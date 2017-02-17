@@ -1,0 +1,23 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Registration Form</h1>
+  <form class="form-group" action="" method="post" name="register">
+      {{ form.hidden_tag() }}
+      <p>
+          Please fill the Registrationform:<br><br>
+      </p>
+      <p >{{ form.name.label }}: {{ form.name(size=50) }}</p>
+      {% if form.name.errors %}
+        <ul class="errors">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <p >{{ form.password.label }}: {{ form.password(size=50)}}</p>
+      <p >{{ form.password2.label }}: {{ form.password2(size=50)}} </p>
+      {% if form.password.errors %}
+        <ul class="errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+    {% endif %}
+
+      <p><input type="submit" value="Sign In"></p>
+  </form>
+{% endblock %}
