@@ -1,4 +1,4 @@
 #!flask/bin/python
-from demo import demo
+from sampledb import app
 
-demo.run(debug=True)
+app.run(debug=True)
