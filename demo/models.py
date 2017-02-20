@@ -2,6 +2,7 @@ from sqlalchemy import *
 from demo import db
 from sqlalchemy.orm import relationship
 import sqlalchemy.dialects.postgresql as postgresql
+from flask_login import UserMixin
 
 
 
@@ -17,7 +18,7 @@ class logintype(enum.Enum):
     other = "username and passwort against DB"
 
 
-class User(db.Model):
+class User(db.Model,UserMixin):
     __tablename__='users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
@@ -31,6 +32,9 @@ class User(db.Model):
         self.name = name
         self.email = email
         self.usertype = usertype
+
+    def get_id(self):
+        return self.id
 
     def __repr__(self):
         return '<User %r>' % (self.name)

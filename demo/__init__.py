@@ -3,15 +3,15 @@ from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 
-#from flask.ext.login import LoginManager
+from flask_login import LoginManager
 
-#login_manager = LoginManager()
-#login_manager.session_protection = 'strong'
-#login_manager.login_view = 'login'
+lm = LoginManager()
+lm.session_protection = 'strong'
+lm.login_view = 'login_user'
 
 demo = Flask(__name__)
 demo.config.from_object('config')
-#login_manager.init_app(demo)
+lm.init_app(demo)
 
 demo.config.update(
 MAIL_SERVER='mail.fz-juelich.de',
