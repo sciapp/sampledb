@@ -53,11 +53,14 @@ def get_object(object_id):
 @object_api.route('/')
 def get_objects():
     objects = Objects.get_current_objects()
-    # TODO: implement this
     # Search should be done here using query parameters
-    # Either ids only or full info?
-    # List of ids?
-    flask.abort(404)
+    return json.dumps([{
+        'object_id': obj.object_id,
+        'version_id': obj.version_id,
+        'user_id': obj.user_id,
+        'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+        'data': obj.data
+    } for obj in objects], cls=datatypes.JSONEncoder)
 
 
 @object_api.route('/', methods=['POST'])
