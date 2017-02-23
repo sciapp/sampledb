@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "title": "Generic Object",
+    "type": "object",
+    "properties": {
+        "object_id": {
+            "title": "Object Identifier",
+            "type": "number",
+            "minimum": 0
+        },
+        "version_id": {
+            "title": "Object Version Identifier",
+            "type": "number",
+            "default": 0,
+            "minimum": 0
+        },
+        "user_id": {
+            "title": "Object User Identifier",
+            "type": "number"
+        },
+        "last_modified": {
+            "title": "Last Modification Datetime",
+            "type": "string"
+        },
+        "data": {
+            "title": "Object Data",
+            "type": "object"
+        }
+    },
+    "required" : ["data"],
+    "additionalProperties": false
+}
