@@ -11,8 +11,9 @@ import logging
 import pytest
 import requests
 import sampledb
+import sampledb.object_database.models
 from sampledb.object_database import datatypes
-from sampledb.object_database import object_api
+from sampledb.object_database import views
 
 from .utils import flask_server
 
@@ -36,20 +37,20 @@ def app():
     # recreate the tables used by this application
     with sampledb.app.app_context():
         sampledb.db.metadata.create_all(bind=engine)
-        object_api.Objects.bind = sampledb.db.engine
+        sampledb.object_database.models.Objects.bind = sampledb.db.engine
         # create the object tables
-        object_api.Objects.metadata.create_all(sampledb.db.engine)
+        sampledb.object_database.models.Objects.metadata.create_all(sampledb.db.engine)
     return sampledb.app
 
 
 def test_get_object(flask_server):
     r = requests.get(flask_server.base_url + 'objects/0')
     assert r.status_code == 404
-    obj = object_api.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
     r = requests.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
-    jsonschema.validate(data, object_api.OBJECT_SCHEMA)
+    jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
     assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
     # Verify their values one by one
@@ -61,11 +62,11 @@ def test_get_object(flask_server):
 
 
 def test_get_object_version_initial(flask_server):
-    obj = object_api.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
-    jsonschema.validate(data, object_api.OBJECT_SCHEMA)
+    jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
     assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
     # Verify their values one by one
@@ -77,12 +78,12 @@ def test_get_object_version_initial(flask_server):
 
 
 def test_get_object_version_updated(flask_server):
-    obj = object_api.Objects.create_object({}, user_id=0)
-    obj = object_api.Objects.update_object(obj.object_id, {}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=0)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/{}'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
-    jsonschema.validate(data, object_api.OBJECT_SCHEMA)
+    jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
     assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
     # Verify their values one by one
@@ -94,12 +95,12 @@ def test_get_object_version_updated(flask_server):
 
 
 def test_get_object_version_old(flask_server):
-    obj = object_api.Objects.create_object({}, user_id=0)
-    object_api.Objects.update_object(obj.object_id, {}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+    sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=0)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
-    jsonschema.validate(data, object_api.OBJECT_SCHEMA)
+    jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
     assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
     # Verify their values one by one
@@ -111,21 +112,21 @@ def test_get_object_version_old(flask_server):
 
 
 def test_get_object_version_missing(flask_server):
-    obj = object_api.Objects.create_object({}, user_id=0)
-    obj = object_api.Objects.update_object(obj.object_id, {}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=0)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/2'.format(obj.object_id, obj.version_id))
     assert r.status_code == 404
 
 
 def test_create_object(flask_server):
-    assert len(object_api.Objects.get_current_objects()) == 0
+    assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
     data = {
         'data': {}
     }
     r = requests.post(flask_server.base_url + 'objects/', json=data)
     assert r.status_code == 201
-    assert len(object_api.Objects.get_current_objects()) == 1
-    obj = object_api.Objects.get_current_objects()[0]
+    assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
+    obj = sampledb.object_database.models.Objects.get_current_objects()[0]
     assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(obj.object_id)
     assert obj.version_id == 0
     assert obj.data == {}
@@ -134,13 +135,13 @@ def test_create_object(flask_server):
 
 
 def test_update_object(flask_server):
-    obj = object_api.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
     data = {
         'data': {'x' : 1}
     }
     r = requests.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
     assert r.status_code == 200
-    obj = object_api.Objects.get_current_objects()[0]
+    obj = sampledb.object_database.models.Objects.get_current_objects()[0]
     assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(obj.object_id)
     assert obj.data == {'x': 1}
     assert obj.version_id == 1

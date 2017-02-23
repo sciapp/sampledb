@@ -5,10 +5,12 @@
 
 import json
 import os
-import jsonschema
+
 import flask
+import jsonschema
+
 from . import datatypes
-from .versioned_json_object_tables import VersionedJSONSerializableObjectTables
+from .models import Objects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -18,20 +20,6 @@ SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
 
 OBJECT_SCHEMA = json.load(open(os.path.join(SCHEMA_DIR, 'object.json'), 'r'))
 jsonschema.Draft4Validator.check_schema(OBJECT_SCHEMA)
-
-
-class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObject):
-    pass
-
-
-Objects = VersionedJSONSerializableObjectTables(
-    'objects', object_type=Object
-)
-
-
-@object_api.route('/')
-def index():
-    return ''
 
 
 @object_api.route('/<int:object_id>/versions/<int:version_id>')
