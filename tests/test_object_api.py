@@ -10,8 +10,10 @@ import jsonschema
 import logging
 import pytest
 import requests
+import flask_login
 import sampledb
 import sampledb.object_database.models
+from sampledb.authentication import User, UserType
 from sampledb.object_database import datatypes
 from sampledb.object_database import views
 
@@ -26,6 +28,14 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @pytest.fixture
 def app():
     sampledb_app = sampledb.create_app()
+
+    @sampledb_app.route('/users/<int:user_id>/autologin')
+    def autologin(user_id):
+        user = User.query.get(user_id)
+        assert user is not None
+        flask_login.login_user(user)
+        return ''
+
     db_url = sampledb_app.config['SQLALCHEMY_DATABASE_URI']
     engine = sampledb.db.create_engine(
         db_url,
@@ -43,10 +53,20 @@ def app():
         sampledb.object_database.models.Objects.metadata.create_all(sampledb.db.engine)
     return sampledb_app
 
+@pytest.fixture
+def user(flask_server):
+    user = User(name="Testuser", email="example@fz-juelich.de", user_type=UserType.PERSON)
+    with flask_server.app.app_context():
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        # force attribute refresh
+        assert user.id is not None
+    return user
 
-def test_get_objects(flask_server):
-    sampledb.object_database.models.Objects.create_object({}, user_id=0)
-    sampledb.object_database.models.Objects.create_object({}, user_id=0)
+
+def test_get_objects(flask_server, user):
+    sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/')
     assert r.status_code == 200
     data = r.json()
@@ -54,10 +74,10 @@ def test_get_objects(flask_server):
         jsonschema.validate(obj, views.OBJECT_SCHEMA)
 
 
-def test_get_object(flask_server):
+def test_get_object(flask_server, user):
     r = requests.get(flask_server.base_url + 'objects/0')
     assert r.status_code == 404
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
@@ -72,8 +92,8 @@ def test_get_object(flask_server):
     assert datetime.datetime.strptime(data['last_modified'], '%Y-%m-%d %H:%M:%S') == obj.utc_datetime.replace(microsecond=0)
 
 
-def test_get_object_version_initial(flask_server):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+def test_get_object_version_initial(flask_server, user):
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
@@ -88,9 +108,9 @@ def test_get_object_version_initial(flask_server):
     assert datetime.datetime.strptime(data['last_modified'], '%Y-%m-%d %H:%M:%S') == obj.utc_datetime.replace(microsecond=0)
 
 
-def test_get_object_version_updated(flask_server):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
-    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=0)
+def test_get_object_version_updated(flask_server, user):
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/{}'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
@@ -105,9 +125,9 @@ def test_get_object_version_updated(flask_server):
     assert datetime.datetime.strptime(data['last_modified'], '%Y-%m-%d %H:%M:%S') == obj.utc_datetime.replace(microsecond=0)
 
 
-def test_get_object_version_old(flask_server):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
-    sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=0)
+def test_get_object_version_old(flask_server, user):
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
@@ -122,19 +142,22 @@ def test_get_object_version_old(flask_server):
     assert datetime.datetime.strptime(data['last_modified'], '%Y-%m-%d %H:%M:%S') == obj.utc_datetime.replace(microsecond=0)
 
 
-def test_get_object_version_missing(flask_server):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
-    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=0)
+def test_get_object_version_missing(flask_server, user):
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/2'.format(obj.object_id, obj.version_id))
     assert r.status_code == 404
 
 
-def test_create_object(flask_server):
+def test_create_object(flask_server, user):
+    # this operation requires a logged in user
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
     data = {
         'data': {}
     }
-    r = requests.post(flask_server.base_url + 'objects/', json=data)
+    r = session.post(flask_server.base_url + 'objects/', json=data)
     assert r.status_code == 201
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
     obj = sampledb.object_database.models.Objects.get_current_objects()[0]
@@ -145,7 +168,10 @@ def test_create_object(flask_server):
     assert obj.utc_datetime >= datetime.datetime.utcnow()-datetime.timedelta(seconds=5)
 
 
-def test_create_object_errors(flask_server):
+def test_create_object_errors(flask_server, user):
+    # this operation requires a logged in user
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
     invalid_data = [
         {
@@ -155,7 +181,7 @@ def test_create_object_errors(flask_server):
             'version_id': 1,
             'data': {}
         }, {
-            'user_id': 1,
+            'user_id': user.id+1,
             'data': {}
         }, {
             'last_modified': '2017-01-01 00:00:00',
@@ -166,20 +192,23 @@ def test_create_object_errors(flask_server):
         }, {}
     ]
     for data in invalid_data:
-        r = requests.post(flask_server.base_url + 'objects/', json=data)
+        r = session.post(flask_server.base_url + 'objects/', json=data)
         assert r.status_code == 400
         assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
-    r = requests.post(flask_server.base_url + 'objects/', json=None)
+    r = session.post(flask_server.base_url + 'objects/', json=None)
     assert r.status_code == 400
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
 
 
-def test_update_object(flask_server):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+def test_update_object(flask_server, user):
+    # this operation requires a logged in user
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
     data = {
         'data': {'x' : 1}
     }
-    r = requests.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
+    r = session.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
     assert r.status_code == 200
     obj = sampledb.object_database.models.Objects.get_current_objects()[0]
     assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(obj.object_id)
@@ -189,12 +218,15 @@ def test_update_object(flask_server):
     assert obj.utc_datetime >= datetime.datetime.utcnow()-datetime.timedelta(seconds=5)
 
 
-def test_update_object_errors(flask_server):
+def test_update_object_errors(flask_server, user):
+    # this operation requires a logged in user
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
-    r = requests.put(flask_server.base_url + 'objects/0', json={'data': {}})
+    r = session.put(flask_server.base_url + 'objects/0', json={'data': {}})
     assert r.status_code == 404
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=0)
+    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
     invalid_data = [
         {
@@ -204,7 +236,7 @@ def test_update_object_errors(flask_server):
             'version_id': 0,
             'data': {}
         }, {
-            'user_id': 1,
+            'user_id': user.id+1,
             'data': {}
         }, {
             'last_modified': '2017-01-01 00:00:00',
@@ -215,9 +247,9 @@ def test_update_object_errors(flask_server):
         }, {}
     ]
     for data in invalid_data:
-        r = requests.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
+        r = session.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
         assert r.status_code == 400
         assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
-    r = requests.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=None)
+    r = session.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=None)
     assert r.status_code == 400
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1

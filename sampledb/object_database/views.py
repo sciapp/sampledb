@@ -7,6 +7,7 @@ import json
 import os
 
 import flask
+import flask_login
 import jsonschema
 
 from . import datatypes
@@ -64,9 +65,9 @@ def get_objects():
 
 
 @object_api.route('/', methods=['POST'])
+@flask_login.login_required
 def create_object():
-    # TODO: get current user id
-    user_id = 0
+    user_id = flask_login.current_user.id
     if not flask.request.is_json:
         flask.abort(400)
     obj = flask.request.json
@@ -88,12 +89,12 @@ def create_object():
 
 
 @object_api.route('/<int:object_id>', methods=['PUT'])
+@flask_login.login_required
 def update_object(object_id):
     current_object = Objects.get_current_object(object_id)
     if current_object is None:
         flask.abort(404)
-    # TODO: get current user id
-    user_id = 0
+    user_id = flask_login.current_user.id
     if not flask.request.is_json:
         flask.abort(400)
     obj = flask.request.json
