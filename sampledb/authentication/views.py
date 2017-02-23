@@ -53,15 +53,13 @@ def login():
         for authentication_method in authentication_methods:
             # authentificaton method in db is ldap
             if authentication_method.type == AuthenticationType.LDAP:
-                # TODO: ???
                 result = validate_user(login, password)
             else:
                 result = utils.validate_user_db(login, password)
             if result:
                 user = authentication_method.user
                 flask_login.login_user(user)
-            else:
-                result = utils.validate_user_db(login, password)
+                break
 
         # no authentificaton method in db
         if not authentication_methods:
@@ -75,6 +73,7 @@ def login():
                     # if authenticate with ldap insert to db
                 else:
                     newuser = get_user_info(login)
+                    # TODO: mehrer user können gleiche mail haben
                     # look , if user in usertable without authentication method
                     erg = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
                     # if not, add to table user

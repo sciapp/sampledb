@@ -9,6 +9,7 @@ import sqlalchemy
 from bs4 import BeautifulSoup
 
 import sampledb
+import sampledb.authentication.models
 
 from .utils import flask_server
 
@@ -63,6 +64,8 @@ def test_invite(flask_server):
     })
     assert r.status_code == 200
     assert 'registration successful' in r.content.decode('utf-8')
+    with sampledb.app.app_context():
+        assert len(sampledb.authentication.models.User.query.all()) == 1
 
     # Try logging in
     r = session.post(flask_server.base_url + 'login', {
