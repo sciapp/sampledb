@@ -45,7 +45,9 @@ def session(engine):
     Base.metadata.create_all(engine)
 
     Session = sessionmaker()
-    return Session(bind=engine)
+    session = Session(bind=engine)
+    yield session
+    session.close()
 
 
 @pytest.fixture
@@ -70,7 +72,6 @@ def test_create_object(session: sessionmaker(), objects: VersionedJSONSerializab
     assert object1.data == {}
     assert object1.utc_datetime < datetime.datetime.utcnow()
     assert object1.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
-    session.close()
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
 
@@ -92,7 +93,6 @@ def test_update_object(session: sessionmaker(), objects: VersionedJSONSerializab
     assert object2.data == {'test': 1}
     assert object2.utc_datetime < datetime.datetime.utcnow()
     assert object2.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
-    session.close()
     assert [object2] == objects.get_current_objects()
     assert object2 == objects.get_current_object(object2.object_id)
 
@@ -103,7 +103,6 @@ def test_get_current_objects(session: sessionmaker(), objects: VersionedJSONSeri
     session.commit()
     object1 = objects.create_object({}, user_id=user.id)
     object2 = objects.create_object({}, user_id=user.id)
-    session.close()
     current_objects = objects.get_current_objects()
     assert current_objects == [object1, object2] or current_objects == [object2, object1]
 
@@ -114,8 +113,6 @@ def test_get_current_object(session: sessionmaker(), objects: VersionedJSONSeria
     session.commit()
     object1 = objects.create_object({}, user_id=user.id)
     object2 = objects.create_object({}, user_id=user.id)
-    session.close()
-    current_objects = objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
     assert object2 == objects.get_current_object(object2.object_id)
 
@@ -131,7 +128,11 @@ def test_get_object_versions(session: sessionmaker(), objects: VersionedJSONSeri
     object2 = objects.update_object(object1.object_id, {'test': 1}, user2.id)
     object_versions = objects.get_object_versions(object1.object_id)
     assert object_versions == [object1, object2]
-    session.close()
+
+
+def test_get_object_versions_errors(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    object_versions = objects.get_object_versions(0)
+    assert object_versions == []
 
 
 def test_get_object_version(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
@@ -149,4 +150,3 @@ def test_get_object_version(session: sessionmaker(), objects: VersionedJSONSeria
     assert object_version1 == object1
     assert object_version2 == object2
     assert object_version3 is None
-    session.close()
