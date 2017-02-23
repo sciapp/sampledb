@@ -1,8 +1,7 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
-
 from flask_login import LoginManager
+from flask_mail import Mail
+from flask_sqlalchemy import SQLAlchemy
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
@@ -12,6 +11,7 @@ db = SQLAlchemy()
 
 import sampledb.authentication
 import sampledb.object_database
+import sampledb.main
 
 
 def create_app():
@@ -20,7 +20,8 @@ def create_app():
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
-    app.register_blueprint(sampledb.authentication.authentication)
+    app.register_blueprint(sampledb.main.main_blueprint)
+    app.register_blueprint(sampledb.authentication.authentication_blueprint)
     app.register_blueprint(sampledb.object_database.object_api, url_prefix='/objects')
 
     with app.app_context():
@@ -31,7 +32,3 @@ def create_app():
         sampledb.object_database.Objects.metadata.create_all(db.engine)
 
     return app
-
-app = create_app()
-
-import sampledb.views

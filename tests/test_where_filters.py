@@ -22,7 +22,8 @@ class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObje
 
 @pytest.fixture
 def engine():
-    db_url = sampledb.app.config['SQLALCHEMY_DATABASE_URI']
+    sampledb_app = sampledb.create_app()
+    db_url = sampledb_app.config['SQLALCHEMY_DATABASE_URI']
     engine = db.create_engine(
         db_url,
         echo=False,

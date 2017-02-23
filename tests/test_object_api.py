@@ -25,7 +25,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 @pytest.fixture
 def app():
-    db_url = sampledb.app.config['SQLALCHEMY_DATABASE_URI']
+    sampledb_app = sampledb.create_app()
+    db_url = sampledb_app.config['SQLALCHEMY_DATABASE_URI']
     engine = sampledb.db.create_engine(
         db_url,
         json_serializer=lambda obj: json.dumps(obj, cls=datatypes.JSONEncoder),
@@ -35,12 +36,12 @@ def app():
     # fully empty the database first
     sampledb.db.MetaData(reflect=True, bind=engine).drop_all()
     # recreate the tables used by this application
-    with sampledb.app.app_context():
+    with sampledb_app.app_context():
         sampledb.db.metadata.create_all(bind=engine)
         sampledb.object_database.models.Objects.bind = sampledb.db.engine
         # create the object tables
         sampledb.object_database.models.Objects.metadata.create_all(sampledb.db.engine)
-    return sampledb.app
+    return sampledb_app
 
 
 def test_get_object(flask_server):

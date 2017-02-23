@@ -16,15 +16,16 @@ from .utils import flask_server
 
 @pytest.fixture
 def app():
-    db_url = sampledb.app.config['SQLALCHEMY_DATABASE_URI']
+    sampledb_app = sampledb.create_app()
+    db_url = sampledb_app.config['SQLALCHEMY_DATABASE_URI']
     engine = sampledb.db.create_engine(db_url)
     # fully empty the database first
     sqlalchemy.MetaData(reflect=True, bind=engine).drop_all()
     # recreate the tables used by this application
-    with sampledb.app.app_context():
+    with sampledb_app.app_context():
         sampledb.db.metadata.create_all(bind=engine)
 
-    return sampledb.app
+    return sampledb_app
 
 
 def test_index(flask_server):
@@ -64,7 +65,7 @@ def test_invite(flask_server):
     })
     assert r.status_code == 200
     assert 'registration successful' in r.content.decode('utf-8')
-    with sampledb.app.app_context():
+    with flask_server.app.app_context():
         assert len(sampledb.authentication.models.User.query.all()) == 1
 
     # Try logging in

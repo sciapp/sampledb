@@ -27,7 +27,7 @@ def load_user(user_id):
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
-    return flask.redirect(flask.url_for('index'))
+    return flask.redirect(flask.url_for('main.index'))
 
 
 @authentication.route('/login', methods=['GET', 'POST'])
@@ -35,7 +35,7 @@ def login():
     if flask_login.current_user.is_authenticated:
         flask.flash('you are already logged in', 'danger')
         print('user exists')
-        return flask.redirect(flask.url_for('index'))
+        return flask.redirect(flask.url_for('main.index'))
 
     if flask.request.method == 'POST':
         login = flask.request.form['username']
@@ -100,7 +100,7 @@ def login():
             print("user or password wrong, can't login")
         else:
             print("user is authenticated")
-    return flask.redirect(flask.url_for('index'))
+    return flask.redirect(flask.url_for('main.index'))
 
 
 @authentication.route('/invite_user', methods=['POST'])
@@ -116,7 +116,7 @@ def invite():
         recipients=[email],
         html=html
     ))
-    return flask.redirect(flask.url_for('index'))
+    return flask.redirect(flask.url_for('main.index'))
 
 
 @authentication.route('/confirm/<token>', methods=['GET', 'POST'])
@@ -151,9 +151,9 @@ def confirm_email(token):
                 db.session.add(auth)
                 db.session.commit()
             flask.flash('registration successfully')
-            return flask.redirect(flask.url_for('index'))
+            return flask.redirect(flask.url_for('main.index'))
         else:
             flask.flash('user exists, please contact administrator')
-            return flask.redirect(flask.url_for('index'))
+            return flask.redirect(flask.url_for('main.index'))
     else:
         return flask.render_template('register.html', form=form)
