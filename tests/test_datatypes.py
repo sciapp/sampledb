@@ -140,11 +140,28 @@ def test_quantity_deserialization_non_base_units():
 
 
 def test_quantity_equals():
-    utc_datetime = datetime.datetime.utcnow()
     assert datatypes.Quantity(1, None) == datatypes.Quantity(1, None)
     assert datatypes.Quantity(1, None) != datatypes.Quantity(2, None)
     assert datatypes.Quantity(1, 'meter') == datatypes.Quantity(0.001, 'kilometers')
     assert datatypes.Quantity(1, 'meter') != datatypes.Quantity(1, 'second')
+
+
+def test_quantity_invalid_value():
+    with pytest.raises(ValueError):
+        datatypes.Quantity(1, 'invalid')
+
+
+def test_quantity_invalid_json():
+    quantity = {
+        '_type': 'quantity',
+        'units': None,
+        'magnitude_in_base_units': 1,
+        'dimensionality': 'dimensionless'
+    }
+    json.loads(json.dumps(quantity), object_hook=datatypes.JSONEncoder.object_hook)
+    quantity['units'] = 'invalid'
+    with pytest.raises(ValueError):
+        json.loads(json.dumps(quantity), object_hook=datatypes.JSONEncoder.object_hook)
 
 
 def test_datetime_serialization():

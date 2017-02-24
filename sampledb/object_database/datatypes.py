@@ -111,7 +111,7 @@ class DateTime(object):
         self.utc_datetime = utc_datetime.replace(microsecond=0)
 
     def __repr__(self):
-        return '<{0}(utc_datetime={1}>'.format(type(self).__name__, self.utc_datetime.strftime(DateTime.FORMAT_STRING))
+        return '<{0}(utc_datetime={1})>'.format(type(self).__name__, self.utc_datetime.strftime(DateTime.FORMAT_STRING))
 
     def __eq__(self, other):
         return self.utc_datetime == other.utc_datetime
@@ -138,12 +138,15 @@ class Quantity(object):
                 self.units = str(self.pint_units)
             else:
                 self.units = units
-                self.pint_units = ureg.Unit(self.units)
+                try:
+                    self.pint_units = ureg.Unit(self.units)
+                except (pint.errors.UndefinedUnitError, AttributeError):
+                    raise ValueError("Invalid units '{}'".format(self.units))
             self.maginitude_in_base_units = ureg.Quantity(self.magnitude, self.pint_units).to_base_units().magnitude
         self.dimensionality = self.pint_units.dimensionality
 
     def __repr__(self):
-        return '<{0}(magnitude={1.magnitude}, units="{1.units}">'.format(type(self).__name__, self)
+        return '<{0}(magnitude={1.magnitude}, units="{1.units}")>'.format(type(self).__name__, self)
 
     def __eq__(self, other):
         return ureg.Quantity(self.magnitude, self.pint_units) == ureg.Quantity(other.magnitude, other.pint_units)
@@ -162,7 +165,10 @@ class Quantity(object):
         if units is None:
             pint_units = ureg.Unit('1')
         else:
-            pint_units = ureg.Unit(obj['units'])
+            try:
+                pint_units = ureg.Unit(units)
+            except (pint.errors.UndefinedUnitError, AttributeError):
+                raise ValueError("Invalid units '{}'".format(units))
         # convert magnitude back from base unit to desired unit
         pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
         magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
@@ -177,7 +183,7 @@ class Boolean(object):
         self.value = bool(value)
 
     def __repr__(self):
-        return '<{0}(value={1.value}>'.format(type(self).__name__, self)
+        return '<{0}(value={1.value})>'.format(type(self).__name__, self)
 
     def __eq__(self, other):
         return self.value == other.value
@@ -196,7 +202,7 @@ class Text(object):
         self.text = text
 
     def __repr__(self):
-        return '<{0}(text="{1.text}">'.format(type(self).__name__, self)
+        return '<{0}(text="{1.text}")>'.format(type(self).__name__, self)
 
     def __eq__(self, other):
         return self.text == other.text
