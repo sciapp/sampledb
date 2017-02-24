@@ -53,6 +53,7 @@ def app():
         sampledb.object_database.models.Objects.metadata.create_all(sampledb.db.engine)
     return sampledb_app
 
+
 @pytest.fixture
 def user(flask_server):
     user = User(name="Testuser", email="example@fz-juelich.de", user_type=UserType.PERSON)
@@ -230,18 +231,23 @@ def test_update_object_errors(flask_server, user):
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
     invalid_data = [
         {
+            # modifying the object ID is not allowed
             'object_id': 2,
             'data': {}
         }, {
+            # version ID must always me incremented by one
             'version_id': 0,
             'data': {}
         }, {
+            # user ID is always the ID of the currently logged in user
             'user_id': user.id+1,
             'data': {}
         }, {
+            # TODO: should it be allowed to vary last_modified time? Probably not.
             'last_modified': '2017-01-01 00:00:00',
             'data': {}
         }, {
+            # attributes / keys which aren't part of the object schema are not allowed
             'invalid': '',
             'data': {}
         }, {}

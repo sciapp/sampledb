@@ -8,7 +8,7 @@ from .ldap import validate_user, get_user_info
 from .models import AuthenticationType, Authentication, UserType, User
 from .forms import RegisterForm
 from .. import mail, db, login_manager
-from ..token import generate_confirmation_token, confirm_token
+from ..security_tokens import generate_token, verify_token
 
 authentication = flask.Blueprint('authentication', __name__, template_folder='templates')
 login_manager.login_view = 'authentication.login'
@@ -106,7 +106,7 @@ def login():
 @authentication.route('/invite_user', methods=['POST'])
 def invite():
     email = flask.request.form['mail']
-    token = generate_confirmation_token(email, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
+    token = generate_token(email, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     subject = "Please confirm your email"
     confirm_url = flask.url_for(".confirm_email", token=token, _external=True)
     html = flask.render_template('activate.html', confirm_url=confirm_url)
@@ -121,7 +121,7 @@ def invite():
 
 @authentication.route('/confirm/<token>', methods=['GET', 'POST'])
 def confirm_email(token):
-    email = confirm_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
+    email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     if email is None:
         # TODO: Why flash?
         flask.flash('The registration link is invalid or has expired.', 'danger')
