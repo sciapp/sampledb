@@ -9,6 +9,7 @@ import pytest
 import sqlalchemy as db
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import jsonschema.exceptions
 
 import sampledb
 from sampledb.object_database.versioned_json_object_tables import VersionedJSONSerializableObjectTables
@@ -66,10 +67,11 @@ def test_create_object(session: sessionmaker(), objects: VersionedJSONSerializab
     user = User(id=0, name="User")
     session.add(user)
     session.commit()
-    object1 = objects.create_object({}, user_id=user.id)
+    object1 = objects.create_object(data={}, schema={}, user_id=user.id)
     assert object1.version_id == 0
     assert object1.user_id is not None and object1.user_id == user.id
     assert object1.data == {}
+    assert object1.schema == {}
     assert object1.utc_datetime < datetime.datetime.utcnow()
     assert object1.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
     assert [object1] == objects.get_current_objects()
@@ -80,17 +82,18 @@ def test_update_object(session: sessionmaker(), objects: VersionedJSONSerializab
     user1 = User(name="User 1")
     session.add(user1)
     session.commit()
-    object1 = objects.create_object({}, user_id=user1.id)
+    object1 = objects.create_object(data={}, schema={}, user_id=user1.id)
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
     user2 = User(name="User 2")
     session.add(user2)
     session.commit()
-    object2 = objects.update_object(object1.object_id, {'test': 1}, user2.id)
+    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id)
     assert object2.object_id == object1.object_id
     assert object2.version_id == 1
     assert object2.user_id is not None and object2.user_id == user2.id
     assert object2.data == {'test': 1}
+    assert object2.schema == {}
     assert object2.utc_datetime < datetime.datetime.utcnow()
     assert object2.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
     assert [object2] == objects.get_current_objects()
@@ -101,8 +104,8 @@ def test_get_current_objects(session: sessionmaker(), objects: VersionedJSONSeri
     user = User(id=0, name="User")
     session.add(user)
     session.commit()
-    object1 = objects.create_object({}, user_id=user.id)
-    object2 = objects.create_object({}, user_id=user.id)
+    object1 = objects.create_object(data={}, schema={}, user_id=user.id)
+    object2 = objects.create_object(data={}, schema={}, user_id=user.id)
     current_objects = objects.get_current_objects()
     assert current_objects == [object1, object2] or current_objects == [object2, object1]
 
@@ -111,8 +114,8 @@ def test_get_current_object(session: sessionmaker(), objects: VersionedJSONSeria
     user = User(id=0, name="User")
     session.add(user)
     session.commit()
-    object1 = objects.create_object({}, user_id=user.id)
-    object2 = objects.create_object({}, user_id=user.id)
+    object1 = objects.create_object(data={}, schema={}, user_id=user.id)
+    object2 = objects.create_object(data={}, schema={}, user_id=user.id)
     assert object1 == objects.get_current_object(object1.object_id)
     assert object2 == objects.get_current_object(object2.object_id)
 
@@ -121,11 +124,11 @@ def test_get_object_versions(session: sessionmaker(), objects: VersionedJSONSeri
     user1 = User(name="User 1")
     session.add(user1)
     session.commit()
-    object1 = objects.create_object({}, user_id=user1.id)
+    object1 = objects.create_object(data={}, schema={}, user_id=user1.id)
     user2 = User(name="User 2")
     session.add(user2)
     session.commit()
-    object2 = objects.update_object(object1.object_id, {'test': 1}, user2.id)
+    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id)
     object_versions = objects.get_object_versions(object1.object_id)
     assert object_versions == [object1, object2]
 
@@ -139,14 +142,74 @@ def test_get_object_version(session: sessionmaker(), objects: VersionedJSONSeria
     user1 = User(name="User 1")
     session.add(user1)
     session.commit()
-    object1 = objects.create_object({}, user_id=user1.id)
+    object1 = objects.create_object(data={}, schema={}, user_id=user1.id)
     user2 = User(name="User 2")
     session.add(user2)
     session.commit()
-    object2 = objects.update_object(object1.object_id, {'test': 1}, user2.id)
+    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id)
     object_version1 = objects.get_object_version(object1.object_id, 0)
     object_version2 = objects.get_object_version(object1.object_id, 1)
     object_version3 = objects.get_object_version(object1.object_id, 2)
     assert object_version1 == object1
     assert object_version2 == object2
     assert object_version3 is None
+
+
+def test_create_object_invalid_schema(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(id=0, name="User")
+    session.add(user)
+    session.commit()
+    schema = {
+        'type': 'invalid'
+    }
+    with pytest.raises(jsonschema.exceptions.SchemaError):
+        objects.create_object(data={}, schema=schema, user_id=user.id)
+
+
+def test_create_object_invalid_data(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(id=0, name="User")
+    session.add(user)
+    session.commit()
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': {
+                'type': 'integer'
+            }
+        }
+    }
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        objects.create_object(data={'test': False}, schema=schema, user_id=user.id)
+
+
+def test_update_object_invalid_schema(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(name="User 1")
+    session.add(user)
+    session.commit()
+    object1 = objects.create_object(data={}, schema={}, user_id=user.id)
+    assert [object1] == objects.get_current_objects()
+    assert object1 == objects.get_current_object(object1.object_id)
+    schema = {
+        'type': 'invalid'
+    }
+    with pytest.raises(jsonschema.exceptions.SchemaError):
+        objects.update_object(object1.object_id, data={'test': 1}, schema=schema, user_id=user.id)
+
+
+def test_update_object_invalid_data(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(name="User 1")
+    session.add(user)
+    session.commit()
+    object1 = objects.create_object(data={}, schema={}, user_id=user.id)
+    assert [object1] == objects.get_current_objects()
+    assert object1 == objects.get_current_object(object1.object_id)
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': {
+                'type': 'integer'
+            }
+        }
+    }
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        objects.update_object(object1.object_id, data={'test': '1'}, schema=schema, user_id=user.id)

@@ -5,6 +5,7 @@
 
 import collections
 import datetime
+import jsonschema
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
 
@@ -16,14 +17,16 @@ class VersionedJSONSerializableObjectTables(object):
     A class for storing JSON-serializable objects without deletes and with versioned updates.
 
     The class uses two tables, one for the current objects and one for previous versions of these objects. Each
-    object consists of an object ID, a version ID, the actual data and information about this current version (the ID
-    of this version's author and a datetime of when the object was created or updated).
+    object consists of an object ID, a version ID, the actual data, a JSON schema for the data and information about
+    this current version (the ID of this version's author and a datetime of when the object was created or updated).
 
     These two tables will be created when the instance of this class is created, if bind is provided. Otherwise you
     can use the metadata attribute to access the SQLAlchemy MetaData object associated with these tables. You can then
     call metadata.create_all(bind) to create the tables.
 
     You should **not** interact with the tables yourself. Instead, use the functions provided by this class.
+
+    For information on JSON schemas, see http://json-schema.org/.
     """
 
     VersionedJSONSerializableObject = collections.namedtuple(
@@ -32,6 +35,7 @@ class VersionedJSONSerializableObjectTables(object):
             'object_id',
             'version_id',
             'data',
+            'schema',
             'user_id',
             'utc_datetime'
         ]
@@ -53,6 +57,7 @@ class VersionedJSONSerializableObjectTables(object):
             db.Column('object_id', db.Integer, nullable=False, primary_key=True, autoincrement=True),
             db.Column('version_id', db.Integer, nullable=False, default=0),
             db.Column('data', postgresql.JSONB, nullable=False),
+            db.Column('schema', postgresql.JSONB, nullable=False),
             db.Column('user_id', db.Integer, nullable=False),
             db.Column('utc_datetime', db.DateTime, nullable=False)
         )
@@ -62,6 +67,7 @@ class VersionedJSONSerializableObjectTables(object):
             db.Column('object_id', db.Integer, nullable=False),
             db.Column('version_id', db.Integer, nullable=False, default=0),
             db.Column('data', postgresql.JSONB, nullable=False),
+            db.Column('schema', postgresql.JSONB, nullable=False),
             db.Column('user_id', db.Integer, nullable=False),
             db.Column('utc_datetime', db.DateTime, nullable=False),
             db.PrimaryKeyConstraint('object_id', 'version_id')
@@ -74,11 +80,12 @@ class VersionedJSONSerializableObjectTables(object):
         if self.bind is not None:
             self.metadata.create_all(self.bind)
 
-    def create_object(self, data, user_id, utc_datetime=None, connection=None):
+    def create_object(self, data, schema, user_id, utc_datetime=None, connection=None):
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
 
         :param data: a JSON serializable object containing the object data
+        :param schema: a JSON schema describing data
         :param user_id: the ID of the user who created the object
         :param utc_datetime: the datetime (in UTC) when the object was created (optional, defaults to utcnow())
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
@@ -88,6 +95,8 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
+        jsonschema.Draft4Validator.check_schema(schema)
+        jsonschema.validate(data, schema, cls=jsonschema.Draft4Validator)
         version_id = 0
         object_id = connection.execute(
             self._current_table
@@ -95,6 +104,7 @@ class VersionedJSONSerializableObjectTables(object):
             .values(
                 version_id=version_id,
                 data=data,
+                schema=schema,
                 user_id=user_id,
                 utc_datetime=utc_datetime
             )
@@ -102,9 +112,9 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.object_id
             )
         ).scalar()
-        return self.object_type(object_id, version_id, data, user_id, utc_datetime)
+        return self.object_type(object_id, version_id, data, schema, user_id, utc_datetime)
 
-    def update_object(self, object_id, data, user_id, utc_datetime=None, connection=None):
+    def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None):
         """
         Updates an existing object using the given data, user id and datetime.
 
@@ -113,6 +123,7 @@ class VersionedJSONSerializableObjectTables(object):
 
         :param object_id: the ID of the existing object
         :param data: a JSON serializable object containing the updated object data
+        :param schema: a JSON schema describing data
         :param user_id: the ID of the user who updated the object
         :param utc_datetime: the datetime (in UTC) when the object was updated (optional, defaults to utcnow())
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
@@ -122,13 +133,15 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
+        jsonschema.Draft4Validator.check_schema(schema)
+        jsonschema.validate(data, schema, cls=jsonschema.Draft4Validator)
         with connection.begin() as transaction:
             # Copy current version to previous versions
             assert connection.execute(
                 self._previous_table
                 .insert()
                 .from_select(
-                    ['object_id', 'version_id', 'data', 'user_id', 'utc_datetime'],
+                    ['object_id', 'version_id', 'data', 'schema', 'user_id', 'utc_datetime'],
                     self._current_table
                     .select()
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
@@ -143,6 +156,7 @@ class VersionedJSONSerializableObjectTables(object):
                 .values(
                     version_id=self._current_table.c.version_id + 1,
                     data=data,
+                    schema=schema,
                     user_id=user_id,
                     utc_datetime=utc_datetime
                 )
@@ -152,7 +166,7 @@ class VersionedJSONSerializableObjectTables(object):
                 [{'oid': object_id}]
             ).scalar()
             transaction.commit()
-        return self.object_type(object_id, version_id, data, user_id, utc_datetime)
+        return self.object_type(object_id, version_id, data, schema, user_id, utc_datetime)
 
     def get_current_object(self, object_id, connection=None):
         """
@@ -170,6 +184,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.object_id,
                 self._current_table.c.version_id,
                 self._current_table.c.data,
+                self._current_table.c.schema,
                 self._current_table.c.user_id,
                 self._current_table.c.utc_datetime
             ])
@@ -195,6 +210,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.object_id,
                 self._current_table.c.version_id,
                 self._current_table.c.data,
+                self._current_table.c.schema,
                 self._current_table.c.user_id,
                 self._current_table.c.utc_datetime
             ])
@@ -222,6 +238,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
                 self._previous_table.c.data,
+                self._previous_table.c.schema,
                 self._previous_table.c.user_id,
                 self._previous_table.c.utc_datetime
             ])
@@ -251,6 +268,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
                 self._previous_table.c.data,
+                self._previous_table.c.schema,
                 self._previous_table.c.user_id,
                 self._previous_table.c.utc_datetime
             ])

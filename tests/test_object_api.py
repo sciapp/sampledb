@@ -66,8 +66,8 @@ def user(flask_server):
 
 
 def test_get_objects(flask_server, user):
-    sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
-    sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
+    sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/')
     assert r.status_code == 200
     data = r.json()
@@ -78,13 +78,13 @@ def test_get_objects(flask_server, user):
 def test_get_object(flask_server, user):
     r = requests.get(flask_server.base_url + 'objects/0')
     assert r.status_code == 404
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
-    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
+    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'schema', 'last_modified'}
     # Verify their values one by one
     assert data['object_id'] == obj.object_id
     assert data['version_id'] == obj.version_id
@@ -94,13 +94,13 @@ def test_get_object(flask_server, user):
 
 
 def test_get_object_version_initial(flask_server, user):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
-    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
+    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'schema', 'last_modified'}
     # Verify their values one by one
     assert data['object_id'] == obj.object_id
     assert data['version_id'] == obj.version_id
@@ -110,14 +110,14 @@ def test_get_object_version_initial(flask_server, user):
 
 
 def test_get_object_version_updated(flask_server, user):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
-    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/{}'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
-    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
+    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'schema', 'last_modified'}
     # Verify their values one by one
     assert data['object_id'] == obj.object_id
     assert data['version_id'] == obj.version_id
@@ -127,14 +127,14 @@ def test_get_object_version_updated(flask_server, user):
 
 
 def test_get_object_version_old(flask_server, user):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
-    sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
+    sampledb.object_database.models.Objects.update_object(obj.object_id, {}, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
     # Make sure we know about all keys in data
-    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'last_modified'}
+    assert set(data.keys()) == {'object_id', 'version_id', 'user_id', 'data', 'schema', 'last_modified'}
     # Verify their values one by one
     assert data['object_id'] == obj.object_id
     assert data['version_id'] == obj.version_id
@@ -144,8 +144,8 @@ def test_get_object_version_old(flask_server, user):
 
 
 def test_get_object_version_missing(flask_server, user):
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
-    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object({}, {}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, {}, {}, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/2'.format(obj.object_id, obj.version_id))
     assert r.status_code == 404
 
@@ -156,7 +156,8 @@ def test_create_object(flask_server, user):
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
     data = {
-        'data': {}
+        'data': {},
+        'schema': {}
     }
     r = session.post(flask_server.base_url + 'objects/', json=data)
     assert r.status_code == 201
@@ -176,19 +177,32 @@ def test_create_object_errors(flask_server, user):
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
     invalid_data = [
         {
+            # object ID is determined by the database
             'object_id': 1,
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
+            # version ID has to be 0 for any new objects
             'version_id': 1,
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
+            # user ID is always the ID of the currently logged in user
             'user_id': user.id+1,
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
+            # TODO: should it be allowed to set last_modified time? Probably not.
             'last_modified': '2017-01-01 00:00:00',
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
+            # attributes / keys which aren't part of the object schema are not allowed
             'invalid': '',
+            'data': {},
+            'schema': {}
+        }, {
+            # schema is required
             'data': {}
         }, {}
     ]
@@ -205,15 +219,17 @@ def test_update_object(flask_server, user):
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(data={}, schema={}, user_id=user.id)
     data = {
-        'data': {'x' : 1}
+        'data': {'x': 1},
+        'schema': {}
     }
     r = session.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
     assert r.status_code == 200
     obj = sampledb.object_database.models.Objects.get_current_objects()[0]
     assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(obj.object_id)
     assert obj.data == {'x': 1}
+    assert obj.schema == {}
     assert obj.version_id == 1
     assert obj.utc_datetime <= datetime.datetime.utcnow()
     assert obj.utc_datetime >= datetime.datetime.utcnow()-datetime.timedelta(seconds=5)
@@ -227,28 +243,36 @@ def test_update_object_errors(flask_server, user):
     r = session.put(flask_server.base_url + 'objects/0', json={'data': {}})
     assert r.status_code == 404
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
-    obj = sampledb.object_database.models.Objects.create_object({}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(data={}, schema={}, user_id=user.id)
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
     invalid_data = [
         {
             # modifying the object ID is not allowed
             'object_id': 2,
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
             # version ID must always me incremented by one
             'version_id': 0,
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
             # user ID is always the ID of the currently logged in user
             'user_id': user.id+1,
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
             # TODO: should it be allowed to vary last_modified time? Probably not.
             'last_modified': '2017-01-01 00:00:00',
-            'data': {}
+            'data': {},
+            'schema': {}
         }, {
             # attributes / keys which aren't part of the object schema are not allowed
             'invalid': '',
+            'data': {},
+            'schema': {}
+        }, {
+            # schema is required
             'data': {}
         }, {}
     ]

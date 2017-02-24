@@ -102,6 +102,20 @@ class JSONEncoder(json.JSONEncoder):
 
 @JSONEncoder.serializable_type('datetime')
 class DateTime(object):
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': [ 'datetime' ]
+            },
+            'utc_datetime': {
+                'type': 'string',
+                'pattern': '^[0-9]{4}\\-[0-1][0-9]\\-[0-3][0-9]\\ [0-9]{2}:[0-9]{2}:[0-9]{2}$'
+            }
+        },
+        'required': ['_type', 'utc_datetime'],
+        'additionalProperties': False
+    }
 
     FORMAT_STRING = '%Y-%m-%d %H:%M:%S'
 
@@ -126,6 +140,30 @@ class DateTime(object):
 
 @JSONEncoder.serializable_type('quantity')
 class Quantity(object):
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': [ 'quantity' ]
+            },
+            'dimensionality': {
+                'type': 'string',
+                'magnitude_in_base_units': 'string'
+            },
+            'magnitude_in_base_units': {
+                'type': 'number'
+            },
+            'units': {
+                'anyOf': [
+                    {'type': 'null'},
+                    {'type': 'string'}
+                ]
+            }
+        },
+        'required': ['_type', 'dimensionality', 'magnitude_in_base_units', 'units'],
+        'additionalProperties': False
+    }
+
     def __init__(self, magnitude, units):
         self.magnitude = float(magnitude)
         if units is None:
@@ -179,6 +217,19 @@ class Quantity(object):
 
 @JSONEncoder.serializable_type('bool')
 class Boolean(object):
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': ['bool']
+            },
+            'value': {
+                'type': 'boolean'
+            }
+        },
+        'required': ['_type', 'value'],
+        'additionalProperties': False
+    }
     def __init__(self, value):
         self.value = bool(value)
 
@@ -198,6 +249,21 @@ class Boolean(object):
 
 @JSONEncoder.serializable_type('text')
 class Text(object):
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': ['text']
+            },
+            'text': {
+                'type': 'string'
+            }
+        },
+        'required': ['_type', 'text'],
+        'additionalProperties': False
+    }
+
+
     def __init__(self, text):
         self.text = text
 

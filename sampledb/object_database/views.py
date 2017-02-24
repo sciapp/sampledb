@@ -33,7 +33,8 @@ def get_object_version(object_id, version_id):
         'version_id': obj.version_id,
         'user_id': obj.user_id,
         'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
-        'data': obj.data
+        'data': obj.data,
+        'schema': obj.schema
     }, cls=datatypes.JSONEncoder)
 
 
@@ -47,7 +48,8 @@ def get_object(object_id):
         'version_id': obj.version_id,
         'user_id': obj.user_id,
         'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
-        'data': obj.data
+        'data': obj.data,
+        'schema': obj.schema
     }, cls=datatypes.JSONEncoder)
 
 
@@ -60,7 +62,8 @@ def get_objects():
         'version_id': obj.version_id,
         'user_id': obj.user_id,
         'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
-        'data': obj.data
+        'data': obj.data,
+        'schema': obj.schema
     } for obj in objects], cls=datatypes.JSONEncoder)
 
 
@@ -84,7 +87,7 @@ def create_object():
         flask.abort(400)
     if 'version_id' in obj and obj['version_id'] != 0:
         flask.abort(400)
-    obj = Objects.create_object(obj['data'], user_id=user_id)
+    obj = Objects.create_object(obj['data'], obj['schema'], user_id=user_id)
     return '', 201, {'Location': flask.url_for('.get_object', object_id=obj.object_id)}
 
 
@@ -111,5 +114,5 @@ def update_object(object_id):
         flask.abort(400)
     if 'version_id' in obj and obj['version_id'] != current_object.version_id+1:
         flask.abort(400)
-    obj = Objects.update_object(object_id, obj['data'], user_id=user_id)
+    obj = Objects.update_object(object_id, obj['data'], obj['schema'], user_id=user_id)
     return '', 200, {'Location': flask.url_for('.get_object', object_id=obj.object_id)}

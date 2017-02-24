@@ -5,6 +5,8 @@
 
 import datetime
 import json
+import jsonschema
+import jsonschema.exceptions
 
 import pytest
 
@@ -164,6 +166,43 @@ def test_quantity_invalid_json():
         json.loads(json.dumps(quantity), object_hook=datatypes.JSONEncoder.object_hook)
 
 
+def test_quantity_valid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Quantity.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.Quantity(1, 'm')}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
+
+
+def test_quantity_valid_data_dimensionless():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Quantity.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.Quantity(1, None)}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
+
+
+def test_quantity_invalid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Quantity.JSON_SCHEMA
+        }
+    }
+    data = {'test': 1}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        jsonschema.validate(raw_data, schema)
+
+
 def test_datetime_serialization():
     utc_datetime = datetime.datetime.utcnow()
     s = json.dumps(datatypes.DateTime(utc_datetime), cls=datatypes.JSONEncoder)
@@ -185,6 +224,31 @@ def test_datetime_equals():
     utc_datetime = datetime.datetime.utcnow()
     assert datatypes.DateTime(utc_datetime) == datatypes.DateTime(utc_datetime)
     assert datatypes.DateTime(utc_datetime) != datatypes.DateTime(utc_datetime + datetime.timedelta(days=1))
+
+
+def test_datetime_valid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.DateTime.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.DateTime(datetime.datetime.utcnow())}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
+
+
+def test_datetime_invalid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.DateTime.JSON_SCHEMA
+        }
+    }
+    data = {'test': "2017-02-24 16:26:00"}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        jsonschema.validate(raw_data, schema)
 
 
 def test_boolean_serialization_true():
@@ -214,6 +278,31 @@ def test_boolean_equals():
     assert datatypes.Boolean(True) != datatypes.Boolean(False)
 
 
+def test_boolean_valid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Boolean.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.Boolean(True)}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
+
+
+def test_boolean_invalid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Boolean.JSON_SCHEMA
+        }
+    }
+    data = {'test': True}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        jsonschema.validate(raw_data, schema)
+
+
 def test_text_serialization():
     s = json.dumps(datatypes.Text("Test"), cls=datatypes.JSONEncoder)
     assert json.loads(s) == {
@@ -231,3 +320,28 @@ def test_text_deserialization():
 def test_text_equals():
     assert datatypes.Text("Test") == datatypes.Text("Test")
     assert datatypes.Text("Test") != datatypes.Text("ABCD")
+
+
+def test_text_valid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Text.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.Text("Example")}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
+
+
+def test_text_invalid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Text.JSON_SCHEMA
+        }
+    }
+    data = {'test': "Example"}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        jsonschema.validate(raw_data, schema)
