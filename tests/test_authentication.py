@@ -81,3 +81,19 @@ def test_invite(flask_server):
     assert r.status_code == 200
 
 
+def test_useradd(flask_server):
+    r = requests.get(flask_server.base_url)
+    assert r.status_code == 200
+    session = requests.session()
+    url = session.get(flask_server.base_url + 'add_user')
+    assert url.status_code == 200
+    csrf_token = BeautifulSoup(url.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    r = session.post(url, {
+        'name': 'ombe',
+        'email': 'd.henkel@fz-juelich.de',
+        'password': 'xxx',
+        'type' : 'Other',
+        'method': 'Other',
+        'admin': '0',
+        'csrf_token': csrf_token
+    })
