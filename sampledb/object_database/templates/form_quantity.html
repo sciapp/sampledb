@@ -1,11 +1,15 @@
 <div class="form-group">
-  <label>{{ schema.title }}</label>
+  <label class="control-label col-md-3">{{ schema.title }}</label>
   {% if schema.allOf[1].properties.dimensionality['enum'][0] == "dimensionless" %}
-    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}">
+    <div class="col-md-9">
+      <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units }}"{% endif %}>
+    </div>
   {% else %}
-    <div class="input-group">
-      <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}">
-      <span class="input-group-addon">{{ schema.allOf[1].properties.defaultUnits['enum'][0] }}</span>
+    <div class="col-md-9">
+      <div class="input-group">
+        <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none %}value="{{ '%g'| format((data | to_datatype).magnitude) }}"{% endif %}>
+        <span class="input-group-addon">{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema.allOf[1].properties.defaultUnits['enum'][0] }}{% endif %}</span>
+      </div>
     </div>
   {% endif %}
 </div>

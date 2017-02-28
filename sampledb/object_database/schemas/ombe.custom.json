@@ -7,7 +7,7 @@
       "$ref": "#/definitions/text"
     },
     "created": {
-      "title": "Creation datetime",
+      "title": "Creation Datetime",
       "$ref": "#/definitions/datetime"
     },
     "substrate": {
@@ -175,7 +175,7 @@
       }
     }
   },
-  "_propertyOrder": ["name", "substrate", "created", "multilayer"],
+  "_propertyOrder": ["name", "created", "substrate", "multilayer"],
   "required": ["name", "substrate", "multilayer"],
   "additionalProperties": false,
   "definitions": {
