@@ -1,0 +1,27 @@
+<!-- object start -->
+<strong>{{ schema.title }}</strong>
+<div style="">
+{% if "_propertyOrder" not in schema %}
+  {% for property_name, property_schema in schema.properties.items() %}
+    {% set name = property_name %}
+    {% set schema = property_schema %}
+    {% include "form_any.html" %}
+  {% endfor %}
+{% else %}
+  {% for property_name in schema._propertyOrder %}
+    {% if property_name in schema.properties %}
+      {% set name = property_name %}
+      {% set schema = schema.properties[property_name] %}
+      {% include "form_any.html" %}
+    {% endif %}
+  {% endfor %}
+  {% for property_name, property_schema in schema.properties.items() %}
+    {% if property_name not in schema._propertyOrder %}
+      {% set name = property_name %}
+      {% set schema = property_schema %}
+      {% include "form_any.html" %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+</div>
+<!-- object end -->

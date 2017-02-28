@@ -1,0 +1,11 @@
+<div class="form-group">
+  <label>{{ schema.title }}</label>
+  {% if schema.allOf[1].properties.dimensionality['enum'][0] == "dimensionless" %}
+    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}">
+  {% else %}
+    <div class="input-group">
+      <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}">
+      <span class="input-group-addon">{{ schema.allOf[1].properties.defaultUnits['enum'][0] }}</span>
+    </div>
+  {% endif %}
+</div>

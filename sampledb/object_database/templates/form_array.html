@@ -1,0 +1,23 @@
+<!-- array start -->
+<div class="form-group">
+<strong>{{ schema.title }}</strong>
+</div>
+<div style="padding-left:2.5em;">
+{% set name = "item" %}
+{% if "itemName" in schema %}
+  {% set itemName = schema.itemName %}
+{% else %}
+  {% set itemName = "Item" %}
+{% endif %}
+{% set schema = schema['items'] %}
+  <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc;padding-left:2.5em; margin-bottom: 1em;">
+  {% include "form_any.html" %}
+  <div class="form-group clearfix">
+    <button type="button" class="btn btn-danger pull-right" style="width:10em">Remove {{ itemName }}</button>
+  </div>
+  </div>
+<div class="form-group clearfix">
+  <button type="button" class="btn btn-success pull-right" style="width:10em">Add {{ itemName }}</button>
+</div>
+</div>
+<!-- array end -->

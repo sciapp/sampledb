@@ -15,7 +15,7 @@ from .models import Objects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
-object_api = flask.Blueprint('object_api', __name__)
+object_api = flask.Blueprint('object_api', __name__, template_folder='templates')
 
 SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
 
@@ -116,3 +116,5 @@ def update_object(object_id):
         flask.abort(400)
     obj = Objects.update_object(object_id, obj['data'], obj['schema'], user_id=user_id)
     return '', 200, {'Location': flask.url_for('.get_object', object_id=obj.object_id)}
+
+from .form_template_demo import render_schema
