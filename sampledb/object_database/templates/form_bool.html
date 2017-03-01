@@ -1,0 +1,11 @@
+<div class="form-group row" style="padding-right:0.75em">
+  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <div class="col-md-9">
+    <div class="checkbox" style="">
+    <label>
+      <span class="sr-only">{{ schema.title }}</span>
+        <input type="checkbox"  {% if data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
+    </label>
+    </div>
+  </div>
+</div>

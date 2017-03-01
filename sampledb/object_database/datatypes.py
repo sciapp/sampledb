@@ -263,7 +263,6 @@ class Text(object):
         'additionalProperties': False
     }
 
-
     def __init__(self, text):
         self.text = text
 

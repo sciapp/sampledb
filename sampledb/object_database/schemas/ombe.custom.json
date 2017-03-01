@@ -14,6 +14,24 @@
       "title": "Substrate",
       "$ref": "#/definitions/text"
     },
+    "checkbox": {
+      "title": "Checkbox",
+      "$ref": "#/definitions/bool"
+    },
+    "dropdown": {
+      "title": "Dropdown",
+      "allOf": [
+        {"$ref": "#/definitions/text"},
+        {
+          "properties": {
+            "text": {
+              "enum": ["value 1", "option 2", "selection 3"]
+            }
+          },
+          "required": ["text"]
+        }
+      ]
+    },
     "multilayer": {
       "title": "Multilayers",
       "type": "array",
@@ -176,7 +194,7 @@
       }
     }
   },
-  "_propertyOrder": ["name", "created", "substrate", "multilayer"],
+  "_propertyOrder": ["name", "created", "checkbox", "substrate", "dropdown", "multilayer"],
   "required": ["name", "substrate", "multilayer"],
   "additionalProperties": false,
   "definitions": {
