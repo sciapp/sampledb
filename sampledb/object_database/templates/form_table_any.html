@@ -1,0 +1,13 @@
+{% if schema['$ref'] == '#/definitions/text' %}
+  {% include "form_table_text.html" %}
+{#{% elif schema['$ref'] == '#/definitions/datetime' %}#}
+{#  {% include "form_datetime.html" %}#}
+{% elif "allOf" in schema and schema.allOf[0]['$ref'] == '#/definitions/quantity' %}
+  {% include "form_table_quantity.html" %}
+{#{% elif schema.type == 'object' %}#}
+{#  {% include "form_object.html" %}#}
+{#{% elif schema.type == 'array' %}#}
+{#  {% include "form_array.html" %}#}
+{% else %}
+  {{ name }}{{ schema.type }}{{ schema['$ref'] }}
+{% endif %}

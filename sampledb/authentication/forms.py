@@ -20,7 +20,7 @@ class NewUserForm(FlaskForm):
     email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
                                             Email("Please enter your contact email.")])
     password = PasswordField('Password', validators=[DataRequired(),Length(min=3)])
-    authenticationmethod = RadioField('method', choices=[('E','Email'),('O','Other')])
+    authentication_method = RadioField('Authentication Method', choices=[('E','Email'),('O','Other')])
     login = StringField('Login', validators=[DataRequired()])
     type = RadioField('usertype', choices=[('P','Person'),('O','Other')])
 #    admin = RadioField('admin', choices=['0', '1'])

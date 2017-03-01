@@ -157,29 +157,30 @@ def confirm_email(token):
     else:
         return flask.render_template('register.html', form=form)
 
+
 @authentication.route('/add_user', methods=['GET', 'POST'])
 def useradd():
-   form = NewUserForm()
-   if form.validate_on_submit():
-       pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-       if(form.type.data=='O'):
-           type = UserType.OTHER
-       else:
-           type = UserType.PERSON
-       user = User(str(form.name.data).title(),str(form.email.data),type)
-       db.session.add(user)
-       db.session.commit()
-       u_id = User.query.filter_by(name=str(user.name).title(), email=user.email).first()
-       if u_id is not None:
-           pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-           log = {
+    form = NewUserForm()
+    if form.validate_on_submit():
+        pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        if (form.type.data == 'O'):
+            type = UserType.OTHER
+        else:
+            type = UserType.PERSON
+        user = User(str(form.name.data).title(), str(form.email.data), type)
+        db.session.add(user)
+        db.session.commit()
+        u_id = User.query.filter_by(name=str(user.name).title(), email=user.email).first()
+        if u_id is not None:
+            pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            log = {
                 'login': str(form.login.data),
                 'bcrypt_hash': pw_hash
-           }
-           if form.authenticationmethod.data == 'email':
-               auth = Authentication(log, AuthenticationType.EMAIL, u_id.id)
-           else:
+            }
+            if form.authentication_method.data == 'E':
+                auth = Authentication(log, AuthenticationType.EMAIL, u_id.id)
+            else:
                 auth = Authentication(log, AuthenticationType.OTHER, u_id.id)
-           db.session.add(auth)
-           db.session.commit()
-   return flask.render_template('user.html',form=form)
+            db.session.add(auth)
+            db.session.commit()
+    return flask.render_template('user.html',form=form)

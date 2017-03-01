@@ -85,15 +85,19 @@ def test_useradd(flask_server):
     r = requests.get(flask_server.base_url)
     assert r.status_code == 200
     session = requests.session()
-    url = session.get(flask_server.base_url + 'add_user')
-    assert url.status_code == 200
-    csrf_token = BeautifulSoup(url.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    url = flask_server.base_url + 'add_user'
+    r = session.get(url)
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
     r = session.post(url, {
         'name': 'ombe',
         'email': 'd.henkel@fz-juelich.de',
         'password': 'xxx',
-        'type' : 'Other',
-        'method': 'Other',
-        'admin': '0',
+        'login': 'ombe',
+        'type': 'O',
+        'authentication_method': 'O',
         'csrf_token': csrf_token
     })
+    assert r.status_code == 200
+    with flask_server.app.app_context():
+        assert len(sampledb.authentication.models.User.query.all()) == 1

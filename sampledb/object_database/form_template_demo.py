@@ -24,6 +24,7 @@ jsonschema.validate(data, schema)
 def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
+
 @object_api.route('/test')
 def render_schema():
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
