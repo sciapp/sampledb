@@ -68,6 +68,16 @@ def test_invite(flask_server):
     with flask_server.app.app_context():
         assert len(sampledb.authentication.models.User.query.all()) == 1
 
+    #  test second Submit the missing information
+    r = session.post(confirmation_url, {
+        'name': 'Testuser',
+        'password': 'test',
+        'password2': 'test',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 200
+
+
     # Try logging in
     r = session.post(flask_server.base_url + 'login', {
         'username': 'example@fz-juelich.de',
@@ -82,8 +92,6 @@ def test_invite(flask_server):
 
 
 def test_useradd(flask_server):
-    r = requests.get(flask_server.base_url)
-    assert r.status_code == 200
     session = requests.session()
     url = flask_server.base_url + 'add_user'
     r = session.get(url)
@@ -101,3 +109,16 @@ def test_useradd(flask_server):
     assert r.status_code == 200
     with flask_server.app.app_context():
         assert len(sampledb.authentication.models.User.query.all()) == 1
+
+    # Try to add user twice
+    r = session.post(url, {
+        'name': 'ombe',
+        'email': 'd.henkel@fz-juelich.de',
+        'password': 'xxxx',
+        'login': 'ombe',
+        'type': 'O',
+        'authentication_method': 'O',
+        'admin': '0',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 200
