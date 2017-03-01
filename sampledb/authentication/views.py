@@ -123,7 +123,7 @@ def confirm_email(token):
     email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     if email is None:
         # TODO: Why flash?
-        flask.flash('The registration link is invalid or has expired.', 'danger')
+        flask.flash('The registration link has expired.', 'danger')
         return flask.render_template('index.html')
     form = RegisterForm()
     if form.validate_on_submit():
@@ -132,26 +132,19 @@ def confirm_email(token):
             print('Bad Syntax')
         name = str(form.name.data)
         user = User(name, email, UserType.PERSON)
+        # check, if user sent confirmation email and registered himself
         erg = User.query.filter_by(name=str(user.name).title(), email=str(user.email)).first()
         # no user with this name and contact email in db => add to db
         if erg is None:
             u = User(str(user.name).title(), user.email, user.type)
-            db.session.add(u)
-            db.session.commit()
-            # look for id to insert authentication method for it
-            u_id = User.query.filter_by(name=str(user.name).title(), email=user.email).first()
-            if u_id is not None:
-                pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                log = {
-                    'login': email,
-                    'bcrypt_hash': pw_hash
-                }
-                auth = Authentication(log, AuthenticationType.EMAIL, u_id.id)
-                db.session.add(auth)
-                db.session.commit()
-            flask.flash('registration successfully')
+            result = utils.insert_user_and_authentication_method_to_db(u, form.password.data, email,AuthenticationType.EMAIL)
+            if not result:
+                flask.flash('registration failed, please contact administrator')
+            else:
+                flask.flash('registration successfully')
             return flask.redirect(flask.url_for('main.index'))
         else:
+            print('user exists')
             flask.flash('user exists, please contact administrator')
             return flask.redirect(flask.url_for('main.index'))
     else:
@@ -161,25 +154,28 @@ def confirm_email(token):
 def useradd():
    form = NewUserForm()
    if form.validate_on_submit():
-       pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-       if(form.type.data=='O'):
-           type = UserType.OTHER
-       else:
-           type = UserType.PERSON
-       user = User(str(form.name.data).title(),str(form.email.data),type)
-       db.session.add(user)
-       db.session.commit()
-       u_id = User.query.filter_by(name=str(user.name).title(), email=user.email).first()
-       if u_id is not None:
-           pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-           log = {
-                'login': str(form.login.data),
-                'bcrypt_hash': pw_hash
-           }
-           if form.authenticationmethod.data == 'email':
-               auth = Authentication(log, AuthenticationType.EMAIL, u_id.id)
+       # check, if login already exists
+       login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
+       if login is None:
+           if(form.type.data=='O'):
+               type = UserType.OTHER
            else:
-                auth = Authentication(log, AuthenticationType.OTHER, u_id.id)
-           db.session.add(auth)
-           db.session.commit()
+               type = UserType.PERSON
+           user = User(str(form.name.data).title(),str(form.email.data),type)
+           if form.authentication_method.data == 'E':
+               result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
+                                                                          AuthenticationType.EMAIL)
+           else:
+               result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
+                                                                          AuthenticationType.OTHER)
+           if not result:
+               flask.flash('adding new user failed')
+               return flask.redirect(flask.url_for('main.index'))
+
+       else:
+           flask.flash('user exists, please contact administrator')
+           print('user already exists')
+           return flask.redirect(flask.url_for('main.index'))
+#   else:
+#       print(form.errors)
    return flask.render_template('user.html',form=form)
