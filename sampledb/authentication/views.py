@@ -187,41 +187,56 @@ def useradd():
 #       print(form.errors)
    return flask.render_template('user.html',form=form)
 
+
+@authentication.route('/show_login', methods=['GET', 'POST'])
+#@flask_login.login_required
+def show_login():
+    if flask_login.current_user.is_authenticated:
+        user = flask_login.current_user
+        print(user.name)
+        print(user.email)
+        print(user.type)
+        authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).all()
+        for authentication_method in authentication_methods:
+            print(authentication_method.type)
+            print(authentication_method.login['login'])
+    return flask.redirect(flask.url_for('main.index'))
+
+
 @authentication.route('/edit_user', methods=['GET', 'POST'])
 @flask_login.login_required
 def useredit():
-   user = flask_login.current_user
-   print(user.id)
-   login = Authentication.query.filter(Authentication.user_id == user.id).first()
-   user.login = login.login['login']
-   user.authentification_method = login.type
-   print(login.type)
-   form = ChangeUserForm( obj=user)
-   if form.authentication_method.data is None:
-       form.authentication_method.data = login.type
-   if form.validate_on_submit():
-       # check, if login  exists
-       login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
-       if login is None:
-           flask.flash("user doesn't exists, please contact administrator")
-           return False
-       else:
-           if(form.type.data=='O'):
-               type = UserType.OTHER
-           else:
-               type = UserType.PERSON
-           user = User(str(form.name.data).title(),str(form.email.data),type)
-           if form.authentication_method.data == 'E':
-               result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
-                                                                          AuthenticationType.EMAIL)
-           else:
-               result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
-                                                                          AuthenticationType.OTHER)
-           if not result:
-               flask.flash('changing user failed')
-           else:
-               flask.flash('changing user successfully')
-       return flask.redirect(flask.url_for('main.index'))
-   else:
-       print(form.errors)
-   return flask.render_template('edit_user.html', form=form, AuthenticationType=AuthenticationType)
+    user = flask_login.current_user
+    login = Authentication.query.filter(Authentication.user_id == user.id).first()
+    user.login = login.login['login']
+    user.authentification_method = login.type
+    print(login.type)
+    form = ChangeUserForm(obj=user)
+    if form.authentication_method.data is None:
+        form.authentication_method.data = login.type
+    if form.validate_on_submit():
+        # check, if login  exists
+        login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
+        if login is None:
+            flask.flash("user doesn't exists, please contact administrator")
+            return False
+        else:
+            if (form.type.data == 'O'):
+                type = UserType.OTHER
+            else:
+                type = UserType.PERSON
+            user = User(str(form.name.data).title(), str(form.email.data), type)
+            if form.authentication_method.data == 'E':
+                result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
+                                                                           AuthenticationType.EMAIL)
+            else:
+                result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
+                                                                           AuthenticationType.OTHER)
+            if not result:
+                flask.flash('changing user failed')
+            else:
+                flask.flash('changing user successfully')
+        return flask.redirect(flask.url_for('main.index'))
+    else:
+        print(form.errors)
+    return flask.render_template('edit_user.html', form=form, AuthenticationType=AuthenticationType)

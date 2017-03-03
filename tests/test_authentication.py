@@ -133,3 +133,16 @@ def test_ldap_authentification(flask_server):
         'password': flask_server.app.config['TESTING_LDAP_PW']
     })
     assert r.status_code == 200
+
+def test_show_login(flask_server):
+    # Try logging in with ldap-test-account
+    session = requests.session()
+    r = session.post(flask_server.base_url + 'login', {
+        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
+        'password': flask_server.app.config['TESTING_LDAP_PW']
+    })
+    assert r.status_code == 200
+
+    r = session.post(flask_server.base_url + 'show_login')
+    assert r.status_code == 200
+
