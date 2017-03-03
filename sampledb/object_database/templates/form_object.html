@@ -1,10 +1,15 @@
 <!-- object start -->
-<strong>{{ schema.title }}</strong>
+<strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title }}</strong>
 <div style="">
 {% if "_propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}
     {% set name = property_name %}
     {% set schema = property_schema %}
+    {% if data is not none and property_name in data %}
+    {% set data = data[property_name] %}
+    {% else %}
+    {% set data = none %}
+    {% endif %}
     {% include "form_any.html" %}
   {% endfor %}
 {% else %}
@@ -12,6 +17,11 @@
     {% if property_name in schema.properties %}
       {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
+      {% if data is not none and property_name in data %}
+      {% set data = data[property_name] %}
+      {% else %}
+      {% set data = none %}
+      {% endif %}
       {% include "form_any.html" %}
     {% endif %}
   {% endfor %}
@@ -19,6 +29,11 @@
     {% if property_name not in schema._propertyOrder %}
       {% set name = property_name %}
       {% set schema = property_schema %}
+      {% if data is not none and property_name in data %}
+      {% set data = data[property_name] %}
+      {% else %}
+      {% set data = none %}
+      {% endif %}
       {% include "form_any.html" %}
     {% endif %}
   {% endfor %}

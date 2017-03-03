@@ -7,12 +7,30 @@
       "$ref": "#/definitions/text"
     },
     "created": {
-      "title": "Creation datetime",
+      "title": "Creation Datetime",
       "$ref": "#/definitions/datetime"
     },
     "substrate": {
       "title": "Substrate",
       "$ref": "#/definitions/text"
+    },
+    "checkbox": {
+      "title": "Checkbox",
+      "$ref": "#/definitions/bool"
+    },
+    "dropdown": {
+      "title": "Dropdown",
+      "allOf": [
+        {"$ref": "#/definitions/text"},
+        {
+          "properties": {
+            "text": {
+              "enum": ["value 1", "option 2", "selection 3"]
+            }
+          },
+          "required": ["text"]
+        }
+      ]
     },
     "multilayer": {
       "title": "Multilayers",
@@ -102,7 +120,8 @@
                 "elements": {
                   "title": "Elements",
                   "type": "array",
-                  "itemName" : "Element",
+                  "itemName": "Element",
+                  "table": true,
                   "items": {
                     "title": "Element",
                     "type": "object",
@@ -175,7 +194,7 @@
       }
     }
   },
-  "_propertyOrder": ["name", "substrate", "created", "multilayer"],
+  "_propertyOrder": ["name", "created", "checkbox", "substrate", "dropdown", "multilayer"],
   "required": ["name", "substrate", "multilayer"],
   "additionalProperties": false,
   "definitions": {

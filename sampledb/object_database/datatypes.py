@@ -211,7 +211,10 @@ class Quantity(object):
         pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
         magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
         quantity = cls(magnitude, units)
-        assert str(quantity.dimensionality) == obj['dimensionality']
+        if pint_units.dimensionless:
+            assert obj['dimensionality'] == 'dimensionless'
+        else:
+            assert ureg.check(obj['dimensionality'])(pint_units)
         return quantity
 
 
@@ -262,7 +265,6 @@ class Text(object):
         'required': ['_type', 'text'],
         'additionalProperties': False
     }
-
 
     def __init__(self, text):
         self.text = text

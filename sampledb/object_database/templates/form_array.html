@@ -1,23 +1,76 @@
 <!-- array start -->
-<div class="form-group">
+<div class="form-group row">
+  <div class="col-md-3 control-label">
 <strong>{{ schema.title }}</strong>
+  </div>
 </div>
 <div style="padding-left:2.5em;">
-{% set name = "item" %}
-{% if "itemName" in schema %}
-  {% set itemName = schema.itemName %}
+{% if schema.table %}
+  <table class="table">
+    <thead>
+      <tr>
+        {% set item_property_names = schema["items"].properties.keys() %}
+        {% for property_name in item_property_names %}
+          <th scope="col">{{ schema["items"].properties[property_name].title }}</th>
+        {% endfor %}
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% if data is not none %}
+      {% for item in data %}
+        {% set name = "item" %}
+        {% set schema = schema['items'] %}
+        {% set data = item %}
+        <tr>
+        {% for property_name in item_property_names %}
+          <td>
+            {% set name = property_name %}
+            {% set schema = schema.properties[property_name] %}
+            {% if data is not none and property_name in data %}
+            {% set data = data[property_name] %}
+            {% else %}
+            {% set data = none %}
+            {% endif %}
+            {% include "form_table_any.html" %}
+          </td>
+        {% endfor %}
+        <td><button type="button" class="btn btn-danger pull-right">&times;</button></td>
+        </tr>
+      {% endfor %}
+    {% endif %}
+    </tbody>
+    <tfoot>
+      <tr>
+        {% for property_name in item_property_names %}
+          <th scope="col"></th>
+        {% endfor %}
+        <th><button type="button" class="btn btn-success pull-right">+</button></th>
+      </tr>
+    </tfoot>
+  </table>
 {% else %}
-  {% set itemName = "Item" %}
+  {% if "itemName" in schema %}
+    {% set itemName = schema.itemName %}
+  {% else %}
+    {% set itemName = "Item" %}
+  {% endif %}
+  {% if data is not none %}
+    {% for item in data %}
+      {% set name = "item" %}
+      {% set schema = schema['items'] %}
+      {% set data = item %}
+        <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
+        <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger" style="width:10em;">Remove {{ itemName }}</button></div>
+        {% include "form_any.html" %}
+        </div>
+    {% endfor %}
+  {% endif %}
+  <div class="form-group row clearfix" style="padding-right:0.75em">
+    <div class="col-md-9 col-md-offset-3">
+      <button type="button" class="btn btn-success pull-right" style="width:10em">Add {{ itemName }}</button>
+    </div>
+  </div>
 {% endif %}
-{% set schema = schema['items'] %}
-  <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc;padding-left:2.5em; margin-bottom: 1em;">
-  {% include "form_any.html" %}
-  <div class="form-group clearfix">
-    <button type="button" class="btn btn-danger pull-right" style="width:10em">Remove {{ itemName }}</button>
-  </div>
-  </div>
-<div class="form-group clearfix">
-  <button type="button" class="btn btn-success pull-right" style="width:10em">Add {{ itemName }}</button>
-</div>
 </div>
 <!-- array end -->

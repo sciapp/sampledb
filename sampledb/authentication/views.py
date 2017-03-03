@@ -157,6 +157,7 @@ def confirm_email(token):
     else:
         return flask.render_template('register.html', form=form)
 
+
 @authentication.route('/add_user', methods=['GET', 'POST'])
 def useradd():
    form = NewUserForm()

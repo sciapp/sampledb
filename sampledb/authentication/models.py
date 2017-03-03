@@ -17,7 +17,7 @@ class AuthenticationType(enum.Enum):
 
 
 class Authentication(db.Model):
-    __tablename__="authentications"
+    __tablename__ = "authentications"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -41,7 +41,7 @@ class UserType(enum.Enum):
 
 
 class User(db.Model, flask_login.UserMixin):
-    __tablename__='users'
+    __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
