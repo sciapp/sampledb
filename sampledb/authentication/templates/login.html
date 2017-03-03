@@ -1,0 +1,17 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Login</h1>
+    <form class="form-group" action="" method="post" name="register">
+      <p >{{ form.username.label }}: {{ form.username(size=50) }}</p>
+      {% if form.username.errors %}
+        <ul class="errors">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <p >{{ form.password.label }}: {{ form.password(size=50)}}</p>
+      {% if form.password.errors %}
+        <ul class="errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <p><input type="submit" value="Login"></p>
+  </form>
+{% endblock %}

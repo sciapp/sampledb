@@ -56,7 +56,7 @@ def app():
 
 @pytest.fixture
 def user(flask_server):
-    user = User(name="Testuser", email="example@fz-juelich.de", user_type=UserType.PERSON)
+    user = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
     with flask_server.app.app_context():
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
