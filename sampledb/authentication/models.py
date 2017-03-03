@@ -49,10 +49,10 @@ class User(db.Model, flask_login.UserMixin):
     type = db.Column(db.Enum(UserType), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
-    def __init__(self, name, email, user_type):
+    def __init__(self, name, email, type):
         self.name = name
         self.email = email
-        self.type = user_type
+        self.type = type
 
     def get_id(self):
         return self.id

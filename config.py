@@ -1,6 +1,7 @@
 import base64
 import getpass
 import os
+import ldapaccount
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 user = getpass.getuser()
@@ -21,3 +22,6 @@ LDAP_BASE_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
 MAIL_SERVER='mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
 MAIL_SUPPRESS_SEND = True
+
+TESTING_LDAP_LOGIN = ldapaccount.LDAP_LOGIN
+TESTING_LDAP_PW = ldapaccount.LDAP_PW

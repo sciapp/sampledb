@@ -42,7 +42,7 @@ def test_update_instrument():
 
 
 def test_instrument_responsible_users():
-    user = User(name="Testuser", email="example@fz-juelich.de", user_type=UserType.PERSON)
+    user = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     instrument = logic.create_instrument(name="Example Instrument", description="")
