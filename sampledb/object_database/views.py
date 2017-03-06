@@ -12,6 +12,7 @@ import jsonschema
 
 from . import datatypes
 from .models import Objects
+from ..instruments.logic import get_action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -87,7 +88,16 @@ def create_object():
         flask.abort(400)
     if 'version_id' in obj and obj['version_id'] != 0:
         flask.abort(400)
-    obj = Objects.create_object(obj['data'], obj['schema'], user_id=user_id)
+    if 'action_id' not in obj:
+        flask.abort(400)
+    if get_action(action_id=obj['action_id']) is None:
+        flask.abort(400)
+    obj = Objects.create_object(
+        action_id=obj['action_id'],
+        data=obj['data'],
+        schema=obj['schema'],
+        user_id=user_id
+    )
     return '', 201, {'Location': flask.url_for('.get_object', object_id=obj.object_id)}
 
 
@@ -106,6 +116,8 @@ def update_object(object_id):
     except jsonschema.ValidationError:
         flask.abort(400)
     if 'object_id' in obj and obj['object_id'] != object_id:
+        flask.abort(400)
+    if 'action_id' in obj and obj['action_id'] != current_object.action_id:
         flask.abort(400)
     if 'user_id' in obj and obj['user_id'] != user_id:
         flask.abort(400)

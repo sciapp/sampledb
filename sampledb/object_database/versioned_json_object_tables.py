@@ -34,6 +34,7 @@ class VersionedJSONSerializableObjectTables(object):
         [
             'object_id',
             'version_id',
+            'action_id',
             'data',
             'schema',
             'user_id',
@@ -41,7 +42,7 @@ class VersionedJSONSerializableObjectTables(object):
         ]
     )
 
-    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None):
+    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None):
         """
         Creates new instance for storing versioned, JSON-serializable objects using two tables.
 
@@ -49,6 +50,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param bind: the SQLAlchemy engine used for creating the tables and for future connections
         :param object_type: the type used for returning objects
         :param user_id_column: a SQLAlchemy column object for use as foreign key for the user ID (optional)
+        :param action_id_column: a SQLAlchemy column object for use as foreign key for the action ID (optional)
         """
         self.metadata = db.MetaData()
         self._current_table = db.Table(
@@ -56,6 +58,7 @@ class VersionedJSONSerializableObjectTables(object):
             self.metadata,
             db.Column('object_id', db.Integer, nullable=False, primary_key=True, autoincrement=True),
             db.Column('version_id', db.Integer, nullable=False, default=0),
+            db.Column('action_id', db.Integer, nullable=False),
             db.Column('data', postgresql.JSONB, nullable=False),
             db.Column('schema', postgresql.JSONB, nullable=False),
             db.Column('user_id', db.Integer, nullable=False),
@@ -65,7 +68,8 @@ class VersionedJSONSerializableObjectTables(object):
             table_name_prefix+'_previous',
             self.metadata,
             db.Column('object_id', db.Integer, nullable=False),
-            db.Column('version_id', db.Integer, nullable=False, default=0),
+            db.Column('version_id', db.Integer, nullable=False),
+            db.Column('action_id', db.Integer, nullable=False),
             db.Column('data', postgresql.JSONB, nullable=False),
             db.Column('schema', postgresql.JSONB, nullable=False),
             db.Column('user_id', db.Integer, nullable=False),
@@ -75,18 +79,27 @@ class VersionedJSONSerializableObjectTables(object):
         if user_id_column is not None:
             self._current_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
             self._previous_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
+        if action_id_column is not None:
+            self._current_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
+            self._previous_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
+        elif action_schema_column is not None:
+            raise ValueError("Using action_schema_column requires using the action_id_column as well!")
+        self._action_id_column = action_id_column
+        self._action_schema_column = action_schema_column
         self.object_type = object_type
+        self.object_id_column = self._current_table.c.object_id
         self.bind = bind
         if self.bind is not None:
             self.metadata.create_all(self.bind)
 
-    def create_object(self, data, schema, user_id, utc_datetime=None, connection=None):
+    def create_object(self, data, schema, user_id, action_id, utc_datetime=None, connection=None):
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
 
         :param data: a JSON serializable object containing the object data
-        :param schema: a JSON schema describing data
+        :param schema: a JSON schema describing data (may be None if action's schema is to be used)
         :param user_id: the ID of the user who created the object
+        :param action_id: the ID of the action which was used to create the object
         :param utc_datetime: the datetime (in UTC) when the object was created (optional, defaults to utcnow())
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: the newly created object as object_type
@@ -95,6 +108,17 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
+        if schema is None and self._action_schema_column is not None:
+            action = connection.execute(
+                db
+                .select([
+                    self._action_schema_column
+                ])
+                .where(self._action_id_column == action_id)
+            ).fetchone()
+            if action is None:
+                raise ValueError('Action with id {} not found'.format(action_id))
+            schema = action[0]
         jsonschema.Draft4Validator.check_schema(schema)
         jsonschema.validate(data, schema, cls=jsonschema.Draft4Validator)
         version_id = 0
@@ -103,6 +127,7 @@ class VersionedJSONSerializableObjectTables(object):
             .insert()
             .values(
                 version_id=version_id,
+                action_id=action_id,
                 data=data,
                 schema=schema,
                 user_id=user_id,
@@ -112,7 +137,15 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.object_id
             )
         ).scalar()
-        return self.object_type(object_id, version_id, data, schema, user_id, utc_datetime)
+        return self.object_type(
+            object_id=object_id,
+            version_id=version_id,
+            action_id=action_id,
+            data=data,
+            schema=schema,
+            user_id=user_id,
+            utc_datetime=utc_datetime
+        )
 
     def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None):
         """
@@ -141,7 +174,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table
                 .insert()
                 .from_select(
-                    ['object_id', 'version_id', 'data', 'schema', 'user_id', 'utc_datetime'],
+                    ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime'],
                     self._current_table
                     .select()
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
@@ -166,7 +199,7 @@ class VersionedJSONSerializableObjectTables(object):
                 [{'oid': object_id}]
             ).scalar()
             transaction.commit()
-        return self.object_type(object_id, version_id, data, schema, user_id, utc_datetime)
+        return self.get_current_object(object_id, connection=connection)
 
     def get_current_object(self, object_id, connection=None):
         """
@@ -183,6 +216,7 @@ class VersionedJSONSerializableObjectTables(object):
             .select([
                 self._current_table.c.object_id,
                 self._current_table.c.version_id,
+                self._current_table.c.action_id,
                 self._current_table.c.data,
                 self._current_table.c.schema,
                 self._current_table.c.user_id,
@@ -209,6 +243,7 @@ class VersionedJSONSerializableObjectTables(object):
             .select([
                 self._current_table.c.object_id,
                 self._current_table.c.version_id,
+                self._current_table.c.action_id,
                 self._current_table.c.data,
                 self._current_table.c.schema,
                 self._current_table.c.user_id,
@@ -237,6 +272,7 @@ class VersionedJSONSerializableObjectTables(object):
             .select([
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
+                self._previous_table.c.action_id,
                 self._previous_table.c.data,
                 self._previous_table.c.schema,
                 self._previous_table.c.user_id,
@@ -267,6 +303,7 @@ class VersionedJSONSerializableObjectTables(object):
             .select([
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
+                self._previous_table.c.action_id,
                 self._previous_table.c.data,
                 self._previous_table.c.schema,
                 self._previous_table.c.user_id,
