@@ -79,6 +79,13 @@ def create_object():
         jsonschema.validate(obj, OBJECT_SCHEMA)
     except jsonschema.ValidationError:
         flask.abort(400)
+    if 'action_id' not in obj:
+        flask.abort(400)
+    action = get_action(action_id=obj['action_id'])
+    if action is None:
+        flask.abort(400)
+    if obj['schema'] != action.schema:
+        flask.abort(400)
     if 'object_id' in obj:
         flask.abort(400)
     if 'user_id' in obj and obj['user_id'] != user_id:
@@ -87,10 +94,6 @@ def create_object():
         # TODO: possibly allow setting last modified?
         flask.abort(400)
     if 'version_id' in obj and obj['version_id'] != 0:
-        flask.abort(400)
-    if 'action_id' not in obj:
-        flask.abort(400)
-    if get_action(action_id=obj['action_id']) is None:
         flask.abort(400)
     obj = Objects.create_object(
         action_id=obj['action_id'],

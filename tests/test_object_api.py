@@ -83,8 +83,8 @@ def action(flask_server):
 
 
 def test_get_objects(flask_server, user, action):
-    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
-    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
+    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/')
     assert r.status_code == 200
     data = r.json()
@@ -95,7 +95,7 @@ def test_get_objects(flask_server, user, action):
 def test_get_object(flask_server, user, action):
     r = requests.get(flask_server.base_url + 'objects/0')
     assert r.status_code == 404
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
@@ -111,7 +111,7 @@ def test_get_object(flask_server, user, action):
 
 
 def test_get_object_version_initial(flask_server, user, action):
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
@@ -127,8 +127,8 @@ def test_get_object_version_initial(flask_server, user, action):
 
 
 def test_get_object_version_updated(flask_server, user, action):
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
-    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema=action.schema, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/{}'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
@@ -144,8 +144,8 @@ def test_get_object_version_updated(flask_server, user, action):
 
 
 def test_get_object_version_old(flask_server, user, action):
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
-    sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
+    sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema=action.schema, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
@@ -161,8 +161,8 @@ def test_get_object_version_old(flask_server, user, action):
 
 
 def test_get_object_version_missing(flask_server, user, action):
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
-    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema=action.schema, user_id=user.id)
     r = requests.get(flask_server.base_url + 'objects/{}/versions/2'.format(obj.object_id, obj.version_id))
     assert r.status_code == 404
 
@@ -175,7 +175,7 @@ def test_create_object(flask_server, user, action):
     data = {
         'action_id': action.id,
         'data': {},
-        'schema': {}
+        'schema': action.schema
     }
     r = session.post(flask_server.base_url + 'objects/', json=data)
     assert r.status_code == 201
@@ -199,31 +199,31 @@ def test_create_object_errors(flask_server, user, action):
             'object_id': 1,
             'action_id': action.id,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # version ID has to be 0 for any new objects
             'version_id': 1,
             'action_id': action.id,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # user ID is always the ID of the currently logged in user
             'user_id': user.id+1,
             'action_id': action.id,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             'action_id': action.id,
             # TODO: should it be allowed to set last_modified time? Probably not.
             'last_modified': '2017-01-01 00:00:00',
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # attributes / keys which aren't part of the object schema are not allowed
             'action_id': action.id,
             'invalid': '',
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # schema is required
             'action_id': action.id,
@@ -231,12 +231,17 @@ def test_create_object_errors(flask_server, user, action):
         }, {
             # action_id is required
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # action_id must be valid foreign key
             'action_id': action.id+1,
             'data': {},
-            'schema': {}
+            'schema': action.schema
+        }, {
+            # schema must be equal to action schema
+            'action_id': action.id,
+            'data': {},
+            'schema': {'type': 'object', 'properties': {'test': {'type': 'string'}}}
         }, {}
     ]
     for data in invalid_data:
@@ -252,17 +257,17 @@ def test_update_object(flask_server, user, action):
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     data = {
         'data': {'x': 1},
-        'schema': {}
+        'schema': action.schema
     }
     r = session.put(flask_server.base_url + 'objects/{}'.format(obj.object_id), json=data)
     assert r.status_code == 200
     obj = sampledb.object_database.models.Objects.get_current_objects()[0]
     assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(obj.object_id)
     assert obj.data == {'x': 1}
-    assert obj.schema == {}
+    assert obj.schema == action.schema
     assert obj.version_id == 1
     assert obj.utc_datetime <= datetime.datetime.utcnow()
     assert obj.utc_datetime >= datetime.datetime.utcnow()-datetime.timedelta(seconds=5)
@@ -276,34 +281,34 @@ def test_update_object_errors(flask_server, user, action):
     r = session.put(flask_server.base_url + 'objects/0', json={'data': {}})
     assert r.status_code == 404
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 0
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     assert len(sampledb.object_database.models.Objects.get_current_objects()) == 1
     invalid_data = [
         {
             # modifying the object ID is not allowed
             'object_id': 2,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # version ID must always me incremented by one
             'version_id': 0,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # user ID is always the ID of the currently logged in user
             'user_id': user.id+1,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # TODO: should it be allowed to vary last_modified time? Probably not.
             'last_modified': '2017-01-01 00:00:00',
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # attributes / keys which aren't part of the object schema are not allowed
             'invalid': '',
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {
             # schema is required
             'data': {}
@@ -311,7 +316,7 @@ def test_update_object_errors(flask_server, user, action):
             # action_id cannot be changed
             'action_id': action.id+1,
             'data': {},
-            'schema': {}
+            'schema': action.schema
         }, {}
     ]
     for data in invalid_data:
