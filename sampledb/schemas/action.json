@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "title": "Action",
+    "type": "object",
+    "properties": {
+        "id": {
+            "title": "Action Identifier",
+            "type": "integer",
+            "minimum": 0
+        },
+        "name": {
+            "title": "Action Name",
+            "type": "string"
+        },
+        "description": {
+            "title": "Action Description",
+            "type": "string"
+        },
+        "instrument_id": {
+            "title": "Instrument Identifier",
+            "oneOf": [
+                {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "schema": {
+            "title": "Action Schema",
+            "type": "object"
+        }
+    },
+    "required" : ["name", "description"],
+    "additionalProperties": false
+}

@@ -4,6 +4,7 @@
 """
 
 import json
+import os
 import jsonschema.exceptions
 import flask
 import flask_login
@@ -13,6 +14,13 @@ from . import logic
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 instrument_api = flask.Blueprint('instrument_api', __name__)
+
+SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'schemas')
+
+INSTRUMENT_SCHEMA = json.load(open(os.path.join(SCHEMA_DIR, 'instrument.json'), 'r'))
+ACTION_SCHEMA = json.load(open(os.path.join(SCHEMA_DIR, 'action.json'), 'r'))
+jsonschema.Draft4Validator.check_schema(INSTRUMENT_SCHEMA)
+jsonschema.Draft4Validator.check_schema(ACTION_SCHEMA)
 
 
 @instrument_api.route('/instruments/', methods=['GET'])
@@ -39,9 +47,10 @@ def create_instrument():
         data = json.loads(flask.request.data.decode('utf-8'))
     except json.JSONDecodeError:
         return flask.abort(400)
-    # TODO: validate using schema
-    if not isinstance(data, dict):
-        return flask.abort(400)
+    try:
+        jsonschema.validate(data, INSTRUMENT_SCHEMA)
+    except jsonschema.ValidationError:
+        flask.abort(400)
     if {'name', 'description'} != set(data.keys()):
         return flask.abort(400)
     name = data['name']
@@ -83,15 +92,14 @@ def update_instrument(instrument_id):
         data = json.loads(flask.request.data.decode('utf-8'))
     except json.JSONDecodeError:
         return flask.abort(400)
-    # TODO: validate using schema
-    if not isinstance(data, dict):
-        return flask.abort(400)
+    try:
+        jsonschema.validate(data, INSTRUMENT_SCHEMA)
+    except jsonschema.ValidationError:
+        flask.abort(400)
     if {'id', 'name', 'description', 'responsible_users'} != set(data.keys()):
         return flask.abort(400)
     if data['id'] != instrument_id:
         return flask.abort(400)
-    if not isinstance(data['responsible_users'], list):
-        flask.abort(400)
     name = data['name']
     description = data['description']
     instrument = logic.update_instrument(instrument_id=instrument_id, name=name, description=description)
@@ -152,9 +160,10 @@ def update_action(action_id):
         data = json.loads(flask.request.data.decode('utf-8'))
     except json.JSONDecodeError:
         return flask.abort(400)
-    # TODO: validate using schema
-    if not isinstance(data, dict):
-        return flask.abort(400)
+    try:
+        jsonschema.validate(data, ACTION_SCHEMA)
+    except jsonschema.ValidationError:
+        flask.abort(400)
     if {'id', 'name', 'description', 'schema', 'instrument_id'} != set(data.keys()):
         return flask.abort(400)
     if data['id'] != action_id:
@@ -184,9 +193,10 @@ def create_action():
         data = json.loads(flask.request.data.decode('utf-8'))
     except json.JSONDecodeError:
         return flask.abort(400)
-    # TODO: validate using schema
-    if not isinstance(data, dict):
-        return flask.abort(400)
+    try:
+        jsonschema.validate(data, ACTION_SCHEMA)
+    except jsonschema.ValidationError:
+        flask.abort(400)
     if {'name', 'description', 'instrument_id', 'schema'} != set(data.keys()):
         return flask.abort(400)
     instrument_id = data['instrument_id']

@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "title": "Instrument",
+    "type": "object",
+    "properties": {
+        "id": {
+            "title": "Instrument Identifier",
+            "type": "integer",
+            "minimum": 0
+        },
+        "name": {
+            "title": "Instrument Name",
+            "type": "string"
+        },
+        "description": {
+            "title": "Instrument Description",
+            "type": "string"
+        },
+        "responsible_users": {
+            "title": "Responsible User Identifiers",
+            "type": "array",
+            "item": {
+                "type": "integer",
+                "minimum": 0
+            },
+            "default": []
+        }
+    },
+    "required" : ["name", "description"],
+    "additionalProperties": false
+}

@@ -74,11 +74,29 @@ def test_create_instrument_invalid_data(flask_server, user):
     r = session.post(flask_server.base_url + 'instruments/', json.dumps([]))
     assert r.status_code == 400
     assert len(logic.get_instruments()) == 0
+    # invalid JSON
     r = session.post(flask_server.base_url + 'instruments/', 'invalid')
     assert r.status_code == 400
     assert len(logic.get_instruments()) == 0
+    # invalid attributes
     r = session.post(flask_server.base_url + 'instruments/', json.dumps({
         'invalid': 'name'
+    }))
+    assert r.status_code == 400
+    assert len(logic.get_instruments()) == 0
+    # try setting id
+    r = session.post(flask_server.base_url + 'instruments/', json.dumps({
+        'id': '0',
+        'name': 'Test',
+        'description': ''
+    }))
+    assert r.status_code == 400
+    assert len(logic.get_instruments()) == 0
+    # try setting responsible users
+    r = session.post(flask_server.base_url + 'instruments/', json.dumps({
+        'name': 'Test',
+        'description': '',
+        'responsible_users': []
     }))
     assert r.status_code == 400
     assert len(logic.get_instruments()) == 0
@@ -133,6 +151,22 @@ def test_update_instrument_invalid_data(flask_server, user):
     # invalid attributes
     r = session.put(flask_server.base_url + 'instruments/{}'.format(instrument.id), json.dumps({
         'invalid': 'name'
+    }))
+    assert r.status_code == 400
+    assert logic.get_instrument(instrument_id=instrument.id) == original_instrument
+    # missing attributes
+    r = session.put(flask_server.base_url + 'instruments/{}'.format(instrument.id), json.dumps({
+        'name': 'Test',
+        'description': 'desc'
+    }))
+    assert r.status_code == 400
+    assert logic.get_instrument(instrument_id=instrument.id) == original_instrument
+    # modified id
+    r = session.put(flask_server.base_url + 'instruments/{}'.format(instrument.id), json.dumps({
+        'id': instrument.id+1,
+        'name': 'Test',
+        'description': 'desc',
+        'responsible_users': [user.id]
     }))
     assert r.status_code == 400
     assert logic.get_instrument(instrument_id=instrument.id) == original_instrument
@@ -379,6 +413,15 @@ def test_update_action_invalid_data(flask_server, user):
     }))
     assert r.status_code == 400
     assert logic.get_action(action_id=action.id) == original_action
+    # missing id
+    r = session.put(flask_server.base_url + 'actions/{}'.format(action.id), json.dumps({
+        'name': 'Example Action',
+        'description': '',
+        'instrument_id': None,
+        'schema': {}
+    }))
+    assert r.status_code == 400
+    assert logic.get_action(action_id=action.id) == original_action
 
 
 def test_create_action(flask_server, user):
@@ -421,6 +464,12 @@ def test_create_action_invalid_data(flask_server, user):
     # invalid attributes
     r = session.post(flask_server.base_url + 'actions/', json.dumps({
         'invalid': 'name'
+    }))
+    # missing attributes
+    r = session.post(flask_server.base_url + 'actions/', json.dumps({
+        'name': 'Example Action',
+        'description': '',
+        'schema': {}
     }))
     assert r.status_code == 400
     assert len(logic.get_actions()) == 0

@@ -171,11 +171,11 @@ def useradd():
                type = UserType.PERSON
            user = User(str(form.name.data).title(),str(form.email.data),type)
            if form.authentication_method.data == 'E':
-               result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
-                                                                          AuthenticationType.EMAIL)
+               authentication_method = AuthenticationType.EMAIL
            else:
-               result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
-                                                                          AuthenticationType.OTHER)
+               authentication_method = AuthenticationType.OTHER
+           result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data, authentication_method)
+
            if not result:
                flask.flash('adding new user failed')
                return flask.redirect(flask.url_for('main.index'))

@@ -5,23 +5,23 @@
     "properties": {
         "object_id": {
             "title": "Object Identifier",
-            "type": "number",
+            "type": "integer",
             "minimum": 0
         },
         "version_id": {
             "title": "Object Version Identifier",
-            "type": "number",
+            "type": "integer",
             "default": 0,
             "minimum": 0
         },
         "action_id": {
             "title": "Action Identifier",
-            "type": "number",
+            "type": "integer",
             "minimum": 0
         },
         "user_id": {
             "title": "Object User Identifier",
-            "type": "number"
+            "type": "integer"
         },
         "last_modified": {
             "title": "Last Modification Datetime",

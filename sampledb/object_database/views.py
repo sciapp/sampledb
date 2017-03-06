@@ -10,7 +10,6 @@ import flask
 import flask_login
 import jsonschema
 
-from . import datatypes
 from .models import Objects
 from ..instruments.logic import get_action
 
@@ -18,7 +17,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 object_api = flask.Blueprint('object_api', __name__, template_folder='templates')
 
-SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
+SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'schemas')
 
 OBJECT_SCHEMA = json.load(open(os.path.join(SCHEMA_DIR, 'object.json'), 'r'))
 jsonschema.Draft4Validator.check_schema(OBJECT_SCHEMA)
