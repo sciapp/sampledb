@@ -29,14 +29,14 @@ def get_object_version(object_id, version_id):
     obj = Objects.get_object_version(object_id, version_id)
     if obj is None:
         flask.abort(404)
-    return json.dumps({
+    return flask.jsonify({
         'object_id': obj.object_id,
         'version_id': obj.version_id,
         'user_id': obj.user_id,
         'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
         'data': obj.data,
         'schema': obj.schema
-    }, cls=datatypes.JSONEncoder)
+    })
 
 
 @object_api.route('/<int:object_id>')
@@ -44,28 +44,28 @@ def get_object(object_id):
     obj = Objects.get_current_object(object_id)
     if obj is None:
         flask.abort(404)
-    return json.dumps({
+    return flask.jsonify({
         'object_id': obj.object_id,
         'version_id': obj.version_id,
         'user_id': obj.user_id,
         'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
         'data': obj.data,
         'schema': obj.schema
-    }, cls=datatypes.JSONEncoder)
+    })
 
 
 @object_api.route('/')
 def get_objects():
     objects = Objects.get_current_objects()
     # Search should be done here using query parameters
-    return json.dumps([{
+    return flask.jsonify([{
         'object_id': obj.object_id,
         'version_id': obj.version_id,
         'user_id': obj.user_id,
         'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
         'data': obj.data,
         'schema': obj.schema
-    } for obj in objects], cls=datatypes.JSONEncoder)
+    } for obj in objects])
 
 
 @object_api.route('/', methods=['POST'])
