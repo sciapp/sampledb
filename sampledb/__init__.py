@@ -13,6 +13,7 @@ import sampledb.authentication
 import sampledb.object_database
 import sampledb.main
 import sampledb.instruments
+import sampledb.permissions
 
 
 def create_app():
@@ -24,6 +25,7 @@ def create_app():
     app.register_blueprint(sampledb.main.main_blueprint)
     app.register_blueprint(sampledb.authentication.authentication_blueprint)
     app.register_blueprint(sampledb.object_database.object_api, url_prefix='/objects')
+    app.register_blueprint(sampledb.permissions.permissions_api, url_prefix='/objects')
     app.register_blueprint(sampledb.instruments.instrument_api)
 
     with app.app_context():

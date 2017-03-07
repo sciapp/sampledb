@@ -20,6 +20,22 @@ class Permissions(enum.Enum):
     def __contains__(self, item: 'Permissions') -> bool:
         return self.value >= item.value
 
+    def __str__(self):
+        return self.name.lower()
+
+    @staticmethod
+    def from_name(name):
+        members = {
+            'none': Permissions.NONE,
+            'read': Permissions.READ,
+            'write': Permissions.WRITE,
+            'grant': Permissions.GRANT,
+        }
+        try:
+            return members[name.lower()]
+        except KeyError:
+            raise ValueError('Invalid name')
+
 
 class UserObjectPermissions(db.Model):
     __tablename__ = 'user_object_permissions'

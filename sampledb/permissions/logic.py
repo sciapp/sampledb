@@ -21,7 +21,7 @@ def set_object_public(object_id, is_public=True):
         PublicObjects.query.filter_by(object_id=object_id).delete()
     else:
         db.session.add(PublicObjects(object_id=object_id))
-        db.session.commit()
+    db.session.commit()
 
 
 def get_object_permissions(object_id):
@@ -62,6 +62,7 @@ def get_user_object_permissions(object_id, user_id):
 
 
 def set_user_object_permissions(object_id, user_id, permissions: Permissions):
+    assert user_id is not None
     if permissions == Permissions.NONE:
         UserObjectPermissions.query.filter_by(object_id=object_id, user_id=user_id).delete()
     else:
@@ -71,4 +72,4 @@ def set_user_object_permissions(object_id, user_id, permissions: Permissions):
         else:
             user_object_permissions.permissions = permissions
         db.session.add(user_object_permissions)
-        db.session.commit()
+    db.session.commit()
