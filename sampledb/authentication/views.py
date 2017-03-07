@@ -158,6 +158,29 @@ def confirm_email(token):
         return flask.render_template('register.html', form=form)
 
 
+@authentication.route('/confirm2/<token>', methods=['GET', 'POST'])
+def confirm2_email(token):
+    data = verify_token(token, salt='edit_profile', secret_key=flask.current_app.config['SECRET_KEY'])
+    if data is None:
+        # TODO: Why flash?
+        flask.flash('The confirmation link has expired.', 'danger')
+        return flask.render_template('index.html')
+    else:
+        if(len(data)!=2):
+            flask.flash('Error in confirmation email.', 'danger')
+            return flask.render_template('index.html')
+        email = data[0]
+        id = data[1]
+        if '@' not in email:
+            # TODO: ???
+            print('Bad Syntax')
+        user = User.query.get(id)
+        print(user)
+        user.email = email
+        db.session.add(user)
+        db.session.commit()
+        return flask.redirect(flask.url_for('main.index'))
+
 @authentication.route('/add_user', methods=['GET', 'POST'])
 def useradd():
    form = NewUserForm()
@@ -189,7 +212,7 @@ def useradd():
    return flask.render_template('user.html',form=form)
 
 
-@authentication.route('/show_login', methods=['GET', 'POST'])
+@authentication.route('/login/show_all', methods=['GET', 'POST'])
 #@flask_login.login_required
 def show_login():
     if flask_login.current_user.is_authenticated:
@@ -201,43 +224,55 @@ def show_login():
         for authentication_method in authentication_methods:
             print(authentication_method.type)
             print(authentication_method.login['login'])
+        return flask.render_template('authentication_form.html', user=user, authentications=authentication_methods)
+    return flask.redirect(flask.url_for('main.index'))
+
+@authentication.route('/authentication/<id>/remove', methods=['GET', 'POST'])
+#@flask_login.login_required
+def delete_login(id):
+    if flask_login.current_user.is_authenticated:
+        user = flask_login.current_user
+        if(str(user.id) == id):
+            authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).count()
+            if (authentication_methods <= 1):
+                print('one authentication-method must exist, delete not possible')
+                flask.flash('one authentication-method must exist, delete not possible')
+                return flask.redirect(flask.url_for('main.index'))
+            else:
+                authentication_methods = Authentication.query.filter(Authentication.id == id).first()
+                db.session.delete(authentication_methods)
+                db.session.commit()
+                print('delete authentication-method')
     return flask.redirect(flask.url_for('main.index'))
 
 
-@authentication.route('/edit_user', methods=['GET', 'POST'])
+@authentication.route('/edit_profile', methods=['GET', 'POST'])
 @flask_login.login_required
-def useredit():
+def editprofile():
     user = flask_login.current_user
-    login = Authentication.query.filter(Authentication.user_id == user.id).first()
-    user.login = login.login['login']
-    user.authentification_method = login.type
-    print(login.type)
-    form = ChangeUserForm(obj=user)
-    if form.authentication_method.data is None:
-        form.authentication_method.data = login.type
+    form = ChangeUserForm()
+    if form.name.data is None:
+        form.name.data = user.name
+    if form.email.data is None:
+        form.email.data = user.email
     if form.validate_on_submit():
-        # check, if login  exists
-        login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
-        if login is None:
-            flask.flash("user doesn't exists, please contact administrator")
-            return False
-        else:
-            if (form.type.data == 'O'):
-                type = UserType.OTHER
-            else:
-                type = UserType.PERSON
-            user = User(str(form.name.data).title(), str(form.email.data), type)
-            if form.authentication_method.data == 'E':
-                result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
-                                                                           AuthenticationType.EMAIL)
-            else:
-                result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
-                                                                           AuthenticationType.OTHER)
-            if not result:
-                flask.flash('changing user failed')
-            else:
-                flask.flash('changing user successfully')
+        # the name changes , keep the old contact email
+        if (form.name.data != user.name):
+            u = User(str(form.name.data), str(user.email), user.type)
+            db.session.add(u)
+            db.session.commit()
+        # check, if contact email changes
+        if(form.email.data != user.email):
+            # send confirm link
+            token = generate_token([form.email.data, user.id], salt='edit_profile', secret_key=flask.current_app.config['SECRET_KEY'])
+            subject = "Please confirm your email"
+            confirm_url = flask.url_for(".confirm2_email", token=token, _external=True)
+            html = flask.render_template('activate.html', confirm_url=confirm_url)
+            mail.send(flask_mail.Message(
+                subject,
+                sender=flask.current_app.config['MAIL_SENDER'],
+                recipients=[form.email.data],
+                html=html
+            ))
         return flask.redirect(flask.url_for('main.index'))
-    else:
-        print(form.errors)
-    return flask.render_template('edit_user.html', form=form, AuthenticationType=AuthenticationType)
+    return flask.render_template('edit_user.html', form=form)

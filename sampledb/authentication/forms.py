@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, RadioField
+from wtforms import StringField, PasswordField, SubmitField, RadioField, HiddenField
 
 from wtforms.validators import DataRequired, EqualTo, Length, Email
 
@@ -30,11 +30,9 @@ class ChangeUserForm(FlaskForm):
     name = StringField('Full Name', validators=[DataRequired()])
     email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
                                             Email("Please enter your contact email.")])
-    authentication_method = RadioField('Authentication Method', choices=[('E','Email'),('O','Other'),('L','LDAP')])
-    login = StringField('Login', validators=[DataRequired()])
     submit = SubmitField('Change Settings')
 
-    def __init_(self, name=None, email=None, password=None, login=None):
+    def __init_(self, name=None, email=None):
         super(ChangeUserForm,self).__init__()
 
 
@@ -42,3 +40,7 @@ class LoginForm(FlaskForm):
     username = StringField('Login', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
     submit = SubmitField('Login')
+
+class ConfirmForm(FlaskForm):
+    uid = HiddenField('ID')
+    submit = SubmitField('Confirm')
