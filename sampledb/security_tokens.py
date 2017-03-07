@@ -1,9 +1,9 @@
 import itsdangerous
 
 
-def generate_token(email, salt, secret_key):
+def generate_token(data, salt, secret_key):
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key)
-    return serializer.dumps(email, salt=salt)
+    return serializer.dumps(data, salt=salt)
 
 
 def verify_token(token, salt, secret_key, expiration=36000):

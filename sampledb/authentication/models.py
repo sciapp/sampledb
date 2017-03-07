@@ -23,6 +23,7 @@ class Authentication(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     login = db.Column(postgresql.JSONB)
     type = db.Column(db.Enum(AuthenticationType))
+    confirmed = db.Column(db.Boolean, default=False, nullable=False)
     user = db.relationship('User', backref="authentication_methods")
 
     def __init__(self, login, authentication_type, user_id):
