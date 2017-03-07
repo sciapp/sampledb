@@ -3,6 +3,7 @@
 
 """
 
+from .. import db
 from ..authentication import User
 from ..instruments import Action
 from .versioned_json_object_tables import VersionedJSONSerializableObjectTables
@@ -19,5 +20,6 @@ Objects = VersionedJSONSerializableObjectTables(
     object_type=Object,
     user_id_column=User.id,
     action_id_column=Action.id,
-    action_schema_column=Action.schema
+    action_schema_column=Action.schema,
+    metadata=db.metadata
 )

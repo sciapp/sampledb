@@ -42,7 +42,7 @@ class VersionedJSONSerializableObjectTables(object):
         ]
     )
 
-    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None):
+    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None):
         """
         Creates new instance for storing versioned, JSON-serializable objects using two tables.
 
@@ -52,7 +52,9 @@ class VersionedJSONSerializableObjectTables(object):
         :param user_id_column: a SQLAlchemy column object for use as foreign key for the user ID (optional)
         :param action_id_column: a SQLAlchemy column object for use as foreign key for the action ID (optional)
         """
-        self.metadata = db.MetaData()
+        if metadata is None:
+            metadata = db.MetaData()
+        self.metadata = metadata
         self._current_table = db.Table(
             table_name_prefix+'_current',
             self.metadata,

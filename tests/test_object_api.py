@@ -49,9 +49,6 @@ def app():
     # recreate the tables used by this application
     with sampledb_app.app_context():
         sampledb.db.metadata.create_all(bind=engine)
-        sampledb.object_database.models.Objects.bind = sampledb.db.engine
-        # create the object tables
-        sampledb.object_database.models.Objects.metadata.create_all(sampledb.db.engine)
     return sampledb_app
 
 

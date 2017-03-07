@@ -30,7 +30,5 @@ def create_app():
         db.metadata.create_all(bind=db.engine)
 
         sampledb.object_database.Objects.bind = db.engine
-        # create the object tables
-        sampledb.object_database.Objects.metadata.create_all(db.engine)
 
     return app
