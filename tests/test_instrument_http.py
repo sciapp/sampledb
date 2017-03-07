@@ -46,6 +46,12 @@ def user(flask_server):
     return user
 
 
+@pytest.fixture(autouse=True)
+def app_context(flask_server):
+    with flask_server.app.app_context():
+        yield None
+
+
 def test_create_instrument(flask_server, user):
     assert len(logic.get_instruments()) == 0
     # this operation requires a logged in user
@@ -103,16 +109,13 @@ def test_create_instrument_invalid_data(flask_server, user):
 
 
 def test_update_instrument(flask_server, user):
-    with flask_server.app.app_context():
-        user2 = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
-        sampledb.db.session.add(user2)
-        sampledb.db.session.commit()
-        # force loading of id
-        assert user2.id is not None
-        instrument = logic.create_instrument(name="Example Instrument", description="")
-        assert instrument.id is not None
-        logic.add_instrument_responsible_user(instrument.id, user2.id)
-        instrument_id = instrument.id
+    user2 = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
+    sampledb.db.session.add(user2)
+    sampledb.db.session.commit()
+    instrument = logic.create_instrument(name="Example Instrument", description="")
+    assert instrument.id is not None
+    logic.add_instrument_responsible_user(instrument.id, user2.id)
+    instrument_id = instrument.id
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -135,11 +138,7 @@ def test_update_instrument(flask_server, user):
 
 
 def test_update_instrument_invalid_data(flask_server, user):
-    with flask_server.app.app_context():
-        instrument = logic.create_instrument(name="Example Instrument", description="")
-        # force loading of id and responsible users
-        assert instrument.id is not None
-        assert instrument.responsible_users is not None
+    instrument = logic.create_instrument(name="Example Instrument", description="")
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -195,10 +194,7 @@ def test_update_instrument_invalid_data(flask_server, user):
 
 
 def test_update_instrument_missing(flask_server, user):
-    with flask_server.app.app_context():
-        instrument = logic.create_instrument(name="Example Instrument", description="")
-        # force loading of id
-        assert instrument.id is not None
+    instrument = logic.create_instrument(name="Example Instrument", description="")
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -207,10 +203,7 @@ def test_update_instrument_missing(flask_server, user):
 
 
 def test_get_instrument(flask_server, user):
-    with flask_server.app.app_context():
-        instrument = logic.create_instrument(name="Example Instrument", description="")
-        # force loading of id
-        assert instrument.id is not None
+    instrument = logic.create_instrument(name="Example Instrument", description="")
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -227,10 +220,7 @@ def test_get_instrument(flask_server, user):
 
 
 def test_get_instrument_missing(flask_server, user):
-    with flask_server.app.app_context():
-        instrument = logic.create_instrument(name="Example Instrument", description="")
-        # force loading of id
-        assert instrument.id is not None
+    instrument = logic.create_instrument(name="Example Instrument", description="")
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -239,10 +229,7 @@ def test_get_instrument_missing(flask_server, user):
 
 
 def test_get_instruments(flask_server, user):
-    with flask_server.app.app_context():
-        instrument = logic.create_instrument(name="Example Instrument", description="")
-        # force loading of id
-        assert instrument.id is not None
+    instrument = logic.create_instrument(name="Example Instrument", description="")
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -261,10 +248,7 @@ def test_get_instruments(flask_server, user):
 
 
 def test_get_actions(flask_server, user):
-    with flask_server.app.app_context():
-        action = logic.create_action(name="Example Action", description="", schema={})
-        # force loading of id
-        assert action.id is not None
+    action = logic.create_action(name="Example Action", description="", schema={})
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -286,10 +270,7 @@ def test_get_actions(flask_server, user):
 
 
 def test_get_action(flask_server, user):
-    with flask_server.app.app_context():
-        action = logic.create_action(name="Example Action", description="", schema={})
-        # force loading of id
-        assert action.id is not None
+    action = logic.create_action(name="Example Action", description="", schema={})
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -309,10 +290,7 @@ def test_get_action(flask_server, user):
 
 
 def test_get_action_missing(flask_server, user):
-    with flask_server.app.app_context():
-        action = logic.create_action(name="Example Action", description="", schema={})
-        # force loading of id
-        assert action.id is not None
+    action = logic.create_action(name="Example Action", description="", schema={})
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -321,9 +299,7 @@ def test_get_action_missing(flask_server, user):
 
 
 def test_update_action(flask_server, user):
-    with flask_server.app.app_context():
-        action = logic.create_action(name="Example Action", description="", schema={})
-        assert action.id is not None
+    action = logic.create_action(name="Example Action", description="", schema={})
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -349,10 +325,7 @@ def test_update_action(flask_server, user):
 
 
 def test_update_action_missing(flask_server, user):
-    with flask_server.app.app_context():
-        action = logic.create_action(name="Example Action", description="", schema={})
-        # force loading of id
-        assert action.id is not None
+    action = logic.create_action(name="Example Action", description="", schema={})
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -361,10 +334,7 @@ def test_update_action_missing(flask_server, user):
 
 
 def test_update_action_invalid_data(flask_server, user):
-    with flask_server.app.app_context():
-        action = logic.create_action(name="Example Action", description="", schema={})
-        # force loading of id
-        assert action.id is not None
+    action = logic.create_action(name="Example Action", description="", schema={})
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
