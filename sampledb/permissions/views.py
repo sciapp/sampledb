@@ -42,7 +42,6 @@ def set_user_object_permissions(object_id, user_id):
         permissions = Permissions.from_name(flask.request.json)
     except ValueError:
         return flask.abort(400)
-    print(permissions)
     logic.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
     return flask.redirect(flask.url_for('permissions_api.get_user_object_permissions', object_id=object_id, user_id=user_id))
 
