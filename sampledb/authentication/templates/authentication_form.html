@@ -2,25 +2,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1>Authentifications of {{user.name}} </h1>
-    <form class="form-group" action="" method="post" name="add_login">
-       <table border=1>
-           <tr>
-               <th> Login</th>
-               <th> Login-type</th>
-               <th> Action</th>
-           </tr>
-           {% for authentication in authentications %}
-           <tr>
-               <td width="100">{{authentication.login['login']}}</td>
-               <td width="250">{{authentication.type}}</td>
-               <td widht="200"> <a href="/authentication/{{authentication.id}}/remove?id={{user.id}}">REMOVE</a></td>
-           </tr>
-           {% endfor %}
-       </table>
-        <p></p>
-      <p><input type="submit" value="Add additional Authentification"></p>
-      <a href="{{ url_for('main.index') }}">Add additional Authentification</a>
-      <a href="{{ url_for('main.index') }}">Home</a>
-  </form>
+<h1>Add additional Authentication-method </h1>
+<form class="form-group" action="" method="post" name="register">
+    {{ form.hidden_tag() }}
+    <p>{{ form.login.label }}: {{ form.login(size=50) }}</p>
+    {% if form.login.errors %}
+    <ul class="errors">{% for error in form.login.errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <p>{{ form.password.label }}: {{ form.password(size=50)}}</p>
+    {% if form.password.errors %}
+    <ul class="errors">{% for error in form.password.errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <p>
+             Authentication Method:
+             {{form.authentication_method()}}
+      </p>
+    <p><input type="submit" value="Add Authentication-method"></p>
+</form>
 {% endblock %}

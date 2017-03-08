@@ -7,7 +7,7 @@ from flask import g
 from . import utils
 from .ldap import validate_user, get_user_info
 from .models import AuthenticationType, Authentication, UserType, User
-from .forms import RegisterForm, NewUserForm, ChangeUserForm, LoginForm
+from .forms import RegisterForm, NewUserForm, ChangeUserForm, LoginForm, AuthenticationForm
 from .. import mail, db, login_manager
 from ..security_tokens import generate_token, verify_token
 
@@ -33,14 +33,11 @@ def logout():
 
 @authentication.route('/login', methods=['GET', 'POST'])
 def login():
-    print('login')
     if flask_login.current_user.is_authenticated:
         flask.flash('you are already logged in', 'danger')
-        print('user exists')
         return flask.redirect(flask.url_for('main.index'))
     if flask.request.method == 'POST':
         login = flask.request.form['username']
-        print(login)
         password = flask.request.form['password']
         # filter email + password or username + password or username (ldap)
         authentication_methods = Authentication.query.filter(
@@ -55,7 +52,6 @@ def login():
         for authentication_method in authentication_methods:
             # authentificaton method in db is ldap
             if authentication_method.type == AuthenticationType.LDAP:
-                print('ldap in db')
                 result = validate_user(login, password)
             else:
                 result = utils.validate_user_db(login, password)
@@ -63,6 +59,7 @@ def login():
                 user = authentication_method.user
                 flask_login.login_user(user)
                 break
+
 
         # no authentificaton method in db
         if not authentication_methods:
@@ -88,7 +85,8 @@ def login():
                     user = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
                     if user is not None:
                         log = {'login': login}
-                        authenticate = Authentication(log, AuthenticationType.LDAP, user.id)
+                        confirmed = True
+                        authenticate = Authentication(log, AuthenticationType.LDAP, confirmed, user.id)
                         db.session.add(authenticate)
                         db.session.commit()
                         flask_login.login_user(user)
@@ -151,14 +149,13 @@ def confirm_email(token):
                 flask.flash('registration successfully')
             return flask.redirect(flask.url_for('main.index'))
         else:
-            print('user exists')
             flask.flash('user exists, please contact administrator')
             return flask.redirect(flask.url_for('main.index'))
     else:
         return flask.render_template('register.html', form=form)
 
 
-@authentication.route('/confirm2/<token>', methods=['GET', 'POST'])
+@authentication.route('/confirm2/<token>', methods=['GET'])
 def confirm2_email(token):
     data = verify_token(token, salt='edit_profile', secret_key=flask.current_app.config['SECRET_KEY'])
     if data is None:
@@ -175,11 +172,32 @@ def confirm2_email(token):
             # TODO: ???
             print('Bad Syntax')
         user = User.query.get(id)
-        print(user)
         user.email = email
         db.session.add(user)
         db.session.commit()
         return flask.redirect(flask.url_for('main.index'))
+
+@authentication.route('/confirm3/<token>', methods=['GET'])
+def confirm3_email(token):
+    data = verify_token(token, salt='add_login', secret_key=flask.current_app.config['SECRET_KEY'])
+    if data is None:
+        # TODO: Why flash?
+        flask.flash('The confirmation link has expired.', 'danger')
+        return flask.render_template('index.html')
+    else:
+        if (len(data) != 2):
+            flask.flash('Error in confirmation email.', 'danger')
+            return flask.render_template('index.html')
+        email = data[0]
+        id = data[1]
+        if '@' not in email:
+            # TODO: ???
+            print('Bad Syntax')
+        auth = Authentication.query.filter(Authentication.user_id == id, Authentication.login['login'].astext ==email).first()
+        auth.confirmed = True
+        db.session.add(auth)
+        db.session.commit()
+    return flask.redirect(flask.url_for('main.index'))
 
 @authentication.route('/add_user', methods=['GET', 'POST'])
 def useradd():
@@ -207,32 +225,28 @@ def useradd():
            flask.flash('user exists, please contact administrator')
            print('user already exists')
            return flask.redirect(flask.url_for('main.index'))
-#   else:
-#       print(form.errors)
    return flask.render_template('user.html',form=form)
 
 
-@authentication.route('/login/show_all', methods=['GET', 'POST'])
-#@flask_login.login_required
+@authentication.route('/login/show_all', methods=['GET','POST'])
+@flask_login.login_required
 def show_login():
-    if flask_login.current_user.is_authenticated:
-        user = flask_login.current_user
-        print(user.name)
-        print(user.email)
-        print(user.type)
-        authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).all()
-        for authentication_method in authentication_methods:
-            print(authentication_method.type)
-            print(authentication_method.login['login'])
-        return flask.render_template('authentication_form.html', user=user, authentications=authentication_methods)
-    return flask.redirect(flask.url_for('main.index'))
+    user = flask_login.current_user
+    authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).all()
+    for authentication_method in authentication_methods:
+        print(authentication_method.type)
+        print(authentication_method.login['login'])
+    return flask.render_template('authentications.html', user=user, authentications=authentication_methods)
 
-@authentication.route('/authentication/<id>/remove', methods=['GET', 'POST'])
-#@flask_login.login_required
-def delete_login(id):
+
+@authentication.route('/authentication/<userid>/remove/<id>', methods=['GET', 'POST'])
+@flask_login.login_required
+def delete_login(userid,id):
     if flask_login.current_user.is_authenticated:
         user = flask_login.current_user
-        if(str(user.id) == id):
+        print('userid',userid)
+        print('authentication_id',id)
+        if(str(user.id) == userid):
             authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).count()
             if (authentication_methods <= 1):
                 print('one authentication-method must exist, delete not possible')
@@ -245,6 +259,78 @@ def delete_login(id):
                 print('delete authentication-method')
     return flask.redirect(flask.url_for('main.index'))
 
+@authentication.route('/authentication/add/<userid>', methods=['GET', 'POST'])
+@flask_login.login_required
+def add_login(userid):
+    user = flask_login.current_user
+    if(str(user.id) == userid):
+        form = AuthenticationForm()
+        if form.validate_on_submit():
+            # check, if login already exists
+            login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data, Authentication.user_id == userid).first()
+            if login is None:
+                pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                log = {
+                    'login': form.login.data,
+                    'bcrypt_hash': pw_hash
+                }
+                print(form.login.data)
+                print(form.authentication_method.data)
+                if form.authentication_method.data == 'E':
+                    authentication_method = AuthenticationType.EMAIL
+                    #check if login looks like an email
+                    if '@' not in form.login.data:
+                        flask.flash('input error, login is not an email or the AuthenticationType is wrong')
+                        print('input error')
+                        flask.render_template('authentication_form.html', form=form)
+                    else:
+                        # add authentication-method to db and send confirmation email
+                        confirmed = False
+                        auth = Authentication(log, authentication_method, confirmed, user.id)
+                        print('add to db')
+                        db.session.add(auth)
+                        db.session.commit()
+                        # send confirm link
+                        token = generate_token([form.login.data, user.id], salt='add_login',
+                                               secret_key=flask.current_app.config['SECRET_KEY'])
+                        subject = "Please confirm your email"
+                        confirm_url = flask.url_for(".confirm3_email", token=token, _external=True)
+                        html = flask.render_template('activate.html', confirm_url=confirm_url)
+                        mail.send(flask_mail.Message(
+                            subject,
+                            sender=flask.current_app.config['MAIL_SENDER'],
+                            recipients=[form.login.data],
+                            html=html
+                        ))
+                        return flask.redirect(flask.url_for('main.index'))
+
+                else:
+                    if form.authentication_method.data == 'O':
+                        authentication_method = AuthenticationType.OTHER
+                        confirmed = True
+                        auth = Authentication(log, authentication_method, confirmed, user.id)
+                        db.session.add(auth)
+                        db.session.commit()
+                    else:
+                        authentication_method = AuthenticationType.LDAP
+                        result = validate_user(form.login.data, form.password.data)
+                        confirmed = False
+                        if(result):
+                            confirmed = True
+                            auth = Authentication(log, authentication_method, confirmed, user.id)
+                            db.session.add(auth)
+                            db.session.commit()
+                        else:
+                            print('error additional authentication-method wrong')
+            else:
+                print('authentication-method already exists')
+                # was tun??????
+#        else:
+#            print(form.errors)
+        return flask.render_template('authentication_form.html', form=form)
+    else:
+        print('error')
+        return flask.redirect(flask.url_for('main.index'))
 
 @authentication.route('/edit_profile', methods=['GET', 'POST'])
 @flask_login.login_required

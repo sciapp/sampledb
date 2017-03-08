@@ -26,9 +26,10 @@ class Authentication(db.Model):
     confirmed = db.Column(db.Boolean, default=False, nullable=False)
     user = db.relationship('User', backref="authentication_methods")
 
-    def __init__(self, login, authentication_type, user_id):
+    def __init__(self, login, authentication_type, confirmed, user_id):
         self.login = login
         self.type = authentication_type
+        self.confirmed = confirmed
         self.user_id = user_id
 
     def __repr__(self):

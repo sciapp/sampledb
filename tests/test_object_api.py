@@ -53,6 +53,12 @@ def app():
     return sampledb_app
 
 
+@pytest.fixture(autouse=True)
+def app_context(flask_server):
+    with flask_server.app.app_context():
+        yield None
+
+
 @pytest.fixture
 def user(flask_server):
     user = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)

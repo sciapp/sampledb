@@ -53,7 +53,8 @@ def app_context(flask_server):
 
 
 def test_create_instrument(flask_server, user):
-    assert len(logic.get_instruments()) == 0
+    with flask_server.app.app_context():
+        assert len(logic.get_instruments()) == 0
     # this operation requires a logged in user
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
@@ -63,13 +64,14 @@ def test_create_instrument(flask_server, user):
     }))
     assert r.status_code == 201
     instrument = r.json()
-    assert len(logic.get_instruments()) == 1
-    assert logic.get_instrument(instrument_id=instrument['id']).id == instrument['id']
-    assert instrument['name'] == 'Example Instrument'
-    assert logic.get_instrument(instrument_id=instrument['id']).name == instrument['name']
-    assert instrument['description'] == ''
-    assert logic.get_instrument(instrument_id=instrument['id']).description == instrument['description']
-    assert len(instrument['responsible_users']) == 0
+    with flask_server.app.app_context():
+        assert len(logic.get_instruments()) == 1
+        assert logic.get_instrument(instrument_id=instrument['id']).id == instrument['id']
+        assert instrument['name'] == 'Example Instrument'
+        assert logic.get_instrument(instrument_id=instrument['id']).name == instrument['name']
+        assert instrument['description'] == ''
+        assert logic.get_instrument(instrument_id=instrument['id']).description == instrument['description']
+        assert len(instrument['responsible_users']) == 0
 
 
 def test_create_instrument_invalid_data(flask_server, user):

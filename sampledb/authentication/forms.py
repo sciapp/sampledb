@@ -41,6 +41,8 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
     submit = SubmitField('Login')
 
-class ConfirmForm(FlaskForm):
-    uid = HiddenField('ID')
-    submit = SubmitField('Confirm')
+class AuthenticationForm(FlaskForm):
+    login = StringField('Login', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
+    authentication_method = RadioField('Authentication Method', choices=[('E','Email'),('O','Other'),('L','LDAP')], default='E')
+    submit = SubmitField('Login')
