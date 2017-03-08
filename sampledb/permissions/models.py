@@ -6,7 +6,7 @@
 import enum
 from .. import db
 from ..authentication import User
-from ..object_database import Objects
+from ..object_database.models import Objects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

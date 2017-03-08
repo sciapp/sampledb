@@ -12,6 +12,7 @@ import jsonschema
 
 from .models import Objects
 from ..instruments.logic import get_action
+from ..permissions.utils import object_permissions_required, Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -24,6 +25,7 @@ jsonschema.Draft4Validator.check_schema(OBJECT_SCHEMA)
 
 
 @object_api.route('/<int:object_id>/versions/<int:version_id>')
+@object_permissions_required(Permissions.READ)
 def get_object_version(object_id, version_id):
     obj = Objects.get_object_version(object_id, version_id)
     if obj is None:
@@ -39,6 +41,7 @@ def get_object_version(object_id, version_id):
 
 
 @object_api.route('/<int:object_id>')
+@object_permissions_required(Permissions.READ)
 def get_object(object_id):
     obj = Objects.get_current_object(object_id)
     if obj is None:
@@ -57,6 +60,7 @@ def get_object(object_id):
 def get_objects():
     objects = Objects.get_current_objects()
     # Search should be done here using query parameters
+    # TODO: filter according to permissions!
     return flask.jsonify([{
         'object_id': obj.object_id,
         'version_id': obj.version_id,
@@ -70,6 +74,7 @@ def get_objects():
 @object_api.route('/', methods=['POST'])
 @flask_login.login_required
 def create_object():
+    # TODO: set up initial permissions
     user_id = flask_login.current_user.id
     if not flask.request.is_json:
         flask.abort(400)
@@ -104,7 +109,7 @@ def create_object():
 
 
 @object_api.route('/<int:object_id>', methods=['PUT'])
-@flask_login.login_required
+@object_permissions_required(Permissions.WRITE)
 def update_object(object_id):
     current_object = Objects.get_current_object(object_id)
     if current_object is None:

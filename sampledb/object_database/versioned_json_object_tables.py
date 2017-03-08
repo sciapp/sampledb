@@ -42,7 +42,7 @@ class VersionedJSONSerializableObjectTables(object):
         ]
     )
 
-    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None):
+    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None):
         """
         Creates new instance for storing versioned, JSON-serializable objects using two tables.
 
@@ -51,6 +51,8 @@ class VersionedJSONSerializableObjectTables(object):
         :param object_type: the type used for returning objects
         :param user_id_column: a SQLAlchemy column object for use as foreign key for the user ID (optional)
         :param action_id_column: a SQLAlchemy column object for use as foreign key for the action ID (optional)
+        :param metdata: an SQLAlchemy MetaData object used for creating the two tables (optional)
+        :param create_object_callbacks: a list of callables which will be called when an object is created (optional)
         """
         if metadata is None:
             metadata = db.MetaData()
@@ -90,6 +92,9 @@ class VersionedJSONSerializableObjectTables(object):
         self._action_schema_column = action_schema_column
         self.object_type = object_type
         self.object_id_column = self._current_table.c.object_id
+        if create_object_callbacks is None:
+            create_object_callbacks = []
+        self.create_object_callbacks = create_object_callbacks
         self.bind = bind
         if self.bind is not None:
             self.metadata.create_all(self.bind)
@@ -139,7 +144,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.object_id
             )
         ).scalar()
-        return self.object_type(
+        obj = self.object_type(
             object_id=object_id,
             version_id=version_id,
             action_id=action_id,
@@ -148,6 +153,9 @@ class VersionedJSONSerializableObjectTables(object):
             user_id=user_id,
             utc_datetime=utc_datetime
         )
+        for create_object_callback in  self.create_object_callbacks:
+            create_object_callback(obj)
+        return obj
 
     def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None):
         """

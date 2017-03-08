@@ -5,7 +5,7 @@
 
 from .. import db
 from ..instruments.logic import get_action
-from ..object_database import Objects
+from ..object_database.models import Objects
 from .models import Permissions, UserObjectPermissions, PublicObjects
 
 
@@ -73,3 +73,9 @@ def set_user_object_permissions(object_id, user_id, permissions: Permissions):
             user_object_permissions.permissions = permissions
         db.session.add(user_object_permissions)
     db.session.commit()
+
+
+def set_initial_permissions(obj):
+    set_user_object_permissions(object_id=obj.object_id, user_id=obj.user_id, permissions=Permissions.GRANT)
+
+Objects.create_object_callbacks.append(set_initial_permissions)

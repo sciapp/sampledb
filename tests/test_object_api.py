@@ -17,6 +17,7 @@ from sampledb.authentication import User, UserType
 from sampledb.instruments import Action
 from sampledb.object_database import datatypes
 from sampledb.object_database import views
+from sampledb.permissions.logic import set_user_object_permissions, Permissions
 
 from .utils import flask_server
 
@@ -90,10 +91,13 @@ def test_get_objects(flask_server, user, action):
 
 
 def test_get_object(flask_server, user, action):
+
     r = requests.get(flask_server.base_url + 'objects/0')
     assert r.status_code == 404
     obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
-    r = requests.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
@@ -109,7 +113,9 @@ def test_get_object(flask_server, user, action):
 
 def test_get_object_version_initial(flask_server, user, action):
     obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
-    r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
@@ -126,7 +132,9 @@ def test_get_object_version_initial(flask_server, user, action):
 def test_get_object_version_updated(flask_server, user, action):
     obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     obj = sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema=action.schema, user_id=user.id)
-    r = requests.get(flask_server.base_url + 'objects/{}/versions/{}'.format(obj.object_id, obj.version_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/{}/versions/{}'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
@@ -143,7 +151,9 @@ def test_get_object_version_updated(flask_server, user, action):
 def test_get_object_version_old(flask_server, user, action):
     obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema=action.schema, user_id=user.id)
-    r = requests.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id, obj.version_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/{}/versions/0'.format(obj.object_id, obj.version_id))
     assert r.status_code == 200
     data = r.json()
     jsonschema.validate(data, views.OBJECT_SCHEMA)
@@ -160,7 +170,9 @@ def test_get_object_version_old(flask_server, user, action):
 def test_get_object_version_missing(flask_server, user, action):
     obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     obj = sampledb.object_database.models.Objects.update_object(obj.object_id, data={}, schema=action.schema, user_id=user.id)
-    r = requests.get(flask_server.base_url + 'objects/{}/versions/2'.format(obj.object_id, obj.version_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/{}/versions/2'.format(obj.object_id, obj.version_id))
     assert r.status_code == 404
 
 

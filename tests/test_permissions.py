@@ -142,29 +142,38 @@ def test_get_user_public_object_permissions(user, independent_action_object):
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
 
 
-def test_get_object_permissions(user, instrument, instrument_action_object):
-    user_id = user.id
+def test_get_object_permissions(users, instrument, instrument_action_object):
+    user_id = users[0].id
     object_id = instrument_action_object.object_id
-    assert logic.get_object_permissions(object_id=object_id) == {None: Permissions.NONE}
+    # by default, only the user who created an object has access to it
+    assert logic.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        users[1].id: Permissions.GRANT
+    }
     logic.set_object_public(object_id)
-    assert logic.get_object_permissions(object_id=object_id) == {None: Permissions.READ}
+    assert logic.get_object_permissions(object_id=object_id) == {
+        None: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
     sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
     sampledb.db.session.commit()
     assert logic.get_object_permissions(object_id=object_id) == {
         None: Permissions.READ,
-        user_id: Permissions.WRITE
+        user_id: Permissions.WRITE,
+        users[1].id: Permissions.GRANT
     }
-    instrument.responsible_users.append(user)
+    instrument.responsible_users.append(users[0])
     sampledb.db.session.add(instrument)
     sampledb.db.session.commit()
     assert logic.get_object_permissions(object_id=object_id) == {
         None: Permissions.READ,
-        user_id: Permissions.GRANT
+        user_id: Permissions.GRANT,
+        users[1].id: Permissions.GRANT
     }
 
 
-def test_update_object_permissions(user, independent_action_object):
-    user_id = user.id
+def test_update_object_permissions(users, independent_action_object):
+    user_id = users[0].id
     object_id = independent_action_object.object_id
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     logic.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.WRITE)
@@ -173,4 +182,7 @@ def test_update_object_permissions(user, independent_action_object):
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
     logic.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.NONE)
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
-    assert logic.get_object_permissions(object_id=object_id) == {None: Permissions.NONE}
+    assert logic.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        users[1].id: Permissions.GRANT
+    }

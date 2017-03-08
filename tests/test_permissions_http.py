@@ -45,11 +45,10 @@ def users(flask_server):
     for name in names:
         with flask_server.app.app_context():
             user = User(name=name, email="example@fz-juelich.de", type=UserType.PERSON)
-            for user in users:
-                sampledb.db.session.add(user)
-                sampledb.db.session.commit()
-                # force attribute refresh
-                assert user.id is not None
+            sampledb.db.session.add(user)
+            sampledb.db.session.commit()
+            # force attribute refresh
+            assert user.id is not None
             users.append(user)
     return users
 
@@ -129,29 +128,46 @@ def app_context(flask_server):
         yield None
 
 
-def test_public_objects(flask_server, independent_action_object):
+def test_require_login(flask_server, user, independent_action_object):
     object_id = independent_action_object.object_id
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
+    r = requests.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id), allow_redirects=False)
+    # Either get 401 Unauthorized or 302 Found
+    assert r.status_code == 401 or r.status_code == 302
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
+    assert r.status_code == 403
+
+
+def test_public_objects(flask_server, user, independent_action_object):
+    user_id = user.id
+    object_id = independent_action_object.object_id
+    logic.set_user_object_permissions(user_id=user_id, object_id=object_id, permissions=Permissions.GRANT)
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
     assert r.status_code == 200
     assert r.json() == 'none'
     logic.set_object_public(object_id)
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
     assert r.status_code == 200
     assert r.json() == 'read'
     logic.set_object_public(object_id, False)
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id))
     assert r.status_code == 200
     assert r.json() == 'none'
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id), json='read')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/all'.format(object_id), json='read')
     assert r.status_code == 200
     assert r.json() == 'read'
     assert logic.object_is_public(object_id)
 
 
-def test_default_user_object_permissions(flask_server, user, independent_action_object):
-    user_id = user.id
+def test_default_user_object_permissions(flask_server, users, independent_action_object):
+    user_id = users[0].id
     object_id = independent_action_object.object_id
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(users[1].id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id))
     assert r.status_code == 200
     assert r.json() == 'none'
 
@@ -159,9 +175,10 @@ def test_default_user_object_permissions(flask_server, user, independent_action_
 def test_get_user_object_permissions(flask_server, user, independent_action_object):
     user_id = user.id
     object_id = independent_action_object.object_id
-    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
-    sampledb.db.session.commit()
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id))
+    logic.set_user_object_permissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE)
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id))
     assert r.status_code == 200
     assert r.json() == 'write'
 
@@ -171,9 +188,10 @@ def test_get_instrument_responsible_user_object_permissions(flask_server, user, 
     object_id = instrument_action_object.object_id
     instrument.responsible_users.append(user)
     sampledb.db.session.add(instrument)
-    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
-    sampledb.db.session.commit()
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id))
+    logic.set_user_object_permissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE)
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id))
     assert r.status_code == 200
     assert r.json() == 'grant'
 
@@ -187,32 +205,41 @@ def test_get_user_public_object_permissions(flask_server, user, independent_acti
     assert r.json() == 'read'
 
 
-def test_get_object_permissions(flask_server, user, instrument, instrument_action_object):
-    user_id = user.id
+def test_get_object_permissions(flask_server, users, instrument, instrument_action_object):
+    user_id = users[0].id
     object_id = instrument_action_object.object_id
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(users[1].id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
     assert r.status_code == 200
-    assert r.json() == {'all': 'none'}
+    assert r.json() == {
+        'all': 'none',
+        str(users[1].id): 'grant'
+    }
     logic.set_object_public(object_id)
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
-    assert r.status_code == 200
-    assert r.json() == {'all': 'read'}
-    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
-    sampledb.db.session.commit()
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
     assert r.status_code == 200
     assert r.json() == {
         'all': 'read',
-        str(user_id): 'write'
+        str(users[1].id): 'grant'
     }
-    instrument.responsible_users.append(user)
+    logic.set_user_object_permissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE)
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
+    assert r.status_code == 200
+    assert r.json() == {
+        'all': 'read',
+        str(user_id): 'write',
+        str(users[1].id): 'grant'
+    }
+    instrument.responsible_users.append(users[0])
     sampledb.db.session.add(instrument)
     sampledb.db.session.commit()
-    r = requests.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
+    r = session.get(flask_server.base_url + 'objects/{}/permissions/'.format(object_id))
     assert r.status_code == 200
     assert r.json() == {
         'all': 'read',
-        str(user_id): 'grant'
+        str(user_id): 'grant',
+        str(users[1].id): 'grant'
     }
 
 
@@ -226,38 +253,47 @@ def test_get_missing_object_public_permissions(flask_server):
     assert r.status_code == 404
 
 
-def test_update_object_permissions(flask_server, user, independent_action_object):
-    user_id = user.id
+def test_update_object_permissions(flask_server, users, independent_action_object):
+    user_id = users[0].id
     object_id = independent_action_object.object_id
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(users[1].id))
+    logic.set_user_object_permissions(user_id=users[1].id, object_id=object_id, permissions=Permissions.GRANT)
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='write')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='write')
     assert r.status_code == 200
     assert r.json() == 'write'
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='read')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='read')
     assert r.status_code == 200
     assert r.json() == 'read'
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='none')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='none')
     assert r.status_code == 200
     assert r.json() == 'none'
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
-    assert logic.get_object_permissions(object_id=object_id) == {None: Permissions.NONE}
+    assert logic.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        users[1].id: Permissions.GRANT
+    }
 
 
-def test_update_object_permissions_errors(flask_server, user, independent_action_object):
-    user_id = user.id
+def test_update_object_permissions_errors(flask_server, users, independent_action_object):
+    user_id = users[0].id
     object_id = independent_action_object.object_id
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(users[1].id))
+    logic.set_user_object_permissions(user_id=users[1].id, object_id=object_id, permissions=Permissions.GRANT)
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     # invalid permission name
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='execute')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), json='execute')
     assert r.status_code == 400
     assert logic.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     # invalid object id
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(42, user_id), json='read')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(42, user_id), json='read')
     assert r.status_code == 404
     # invalid data
-    r = requests.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), data='invalid')
+    r = session.put(flask_server.base_url + 'objects/{}/permissions/{}'.format(object_id, user_id), data='invalid')
     assert r.status_code == 400
 
 
