@@ -23,5 +23,7 @@ MAIL_SERVER='mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
 MAIL_SUPPRESS_SEND = True
 
+TEMPLATES_AUTO_RELOAD = True
+
 TESTING_LDAP_LOGIN = ldapaccount.LDAP_LOGIN
 TESTING_LDAP_PW = ldapaccount.LDAP_PW

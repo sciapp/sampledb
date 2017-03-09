@@ -68,7 +68,7 @@ def login():
                 result = validate_user(login, password)
                 if not result:
                     flask.flash('authentication failed.', 'danger')
-                    return flask.render_template('index.html')
+                    return flask.render_template('index_old.html')
                     # if authenticate with ldap insert to db
                 else:
                     newuser = get_user_info(login)
@@ -129,7 +129,7 @@ def confirm_email(token):
     if email is None:
         # TODO: Why flash?
         flask.flash('The registration link has expired.', 'danger')
-        return flask.render_template('index.html')
+        return flask.render_template('index_old.html')
     form = RegisterForm()
     if form.validate_on_submit():
         if '@' not in email:
@@ -161,11 +161,11 @@ def confirm2_email(token):
     if data is None:
         # TODO: Why flash?
         flask.flash('The confirmation link has expired.', 'danger')
-        return flask.render_template('index.html')
+        return flask.render_template('index_old.html')
     else:
         if(len(data)!=2):
             flask.flash('Error in confirmation email.', 'danger')
-            return flask.render_template('index.html')
+            return flask.render_template('index_old.html')
         email = data[0]
         id = data[1]
         if '@' not in email:

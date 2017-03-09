@@ -15,6 +15,8 @@ from . import logic
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
+# TODO: REST APIs should use HTTP basic auth instead of cookies, etc.
+
 
 def object_permissions_required(required_object_permissions: Permissions):
     def decorator(func):
