@@ -46,14 +46,14 @@ def _get_object_responsible_user_ids(object_id):
 
 
 def get_user_object_permissions(object_id, user_id):
-    if user_id is not None:
-        # instrument responsible users always have GRANT permissions for an object
-        if user_id in _get_object_responsible_user_ids(object_id):
-            return Permissions.GRANT
-        # other users might have been granted permissions
-        user_object_permissions = UserObjectPermissions.query.filter_by(object_id=object_id, user_id=user_id).first()
-        if user_object_permissions is not None and user_object_permissions.permissions != Permissions.NONE:
-            return user_object_permissions.permissions
+    assert user_id is not None
+    # instrument responsible users always have GRANT permissions for an object
+    if user_id in _get_object_responsible_user_ids(object_id):
+        return Permissions.GRANT
+    # other users might have been granted permissions
+    user_object_permissions = UserObjectPermissions.query.filter_by(object_id=object_id, user_id=user_id).first()
+    if user_object_permissions is not None and user_object_permissions.permissions != Permissions.NONE:
+        return user_object_permissions.permissions
     # lastly, the object may be public, so all users have READ permissions
     if object_is_public(object_id):
         return Permissions.READ

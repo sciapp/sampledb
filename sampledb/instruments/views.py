@@ -22,8 +22,9 @@ ACTION_SCHEMA = json.load(open(os.path.join(SCHEMA_DIR, 'action.json'), 'r'))
 jsonschema.Draft4Validator.check_schema(INSTRUMENT_SCHEMA)
 jsonschema.Draft4Validator.check_schema(ACTION_SCHEMA)
 
-
+# TODO: instrument permissions
 # TODO: authorization and HTTP basic auth instead of cookies, etc
+
 
 @instrument_api.route('/instruments/', methods=['GET'])
 @flask_login.login_required

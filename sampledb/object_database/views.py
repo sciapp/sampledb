@@ -58,13 +58,11 @@ def get_object(object_id):
 
 
 @object_api.route('/')
+@flask_login.login_required
 def get_objects():
     # TODO: Search should be done here using query parameters
     objects = Objects.get_current_objects()
-    if flask_login.current_user.is_authenticated:
-        user_id = flask_login.current_user.id
-    else:
-        user_id = None
+    user_id = flask_login.current_user.id
     return flask.jsonify(
         [
             {

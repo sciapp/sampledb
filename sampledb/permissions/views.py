@@ -26,9 +26,17 @@ def get_object_permissions(object_id):
 
 
 @permissions_api.route('/<int:object_id>/permissions/all')
+@object_permissions_required(Permissions.READ)
+def get_public_object_permissions(object_id):
+    permissions = Permissions.NONE
+    if logic.object_is_public(object_id):
+        permissions = Permissions.READ
+    return flask.jsonify(str(permissions))
+
+
 @permissions_api.route('/<int:object_id>/permissions/<int:user_id>')
 @object_permissions_required(Permissions.READ)
-def get_user_object_permissions(object_id, user_id=None):
+def get_user_object_permissions(object_id, user_id):
     permissions = logic.get_user_object_permissions(object_id=object_id, user_id=user_id)
     return flask.jsonify(str(permissions))
 
@@ -55,4 +63,4 @@ def set_public_object_permissions(object_id):
         return flask.abort(400)
     should_be_public = (flask.request.json == 'read')
     logic.set_object_public(object_id, should_be_public)
-    return flask.redirect(flask.url_for('permissions_api.get_user_object_permissions', object_id=object_id))
+    return flask.redirect(flask.url_for('permissions_api.get_public_object_permissions', object_id=object_id))

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Instruments</h1>
+  {% for instrument in instruments %}
+    <h2><a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name }}">{{ instrument.name }}</a></h2>
+    <p>{{ instrument.description }}</p>
+  {% endfor %}
+{% endblock %}

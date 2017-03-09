@@ -23,37 +23,37 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="/frontend/">SampleDB</a>
+      <a class="navbar-brand" href="{{ url_for('.index') }}">SampleDB</a>
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <li><a href="#">Instruments</a></li>
-        <li><a href="#">Objects</a></li>
+        <li><a href="{{ url_for('.instruments') }}">Instruments</a></li>
+        <li><a href="{{ url_for('.objects') }}">Objects</a></li>
       </ul>
-      <form class="navbar-form navbar-left">
+      {# <form class="navbar-form navbar-left">
         <div class="input-group">
           <input type="text" class="form-control" placeholder="Search...">
           <span class="input-group-btn">
             <button class="btn btn-default" type="button"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
           </span>
         </div>
-      </form>
+      </form> #}
       {% block navbar_userarea %}
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ current_user.name }} <span class="caret"></span></a>
             <ul class="dropdown-menu">
-              <li><a href="{{ url_for('frontend.user_profile', user_id=current_user.id) }}">Profile</a></li>
-              <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
-              <li><a href="{{ url_for('frontend.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
+              <li><a href="{{ url_for('.user_profile', user_id=current_user.id) }}">Profile</a></li>
+              <li><a href="{{ url_for('.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
+              <li><a href="{{ url_for('.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.sign_out') }}">Sign out</a></li>
+              <li><a href="{{ url_for('.sign_out') }}">Sign out</a></li>
             </ul>
           </li>
           {% else %}
-          <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-primary navbar-btn">Sign in</a>
+          <a href="{{ url_for('.sign_in') }}" class="btn btn-primary navbar-btn">Sign in</a>
           {% endif %}
       </ul>
       {% endblock %}

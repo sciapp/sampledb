@@ -5,6 +5,7 @@
 
 import flask
 import flask_login
+from ..instruments.logic import get_instruments, get_instrument
 
 from ..permissions.utils import object_permissions_required, Permissions
 
@@ -73,14 +74,17 @@ def user_activity(user_id=None):
 
 @frontend.route('/instruments/')
 def instruments():
-    # TODO: implement this
-    return flask.render_template('index.html')
+    instruments = get_instruments()
+    return flask.render_template('instruments.html', instruments=instruments)
 
 
 @frontend.route('/instruments/<int:instrument_id>')
 def instrument(instrument_id):
-    # TODO: implement this
-    return flask.render_template('index.html')
+    instrument = get_instrument(instrument_id)
+    if instrument is None:
+        return flask.abort(404)
+    # TODO: check instrument permissions
+    return flask.render_template('instrument.html', instrument=instrument)
 
 
 @frontend.route('/actions/')

@@ -17,6 +17,7 @@ from sampledb.authentication import User, UserType
 from sampledb.instruments import Action
 from sampledb.object_database import datatypes
 from sampledb.object_database import views
+from sampledb.permissions.logic import set_user_object_permissions, Permissions
 
 from .utils import flask_server
 
@@ -86,30 +87,29 @@ def action(flask_server):
 
 
 def test_get_objects(flask_server, user, action):
-    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
-    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
-    r = requests.get(flask_server.base_url + 'objects/')
-    assert r.status_code == 200
-    data = r.json()
-    assert len(data) == 0
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     r = session.get(flask_server.base_url + 'objects/')
     assert r.status_code == 200
     data = r.json()
     assert len(data) == 2
     for obj in data:
         jsonschema.validate(obj, views.OBJECT_SCHEMA)
-
+    set_user_object_permissions(user_id=user.id, object_id=obj['object_id'], permissions=Permissions.NONE)
+    r = session.get(flask_server.base_url + 'objects/')
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 1
 
 
 def test_get_object(flask_server, user, action):
-
-    r = requests.get(flask_server.base_url + 'objects/0')
-    assert r.status_code == 404
-    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     session = requests.session()
     session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/0')
+    assert r.status_code == 404
+    obj = sampledb.object_database.models.Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     r = session.get(flask_server.base_url + 'objects/{}'.format(obj.object_id))
     assert r.status_code == 200
     data = r.json()
