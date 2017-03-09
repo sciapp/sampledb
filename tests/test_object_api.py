@@ -17,7 +17,6 @@ from sampledb.authentication import User, UserType
 from sampledb.instruments import Action
 from sampledb.object_database import datatypes
 from sampledb.object_database import views
-from sampledb.permissions.logic import set_user_object_permissions, Permissions
 
 from .utils import flask_server
 
@@ -92,8 +91,16 @@ def test_get_objects(flask_server, user, action):
     r = requests.get(flask_server.base_url + 'objects/')
     assert r.status_code == 200
     data = r.json()
+    assert len(data) == 0
+    session = requests.session()
+    session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id))
+    r = session.get(flask_server.base_url + 'objects/')
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 2
     for obj in data:
         jsonschema.validate(obj, views.OBJECT_SCHEMA)
+
 
 
 def test_get_object(flask_server, user, action):

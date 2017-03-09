@@ -13,6 +13,7 @@ import jsonschema
 from .models import Objects
 from ..instruments.logic import get_action
 from ..permissions.utils import object_permissions_required, Permissions
+from ..permissions.logic import get_user_object_permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -58,17 +59,26 @@ def get_object(object_id):
 
 @object_api.route('/')
 def get_objects():
+    # TODO: Search should be done here using query parameters
     objects = Objects.get_current_objects()
-    # Search should be done here using query parameters
-    # TODO: filter according to permissions!
-    return flask.jsonify([{
-        'object_id': obj.object_id,
-        'version_id': obj.version_id,
-        'user_id': obj.user_id,
-        'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
-        'data': obj.data,
-        'schema': obj.schema
-    } for obj in objects])
+    if flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+    else:
+        user_id = None
+    return flask.jsonify(
+        [
+            {
+                'object_id': obj.object_id,
+                'version_id': obj.version_id,
+                'user_id': obj.user_id,
+                'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+                'data': obj.data,
+                'schema': obj.schema
+            }
+            for obj in objects
+            if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)
+        ]
+    )
 
 
 @object_api.route('/', methods=['POST'])
