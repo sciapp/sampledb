@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>{{ instrument.name }}</h1>
+  <h2>Versions</h2>
+
+  {% for object_version in object_versions %}
+    {{ object_version.version_id }}
+  {% endfor %}
+{% endblock %}

@@ -3,11 +3,18 @@
 
 """
 
+import json
 import flask
 import flask_login
+from .. import db
+from ..authentication.models import User
 from ..instruments.logic import get_instruments, get_instrument
-
+from ..instruments.models import Action, Instrument
+from ..object_database.models import Objects
+from ..permissions.logic import get_user_object_permissions, object_is_public, get_object_permissions
 from ..permissions.utils import object_permissions_required, Permissions
+
+from .forms import ObjectPermissionsForm
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -101,8 +108,25 @@ def action(action_id):
 
 @frontend.route('/objects/')
 def objects():
-    # TODO: implement this
-    return flask.render_template('index.html')
+    objects = Objects.get_current_objects(connection=db.engine)
+    if flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+        objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
+    else:
+        objects = [obj for obj in objects if object_is_public(obj.object_id)]
+    objects = [
+        {
+            'object_id': obj.object_id,
+            'version_id': obj.version_id,
+            'user_id': obj.user_id,
+            'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            'data': obj.data,
+            'schema': obj.schema
+        }
+        for obj in objects
+    ]
+    # TODO implement view
+    return flask.render_template('index.html', objects=objects)
 
 
 @frontend.route('/objects/<int:object_id>')
@@ -129,8 +153,46 @@ def object_version(object_id, version_id):
 @frontend.route('/objects/<int:object_id>/permissions')
 @object_permissions_required(Permissions.READ)
 def object_permissions(object_id):
-    # TODO: implement this
-    return flask.render_template('index.html')
+    object = Objects.get_current_object(object_id, connection=db.engine)
+    action = Action.query.get(object.action_id)
+    instrument = action.instrument
+    object_permissions = get_object_permissions(object_id=object_id)
+    if Permissions.GRANT in object_permissions[flask_login.current_user.id]:
+        public_permissions = 'none'
+        if Permissions.READ in object_permissions[None]:
+            public_permissions = 'read'
+        user_permissions = []
+        for user_id, permissions in object_permissions.items():
+            if user_id is None:
+                continue
+            user_permissions.append({'user_id': user_id, 'permissions': permissions.name.lower()})
+        form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+    else:
+        form = None
+    return flask.render_template('object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=form)
+
+
+@frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
+@object_permissions_required(Permissions.GRANT)
+def update_object_permissions(object_id):
+    object_permissions = get_object_permissions(object_id=object_id)
+    public_permissions = 'none'
+    if Permissions.READ in object_permissions[None]:
+        public_permissions = 'read'
+    user_permissions = []
+    for user_id, permissions in object_permissions.items():
+        if user_id is None:
+            continue
+        user_permissions.append({'user_id': user_id, 'permissions': permissions.name.lower()})
+    form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+    if form.validate_on_submit():
+        # TODO: change permissions
+        pass
+    else:
+        # TODO: properly handle failure (can a normal user cause failure?)
+        pass
+    print(form.errors)
+    return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
 
 
 @frontend.errorhandler(403)

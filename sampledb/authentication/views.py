@@ -24,6 +24,7 @@ def load_user(user_id):
         return None
     return User.query.get(user_id)
 
+
 @authentication.route('/logout')
 @flask_login.login_required
 def logout():
@@ -142,7 +143,7 @@ def confirm_email(token):
         # no user with this name and contact email in db => add to db
         if erg is None:
             u = User(str(user.name).title(), user.email, user.type)
-            result = utils.insert_user_and_authentication_method_to_db(u, form.password.data, email,AuthenticationType.EMAIL)
+            result = utils.insert_user_and_authentication_method_to_db(u, form.password.data, email, AuthenticationType.EMAIL)
             if not result:
                 flask.flash('registration failed, please contact administrator')
             else:
