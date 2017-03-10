@@ -4,7 +4,6 @@ import flask_mail
 import flask_login
 from flask_login import login_user
 
-from . import logic
 from .. import mail, db, login_manager
 from .ldap import validate_user, get_user_info
 from .models import  Authentication, AuthenticationType, User
@@ -74,7 +73,7 @@ def login(login,password):
         if authentication_method.type == AuthenticationType.LDAP:
             result = validate_user(login, password)
         else:
-            result = logic.validate_user_db(login, password)
+            result = validate_user_db(login, password)
         if result:
             user = authentication_method.user
             flask_login.login_user(user)
@@ -104,7 +103,7 @@ def login(login,password):
                 user = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
                 if user is not None:
                     log = {'login': login}
-                    logic.add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
+                    add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
                     flask_login.login_user(user)
                     return True
                 else:

@@ -32,66 +32,21 @@ def logout():
 
 @authentication.route('/login', methods=['GET', 'POST'])
 def login():
+    form = LoginForm
     if flask_login.current_user.is_authenticated:
         flask.flash('you are already logged in', 'danger')
         return flask.redirect(flask.url_for('main.index'))
     if flask.request.method == 'POST':
         login = flask.request.form['username']
         password = flask.request.form['password']
-        # filter email + password or username + password or username (ldap)
-        authentication_methods = Authentication.query.filter(
-            db.or_(
-                db.and_(Authentication.login['login'].astext == login, Authentication.type == AuthenticationType.EMAIL),
-                db.and_(Authentication.login['login'].astext == login, Authentication.type == AuthenticationType.LDAP),
-                db.and_(Authentication.login['login'].astext == login, Authentication.type == AuthenticationType.OTHER)
-            )
-        ).all()
+        result = logic.login(login,password)
+        print('result', result)
+        if not result:
+            flask.abort(401)
+        else:
+            flask.flash('login is successfully')
+            return flask.redirect(flask.url_for('main.index'))
 
-        result = False
-        for authentication_method in authentication_methods:
-            # authentificaton method in db is ldap
-            if authentication_method.type == AuthenticationType.LDAP:
-                result = validate_user(login, password)
-            else:
-                result = logic.validate_user_db(login, password)
-            if result:
-                user = authentication_method.user
-                flask_login.login_user(user)
-                break
-
-
-        # no authentificaton method in db
-        if not authentication_methods:
-            if '@' not in login:
-                # try to authenticate against ldap, if login is no email
-                result = validate_user(login, password)
-                if not result:
-#                    flask.abort(403)
-                    return result
-                    # if authenticate with ldap insert to db
-                else:
-                    newuser = get_user_info(login)
-                    # TODO: mehrer user können gleiche mail haben, aber nur einen login
-                    # ein user kann mehrere logins haben (experiment-account, normaler account z.B. henkel und lido)
-                    # look , if user in usertable without authentication method or other authentication method
-                    erg = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
-                    # if not, add user to table
-                    if erg is None:
-                        u = User(str(newuser.name), str(newuser.email), newuser.type)
-                        db.session.add(u)
-                        db.session.commit()
-                    # add authenticate method to table for user (old or new)
-                    user = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
-                    if user is not None:
-                        log = {'login': login}
-                        logic.add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
-                        flask_login.login_user(user)
-                    else:
-                        return False
-            else:
-                flask.abort(400)
-                return flask.render_template('login.html')
-    form = LoginForm()
     return flask.render_template('login.html',form=form)
 
 
@@ -219,7 +174,6 @@ def add_login(userid):
     if(str(user.id) == userid):
         form = AuthenticationForm()
         if form.validate_on_submit():
-            print('valid')
             # check, if login already exists
             login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data, Authentication.user_id == userid).first()
             if login is None:

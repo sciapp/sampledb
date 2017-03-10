@@ -237,12 +237,12 @@ def test_add_authenticationmethod(flask_server):
     # Create new session
     session = requests.session()
 
-    # Try to login
+    # Try to login , expect 401 because the confiramtion mail is later
     r = session.post(flask_server.base_url + 'login', {
         'username': 'example@fz-juelich.de',
         'password': 'xxx'
     })
-    assert r.status_code == 200
+    assert r.status_code == 401
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
 
     # Check if an confirmation mail was sent
