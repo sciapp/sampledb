@@ -62,10 +62,8 @@ def get_user_info(user_ldap_uid):
     user = reader[0]
     if not user.mail:
         email = None
-        print('no mail')
         abort(400, 'Email in LDAP-account missing, please contact your administrator')
     else:
-        print(user.mail)
         email = user.mail[0]
     if not user.cn:
         name = user_ldap_uid

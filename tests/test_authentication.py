@@ -72,6 +72,7 @@ def test_invite(flask_server):
     })
     assert r.status_code == 200
     assert 'registration successful' in r.content.decode('utf-8')
+    # check , if user is added to db
     with flask_server.app.app_context():
         assert len(sampledb.authentication.models.User.query.all()) == 1
 
@@ -91,7 +92,7 @@ def test_invite(flask_server):
         'password': 'test'
     })
     assert r.status_code == 200
-    # Currently there is no way to know whether we're authenticated
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
     r = session.post(flask_server.base_url + 'authentication/add/1')
     assert r.status_code == 200
@@ -102,32 +103,35 @@ def test_invite(flask_server):
 
     csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
     # Submit the missing information and complete the registration
-    with sampledb.mail.record_messages() as outbox:
-        r = session.post(url, {
-            'login': flask_server.app.config['TESTING_LDAP_LOGIN'],
-            'password': flask_server.app.config['TESTING_LDAP_PW'],
-            'authentication_method': 'L',
-            'csrf_token': csrf_token
-        })
-    assert r.status_code == 200
+    # add correct authentication-method
 
-    with sampledb.mail.record_messages() as outbox:
-        r = session.post(url, {
-            'login': flask_server.app.config['TESTING_LDAP_LOGIN'],
-            'password': flask_server.app.config['TESTING_LDAP_PW'],
-            'authentication_method': 'L',
-            'csrf_token': csrf_token
-        })
+    r = session.post(url, {
+        'login': flask_server.app.config['TESTING_LDAP_LOGIN'],
+        'password': flask_server.app.config['TESTING_LDAP_PW'],
+        'authentication_method': 'L',
+        'csrf_token': csrf_token
+    })
     assert r.status_code == 200
+    # add incorrect authentication-method
 
-    with sampledb.mail.record_messages() as outbox:
-        r = session.post(url, {
-            'login': 'henkel',
-            'password': 'xxx',
-            'authentication_method': 'L',
-            'csrf_token': csrf_token
-        })
+    r = session.post(url, {
+        'login': 'henkel',
+        'password': 'xxx',
+        'authentication_method': 'L',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 400
+
+    # Create new session
+    session = requests.session()
+
+    # Try to login
+    r = session.post(flask_server.base_url + 'login', {
+        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
+        'password': flask_server.app.config['TESTING_LDAP_PW']
+    })
     assert r.status_code == 200
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
     # Log out again
     r = session.get(flask_server.base_url + 'logout')
@@ -249,7 +253,7 @@ def test_add_authenticationmethod(flask_server):
 
     # Get the confirmation url from the mail and open it
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm3/')
+    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email/')
     r = session.get(confirmation_url)
     assert r.status_code == 200
 
@@ -285,19 +289,19 @@ def test_confirm_email(flask_server):
     # Submit the missing information and complete the registration
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'name': 'dorotest',
-            'email': 'wwwiff@fz-juelich.de',
+            'name': 'Doro Testaccount1',
+            'email': 'example@fz-juelich.de',
             'csrf_token': csrf_token
         })
         assert r.status_code == 200
 
     # Check if an invitation mail was sent
     assert len(outbox) == 1
-    assert 'wwwiff@fz-juelich.de' in outbox[0].recipients
+    assert 'example@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
     assert 'Welcome to iffsample!' in message
 
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm2/')
+    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email/')
     r = session.get(confirmation_url)
     assert r.status_code == 200

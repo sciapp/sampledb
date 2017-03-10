@@ -3,8 +3,7 @@ import flask
 import flask_login
 import flask_mail
 
-from flask import g
-from . import utils
+from . import logic
 from .ldap import validate_user, get_user_info
 from .models import AuthenticationType, Authentication, UserType, User
 from .forms import RegisterForm, NewUserForm, ChangeUserForm, LoginForm, AuthenticationForm
@@ -54,7 +53,7 @@ def login():
             if authentication_method.type == AuthenticationType.LDAP:
                 result = validate_user(login, password)
             else:
-                result = utils.validate_user_db(login, password)
+                result = logic.validate_user_db(login, password)
             if result:
                 user = authentication_method.user
                 flask_login.login_user(user)
@@ -67,8 +66,8 @@ def login():
                 # try to authenticate against ldap, if login is no email
                 result = validate_user(login, password)
                 if not result:
-                    flask.flash('authentication failed.', 'danger')
-                    return flask.render_template('index.html')
+#                    flask.abort(403)
+                    return result
                     # if authenticate with ldap insert to db
                 else:
                     newuser = get_user_info(login)
@@ -85,24 +84,13 @@ def login():
                     user = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
                     if user is not None:
                         log = {'login': login}
-                        confirmed = True
-                        authenticate = Authentication(log, AuthenticationType.LDAP, confirmed, user.id)
-                        db.session.add(authenticate)
-                        db.session.commit()
+                        logic.add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
                         flask_login.login_user(user)
                     else:
-                        flask.flash('database error')
+                        return False
             else:
-                print('invalid user or password')
+                flask.abort(400)
                 return flask.render_template('login.html')
-        # TODO: ???
-        # if result, user is authenticated
-        if not result:
-            flask.flash('xxx')
-            print("user or password wrong, can't login")
-        else:
-            print("user is authenticated")
-#    return flask.redirect(flask.url_for('main.index'))
     form = LoginForm()
     return flask.render_template('login.html',form=form)
 
@@ -127,14 +115,9 @@ def invite():
 def confirm_email(token):
     email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     if email is None:
-        # TODO: Why flash?
-        flask.flash('The registration link has expired.', 'danger')
-        return flask.render_template('index.html')
+        return flask.abort(404)
     form = RegisterForm()
     if form.validate_on_submit():
-        if '@' not in email:
-            # TODO: ???
-            print('Bad Syntax')
         name = str(form.name.data)
         user = User(name, email, UserType.PERSON)
         # check, if user sent confirmation email and registered himself
@@ -142,12 +125,12 @@ def confirm_email(token):
         # no user with this name and contact email in db => add to db
         if erg is None:
             u = User(str(user.name).title(), user.email, user.type)
-            result = utils.insert_user_and_authentication_method_to_db(u, form.password.data, email,AuthenticationType.EMAIL)
+            result = logic.insert_user_and_authentication_method_to_db(u, form.password.data, email,AuthenticationType.EMAIL)
             if not result:
-                flask.flash('registration failed, please contact administrator')
+                return flask.abort(400)
             else:
                 flask.flash('registration successfully')
-            return flask.redirect(flask.url_for('main.index'))
+                return flask.redirect(flask.url_for('main.index'))
         else:
             flask.flash('user exists, please contact administrator')
             return flask.redirect(flask.url_for('main.index'))
@@ -155,49 +138,28 @@ def confirm_email(token):
         return flask.render_template('register.html', form=form)
 
 
-@authentication.route('/confirm2/<token>', methods=['GET'])
-def confirm2_email(token):
-    data = verify_token(token, salt='edit_profile', secret_key=flask.current_app.config['SECRET_KEY'])
+@authentication.route('/confirm-email/<token>/<salt>', methods=['GET'])
+def confirm_email_without_form(token, salt):
+    data = verify_token(token, salt=salt, secret_key=flask.current_app.config['SECRET_KEY'])
     if data is None:
-        # TODO: Why flash?
-        flask.flash('The confirmation link has expired.', 'danger')
-        return flask.render_template('index.html')
+        return flask.abort(404)
     else:
         if(len(data)!=2):
-            flask.flash('Error in confirmation email.', 'danger')
-            return flask.render_template('index.html')
+            return flask.abort(400)
         email = data[0]
-        id = data[1]
-        if '@' not in email:
-            # TODO: ???
-            print('Bad Syntax')
-        user = User.query.get(id)
-        user.email = email
-        db.session.add(user)
+        id    = data[1]
+        if(salt=='edit_profile'):
+            user = User.query.get(id)
+            user.email = email
+            db.session.add(user)
+        else:
+            auth = Authentication.query.filter(Authentication.user_id == id,
+                                               Authentication.login['login'].astext == email).first()
+            auth.confirmed = True
+            db.session.add(auth)
         db.session.commit()
         return flask.redirect(flask.url_for('main.index'))
 
-@authentication.route('/confirm3/<token>', methods=['GET'])
-def confirm3_email(token):
-    data = verify_token(token, salt='add_login', secret_key=flask.current_app.config['SECRET_KEY'])
-    if data is None:
-        # TODO: Why flash?
-        flask.flash('The confirmation link has expired.', 'danger')
-        return flask.render_template('index.html')
-    else:
-        if (len(data) != 2):
-            flask.flash('Error in confirmation email.', 'danger')
-            return flask.render_template('index.html')
-        email = data[0]
-        id = data[1]
-        if '@' not in email:
-            # TODO: ???
-            print('Bad Syntax')
-        auth = Authentication.query.filter(Authentication.user_id == id, Authentication.login['login'].astext ==email).first()
-        auth.confirmed = True
-        db.session.add(auth)
-        db.session.commit()
-    return flask.redirect(flask.url_for('main.index'))
 
 @authentication.route('/add_user', methods=['GET', 'POST'])
 def useradd():
@@ -215,15 +177,12 @@ def useradd():
                authentication_method = AuthenticationType.EMAIL
            else:
                authentication_method = AuthenticationType.OTHER
-           result = utils.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data, authentication_method)
+           result = logic.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data, authentication_method)
 
            if not result:
-               flask.flash('adding new user failed')
-               return flask.redirect(flask.url_for('main.index'))
-
+               return flask.abort(400)
        else:
            flask.flash('user exists, please contact administrator')
-           print('user already exists')
            return flask.redirect(flask.url_for('main.index'))
    return flask.render_template('user.html',form=form)
 
@@ -233,9 +192,6 @@ def useradd():
 def show_login():
     user = flask_login.current_user
     authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).all()
-    for authentication_method in authentication_methods:
-        print(authentication_method.type)
-        print(authentication_method.login['login'])
     return flask.render_template('authentications.html', user=user, authentications=authentication_methods)
 
 
@@ -244,8 +200,6 @@ def show_login():
 def delete_login(userid,id):
     if flask_login.current_user.is_authenticated:
         user = flask_login.current_user
-        print('userid',userid)
-        print('authentication_id',id)
         if(str(user.id) == userid):
             authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).count()
             if (authentication_methods <= 1):
@@ -256,7 +210,6 @@ def delete_login(userid,id):
                 authentication_methods = Authentication.query.filter(Authentication.id == id).first()
                 db.session.delete(authentication_methods)
                 db.session.commit()
-                print('delete authentication-method')
     return flask.redirect(flask.url_for('main.index'))
 
 @authentication.route('/authentication/add/<userid>', methods=['GET', 'POST'])
@@ -266,6 +219,7 @@ def add_login(userid):
     if(str(user.id) == userid):
         form = AuthenticationForm()
         if form.validate_on_submit():
+            print('valid')
             # check, if login already exists
             login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data, Authentication.user_id == userid).first()
             if login is None:
@@ -274,63 +228,35 @@ def add_login(userid):
                     'login': form.login.data,
                     'bcrypt_hash': pw_hash
                 }
-                print(form.login.data)
-                print(form.authentication_method.data)
                 if form.authentication_method.data == 'E':
                     authentication_method = AuthenticationType.EMAIL
                     #check if login looks like an email
                     if '@' not in form.login.data:
-                        flask.flash('input error, login is not an email or the AuthenticationType is wrong')
-                        print('input error')
-                        flask.render_template('authentication_form.html', form=form)
+                        return flask.abort(400)
                     else:
                         # add authentication-method to db and send confirmation email
-                        confirmed = False
-                        auth = Authentication(log, authentication_method, confirmed, user.id)
-                        print('add to db')
-                        db.session.add(auth)
-                        db.session.commit()
+                        logic.add_authentication_to_db(log, authentication_method, False, user.id)
+
                         # send confirm link
-                        token = generate_token([form.login.data, user.id], salt='add_login',
-                                               secret_key=flask.current_app.config['SECRET_KEY'])
-                        subject = "Please confirm your email"
-                        confirm_url = flask.url_for(".confirm3_email", token=token, _external=True)
-                        html = flask.render_template('activate.html', confirm_url=confirm_url)
-                        mail.send(flask_mail.Message(
-                            subject,
-                            sender=flask.current_app.config['MAIL_SENDER'],
-                            recipients=[form.login.data],
-                            html=html
-                        ))
+                        logic.send_confirm_email(form.login.data, user.id, 'add_login')
                         return flask.redirect(flask.url_for('main.index'))
 
                 else:
                     if form.authentication_method.data == 'O':
-                        authentication_method = AuthenticationType.OTHER
-                        confirmed = True
-                        auth = Authentication(log, authentication_method, confirmed, user.id)
-                        db.session.add(auth)
-                        db.session.commit()
+                        logic.add_authentication_to_db(log, AuthenticationType.OTHER, True, user.id)
+
                     else:
-                        authentication_method = AuthenticationType.LDAP
                         result = validate_user(form.login.data, form.password.data)
-                        confirmed = False
                         if(result):
-                            confirmed = True
-                            auth = Authentication(log, authentication_method, confirmed, user.id)
-                            db.session.add(auth)
-                            db.session.commit()
+                            logic.add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
                         else:
-                            print('error additional authentication-method wrong')
+                            return flask.abort(400)
             else:
-                print('authentication-method already exists')
-                # was tun??????
-#        else:
-#            print(form.errors)
+                # authentication-method already exists
+                return flask.abort(400)
         return flask.render_template('authentication_form.html', form=form)
     else:
-        print('error')
-        return flask.redirect(flask.url_for('main.index'))
+        return flask.abort(400)
 
 @authentication.route('/edit_profile', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -342,23 +268,13 @@ def editprofile():
     if form.email.data is None:
         form.email.data = user.email
     if form.validate_on_submit():
-        # the name changes , keep the old contact email
         if (form.name.data != user.name):
-            u = User(str(form.name.data), str(user.email), user.type)
+            u = user
+            u.name = str(form.name.data)
             db.session.add(u)
             db.session.commit()
-        # check, if contact email changes
         if(form.email.data != user.email):
             # send confirm link
-            token = generate_token([form.email.data, user.id], salt='edit_profile', secret_key=flask.current_app.config['SECRET_KEY'])
-            subject = "Please confirm your email"
-            confirm_url = flask.url_for(".confirm2_email", token=token, _external=True)
-            html = flask.render_template('activate.html', confirm_url=confirm_url)
-            mail.send(flask_mail.Message(
-                subject,
-                sender=flask.current_app.config['MAIL_SENDER'],
-                recipients=[form.email.data],
-                html=html
-            ))
+            logic.send_confirm_email(form.email.data, user.id, 'edit_profile')
         return flask.redirect(flask.url_for('main.index'))
     return flask.render_template('edit_user.html', form=form)
