@@ -3,14 +3,13 @@
 
 """
 
-import json
 import flask
 import flask_login
 from .. import db
 from ..authentication.models import User
 from ..authentication.logic import login
 from ..instruments.logic import get_instruments, get_instrument
-from ..instruments.models import Action, Instrument
+from ..instruments.models import Action
 from ..object_database.models import Objects
 from ..permissions.logic import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..permissions.utils import object_permissions_required, Permissions
@@ -30,13 +29,16 @@ def index():
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])
 def sign_in():
+    # TODO: handle next
+    if flask_login.current_user.is_authenticated:
+        return flask.redirect(flask.url_for('.index'))
     form = SigninForm()
     has_errors = False
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
         remember_me = form.remember_me.data
-        # TODO: remember_me
+        # TODO: handle remember_me
         if login(username, password):
             return flask.redirect(flask.url_for('.index'))
         has_errors = True
