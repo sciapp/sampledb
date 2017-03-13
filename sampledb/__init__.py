@@ -30,6 +30,7 @@ def create_app():
     app.register_blueprint(sampledb.instruments.instrument_api)
     app.register_blueprint(sampledb.frontend.frontend, url_prefix='/frontend')
     login_manager.login_view = 'frontend.sign_in'
+    app.jinja_env.globals.update(signout_form=sampledb.frontend.signout_form)
 
     with app.app_context():
         db.metadata.create_all(bind=db.engine)

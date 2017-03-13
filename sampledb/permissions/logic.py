@@ -19,12 +19,12 @@ def object_is_public(object_id):
 def set_object_public(object_id, is_public=True):
     if not is_public:
         PublicObjects.query.filter_by(object_id=object_id).delete()
-    else:
+    elif not object_is_public(object_id):
         db.session.add(PublicObjects(object_id=object_id))
     db.session.commit()
 
 
-def get_object_permissions(object_id):
+def get_object_permissions(object_id, include_instrument_responsible_users=True):
     object_permissions = {}
     if object_is_public(object_id):
         object_permissions[None] = Permissions.READ
@@ -32,8 +32,9 @@ def get_object_permissions(object_id):
         object_permissions[None] = Permissions.NONE
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=object_id).all():
         object_permissions[user_object_permissions.user_id] = user_object_permissions.permissions
-    for user_id in _get_object_responsible_user_ids(object_id):
-        object_permissions[user_id] = Permissions.GRANT
+    if include_instrument_responsible_users:
+        for user_id in _get_object_responsible_user_ids(object_id):
+            object_permissions[user_id] = Permissions.GRANT
     return object_permissions
 
 

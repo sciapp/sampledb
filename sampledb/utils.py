@@ -10,6 +10,7 @@ import flask
 import flask_login
 
 from . import login_manager
+from .authentication.logic import login
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -37,6 +38,7 @@ def basic_auth_loader(request):
     if ':' not in auth_data:
         return None
     username, password = auth_data.split(':', 1)
-    # TODO: get a user based on username and password
-
+    # Prevent cookies?
+    if login(username, password):
+        return flask_login.current_user
     return None

@@ -21,3 +21,25 @@ body > footer {
     max-width: 600px;
     margin: 3em auto;
 }
+
+.form-navbar-signout {
+    display:block;
+    padding:0;
+    margin:0;
+}
+.form-navbar-signout button.btn.btn-link {
+    display:block;
+    padding:3px 20px;
+    margin:0;
+    text-decoration:none;
+    border:0;
+    width:100%;
+    color:rgb(51, 51, 51);
+    text-align: left;
+}
+.form-navbar-signout button.btn.btn-link:hover {
+    text-decoration:none;
+    color:rgb(51, 51, 51);
+    background-color:#f7f7f7;
+
+}

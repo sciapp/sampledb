@@ -8,17 +8,19 @@ import flask
 import flask_login
 from .. import db
 from ..authentication.models import User
+from ..authentication.logic import login
 from ..instruments.logic import get_instruments, get_instrument
 from ..instruments.models import Action, Instrument
 from ..object_database.models import Objects
-from ..permissions.logic import get_user_object_permissions, object_is_public, get_object_permissions
+from ..permissions.logic import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..permissions.utils import object_permissions_required, Permissions
 
-from .forms import ObjectPermissionsForm
+from .forms import ObjectPermissionsForm, SigninForm, SignoutForm
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 frontend = flask.Blueprint('frontend', __name__)
+
 
 
 @frontend.route('/')
@@ -28,15 +30,29 @@ def index():
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])
 def sign_in():
-    # TODO: implement POST (sign in user or show error message and mark input fields as erroneous)
-    return flask.render_template('signin.html')
+    form = SigninForm()
+    has_errors = False
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        remember_me = form.remember_me.data
+        # TODO: remember_me
+        if login(username, password):
+            return flask.redirect(flask.url_for('.index'))
+        has_errors = True
+    elif form.errors:
+        has_errors = True
+    return flask.render_template('sign_in.html', form=form, has_errors=has_errors)
 
 
 @frontend.route('/users/me/sign_out', methods=['GET', 'POST'])
+@flask_login.login_required
 def sign_out():
-    # TODO: implement GET (confirmation dialog)
-    # TODO: implement POST (sign out and redirect)
-    return flask.render_template('index.html')
+    form = SignoutForm()
+    if form.validate_on_submit():
+        flask_login.logout_user()
+        return flask.redirect(flask.url_for('.index'))
+    return flask.render_template('sign_out.html')
 
 
 @frontend.route('/users/invitation', methods=['GET', 'POST'])
@@ -156,8 +172,8 @@ def object_permissions(object_id):
     object = Objects.get_current_object(object_id, connection=db.engine)
     action = Action.query.get(object.action_id)
     instrument = action.instrument
-    object_permissions = get_object_permissions(object_id=object_id)
-    if Permissions.GRANT in object_permissions[flask_login.current_user.id]:
+    object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
+    if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
         public_permissions = 'none'
         if Permissions.READ in object_permissions[None]:
             public_permissions = 'read'
@@ -175,23 +191,19 @@ def object_permissions(object_id):
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id):
-    object_permissions = get_object_permissions(object_id=object_id)
-    public_permissions = 'none'
-    if Permissions.READ in object_permissions[None]:
-        public_permissions = 'read'
-    user_permissions = []
-    for user_id, permissions in object_permissions.items():
-        if user_id is None:
-            continue
-        user_permissions.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-    form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+    form = ObjectPermissionsForm()
     if form.validate_on_submit():
-        # TODO: change permissions
-        pass
+        set_object_public(object_id, form.public_permissions.data == 'read')
+        for user_permissions_data in form.user_permissions.data:
+            user_id = user_permissions_data['user_id']
+            user = User.query.get(user_id)
+            if user is None:
+                continue
+            permissions = Permissions.from_name(user_permissions_data['permissions'])
+            set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
+        flask.flash("Successfully updated object permissions.", 'success')
     else:
-        # TODO: properly handle failure (can a normal user cause failure?)
-        pass
-    print(form.errors)
+        flask.flash("A problem occurred while changing the object permissions. Please try again.", 'error')
     return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
 
 

@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, IntegerField
+from wtforms import FieldList, FormField, SelectField, IntegerField, StringField, BooleanField
 from wtforms.validators import InputRequired
 from ..permissions.models import Permissions
 
@@ -27,3 +27,13 @@ class ObjectPermissionsForm(FlaskForm):
         validators=[InputRequired()]
     )
     user_permissions = FieldList(FormField(ObjectUserPermissionsForm), min_entries=0)
+
+
+class SigninForm(FlaskForm):
+    username = StringField(validators=[InputRequired()])
+    password = StringField(validators=[InputRequired()])
+    remember_me = BooleanField()
+
+
+class SignoutForm(FlaskForm):
+    pass
