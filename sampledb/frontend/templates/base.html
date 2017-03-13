@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sample and Measurement Database</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% block stylesheets %}
+  <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/base.css') }}">
+  {% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-default navbar-static-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{{ url_for('frontend.index') }}">SampleDB</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
+        <li><a href="{{ url_for('frontend.objects') }}">Objects</a></li>
+      </ul>
+      {# <form class="navbar-form navbar-left">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search...">
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+          </span>
+        </div>
+      </form> #}
+      {% block navbar_userarea %}
+      <ul class="nav navbar-nav navbar-right">
+          {% if current_user.is_authenticated %}
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ current_user.name }} <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="{{ url_for('frontend.user_profile', user_id=current_user.id) }}">Profile</a></li>
+              <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
+              <li><a href="{{ url_for('frontend.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
+              <li role="separator" class="divider"></li>
+              <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">Sign out</button></form></li>
+            </ul>
+          </li>
+          {% else %}
+          <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-primary navbar-btn">Sign in</a>
+          {% endif %}
+      </ul>
+      {% endblock %}
+    </div>
+  </div>
+</nav>
+<div id="main" class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      {% if category == "error" %}
+        {% set alert_class="alert-danger" %}
+      {% elif category == "warning" %}
+        {% set alert_class="alert-warning" %}
+      {% elif category == "success" %}
+        {% set alert_class="alert-success" %}
+      {% else %}
+        {% set alert_class="alert-info" %}
+      {% endif %}
+      <div class="alert {{ alert_class }} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+ {% block content %}{% endblock %}
+</div>
+<footer>
+  <div class="container">
+    <p class="text-center text-muted">SampleDB is a service by the <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> team.</p>
+  </div>
+</footer>
+ {% block scripts %}
+<script
+    src="https://code.jquery.com/jquery-1.12.4.min.js"
+    integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+    crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+  {% endblock %}
+</body>
+</html>

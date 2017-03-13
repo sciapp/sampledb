@@ -3,10 +3,20 @@
 
 """
 
-from .views import frontend
-from .forms import SignoutForm
-
-def signout_form():
-    return SignoutForm()
+import flask
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+frontend = flask.Blueprint('frontend', __name__, template_folder='templates')
+
+
+from . import actions
+from . import authentication
+from . import authentication_forms
+from . import index
+from . import instruments
+from . import objects
+from . import objects_forms
+from . import users
+from . import users_forms
+from . import errors

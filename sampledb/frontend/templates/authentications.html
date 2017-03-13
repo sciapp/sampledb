@@ -1,0 +1,25 @@
+{% extends "base_old.html" %}
+
+{% block content %}
+  <h1>Authentifications of {{user.name}} </h1>
+    <form class="form-group" action=""  name="add_login">
+       <table border=1>
+           <tr>
+               <th> Login</th>
+               <th> Login-type</th>
+               <th> Action</th>
+           </tr>
+           {% for authentication in authentications %}
+           <tr>
+               <td width="100">{{authentication.login['login']}}</td>
+               <td width="250">{{authentication.type}}</td>
+               <td widht="200"> <a href="/authentication/{{authentication.id}}/remove/{{user.id}}">REMOVE</a></td>
+           </tr>
+           {% endfor %}
+       </table>
+        <p></p>
+      <p><input type="submit" value="Add additional Authentification"></p>
+      <a href=/authentication/add/{{user.id}}>Add additional Authentification</a>
+      <a href="{{ url_for('frontend.index') }}">Home</a>
+  </form>
+{% endblock %}
