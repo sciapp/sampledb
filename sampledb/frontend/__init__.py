@@ -20,4 +20,3 @@ from . import objects_forms
 from . import users
 from . import users_forms
 from . import errors
-from . import form_template_demo
