@@ -8,9 +8,9 @@ import flask
 import flask_login
 import sqlalchemy
 import sampledb
-from sampledb.object_database.models import Objects
-from sampledb.authentication.models import User, UserType
-from sampledb.instruments.logic import create_instrument, add_instrument_responsible_user, create_action
+from sampledb.models import Objects
+from sampledb.models import User, UserType
+from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user, create_action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
