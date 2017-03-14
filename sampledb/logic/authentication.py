@@ -1,16 +1,19 @@
 import bcrypt
+import flask
 import flask_login
+import flask_mail
 from flask_login import login_user
 
+from .. import mail
+from .. import logic
 from sampledb.logic.ldap import validate_user, get_user_info
 from .. import db
-from ..models import Authentication, AuthenticationType, User
-
+from ..models import Authentication, AuthenticationType, User, UserType
 
 def validate_user_db(login, password):
     authentication_methods = Authentication.query.filter(Authentication.login['login'].astext == login).all()
     for authentication_method in authentication_methods:
-        if(authentication_method.confirmed):
+        if authentication_method.confirmed:
             if bcrypt.checkpw(password.encode('utf-8'), authentication_method.login['bcrypt_hash'].encode('utf-8')):
                 user = authentication_method.user
                 login_user(user)
@@ -18,25 +21,19 @@ def validate_user_db(login, password):
     return False
 
 
-def insert_user_and_authentication_method_to_db(user, password, login, authentication_method):
+def insert_user_and_authentication_method_to_db(user, password, login, user_type):
     db.session.add(user)
     db.session.commit()
-    if user.id is not None:
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': login,
-            'bcrypt_hash': pw_hash
-        }
-        confirmed = True
-        auth = Authentication(log, authentication_method, confirmed , user.id)
-        db.session.add(auth)
-        db.session.commit()
-        return True
-    return False
+    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    login_data = {
+        'login': login,
+        'bcrypt_hash': pw_hash
+    }
+    add_authentication_to_db(login_data, user_type, True, user.id)
 
 
-def add_authentication_to_db(log,authentication_method,confirmed,id):
-    auth = Authentication(log, authentication_method, confirmed, id)
+def add_authentication_to_db(log, user_type, confirmed, user_id):
+    auth = Authentication(log, user_type, confirmed, user_id)
     db.session.add(auth)
     db.session.commit()
 
@@ -54,7 +51,6 @@ def login(login,password):
         )
     ).all()
 
-    result = False
     for authentication_method in authentication_methods:
         # authentificaton method in db is ldap
         if authentication_method.type == AuthenticationType.LDAP:
@@ -64,38 +60,52 @@ def login(login,password):
         if result:
             user = authentication_method.user
             flask_login.login_user(user)
-            return result
+            return True
 
-    # no authentificaton method in db or authentication_method not successfully
-    if not authentication_methods:
+    # no authentificaton method in db
+    if not authentication_methods and '@' not in login:
+        # try to authenticate against ldap, if login is no email
+        if not validate_user(login, password):
+            return False
+
+        new_user = get_user_info(login)
+        assert new_user.type == UserType.PERSON
+        user = User.query.filter_by(email=str(new_user.email), type=UserType.PERSON).first()
+        if user is None:
+            user = new_user
+            db.session.add(user)
+            db.session.commit()
+        add_authentication_to_db({'login': login}, user_type=AuthenticationType.LDAP, confirmed=True, user_id=user.id)
+        flask_login.login_user(user)
+        return True
+    return False
+
+
+def add_login(userid, login, password, authentication_method):
+    logins = Authentication.query.filter(Authentication.login['login'].astext == login,
+                                        Authentication.user_id == userid).first()
+    if logins is not None:
+        # authentication-method already exists
+        return False
+    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    log = {
+        'login': login,
+        'bcrypt_hash': pw_hash
+    }
+
+    if authentication_method == AuthenticationType.EMAIL:
+        # check if login looks like an email
         if '@' not in login:
-            # try to authenticate against ldap, if login is no email
-            result = validate_user(login, password)
-            if not result:
-                #                    flask.abort(403)
-                return result
-                # if authenticate with ldap insert to db
-            else:
-                newuser = get_user_info(login)
-                # TODO: mehrer user können gleiche mail haben, aber nur einen login
-                # ein user kann mehrere logins haben (experiment-account, normaler account z.B. henkel und lido)
-                # look , if user in usertable without authentication method or other authentication method
-                erg = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
-                # if not, add user to table
-                if erg is None:
-                    u = User(str(newuser.name), str(newuser.email), newuser.type)
-                    db.session.add(u)
-                    db.session.commit()
-                # add authenticate method to table for user (old or new)
-                user = User.query.filter_by(name=str(newuser.name), email=str(newuser.email)).first()
-                if user is not None:
-                    log = {'login': login}
-                    add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
-                    flask_login.login_user(user)
-                    return True
-                else:
-                    return False
+            return False
         else:
-            return result
+            # send confirm link
+            logic.utils.send_confirm_email(login, userid, 'add_login')
+            confirmed = False
+    elif authentication_method == AuthenticationType.OTHER:
+        confirmed = True
     else:
-        return result
+        if not validate_user(login, password):
+            return False
+        confirmed = True
+    add_authentication_to_db(log, authentication_method, confirmed, userid)
+    return True

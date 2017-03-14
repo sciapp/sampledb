@@ -14,55 +14,44 @@ def user_dn(user_ldap_uid):
     return user_dn
 
 
-def validate_user(user_ldap_uid, password):
+def search_user(user_ldap_uid):
+
     ldap_host = flask.current_app.config['LDAP_HOST']
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
     try:
         connection = ldap3.Connection(server, auto_bind=True)
-        object_def = ldap3.ObjectDef('inetOrgPerson', connection)
-        reader = ldap3.Reader(connection, object_def, user_dn(user_ldap_uid))
-        reader.search()
     except ldap3.LDAPBindError:
-        flask.flash('LDAPBindError')
-        return False
+        return None
+    object_def = ldap3.ObjectDef('inetOrgPerson', connection)
+    reader = ldap3.Reader(connection, object_def, user_dn(user_ldap_uid))
+    reader.search()
 
     # search if user_dn exactly one user, not more
     if len(reader) != 1:
+        return None
+    return reader[0]
+
+
+def validate_user(user_ldap_uid, password):
+    if search_user(user_ldap_uid) is None:
         return False
+
+    ldap_host = flask.current_app.config['LDAP_HOST']
     # if one user found in ldap
-    # try to bind with credentials. throws exception if credentials are invalid
-    # raise_exceptions=False => more details found in connections.results , only for developing
-    else:
-        try:
-            server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
-            connection = ldap3.Connection(server, user=user_dn(user_ldap_uid), password=password)
-            return bool(connection.bind())
-        except ldap3.LDAPInvalidCredentials:
-            flask.flash('LDAPInvalidCredentials')
-            return False
+    # try to bind with credentials
+    server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
+    connection = ldap3.Connection(server, user=user_dn(user_ldap_uid), password=password, raise_exceptions=False)
+    return bool(connection.bind())
 
 
 def get_user_info(user_ldap_uid):
-    ldap_host = flask.current_app.config['LDAP_HOST']
-    server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
-    try:
-        connection = ldap3.Connection(server, auto_bind=True)
-        object_def = ldap3.ObjectDef('inetOrgPerson', connection)
-        reader = ldap3.Reader(connection, object_def, user_dn(user_ldap_uid))
-        reader.search()
-    except ldap3.LDAPBindError:
-        flask.flash('LDAPBindError')
-        return False
-
-    # search if user_dn exactly one user, not more
-    if len(reader) != 1:
-        return False
-    user = reader[0]
+    user = search_user(user_ldap_uid)
+    if user is None:
+        return None
     if not user.mail:
-        email = None
         flask.abort(400, 'Email in LDAP-account missing, please contact your administrator')
-    else:
-        email = user.mail[0]
+        return None
+    email = user.mail[0]
     if not user.cn:
         name = user_ldap_uid
     else:
@@ -73,7 +62,4 @@ def get_user_info(user_ldap_uid):
         email=email,
         type=UserType.PERSON
     )
-    print(user.name)
-    print(user.email)
-    print('------')
     return user

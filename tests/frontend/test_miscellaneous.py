@@ -33,7 +33,7 @@ def test_invite(flask_server):
 
     # Get the confirmation url from the mail and open it
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm/')
+    assert confirmation_url.startswith(flask_server.base_url + 'confirm')
     r = session.get(confirmation_url)
     assert r.status_code == 200
 
@@ -230,7 +230,7 @@ def test_add_authenticationmethod(flask_server):
 
     # Get the confirmation url from the mail and open it
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email/')
+    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email')
     r = session.get(confirmation_url)
     assert r.status_code == 200
 
@@ -279,6 +279,7 @@ def test_confirm_email(flask_server):
     assert 'Welcome to iffsample!' in message
 
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email/')
+    print(confirmation_url)
+    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email')
     r = session.get(confirmation_url)
     assert r.status_code == 200

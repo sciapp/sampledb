@@ -5,8 +5,8 @@ import flask_mail
 
 from .authentication_forms import RegisterForm, NewUserForm, ChangeUserForm, LoginForm, AuthenticationForm
 from .. import logic
-from ..logic.ldap import validate_user
-from ..logic.security_tokens import generate_token, verify_token
+from sampledb.logic.authentication import insert_user_and_authentication_method_to_db
+from ..logic.security_tokens import  verify_token
 from .. import mail, db, login_manager
 from ..models import AuthenticationType, Authentication, UserType, User
 
@@ -38,9 +38,7 @@ def login():
     if flask.request.method == 'POST':
         login = flask.request.form['username']
         password = flask.request.form['password']
-        result = logic.authentication.login(login, password)
-        print('result', result)
-        if not result:
+        if not logic.authentication.login(login,password):
             flask.abort(401)
         else:
             flask.flash('login is successfully')
@@ -52,21 +50,13 @@ def login():
 @frontend.route('/invite_user', methods=['POST'])
 def invite():
     email = flask.request.form['mail']
-    token = generate_token(email, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
-    subject = "Please confirm your email"
-    confirm_url = flask.url_for(".confirm_email", token=token, _external=True)
-    html = flask.render_template('activate.html', confirm_url=confirm_url)
-    mail.send(flask_mail.Message(
-        subject,
-        sender=flask.current_app.config['MAIL_SENDER'],
-        recipients=[email],
-        html=html
-    ))
+    # send confirm link
+    logic.utils.send_confirm_email(email, None, 'invitation')
     return flask.redirect(flask.url_for('frontend.index'))
 
-
-@frontend.route('/confirm/<token>', methods=['GET', 'POST'])
-def confirm_email(token):
+@frontend.route('/confirm', methods=['GET', 'POST'])
+def confirm_registration():
+    token = flask.request.args.get('token')
     email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     if email is None:
         return flask.abort(404)
@@ -79,12 +69,9 @@ def confirm_email(token):
         # no user with this name and contact email in db => add to db
         if erg is None:
             u = User(str(user.name).title(), user.email, user.type)
-            result = logic.authentication.insert_user_and_authentication_method_to_db(u, form.password.data, email, AuthenticationType.EMAIL)
-            if not result:
-                return flask.abort(400)
-            else:
-                flask.flash('registration successfully')
-                return flask.redirect(flask.url_for('frontend.index'))
+            insert_user_and_authentication_method_to_db(u, form.password.data, email,AuthenticationType.EMAIL)
+            flask.flash('registration successfully')
+            return flask.redirect(flask.url_for('frontend.index'))
         else:
             flask.flash('user exists, please contact administrator')
             return flask.redirect(flask.url_for('frontend.index'))
@@ -92,8 +79,10 @@ def confirm_email(token):
         return flask.render_template('register.html', form=form)
 
 
-@frontend.route('/confirm-email/<token>/<salt>', methods=['GET'])
-def confirm_email_without_form(token, salt):
+@frontend.route('/confirm-email', methods=['GET'])
+def confirm_email():
+    salt = flask.request.args.get('salt')
+    token = flask.request.args.get('token')
     data = verify_token(token, salt=salt, secret_key=flask.current_app.config['SECRET_KEY'])
     if data is None:
         if(len(data)!=2):
@@ -101,19 +90,21 @@ def confirm_email_without_form(token, salt):
             return flask.render_template('index_old.html')
         return flask.abort(404)
     else:
-        if(len(data)!=2):
+        if len(data) != 2:
             return flask.abort(400)
         email = data[0]
-        id    = data[1]
-        if(salt=='edit_profile'):
+        id = data[1]
+        if salt == 'edit_profile':
             user = User.query.get(id)
             user.email = email
             db.session.add(user)
-        else:
+        elif salt == 'add_login':
             auth = Authentication.query.filter(Authentication.user_id == id,
                                                Authentication.login['login'].astext == email).first()
             auth.confirmed = True
             db.session.add(auth)
+        else:
+            return flask.abort(400)
         db.session.commit()
         return flask.redirect(flask.url_for('frontend.index'))
 
@@ -134,10 +125,7 @@ def useradd():
                authentication_method = AuthenticationType.EMAIL
            else:
                authentication_method = AuthenticationType.OTHER
-           result = logic.authentication.insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data, authentication_method)
-
-           if not result:
-               return flask.abort(400)
+           insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data, authentication_method)
        else:
            flask.flash('user exists, please contact administrator')
            return flask.redirect(flask.url_for('frontend.index'))
@@ -157,10 +145,9 @@ def show_login():
 def delete_login(userid,id):
     if flask_login.current_user.is_authenticated:
         user = flask_login.current_user
-        if(str(user.id) == userid):
+        if str(user.id) == userid:
             authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).count()
-            if (authentication_methods <= 1):
-                print('one authentication-method must exist, delete not possible')
+            if authentication_methods <= 1:
                 flask.flash('one authentication-method must exist, delete not possible')
                 return flask.redirect(flask.url_for('frontend.index'))
             else:
@@ -169,47 +156,26 @@ def delete_login(userid,id):
                 db.session.commit()
     return flask.redirect(flask.url_for('frontend.index'))
 
-@frontend.route('/authentication/add/<userid>', methods=['GET', 'POST'])
+@frontend.route('/authentication/add/<int:userid>', methods=['GET', 'POST'])
 @flask_login.login_required
 def add_login(userid):
     user = flask_login.current_user
-    if(str(user.id) == userid):
+    if user.id == userid:
         form = AuthenticationForm()
         if form.validate_on_submit():
             # check, if login already exists
-            login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data, Authentication.user_id == userid).first()
-            if login is None:
-                pw_hash = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                log = {
-                    'login': form.login.data,
-                    'bcrypt_hash': pw_hash
-                }
-                if form.authentication_method.data == 'E':
-                    authentication_method = AuthenticationType.EMAIL
-                    #check if login looks like an email
-                    if '@' not in form.login.data:
-                        return flask.abort(400)
-                    else:
-                        # add authentication-method to db and send confirmation email
-                        logic.authentication.add_authentication_to_db(log, authentication_method, False, user.id)
-
-                        # send confirm link
-                        logic.utils.send_confirm_email(form.login.data, user.id, 'add_login')
-                        return flask.redirect(flask.url_for('frontend.index'))
-
-                else:
-                    if form.authentication_method.data == 'O':
-                        logic.authentication.add_authentication_to_db(log, AuthenticationType.OTHER, True, user.id)
-
-                    else:
-                        result = validate_user(form.login.data, form.password.data)
-                        if(result):
-                            logic.authentication.add_authentication_to_db(log, AuthenticationType.LDAP, True, user.id)
-                        else:
-                            return flask.abort(400)
-            else:
-                # authentication-method already exists
+            authentication_methods = {
+                'E': AuthenticationType.EMAIL,
+                'L': AuthenticationType.LDAP,
+                'O': AuthenticationType.OTHER
+            }
+            if form.authentication_method.data not in authentication_methods:
                 return flask.abort(400)
+            authentication_method = authentication_methods[form.authentication_method.data]
+
+            if not logic.authentication.add_login(userid, form.login.data, form.password.data, authentication_method):
+                return flask.abort(400)
+
         return flask.render_template('authentication_form.html', form=form)
     else:
         return flask.abort(400)
