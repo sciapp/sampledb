@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="https://cdn.rawgit.com/Eonasdan/bootstrap-datetimepicker/master/build/css/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+{% endblock %}
+
+{% block content %}
+  <form class="form-horizontal">
+    {% include "objects/view/any.html" %}
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+<script src="http://momentjs.com/downloads/moment-with-locales.js"></script>
+<script src="https://cdn.rawgit.com/Eonasdan/bootstrap-datetimepicker/25c11d79/build/js/bootstrap-datetimepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('.input-group.date').each(function() {
+          $(this).datetimepicker({
+            format: 'YYYY-MM-DD HH:mm:ss',
+            date: $(this).attr('data-datetime')
+          });
+        });
+    });
+</script>
+{% endblock %}
+</body>
+</html>

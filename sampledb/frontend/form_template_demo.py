@@ -10,7 +10,8 @@ import flask
 import jsonschema
 
 from sampledb.logic.datatypes import JSONEncoder
-from sampledb.rest_api.objects import object_api, SCHEMA_DIR
+from sampledb.frontend import frontend
+from sampledb.rest_api.objects import SCHEMA_DIR
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -26,7 +27,14 @@ def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
-@object_api.route('/test')
+@frontend.route('/test')
 def render_schema():
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
-    return flask.render_template('form_base.html', schema=schema, data=data)
+    return flask.render_template('objects/forms/form_base.html', schema=schema, data=data)
+
+
+@frontend.route('/test/2')
+def render_data():
+    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
+    return flask.render_template('objects/view/base.html', schema=schema, data=data)
+

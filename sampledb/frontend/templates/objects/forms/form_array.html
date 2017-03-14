@@ -32,7 +32,7 @@
             {% else %}
             {% set data = none %}
             {% endif %}
-            {% include "form_table_any.html" %}
+            {% include "objects/forms/form_table_any.html" %}
           </td>
         {% endfor %}
         <td><button type="button" class="btn btn-danger pull-right">&times;</button></td>
@@ -62,7 +62,7 @@
       {% set data = item %}
         <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
         <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger" style="width:10em;">Remove {{ itemName }}</button></div>
-        {% include "form_any.html" %}
+        {% include "objects/forms/form_any.html" %}
         </div>
     {% endfor %}
   {% endif %}

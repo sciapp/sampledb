@@ -1,0 +1,12 @@
+<div class="row" style="padding-right:0.75em">
+  <label class="col-md-3" style="text-align: right">{{ schema.title }}</label>
+  {% if schema.allOf[1].properties.dimensionality['enum'][0] == "dimensionless" %}
+    <div class="col-md-9">
+      {{ data.magnitude_in_base_units }}
+    </div>
+  {% else %}
+    <div class="col-md-9">
+      {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) }} {{ (data | to_datatype).units }}{% endif %}
+    </div>
+  {% endif %}
+</div>

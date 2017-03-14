@@ -1,0 +1,17 @@
+{% if schema['$ref'] == '#/definitions/text' %}
+  {% include "objects/forms/form_text.html" %}
+{% elif schema['$ref'] == '#/definitions/datetime' %}
+  {% include "objects/forms/form_datetime.html" %}
+{% elif schema['$ref'] == '#/definitions/bool' %}
+  {% include "objects/forms/form_bool.html" %}
+{% elif "allOf" in schema and schema.allOf[0]['$ref'] == '#/definitions/quantity' %}
+  {% include "objects/forms/form_quantity.html" %}
+{% elif "allOf" in schema and schema.allOf[0]['$ref'] == '#/definitions/text' %}
+  {% include "objects/forms/form_select.html" %}
+{% elif schema.type == 'object' %}
+  {% include "objects/forms/form_object.html" %}
+{% elif schema.type == 'array' %}
+  {% include "objects/forms/form_array.html" %}
+{% else %}
+  {{ name }}{{ schema.type }}{{ schema['$ref'] }}
+{% endif %}

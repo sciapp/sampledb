@@ -80,7 +80,7 @@ def object_permissions(object_id):
         form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
     else:
         form = None
-    return flask.render_template('object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=form)
+    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=form)
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])

@@ -1,0 +1,8 @@
+
+{% if schema.allOf[1].properties.dimensionality['enum'][0] == "dimensionless" %}
+  {{ data.magnitude_in_base_units }}
+{% else %}
+  <div class="input-group">
+    {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) }} {{ (data | to_datatype).units }}{% endif %}
+  </div>
+{% endif %}

@@ -12,14 +12,23 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 @frontend.app_errorhandler(403)
 def forbidden(error):
-    return flask.render_template('403.html'), 403
+    try:
+        return flask.render_template('errors/403.html'), 403
+    except:
+        return 'Not found', 404
 
 
 @frontend.app_errorhandler(404)
 def file_not_found(error):
-    return flask.render_template('404.html'), 404
+    try:
+        return flask.render_template('errors/404.html'), 404
+    except:
+        return 'Not found', 404
 
 
 @frontend.app_errorhandler(500)
 def internal_server_error(error):
-    return flask.render_template('500.html'), 500
+    try:
+        return flask.render_template('errors/500.html'), 500
+    except:
+        return 'Not found', 500
