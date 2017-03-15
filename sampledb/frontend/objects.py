@@ -49,8 +49,6 @@ def to_datatype(obj):
 @object_permissions_required(Permissions.READ)
 def object(object_id):
     object = Objects.get_current_object(object_id=object_id)
-    if object is None:
-        return flask.abort(404)
 
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
@@ -62,7 +60,7 @@ def object(object_id):
     return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id)
 
 
-@frontend.route('/objects/<int:object_id>/versions')
+@frontend.route('/objects/<int:object_id>/versions/')
 @object_permissions_required(Permissions.READ)
 def object_versions(object_id):
     object = Objects.get_current_object(object_id=object_id)
@@ -76,16 +74,8 @@ def object_versions(object_id):
 @object_permissions_required(Permissions.READ)
 def object_version(object_id, version_id):
     object = Objects.get_object_version(object_id=object_id, version_id=version_id)
-    if object is None:
-        return flask.abort(404)
 
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
-    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
-    if flask.request.args.get('mode') == 'edit':
-        if Permissions.WRITE in user_permissions:
-            return flask.render_template('objects/forms/form_base.html', schema=object.schema, data=object.data)
-        else:
-            return flask.abort(403)
     return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id)
 
 
