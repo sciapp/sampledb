@@ -59,14 +59,14 @@ def login(login,password):
             result = validate_user_db(login, password)
         if result:
             user = authentication_method.user
-            flask_login.login_user(user)
-            return True
+#            flask_login.login_user(user)
+            return user
 
     # no authentificaton method in db
     if not authentication_methods and '@' not in login:
         # try to authenticate against ldap, if login is no email
         if not validate_user(login, password):
-            return False
+            return None
 
         new_user = get_user_info(login)
         assert new_user.type == UserType.PERSON
@@ -76,9 +76,9 @@ def login(login,password):
             db.session.add(user)
             db.session.commit()
         add_authentication_to_db({'login': login}, user_type=AuthenticationType.LDAP, confirmed=True, user_id=user.id)
-        flask_login.login_user(user)
-        return True
-    return False
+#        flask_login.login_user(user)
+        return user
+    return None
 
 
 def add_login(userid, login, password, authentication_method):
