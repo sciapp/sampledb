@@ -24,8 +24,9 @@ def sign_in():
         username = form.username.data
         password = form.password.data
         remember_me = form.remember_me.data
-        # TODO: handle remember_me
-        if login(username, password):
+        user = login(username, password)
+        if user:
+            flask_login.login_user(user, remember=remember_me)
             return flask.redirect(flask.url_for('.index'))
         has_errors = True
     elif form.errors:

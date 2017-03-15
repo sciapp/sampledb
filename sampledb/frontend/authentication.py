@@ -38,9 +38,14 @@ def login():
     if flask.request.method == 'POST':
         login = flask.request.form['username']
         password = flask.request.form['password']
-        if not logic.authentication.login(login,password):
+        remember_me = False
+        if 'remember_me' in flask.request.form:
+            remember_me = True
+        user = logic.authentication.login(login,password)
+        if user is None:
             flask.abort(401)
         else:
+            flask_login.login_user(user, remember=remember_me)
             flask.flash('login is successfully')
             return flask.redirect(flask.url_for('frontend.index'))
 
