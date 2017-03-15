@@ -37,7 +37,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object_permissions', object_id=1))
+        return flask.redirect(flask.url_for('frontend.object', object_id=1))
 
     sampledb.login_manager.login_view = 'autologin'
 

@@ -7,9 +7,8 @@
 {% endblock %}
 
 {% block content %}
-  <form class="form-horizontal">
-    {% include "objects/view/any.html" %}
-  </form>
+  {% include "objects/view/any.html" %}
+  <p class="text-center">Last edited on {{  last_edit_datetime }} by <a href="{{ url_for('.user_profile', user_id=last_edit_user.id) }}">{{ last_edit_user.name }}</a>. See <a href="{{ url_for('.object_versions', object_id=object_id) }}">previous versions</a>.</p>
 {% endblock %}
 
 {% block scripts %}
