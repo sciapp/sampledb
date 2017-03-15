@@ -15,7 +15,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def instruments():
     instruments = get_instruments()
     # TODO: check instrument permissions
-    return flask.render_template('instruments.html', instruments=instruments)
+    return flask.render_template('instrumens/instruments.html', instruments=instruments)
 
 
 @frontend.route('/instruments/<int:instrument_id>')
@@ -24,5 +24,5 @@ def instrument(instrument_id):
     if instrument is None:
         return flask.abort(404)
     # TODO: check instrument permissions
-    return flask.render_template('instrument.html', instrument=instrument)
+    return flask.render_template('instrumens/instrument.html', instrument=instrument)
 

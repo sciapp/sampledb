@@ -10,7 +10,7 @@
     {% else %}
     {% set data = none %}
     {% endif %}
-    {% include "form_any.html" %}
+    {% include "objects/forms/form_any.html" %}
   {% endfor %}
 {% else %}
   {% for property_name in schema._propertyOrder %}
@@ -22,7 +22,7 @@
       {% else %}
       {% set data = none %}
       {% endif %}
-      {% include "form_any.html" %}
+      {% include "objects/forms/form_any.html" %}
     {% endif %}
   {% endfor %}
   {% for property_name, property_schema in schema.properties.items() %}
@@ -34,7 +34,7 @@
       {% else %}
       {% set data = none %}
       {% endif %}
-      {% include "form_any.html" %}
+      {% include "objects/forms/form_any.html" %}
     {% endif %}
   {% endfor %}
 {% endif %}

@@ -1,0 +1,67 @@
+<!-- array start -->
+<div class="form-group row">
+  <div class="col-md-3" style="text-align: right">
+<strong>{{ schema.title }}</strong>
+  </div>
+</div>
+<div style="padding-left:2.5em;">
+{% if schema.table %}
+  <table class="table">
+    <thead>
+      <tr>
+        {% set item_property_names = schema["items"].properties.keys() %}
+        {% for property_name in item_property_names %}
+          <th scope="col">{{ schema["items"].properties[property_name].title }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+    {% if data is not none %}
+      {% for item in data %}
+        {% set name = "item" %}
+        {% set schema = schema['items'] %}
+        {% set data = item %}
+        <tr>
+        {% for property_name in item_property_names %}
+          <td>
+            {% set name = property_name %}
+            {% set schema = schema.properties[property_name] %}
+            {% if data is not none and property_name in data %}
+            {% set data = data[property_name] %}
+            {% else %}
+            {% set data = none %}
+            {% endif %}
+            {% include "objects/view/table_any.html" %}
+          </td>
+        {% endfor %}
+        </tr>
+      {% endfor %}
+    {% endif %}
+    </tbody>
+    <tfoot>
+      <tr>
+        {% for property_name in item_property_names %}
+          <th scope="col"></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+  </table>
+{% else %}
+  {% if "itemName" in schema %}
+    {% set itemName = schema.itemName %}
+  {% else %}
+    {% set itemName = "Item" %}
+  {% endif %}
+  {% if data is not none %}
+    {% for item in data %}
+      {% set name = "item" %}
+      {% set schema = schema['items'] %}
+      {% set data = item %}
+        <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
+        {% include "objects/view/any.html" %}
+        </div>
+    {% endfor %}
+  {% endif %}
+{% endif %}
+</div>
+<!-- array end -->
