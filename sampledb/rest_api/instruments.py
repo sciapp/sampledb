@@ -10,6 +10,7 @@ import flask
 import flask_login
 
 from ..logic import instruments
+from ..utils import http_auth_required
 
 from . import rest_api
 
@@ -23,11 +24,10 @@ jsonschema.Draft4Validator.check_schema(INSTRUMENT_SCHEMA)
 jsonschema.Draft4Validator.check_schema(ACTION_SCHEMA)
 
 # TODO: instrument permissions
-# TODO: authorization and HTTP basic auth instead of cookies, etc
 
 
 @rest_api.route('/instruments/', methods=['GET'])
-@flask_login.login_required
+@http_auth_required
 def get_instruments():
     return flask.jsonify([
         {
@@ -43,7 +43,7 @@ def get_instruments():
 
 
 @rest_api.route('/instruments/', methods=['POST'])
-@flask_login.login_required
+@http_auth_required
 def create_instrument():
     try:
         data = json.loads(flask.request.data.decode('utf-8'))
@@ -69,7 +69,7 @@ def create_instrument():
 
 
 @rest_api.route('/instruments/<int:instrument_id>', methods=['GET'])
-@flask_login.login_required
+@http_auth_required
 def get_instrument(instrument_id):
     instrument = instruments.get_instrument(instrument_id=instrument_id)
     if instrument is None:
@@ -85,7 +85,7 @@ def get_instrument(instrument_id):
 
 
 @rest_api.route('/instruments/<int:instrument_id>', methods=['PUT'])
-@flask_login.login_required
+@http_auth_required
 def update_instrument(instrument_id):
     instrument = instruments.get_instrument(instrument_id=instrument_id)
     if instrument is None:
@@ -122,7 +122,7 @@ def update_instrument(instrument_id):
 
 
 @rest_api.route('/actions/', methods=['GET'])
-@flask_login.login_required
+@http_auth_required
 def get_actions():
     actions = instruments.get_actions()
     return flask.jsonify([
@@ -138,7 +138,7 @@ def get_actions():
 
 
 @rest_api.route('/actions/<int:action_id>', methods=['GET'])
-@flask_login.login_required
+@http_auth_required
 def get_action(action_id):
     action = instruments.get_action(action_id=action_id)
     if action is None:
@@ -153,7 +153,7 @@ def get_action(action_id):
 
 
 @rest_api.route('/actions/<int:action_id>', methods=['PUT'])
-@flask_login.login_required
+@http_auth_required
 def update_action(action_id):
     action = instruments.get_action(action_id=action_id)
     if action is None:
@@ -189,7 +189,7 @@ def update_action(action_id):
 
 
 @rest_api.route('/actions/', methods=['POST'])
-@flask_login.login_required
+@http_auth_required
 def create_action():
     try:
         data = json.loads(flask.request.data.decode('utf-8'))

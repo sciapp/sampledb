@@ -279,7 +279,6 @@ def test_confirm_email(flask_server):
     assert 'Welcome to iffsample!' in message
 
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    print(confirmation_url)
     assert confirmation_url.startswith(flask_server.base_url + 'confirm-email')
     r = session.get(confirmation_url)
     assert r.status_code == 200

@@ -29,28 +29,34 @@ def admin_required(func):
     return wrapper
 
 
-@login_manager.request_loader
-def basic_auth_loader(request):
-    auth_header = request.headers.get('Authorization', None)
-    if not auth_header:
-        return None
-    if not auth_header.startswith('Basic '):
-        return None
-    try:
-        auth_data = base64.b64decode(auth_header.replace('Basic ', '', 1), validate=True).decode('utf-8')
-    except (TypeError, binascii.Error, UnicodeDecodeError):
-        return None
-    if ':' not in auth_data:
-        return None
-    username, password = auth_data.split(':', 1)
-    # Prevent cookies?
-    if login(username, password):
-        return flask_login.current_user
-    return None
+def http_auth_required(func):
+    func = flask_login.login_required(func)
+
+    @functools.wraps(func)
+    def wrapper(**kwargs):
+        auth_header = flask.request.headers.get('Authorization', None)
+        if not auth_header:
+            return flask.abort(401)
+        if not auth_header.startswith('Basic '):
+            return flask.abort(401)
+        try:
+            auth_data = base64.b64decode(auth_header.replace('Basic ', '', 1), validate=True).decode('utf-8')
+        except (TypeError, binascii.Error, UnicodeDecodeError):
+            return flask.abort(401)
+        if ':' not in auth_data:
+            return flask.abort(401)
+        username, password = auth_data.split(':', 1)
+        user = login(username, password)
+        if user is None:
+            return flask.abort(401)
+        flask_login.login_user(user, remember=False)
+        if not flask_login.current_user.is_authenticated or not flask_login.current_user.is_active:
+            return flask.abort(401)
+        return func(**kwargs)
+    return wrapper
 
 
 def object_permissions_required(required_object_permissions: Permissions):
-    # TODO: REST APIs should use HTTP basic auth instead of cookies, etc.
     def decorator(func):
         @flask_login.login_required
         @functools.wraps(func)
