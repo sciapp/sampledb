@@ -56,6 +56,8 @@ def object(object_id):
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
 
+    errors = []
+    form_data = {}
     if flask.request.method != 'GET':
         if not user_may_edit:
             return flask.abort(403)
@@ -63,19 +65,22 @@ def object(object_id):
         # TODO: update schema
         # schema = Action.query.get(object.action_id).schema
         schema = object.schema
-        object_data = parse_form_data(dict(flask.request.form), schema)
-        try:
-            jsonschema.validate(object_data, schema)
-        except jsonschema.ValidationError:
-            print('validation failed')
-            # TODO: handle error
-            flask.abort(400)
-        Objects.update_object(object_id=object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
-        flask.flash('The object was updated successfully.', 'success')
-        return flask.redirect(flask.url_for('.object', object_id=object_id))
+        object_data, errors = parse_form_data(dict(flask.request.form), schema)
+        if not errors:
+            try:
+                jsonschema.validate(object_data, schema)
+            except jsonschema.ValidationError:
+                print('validation failed')
+                # TODO: handle error
+                flask.abort(400)
+            Objects.update_object(object_id=object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
+            flask.flash('The object was updated successfully.', 'success')
+            return flask.redirect(flask.url_for('.object', object_id=object_id))
+        else:
+            form_data = {k: v[0] for k, v in dict(flask.request.form).items()}
     if flask.request.args.get('mode') == 'edit':
         if user_may_edit:
-            return flask.render_template('objects/forms/form_base.html', schema=object.schema, data=object.data, object_id=object_id)
+            return flask.render_template('objects/forms/form_base.html', schema=object.schema, data=object.data, object_id=object_id, errors=errors, form_data=form_data)
         else:
             return flask.abort(403)
     return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit)

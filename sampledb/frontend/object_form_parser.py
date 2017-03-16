@@ -5,32 +5,45 @@
 
 import os
 import itertools
+import functools
 import pint
 ureg = pint.UnitRegistry()
 import json
 
 from sampledb.rest_api.objects import SCHEMA_DIR
 
+def form_data_parser(func):
+    @functools.wraps(func)
+    def wrapper(form_data, schema, id_prefix, errors):
+        try:
+            return func(form_data, schema, id_prefix, errors)
+        except ValueError:
+            for name in form_data:
+                if name.startswith(id_prefix):
+                    errors.append(name)
+            return None
+    return wrapper
 
-# TODO: handle errors
 
-def parse_any_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_any_form_data(form_data, schema, id_prefix, errors):
     if schema.get('type') == 'object':
-        return parse_object_form_data(form_data, schema, id_prefix)
+        return parse_object_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('type') == 'array':
-        return parse_array_form_data(form_data, schema, id_prefix)
+        return parse_array_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('$ref') == '#/definitions/text' or schema.get('allOf', [None])[0] == {'$ref': '#/definitions/text'}:
-        return parse_text_form_data(form_data, schema, id_prefix)
+        return parse_text_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('$ref') == '#/definitions/datetime':
-        return parse_datetime_form_data(form_data, schema, id_prefix)
+        return parse_datetime_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('$ref') == '#/definitions/bool':
-        return parse_boolean_form_data(form_data, schema, id_prefix)
+        return parse_boolean_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('allOf', [None])[0] == {'$ref': '#/definitions/quantity'}:
-        return parse_quantity_form_data(form_data, schema, id_prefix)
+        return parse_quantity_form_data(form_data, schema, id_prefix, errors)
     raise ValueError('invalid schema')
 
 
-def parse_text_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_text_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
     # TODO: validate schema?
     if keys != [id_prefix + '_text']:
@@ -42,7 +55,8 @@ def parse_text_form_data(form_data, schema, id_prefix):
     }
 
 
-def parse_quantity_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_quantity_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
     # TODO: validate schema?
     if set(keys) != {id_prefix + '_magnitude', id_prefix + '_units'} and keys != [id_prefix + '_magnitude']:
@@ -71,7 +85,8 @@ def parse_quantity_form_data(form_data, schema, id_prefix):
     }
 
 
-def parse_datetime_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_datetime_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
     # TODO: validate schema?
     if keys != [id_prefix + '_datetime']:
@@ -83,7 +98,8 @@ def parse_datetime_form_data(form_data, schema, id_prefix):
     }
 
 
-def parse_boolean_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_boolean_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
     # TODO: validate schema?
     if set(keys) == {id_prefix + '_hidden', id_prefix + '_value'}:
@@ -99,7 +115,8 @@ def parse_boolean_form_data(form_data, schema, id_prefix):
     }
 
 
-def parse_array_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_array_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
     item_schema = schema['items']
     item_indices = set()
@@ -123,17 +140,18 @@ def parse_array_form_data(form_data, schema, id_prefix):
                 items.append(None)
             else:
                 item_id_prefix = id_prefix+'_{}'.format(i)
-                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix))
+                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors))
     return items
 
 
-def parse_object_form_data(form_data, schema, id_prefix):
+@form_data_parser
+def parse_object_form_data(form_data, schema, id_prefix, errors):
     assert schema['type'] == 'object'
     data = {}
     for property_name, property_schema in schema['properties'].items():
         property_id_prefix = id_prefix + '_' + property_name
         if any(key.startswith(id_prefix) for key in form_data.keys()):
-            property = parse_any_form_data(form_data, property_schema, property_id_prefix)
+            property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors)
             if property is not None:
                 data[property_name] = property
     return data
@@ -141,4 +159,7 @@ def parse_object_form_data(form_data, schema, id_prefix):
 
 def parse_form_data(form_data, schema):
     id_prefix = 'object'
-    return parse_object_form_data(form_data, schema, id_prefix)
+    errors = []
+    data = parse_object_form_data(form_data, schema, id_prefix, errors)
+    return data, errors
+

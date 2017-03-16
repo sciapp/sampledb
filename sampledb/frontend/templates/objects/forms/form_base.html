@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-  <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id) }}">
+  <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode='edit') }}">
     {% set id_prefix = "object" %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">

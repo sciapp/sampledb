@@ -1,12 +1,20 @@
-<div class="form-group row" style="padding-right:0.75em">
+<div class="form-group{% if id_prefix+'_text' in errors %} has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
   <label class="control-label col-md-3">{{ schema.title }}</label>
   <div class="col-md-9">
   <select class="form-control selectpicker" name="{{ id_prefix }}_text">
   {% for option in  schema.allOf[1].properties.text.enum %}
-    {% if data is not none and "text" in data and data.text == option %}
-    <option selected="selected">{{ option }}</option>
+    {% if id_prefix+'_text' in form_data %}
+      {% if form_data[id_prefix+'_text'] == option %}
+      <option selected="selected">{{ option }}</option>
+      {% else %}
+      <option>{{ option }}</option>
+      {% endif %}
     {% else %}
-    <option>{{ option }}</option>
+      {% if data is not none and "text" in data and data.text == option %}
+      <option selected="selected">{{ option }}</option>
+      {% else %}
+      <option>{{ option }}</option>
+      {% endif %}
     {% endif %}
   {% endfor %}
   </select>

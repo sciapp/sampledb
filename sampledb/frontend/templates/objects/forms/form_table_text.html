@@ -1,1 +1,3 @@
-<input type="text" class="form-control" name="{{ id_prefix }}_text" placeholder="{{ schema.title }}" {% if data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>
+<div class="{% if id_prefix+'_magnitude' in errors %}has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %}">
+<input type="text" class="form-control" name="{{ id_prefix }}_text" placeholder="{{ schema.title }}" {% if id_prefix+'_text' in form_data %}value="{{ form_data[id_prefix+'_text'] }}"{% elif data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>
+</div>
