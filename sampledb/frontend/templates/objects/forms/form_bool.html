@@ -4,7 +4,8 @@
     <div class="checkbox" style="">
     <label>
       <span class="sr-only">{{ schema.title }}</span>
-        <input type="checkbox"  {% if data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
+        <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+        <input type="checkbox" name="{{ id_prefix }}_value" {% if data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
     </label>
     </div>
   </div>

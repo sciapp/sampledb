@@ -4,6 +4,7 @@
 """
 
 import json
+import jsonschema
 import flask
 import flask_login
 
@@ -14,6 +15,7 @@ from .objects_forms import ObjectPermissionsForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
 from ..utils import object_permissions_required
+from .object_form_parser import parse_form_data
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -45,19 +47,38 @@ def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
-@frontend.route('/objects/<int:object_id>')
+@frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.READ)
 def object(object_id):
     object = Objects.get_current_object(object_id=object_id)
 
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    user_may_edit = Permissions.WRITE in user_permissions
+
+    if flask.request.method != 'GET':
+        if not user_may_edit:
+            return flask.abort(403)
+        # TODO: csrf protection
+        # TODO: update schema
+        # schema = Action.query.get(object.action_id).schema
+        schema = object.schema
+        object_data = parse_form_data(dict(flask.request.form), schema)
+        try:
+            jsonschema.validate(object_data, schema)
+        except jsonschema.ValidationError:
+            print('validation failed')
+            # TODO: handle error
+            flask.abort(400)
+        Objects.update_object(object_id=object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
+        flask.flash('The object was updated successfully.', 'success')
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
     if flask.request.args.get('mode') == 'edit':
-        if Permissions.WRITE in user_permissions:
-            return flask.render_template('objects/forms/form_base.html', schema=object.schema, data=object.data)
+        if user_may_edit:
+            return flask.render_template('objects/forms/form_base.html', schema=object.schema, data=object.data, object_id=object_id)
         else:
             return flask.abort(403)
-    return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id)
+    return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit)
 
 
 @frontend.route('/objects/<int:object_id>/versions/')

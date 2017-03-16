@@ -15,6 +15,10 @@
     "_type": "text",
     "text": "option 2"
   },
+  "checkbox": {
+    "_type": "bool",
+    "value": false
+  },
   "multilayer": [{
       "repetitions": {
         "_type": "quantity",

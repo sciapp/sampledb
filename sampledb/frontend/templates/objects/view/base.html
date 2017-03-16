@@ -8,6 +8,13 @@
 
 {% block content %}
   {% include "objects/view/any.html" %}
+    {% if user_may_edit %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary pull-right" style="width:10em">Edit</a>
+      </div>
+    </div>
+    {% endif %}
   <p class="text-center">Last edited on {{  last_edit_datetime }} by <a href="{{ url_for('.user_profile', user_id=last_edit_user.id) }}">{{ last_edit_user.name }}</a>. See <a href="{{ url_for('.object_versions', object_id=object_id) }}">previous versions</a>.</p>
 {% endblock %}
 

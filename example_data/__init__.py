@@ -32,7 +32,8 @@ def setup_data(app):
     sampledb.db.session.commit()
 
     # Setup autologin for testing
-    @app.route('/users/[int:user_id]/autologin')
+    @app.route('/users/me/autologin')
+    @app.route('/users/<int:user_id>/autologin')
     def autologin(user_id=instrument_responsible_user.id):
         user = User.query.get(user_id)
         assert user is not None
