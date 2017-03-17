@@ -3,14 +3,10 @@
 
 """
 
-import os
-import itertools
 import functools
 import pint
 ureg = pint.UnitRegistry()
-import json
 
-from sampledb.rest_api.objects import SCHEMA_DIR
 
 def form_data_parser(func):
     @functools.wraps(func)

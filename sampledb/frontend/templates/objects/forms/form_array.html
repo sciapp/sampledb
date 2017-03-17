@@ -37,7 +37,7 @@
             {% include "objects/forms/form_table_any.html" %}
           </td>
         {% endfor %}
-        <td><button type="button" class="btn btn-danger pull-right">&times;</button></td>
+        <td><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
         </tr>
       {% endfor %}
     {% endif %}
@@ -47,7 +47,7 @@
         {% for property_name in item_property_names %}
           <th scope="col"></th>
         {% endfor %}
-        <th><button type="button" class="btn btn-success pull-right">+</button></th>
+        <th><button type="submit" name="action_{{ id_prefix }}_?_add" class="btn btn-success pull-right">+</button></th>
       </tr>
     </tfoot>
   </table>
@@ -64,14 +64,14 @@
       {% set id_prefix = id_prefix + '_{}'.format(loop.index0) %}
       {% set data = item %}
         <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
-        <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger" style="width:10em;">Remove {{ itemName }}</button></div>
+        <div class="pull-right" style="padding-right:0.75em"><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="width:10em;">Remove {{ itemName }}</button></div>
         {% include "objects/forms/form_any.html" %}
         </div>
     {% endfor %}
   {% endif %}
   <div class="form-group row clearfix" style="padding-right:0.75em">
     <div class="col-md-9 col-md-offset-3">
-      <button type="button" class="btn btn-success pull-right" style="width:10em">Add {{ itemName }}</button>
+      <button type="submit" name="action_{{ id_prefix }}_?_add" class="btn btn-success pull-right" style="width:10em">Add {{ itemName }}</button>
     </div>
   </div>
 {% endif %}
