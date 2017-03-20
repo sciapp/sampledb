@@ -12,7 +12,7 @@ import itsdangerous
 from . import frontend
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..logic.datatypes import JSONEncoder
-from .objects_forms import ObjectPermissionsForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
 from ..utils import object_permissions_required
@@ -124,8 +124,8 @@ def show_object_form(object, action):
     form_data = {}
     previous_actions = []
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
-    if flask.request.method != 'GET':
-        # TODO: csrf protection
+    form = ObjectForm()
+    if flask.request.method != 'GET' and form.validate_on_submit():
         form_data = {k: v[0] for k, v in dict(flask.request.form).items()}
 
         if 'previous_actions' in flask.request.form:
@@ -160,9 +160,9 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions))
+        return flask.render_template('objects/forms/form_create.html', schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions))
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])

@@ -2,6 +2,7 @@
 
 {% block content %}
   <form class="form-horizontal" method="post" action="{{ url_for('.new_object') }}">
+    {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
     {% set id_prefix = "object" %}
     {% include "objects/forms/form_any.html" %}
