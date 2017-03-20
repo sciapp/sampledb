@@ -50,16 +50,15 @@ def to_datatype(obj):
 
 def generate_placeholder_object(schema):
     if 'type' in schema and schema['type'] == 'object':
-        o = {}
-        for property_name, property_schema in schema.get("properties", {}).items():
-            o[property_name] = generate_placeholder_object(property_schema)
-        return o
+        return {
+            property_name: generate_placeholder_object(property_schema)
+            for property_name, property_schema in schema.get('properties', {}).items()
+        }
     elif 'type' in schema and schema['type'] == 'array':
         # TODO: items / minimum length
         return []
     # TODO: other types and their defaults
     return None
-
 
 def apply_action_to_data(data, schema, action, form_data):
     new_form_data = form_data

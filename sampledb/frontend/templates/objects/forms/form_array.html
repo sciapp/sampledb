@@ -10,8 +10,16 @@
     <thead>
       <tr>
         {% set item_property_names = schema["items"].properties.keys() %}
-        {% for property_name in item_property_names %}
+        {% set property_order = schema.get('items', {}).get('_propertyOrder', []) %}
+        {% for property_name in property_order %}
+          {% if property_name in item_property_names %}
           <th scope="col">{{ schema["items"].properties[property_name].title }}</th>
+          {% endif %}
+        {% endfor %}
+        {% for property_name in item_property_names %}
+          {% if property_name not in property_order %}
+          <th scope="col">{{ schema["items"].properties[property_name].title }}</th>
+          {% endif %}
         {% endfor %}
         <th></th>
       </tr>
@@ -24,7 +32,8 @@
         {% set id_prefix = id_prefix + '_{}'.format(loop.index0) %}
         {% set data = item %}
         <tr>
-        {% for property_name in item_property_names %}
+        {% for property_name in property_order %}
+          {% if property_name in item_property_names %}
           <td>
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
@@ -36,6 +45,22 @@
             {% endif %}
             {% include "objects/forms/form_table_any.html" %}
           </td>
+          {% endif %}
+        {% endfor %}
+        {% for property_name in item_property_names %}
+          {% if property_name not in property_order %}
+          <td>
+            {% set name = property_name %}
+            {% set schema = schema.properties[property_name] %}
+            {% set id_prefix = id_prefix + '_' + name %}
+            {% if data is not none and property_name in data %}
+            {% set data = data[property_name] %}
+            {% else %}
+            {% set data = none %}
+            {% endif %}
+            {% include "objects/forms/form_table_any.html" %}
+          </td>
+          {% endif %}
         {% endfor %}
         <td><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
         </tr>
