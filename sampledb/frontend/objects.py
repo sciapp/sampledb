@@ -109,35 +109,32 @@ def apply_action_to_data(data, schema, action, form_data):
     return new_form_data
 
 
-@frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
-@object_permissions_required(Permissions.READ)
-def object(object_id):
-    object = Objects.get_current_object(object_id=object_id)
-
-    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
-    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
-    user_may_edit = Permissions.WRITE in user_permissions
-    data = object.data
+def show_object_form(object, action):
+    if object is None:
+        data = generate_placeholder_object(action.schema)
+    else:
+        data = object.data
+    # TODO: update schema
+    # schema = Action.query.get(object.action_id).schema
+    if object is not None:
+        schema = object.schema
+    else:
+        schema = action.schema
     errors = []
     form_data = {}
     previous_actions = []
-    s = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
+    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
     if flask.request.method != 'GET':
-        if not user_may_edit:
-            return flask.abort(403)
         # TODO: csrf protection
         form_data = {k: v[0] for k, v in dict(flask.request.form).items()}
 
         if 'previous_actions' in flask.request.form:
             try:
-                previous_actions = s.loads(flask.request.form['previous_actions'])
+                previous_actions = serializer.loads(flask.request.form['previous_actions'])
             except itsdangerous.BadData:
                 flask.abort(400)
 
         if "action_submit" in form_data:
-            # TODO: update schema
-            # schema = Action.query.get(object.action_id).schema
-            schema = object.schema
             object_data, errors = parse_form_data(dict(flask.request.form), schema)
             if not errors:
                 try:
@@ -147,23 +144,60 @@ def object(object_id):
                     print('object schema validation failed')
                     # TODO: handle error
                     flask.abort(400)
-                Objects.update_object(object_id=object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
-                flask.flash('The object was updated successfully.', 'success')
-                return flask.redirect(flask.url_for('.object', object_id=object_id))
+                if object is None:
+                    object = Objects.create_object(data=object_data, schema=schema, user_id=flask_login.current_user.id, action_id=action.id)
+                    flask.flash('The object was created successfully.', 'success')
+                else:
+                    Objects.update_object(object_id=object.object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
+                    flask.flash('The object was updated successfully.', 'success')
+                return flask.redirect(flask.url_for('.object', object_id=object.object_id))
         elif any(name.startswith('action_object_') and (name.endswith('_delete') or name.endswith('_add')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
             previous_actions.append(action)
-    if flask.request.args.get('mode') == 'edit':
-        if user_may_edit:
-            for action in previous_actions:
-                try:
-                    form_data = apply_action_to_data(data, object.schema, action, form_data)
-                except ValueError:
-                    flask.abort(400)
-            return flask.render_template('objects/forms/form_base.html', schema=object.schema, data=data, object_id=object_id, errors=errors, form_data=form_data, previous_actions=s.dumps(previous_actions))
-        else:
-            return flask.abort(403)
-    return flask.render_template('objects/view/base.html', schema=object.schema, data=data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit)
+    for action in previous_actions:
+        try:
+            form_data = apply_action_to_data(data, schema, action, form_data)
+        except ValueError:
+            flask.abort(400)
+    if object is None:
+        return flask.render_template('objects/forms/form_create.html', schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions))
+    else:
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions))
+
+
+@frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
+@object_permissions_required(Permissions.READ)
+def object(object_id):
+    object = Objects.get_current_object(object_id=object_id)
+
+    # TODO: setup jinja env globally
+    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
+    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    user_may_edit = Permissions.WRITE in user_permissions
+    if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
+        return flask.abort(403)
+    if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
+        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit)
+
+    return show_object_form(object, action=Action.query.get(object.action_id))
+
+
+@frontend.route('/objects/new', methods=['GET', 'POST'])
+@flask_login.login_required
+def new_object():
+    action_id = flask.request.args.get('action_id', None)
+    if action_id is None:
+        # TODO: handle error
+        return flask.abort(404)
+    action = Action.query.get(action_id)
+    if action is None:
+        # TODO: handle error
+        return flask.abort(404)
+
+    # TODO: setup jinja env globally
+    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
+    # TODO: check instrument permissions
+    return show_object_form(None, action)
 
 
 @frontend.route('/objects/<int:object_id>/versions/')
