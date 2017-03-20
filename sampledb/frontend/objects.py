@@ -60,6 +60,7 @@ def generate_placeholder_object(schema):
     # TODO: other types and their defaults
     return None
 
+
 def apply_action_to_data(data, schema, action, form_data):
     new_form_data = form_data
     if action.endswith('_delete'):
@@ -127,10 +128,11 @@ def object(object_id):
         # TODO: csrf protection
         form_data = {k: v[0] for k, v in dict(flask.request.form).items()}
 
-        try:
-            previous_actions = s.loads(flask.request.form['previous_actions'])
-        except itsdangerous.BadData:
-            flask.abort(400)
+        if 'previous_actions' in flask.request.form:
+            try:
+                previous_actions = s.loads(flask.request.form['previous_actions'])
+            except itsdangerous.BadData:
+                flask.abort(400)
 
         if "action_submit" in form_data:
             # TODO: update schema
