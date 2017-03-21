@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Objects</h1>
+
+  <table class="table">
+  <thead>
+    <tr><th scope="col" rowspan="2">ID</th><th scope="col" rowspan="2">Name</th><th scope="col" colspan="2">Created</th><th scope="col" colspan="2">Last modified</th><th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th></tr>
+    <tr><th scope="col">Date</th><th scope="col">User</th><th scope="col">Date</th><th scope="col">User</th></tr>
+  </thead>
+  <tbody>
+  {% for object in objects %}
+    <tr>
+      <th scope="row">{{ object.object_id }}</th>
+      <td><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.data['name']['text'] }}</a></td>
+      <td>{{ object.created_at }}</td>
+      <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>
+      <td>{{ object.last_modified_at }}</td>
+      <td><a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.name }}</a></td>
+      {% if object.action is not none %}
+        {% if object.action.instrument is not none %}
+          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name }}</a></td>
+        {% else %}
+          <td>&mdash;</td>
+        {% endif %}
+        <td><a href="{{ url_for('.action', action_id=object.action.id) }}">{{ object.action.name }}</a></td>
+      {% else %}
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+      {% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+{% endblock %}

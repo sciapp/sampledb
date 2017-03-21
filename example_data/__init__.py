@@ -42,12 +42,12 @@ def setup_data(app):
 
     sampledb.login_manager.login_view = 'autologin'
 
-    instrument = create_instrument(name="Example Instrument", description="This is an example instrument.")
+    instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
     with open('sampledb/schemas/ombe.custom.json', 'r') as schema_file:
         schema = json.load(schema_file)
-    instrument_action = create_action("Example action", "This is an example action", schema, instrument.id)
-    independent_action = create_action("Example action", "This is an example action", schema)
+    instrument_action = create_action("Sample Creation", "This is an example action", schema, instrument.id)
+    independent_action = create_action("Alternative Process", "This is an example action", schema)
     sampledb.db.session.commit()
 
     with open('example_data/ombe.json', 'r') as data_file:

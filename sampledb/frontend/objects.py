@@ -22,6 +22,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 @frontend.route('/objects/')
+@flask_login.login_required
 def objects():
     objects = Objects.get_current_objects(connection=db.engine)
     if flask_login.current_user.is_authenticated:
@@ -29,19 +30,23 @@ def objects():
         objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
     else:
         objects = [obj for obj in objects if object_is_public(obj.object_id)]
-    objects = [
-        {
+    for i, obj in enumerate(objects):
+        if obj.version_id == 0:
+            original_object = obj
+        else:
+            original_object = Objects.get_object_version(object_id=obj.object_id, version_id=0)
+        objects[i] = {
             'object_id': obj.object_id,
             'version_id': obj.version_id,
-            'user_id': obj.user_id,
-            'last_modified': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            'created_by': User.query.get(original_object.user_id),
+            'created_at': original_object.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            'modified_by': User.query.get(obj.user_id),
+            'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
             'data': obj.data,
-            'schema': obj.schema
+            'schema': obj.schema,
+            'action': Action.query.get(obj.action_id)
         }
-        for obj in objects
-    ]
-    # TODO implement view
-    return flask.render_template('index.html', objects=objects)
+    return flask.render_template('objects/objects.html', objects=objects)
 
 
 def to_datatype(obj):
