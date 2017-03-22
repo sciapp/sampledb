@@ -1,10 +1,11 @@
-<div class="form-group row" style="padding-right:0.75em">
+<div class="form-group{% if id_prefix+'_hidden' in errors %} has-error{% elif id_prefix+'_hidden' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
   <label class="control-label col-md-3">{{ schema.title }}</label>
   <div class="col-md-9">
     <div class="checkbox" style="">
     <label>
       <span class="sr-only">{{ schema.title }}</span>
-        <input type="checkbox"  {% if data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
+        <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+        <input type="checkbox" name="{{ id_prefix }}_value" {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data%}checked{% endif %}{% elif data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
     </label>
     </div>
   </div>

@@ -27,3 +27,7 @@ class ObjectPermissionsForm(FlaskForm):
         validators=[InputRequired()]
     )
     user_permissions = FieldList(FormField(ObjectUserPermissionsForm), min_entries=0)
+
+
+class ObjectForm(FlaskForm):
+    pass

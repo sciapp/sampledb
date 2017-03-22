@@ -5,7 +5,7 @@
 
 import flask
 
-from sampledb.utils import object_permissions_required
+from sampledb.utils import object_permissions_required, http_auth_required
 from ..models import Permissions
 from .. import logic
 from . import rest_api
@@ -14,6 +14,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 @rest_api.route('/objects/<int:object_id>/permissions/')
+@http_auth_required
 @object_permissions_required(Permissions.READ)
 def get_object_permissions(object_id):
     object_permissions = logic.permissions.get_object_permissions(object_id)
@@ -23,6 +24,7 @@ def get_object_permissions(object_id):
 
 
 @rest_api.route('/objects/<int:object_id>/permissions/all')
+@http_auth_required
 @object_permissions_required(Permissions.READ)
 def get_public_object_permissions(object_id):
     permissions = Permissions.NONE
@@ -32,6 +34,7 @@ def get_public_object_permissions(object_id):
 
 
 @rest_api.route('/objects/<int:object_id>/permissions/<int:user_id>')
+@http_auth_required
 @object_permissions_required(Permissions.READ)
 def get_user_object_permissions(object_id, user_id):
     permissions = logic.permissions.get_user_object_permissions(object_id=object_id, user_id=user_id)
@@ -39,6 +42,7 @@ def get_user_object_permissions(object_id, user_id):
 
 
 @rest_api.route('/objects/<int:object_id>/permissions/<int:user_id>', methods=['PUT'])
+@http_auth_required
 @object_permissions_required(Permissions.GRANT)
 def set_user_object_permissions(object_id, user_id):
     if not flask.request.is_json:
@@ -52,6 +56,7 @@ def set_user_object_permissions(object_id, user_id):
 
 
 @rest_api.route('/objects/<int:object_id>/permissions/all', methods=['PUT'])
+@http_auth_required
 @object_permissions_required(Permissions.GRANT)
 def set_public_object_permissions(object_id):
     if not flask.request.is_json:

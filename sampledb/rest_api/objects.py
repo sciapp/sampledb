@@ -13,7 +13,7 @@ import jsonschema
 from ..logic.permissions import get_user_object_permissions
 from ..logic.instruments import get_action
 from ..models import Objects, Permissions
-from sampledb.utils import object_permissions_required
+from ..utils import object_permissions_required, http_auth_required
 from . import rest_api
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -25,6 +25,7 @@ jsonschema.Draft4Validator.check_schema(OBJECT_SCHEMA)
 
 
 @rest_api.route('/objects/<int:object_id>/versions/<int:version_id>')
+@http_auth_required
 @object_permissions_required(Permissions.READ)
 def get_object_version(object_id, version_id):
     obj = Objects.get_object_version(object_id, version_id)
@@ -41,6 +42,7 @@ def get_object_version(object_id, version_id):
 
 
 @rest_api.route('/objects/<int:object_id>')
+@http_auth_required
 @object_permissions_required(Permissions.READ)
 def get_object(object_id):
     obj = Objects.get_current_object(object_id)
@@ -57,7 +59,7 @@ def get_object(object_id):
 
 
 @rest_api.route('/objects/')
-@flask_login.login_required
+@http_auth_required
 def get_objects():
     # TODO: Search should be done here using query parameters
     objects = Objects.get_current_objects()
@@ -79,7 +81,7 @@ def get_objects():
 
 
 @rest_api.route('/objects/', methods=['POST'])
-@flask_login.login_required
+@http_auth_required
 def create_object():
     # TODO: set up initial permissions
     user_id = flask_login.current_user.id
@@ -116,6 +118,7 @@ def create_object():
 
 
 @rest_api.route('/objects/<int:object_id>', methods=['PUT'])
+@http_auth_required
 @object_permissions_required(Permissions.WRITE)
 def update_object(object_id):
     current_object = Objects.get_current_object(object_id)

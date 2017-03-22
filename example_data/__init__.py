@@ -32,21 +32,22 @@ def setup_data(app):
     sampledb.db.session.commit()
 
     # Setup autologin for testing
-    @app.route('/users/[int:user_id]/autologin')
+    @app.route('/users/me/autologin')
+    @app.route('/users/<int:user_id>/autologin')
     def autologin(user_id=instrument_responsible_user.id):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object_permissions', object_id=1))
+        return flask.redirect(flask.url_for('frontend.object', object_id=1))
 
     sampledb.login_manager.login_view = 'autologin'
 
-    instrument = create_instrument(name="Example Instrument", description="This is an example instrument.")
+    instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
     with open('sampledb/schemas/ombe.custom.json', 'r') as schema_file:
         schema = json.load(schema_file)
-    instrument_action = create_action("Example action", "This is an example action", schema, instrument.id)
-    independent_action = create_action("Example action", "This is an example action", schema)
+    instrument_action = create_action("Sample Creation", "This is an example action", schema, instrument.id)
+    independent_action = create_action("Alternative Process", "This is an example action", schema)
     sampledb.db.session.commit()
 
     with open('example_data/ombe.json', 'r') as data_file:
