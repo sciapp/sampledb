@@ -3,8 +3,10 @@
 
 """
 
+import datetime
 import functools
 import pint
+from ..logic import datatypes
 ureg = pint.UnitRegistry()
 
 
@@ -87,10 +89,14 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors):
     # TODO: validate schema?
     if keys != [id_prefix + '_datetime']:
         raise ValueError('invalid datetime form data')
-    datetime = form_data.get(id_prefix + '_datetime', [''])[0]
+    utc_datetime = form_data.get(id_prefix + '_datetime', [''])[0]
+    try:
+        utc_datetime = datetime.datetime.strptime(utc_datetime, datatypes.DateTime.FORMAT_STRING)
+    except ValueError:
+        raise ValueError('invalid datetime format')
     return {
         '_type': 'datetime',
-        'utc_datetime': str(datetime)
+        'utc_datetime': utc_datetime.strftime(datatypes.DateTime.FORMAT_STRING)
     }
 
 
@@ -99,7 +105,6 @@ def parse_boolean_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
     # TODO: validate schema?
     if set(keys) == {id_prefix + '_hidden', id_prefix + '_value'}:
-        print(form_data[id_prefix + '_value'])
         value = True
     elif keys == [id_prefix + '_hidden']:
         value = False
