@@ -30,6 +30,29 @@ def user(flask_server):
     return user
 
 
+def test_get_objects(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example42']
+    objects = [
+        sampledb.models.Objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            schema=action.schema,
+            user_id=user.id,
+            action_id=action.id
+        )
+        for name in names
+    ]
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects')
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 3
+    for name in names:
+        assert name in str(document.find('tbody'))
+
+
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
     action = sampledb.logic.instruments.create_action('Example Action', '', schema)
@@ -296,7 +319,6 @@ def test_edit_object_action_delete(flask_server, user):
     r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
     assert r.status_code == 200
     assert 'object_multilayer_2_films_0_elements_0' not in r.content.decode('utf-8')
-
 
 
 def test_new_object(flask_server, user):
