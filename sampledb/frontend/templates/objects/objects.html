@@ -5,8 +5,15 @@
 
   <table class="table">
   <thead>
-    <tr><th scope="col" rowspan="2">ID</th><th scope="col" rowspan="2">Name</th><th scope="col" colspan="2">Created</th><th scope="col" colspan="2">Last modified</th><th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th></tr>
-    <tr><th scope="col">Date</th><th scope="col">User</th><th scope="col">Date</th><th scope="col">User</th></tr>
+    <tr>
+      <th scope="col" rowspan="2">ID</th><th scope="col" rowspan="2">Name</th><th scope="col" colspan="2">Created</th><th scope="col" colspan="2">Last modified</th><th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>
+      {% for property_name in display_properties %}
+        <th scope="col" rowspan="2">{{ display_property_titles[property_name] }}</th>
+      {% endfor %}
+    </tr>
+    <tr>
+      <th scope="col">Date</th><th scope="col">User</th><th scope="col">Date</th><th scope="col">User</th>
+    </tr>
   </thead>
   <tbody>
   {% for object in objects %}
@@ -28,6 +35,17 @@
         <td>&mdash;</td>
         <td>&mdash;</td>
       {% endif %}
+      {% for property_name in display_properties %}
+        <td>
+        {% if object.display_properties[property_name] is not none %}
+          {% set data = object.display_properties[property_name][0] %}
+          {% set schema = object.display_properties[property_name][1] %}
+          {% include "objects/view/table_any.html" %}
+        {% else %}
+          &mdash;
+        {% endif %}
+        </td>
+      {% endfor %}
     </tr>
   {% endfor %}
   </tbody>

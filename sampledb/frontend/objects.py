@@ -30,6 +30,7 @@ def objects():
         objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
     else:
         objects = [obj for obj in objects if object_is_public(obj.object_id)]
+
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
             original_object = obj
@@ -44,9 +45,38 @@ def objects():
             'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
             'data': obj.data,
             'schema': obj.schema,
-            'action': Action.query.get(obj.action_id)
+            'action': Action.query.get(obj.action_id),
+            'display_properties': {}
         }
-    return flask.render_template('objects/objects.html', objects=objects)
+
+    # TODO: select display_properties? nested display_properties?
+    display_properties = ['substrate']
+    for obj in objects:
+        for property_name in display_properties:
+            if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:
+                obj['display_properties'][property_name] = None
+                continue
+            obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
+
+    display_property_titles = {}
+    for property_name in display_properties:
+        display_property_titles[property_name] = property_name
+        possible_title = None
+        title_is_shared = True
+        for obj in objects:
+            if obj['display_properties'][property_name] is None:
+                continue
+            if 'title' not in obj['display_properties'][property_name][1]:
+                continue
+            if possible_title is None:
+                possible_title = obj['display_properties'][property_name][1]['title']
+            elif possible_title != obj['display_properties'][property_name][1]['title']:
+                title_is_shared = False
+                break
+        if title_is_shared and possible_title is not None:
+            display_property_titles[property_name] = possible_title
+    objects.sort(key=lambda obj: obj['object_id'])
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles)
 
 
 def to_datatype(obj):
@@ -125,6 +155,7 @@ def show_object_form(object, action):
         schema = object.schema
     else:
         schema = action.schema
+    action_id = action.id
     errors = []
     form_data = {}
     previous_actions = []
@@ -165,7 +196,7 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
     else:
         return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
 
@@ -191,7 +222,7 @@ def object(object_id):
 @flask_login.login_required
 def new_object():
     action_id = flask.request.args.get('action_id', None)
-    if action_id is None:
+    if action_id is None or action_id == '':
         # TODO: handle error
         return flask.abort(404)
     action = Action.query.get(action_id)

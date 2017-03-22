@@ -1,7 +1,7 @@
 {% extends "objects/forms/form_base.html" %}
 
 {% block content %}
-  <form class="form-horizontal" method="post" action="{{ url_for('.new_object') }}">
+  <form class="form-horizontal" method="post" action="{{ url_for('.new_object', action_id=action_id) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
     {% set id_prefix = "object" %}
