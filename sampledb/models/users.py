@@ -28,6 +28,14 @@ class User(db.Model, flask_login.UserMixin):
         self.email = email
         self.type = type
 
+    def __eq__(self, other):
+        return (
+            self.id == other.id and
+            self.name == other.name and
+            self.email == other.email and
+            self.rtype == other.type and
+            self.is_admin == other.is_admin)
+
     def get_id(self):
         return self.id
 

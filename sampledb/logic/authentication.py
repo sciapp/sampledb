@@ -2,7 +2,6 @@ import bcrypt
 import flask
 import flask_login
 import flask_mail
-from flask_login import login_user
 
 from .. import mail
 from .. import logic
@@ -16,7 +15,6 @@ def validate_user_db(login, password):
         if authentication_method.confirmed:
             if bcrypt.checkpw(password.encode('utf-8'), authentication_method.login['bcrypt_hash'].encode('utf-8')):
                 user = authentication_method.user
-                login_user(user)
                 return True
     return False
 
@@ -59,7 +57,6 @@ def login(login,password):
             result = validate_user_db(login, password)
         if result:
             user = authentication_method.user
-#            flask_login.login_user(user)
             return user
 
     # no authentificaton method in db
@@ -76,7 +73,6 @@ def login(login,password):
             db.session.add(user)
             db.session.commit()
         add_authentication_to_db({'login': login}, user_type=AuthenticationType.LDAP, confirmed=True, user_id=user.id)
-#        flask_login.login_user(user)
         return user
     return None
 
