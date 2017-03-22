@@ -16,7 +16,7 @@ import sampledb.logic
 from sampledb.rest_api.objects import SCHEMA_DIR
 
 
-from tests.test_utils import flask_server, app
+from tests.test_utils import flask_server, app, app_context
 
 
 @pytest.fixture
