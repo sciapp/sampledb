@@ -69,3 +69,12 @@ def test_validate_user_db(users):
     user = sampledb.logic.authentication.validate_user_db('mustermann@fz-juelich.de', 'test123')
     # user has no authentication method
     assert user is False
+
+    user = sampledb.logic.authentication.validate_user_db('ombe', 'test123')
+    # user is correct
+    assert user is True
+
+    user = sampledb.logic.authentication.validate_user_db('ombe', 'test456')
+    # password wrong
+    assert user is False
+
