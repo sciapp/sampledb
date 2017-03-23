@@ -8,6 +8,10 @@ import flask
 from ..models import User, UserType
 
 
+class NoEmailInLdapAccount(Exception):
+    pass
+
+
 def user_dn(user_ldap_uid):
     base_dn = flask.current_app.config['LDAP_BASE_DN']
     user_dn = "uid={0},{1}".format(user_ldap_uid, base_dn)
@@ -33,9 +37,11 @@ def search_user(user_ldap_uid):
 
 
 def validate_user(user_ldap_uid, password):
-    if search_user(user_ldap_uid) is None:
+    user = search_user(user_ldap_uid)
+    if user is None:
         return False
-
+    if not user.mail:
+        raise NoEmailInLdapAccount('Email in LDAP-account missing, please contact your administrator')
     ldap_host = flask.current_app.config['LDAP_HOST']
     # if one user found in ldap
     # try to bind with credentials
@@ -49,8 +55,7 @@ def get_user_info(user_ldap_uid):
     if user is None:
         return None
     if not user.mail:
-        flask.abort(400, 'Email in LDAP-account missing, please contact your administrator')
-        return None
+        raise NoEmailInLdapAccount('Email in LDAP-account missing, please contact your administrator')
     email = user.mail[0]
     if not user.cn:
         name = user_ldap_uid
