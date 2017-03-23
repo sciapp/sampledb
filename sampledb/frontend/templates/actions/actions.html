@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Actions</h1>
+  {% for action in actions %}
+    {% if action.instrument is none %}
+    <h2><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h2>
+    {% else %}
+    <h2><a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash; <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h2>
+    {% endif %}
+    <p>{{ action.description }}</p>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-default">Perform Action</a>
+  {% endfor %}
+{% endblock %}

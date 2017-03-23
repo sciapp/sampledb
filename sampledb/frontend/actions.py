@@ -4,19 +4,24 @@
 """
 
 import flask
+import flask_login
 
 from . import frontend
+from ..models import Action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 @frontend.route('/actions/')
+@flask_login.login_required
 def actions():
-    # TODO: implement this
-    return flask.render_template('index.html')
+    # TODO: instrument permissions
+    actions = Action.query.all()
+    return flask.render_template('actions/actions.html', actions=actions)
 
 
 @frontend.route('/actions/<int:action_id>')
+@flask_login.login_required
 def action(action_id):
-    # TODO: implement this
-    return flask.render_template('index.html')
+    action = Action.query.get(action_id)
+    return flask.render_template('actions/action.html', action=action)

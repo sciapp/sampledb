@@ -25,11 +25,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @flask_login.login_required
 def objects():
     objects = Objects.get_current_objects(connection=db.engine)
-    if flask_login.current_user.is_authenticated:
-        user_id = flask_login.current_user.id
-        objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
-    else:
-        objects = [obj for obj in objects if object_is_public(obj.object_id)]
+    user_id = flask_login.current_user.id
+    objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -49,7 +46,7 @@ def objects():
             'display_properties': {}
         }
 
-    # TODO: select display_properties? nested display_properties?
+    # TODO: select display_properties? nested display_properties? find common properties?
     display_properties = ['substrate']
     for obj in objects:
         for property_name in display_properties:
