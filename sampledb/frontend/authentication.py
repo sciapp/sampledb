@@ -29,27 +29,6 @@ def logout():
     return flask.redirect(flask.url_for('frontend.index'))
 
 
-@frontend.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm
-    if flask_login.current_user.is_authenticated:
-        flask.flash('you are already logged in', 'danger')
-        return flask.redirect(flask.url_for('frontend.index'))
-    if flask.request.method == 'POST':
-        login = flask.request.form['username']
-        password = flask.request.form['password']
-        remember_me = False
-        if 'remember_me' in flask.request.form:
-            remember_me = True
-        user = logic.authentication.login(login,password)
-        if user is None:
-            flask.abort(401)
-        else:
-            flask_login.login_user(user, remember=remember_me)
-            flask.flash('login is successfully')
-            return flask.redirect(flask.url_for('frontend.index'))
-
-    return flask.render_template('login.html', form=form)
 
 
 @frontend.route('/invite_user', methods=['POST'])
@@ -137,7 +116,7 @@ def useradd():
    return flask.render_template('user.html', form=form)
 
 
-@frontend.route('/login/show_all', methods=['GET','POST'])
+@frontend.route('/show_all', methods=['GET','POST'])
 @flask_login.login_required
 def show_login():
     user = flask_login.current_user

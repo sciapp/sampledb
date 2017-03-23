@@ -75,15 +75,15 @@ def test_login_user(flask_server, users):
     assert user is None
 
     user = sampledb.logic.authentication.login('ombe', 'test123')
-    # user is confirmed
+    # user is confirmed and experiment
     assert user is not None
 
     user = sampledb.logic.authentication.login('testmail@fz-juelich.de', 'test123')
-    # user is not confirmed
+    # user is not in db
     assert user is None
 
     user = sampledb.logic.authentication.login('henkel', 'test123')
-    # user is not confirmed
+    # user is in ldap, password wrong
     assert user is None
 
 
