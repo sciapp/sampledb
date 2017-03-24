@@ -15,6 +15,16 @@
       </div>
     </div>
     {% endif %}
+    {% if restore_form is not none %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
+          {{ restore_form.csrf_token() }}
+          <button type="submit" class="btn btn-primary pull-right" style="width:10em">Restore</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
   <p class="text-center">Last edited on {{  last_edit_datetime }} by <a href="{{ url_for('.user_profile', user_id=last_edit_user.id) }}">{{ last_edit_user.name }}</a>. See <a href="{{ url_for('.object_versions', object_id=object_id) }}">previous versions</a>.</p>
 {% endblock %}
 

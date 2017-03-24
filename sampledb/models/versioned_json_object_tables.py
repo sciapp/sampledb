@@ -330,3 +330,31 @@ class VersionedJSONSerializableObjectTables(object):
         if current_object is not None and current_object.version_id == version_id:
             return current_object
         return None
+
+    def restore_object_version(self, object_id, version_id, user_id, utc_datetime=None, connection=None):
+        """
+        Reverts the changes made to an object and restores a specific version of it, while keeping the version history.
+        This function merely adds a new version which sets the data and schema to those of the given version.
+
+        :param object_id: the ID of the existing object
+        :param version_id: the ID of the object's existing version
+        :param user_id: the ID of the user who restored the object version
+        :param utc_datetime: the datetime (in UTC) when the version was restored (optional, defaults to utcnow())
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the object as object_type or None if the object or this version of it does not exist
+        """
+        if connection is None:
+            connection = self.bind.connect()
+        if utc_datetime is None:
+            utc_datetime = datetime.datetime.utcnow()
+        object_version = self.get_object_version(object_id=object_id, version_id=version_id)
+        if object_version is None:
+            return None
+        return self.update_object(
+            object_id=object_id,
+            data=object_version.data,
+            schema=object_version.schema,
+            user_id=user_id,
+            utc_datetime=utc_datetime,
+            connection=connection
+        )

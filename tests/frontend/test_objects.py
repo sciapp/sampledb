@@ -337,3 +337,69 @@ def test_new_object(flask_server, user):
     assert len(sampledb.models.Objects.get_current_objects()) == 1
     object = sampledb.models.Objects.get_current_objects()[0]
     assert len(object.data['multilayer']) == 4
+
+
+def test_restore_object_version(flask_server, user):
+    action = sampledb.logic.instruments.create_action('Example Action', '', {})
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = sampledb.models.Objects.create_object(
+        data=data,
+        schema=action.schema,
+        user_id=user.id,
+        action_id=action.id
+    )
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+    data['name']['text'] = 'object_version_1'
+    sampledb.models.Objects.update_object(object.object_id, data=data, schema={}, user_id=user.id)
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 0))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 0), data={'csrf_token': csrf_token})
+    assert r.status_code == 200
+
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+
+
+def test_restore_object_version_invalid_data(flask_server, user):
+    action = sampledb.logic.instruments.create_action('Example Action', '', {})
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = sampledb.models.Objects.create_object(
+        data=data,
+        schema=action.schema,
+        user_id=user.id,
+        action_id=action.id
+    )
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+    data['name']['text'] = 'object_version_1'
+    sampledb.models.Objects.update_object(object.object_id, data=data, schema={}, user_id=user.id)
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(42, 0))
+    assert r.status_code == 404
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+    r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 2))
+    assert r.status_code == 404
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+    r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 0))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+
+    r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(42, 0), data={'csrf_token': csrf_token})
+    assert r.status_code == 404
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+    r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 2), data={'csrf_token': csrf_token})
+    assert r.status_code == 404
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+    r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 1), data={'csrf_token': csrf_token})
+    assert r.status_code == 404
+    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'

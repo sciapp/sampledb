@@ -12,7 +12,7 @@ import itsdangerous
 from . import frontend
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..logic.datatypes import JSONEncoder
-from .objects_forms import ObjectPermissionsForm, ObjectForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
 from ..utils import object_permissions_required
@@ -210,7 +210,7 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit)
+        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id)
 
     return show_object_form(object, action=Action.query.get(object.action_id))
 
@@ -240,6 +240,7 @@ def object_versions(object_id):
     if object is None:
         return flask.abort(404)
     object_versions = Objects.get_object_versions(object_id=object_id)
+    object_versions.sort(key=lambda object_version: -object_version.version_id)
     return flask.render_template('objects/object_versions.html', User=User, object=object, object_versions=object_versions)
 
 
@@ -247,9 +248,30 @@ def object_versions(object_id):
 @object_permissions_required(Permissions.READ)
 def object_version(object_id, version_id):
     object = Objects.get_object_version(object_id=object_id, version_id=version_id)
+    form = None
+    if Permissions.WRITE in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
+        current_object = Objects.get_current_object(object_id=object_id)
+        if current_object.version_id != version_id:
+            form = ObjectVersionRestoreForm()
 
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
-    return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id)
+    return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, version_id=version_id, restore_form=form)
+
+
+@frontend.route('/objects/<int:object_id>/versions/<int:version_id>/restore', methods=['GET', 'POST'])
+@object_permissions_required(Permissions.WRITE)
+def restore_object_version(object_id, version_id):
+    object_version = Objects.get_object_version(object_id=object_id, version_id=version_id)
+    if object_version is None:
+        return flask.abort(404)
+    current_object = Objects.get_current_object(object_id=object_id)
+    if current_object.version_id == version_id:
+        return flask.abort(404)
+    form = ObjectVersionRestoreForm()
+    if form.validate_on_submit():
+        Objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
+    return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
 
 
 @frontend.route('/objects/<int:object_id>/permissions')

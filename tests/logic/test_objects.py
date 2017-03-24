@@ -273,3 +273,31 @@ def test_update_object_invalid_data(session: sessionmaker(), objects: VersionedJ
     }
     with pytest.raises(jsonschema.exceptions.ValidationError):
         objects.update_object(object1.object_id, data={'test': '1'}, schema=schema, user_id=user.id)
+
+
+def test_restore_object_version(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(name="User 1")
+    session.add(user)
+    action = Action(id=0, schema={})
+    session.add(action)
+    session.commit()
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = objects.create_object(action_id=action.id, data=data, schema={}, user_id=user.id)
+    assert objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+    data['name']['text'] = 'object_version_1'
+    objects.update_object(object.object_id, data=data, schema={}, user_id=user.id)
+    assert objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    objects.restore_object_version(object_id=object.object_id, version_id=0, user_id=user.id)
+    assert objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+
+
+def test_restore_object_version_invalid_data(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(name="User 1")
+    session.add(user)
+    action = Action(id=0, schema={})
+    session.add(action)
+    session.commit()
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = objects.create_object(action_id=action.id, data=data, schema={}, user_id=user.id)
+    assert objects.restore_object_version(object_id=object.object_id, version_id=1, user_id=user.id) is None
+    assert objects.restore_object_version(object_id=42, version_id=0, user_id=user.id) is None
