@@ -31,3 +31,7 @@ class ObjectPermissionsForm(FlaskForm):
 
 class ObjectForm(FlaskForm):
     pass
+
+
+class ObjectVersionRestoreForm(FlaskForm):
+    pass

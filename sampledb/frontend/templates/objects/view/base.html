@@ -11,7 +11,24 @@
     {% if user_may_edit %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-9 col-md-offset-3">
-        <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary pull-right" style="width:10em">Edit</a>
+        <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary pull-right" style="width:10em">Edit Object</a>
+      </div>
+    </div>
+    {% endif %}
+    {% if user_may_grant %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary pull-right" style="width:10em">Edit Permissions</a>
+      </div>
+    </div>
+    {% endif %}
+    {% if restore_form is not none %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
+          {{ restore_form.csrf_token() }}
+          <button type="submit" class="btn btn-primary pull-right" style="width:10em">Restore Version</button>
+        </form>
       </div>
     </div>
     {% endif %}

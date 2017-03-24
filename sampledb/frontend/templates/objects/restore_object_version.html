@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="text-center">Are you sure you want to restore this object version?</h1>
+  <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
+    {{ restore_form.csrf_token() }}
+    <button type="submit" class="btn btn-danger" style="width:15em;">Restore</button>
+    <a href="{{ url_for('.object_version', object_id=object_id, version_id=version_id) }}" class="btn btn-default" style="width:15em;">Cancel</a>
+  </form>
+{% endblock %}
