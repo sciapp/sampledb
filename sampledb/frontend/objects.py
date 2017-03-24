@@ -207,10 +207,11 @@ def object(object_id):
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
+    user_may_grant = Permissions.GRANT in user_permissions
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id)
+        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id, user_may_grant=user_may_grant)
 
     return show_object_form(object, action=Action.query.get(object.action_id))
 
@@ -249,13 +250,15 @@ def object_versions(object_id):
 def object_version(object_id, version_id):
     object = Objects.get_object_version(object_id=object_id, version_id=version_id)
     form = None
-    if Permissions.WRITE in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
+    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    if Permissions.WRITE in user_permissions:
         current_object = Objects.get_current_object(object_id=object_id)
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
+    user_may_grant = Permissions.GRANT in user_permissions
 
     flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
-    return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, version_id=version_id, restore_form=form)
+    return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, version_id=version_id, restore_form=form, user_may_grant=user_may_grant)
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>/restore', methods=['GET', 'POST'])

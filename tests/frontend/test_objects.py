@@ -403,3 +403,78 @@ def test_restore_object_version_invalid_data(flask_server, user):
     r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 1), data={'csrf_token': csrf_token})
     assert r.status_code == 404
     assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+
+
+def test_update_object_permissions(flask_server, user):
+    action = sampledb.logic.instruments.create_action('Example Action', '', {})
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = sampledb.models.Objects.create_object(
+        data=data,
+        schema=action.schema,
+        user_id=user.id,
+        action_id=action.id
+    )
+    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    assert current_permissions == {
+        None: sampledb.logic.permissions.Permissions.NONE,
+        user.id: sampledb.logic.permissions.Permissions.GRANT
+    }
+    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
+
+    form_data = {
+        'csrf_token': csrf_token,
+        'public_permissions': 'read',
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': str(user.id),
+        'user_permissions-0-permissions': 'grant',
+    }
+    r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
+    assert r.status_code == 200
+    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    assert current_permissions == {
+        None: sampledb.logic.permissions.Permissions.READ,
+        user.id: sampledb.logic.permissions.Permissions.GRANT
+    }
+    assert sampledb.logic.permissions.object_is_public(object.object_id)
+
+    form_data = {
+        'csrf_token': csrf_token,
+        'public_permissions': 'none',
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': '42',
+        'user_permissions-0-permissions': 'read',
+    }
+    r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
+    assert r.status_code == 200
+    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    assert current_permissions == {
+        None: sampledb.logic.permissions.Permissions.NONE,
+        user.id: sampledb.logic.permissions.Permissions.GRANT
+    }
+    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+
+    form_data = {
+        'csrf_token': csrf_token,
+        'public_permissions': 'none',
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': str(user.id),
+        'user_permissions-0-permissions': 'read',
+    }
+    r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
+    assert r.status_code == 200
+    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    assert current_permissions == {
+        None: sampledb.logic.permissions.Permissions.NONE,
+        user.id: sampledb.logic.permissions.Permissions.READ
+    }
+    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+
+    r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
+    assert r.status_code == 403
