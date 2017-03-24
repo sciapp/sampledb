@@ -16,6 +16,7 @@ from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionResto
 from .. import db
 from ..models import User, Action, Objects, Permissions
 from ..utils import object_permissions_required
+from .utils import jinja_filter
 from .object_form_parser import parse_form_data
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -76,6 +77,7 @@ def objects():
     return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles)
 
 
+@jinja_filter
 def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
@@ -203,8 +205,6 @@ def show_object_form(object, action):
 def object(object_id):
     object = Objects.get_current_object(object_id=object_id)
 
-    # TODO: setup jinja env globally
-    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
     user_may_grant = Permissions.GRANT in user_permissions
@@ -228,8 +228,6 @@ def new_object():
         # TODO: handle error
         return flask.abort(404)
 
-    # TODO: setup jinja env globally
-    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
     # TODO: check instrument permissions
     return show_object_form(None, action)
 
@@ -257,7 +255,6 @@ def object_version(object_id, version_id):
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
 
-    flask.current_app.jinja_env.filters['to_datatype'] = to_datatype
     return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, version_id=version_id, restore_form=form, user_may_grant=user_may_grant)
 
 

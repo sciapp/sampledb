@@ -27,6 +27,7 @@ def create_app():
 
     login_manager.login_view = 'frontend.sign_in'
     app.jinja_env.globals.update(signout_form=sampledb.frontend.users_forms.SignoutForm)
+    app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
 
     with app.app_context():
         db.metadata.create_all(bind=db.engine)
