@@ -106,14 +106,6 @@ def test_invite(flask_server):
     })
     assert r.status_code == 400
 
-    # Create new session
-    session = requests.session()
-
-
-    # Log out again
-    r = session.get(flask_server.base_url + 'logout')
-    assert r.status_code == 200
-
 
 def test_useradd(flask_server):
     session = requests.session()
@@ -148,7 +140,6 @@ def test_useradd(flask_server):
     assert r.status_code == 200
 
 
-
 def test_show_all(flask_server):
     # Try logging in with ldap-test-account
     session = requests.session()
@@ -174,6 +165,7 @@ def test_show_all(flask_server):
     r = session.get(flask_server.base_url + 'show_all')
     assert r.status_code == 200
 
+
 def test_remove_authenticationmethod(flask_server):
     # Try logging in with ldap-test-account
     session = requests.session()
@@ -196,6 +188,7 @@ def test_remove_authenticationmethod(flask_server):
     assert r.status_code == 200
     r = session.post(flask_server.base_url + 'authentication/1/remove/1')
     assert r.status_code == 200
+
 
 def test_add_authenticationmethod(flask_server):
     # Try logging in with ldap-test-account

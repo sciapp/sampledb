@@ -22,21 +22,13 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
-@frontend.route('/logout')
-@flask_login.login_required
-def logout():
-    flask_login.logout_user()
-    return flask.redirect(flask.url_for('frontend.index'))
-
-
-
-
 @frontend.route('/invite_user', methods=['POST'])
 def invite():
     email = flask.request.form['mail']
     # send confirm link
     logic.utils.send_confirm_email(email, None, 'invitation')
     return flask.redirect(flask.url_for('frontend.index'))
+
 
 @frontend.route('/confirm', methods=['GET', 'POST'])
 def confirm_registration():
@@ -53,7 +45,7 @@ def confirm_registration():
         # no user with this name and contact email in db => add to db
         if erg is None:
             u = User(str(user.name).title(), user.email, user.type)
-            insert_user_and_authentication_method_to_db(u, form.password.data, email,AuthenticationType.EMAIL)
+            insert_user_and_authentication_method_to_db(u, form.password.data, email, AuthenticationType.EMAIL)
             flask.flash('registration successfully')
             return flask.redirect(flask.url_for('frontend.index'))
         else:
@@ -69,9 +61,6 @@ def confirm_email():
     token = flask.request.args.get('token')
     data = verify_token(token, salt=salt, secret_key=flask.current_app.config['SECRET_KEY'])
     if data is None:
-        if(len(data)!=2):
-            flask.flash('Error in confirmation email.', 'danger')
-            return flask.render_template('index_old.html')
         return flask.abort(404)
     else:
         if len(data) != 2:
@@ -95,28 +84,29 @@ def confirm_email():
 
 @frontend.route('/add_user', methods=['GET', 'POST'])
 def useradd():
-   form = NewUserForm()
-   if form.validate_on_submit():
-       # check, if login already exists
-       login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
-       if login is None:
-           if(form.type.data=='O'):
-               type = UserType.OTHER
-           else:
-               type = UserType.PERSON
-           user = User(str(form.name.data).title(),str(form.email.data),type)
-           if form.authentication_method.data == 'E':
-               authentication_method = AuthenticationType.EMAIL
-           else:
-               authentication_method = AuthenticationType.OTHER
-           insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data, authentication_method)
-       else:
-           flask.flash('user exists, please contact administrator')
-           return flask.redirect(flask.url_for('frontend.index'))
-   return flask.render_template('user.html', form=form)
+    form = NewUserForm()
+    if form.validate_on_submit():
+        # check, if login already exists
+        login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
+        if login is None:
+            if (form.type.data == 'O'):
+                type = UserType.OTHER
+            else:
+                type = UserType.PERSON
+            user = User(str(form.name.data).title(), str(form.email.data), type)
+            if form.authentication_method.data == 'E':
+                authentication_method = AuthenticationType.EMAIL
+            else:
+                authentication_method = AuthenticationType.OTHER
+            insert_user_and_authentication_method_to_db(user, form.password.data, form.login.data,
+                                                        authentication_method)
+        else:
+            flask.flash('user exists, please contact administrator')
+            return flask.redirect(flask.url_for('frontend.index'))
+    return flask.render_template('user.html', form=form)
 
 
-@frontend.route('/show_all', methods=['GET','POST'])
+@frontend.route('/show_all', methods=['GET', 'POST'])
 @flask_login.login_required
 def show_login():
     user = flask_login.current_user
@@ -126,7 +116,7 @@ def show_login():
 
 @frontend.route('/authentication/<userid>/remove/<id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def delete_login(userid,id):
+def delete_login(userid, id):
     if flask_login.current_user.is_authenticated:
         user = flask_login.current_user
         if str(user.id) == userid:
@@ -139,6 +129,7 @@ def delete_login(userid,id):
                 db.session.delete(authentication_methods)
                 db.session.commit()
     return flask.redirect(flask.url_for('frontend.index'))
+
 
 @frontend.route('/authentication/add/<int:userid>', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -164,6 +155,7 @@ def add_login(userid):
     else:
         return flask.abort(400)
 
+
 @frontend.route('/edit_profile', methods=['GET', 'POST'])
 @flask_login.login_required
 def editprofile():
@@ -183,4 +175,4 @@ def editprofile():
             # send confirm link
             logic.utils.send_confirm_email(form.email.data, user.id, 'edit_profile')
         return flask.redirect(flask.url_for('frontend.index'))
-    return flask.render_template('edit_user.html', form=form)
+    return flask.render_template('preferences.html', user=user, form=form)
