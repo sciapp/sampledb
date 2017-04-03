@@ -106,13 +106,6 @@ def useradd():
     return flask.render_template('user.html', form=form)
 
 
-@frontend.route('/show_all', methods=['GET', 'POST'])
-@flask_login.login_required
-def show_login():
-    user = flask_login.current_user
-    authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).all()
-    return flask.render_template('authentications.html', user=user, authentications=authentication_methods)
-
 
 @frontend.route('/authentication/<userid>/remove/<id>', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -156,23 +149,4 @@ def add_login(userid):
         return flask.abort(400)
 
 
-@frontend.route('/edit_profile', methods=['GET', 'POST'])
-@flask_login.login_required
-def editprofile():
-    user = flask_login.current_user
-    form = ChangeUserForm()
-    if form.name.data is None:
-        form.name.data = user.name
-    if form.email.data is None:
-        form.email.data = user.email
-    if form.validate_on_submit():
-        if (form.name.data != user.name):
-            u = user
-            u.name = str(form.name.data)
-            db.session.add(u)
-            db.session.commit()
-        if(form.email.data != user.email):
-            # send confirm link
-            logic.utils.send_confirm_email(form.email.data, user.id, 'edit_profile')
-        return flask.redirect(flask.url_for('frontend.index'))
-    return flask.render_template('preferences.html', user=user, form=form)
+

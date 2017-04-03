@@ -92,6 +92,7 @@ def user_preferences(user_id=None):
             db.session.commit()
         if(form.email.data != user.email):
             # send confirm link
+            print('send-email')
             send_confirm_email(form.email.data, user.id, 'edit_profile')
         return flask.redirect(flask.url_for('frontend.index'))
     return flask.render_template('preferences.html', user=user, form=form, authentications=authentication_methods)
