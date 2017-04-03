@@ -106,14 +106,6 @@ def test_invite(flask_server):
     })
     assert r.status_code == 400
 
-    # Create new session
-    session = requests.session()
-
-
-    # Log out again
-    r = session.get(flask_server.base_url + 'logout')
-    assert r.status_code == 200
-
 
 def test_useradd(flask_server):
     session = requests.session()
@@ -149,31 +141,6 @@ def test_useradd(flask_server):
 
 
 
-def test_show_all(flask_server):
-    # Try logging in with ldap-test-account
-    session = requests.session()
-    r = session.get(flask_server.base_url + 'users/me/sign_in')
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
-    assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
-    # it also contains a hidden CSRF token
-    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    # submit the form
-    r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
-        'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
-        'csrf_token': csrf_token
-    })
-
-    assert r.status_code == 200
-
-    r = session.get(flask_server.base_url + 'show_all')
-    assert r.status_code == 200
-
 def test_remove_authenticationmethod(flask_server):
     # Try logging in with ldap-test-account
     session = requests.session()
@@ -196,6 +163,7 @@ def test_remove_authenticationmethod(flask_server):
     assert r.status_code == 200
     r = session.post(flask_server.base_url + 'authentication/1/remove/1')
     assert r.status_code == 200
+
 
 def test_add_authenticationmethod(flask_server):
     # Try logging in with ldap-test-account
@@ -300,50 +268,3 @@ def test_add_authenticationmethod(flask_server):
     assert r.status_code == 200
 
 
-def test_confirm_email(flask_server):
-    session = requests.session()
-    r = session.get(flask_server.base_url + 'users/me/sign_in')
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
-    assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
-    # it also contains a hidden CSRF token
-    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    # submit the form
-    r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
-        'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
-        'csrf_token': csrf_token
-    })
-    url = flask_server.base_url + 'edit_profile'
-    assert r.status_code == 200
-    # Send a POST request to the confirmation url
-    # TODO: require authorization
-
-    r = session.get(flask_server.base_url + 'edit_profile')
-    assert r.status_code == 200
-
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
-
-    # Submit the missing information and complete the registration
-    with sampledb.mail.record_messages() as outbox:
-        r = session.post(url, {
-            'name': 'Doro Testaccount1',
-            'email': 'example@fz-juelich.de',
-            'csrf_token': csrf_token
-        })
-        assert r.status_code == 200
-
-    # Check if an invitation mail was sent
-    assert len(outbox) == 1
-    assert 'example@fz-juelich.de' in outbox[0].recipients
-    message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
-
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email')
-    r = session.get(confirmation_url)
-    assert r.status_code == 200

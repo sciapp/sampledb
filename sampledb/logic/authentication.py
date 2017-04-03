@@ -36,7 +36,7 @@ def add_authentication_to_db(log, user_type, confirmed, user_id):
     db.session.commit()
 
 
-def login(login,password):
+def login(login, password):
     # filter email + password or username + password or username (ldap)
     authentication_methods = Authentication.query.filter(
         db.or_(
@@ -78,8 +78,7 @@ def login(login,password):
 
 
 def add_login(userid, login, password, authentication_method):
-    logins = Authentication.query.filter(Authentication.login['login'].astext == login,
-                                        Authentication.user_id == userid).first()
+    logins = Authentication.query.filter(Authentication.login['login'].astext == login, Authentication.user_id == userid).first()
     if logins is not None:
         # authentication-method already exists
         return False
