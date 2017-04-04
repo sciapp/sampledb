@@ -29,13 +29,13 @@ def parse_any_form_data(form_data, schema, id_prefix, errors):
         return parse_object_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('type') == 'array':
         return parse_array_form_data(form_data, schema, id_prefix, errors)
-    elif schema.get('$ref') == '#/definitions/text' or schema.get('allOf', [None])[0] == {'$ref': '#/definitions/text'}:
+    elif schema.get('type') == 'text':
         return parse_text_form_data(form_data, schema, id_prefix, errors)
-    elif schema.get('$ref') == '#/definitions/datetime':
+    elif schema.get('type') == 'datetime':
         return parse_datetime_form_data(form_data, schema, id_prefix, errors)
-    elif schema.get('$ref') == '#/definitions/bool':
+    elif schema.get('type') == 'bool':
         return parse_boolean_form_data(form_data, schema, id_prefix, errors)
-    elif schema.get('allOf', [None])[0] == {'$ref': '#/definitions/quantity'}:
+    elif schema.get('type') == 'quantity':
         return parse_quantity_form_data(form_data, schema, id_prefix, errors)
     raise ValueError('invalid schema')
 
@@ -43,10 +43,16 @@ def parse_any_form_data(form_data, schema, id_prefix, errors):
 @form_data_parser
 def parse_text_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
-    # TODO: validate schema?
+    # TODO: minLength/maxLength in schema
+    minimum_length = schema.get("minLength", 0)
+    maximum_length = schema.get("maxLength", None)
     if keys != [id_prefix + '_text']:
         raise ValueError('invalid text form data')
     text = form_data.get(id_prefix + '_text', [''])[0]
+    if len(text) < minimum_length:
+        raise ValueError("text too short")
+    if maximum_length is not None and len(text) > maximum_length:
+        raise ValueError("text too long")
     return {
         '_type': 'text',
         'text': str(text)

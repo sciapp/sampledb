@@ -214,7 +214,11 @@ def test_get_instruments(flask_server, user, username, password):
 
 
 def test_get_actions(flask_server, user, username, password):
-    instruments.create_action(name="Example Action", description="", schema={})
+    instruments.create_action(name="Example Action", description="", schema={
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    })
     r = requests.get(flask_server.api_url + 'actions/', auth=(username, password))
     assert r.status_code == 200
     actions = r.json()
@@ -228,12 +232,20 @@ def test_get_actions(flask_server, user, username, password):
     assert instruments.get_action(action_id=action['id']).description == action['description']
     assert action['instrument_id'] is None
     assert instruments.get_action(action_id=action['id']).instrument_id is None
-    assert action['schema'] == {}
+    assert action['schema'] == {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    }
     assert instruments.get_action(action_id=action['id']).schema == action['schema']
 
 
 def test_get_action(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={})
+    action = instruments.create_action(name="Example Action", description="", schema={
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    })
     r = requests.get(flask_server.api_url + 'actions/{}'.format(action.id), auth=(username, password))
     assert r.status_code == 200
     action = r.json()
@@ -245,24 +257,40 @@ def test_get_action(flask_server, user, username, password):
     assert instruments.get_action(action_id=action['id']).description == action['description']
     assert action['instrument_id'] is None
     assert instruments.get_action(action_id=action['id']).instrument_id is None
-    assert action['schema'] == {}
+    assert action['schema'] == {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    }
     assert instruments.get_action(action_id=action['id']).schema == action['schema']
 
 
 def test_get_action_missing(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={})
+    action = instruments.create_action(name="Example Action", description="", schema={
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    })
     r = requests.get(flask_server.api_url + 'actions/{}'.format(action.id+1), auth=(username, password))
     assert r.status_code == 404
 
 
 def test_update_action(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={})
+    action = instruments.create_action(name="Example Action", description="", schema={
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    })
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps({
         'id': action.id,
         'instrument_id': None,
         'name': 'Test',
         'description': 'desc',
-        'schema': {}
+        'schema': {
+            'title': 'Updated Example Object',
+            'type': 'object',
+            'properties': {}
+        }
     }), auth=(username, password))
     assert r.status_code == 200
     action = r.json()
@@ -274,18 +302,30 @@ def test_update_action(flask_server, user, username, password):
     assert instruments.get_action(action_id=action['id']).description == action['description']
     assert action['instrument_id'] is None
     assert instruments.get_action(action_id=action['id']).instrument_id is None
-    assert action['schema'] == {}
+    assert action['schema'] == {
+        'title': 'Updated Example Object',
+        'type': 'object',
+        'properties': {}
+    }
     assert instruments.get_action(action_id=action['id']).schema == action['schema']
 
 
 def test_update_action_missing(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={})
+    action = instruments.create_action(name="Example Action", description="", schema={
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    })
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id+1), auth=(username, password))
     assert r.status_code == 404
 
 
 def test_update_action_invalid_data(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={})
+    action = instruments.create_action(name="Example Action", description="", schema={
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    })
     original_action = action
     # invalid json data
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps([]), auth=(username, password))
@@ -307,7 +347,11 @@ def test_update_action_invalid_data(flask_server, user, username, password):
         'name': 'Example Action',
         'description': '',
         'instrument_id': 0,
-        'schema': {}
+        'schema': {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        }
     }), auth=(username, password))
     assert r.status_code == 400
     assert instruments.get_action(action_id=action.id) == original_action
@@ -317,7 +361,11 @@ def test_update_action_invalid_data(flask_server, user, username, password):
         'name': 'Example Action',
         'description': '',
         'instrument_id': None,
-        'schema': {}
+        'schema': {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        }
     }), auth=(username, password))
     assert r.status_code == 400
     assert instruments.get_action(action_id=action.id) == original_action
@@ -336,7 +384,11 @@ def test_update_action_invalid_data(flask_server, user, username, password):
         'name': 'Example Action',
         'description': '',
         'instrument_id': None,
-        'schema': {}
+        'schema': {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        }
     }), auth=(username, password))
     assert r.status_code == 400
     assert instruments.get_action(action_id=action.id) == original_action
@@ -347,7 +399,11 @@ def test_create_action(flask_server, user, username, password):
     r = requests.post(flask_server.api_url + 'actions/', json.dumps({
         'name': 'Example Action',
         'description': '',
-        'schema': {},
+        'schema': {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        },
         'instrument_id': None
     }), auth=(username, password))
     assert r.status_code == 201
@@ -359,7 +415,11 @@ def test_create_action(flask_server, user, username, password):
     assert action['description'] == ''
     assert action['instrument_id'] is None
     assert instruments.get_action(action_id=action['id']).instrument_id is None
-    assert action['schema'] == {}
+    assert action['schema'] == {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {}
+    }
     assert instruments.get_action(action_id=action['id']).schema == action['schema']
 
 
@@ -381,7 +441,11 @@ def test_create_action_invalid_data(flask_server, user, username, password):
     r = requests.post(flask_server.api_url + 'actions/', json.dumps({
         'name': 'Example Action',
         'description': '',
-        'schema': {}
+        'schema': {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        }
     }), auth=(username, password))
     assert r.status_code == 400
     assert len(instruments.get_actions()) == 0

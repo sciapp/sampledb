@@ -10,6 +10,7 @@ import flask
 import flask_login
 
 from ..logic import instruments
+from ..logic import schemas
 from ..utils import http_auth_required
 
 from . import rest_api
@@ -177,7 +178,7 @@ def update_action(action_id):
     schema = data['schema']
     try:
         action = instruments.update_action(action_id=action_id, name=name, description=description, schema=schema)
-    except jsonschema.exceptions.SchemaError:
+    except schemas.ValidationError:
         return flask.abort(400)
     return flask.jsonify({
         'id': action.id,
@@ -207,7 +208,7 @@ def create_action():
     schema = data['schema']
     try:
         action = instruments.create_action(name=name, description=description, schema=schema, instrument_id=instrument_id)
-    except jsonschema.exceptions.SchemaError:
+    except schemas.ValidationError:
         return flask.abort(400)
     return flask.jsonify({
         'id': action.id,

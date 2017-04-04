@@ -53,7 +53,16 @@ def user(flask_server, username, password):
 def action(flask_server):
     action = Action(
         name='Example Action',
-        schema={},
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'example': {
+                    'title': 'Example Attribute',
+                    'type': 'text'
+                }
+            }
+        },
         description='',
         instrument_id=None
     )
@@ -239,14 +248,14 @@ def test_create_object_errors(flask_server, user, username, password, action):
 def test_update_object(flask_server, user, username, password, action):
     obj = Objects.create_object(action_id=action.id, data={}, schema=action.schema, user_id=user.id)
     data = {
-        'data': {'x': 1},
+        'data': {'example': {'_type': 'text', 'text': 'Example'}},
         'schema': action.schema
     }
     r = requests.put(flask_server.api_url + 'objects/{}'.format(obj.object_id), json=data, auth=(username, password))
     assert r.status_code == 200
     obj = Objects.get_current_objects()[0]
     assert r.headers['Location'] == flask_server.api_url + 'objects/{}'.format(obj.object_id)
-    assert obj.data == {'x': 1}
+    assert obj.data == {'example': {'_type': 'text', 'text': 'Example'}}
     assert obj.schema == action.schema
     assert obj.version_id == 1
     assert obj.utc_datetime <= datetime.datetime.utcnow()
@@ -293,6 +302,14 @@ def test_update_object_errors(flask_server, user, username, password, action):
             # action_id cannot be changed
             'action_id': action.id+1,
             'data': {},
+            'schema': action.schema
+        }, {
+            # schema must be valid
+            'data': {},
+            'schema': {}
+        }, {
+            # object must be valid for the schema
+            'data': {'example2': {'_type': 'text', 'text': 'Example'}},
             'schema': action.schema
         }, {}
     ]

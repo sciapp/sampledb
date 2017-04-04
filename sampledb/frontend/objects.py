@@ -12,6 +12,7 @@ import itsdangerous
 from . import frontend
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..logic.datatypes import JSONEncoder
+from ..logic.schemas import validate
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
@@ -173,7 +174,7 @@ def show_object_form(object, action):
             object_data, errors = parse_form_data(dict(flask.request.form), schema)
             if not errors:
                 try:
-                    jsonschema.validate(object_data, schema)
+                    validate(object_data, schema)
                 except jsonschema.ValidationError:
                     # TODO: proper logging
                     print('object schema validation failed')

@@ -426,6 +426,35 @@ def test_validate_array():
     validate(instance, schema)
 
 
+def test_validate_array_multiple_errors():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        }
+    }
+    instance = [
+        {
+            '_type': 'text'
+        },
+        {
+            '_type': 'bool'
+        },
+        {
+            '_type': 'text',
+            'text': 'test'
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        validate(instance, schema)
+    exception = exc_info.value
+    assert len(exception.paths) == 2
+    assert ['0'] in exception.paths
+    assert ['1'] in exception.paths
+
+
 def test_validate_array_invalid_instance_type():
     schema = {
         'title': 'Example',
@@ -553,6 +582,36 @@ def test_validate_object():
     }
     instance = {}
     validate(instance, schema)
+
+
+def test_validate_object_multiple_errors():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'example1': {
+                'title': 'Example Item',
+                'type': 'text'
+            },
+            'example2': {
+                'title': 'Example Item',
+                'type': 'text'
+            }
+        },
+        'required': ['example1', 'example2']
+    }
+    instance = {
+        'example2': {
+            '_type': 'tect',
+            'text': 'test'
+        }
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        validate(instance, schema)
+    exception = exc_info.value
+    assert len(exception.paths) == 2
+    assert ['example1'] in exception.paths
+    assert ['example2'] in exception.paths
 
 
 def test_validate_object_invalid_instance_type():

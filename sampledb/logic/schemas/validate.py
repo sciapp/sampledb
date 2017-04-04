@@ -6,7 +6,7 @@
 import datetime
 import typing
 
-from .errors import ValidationError
+from .errors import ValidationError, ValidationMultiError
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -55,8 +55,16 @@ def _validate_array(instance: list, schema: dict, path: typing.List[str]) -> Non
         raise ValidationError('expected at least {} items'.format(schema['minItems']), path)
     if 'maxItems' in schema and len(instance) > schema['maxItems']:
         raise ValidationError('expected at most {} items'.format(schema['maxItems']), path)
-    for item in instance:
-        validate(item, schema['items'], path + ['[?]'])
+    errors = []
+    for index, item in enumerate(instance):
+        try:
+            validate(item, schema['items'], path + [str(index)])
+        except ValidationError as e:
+            errors.append(e)
+    if len(errors) == 1:
+        raise errors[0]
+    elif len(errors) > 1:
+        raise ValidationMultiError(errors)
 
 
 def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> None:
@@ -69,15 +77,23 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> No
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
+    errors = []
     if 'required' in schema:
         for property_name in schema['required']:
             if property_name not in instance:
-                raise ValidationError('missing required property "{}"'.format(property_name), path)
+                errors.append(ValidationError('missing required property "{}"'.format(property_name), path + [property_name]))
     for property_name, property_value in instance.items():
-        if property_name not in schema['properties']:
-            raise ValidationError('unknown property "{}"'.format(property_name), path)
-        else:
-            validate(property_value, schema['properties'][property_name], path + [property_name])
+        try:
+            if property_name not in schema['properties']:
+                raise ValidationError('unknown property "{}"'.format(property_name), path + [property_name])
+            else:
+                validate(property_value, schema['properties'][property_name], path + [property_name])
+        except ValidationError as e:
+            errors.append(e)
+    if len(errors) == 1:
+        raise errors[0]
+    elif len(errors) > 1:
+        raise ValidationMultiError(errors)
 
 
 def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None:

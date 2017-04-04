@@ -12,6 +12,7 @@ import jsonschema
 
 from ..logic.permissions import get_user_object_permissions
 from ..logic.instruments import get_action
+from ..logic.schemas import ValidationError
 from ..models import Objects, Permissions
 from ..utils import object_permissions_required, http_auth_required
 from . import rest_api
@@ -30,7 +31,7 @@ jsonschema.Draft4Validator.check_schema(OBJECT_SCHEMA)
 def get_object_version(object_id, version_id):
     obj = Objects.get_object_version(object_id, version_id)
     if obj is None:
-        flask.abort(404)
+        return flask.abort(404)
     return flask.jsonify({
         'object_id': obj.object_id,
         'version_id': obj.version_id,
@@ -47,7 +48,7 @@ def get_object_version(object_id, version_id):
 def get_object(object_id):
     obj = Objects.get_current_object(object_id)
     if obj is None:
-        flask.abort(404)
+        return flask.abort(404)
     return flask.jsonify({
         'object_id': obj.object_id,
         'version_id': obj.version_id,
@@ -86,28 +87,28 @@ def create_object():
     # TODO: set up initial permissions
     user_id = flask_login.current_user.id
     if not flask.request.is_json:
-        flask.abort(400)
+        return flask.abort(400)
     obj = flask.request.json
     try:
         jsonschema.validate(obj, OBJECT_SCHEMA)
     except jsonschema.ValidationError:
-        flask.abort(400)
+        return flask.abort(400)
     if 'action_id' not in obj:
-        flask.abort(400)
+        return flask.abort(400)
     action = get_action(action_id=obj['action_id'])
     if action is None:
-        flask.abort(400)
+        return flask.abort(400)
     if obj['schema'] != action.schema:
-        flask.abort(400)
+        return flask.abort(400)
     if 'object_id' in obj:
-        flask.abort(400)
+        return flask.abort(400)
     if 'user_id' in obj and obj['user_id'] != user_id:
-        flask.abort(400)
+        return flask.abort(400)
     if 'last_modified' in obj:
         # TODO: possibly allow setting last modified?
-        flask.abort(400)
+        return flask.abort(400)
     if 'version_id' in obj and obj['version_id'] != 0:
-        flask.abort(400)
+        return flask.abort(400)
     obj = Objects.create_object(
         action_id=obj['action_id'],
         data=obj['data'],
@@ -123,26 +124,29 @@ def create_object():
 def update_object(object_id):
     current_object = Objects.get_current_object(object_id)
     if current_object is None:
-        flask.abort(404)
+        return flask.abort(404)
     user_id = flask_login.current_user.id
     if not flask.request.is_json:
-        flask.abort(400)
+        return flask.abort(400)
     obj = flask.request.json
     try:
         jsonschema.validate(obj, OBJECT_SCHEMA)
     except jsonschema.ValidationError:
-        flask.abort(400)
+        return flask.abort(400)
     if 'object_id' in obj and obj['object_id'] != object_id:
-        flask.abort(400)
+        return flask.abort(400)
     if 'action_id' in obj and obj['action_id'] != current_object.action_id:
-        flask.abort(400)
+        return flask.abort(400)
     if 'user_id' in obj and obj['user_id'] != user_id:
-        flask.abort(400)
+        return flask.abort(400)
     if 'last_modified' in obj:
         # TODO: possibly allow setting last modified?
-        flask.abort(400)
+        return flask.abort(400)
     if 'version_id' in obj and obj['version_id'] != current_object.version_id+1:
-        flask.abort(400)
-    obj = Objects.update_object(object_id, obj['data'], obj['schema'], user_id=user_id)
+        return flask.abort(400)
+    try:
+        obj = Objects.update_object(object_id, obj['data'], obj['schema'], user_id=user_id)
+    except ValidationError:
+        return flask.abort(400)
     return '', 200, {'Location': flask.url_for('.get_object', object_id=obj.object_id)}
 

@@ -44,13 +44,13 @@ def setup_data(app):
 
     instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
-    with open('sampledb/schemas/ombe.custom.json', 'r') as schema_file:
+    with open('sampledb/schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action("Sample Creation", "This is an example action", schema, instrument.id)
     independent_action = create_action("Alternative Process", "This is an example action", schema)
     sampledb.db.session.commit()
 
-    with open('example_data/ombe.json', 'r') as data_file:
+    with open('example_data/ombe-1.sampledb.json', 'r') as data_file:
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)

@@ -1,15 +1,15 @@
 <div class="form-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
   <label class="control-label col-md-3">{{ schema.title }}</label>
-  {% if schema.allOf[1].properties.dimensionality['enum'][0] == "dimensionless" %}
+  {% if schema['units'] == "1" %}
     <div class="col-md-9">
       <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units }}"{% endif %}>
     </div>
   {% else %}
     <div class="col-md-9">
-      <input type="hidden" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema.allOf[1].properties.defaultUnits['enum'][0] }}{% endif %}"/>
+      <input type="hidden" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
       <div class="input-group">
         <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none %}value="{{ '%g'| format((data | to_datatype).magnitude) }}"{% endif %}>
-        <span class="input-group-addon" style="min-width: 100px; text-align:left">{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema.allOf[1].properties.defaultUnits['enum'][0] }}{% endif %}</span>
+        <span class="input-group-addon" style="min-width: 100px; text-align:left">{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}</span>
       </div>
     </div>
   {% endif %}

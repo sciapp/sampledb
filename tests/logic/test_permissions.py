@@ -31,7 +31,11 @@ def users():
 def independent_action():
     action = Action(
         name='Example Action',
-        schema={},
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        },
         description='',
         instrument_id=None
     )
@@ -59,7 +63,11 @@ def instrument():
 def instrument_action(instrument):
     action = Action(
         name='Example Action',
-        schema={},
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        },
         description='',
         instrument_id=instrument.id
     )
@@ -73,7 +81,7 @@ def instrument_action(instrument):
 @pytest.fixture
 def objects(users, instrument_action, independent_action):
     actions = [instrument_action, independent_action]
-    objects = [Objects.create_object(user_id=users[1].id, action_id=action.id, data={}, schema={}) for action in actions]
+    objects = [Objects.create_object(user_id=users[1].id, action_id=action.id, data={}, schema=action.schema) for action in actions]
     return objects
 
 

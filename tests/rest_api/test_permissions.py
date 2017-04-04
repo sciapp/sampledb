@@ -36,7 +36,11 @@ def users(flask_server):
 def independent_action(app):
     action = Action(
         name='Example Action',
-        schema={},
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        },
         description='',
         instrument_id=None
     )
@@ -51,7 +55,7 @@ def independent_action(app):
 @pytest.fixture
 def instrument(app):
     instrument = Instrument(
-        name='Example Action',
+        name='Example Instrument',
         description=''
     )
     with app.app_context():
@@ -67,7 +71,11 @@ def instrument(app):
 def instrument_action(app, instrument):
     action = Action(
         name='Example Action',
-        schema={},
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {}
+        },
         description='',
         instrument_id=instrument.id
     )
@@ -82,7 +90,7 @@ def instrument_action(app, instrument):
 @pytest.fixture
 def objects(users, instrument_action, independent_action):
     actions = [instrument_action, independent_action]
-    objects = [Objects.create_object(user_id=users[1].id, action_id=action.id, data={}, schema={}) for action in actions]
+    objects = [Objects.create_object(user_id=users[1].id, action_id=action.id, data={}, schema=action.schema) for action in actions]
     return objects
 
 

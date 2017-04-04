@@ -5,7 +5,6 @@
 
 import collections
 import datetime
-import jsonschema
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
 
@@ -42,7 +41,7 @@ class VersionedJSONSerializableObjectTables(object):
         ]
     )
 
-    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None):
+    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None, data_validator=None, schema_validator=None):
         """
         Creates new instance for storing versioned, JSON-serializable objects using two tables.
 
@@ -53,6 +52,8 @@ class VersionedJSONSerializableObjectTables(object):
         :param action_id_column: a SQLAlchemy column object for use as foreign key for the action ID (optional)
         :param metdata: an SQLAlchemy MetaData object used for creating the two tables (optional)
         :param create_object_callbacks: a list of callables which will be called when an object is created (optional)
+        :param data_validator: a data validator function (given the data and the schema) (optional)
+        :param schema_validator: a schema validator function (given the schema) (optional)
         """
         if metadata is None:
             metadata = db.MetaData()
@@ -98,6 +99,8 @@ class VersionedJSONSerializableObjectTables(object):
         self.bind = bind
         if self.bind is not None:
             self.metadata.create_all(self.bind)
+        self._data_validator = data_validator
+        self._schema_validator = schema_validator
 
     def create_object(self, data, schema, user_id, action_id, utc_datetime=None, connection=None):
         """
@@ -126,8 +129,10 @@ class VersionedJSONSerializableObjectTables(object):
             if action is None:
                 raise ValueError('Action with id {} not found'.format(action_id))
             schema = action[0]
-        jsonschema.Draft4Validator.check_schema(schema)
-        jsonschema.validate(data, schema, cls=jsonschema.Draft4Validator)
+        if self._schema_validator:
+            self._schema_validator(schema)
+        if self._data_validator:
+            self._data_validator(data, schema)
         version_id = 0
         object_id = connection.execute(
             self._current_table
@@ -176,8 +181,10 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
-        jsonschema.Draft4Validator.check_schema(schema)
-        jsonschema.validate(data, schema, cls=jsonschema.Draft4Validator)
+        if self._schema_validator:
+            self._schema_validator(schema)
+        if self._data_validator:
+            self._data_validator(data, schema)
         with connection.begin() as transaction:
             # Copy current version to previous versions
             assert connection.execute(
