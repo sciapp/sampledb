@@ -101,6 +101,85 @@ def test_validate_text_schema():
     validate_schema(schema)
 
 
+def test_validate_text_with_min_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': 1
+    }
+    validate_schema(schema)
+
+
+def test_validate_text_with_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'maxLength': 10
+    }
+    validate_schema(schema)
+
+
+def test_validate_text_with_invalid_min_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': "1"
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_negative_min_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': -1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_invalid_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'maxLength': "10"
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_negative_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'maxLength': -1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_min_and_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': 1,
+        'maxLength': 10
+    }
+    validate_schema(schema)
+
+
+def test_validate_text_invalid_min_and_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': 10,
+        'maxLength': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_text_schema_default():
     schema = {
         'title': 'Example',

@@ -4,7 +4,10 @@
   "properties": {
     "name": {
       "title": "Sample Name",
-      "type": "text"
+      "type": "text",
+      "default": "OMBE-",
+      "minLength": 1,
+      "maxLength": 100
     },
     "created": {
       "title": "Creation Datetime",
@@ -12,7 +15,8 @@
     },
     "substrate": {
       "title": "Substrate",
-      "type": "text"
+      "type": "text",
+      "minLength": 1
     },
     "checkbox": {
       "title": "Checkbox",
@@ -28,7 +32,8 @@
           "repetitions": {
             "title": "Film Layer Repetitions",
             "type": "quantity",
-            "units": "1"
+            "units": "1",
+            "default": 1
           },
           "films": {
             "title": "Films",

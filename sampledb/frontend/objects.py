@@ -12,7 +12,7 @@ import itsdangerous
 from . import frontend
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..logic.datatypes import JSONEncoder
-from ..logic.schemas import validate
+from ..logic.schemas import validate, generate_placeholder
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
@@ -83,19 +83,6 @@ def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
-def generate_placeholder_object(schema):
-    if 'type' in schema and schema['type'] == 'object':
-        return {
-            property_name: generate_placeholder_object(property_schema)
-            for property_name, property_schema in schema.get('properties', {}).items()
-        }
-    elif 'type' in schema and schema['type'] == 'array':
-        # TODO: items / minimum length
-        return []
-    # TODO: other types and their defaults
-    return None
-
-
 def apply_action_to_data(data, schema, action, form_data):
     new_form_data = form_data
     if action.endswith('_delete'):
@@ -136,7 +123,7 @@ def apply_action_to_data(data, schema, action, form_data):
             del sub_data[int(keys[-1])]
             # TODO: minimum length
         elif action.endswith('_add'):
-            sub_data.append(generate_placeholder_object(sub_schema["items"]))
+            sub_data.append(generate_placeholder(sub_schema["items"]))
             # TODO: maximum length
     except (ValueError, KeyError, IndexError, TypeError):
         # TODO: error handling/logging?
@@ -146,7 +133,7 @@ def apply_action_to_data(data, schema, action, form_data):
 
 def show_object_form(object, action):
     if object is None:
-        data = generate_placeholder_object(action.schema)
+        data = generate_placeholder(action.schema)
     else:
         data = object.data
     # TODO: update schema

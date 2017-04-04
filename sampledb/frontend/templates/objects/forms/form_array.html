@@ -10,7 +10,7 @@
     <thead>
       <tr>
         {% set item_property_names = schema["items"].properties.keys() %}
-        {% set property_order = schema.get('items', {}).get('_propertyOrder', []) %}
+        {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
         {% for property_name in property_order %}
           {% if property_name in item_property_names %}
           <th scope="col">{{ schema["items"].properties[property_name].title }}</th>
@@ -77,11 +77,7 @@
     </tfoot>
   </table>
 {% else %}
-  {% if "itemName" in schema %}
-    {% set itemName = schema.itemName %}
-  {% else %}
-    {% set itemName = "Item" %}
-  {% endif %}
+  {% set itemName = schema['items'].title %}
   {% if data is not none %}
     {% for item in data %}
       {% set name = "item" %}

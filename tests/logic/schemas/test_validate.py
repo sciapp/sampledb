@@ -107,6 +107,60 @@ def test_validate_text_invalid_key():
         validate(instance, schema)
 
 
+def test_validate_text_min_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': 1
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'test'
+    }
+    validate(instance, schema)
+
+
+def test_validate_text_invalid_min_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'minLength': 10
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'test'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_text_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'maxLength': 10
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'test'
+    }
+    validate(instance, schema)
+
+
+def test_validate_text_invalid_max_length():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'maxLength': 1
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'test'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_text_invalid_text_type():
     schema = {
         'title': 'Example',
