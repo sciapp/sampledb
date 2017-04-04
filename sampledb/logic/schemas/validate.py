@@ -119,12 +119,16 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
         raise ValidationError('expected _type "text"', path)
     if not isinstance(instance['text'], str):
         raise ValidationError('text must be str', path)
+    choices = schema.get('choices', None)
+    if choices and instance['text'] not in choices:
+        raise ValidationError('text must be one of {}'.format(choices), path)
     min_length = schema.get('minLength', 0)
     max_length = schema.get('maxLength', None)
     if len(instance['text']) < min_length:
         raise ValidationError('text must be at least {} characters long'.format(min_length), path)
     if max_length is not None and len(instance['text']) > max_length:
         raise ValidationError('text must be at most {} characters long'.format(max_length), path)
+
 
 
 def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> None:

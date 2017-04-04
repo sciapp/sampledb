@@ -22,6 +22,11 @@
       "title": "Checkbox",
       "type": "bool"
     },
+    "dropdown": {
+      "title": "Dropdown",
+      "type": "text",
+      "choices": ["Option A", "Option B", "Option C"]
+    },
     "multilayer": {
       "title": "Multilayers",
       "type": "array",

@@ -138,7 +138,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raises: ValidationError, if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -156,6 +156,14 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('maxLength must not be negative', path)
     if 'minLength' in schema and 'maxLength' in schema and schema['maxLength'] < schema['minLength']:
         raise ValidationError('maxLength must not be less than minLength', path)
+    if 'choices' in schema and not isinstance(schema['choices'], list):
+        raise ValidationError('choices must be list', path)
+    if 'choices' in schema and not schema['choices']:
+        raise ValidationError('choices must not be empty', path)
+    if 'choices' in schema:
+        for i, choice in enumerate(schema['choices']):
+            if not isinstance(choice, str):
+                raise ValidationError('choice must be str', path + [str(i)])
 
 
 def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:

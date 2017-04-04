@@ -119,6 +119,35 @@ def test_validate_text_with_max_length():
     validate_schema(schema)
 
 
+def test_validate_text_with_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': ['A', 'B', 'C']
+    }
+    validate_schema(schema)
+
+
+def test_validate_text_with_invalid_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': ['1', '2', 3]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_empty_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': []
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_text_with_invalid_min_length():
     schema = {
         'title': 'Example',

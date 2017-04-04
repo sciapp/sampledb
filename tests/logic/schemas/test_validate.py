@@ -107,6 +107,33 @@ def test_validate_text_invalid_key():
         validate(instance, schema)
 
 
+def test_validate_text_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': ["A", "B", "C"]
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'B'
+    }
+    validate(instance, schema)
+
+
+def test_validate_text_invalid_choice():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': ['A', 'B', 'C']
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'D'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_text_min_length():
     schema = {
         'title': 'Example',

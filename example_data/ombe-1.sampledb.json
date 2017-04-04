@@ -15,6 +15,10 @@
     "_type": "bool",
     "value": false
   },
+  "dropdown": {
+    "_type": "text",
+    "text": "Option B"
+  },
   "multilayer": [{
       "repetitions": {
         "_type": "quantity",
