@@ -7,6 +7,7 @@ import datetime
 import functools
 import pint
 from ..logic import datatypes
+from ..logic import schemas
 ureg = pint.UnitRegistry()
 
 
@@ -15,10 +16,15 @@ def form_data_parser(func):
     def wrapper(form_data, schema, id_prefix, errors):
         try:
             return func(form_data, schema, id_prefix, errors)
-        except ValueError:
+        except ValueError as e:
             for name in form_data:
-                if name.startswith(id_prefix):
-                    errors.append(name)
+                if name.startswith(id_prefix) and '_' not in name[len(id_prefix)+1:]:
+                    errors[name] = str(e)
+            return None
+        except schemas.ValidationError as e:
+            for name in form_data:
+                if name.startswith(id_prefix) and '_' not in name[len(id_prefix)+1:]:
+                    errors[name] = e.message
             return None
     return wrapper
 
@@ -43,20 +49,15 @@ def parse_any_form_data(form_data, schema, id_prefix, errors):
 @form_data_parser
 def parse_text_form_data(form_data, schema, id_prefix, errors):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
-    # TODO: minLength/maxLength in schema
-    minimum_length = schema.get("minLength", 0)
-    maximum_length = schema.get("maxLength", None)
     if keys != [id_prefix + '_text']:
         raise ValueError('invalid text form data')
     text = form_data.get(id_prefix + '_text', [''])[0]
-    if len(text) < minimum_length:
-        raise ValueError("text too short")
-    if maximum_length is not None and len(text) > maximum_length:
-        raise ValueError("text too long")
-    return {
+    data = {
         '_type': 'text',
         'text': str(text)
     }
+    schemas.validate(data, schema)
+    return data
 
 
 @form_data_parser
@@ -73,20 +74,24 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors):
     except ValueError:
         raise ValueError('invalid quantity form data')
     if id_prefix + '_units' in form_data:
-        # TODO: handle exceptions
         units = form_data[id_prefix + '_units'][0]
-        pint_units = ureg.Unit(units)
+        try:
+            pint_units = ureg.Unit(units)
+        except pint.UndefinedUnitError:
+            raise ValueError('invalid units')
     else:
         units = '1'
         pint_units = ureg.Unit('1')
     dimensionality = str(pint_units.dimensionality)
     magnitude_in_base_units = ureg.Quantity(magnitude, pint_units).to_base_units().magnitude
-    return {
+    data = {
         '_type': 'quantity',
         'magnitude_in_base_units': magnitude_in_base_units,
         'dimensionality': dimensionality,
         'units': units
     }
+    schemas.validate(data, schema)
+    return data
 
 
 @form_data_parser
@@ -96,14 +101,12 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors):
     if keys != [id_prefix + '_datetime']:
         raise ValueError('invalid datetime form data')
     utc_datetime = form_data.get(id_prefix + '_datetime', [''])[0]
-    try:
-        utc_datetime = datetime.datetime.strptime(utc_datetime, datatypes.DateTime.FORMAT_STRING)
-    except ValueError:
-        raise ValueError('invalid datetime format')
-    return {
+    data = {
         '_type': 'datetime',
-        'utc_datetime': utc_datetime.strftime(datatypes.DateTime.FORMAT_STRING)
+        'utc_datetime': utc_datetime
     }
+    schemas.validate(data, schema)
+    return data
 
 
 @form_data_parser
@@ -148,6 +151,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors):
             else:
                 item_id_prefix = id_prefix+'_{}'.format(i)
                 items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors))
+    schemas.validate(items, schema)
     return items
 
 
@@ -161,12 +165,13 @@ def parse_object_form_data(form_data, schema, id_prefix, errors):
             property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors)
             if property is not None:
                 data[property_name] = property
+    schemas.validate(data, schema)
     return data
 
 
 def parse_form_data(form_data, schema):
     id_prefix = 'object'
-    errors = []
+    errors = {}
     data = parse_object_form_data(form_data, schema, id_prefix, errors)
     return data, errors
 

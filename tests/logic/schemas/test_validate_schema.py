@@ -148,6 +148,25 @@ def test_validate_text_with_empty_choices():
         validate_schema(schema)
 
 
+def test_validate_text_with_pattern():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'pattern': '^[1-9][0-9]*/[A-Za-z]+$'
+    }
+    validate_schema(schema)
+
+
+def test_validate_text_with_invalid_pattern():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'pattern': '['
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_text_with_invalid_min_length():
     schema = {
         'title': 'Example',

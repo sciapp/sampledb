@@ -6,6 +6,7 @@
 
 import datetime
 import typing
+import re
 
 from .errors import ValidationError
 from .utils import units_are_valid
@@ -73,7 +74,7 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
             raise ValidationError('minItems must not be negative', path)
         else:
             has_min_items = True
-    has_max_items = True
+    has_max_items = False
     if 'maxItems' in schema:
         if not isinstance(schema['maxItems'], int):
             raise ValidationError('maxItems must be an integer', path)
@@ -138,7 +139,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raises: ValidationError, if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -164,6 +165,13 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
         for i, choice in enumerate(schema['choices']):
             if not isinstance(choice, str):
                 raise ValidationError('choice must be str', path + [str(i)])
+    if 'pattern' in schema and not isinstance(schema['pattern'], str):
+        raise ValidationError('pattern must be str', path)
+    if 'pattern' in schema:
+        try:
+            re.compile(schema['pattern'])
+        except re.error:
+            raise ValidationError('pattern is no valid regular expression', path)
 
 
 def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:

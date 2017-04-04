@@ -7,7 +7,8 @@
       "type": "text",
       "default": "OMBE-",
       "minLength": 1,
-      "maxLength": 100
+      "maxLength": 100,
+      "pattern": "^OMBE-[0-9]+$"
     },
     "created": {
       "title": "Creation Datetime",
@@ -30,6 +31,7 @@
     "multilayer": {
       "title": "Multilayers",
       "type": "array",
+      "minItems": 1,
       "items": {
         "title": "Multilayer",
         "type": "object",
@@ -43,6 +45,7 @@
           "films": {
             "title": "Films",
             "type": "array",
+            "minItems": 1,
             "items": {
               "title": "Film",
               "type": "object",
@@ -70,6 +73,7 @@
                   "title": "Elements",
                   "type": "array",
                   "style": "table",
+                  "minItems": 1,
                   "items": {
                     "title": "Element",
                     "type": "object",
@@ -124,12 +128,16 @@
     "name",
     "created",
     "checkbox",
+    "dropdown",
     "substrate",
     "multilayer"
   ],
   "required": [
     "name",
+    "created",
+    "checkbox",
     "substrate",
+    "dropdown",
     "multilayer"
   ]
 }

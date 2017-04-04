@@ -134,6 +134,33 @@ def test_validate_text_invalid_choice():
         validate(instance, schema)
 
 
+def test_validate_text_pattern():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'pattern': '^[1-9][0-9]*/[A-Za-z]+$'
+    }
+    instance = {
+        '_type': 'text',
+        'text': '42/Test'
+    }
+    validate(instance, schema)
+
+
+def test_validate_text_pattern_mismatch():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'pattern': '^[1-9][0-9]*/[A-Za-z]+$'
+    }
+    instance = {
+        '_type': 'text',
+        'text': '02/Test'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_text_min_length():
     schema = {
         'title': 'Example',
