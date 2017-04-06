@@ -173,7 +173,7 @@ def test_user_preferences_change_contactemail(flask_server):
     assert 'Welcome to iffsample!' in message
 
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email')
+    assert confirmation_url.startswith(flask_server.base_url + 'users/confirm-email')
     r = session.get(confirmation_url)
     assert r.status_code == 200
 
@@ -357,7 +357,7 @@ def test_user_add_email_authentication_method(flask_server):
 
     # Get the confirmation url from the mail and open it
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'confirm-email')
+    assert confirmation_url.startswith(flask_server.base_url + 'users/confirm-email')
     r = session.get(confirmation_url)
     assert r.status_code == 200
 

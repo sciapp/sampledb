@@ -12,6 +12,7 @@ from . import frontend
 from .authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from sampledb.logic.authentication import login, add_login, OnlyOneAuthenticationMethod, check_count_of_authentication_methods
 from sampledb.logic.utils import send_confirm_email
+from ..logic.security_tokens import verify_token
 
 from ..models import Authentication, AuthenticationType, User
 
@@ -140,6 +141,34 @@ def user_preferences(user_id=None):
             authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form, authentication_method_form=authentication_method_form,
                                  authentication_form=authentication_form, authentications=authentication_methods)
+
+
+@frontend.route('/users/confirm-email', methods=['GET'])
+def confirm_email():
+    salt = flask.request.args.get('salt')
+    token = flask.request.args.get('token')
+    data = verify_token(token, salt=salt, secret_key=flask.current_app.config['SECRET_KEY'])
+    if data is None:
+        return flask.abort(404)
+    else:
+        if len(data) != 2:
+            return flask.abort(400)
+        email = data[0]
+        id = data[1]
+        if salt == 'edit_profile':
+            user = User.query.get(id)
+            user.email = email
+            db.session.add(user)
+        elif salt == 'add_login':
+            auth = Authentication.query.filter(Authentication.user_id == id,
+                                               Authentication.login['login'].astext == email).first()
+            auth.confirmed = True
+            db.session.add(auth)
+        else:
+            return flask.abort(400)
+        db.session.commit()
+        user = User.query.get(id)
+        return flask.redirect(flask.url_for('.user_preferences', user_id=user.id))
 
 
 @frontend.route('/users/me/activity')

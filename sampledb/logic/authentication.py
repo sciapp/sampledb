@@ -44,6 +44,7 @@ def add_authentication_to_db(log, user_type, confirmed, user_id):
     db.session.add(auth)
     db.session.commit()
 
+
 def login(login, password):
     # filter email + password or username + password or username (ldap)
     authentication_methods = Authentication.query.filter(

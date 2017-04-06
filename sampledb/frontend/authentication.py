@@ -55,33 +55,6 @@ def confirm_registration():
         return flask.render_template('register.html', form=form)
 
 
-@frontend.route('/confirm-email', methods=['GET'])
-def confirm_email():
-    salt = flask.request.args.get('salt')
-    token = flask.request.args.get('token')
-    data = verify_token(token, salt=salt, secret_key=flask.current_app.config['SECRET_KEY'])
-    if data is None:
-        return flask.abort(404)
-    else:
-        if len(data) != 2:
-            return flask.abort(400)
-        email = data[0]
-        id = data[1]
-        if salt == 'edit_profile':
-            user = User.query.get(id)
-            user.email = email
-            db.session.add(user)
-        elif salt == 'add_login':
-            auth = Authentication.query.filter(Authentication.user_id == id,
-                                               Authentication.login['login'].astext == email).first()
-            auth.confirmed = True
-            db.session.add(auth)
-        else:
-            return flask.abort(400)
-        db.session.commit()
-        return flask.redirect(flask.url_for('frontend.index'))
-
-
 @frontend.route('/add_user', methods=['GET', 'POST'])
 def useradd():
     form = NewUserForm()

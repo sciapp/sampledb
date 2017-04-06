@@ -8,7 +8,7 @@ import sampledb
 import sampledb.models
 
 
-from ..test_utils import  flask_server, app
+from ..test_utils import flask_server, app
 
 @pytest.fixture
 def users(app):
@@ -55,6 +55,7 @@ def users(app):
         sampledb.db.session.commit()
 
     return users
+
 
 def test_send_confirm_email(app):
     # Submit the missing information and complete the registration
