@@ -3,9 +3,9 @@
 
 """
 
-import jsonschema
 from .. import db
 from ..models import User, Instrument, Action
+from .schemas import validate_schema
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -54,7 +54,7 @@ def remove_instrument_responsible_user(instrument_id, user_id):
 
 
 def create_action(name, description, schema, instrument_id=None):
-    jsonschema.Draft4Validator.check_schema(schema)
+    validate_schema(schema)
     action = Action(
         name=name,
         description=description,
@@ -75,7 +75,7 @@ def get_action(action_id):
 
 
 def update_action(action_id, name, description, schema):
-    jsonschema.Draft4Validator.check_schema(schema)
+    validate_schema(schema)
     action = Action.query.get(action_id)
     action.name = name
     action.description = description

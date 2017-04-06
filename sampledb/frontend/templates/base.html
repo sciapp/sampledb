@@ -33,14 +33,14 @@
         <li><a href="{{ url_for('frontend.objects') }}">Objects</a></li>
       </ul>
       {% endif %}
-      {# <form class="navbar-form navbar-left">
+      <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left">
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="Search...">
+          <input type="text" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
-            <button class="btn btn-default" type="button"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+            <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
           </span>
         </div>
-      </form> #}
+      </form>
       {% block navbar_userarea %}
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}

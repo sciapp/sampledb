@@ -3,6 +3,8 @@
 
 """
 
+import jsonschema
+
 from .. import db
 from .users import User
 from .instruments import Action

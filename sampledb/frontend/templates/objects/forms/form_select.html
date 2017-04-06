@@ -2,7 +2,7 @@
   <label class="control-label col-md-3">{{ schema.title }}</label>
   <div class="col-md-9">
   <select class="form-control selectpicker" name="{{ id_prefix }}_text">
-  {% for option in  schema.allOf[1].properties.text.enum %}
+  {% for option in schema.choices %}
     {% if id_prefix+'_text' in form_data %}
       {% if form_data[id_prefix+'_text'] == option %}
       <option selected="selected">{{ option }}</option>
@@ -18,6 +18,5 @@
     {% endif %}
   {% endfor %}
   </select>
-{#    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>#}
   </div>
 </div>

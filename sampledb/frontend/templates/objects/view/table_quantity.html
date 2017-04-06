@@ -1,5 +1,5 @@
 
-{% if schema.allOf[1].properties.dimensionality['enum'][0] == "dimensionless" %}
+{% if schema['units'] == "1" %}
   {{ data.magnitude_in_base_units }}
 {% else %}
   <div class="input-group">

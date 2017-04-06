@@ -7,5 +7,6 @@
             <span class="glyphicon glyphicon-calendar"></span>
         </span>
     </div>
+    {% if id_prefix+'_datetime' in errors %}<span class="help-block">{{ errors[id_prefix+'_datetime'] }}</span>{% endif %}
   </div>
 </div>

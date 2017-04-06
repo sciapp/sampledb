@@ -11,13 +11,13 @@
     "_type": "text",
     "text": "GaAs"
   },
-  "dropdown": {
-    "_type": "text",
-    "text": "option 2"
-  },
   "checkbox": {
     "_type": "bool",
     "value": false
+  },
+  "dropdown": {
+    "_type": "text",
+    "text": "Option B"
   },
   "multilayer": [{
       "repetitions": {

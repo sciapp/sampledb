@@ -1,17 +1,15 @@
-{% if schema['$ref'] == '#/definitions/text' %}
+{% if schema['type'] == 'text' %}
   {% include "objects/view/text.html" %}
-{% elif schema['$ref'] == '#/definitions/datetime' %}
+{% elif schema['type'] == 'datetime' %}
   {% include "objects/view/datetime.html" %}
-{% elif schema['$ref'] == '#/definitions/bool' %}
+{% elif schema['type'] == 'bool' %}
   {% include "objects/view/bool.html" %}
-{% elif "allOf" in schema and schema.allOf[0]['$ref'] == '#/definitions/quantity' %}
+{% elif schema['type'] == 'quantity' %}
   {% include "objects/view/quantity.html" %}
-{% elif "allOf" in schema and schema.allOf[0]['$ref'] == '#/definitions/text' %}
-  {% include "objects/view/select.html" %}
 {% elif schema.type == 'object' %}
   {% include "objects/view/object.html" %}
 {% elif schema.type == 'array' %}
   {% include "objects/view/array.html" %}
 {% else %}
-  {{ name }}{{ schema.type }}{{ schema['$ref'] }}
+  {{ name }}{{ schema.type }}{{ schema['type'] }}
 {% endif %}

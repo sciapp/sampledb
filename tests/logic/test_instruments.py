@@ -8,6 +8,7 @@ import pytest
 import sampledb
 from sampledb.models import User, UserType
 from sampledb.logic import instruments
+from sampledb.logic import schemas
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -55,10 +56,12 @@ def test_instrument_responsible_users():
 
 def test_create_action():
     schema = {
+        'title': 'Example Action',
         'type': 'object',
         'properties': {
             'example': {
-                'type': 'string'
+                'title': 'Example Attribute',
+                'type': 'text'
             }
         }
     }
@@ -75,16 +78,18 @@ def test_create_action_invalid_schema():
     schema = {
         'type': 'invalid'
     }
-    with pytest.raises(jsonschema.SchemaError):
+    with pytest.raises(schemas.ValidationError):
         instruments.create_action(name="Example Action", description="", schema=schema)
 
 
 def test_update_action():
     schema = {
+        'title': 'Example Action',
         'type': 'object',
         'properties': {
             'example': {
-                'type': 'string'
+                'title': 'Example Attribute',
+                'type': 'text'
             }
         }
     }

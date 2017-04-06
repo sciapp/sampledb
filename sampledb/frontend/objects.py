@@ -4,7 +4,6 @@
 """
 
 import json
-import jsonschema
 import flask
 import flask_login
 import itsdangerous
@@ -12,6 +11,8 @@ import itsdangerous
 from . import frontend
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..logic.datatypes import JSONEncoder
+from ..logic.schemas import validate, generate_placeholder, ValidationError
+from ..logic.object_search import generate_filter_func
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
@@ -25,7 +26,9 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
-    objects = Objects.get_current_objects(connection=db.engine)
+    query_string = flask.request.args.get('q', '')
+    filter_func = generate_filter_func(query_string)
+    objects = Objects.get_current_objects(filter_func=filter_func, connection=db.engine)
     user_id = flask_login.current_user.id
     objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
 
@@ -47,7 +50,7 @@ def objects():
             'display_properties': {}
         }
 
-    # TODO: select display_properties? nested display_properties? find common properties?
+    # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
     display_properties = ['substrate']
     for obj in objects:
         for property_name in display_properties:
@@ -74,25 +77,12 @@ def objects():
         if title_is_shared and possible_title is not None:
             display_property_titles[property_name] = possible_title
     objects.sort(key=lambda obj: obj['object_id'])
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string)
 
 
 @jinja_filter
 def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
-
-
-def generate_placeholder_object(schema):
-    if 'type' in schema and schema['type'] == 'object':
-        return {
-            property_name: generate_placeholder_object(property_schema)
-            for property_name, property_schema in schema.get('properties', {}).items()
-        }
-    elif 'type' in schema and schema['type'] == 'array':
-        # TODO: items / minimum length
-        return []
-    # TODO: other types and their defaults
-    return None
 
 
 def apply_action_to_data(data, schema, action, form_data):
@@ -135,7 +125,7 @@ def apply_action_to_data(data, schema, action, form_data):
             del sub_data[int(keys[-1])]
             # TODO: minimum length
         elif action.endswith('_add'):
-            sub_data.append(generate_placeholder_object(sub_schema["items"]))
+            sub_data.append(generate_placeholder(sub_schema["items"]))
             # TODO: maximum length
     except (ValueError, KeyError, IndexError, TypeError):
         # TODO: error handling/logging?
@@ -145,7 +135,7 @@ def apply_action_to_data(data, schema, action, form_data):
 
 def show_object_form(object, action):
     if object is None:
-        data = generate_placeholder_object(action.schema)
+        data = generate_placeholder(action.schema)
     else:
         data = object.data
     # TODO: update schema
@@ -173,8 +163,8 @@ def show_object_form(object, action):
             object_data, errors = parse_form_data(dict(flask.request.form), schema)
             if not errors:
                 try:
-                    jsonschema.validate(object_data, schema)
-                except jsonschema.ValidationError:
+                    validate(object_data, schema)
+                except ValidationError:
                     # TODO: proper logging
                     print('object schema validation failed')
                     # TODO: handle error
