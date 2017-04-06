@@ -53,6 +53,32 @@ def test_get_objects(flask_server, user):
         assert name in str(document.find('tbody'))
 
 
+def test_search_objects(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example12']
+    objects = [
+        sampledb.models.Objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            schema=action.schema,
+            user_id=user.id,
+            action_id=action.id
+        )
+        for name in names
+    ]
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects', params={'q': 'Example1'})
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == len([name for name in names if 'Example1' in name])
+    for name in names:
+        if 'Example1' in name:
+            assert name in str(document.find('tbody'))
+        else:
+            assert name not in str(document.find('tbody'))
+
+
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
     action = sampledb.logic.instruments.create_action('Example Action', '', schema)

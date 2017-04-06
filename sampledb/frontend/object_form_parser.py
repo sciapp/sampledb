@@ -72,7 +72,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors):
     try:
         magnitude = float(magnitude)
     except ValueError:
-        raise ValueError('invalid quantity form data')
+        raise ValueError('The magnitude must be a number.')
     if id_prefix + '_units' in form_data:
         units = form_data[id_prefix + '_units'][0]
         try:

@@ -4,7 +4,6 @@
 """
 
 import json
-import jsonschema
 import flask
 import flask_login
 import itsdangerous
@@ -13,6 +12,7 @@ from . import frontend
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
+from ..logic.object_search import generate_filter_func
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
@@ -26,7 +26,9 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
-    objects = Objects.get_current_objects(connection=db.engine)
+    query_string = flask.request.args.get('q', '')
+    filter_func = generate_filter_func(query_string)
+    objects = Objects.get_current_objects(filter_func=filter_func, connection=db.engine)
     user_id = flask_login.current_user.id
     objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
 
@@ -48,7 +50,7 @@ def objects():
             'display_properties': {}
         }
 
-    # TODO: select display_properties? nested display_properties? find common properties?
+    # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
     display_properties = ['substrate']
     for obj in objects:
         for property_name in display_properties:
@@ -75,7 +77,7 @@ def objects():
         if title_is_shared and possible_title is not None:
             display_property_titles[property_name] = possible_title
     objects.sort(key=lambda obj: obj['object_id'])
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string)
 
 
 @jinja_filter

@@ -122,17 +122,16 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
         raise ValidationError('text must be str', path)
     choices = schema.get('choices', None)
     if choices and instance['text'] not in choices:
-        raise ValidationError('text must be one of {}'.format(choices), path)
+        raise ValidationError('The text must be one of {}.'.format(choices), path)
     min_length = schema.get('minLength', 0)
     max_length = schema.get('maxLength', None)
     if len(instance['text']) < min_length:
-        raise ValidationError('text must be at least {} characters long'.format(min_length), path)
+        raise ValidationError('The text must be at least {} characters long.'.format(min_length), path)
     if max_length is not None and len(instance['text']) > max_length:
-        raise ValidationError('text must be at most {} characters long'.format(max_length), path)
+        raise ValidationError('The text must be at most {} characters long.'.format(max_length), path)
     if 'pattern' in schema:
         if re.match(schema['pattern'], instance['text']) is None:
-            raise ValidationError('text must match pattern {}'.format(schema['pattern']), path)
-
+            raise ValidationError('The text must match the pattern: {}.'.format(schema['pattern']), path)
 
 
 def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> None:
@@ -161,7 +160,7 @@ def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> 
     try:
         datetime.datetime.strptime(instance['utc_datetime'], '%Y-%m-%d %H:%M:%S')
     except ValueError:
-        raise ValidationError('invalid utc_datetime', path)
+        raise ValidationError('Please enter the date and time in the format: YYYY-MM-DD HH-MM-SS.', path)
 
 
 def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None:

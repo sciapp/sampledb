@@ -52,7 +52,8 @@
               "properties": {
                 "name": {
                   "title": "Film Name",
-                  "type": "text"
+                  "type": "text",
+                  "minLength": 1
                 },
                 "thickness": {
                   "title": "Film Thickness",
@@ -80,7 +81,8 @@
                     "properties": {
                       "name": {
                         "title": "Element Name",
-                        "type": "text"
+                        "type": "text",
+                        "minLength": 1
                       },
                       "frequency_change": {
                         "title": "Frequency Change",
