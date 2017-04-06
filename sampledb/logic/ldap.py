@@ -12,6 +12,14 @@ class NoEmailInLdapAccount(Exception):
     pass
 
 
+class LdapAccountAlreadyExist(Exception):
+    pass
+
+
+class LdapAccountOrPasswordWrong(Exception):
+    pass
+
+
 def user_dn(user_ldap_uid):
     base_dn = flask.current_app.config['LDAP_BASE_DN']
     user_dn = "uid={0},{1}".format(user_ldap_uid, base_dn)

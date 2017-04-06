@@ -40,7 +40,7 @@ def setup_data(app):
         flask_login.login_user(user)
         return flask.redirect(flask.url_for('frontend.object', object_id=1))
 
-    sampledb.login_manager.login_view = 'autologin'
+        #    sampledb.login_manager.login_view = 'autologin'
 
     instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)

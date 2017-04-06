@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, RadioField, PasswordField, SubmitField
+from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, EqualTo, Length, Email
 
 
@@ -51,3 +51,7 @@ class AuthenticationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
     authentication_method = RadioField('Authentication Method', choices=[('E', 'Email'), ('O', 'Other'), ('L', 'LDAP')], default='E')
     submit = SubmitField('Login')
+
+class AuthenticationMethodForm(FlaskForm):
+    id = IntegerField('Authentication_method_id', validators=[DataRequired()])
+    submit = SubmitField('Remove')

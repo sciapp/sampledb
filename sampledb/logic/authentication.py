@@ -5,9 +5,18 @@ import flask_mail
 
 from .. import mail
 from .. import logic
-from sampledb.logic.ldap import validate_user, get_user_info
+from sampledb.logic.ldap import validate_user, get_user_info, LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
 from .. import db
 from ..models import Authentication, AuthenticationType, User, UserType
+
+
+class OnlyOneAuthenticationMethod(Exception):
+    pass
+
+
+class AuthenticationMethodWrong(Exception):
+    pass
+
 
 def validate_user_db(login, password):
     authentication_methods = Authentication.query.filter(Authentication.login['login'].astext == login).all()
@@ -34,7 +43,6 @@ def add_authentication_to_db(log, user_type, confirmed, user_id):
     auth = Authentication(log, user_type, confirmed, user_id)
     db.session.add(auth)
     db.session.commit()
-
 
 def login(login, password):
     # filter email + password or username + password or username (ldap)
@@ -78,29 +86,37 @@ def login(login, password):
 
 
 def add_login(userid, login, password, authentication_method):
-    logins = Authentication.query.filter(Authentication.login['login'].astext == login, Authentication.user_id == userid).first()
-    if logins is not None:
-        # authentication-method already exists
-        return False
+    logins = Authentication.query.filter(Authentication.login['login'].astext == login,
+                                         Authentication.user_id == userid).first()
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     log = {
         'login': login,
         'bcrypt_hash': pw_hash
     }
-
     if authentication_method == AuthenticationType.EMAIL:
         # check if login looks like an email
         if '@' not in login:
-            return False
+            raise AuthenticationMethodWrong('Login must be an email if the authentication_method is email')
         else:
             # send confirm link
+            print('send_confirm_email')
             logic.utils.send_confirm_email(login, userid, 'add_login')
             confirmed = False
     elif authentication_method == AuthenticationType.OTHER:
         confirmed = True
     else:
+        if logins is not None:
+            # authentication-method already exists
+            raise LdapAccountAlreadyExist('Ldap-Account already exists')
         if not validate_user(login, password):
-            return False
+            raise LdapAccountOrPasswordWrong('Ldap login or password wrong')
         confirmed = True
     add_authentication_to_db(log, authentication_method, confirmed, userid)
+    return True
+
+
+def check_count_of_authentication_methods(user_id):
+    authentication_methods_count = Authentication.query.filter(Authentication.user_id == user_id).count()
+    if authentication_methods_count <= 1:
+        raise OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
     return True
