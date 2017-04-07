@@ -150,3 +150,4 @@ def test_sign_out_page_unauthenticated(flask_server, user):
     assert r.status_code == 302
     assert r.headers['Location'].startswith(flask_server.base_url + 'users/me/sign_in')
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
+

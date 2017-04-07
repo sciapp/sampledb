@@ -4,34 +4,33 @@
 
 {% block content %}
 <h2 class="text-center">Preferences of {{user.name}}</h2>
-<form class="form-horizontal" method="post" name="form-preference-name-and-email">
-    {{ form.csrf_token() }}
-    <div class="form-group{% if has_errors %} has-error{% endif %}">
+<form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+    {{ change_user_form.csrf_token() }}
+    <div class="form-group {% if change_user_form.name.errors %} has-error{% endif %}">
         <label for="input-username" class="col-sm-4 control-label">Username</label>
         <div class="col-sm-8">
-            <input type="text" name="{{form.name.name}}" value="{{ form.name.data }}">
+            <input class="form-control" type="text" id="input-username" name="{{change_user_form.name.name}}" value="{{ change_user_form.name.data }}">
         </div>
     </div>
-    <div class="form-group{% if has_errors %} has-error{% endif %}">
+    <div class="form-group{% if change_user_form.email.errors %} has-error{% endif %}">
         <label for="input-email" class="col-sm-4 control-label">Email</label>
         <div class="col-sm-8">
-             <input type="text" name="{{form.email.name}}" value="{{ form.email.data }}">
+             <input class="form-control" type="text" id="input-email" name="{{change_user_form.email.name}}" value="{{ change_user_form.email.data }}">
         </div>
     </div>
-
     <div class="form-group">
         <div class="col-sm-offset-9 ">
-            <button type="submit" class="btn btn-primary">Change username or email</button>
+            <button type="submit" class="btn btn-primary" name="change" value="Change">Change username or email</button>
         </div>
     </div>
 </form>
+<br><br>
 
 
 <h2 class="text-center">Authentications-methods of {{user.name}} </h2>
 
-<form class="form-horizontal" method="post" name="form-preference-authentication-methods" action="{{ url_for('.add_login', userid=user.id) }}">
-    {{ form.csrf_token() }}
-    <div class="form-group{% if has_errors %} has-error{% endif %}">
+
+    <div>
        <table class="table">
            <tr>
                <th> Login</th>
@@ -42,14 +41,49 @@
            <tr>
                <td width="100">{{authentication.login['login']}}</td>
                <td width="250">{{authentication.type}}</td>
-               <td widht="200"> <a href="/authentication/{{authentication.id}}/remove/{{user.id}}">REMOVE</a></td>
+               <td widht="200">
+                   <form class="form-group" {% if authentication_form.login.errors  or error %} has-error{% endif %} method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+                       {{ authentication_method_form.csrf_token() }}
+                       <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
+                       <input type="submit" class="btn btn-primary" name="remove" value="Remove" >
+                       {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
+                   </form>
+              </td>
            </tr>
            {% endfor %}
        </table>
     </div>
+<br><br>
+
+<h3 class="text-center">Add Authentications-methods  </h3>
+<br>
+<form class="form-horizontal" id="form-add-authentication-methods" method="post" name="form-add-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+    {{ authentication_form.csrf_token() }}
+    <div class="form-group{% if authentication_form.login.errors  or error_add %} has-error{% endif %}">
+        <label for="input-login" class="col-sm-4 control-label">Login</label>
+        <div class="col-sm-8">
+            <input class="form-control" type="text" id="input-login" name="login"  placeholder="Username / Email">
+            {% if error_add %} <span class='help-block'>{{error_add}} </span> {%endif%}
+        </div>
+    </div>
+    <div class="form-group{% if authentication_form.password.errors%} has-error {% endif %}">
+        <label for="input-password" class="col-sm-4 control-label">Password</label>
+        <div class="col-sm-8">
+             <input class="form-control" type="password" id="input-password" name="password"  placeholder="Password">
+            {% if authentication_form.password.errors %}
+             <span class='help-block'>The password must be of minimum 3 characters.</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-4 control-label">Authentication_method</label>
+        <div class="col-sm-8">
+             {{authentication_form.authentication_method}}
+        </div>
+    </div>
     <div class="form-group">
         <div class="col-sm-offset-9 ">
-            <button type="submit" class="btn btn-primary">Add additional Authentification</button>
+            <button type="submit" class="btn btn-primary" name="add" value="Add">Add</button>
         </div>
     </div>
 </form>

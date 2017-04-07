@@ -3,11 +3,14 @@ import bcrypt
 from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
+from sampledb.logic.ldap import LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
+from sampledb.logic.authentication import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, check_count_of_authentication_methods
 
 import sampledb
 import sampledb.models
 
 from ..test_utils import app_context, flask_server, app
+
 
 @pytest.fixture
 def users():
@@ -54,6 +57,7 @@ def users():
 
     return users
 
+
 def get_authentication_methods(userid):
     return Authentication.query.get(userid)
 
@@ -63,7 +67,7 @@ def test_login_user(flask_server, users):
     name = users[0].id
     username = flask_server.app.config['TESTING_LDAP_LOGIN']
     password = flask_server.app.config['TESTING_LDAP_PW']
-    user = sampledb.logic.authentication.login(username,password)
+    user = sampledb.logic.authentication.login(username, password)
     assert user is not None
 
     user = sampledb.logic.authentication.login('example1@fz-juelich.de', 'test123')
@@ -89,19 +93,34 @@ def test_login_user(flask_server, users):
 
 def test_add_login(flask_server, users):
     auth = get_authentication_methods(3)
-    user = sampledb.logic.authentication.add_login(3, 'ombe', 'abc', auth)
+    with pytest.raises(LdapAccountAlreadyExist) as excinfo:
+        user = sampledb.logic.authentication.add_login(3, 'ombe', 'abc', auth)
     # already exists
-    assert user is False
+    assert 'Ldap-Account already exists' in str(excinfo.value)
 
     username = flask_server.app.config['TESTING_LDAP_LOGIN']
     password = flask_server.app.config['TESTING_LDAP_PW']
     user = sampledb.logic.authentication.add_login(1, username, password, AuthenticationType.LDAP)
     assert user is True
 
-    user = sampledb.logic.authentication.add_login(1, username, 'xxx', AuthenticationType.LDAP)
+    with pytest.raises(LdapAccountOrPasswordWrong) as excinfo:
+        user = sampledb.logic.authentication.add_login(1, 'henkel', 'xxx', AuthenticationType.LDAP)
     # password wrong
-    assert user is False
+    assert 'Ldap login or password wrong'
 
-    user = sampledb.logic.authentication.add_login(3, "web.de", 'abc123', AuthenticationType.EMAIL)
+    with pytest.raises(AuthenticationMethodWrong) as excinfo:
+        user = sampledb.logic.authentication.add_login(3, "web.de", 'abc123', AuthenticationType.EMAIL)
     # no email
-    assert user is False
+    assert 'Login must be an email if the authentication_method is email'
+
+
+def test_check_count_of_authentication_methods(flask_server, users):
+    username = flask_server.app.config['TESTING_LDAP_LOGIN']
+    password = flask_server.app.config['TESTING_LDAP_PW']
+    user = sampledb.logic.authentication.login(username, password)
+    assert user is not None
+
+    with pytest.raises(OnlyOneAuthenticationMethod) as excinfo:
+         erg = check_count_of_authentication_methods(user.id)
+
+    assert('one authentication-method must at least exist, delete not possible')

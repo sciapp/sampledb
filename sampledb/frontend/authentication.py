@@ -55,39 +55,15 @@ def confirm_registration():
         return flask.render_template('register.html', form=form)
 
 
-@frontend.route('/confirm-email', methods=['GET'])
-def confirm_email():
-    salt = flask.request.args.get('salt')
-    token = flask.request.args.get('token')
-    data = verify_token(token, salt=salt, secret_key=flask.current_app.config['SECRET_KEY'])
-    if data is None:
-        return flask.abort(404)
-    else:
-        if len(data) != 2:
-            return flask.abort(400)
-        email = data[0]
-        id = data[1]
-        if salt == 'edit_profile':
-            user = User.query.get(id)
-            user.email = email
-            db.session.add(user)
-        elif salt == 'add_login':
-            auth = Authentication.query.filter(Authentication.user_id == id,
-                                               Authentication.login['login'].astext == email).first()
-            auth.confirmed = True
-            db.session.add(auth)
-        else:
-            return flask.abort(400)
-        db.session.commit()
-        return flask.redirect(flask.url_for('frontend.index'))
-
-
 @frontend.route('/add_user', methods=['GET', 'POST'])
 def useradd():
     form = NewUserForm()
+    print('xxxxxxxx')
     if form.validate_on_submit():
+        print('validate')
         # check, if login already exists
         login = Authentication.query.filter(Authentication.login['login'].astext == form.login.data).first()
+        print(login)
         if login is None:
             if (form.type.data == 'O'):
                 type = UserType.OTHER
@@ -106,47 +82,6 @@ def useradd():
     return flask.render_template('user.html', form=form)
 
 
-
-@frontend.route('/authentication/<userid>/remove/<id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def delete_login(userid, id):
-    if flask_login.current_user.is_authenticated:
-        user = flask_login.current_user
-        if str(user.id) == userid:
-            authentication_methods = Authentication.query.filter(Authentication.user_id == user.id).count()
-            if authentication_methods <= 1:
-                flask.flash('one authentication-method must exist, delete not possible')
-                return flask.redirect(flask.url_for('frontend.index'))
-            else:
-                authentication_methods = Authentication.query.filter(Authentication.id == id).first()
-                db.session.delete(authentication_methods)
-                db.session.commit()
-    return flask.redirect(flask.url_for('frontend.index'))
-
-
-@frontend.route('/authentication/add/<int:userid>', methods=['GET', 'POST'])
-@flask_login.login_required
-def add_login(userid):
-    user = flask_login.current_user
-    if user.id == userid:
-        form = AuthenticationForm()
-        if form.validate_on_submit():
-            # check, if login already exists
-            authentication_methods = {
-                'E': AuthenticationType.EMAIL,
-                'L': AuthenticationType.LDAP,
-                'O': AuthenticationType.OTHER
-            }
-            if form.authentication_method.data not in authentication_methods:
-                return flask.abort(400)
-            authentication_method = authentication_methods[form.authentication_method.data]
-
-            if not logic.authentication.add_login(userid, form.login.data, form.password.data, authentication_method):
-                return flask.abort(400)
-
-        return flask.render_template('authentication_form.html', form=form)
-    else:
-        return flask.abort(400)
 
 
 
