@@ -13,7 +13,7 @@ from ..logic.permissions import get_user_object_permissions, object_is_public, g
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm
 from .. import db
 from ..models import User, Action, Objects, Permissions
 from ..utils import object_permissions_required
@@ -28,6 +28,7 @@ def get_user_readable_objects(filter_func=lambda data: True):
     user_id = flask_login.current_user.id
     objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
     return objects
+
 
 @frontend.route('/objects/')
 @flask_login.login_required
@@ -287,25 +288,40 @@ def object_permissions(object_id):
             if user_id is None:
                 continue
             user_permissions.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-        form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+        users = User.query.all()
+        users = [user for user in users if user.id not in object_permissions]
+        add_user_permissions_form = ObjectUserPermissionsForm()
     else:
-        form = None
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=form)
+        edit_user_permissions_form = None
+        add_user_permissions_form = None
+        users = []
+    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=edit_user_permissions_form, users=users, add_user_permissions_form=add_user_permissions_form)
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id):
-    form = ObjectPermissionsForm()
-    if form.validate_on_submit():
-        set_object_public(object_id, form.public_permissions.data == 'read')
-        for user_permissions_data in form.user_permissions.data:
+
+    edit_user_permissions_form = ObjectPermissionsForm()
+    add_user_permissions_form = ObjectUserPermissionsForm()
+    if 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+        set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
+        for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
             user = User.query.get(user_id)
             if user is None:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
             set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
+        flask.flash("Successfully updated object permissions.", 'success')
+    elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
+        user_id = add_user_permissions_form.user_id.data
+        permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
+        object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
+        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
+        assert user_id not in object_permissions
+        set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
         flask.flash("Successfully updated object permissions.", 'success')
     else:
         flask.flash("A problem occurred while changing the object permissions. Please try again.", 'error')

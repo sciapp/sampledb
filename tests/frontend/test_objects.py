@@ -486,6 +486,7 @@ def test_update_object_permissions(flask_server, user):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
         'csrf_token': csrf_token,
         'public_permissions': 'read',
         'user_permissions-0-csrf_token': user_csrf_token,
@@ -502,6 +503,7 @@ def test_update_object_permissions(flask_server, user):
     assert sampledb.logic.permissions.object_is_public(object.object_id)
 
     form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
         'csrf_token': csrf_token,
         'public_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
@@ -518,6 +520,7 @@ def test_update_object_permissions(flask_server, user):
     assert not sampledb.logic.permissions.object_is_public(object.object_id)
 
     form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
         'csrf_token': csrf_token,
         'public_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
@@ -535,3 +538,59 @@ def test_update_object_permissions(flask_server, user):
 
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 403
+
+
+def test_object_permissions_add_user(flask_server, user):
+    action = sampledb.logic.instruments.create_action('Example Action', '', {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }
+    })
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = sampledb.models.Objects.create_object(
+        data=data,
+        schema=action.schema,
+        user_id=user.id,
+        action_id=action.id
+    )
+    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    assert current_permissions == {
+        None: sampledb.logic.permissions.Permissions.NONE,
+        user.id: sampledb.logic.permissions.Permissions.GRANT
+    }
+    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').findAll('input', {'name': 'csrf_token'})[1]['value']
+
+    with flask_server.app.app_context():
+        user2 = sampledb.models.User(name="New User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(user2)
+        sampledb.db.session.commit()
+        # force attribute refresh
+        assert user2.id is not None
+
+    form_data = {
+        'add_user_permissions': 'add_user_permissions',
+        'csrf_token': csrf_token,
+        'user_id': str(user2.id),
+        'permissions': 'write',
+    }
+    r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
+    assert r.status_code == 200
+    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    assert current_permissions == {
+        None: sampledb.logic.permissions.Permissions.NONE,
+        user.id: sampledb.logic.permissions.Permissions.GRANT,
+        user2.id: sampledb.logic.permissions.Permissions.WRITE
+    }
+    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+

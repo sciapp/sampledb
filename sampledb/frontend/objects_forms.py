@@ -10,7 +10,6 @@ from wtforms.validators import InputRequired
 from ..models import Permissions
 
 
-
 class ObjectUserPermissionsForm(FlaskForm):
     user_id = IntegerField(
         validators=[InputRequired()]
