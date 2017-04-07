@@ -172,3 +172,9 @@ def test_datetime_between_excluding(objects):
     objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime - datetime.timedelta(days=1))}, schema={}, user_id=0)
     assert [] == objects.get_current_objects(lambda data: where_filters.datetime_between(data['dt'], datatypes.DateTime(utc_datetime - datetime.timedelta(seconds=1)), datatypes.DateTime(utc_datetime), including=False))
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_between(data['dt'], datatypes.DateTime(utc_datetime - datetime.timedelta(seconds=1)), datatypes.DateTime(utc_datetime + datetime.timedelta(seconds=1)), including=False))
+
+
+def test_sample_equals(objects):
+    object1 = objects.create_object(action_id=0, data={}, schema={}, user_id=0)
+    object2 = objects.create_object(action_id=0, data={'t': {'_type': 'sample', 'object_id': object1.object_id}}, schema={}, user_id=0)
+    assert [object2] == objects.get_current_objects(lambda data: where_filters.sample_equals(data['t'], object1.object_id))

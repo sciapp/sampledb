@@ -37,6 +37,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors):
         return parse_array_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('type') == 'text':
         return parse_text_form_data(form_data, schema, id_prefix, errors)
+    elif schema.get('type') == 'sample':
+        return parse_sample_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('type') == 'datetime':
         return parse_datetime_form_data(form_data, schema, id_prefix, errors)
     elif schema.get('type') == 'bool':
@@ -55,6 +57,26 @@ def parse_text_form_data(form_data, schema, id_prefix, errors):
     data = {
         '_type': 'text',
         'text': str(text)
+    }
+    schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_sample_form_data(form_data, schema, id_prefix, errors):
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix)]
+    if keys != [id_prefix + '_oid']:
+        raise ValueError('invalid sample form data')
+    object_id = form_data.get(id_prefix + '_oid', [''])[0]
+    if not object_id:
+        return None
+    try:
+        object_id = int(object_id)
+    except ValueError:
+        raise ValueError('object_id must be int')
+    data = {
+        '_type': 'sample',
+        'object_id': object_id
     }
     schemas.validate(data, schema)
     return data
