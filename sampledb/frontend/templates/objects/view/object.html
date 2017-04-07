@@ -1,6 +1,6 @@
 <!-- object start -->
 <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title }}</strong>
-<div style="">
+<div>
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}
     {% set name = property_name %}

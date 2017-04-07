@@ -742,3 +742,11 @@ def test_validate_object_schema_default_missing_required_property():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_sample_schema():
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    validate_schema(schema)

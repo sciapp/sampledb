@@ -46,6 +46,8 @@ def validate_schema(schema: dict, path: typing.Union[None, typing.List[str]]=Non
         return _validate_bool_schema(schema, path)
     elif schema['type'] == 'quantity':
         return _validate_quantity_schema(schema, path)
+    elif schema['type'] == 'sample':
+        return _validate_sample_schema(schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -238,3 +240,21 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
         raise ValidationError('default must be float or int', path)
+
+
+def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
+    """
+    Validates the given sample object schema and raises a ValidationError if it is invalid.
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :raises: ValidationError, if the schema is invalid.
+    """
+    valid_keys = {'type', 'title'}
+    required_keys = valid_keys
+    schema_keys = set(schema.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)

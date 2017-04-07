@@ -246,3 +246,12 @@ def test_generate_invalid_type():
     }
     with pytest.raises(SchemaError):
         generate_placeholder(object_schema)
+
+
+def test_generate_sample_object():
+    object_schema = {
+        'title': 'Example Sample',
+        'type': 'sample'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None

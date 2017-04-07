@@ -3,7 +3,6 @@
 
 """
 
-import jsonschema
 import pytest
 import sampledb
 from sampledb.models import User, UserType

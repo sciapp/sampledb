@@ -23,14 +23,18 @@ from .object_form_parser import parse_form_data
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+def get_user_readable_objects(filter_func=lambda data: True):
+    objects = Objects.get_current_objects(filter_func=filter_func, connection=db.engine)
+    user_id = flask_login.current_user.id
+    objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
+    return objects
+
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
     query_string = flask.request.args.get('q', '')
     filter_func = generate_filter_func(query_string)
-    objects = Objects.get_current_objects(filter_func=filter_func, connection=db.engine)
-    user_id = flask_login.current_user.id
-    objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
+    objects = get_user_readable_objects(filter_func)
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -184,10 +188,12 @@ def show_object_form(object, action):
             form_data = apply_action_to_data(data, schema, action, form_data)
         except ValueError:
             flask.abort(400)
+
+    objects = get_user_readable_objects()
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form)
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -201,7 +207,8 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id, user_may_grant=user_may_grant)
+        objects = get_user_readable_objects()
+        return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id, user_may_grant=user_may_grant, objects=objects)
 
     return show_object_form(object, action=Action.query.get(object.action_id))
 

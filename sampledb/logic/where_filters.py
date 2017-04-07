@@ -127,3 +127,10 @@ def text_contains(db_obj, text):
         db_obj['_type'].astext == 'text',
         db_obj['text'].astext.like('%'+text+'%')
     )
+
+
+def sample_equals(db_obj, object_id):
+    return db.and_(
+        db_obj['_type'].astext == 'sample',
+        db_obj['object_id'].astext.cast(db.Integer) == object_id
+    )

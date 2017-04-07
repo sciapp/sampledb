@@ -1,11 +1,17 @@
 <div class="row" style="padding-right:0.75em">
   <label class="col-md-3" style="text-align: right">{{ schema.title }}</label>
   <div class="col-md-9">
-  {% for option in schema['choices'] %}
-    {% if data is not none and "text" in data and data.text == option %}
-    {{ option }}
+  {% with found = [] %}
+  {% for obj in objects %}
+    {% if data is not none and "object_id" in data and data.object_id == obj.object_id %}
+      <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] }}</a>
+    {% if found.append(true) %}{% endif %}
     {% endif %}
   {% endfor %}
+  {% if not found %}
+    &mdash;
+  {% endif %}
+  {% endwith %}
 {#    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>#}
   </div>
 </div>

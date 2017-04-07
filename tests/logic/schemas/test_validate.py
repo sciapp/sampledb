@@ -5,9 +5,22 @@
 import datetime
 import pytest
 
+import sampledb
+import sqlalchemy as db
 from sampledb.logic.schemas import validate, ValidationError
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+@pytest.fixture(autouse=True)
+def app_context():
+    app = sampledb.create_app()
+    with app.app_context():
+        # fully empty the database first
+        sampledb.db.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
+        # recreate the tables used by this application
+        sampledb.db.metadata.create_all(bind=sampledb.db.engine)
+        yield app
 
 
 def test_validate_invalid_type():
@@ -138,7 +151,7 @@ def test_validate_text_pattern():
     schema = {
         'title': 'Example',
         'type': 'text',
-        'pattern': '^[1-9][0-9]*/[A-Za-z]+$'
+        'pattern': '^[1-9][0-9]*/[A-Za-z]+'
     }
     instance = {
         '_type': 'text',
@@ -151,7 +164,7 @@ def test_validate_text_pattern_mismatch():
     schema = {
         'title': 'Example',
         'type': 'text',
-        'pattern': '^[1-9][0-9]*/[A-Za-z]+$'
+        'pattern': '[1-9][0-9]*/[A-Za-z]+'
     }
     instance = {
         '_type': 'text',
@@ -813,6 +826,148 @@ def test_validate_object_invalid_property():
             '_type': 'bool',
             'value': True
         }
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_sample():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.instruments import Action
+    from sampledb.models.objects import Objects
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'sample',
+        'object_id': objects.object_id
+    }
+    validate(instance, schema)
+
+
+def test_validate_sample_invalid_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.instruments import Action
+    from sampledb.models.objects import Objects
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    instance = objects.object_id
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_sample_unexpected_keys():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.instruments import Action
+    from sampledb.models.objects import Objects
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'sample',
+        'object_id': objects.object_id,
+        'action_id': action.id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_sample_missing_keys():
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    instance = {
+        '_type': 'sample'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_sample_wrong_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.instruments import Action
+    from sampledb.models.objects import Objects
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'object_reference',
+        'object_id': objects.object_id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_sample_wrong_object_id_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.instruments import Action
+    from sampledb.models.objects import Objects
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'sample',
+        'object_id': objects
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_sample_invalid_object_id():
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    instance = {
+        '_type': 'sample',
+        'object_id': 42
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
