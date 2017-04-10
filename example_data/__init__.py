@@ -8,8 +8,7 @@ import flask
 import flask_login
 import sqlalchemy
 import sampledb
-from sampledb.models import Objects
-from sampledb.models import User, UserType
+from sampledb.models import Objects, User, UserType, ActionType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user, create_action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -46,8 +45,8 @@ def setup_data(app):
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
     with open('sampledb/schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
-    instrument_action = create_action("Sample Creation", "This is an example action", schema, instrument.id)
-    independent_action = create_action("Alternative Process", "This is an example action", schema)
+    instrument_action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation", "This is an example action", schema, instrument.id)
+    independent_action = create_action(ActionType.SAMPLE_CREATION, "Alternative Process", "This is an example action", schema)
     sampledb.db.session.commit()
 
     with open('example_data/ombe-1.sampledb.json', 'r') as data_file:

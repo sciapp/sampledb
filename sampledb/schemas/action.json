@@ -8,6 +8,11 @@
             "type": "integer",
             "minimum": 0
         },
+        "type": {
+            "title": "Action Type",
+            "type": "string",
+            "enum": ["sampleCreation", "measurement"]
+        },
         "name": {
             "title": "Action Name",
             "type": "string"
@@ -33,6 +38,6 @@
             "type": "object"
         }
     },
-    "required" : ["name", "description"],
+    "required" : ["type", "name", "description"],
     "additionalProperties": false
 }

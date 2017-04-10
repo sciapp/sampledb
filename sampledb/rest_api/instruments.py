@@ -167,7 +167,7 @@ def update_action(action_id):
         jsonschema.validate(data, ACTION_SCHEMA)
     except jsonschema.ValidationError:
         flask.abort(400)
-    if {'id', 'name', 'description', 'schema', 'instrument_id'} != set(data.keys()):
+    if {'type', 'id', 'name', 'description', 'schema', 'instrument_id'} != set(data.keys()):
         return flask.abort(400)
     if data['id'] != action_id:
         return flask.abort(400)
@@ -200,14 +200,18 @@ def create_action():
         jsonschema.validate(data, ACTION_SCHEMA)
     except jsonschema.ValidationError:
         flask.abort(400)
-    if {'name', 'description', 'instrument_id', 'schema'} != set(data.keys()):
+    if {'type', 'name', 'description', 'instrument_id', 'schema'} != set(data.keys()):
         return flask.abort(400)
     instrument_id = data['instrument_id']
     name = data['name']
     description = data['description']
     schema = data['schema']
+    action_type = {
+        'sampleCreation': instruments.ActionType.SAMPLE_CREATION,
+        'measurement': instruments.ActionType.MEASUREMENT
+    }[data['type']]
     try:
-        action = instruments.create_action(name=name, description=description, schema=schema, instrument_id=instrument_id)
+        action = instruments.create_action(action_type=action_type, name=name, description=description, schema=schema, instrument_id=instrument_id)
     except schemas.ValidationError:
         return flask.abort(400)
     return flask.jsonify({

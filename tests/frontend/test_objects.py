@@ -32,7 +32,7 @@ def user(flask_server):
 
 def test_get_objects(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
         sampledb.models.Objects.create_object(
@@ -55,7 +55,7 @@ def test_get_objects(flask_server, user):
 
 def test_search_objects(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example12']
     objects = [
         sampledb.models.Objects.create_object(
@@ -81,7 +81,7 @@ def test_search_objects(flask_server, user):
 
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -98,7 +98,7 @@ def test_get_object(flask_server, user):
 
 def test_get_object_no_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -118,7 +118,7 @@ def test_get_object_no_permissions(flask_server, user):
 
 def test_get_object_edit_form(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -135,7 +135,7 @@ def test_get_object_edit_form(flask_server, user):
 
 def test_get_object_edit_form_read_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -156,7 +156,7 @@ def test_get_object_edit_form_read_permissions(flask_server, user):
 
 def test_get_object_version(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -173,7 +173,7 @@ def test_get_object_version(flask_server, user):
 
 def test_get_object_version_no_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -193,7 +193,7 @@ def test_get_object_version_no_permissions(flask_server, user):
 
 def test_get_object_versions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         schema=action.schema,
@@ -210,7 +210,7 @@ def test_get_object_versions(flask_server, user):
 def test_edit_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
         schema=action.schema,
@@ -234,7 +234,7 @@ def test_edit_object(flask_server, user):
 def test_edit_object_action_add(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
         schema=action.schema,
@@ -256,7 +256,7 @@ def test_edit_object_action_add(flask_server, user):
 def test_edit_object_previous_actions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
         schema=action.schema,
@@ -282,7 +282,7 @@ def test_edit_object_previous_actions(flask_server, user):
 def test_edit_object_previous_actions_invalid_key(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
         schema=action.schema,
@@ -306,7 +306,7 @@ def test_edit_object_previous_actions_invalid_key(flask_server, user):
 def test_edit_object_previous_actions_invalid_action(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
         schema=action.schema,
@@ -330,7 +330,7 @@ def test_edit_object_previous_actions_invalid_action(flask_server, user):
 def test_edit_object_action_delete(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
         schema=action.schema,
@@ -352,7 +352,7 @@ def test_edit_object_action_delete(flask_server, user):
 def test_new_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -378,7 +378,7 @@ def test_restore_object_version(flask_server, user):
             }
         }
     }
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.models.Objects.create_object(
         data=data,
@@ -413,7 +413,7 @@ def test_restore_object_version_invalid_data(flask_server, user):
             }
         }
     }
-    action = sampledb.logic.instruments.create_action('Example Action', '', schema)
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.models.Objects.create_object(
         data=data,
@@ -454,7 +454,7 @@ def test_restore_object_version_invalid_data(flask_server, user):
 
 
 def test_update_object_permissions(flask_server, user):
-    action = sampledb.logic.instruments.create_action('Example Action', '', {
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', {
         'title': 'Example Object',
         'type': 'object',
         'properties': {
@@ -541,7 +541,7 @@ def test_update_object_permissions(flask_server, user):
 
 
 def test_object_permissions_add_user(flask_server, user):
-    action = sampledb.logic.instruments.create_action('Example Action', '', {
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', {
         'title': 'Example Object',
         'type': 'object',
         'properties': {

@@ -15,7 +15,7 @@ import requests
 import sampledb
 from sampledb import logic
 from sampledb.logic.permissions import set_user_object_permissions, Permissions
-from sampledb.models import User, UserType, Action, Objects
+from sampledb.models import User, UserType, Action, Objects, ActionType
 from sampledb.rest_api import objects
 from tests.test_utils import flask_server, app
 
@@ -52,6 +52,7 @@ def user(flask_server, username, password):
 @pytest.fixture
 def action(flask_server):
     action = Action(
+        action_type=ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

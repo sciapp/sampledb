@@ -833,14 +833,14 @@ def test_validate_object_invalid_property():
 
 def test_validate_sample():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action
+    from sampledb.models.instruments import Action, ActionType
     from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -856,14 +856,14 @@ def test_validate_sample():
 
 def test_validate_sample_invalid_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action
+    from sampledb.models.instruments import Action, ActionType
     from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -877,14 +877,14 @@ def test_validate_sample_invalid_type():
 
 def test_validate_sample_unexpected_keys():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action
+    from sampledb.models.instruments import Action, ActionType
     from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -914,14 +914,14 @@ def test_validate_sample_missing_keys():
 
 def test_validate_sample_wrong_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action
+    from sampledb.models.instruments import Action, ActionType
     from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -938,14 +938,14 @@ def test_validate_sample_wrong_type():
 
 def test_validate_sample_wrong_object_id_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action
+    from sampledb.models.instruments import Action, ActionType
     from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action("Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
