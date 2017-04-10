@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+  {% if action_type == ActionType.SAMPLE_CREATION %}
+  <h1>Samples</h1>
+  {% elif action_type == ActionType.MEASUREMENT %}
+  <h1>Measurements</h1>
+  {% else %}
   <h1>Objects</h1>
+  {% endif %}
 
   <table class="table">
   <thead>

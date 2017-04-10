@@ -15,7 +15,7 @@ from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm
 from .. import db
-from ..models import User, Action, Objects, Permissions
+from ..models import User, Action, Objects, Permissions, ActionType
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -23,8 +23,14 @@ from .object_form_parser import parse_form_data
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_user_readable_objects(filter_func=lambda data: True):
-    objects = Objects.get_current_objects(filter_func=filter_func, connection=db.engine)
+def get_user_readable_objects(filter_func=lambda data: True, action_type: ActionType=None):
+    action_table = None
+    action_filter = None
+    if action_type is not None:
+        action_table = Action.__table__
+        action_filter = (Action.type == action_type)
+
+    objects = Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter, connection=db.engine)
     user_id = flask_login.current_user.id
     objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
     return objects
@@ -33,9 +39,14 @@ def get_user_readable_objects(filter_func=lambda data: True):
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
+    action_type = flask.request.args.get('t', '')
+    action_type = {
+        'samples': ActionType.SAMPLE_CREATION,
+        'measurements': ActionType.MEASUREMENT
+    }.get(action_type, None)
     query_string = flask.request.args.get('q', '')
     filter_func = generate_filter_func(query_string)
-    objects = get_user_readable_objects(filter_func)
+    objects = get_user_readable_objects(filter_func, action_type=action_type)
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -82,7 +93,7 @@ def objects():
         if title_is_shared and possible_title is not None:
             display_property_titles[property_name] = possible_title
     objects.sort(key=lambda obj: obj['object_id'])
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType)
 
 
 @jinja_filter
@@ -190,7 +201,7 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
 
-    objects = get_user_readable_objects()
+    objects = get_user_readable_objects(action_type=ActionType.SAMPLE_CREATION)
     if object is None:
         return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
     else:

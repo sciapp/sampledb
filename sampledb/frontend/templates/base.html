@@ -30,11 +30,19 @@
       {% if current_user.is_authenticated %}
       <ul class="nav navbar-nav">
         <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
-        <li><a href="{{ url_for('frontend.objects') }}">Objects</a></li>
+        <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
+        <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
       </ul>
       {% endif %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left">
         <div class="input-group">
+        {% if ActionType %}
+          {% if action_type == ActionType.SAMPLE_CREATION %}
+          <input type="hidden" name="t" value="samples" />
+          {% elif action_type == ActionType.MEASUREMENT %}
+          <input type="hidden" name="t" value="measurements" />
+          {% endif %}
+        {% endif %}
           <input type="text" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
