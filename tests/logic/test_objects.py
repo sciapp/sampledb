@@ -159,6 +159,21 @@ def test_get_current_objects(session: sessionmaker(), objects: VersionedJSONSeri
     assert current_objects == [object1, object2] or current_objects == [object2, object1]
 
 
+def test_get_current_objects_action_filter(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    user = User(id=0, name="User")
+    session.add(user)
+    action1 = Action(id=1, schema={'x': 1})
+    action2 = Action(id=2, schema={})
+    session.add(action1)
+    session.add(action2)
+    session.commit()
+    object1 = objects.create_object(action_id=action1.id, data={}, schema={}, user_id=user.id)
+    object2 = objects.create_object(action_id=action2.id, data={}, schema={}, user_id=user.id)
+
+    current_objects = objects.get_current_objects(action_table=Action.__table__, action_filter=(Action.schema == {'x': 1}))
+    assert current_objects == [object1]
+
+
 def test_get_current_object(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
     user = User(id=0, name="User")
     session.add(user)
