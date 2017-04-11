@@ -16,9 +16,10 @@ users for the instrument.
 Objects can be made public, which grants READ permissions to any logged-in user trying to access the object.
 """
 
+import typing
 from sampledb import db
 from sampledb.logic.instruments import get_action
-from sampledb.models import Permissions, UserObjectPermissions, PublicObjects, Objects
+from sampledb.models import Permissions, UserObjectPermissions, PublicObjects, Objects, ActionType, Action
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -92,3 +93,15 @@ def set_initial_permissions(obj):
     set_user_object_permissions(object_id=obj.object_id, user_id=obj.user_id, permissions=Permissions.GRANT)
 
 Objects.create_object_callbacks.append(set_initial_permissions)
+
+
+def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_type: ActionType=None):
+    action_table = None
+    action_filter = None
+    if action_type is not None:
+        action_table = Action.__table__
+        action_filter = (Action.type == action_type)
+
+    objects = Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter)
+    objects = [obj for obj in objects if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
+    return objects

@@ -9,7 +9,7 @@ import flask_login
 import itsdangerous
 
 from . import frontend
-from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
+from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions, get_objects_with_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
@@ -23,19 +23,6 @@ from .object_form_parser import parse_form_data
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_user_readable_objects(filter_func=lambda data: True, action_type: ActionType=None):
-    action_table = None
-    action_filter = None
-    if action_type is not None:
-        action_table = Action.__table__
-        action_filter = (Action.type == action_type)
-
-    objects = Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter, connection=db.engine)
-    user_id = flask_login.current_user.id
-    objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
-    return objects
-
-
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
@@ -46,7 +33,12 @@ def objects():
     }.get(action_type, None)
     query_string = flask.request.args.get('q', '')
     filter_func = generate_filter_func(query_string)
-    objects = get_user_readable_objects(filter_func, action_type=action_type)
+    objects = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        filter_func=filter_func,
+        action_type=action_type
+    )
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -138,11 +130,11 @@ def apply_action_to_data(data, schema, action, form_data):
         if sub_schema['type'] != 'array':
             raise ValueError('invalid type')
         if action.endswith('_delete'):
-            del sub_data[int(keys[-1])]
-            # TODO: minimum length
+            if 'minItems' not in sub_schema or len(sub_data) > sub_schema["minItems"]:
+                del sub_data[int(keys[-1])]
         elif action.endswith('_add'):
-            sub_data.append(generate_placeholder(sub_schema["items"]))
-            # TODO: maximum length
+            if 'maxItems' not in sub_schema or len(sub_data) < sub_schema["maxItems"]:
+                sub_data.append(generate_placeholder(sub_schema["items"]))
     except (ValueError, KeyError, IndexError, TypeError):
         # TODO: error handling/logging?
         raise ValueError('invalid action')
@@ -201,7 +193,11 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
 
-    objects = get_user_readable_objects(action_type=ActionType.SAMPLE_CREATION)
+    objects = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        action_type=ActionType.SAMPLE_CREATION
+    )
     if object is None:
         return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
     else:
@@ -219,7 +215,11 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        objects = get_user_readable_objects()
+        objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            action_type=ActionType.SAMPLE_CREATION
+        )
         return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id, user_may_grant=user_may_grant, objects=objects)
 
     return show_object_form(object, action=Action.query.get(object.action_id))

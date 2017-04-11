@@ -15,7 +15,7 @@ def forbidden(error):
     try:
         return flask.render_template('errors/403.html'), 403
     except:
-        return 'Not found', 404
+        return 'Forbidden', 403
 
 
 @frontend.app_errorhandler(404)
@@ -31,4 +31,4 @@ def internal_server_error(error):
     try:
         return flask.render_template('errors/500.html'), 500
     except:
-        return 'Not found', 500
+        return 'Internal Server Error', 500
