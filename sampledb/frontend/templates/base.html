@@ -35,7 +35,6 @@
       </ul>
       {% endif %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left">
-        <div class="input-group">
         {% if ActionType %}
           {% if action_type == ActionType.SAMPLE_CREATION %}
           <input type="hidden" name="t" value="samples" />
@@ -43,6 +42,7 @@
           <input type="hidden" name="t" value="measurements" />
           {% endif %}
         {% endif %}
+        <div class="input-group">
           <input type="text" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
