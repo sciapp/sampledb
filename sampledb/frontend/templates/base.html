@@ -30,6 +30,7 @@
       {% if current_user.is_authenticated %}
       <ul class="nav navbar-nav">
         <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
+        <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
         <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
         <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
       </ul>

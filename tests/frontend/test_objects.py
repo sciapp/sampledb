@@ -53,6 +53,96 @@ def test_get_objects(flask_server, user):
         assert name in str(document.find('tbody'))
 
 
+def test_get_objects_by_action_id(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    action1 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example42']
+    objects = [
+        sampledb.models.Objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            schema=action1.schema,
+            user_id=user.id,
+            action_id=action1.id
+        )
+        for name in names
+    ]
+    sampledb.models.Objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+        schema=action2.schema,
+        user_id=user.id,
+        action_id=action2.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects?action={}'.format(action1.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 3
+    for name in names:
+        assert name in str(document.find('tbody'))
+
+
+def test_get_objects_by_action_type(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    action1 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
+    action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example42']
+    objects = [
+        sampledb.models.Objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            schema=action1.schema,
+            user_id=user.id,
+            action_id=action1.id
+        )
+        for name in names
+    ]
+    sampledb.models.Objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+        schema=action2.schema,
+        user_id=user.id,
+        action_id=action2.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects?t=measurements')
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 3
+    for name in names:
+        assert name in str(document.find('tbody'))
+
+
+def test_get_objects_by_action_id_and_type(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    action1 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example42']
+    objects = [
+        sampledb.models.Objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            schema=action1.schema,
+            user_id=user.id,
+            action_id=action1.id
+        )
+        for name in names
+    ]
+    sampledb.models.Objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+        schema=action2.schema,
+        user_id=user.id,
+        action_id=action2.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects?action={}&t=samples'.format(action1.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 3
+    for name in names:
+        assert name in str(document.find('tbody'))
+
+
 def test_search_objects(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)

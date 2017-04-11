@@ -7,5 +7,11 @@
   <h1><a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash; <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h1>
   {% endif %}
   <p>{{ action.description }}</p>
-  <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-default">Perform Action</a>
+  {% if action.type == ActionType.MEASUREMENT %}
+    <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Measurement</a>
+  {% else %}
+    <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Create Sample</a>
+  {% endif %}
 {% endblock %}

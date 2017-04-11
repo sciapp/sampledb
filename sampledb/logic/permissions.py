@@ -19,7 +19,7 @@ Objects can be made public, which grants READ permissions to any logged-in user 
 import typing
 from sampledb import db
 from sampledb.logic.instruments import get_action
-from sampledb.models import Permissions, UserObjectPermissions, PublicObjects, Objects, ActionType, Action
+from sampledb.models import Permissions, UserObjectPermissions, PublicObjects, Objects, ActionType, Action, Object
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -95,12 +95,17 @@ def set_initial_permissions(obj):
 Objects.create_object_callbacks.append(set_initial_permissions)
 
 
-def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_type: ActionType=None):
-    action_table = None
-    action_filter = None
-    if action_type is not None:
-        action_table = Action.__table__
+def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_id: int=None, action_type: ActionType=None) -> typing.List[Object]:
+    action_table = Action.__table__
+    if action_type is not None and action_id is not None:
+        action_filter = db.and_(Action.type == action_type, Action.id == action_id)
+    elif action_type is not None:
         action_filter = (Action.type == action_type)
+    elif action_id is not None:
+        action_filter = (Action.id == action_id)
+    else:
+        action_table = None
+        action_filter = None
 
     objects = Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter)
     objects = [obj for obj in objects if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]

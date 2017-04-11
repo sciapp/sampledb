@@ -26,6 +26,10 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
+    try:
+        action_id = int(flask.request.args.get('action', ''))
+    except ValueError:
+        action_id = None
     action_type = flask.request.args.get('t', '')
     action_type = {
         'samples': ActionType.SAMPLE_CREATION,
@@ -37,6 +41,7 @@ def objects():
         user_id=flask_login.current_user.id,
         permissions=Permissions.READ,
         filter_func=filter_func,
+        action_id=action_id,
         action_type=action_type
     )
 
