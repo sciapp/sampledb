@@ -5,5 +5,6 @@
   {% for instrument in instruments %}
     <h2><a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name }}">{{ instrument.name }}</a></h2>
     <p>{{ instrument.description }}</p>
+    {% include "instruments/instrument_responsible_users.html" %}
   {% endfor %}
 {% endblock %}
