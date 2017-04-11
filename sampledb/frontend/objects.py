@@ -174,7 +174,7 @@ def show_object_form(object, action):
 
         if "action_submit" in form_data:
             object_data, errors = parse_form_data(dict(flask.request.form), schema)
-            if not errors:
+            if object_data is not None  and not errors:
                 try:
                     validate(object_data, schema)
                 except ValidationError:

@@ -53,3 +53,10 @@ def setup_data(app):
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
+
+    instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
+    add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
+    with open('sampledb/schemas/xrr_measurement.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    instrument_action = create_action(ActionType.MEASUREMENT, "XRR Measurement", "", schema, instrument.id)
+    sampledb.db.session.commit()
