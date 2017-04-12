@@ -40,7 +40,7 @@
            {% for authentication in authentications %}
            <tr>
                <td width="100">{{authentication.login['login']}}</td>
-               <td width="250">{{authentication.type}}</td>
+               <td width="250">{{ {'ldap': 'LDAP', 'email': 'E-Mail', 'other': 'Other'}[authentication.type.name.lower()] }}</td>
                <td widht="200">
                    <form class="form-group" {% if authentication_form.login.errors  or error %} has-error{% endif %} method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
@@ -78,7 +78,15 @@
     <div class="form-group">
         <label class="col-sm-4 control-label">Authentication_method</label>
         <div class="col-sm-8">
-             {{authentication_form.authentication_method}}
+          <select class="form-control selectpicker" name="{{ authentication_form.authentication_method.name }}">
+          {% for option in authentication_form.authentication_method.choices %}
+            {% if authentication_form.authentication_method.data == option[0] %}
+              <option value="{{ option[0] }}" selected="selected">{{ option[1] }}</option>
+            {% else %}
+              <option value="{{ option[0] }}">{{ option[1] }}</option>
+            {% endif %}
+          {% endfor %}
+          </select>
         </div>
     </div>
     <div class="form-group">
