@@ -16,3 +16,7 @@ class SigninForm(FlaskForm):
 
 class SignoutForm(FlaskForm):
     pass
+
+
+class InvitationForm(FlaskForm):
+    email = StringField(validators=[InputRequired()])
