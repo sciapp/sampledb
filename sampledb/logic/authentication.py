@@ -116,8 +116,12 @@ def add_login(userid, login, password, authentication_method):
     return True
 
 
-def check_count_of_authentication_methods(user_id):
+def remove_authentication_method(user_id, authentication_method_id):
     authentication_methods_count = Authentication.query.filter(Authentication.user_id == user_id).count()
     if authentication_methods_count <= 1:
         raise OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
+    authentication_methods = Authentication.query.filter(Authentication.id == authentication_method_id).first()
+    assert authentication_methods
+    db.session.delete(authentication_methods)
+    db.session.commit()
     return True

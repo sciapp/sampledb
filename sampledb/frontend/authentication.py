@@ -23,14 +23,6 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
-@frontend.route('/invite_user', methods=['POST'])
-def invite():
-    email = flask.request.form['mail']
-    # send confirm link
-    logic.utils.send_confirm_email(email, None, 'invitation')
-    return flask.redirect(flask.url_for('frontend.index'))
-
-
 @frontend.route('/confirm', methods=['GET', 'POST'])
 def confirm_registration():
     token = flask.request.args.get('token')
@@ -56,7 +48,7 @@ def confirm_registration():
             return flask.redirect(flask.url_for('frontend.index'))
     else:
         print(registration_form.name.data)
-        return flask.render_template('register.html', registration_form=registration_form)
+        return flask.render_template('registration.html', registration_form=registration_form)
 
 
 @frontend.route('/add_user', methods=['GET', 'POST'])

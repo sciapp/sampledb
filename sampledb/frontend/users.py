@@ -10,11 +10,12 @@ from .. import db
 
 from . import frontend
 from .authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
-from sampledb.logic.authentication import login, add_login, OnlyOneAuthenticationMethod, check_count_of_authentication_methods
+from sampledb.logic.authentication import login, add_login, remove_authentication_method
 from sampledb.logic.utils import send_confirm_email
+from sampledb.logic.authentication import insert_user_and_authentication_method_to_db
 from ..logic.security_tokens import verify_token
 
-from ..models import Authentication, AuthenticationType, User
+from ..models import Authentication, AuthenticationType, User, UserType
 
 from .users_forms import SigninForm, SignoutForm, InvitationForm, RegistrationForm
 
@@ -67,10 +68,11 @@ def invitation():
     # TODO: initial instrument permissions?
     invitation_form = InvitationForm()
     if flask.request.method == "GET":
-        # TODO: implement GET (invitation dialog or confirmation dialog)
+        #  GET (invitation dialog )
         has_success = False
         return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success)
     if flask.request.method == "POST":
+        # POST (send invitation)
         has_success = False
         has_error = False
         if invitation_form.validate_on_submit():
@@ -85,20 +87,46 @@ def invitation():
             has_error = True
         return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success,
                                      has_error=has_error)
-# TODO: implement POST (send invitation and redirect or register user and redirect)
     return flask.render_template('index.html')
 
 
 def registration():
+    token = flask.request.args.get('token')
+    email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
+    if email is None:
+        return flask.abort(404)
     registration_form = RegistrationForm()
+    if registration_form.email.data is None or registration_form.email.data == "":
+        registration_form.email.data = email
     has_error = False
     if flask.request.method == "GET":
-        # TODO: implement GET (invitation dialog or confirmation dialog)
-        return flask.render_template('invitation.html', registration_form=registration_form, has_error=has_error)
+        # TODO: implement GET (confirmation dialog)
+        return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
     if flask.request.method == "POST":
+        # TODO: implement POST (redirect or register user and redirect)
         has_error = False
+        if registration_form.email.data != email:
+            has_error = True
+        if registration_form.validate_on_submit():
+            name = str(registration_form.name.data)
+            user = User(name, email, UserType.PERSON)
+            # check, if user sent confirmation email and registered himself
+            erg = User.query.filter_by(name=str(user.name).title(), email=str(user.email)).first()
+            # no user with this name and contact email in db => add to db
+            if erg is None:
+                u = User(str(user.name).title(), user.email, user.type)
+                insert_user_and_authentication_method_to_db(u, registration_form.password.data, email,
+                                                            AuthenticationType.EMAIL)
+                flask.flash('registration successfully')
+                return flask.redirect(flask.url_for('frontend.index'))
+            else:
+                flask.flash('user exists, please contact administrator')
+                has_error = True
+                return flask.render_template('registration.html', registration_form=registration_form,
+                                             has_error=has_error)
+        else:
+            return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
     return flask.render_template('index.html')
-
 
 
 @frontend.route('/users/me')
@@ -150,10 +178,7 @@ def user_preferences(user_id=None):
         authentication_method_id = authentication_method_form.id.data
         if authentication_method_form.validate_on_submit():
             try:
-                check_count_of_authentication_methods(user_id)
-                authentication_methods = Authentication.query.filter(Authentication.id == authentication_method_id).first()
-                db.session.delete(authentication_methods)
-                db.session.commit()
+                remove_authentication_method(user_id, authentication_method_id)
             except Exception as e:
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                              authentication_method_form=authentication_method_form,
