@@ -36,23 +36,26 @@ def confirm_registration():
     email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     if email is None:
         return flask.abort(404)
-    form = RegisterForm()
-    if form.validate_on_submit():
-        name = str(form.name.data)
+    registration_form = RegisterForm()
+    if registration_form.email.data is None or registration_form.email.data == "":
+        registration_form.email.data = email
+    if registration_form.validate_on_submit():
+        name = str(registration_form.name.data)
         user = User(name, email, UserType.PERSON)
         # check, if user sent confirmation email and registered himself
         erg = User.query.filter_by(name=str(user.name).title(), email=str(user.email)).first()
         # no user with this name and contact email in db => add to db
         if erg is None:
             u = User(str(user.name).title(), user.email, user.type)
-            insert_user_and_authentication_method_to_db(u, form.password.data, email, AuthenticationType.EMAIL)
+            insert_user_and_authentication_method_to_db(u, registration_form.password.data, email, AuthenticationType.EMAIL)
             flask.flash('registration successfully')
             return flask.redirect(flask.url_for('frontend.index'))
         else:
             flask.flash('user exists, please contact administrator')
             return flask.redirect(flask.url_for('frontend.index'))
     else:
-        return flask.render_template('register.html', form=form)
+        print(registration_form.name.data)
+        return flask.render_template('register.html', registration_form=registration_form)
 
 
 @frontend.route('/add_user', methods=['GET', 'POST'])

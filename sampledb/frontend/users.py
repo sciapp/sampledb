@@ -16,7 +16,7 @@ from ..logic.security_tokens import verify_token
 
 from ..models import Authentication, AuthenticationType, User
 
-from .users_forms import SigninForm, SignoutForm
+from .users_forms import SigninForm, SignoutForm, InvitationForm
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -58,7 +58,28 @@ def sign_out():
 @frontend.route('/users/invitation', methods=['GET', 'POST'])
 def invitation():
     # TODO: initial instrument permissions?
-    # TODO: implement GET (invitation dialog or confirmation dialog)
+    if flask_login.current_user.is_authenticated:
+        invitation_form = InvitationForm()
+        if flask.request.method == "GET":
+            # TODO: implement GET (invitation dialog or confirmation dialog)
+            print('get')
+            has_success = False
+            return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success)
+        if flask.request.method == "POST":
+            has_success = False
+            has_error = False
+            if invitation_form.validate_on_submit():
+                email = invitation_form.email.data
+                if '@' not in email:
+                    has_error = True
+                else:
+                    has_success = True
+                    # send confirm link
+                    send_confirm_email(invitation_form.email.data, None, 'invitation')
+            else:
+                has_error = True
+            return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success,
+                                         has_error=has_error)
     # TODO: implement POST (send invitation and redirect or register user and redirect)
     return flask.render_template('index.html')
 

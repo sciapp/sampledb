@@ -10,6 +10,8 @@ from wtforms.validators import DataRequired, EqualTo, Length, Email
 
 
 class RegisterForm(FlaskForm):
+    email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
+                                                     Email("Please enter your contact email.")])
     name = StringField('Name', validators=[DataRequired()])
     password = PasswordField('New Password', validators=[
         DataRequired(),
