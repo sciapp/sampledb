@@ -3,7 +3,8 @@ import flask
 import flask_login
 import flask_mail
 
-from .authentication_forms import RegisterForm, NewUserForm, ChangeUserForm, LoginForm, AuthenticationForm
+from .authentication_forms import  NewUserForm, ChangeUserForm, LoginForm, AuthenticationForm
+from .users_forms import  RegistrationForm
 from .. import logic
 from sampledb.logic.authentication import insert_user_and_authentication_method_to_db
 from ..logic.security_tokens import  verify_token
@@ -36,7 +37,7 @@ def confirm_registration():
     email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
     if email is None:
         return flask.abort(404)
-    registration_form = RegisterForm()
+    registration_form = RegistrationForm()
     if registration_form.email.data is None or registration_form.email.data == "":
         registration_form.email.data = email
     if registration_form.validate_on_submit():

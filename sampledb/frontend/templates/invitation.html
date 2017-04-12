@@ -9,7 +9,7 @@
       <div class="col-sm-8">
         <input class=form-control type="text" class="form-control" id="input-email" name="email" placeholder="Email">
         {% if has_success%}
-          <span class='help-block'>Send invitation successfully.</span>
+          <span class='help-block'>The invitation to {{invitation_form.email.data}} has been sent.</span>
         {% endif %}
         {% if has_error%}
           <span class='help-block'>Emails is required or email doesn't seems to be an email</span>
