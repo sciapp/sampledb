@@ -2,6 +2,11 @@
   <label class="control-label col-md-3">{{ schema.title }}</label>
   <div class="col-md-9">
   <select class="form-control selectpicker" name="{{ id_prefix }}_text">
+  {% if id_prefix+'_text' in form_data or (data is not none and 'text' in data) or 'default' in schema %}
+  <option>&ndash;</option>
+  {% else %}
+  <option selected="selected">&ndash;</option>
+  {% endif %}
   {% for option in schema.choices %}
     {% if id_prefix+'_text' in form_data %}
       {% if form_data[id_prefix+'_text'] == option %}
@@ -9,8 +14,14 @@
       {% else %}
       <option>{{ option }}</option>
       {% endif %}
+    {% elif data is not none and "text" in data %}
+      {% if data.text == option %}
+      <option selected="selected">{{ option }}</option>
+      {% else %}
+      <option>{{ option }}</option>
+      {% endif %}
     {% else %}
-      {% if data is not none and "text" in data and data.text == option %}
+      {% if 'default' in schema and schema['default'] == option %}
       <option selected="selected">{{ option }}</option>
       {% else %}
       <option>{{ option }}</option>
