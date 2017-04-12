@@ -7,7 +7,10 @@
     {% set id_prefix = "object" %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
-      <div class="col-md-9 col-md-offset-3">
+      <div class="col-md-2 col-md-offset-8">
+        <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default pull-right" style="width:10em">Cancel</a>
+      </div>
+      <div class="col-md-2">
         <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:10em">Save</button>
       </div>
     </div>

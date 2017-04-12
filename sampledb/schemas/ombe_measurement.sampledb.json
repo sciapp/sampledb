@@ -14,10 +14,6 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
-    "sample": {
-      "title": "Sample",
-      "type": "sample"
-    },
     "substrate": {
       "title": "Substrate",
       "type": "text",
@@ -132,7 +128,6 @@
   },
   "propertyOrder": [
     "name",
-    "sample",
     "created",
     "checkbox",
     "dropdown",

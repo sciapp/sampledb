@@ -156,5 +156,8 @@
       </div>
       </form>
     {% endif %}
+    <div class="container">
+      <a href="{{ url_for('.object', object_id=object.object_id) }}" class="btn btn-default col-md-offset-9 col-md-3" style="margin-top: 1em;">Cancel</a>
+    </div>
   {% endif %}
 {% endblock %}
