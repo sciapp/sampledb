@@ -8,7 +8,7 @@ import datetime
 import typing
 
 from .errors import ValidationError, ValidationMultiError
-from ...models import objects
+from ...models import objects, Action, ActionType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -243,5 +243,9 @@ def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> No
         raise ValidationError('expected _type "sample"', path)
     if not isinstance(instance['object_id'], int):
         raise ValidationError('object_id must be int', path)
-    if objects.Objects.get_current_object(object_id=instance['object_id']) is None:
+    sample = objects.Objects.get_current_object(object_id=instance['object_id'])
+    if sample is None:
         raise ValidationError('object does not exist', path)
+    action = Action.query.get(sample.action_id)
+    if action.type != ActionType.SAMPLE_CREATION:
+        raise ValidationError('object must be sample', path)

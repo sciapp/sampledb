@@ -23,7 +23,6 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])
 def sign_in():
-    # TODO: handle next
     if flask_login.current_user.is_authenticated:
         return flask.redirect(flask.url_for('.index'))
     form = SigninForm()
@@ -35,7 +34,11 @@ def sign_in():
         user = login(username, password)
         if user:
             flask_login.login_user(user, remember=remember_me)
-            return flask.redirect(flask.url_for('.index'))
+            next_url = flask.request.args.get('next', '/')
+            index_url = flask.url_for('.index')
+            if not next_url.startswith('/') or not all(c == '/' or c.isalnum() for c in next_url):
+                next_url = index_url
+            return flask.redirect(next_url)
         has_errors = True
     elif form.errors:
         has_errors = True

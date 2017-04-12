@@ -53,6 +53,64 @@ def test_sign_in(flask_server):
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
 
+def test_sign_in_redirect(flask_server):
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
+    # initially, the a link to the sign in page will be displayed
+    r = session.get(flask_server.base_url)
+    assert r.status_code == 200
+    assert '/users/me/sign_in' in r.content.decode('utf-8')
+    # the sign in page contains a form with fields for username, password and a remember_me checkbox
+    r = session.get(flask_server.base_url + 'users/me/sign_in')
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
+    assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    # it also contains a hidden CSRF token
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    # submit the form
+    r = session.post(flask_server.base_url + 'users/me/sign_in?next=/actions/', {
+        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
+        'password': flask_server.app.config['TESTING_LDAP_PW'],
+        'remember_me': False,
+        'csrf_token': csrf_token
+    }, allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'] == flask_server.base_url + 'actions/'
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
+
+
+def test_sign_in_invalid_redirect(flask_server):
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
+    # initially, the a link to the sign in page will be displayed
+    r = session.get(flask_server.base_url)
+    assert r.status_code == 200
+    assert '/users/me/sign_in' in r.content.decode('utf-8')
+    # the sign in page contains a form with fields for username, password and a remember_me checkbox
+    r = session.get(flask_server.base_url + 'users/me/sign_in')
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
+    assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    # it also contains a hidden CSRF token
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    # submit the form
+    r = session.post(flask_server.base_url + 'users/me/sign_in?next=http://google.de/', {
+        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
+        'password': flask_server.app.config['TESTING_LDAP_PW'],
+        'remember_me': False,
+        'csrf_token': csrf_token
+    }, allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'] == flask_server.base_url
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
+
+
 def test_sign_in_invalid_password(flask_server):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False

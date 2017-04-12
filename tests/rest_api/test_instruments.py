@@ -8,7 +8,7 @@ import json
 import requests
 import pytest
 import sampledb
-from sampledb.models import User, UserType
+from sampledb.models import User, UserType, ActionType
 from sampledb.logic import instruments
 from sampledb import logic
 
@@ -214,7 +214,7 @@ def test_get_instruments(flask_server, user, username, password):
 
 
 def test_get_actions(flask_server, user, username, password):
-    instruments.create_action(name="Example Action", description="", schema={
+    instruments.create_action(action_type=ActionType.SAMPLE_CREATION, name="Example Action", description="", schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {}
@@ -241,7 +241,7 @@ def test_get_actions(flask_server, user, username, password):
 
 
 def test_get_action(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={
+    action = instruments.create_action(action_type=ActionType.SAMPLE_CREATION, name="Example Action", description="", schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {}
@@ -266,7 +266,7 @@ def test_get_action(flask_server, user, username, password):
 
 
 def test_get_action_missing(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={
+    action = instruments.create_action(action_type=ActionType.SAMPLE_CREATION, name="Example Action", description="", schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {}
@@ -276,7 +276,7 @@ def test_get_action_missing(flask_server, user, username, password):
 
 
 def test_update_action(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={
+    action = instruments.create_action(action_type=ActionType.SAMPLE_CREATION, name="Example Action", description="", schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {}
@@ -284,6 +284,7 @@ def test_update_action(flask_server, user, username, password):
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps({
         'id': action.id,
         'instrument_id': None,
+        'type': 'sampleCreation',
         'name': 'Test',
         'description': 'desc',
         'schema': {
@@ -311,7 +312,7 @@ def test_update_action(flask_server, user, username, password):
 
 
 def test_update_action_missing(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={
+    action = instruments.create_action(action_type=ActionType.SAMPLE_CREATION, name="Example Action", description="", schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {}
@@ -321,7 +322,7 @@ def test_update_action_missing(flask_server, user, username, password):
 
 
 def test_update_action_invalid_data(flask_server, user, username, password):
-    action = instruments.create_action(name="Example Action", description="", schema={
+    action = instruments.create_action(action_type=ActionType.SAMPLE_CREATION, name="Example Action", description="", schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {}
@@ -344,6 +345,7 @@ def test_update_action_invalid_data(flask_server, user, username, password):
     # modified instrument id
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps({
         'id': action.id,
+        'type': 'sampleCreation',
         'name': 'Example Action',
         'description': '',
         'instrument_id': 0,
@@ -358,6 +360,7 @@ def test_update_action_invalid_data(flask_server, user, username, password):
     # modified id
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps({
         'id': action.id+1,
+        'type': 'sampleCreation',
         'name': 'Example Action',
         'description': '',
         'instrument_id': None,
@@ -372,6 +375,7 @@ def test_update_action_invalid_data(flask_server, user, username, password):
     # invalid schema
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps({
         'id': action.id,
+        'type': 'sampleCreation',
         'name': 'Example Action',
         'description': '',
         'instrument_id': None,
@@ -382,6 +386,7 @@ def test_update_action_invalid_data(flask_server, user, username, password):
     # missing id
     r = requests.put(flask_server.api_url + 'actions/{}'.format(action.id), json.dumps({
         'name': 'Example Action',
+        'type': 'sampleCreation',
         'description': '',
         'instrument_id': None,
         'schema': {
@@ -397,6 +402,7 @@ def test_update_action_invalid_data(flask_server, user, username, password):
 def test_create_action(flask_server, user, username, password):
     assert len(instruments.get_actions()) == 0
     r = requests.post(flask_server.api_url + 'actions/', json.dumps({
+        'type': 'sampleCreation',
         'name': 'Example Action',
         'description': '',
         'schema': {
@@ -439,6 +445,7 @@ def test_create_action_invalid_data(flask_server, user, username, password):
     }), auth=(username, password))
     # missing attributes
     r = requests.post(flask_server.api_url + 'actions/', json.dumps({
+        'type': 'sampleCreation',
         'name': 'Example Action',
         'description': '',
         'schema': {
@@ -451,6 +458,7 @@ def test_create_action_invalid_data(flask_server, user, username, password):
     assert len(instruments.get_actions()) == 0
     # invalid schema
     r = requests.post(flask_server.api_url + 'actions/', json.dumps({
+        'type': 'sampleCreation',
         'name': 'Example Action',
         'description': '',
         'schema': {'type': 'invalid'},

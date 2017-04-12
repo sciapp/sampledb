@@ -9,7 +9,7 @@ import requests
 
 import sampledb
 from sampledb import logic
-from sampledb.models import User, UserType, Action, Instrument, Permissions, Objects
+from sampledb.models import User, UserType, Action, Instrument, Permissions, Objects, ActionType
 from sampledb.logic.permissions import get_object_permissions, set_user_object_permissions, object_is_public, set_object_public, get_user_object_permissions
 
 from tests.test_utils import flask_server, app
@@ -35,6 +35,7 @@ def users(flask_server):
 @pytest.fixture
 def independent_action(app):
     action = Action(
+        action_type=ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',
@@ -70,6 +71,7 @@ def instrument(app):
 @pytest.fixture
 def instrument_action(app, instrument):
     action = Action(
+        action_type=ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

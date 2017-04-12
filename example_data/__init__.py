@@ -8,8 +8,7 @@ import flask
 import flask_login
 import sqlalchemy
 import sampledb
-from sampledb.models import Objects
-from sampledb.models import User, UserType
+from sampledb.models import Objects, User, UserType, ActionType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user, create_action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -40,17 +39,24 @@ def setup_data(app):
         flask_login.login_user(user)
         return flask.redirect(flask.url_for('frontend.object', object_id=1))
 
-        #    sampledb.login_manager.login_view = 'autologin'
+    # sampledb.login_manager.login_view = 'autologin'
 
     instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
     with open('sampledb/schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
-    instrument_action = create_action("Sample Creation", "This is an example action", schema, instrument.id)
-    independent_action = create_action("Alternative Process", "This is an example action", schema)
+    instrument_action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation", "This is an example action", schema, instrument.id)
+    independent_action = create_action(ActionType.SAMPLE_CREATION, "Alternative Process", "This is an example action", schema)
     sampledb.db.session.commit()
 
     with open('example_data/ombe-1.sampledb.json', 'r') as data_file:
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
+
+    instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
+    add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
+    with open('sampledb/schemas/xrr_measurement.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    instrument_action = create_action(ActionType.MEASUREMENT, "XRR Measurement", "", schema, instrument.id)
+    sampledb.db.session.commit()

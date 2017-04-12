@@ -65,7 +65,7 @@ def test_create_action():
         }
     }
     assert len(instruments.get_actions()) == 0
-    action = instruments.create_action(name="Example Action", description="", schema=schema)
+    action = instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
     assert action.name == "Example Action"
     assert action.description == ""
     assert action.schema == schema
@@ -78,7 +78,7 @@ def test_create_action_invalid_schema():
         'type': 'invalid'
     }
     with pytest.raises(schemas.ValidationError):
-        instruments.create_action(name="Example Action", description="", schema=schema)
+        instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
 
 
 def test_update_action():
@@ -92,7 +92,7 @@ def test_update_action():
             }
         }
     }
-    action = instruments.create_action(name="Example Action", description="", schema=schema)
+    action = instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
     instruments.update_action(action_id=action.id, name="Test", description="desc", schema=schema)
     action = instruments.get_action(action_id=action.id)
     assert action.name == "Test"

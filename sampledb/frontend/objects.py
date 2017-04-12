@@ -9,13 +9,13 @@ import flask_login
 import itsdangerous
 
 from . import frontend
-from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions
+from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions, get_objects_with_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm
 from .. import db
-from ..models import User, Action, Objects, Permissions
+from ..models import User, Action, Objects, Permissions, ActionType
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -23,18 +23,27 @@ from .object_form_parser import parse_form_data
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_user_readable_objects(filter_func=lambda data: True):
-    objects = Objects.get_current_objects(filter_func=filter_func, connection=db.engine)
-    user_id = flask_login.current_user.id
-    objects = [obj for obj in objects if Permissions.READ in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
-    return objects
-
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
+    try:
+        action_id = int(flask.request.args.get('action', ''))
+    except ValueError:
+        action_id = None
+    action_type = flask.request.args.get('t', '')
+    action_type = {
+        'samples': ActionType.SAMPLE_CREATION,
+        'measurements': ActionType.MEASUREMENT
+    }.get(action_type, None)
     query_string = flask.request.args.get('q', '')
     filter_func = generate_filter_func(query_string)
-    objects = get_user_readable_objects(filter_func)
+    objects = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        filter_func=filter_func,
+        action_id=action_id,
+        action_type=action_type
+    )
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -81,7 +90,7 @@ def objects():
         if title_is_shared and possible_title is not None:
             display_property_titles[property_name] = possible_title
     objects.sort(key=lambda obj: obj['object_id'])
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType)
 
 
 @jinja_filter
@@ -126,11 +135,11 @@ def apply_action_to_data(data, schema, action, form_data):
         if sub_schema['type'] != 'array':
             raise ValueError('invalid type')
         if action.endswith('_delete'):
-            del sub_data[int(keys[-1])]
-            # TODO: minimum length
+            if 'minItems' not in sub_schema or len(sub_data) > sub_schema["minItems"]:
+                del sub_data[int(keys[-1])]
         elif action.endswith('_add'):
-            sub_data.append(generate_placeholder(sub_schema["items"]))
-            # TODO: maximum length
+            if 'maxItems' not in sub_schema or len(sub_data) < sub_schema["maxItems"]:
+                sub_data.append(generate_placeholder(sub_schema["items"]))
     except (ValueError, KeyError, IndexError, TypeError):
         # TODO: error handling/logging?
         raise ValueError('invalid action')
@@ -165,7 +174,7 @@ def show_object_form(object, action):
 
         if "action_submit" in form_data:
             object_data, errors = parse_form_data(dict(flask.request.form), schema)
-            if not errors:
+            if object_data is not None  and not errors:
                 try:
                     validate(object_data, schema)
                 except ValidationError:
@@ -189,7 +198,11 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
 
-    objects = get_user_readable_objects()
+    objects = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        action_type=ActionType.SAMPLE_CREATION
+    )
     if object is None:
         return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
     else:
@@ -207,7 +220,11 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        objects = get_user_readable_objects()
+        objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            action_type=ActionType.SAMPLE_CREATION
+        )
         return flask.render_template('objects/view/base.html', schema=object.schema, data=object.data, last_edit_datetime=object.utc_datetime, last_edit_user=User.query.get(object.user_id), object_id=object_id, user_may_edit=user_may_edit, restore_form=None, version_id=object.version_id, user_may_grant=user_may_grant, objects=objects)
 
     return show_object_form(object, action=Action.query.get(object.action_id))
@@ -287,25 +304,40 @@ def object_permissions(object_id):
             if user_id is None:
                 continue
             user_permissions.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-        form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+        users = User.query.all()
+        users = [user for user in users if user.id not in object_permissions]
+        add_user_permissions_form = ObjectUserPermissionsForm()
     else:
-        form = None
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=form)
+        edit_user_permissions_form = None
+        add_user_permissions_form = None
+        users = []
+    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=edit_user_permissions_form, users=users, add_user_permissions_form=add_user_permissions_form)
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id):
-    form = ObjectPermissionsForm()
-    if form.validate_on_submit():
-        set_object_public(object_id, form.public_permissions.data == 'read')
-        for user_permissions_data in form.user_permissions.data:
+
+    edit_user_permissions_form = ObjectPermissionsForm()
+    add_user_permissions_form = ObjectUserPermissionsForm()
+    if 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+        set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
+        for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
             user = User.query.get(user_id)
             if user is None:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
             set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
+        flask.flash("Successfully updated object permissions.", 'success')
+    elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
+        user_id = add_user_permissions_form.user_id.data
+        permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
+        object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
+        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
+        assert user_id not in object_permissions
+        set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
         flask.flash("Successfully updated object permissions.", 'success')
     else:
         flask.flash("A problem occurred while changing the object permissions. Please try again.", 'error')
