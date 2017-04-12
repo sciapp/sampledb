@@ -547,6 +547,7 @@ def test_invitation(flask_server):
 
     # Submit the missing information and complete the registration
     r = session.post(confirmation_url, {
+        'email': 'd.henkel@fz-juelich.de',
         'name': 'Testuser',
         'password': 'test',
         'password2': 'test',

@@ -8,20 +8,6 @@ from wtforms import StringField, RadioField, PasswordField, SubmitField, Integer
 from wtforms.validators import DataRequired, EqualTo, Length, Email
 
 
-
-class RegisterForm(FlaskForm):
-    email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
-                                                     Email("Please enter your contact email.")])
-    name = StringField('Name', validators=[DataRequired()])
-    password = PasswordField('New Password', validators=[
-        DataRequired(),
-        Length(min=3),
-        EqualTo('password2', message='Passwords must match')
-    ])
-    password2 = PasswordField('Confirm password', validators=[DataRequired()])
-    submit = SubmitField('Register')
-
-
 class NewUserForm(FlaskForm):
     name = StringField('Full Name', validators=[DataRequired()])
     email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
@@ -32,6 +18,7 @@ class NewUserForm(FlaskForm):
     type = RadioField('Usertype', choices=[('P', 'Person'), ('O', 'Other')], default='O')
     admin = RadioField('Admin', choices=[('0', 'No'), ('1', 'Yes')], default='0')
     submit = SubmitField('Register')
+
 
 class ChangeUserForm(FlaskForm):
     name = StringField('Full Name', validators=[DataRequired()])
@@ -48,11 +35,13 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
     submit = SubmitField('Login')
 
+
 class AuthenticationForm(FlaskForm):
     login = StringField('Login', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
     authentication_method = RadioField('Authentication Method', choices=[('E', 'Email'), ('O', 'Other'), ('L', 'LDAP')], default='E')
     submit = SubmitField('Login')
+
 
 class AuthenticationMethodForm(FlaskForm):
     id = IntegerField('Authentication_method_id', validators=[DataRequired()])
