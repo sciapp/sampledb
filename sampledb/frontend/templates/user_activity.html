@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{# hide user area in navbar #}
+{% block navbar_userarea %}
+  {% if current_user.is_authenticated %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<h1>User Activity for {{ current_user.name }}</h1>
+<ol class="user-activity-log">
+  {% for user_log_entry in user_log_entries %}
+    {% if user_log_entry.type in (UserLogEntryType.CREATE_OBJECT, UserLogEntryType.EDIT_OBJECT, UserLogEntryType.EDIT_OBJECT_PERMISSIONS) %}
+      <li><time datetime="{{ user_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}">{{ user_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</time>
+      {% if user_log_entry.type == UserLogEntryType.CREATE_OBJECT %}
+        <span>{{ current_user.name }} created object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a></span>
+      {% elif user_log_entry.type == UserLogEntryType.EDIT_OBJECT %}
+        <span>{{ current_user.name }} edited object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> (version <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['version_id'] }}</a>)</span>
+      {% elif user_log_entry.type == UserLogEntryType.EDIT_OBJECT_PERMISSIONS %}
+        <span>{{ current_user.name }} edited object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> permissions</span>
+      {% endif %}
+      </li>
+    {% endif %}
+  {% endfor %}
+</ol>
+</div>
+{% endblock %}

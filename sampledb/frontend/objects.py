@@ -9,6 +9,7 @@ import flask_login
 import itsdangerous
 
 from . import frontend
+from ..logic import user_log
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions, get_objects_with_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
@@ -184,9 +185,11 @@ def show_object_form(object, action):
                     flask.abort(400)
                 if object is None:
                     object = Objects.create_object(data=object_data, schema=schema, user_id=flask_login.current_user.id, action_id=action.id)
+                    user_log.create_object(user_id=flask_login.current_user.id, object_id=object.object_id)
                     flask.flash('The object was created successfully.', 'success')
                 else:
-                    Objects.update_object(object_id=object.object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
+                    object = Objects.update_object(object_id=object.object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
+                    user_log.edit_object(user_id=flask_login.current_user.id, object_id=object.object_id, version_id=object.version_id)
                     flask.flash('The object was updated successfully.', 'success')
                 return flask.redirect(flask.url_for('.object', object_id=object.object_id))
         elif any(name.startswith('action_object_') and (name.endswith('_delete') or name.endswith('_add')) for name in form_data):
@@ -284,6 +287,7 @@ def restore_object_version(object_id, version_id):
     form = ObjectVersionRestoreForm()
     if form.validate_on_submit():
         Objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
+        user_log.edit_object(user_id=flask_login.current_user.id, object_id=object_id, version_id=current_object.version_id+1)
         return flask.redirect(flask.url_for('.object', object_id=object_id))
     return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
 
@@ -330,6 +334,7 @@ def update_object_permissions(object_id):
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
             set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
+        user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         flask.flash("Successfully updated object permissions.", 'success')
     elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
         user_id = add_user_permissions_form.user_id.data
@@ -337,6 +342,7 @@ def update_object_permissions(object_id):
         object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
         assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
         assert user_id not in object_permissions
+        user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
         flask.flash("Successfully updated object permissions.", 'success')
     else:

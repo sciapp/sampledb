@@ -175,11 +175,14 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
 def test_update_object_permissions(users, independent_action_object):
     user_id = users[0].id
     object_id = independent_action_object.object_id
+
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.WRITE)
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
+
     permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.READ)
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
+
     permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.NONE)
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     assert permissions.get_object_permissions(object_id=object_id) == {

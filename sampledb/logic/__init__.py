@@ -3,13 +3,17 @@
 
 """
 
-from . import instruments
-from . import permissions
 from . import authentication
-from . import utils
-from . import security_tokens
-from . import where_filters
+from . import datatypes
+from . import instruments
+from . import ldap
+from . import object_search
+from . import permissions
 from . import schemas
+from . import security_tokens
+from . import user_log
+from . import utils
+from . import where_filters
 
 from ..models.objects import Objects
 

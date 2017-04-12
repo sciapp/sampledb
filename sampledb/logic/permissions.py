@@ -17,9 +17,9 @@ Objects can be made public, which grants READ permissions to any logged-in user 
 """
 
 import typing
-from sampledb import db
-from sampledb.logic.instruments import get_action
-from sampledb.models import Permissions, UserObjectPermissions, PublicObjects, Objects, ActionType, Action, Object
+from .. import db
+from .instruments import get_action
+from ..models import Permissions, UserObjectPermissions, PublicObjects, Objects, ActionType, Action, Object
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'

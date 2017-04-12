@@ -71,3 +71,11 @@ body > footer {
 .instrument-responsible-users li:last-child:after {
     content: '';
 }
+
+.user-activity-log {
+    list-style-type: none;
+    padding:0;
+}
+.user-activity-log li time {
+    font-weight: 600;
+}
