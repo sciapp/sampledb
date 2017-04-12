@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
+import sampledb.logic
 
 
 from tests.test_utils import flask_server, app
@@ -145,6 +146,8 @@ def test_user_preferences_change_contactemail(flask_server):
     assert r.headers['Location'].endswith('/preferences')
     url = r.headers['Location']
 
+    user_id = int(url[len(flask_server.base_url + 'users/'):].split('/')[0])
+
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
@@ -156,6 +159,8 @@ def test_user_preferences_change_contactemail(flask_server):
     # Send a POST request to the confirmation url
     # TODO: require authorization
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    with flask_server.app.app_context():
+        assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
     # Submit the missing information and complete the registration
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
@@ -165,6 +170,13 @@ def test_user_preferences_change_contactemail(flask_server):
             'change': 'Change'
         })
         assert r.status_code == 200
+    with flask_server.app.app_context():
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
+        assert len(user_log_entries) == 1
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.EDIT_USER_PREFERENCES
+        assert user_log_entries[0].user_id == user_id
+        assert user_log_entries[0].data == {}
+    assert r.status_code == 200
 
     # Check if an invitation mail was sent
     assert len(outbox) == 1
@@ -175,6 +187,13 @@ def test_user_preferences_change_contactemail(flask_server):
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
     assert confirmation_url.startswith(flask_server.base_url + 'users/confirm-email')
     r = session.get(confirmation_url)
+    with flask_server.app.app_context():
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
+        assert len(user_log_entries) == 2
+        for user_log_entry in user_log_entries:
+            assert user_log_entry.type == sampledb.models.UserLogEntryType.EDIT_USER_PREFERENCES
+            assert user_log_entry.user_id == user_id
+            assert user_log_entry.data == {}
     assert r.status_code == 200
 
 

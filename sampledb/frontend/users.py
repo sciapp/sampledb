@@ -9,9 +9,10 @@ import flask_login
 from .. import db
 
 from . import frontend
+from ..logic import user_log
 from .authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
-from sampledb.logic.authentication import login, add_login, OnlyOneAuthenticationMethod, check_count_of_authentication_methods
-from sampledb.logic.utils import send_confirm_email
+from ..logic.authentication import login, add_login, OnlyOneAuthenticationMethod, check_count_of_authentication_methods
+from ..logic.utils import send_confirm_email
 from ..logic.security_tokens import verify_token
 
 from ..models import Authentication, AuthenticationType, User
@@ -125,6 +126,7 @@ def user_preferences(user_id=None):
                 u.name = str(change_user_form.name.data)
                 db.session.add(u)
                 db.session.commit()
+                user_log.edit_user_preferences(user_id=user_id)
             if change_user_form.email.data != user.email:
                 # send confirm link
                 send_confirm_email(change_user_form.email.data, user.id, 'edit_profile')
@@ -142,6 +144,7 @@ def user_preferences(user_id=None):
                                              authentication_method_form=authentication_method_form,
                                              authentication_form=authentication_form,
                                              authentications=authentication_methods, error=str(e))
+            user_log.edit_user_preferences(user_id=user_id)
             authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
     if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
         if authentication_form.validate_on_submit():
@@ -178,28 +181,33 @@ def confirm_email():
         if len(data) != 2:
             return flask.abort(400)
         email = data[0]
-        id = data[1]
+        user_id = data[1]
         if salt == 'edit_profile':
-            user = User.query.get(id)
+            user = User.query.get(user_id)
             user.email = email
             db.session.add(user)
         elif salt == 'add_login':
-            auth = Authentication.query.filter(Authentication.user_id == id,
+            auth = Authentication.query.filter(Authentication.user_id == user_id,
                                                Authentication.login['login'].astext == email).first()
             auth.confirmed = True
             db.session.add(auth)
         else:
             return flask.abort(400)
         db.session.commit()
-        user = User.query.get(id)
-        return flask.redirect(flask.url_for('.user_preferences', user_id=user.id))
+        user_log.edit_user_preferences(user_id=user_id)
+        return flask.redirect(flask.url_for('.user_preferences', user_id=user_id))
 
 
 @frontend.route('/users/me/activity')
+@flask_login.login_required
+def current_user_activity():
+    return flask.redirect(flask.url_for('.user_activity', user_id=flask_login.current_user.id))
+
+
 @frontend.route('/users/<int:user_id>/activity')
 @flask_login.login_required
-def user_activity(user_id=None):
-    if user_id is None:
-        return flask.redirect(flask.url_for('.user_activity', user_id=flask_login.current_user.id))
-    # TODO: implement this
-    return flask.render_template('index.html')
+def user_activity(user_id):
+    if user_id != flask_login.current_user.id and not flask_login.current_user.is_admin:
+        return flask.abort(403)
+    user_log_entries = user_log.get_user_log_entries(user_id)
+    return flask.render_template('user_activity.html', user_log_entries=user_log_entries, UserLogEntryType=user_log.UserLogEntryType)
