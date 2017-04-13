@@ -102,19 +102,39 @@ def test_user_preferences_change_name(flask_server):
 
     assert r.status_code == 200
 
-    r = session.get(flask_server.base_url + 'users/me/preferences')
     url = flask_server.base_url + 'users/me/preferences'
+    r = session.get(url, allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].endswith('/preferences')
+    url = r.headers['Location']
+    r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
-    # Submit the missing information and complete the registration
-    with sampledb.mail.record_messages() as outbox:
-        r = session.post(url, {
-            'name': 'Doro Testaccount1111',
-            'email': 'd.henkel@fz-juelich.de',
-            'csrf_token': csrf_token
-        })
 
+    with flask_server.app.app_context():
+        user = sampledb.models.users.User.query.filter_by(email="d.henkel@fz-juelich.de").one()
+
+    assert user.name == "Doro Testaccount"
+
+    document = BeautifulSoup(r.content, 'html.parser')
+    # it also contains a hidden CSRF token
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+
+    # Submit the missing information and complete the registration
+    r = session.post(url, {
+        'name': 'Doro Testaccount1111',
+        'email': 'd.henkel@fz-juelich.de',
+        'csrf_token': csrf_token,
+        'change': 'Change'
+    })
+
+    #check, if email was changed
     assert r.status_code == 200
+    with flask_server.app.app_context():
+        user = sampledb.models.users.User.query.filter_by(email="d.henkel@fz-juelich.de").one()
+
+    assert user.name == "Doro Testaccount1111"
 
 
 def test_user_preferences_change_contactemail(flask_server):
@@ -170,6 +190,7 @@ def test_user_preferences_change_contactemail(flask_server):
             'change': 'Change'
         })
         assert r.status_code == 200
+
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
         assert len(user_log_entries) == 1
@@ -187,6 +208,15 @@ def test_user_preferences_change_contactemail(flask_server):
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
     assert confirmation_url.startswith(flask_server.base_url + 'users/confirm-email')
     r = session.get(confirmation_url)
+
+
+    # check, if email was changed after open confirmation_url
+    with flask_server.app.app_context():
+        user = sampledb.models.users.User.query.filter_by(email="example@fz-juelich.de").one()
+
+    assert user.name == "Doro Testaccount1"
+
+
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
         assert len(user_log_entries) == 2
