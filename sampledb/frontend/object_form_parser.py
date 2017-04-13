@@ -8,7 +8,7 @@ import functools
 import pint
 from ..logic import datatypes
 from ..logic import schemas
-ureg = pint.UnitRegistry()
+from ..logic.units import ureg
 
 
 def form_data_parser(func):
