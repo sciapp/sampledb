@@ -16,7 +16,15 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @flask_login.login_required
 def actions():
     # TODO: instrument permissions
-    actions = Action.query.all()
+    action_type = flask.request.args.get('t', None)
+    action_type = {
+        'samples': ActionType.SAMPLE_CREATION,
+        'measurements': ActionType.MEASUREMENT
+    }.get(action_type, None)
+    if action_type is not None:
+        actions = Action.query.filter_by(type=action_type).all()
+    else:
+        actions = Action.query.all()
     return flask.render_template('actions/actions.html', actions=actions, ActionType=ActionType)
 
 
