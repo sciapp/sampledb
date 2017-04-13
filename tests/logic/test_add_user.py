@@ -4,8 +4,10 @@ from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
 import sampledb
 import sampledb.models
+import sampledb.logic
 
 from ..test_utils import app_context, flask_server, app
+
 
 def test_add_user(flask_server):
     with flask_server.app.app_context():
@@ -15,7 +17,7 @@ def test_add_user(flask_server):
                                                     'example@fz-juelich.de', sampledb.models.AuthenticationType.OTHER)
         assert len(sampledb.models.User.query.all()) == 1
         if result:
-            user =  sampledb.models.query.get(1)
+            user = sampledb.models.query.get(1)
         assert user.id is not None
 
         assert len(sampledb.models.User.query.all()) == 1
@@ -27,7 +29,8 @@ def test_add_user(flask_server):
             user = sampledb.models.query.get(2)
         assert user.id is not None
 
-def test_add_user_LDAP(flask_server,app):
+
+def test_add_user_LDAP(flask_server, app):
     with flask_server.app.app_context():
         username = app.config['TESTING_LDAP_LOGIN']
         password = app.config['TESTING_LDAP_PW']
@@ -36,6 +39,6 @@ def test_add_user_LDAP(flask_server,app):
         result = sampledb.logic.authentication.insert_user_and_authentication_method_to_db(user, password, 'd.henkel@fz-juelich.de', sampledb.models.AuthenticationType.LDAP)
         assert len(sampledb.models.User.query.all()) == 1
         if result:
-            user =  sampledb.models.query.get(1)
+            user = sampledb.models.query.get(1)
         assert user.id is not None
 

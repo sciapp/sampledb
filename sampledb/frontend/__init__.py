@@ -11,7 +11,6 @@ frontend = flask.Blueprint('frontend', __name__, template_folder='templates')
 
 
 from . import actions
-from . import authentication
 from . import authentication_forms
 from . import index
 from . import instruments
