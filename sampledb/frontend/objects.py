@@ -3,6 +3,7 @@
 
 """
 
+import datetime
 import json
 import flask
 import flask_login
@@ -207,9 +208,9 @@ def show_object_form(object, action):
         action_type=ActionType.SAMPLE_CREATION
     )
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects, datetime=datetime)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects)
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects, datetime=datetime)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
