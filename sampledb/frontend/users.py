@@ -130,16 +130,6 @@ def registration():
     return flask.render_template('index.html')
 
 
-@frontend.route('/users/me')
-@frontend.route('/users/<int:user_id>')
-@flask_login.login_required
-def user_profile(user_id=None):
-    if user_id is None:
-        return flask.redirect(flask.url_for('.user_profile', user_id=flask_login.current_user.id))
-    # TODO: implement this
-    return flask.render_template('index.html')
-
-
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])
 @flask_login.login_required
 def user_me_preferences():
