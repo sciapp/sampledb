@@ -19,7 +19,8 @@ setting JSONEncoder.STRICT = True, but the verification will greatly reduce the 
 import datetime
 import json
 import pint
-ureg = pint.UnitRegistry()
+
+from .units import ureg
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

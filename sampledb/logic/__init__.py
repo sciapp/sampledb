@@ -11,6 +11,7 @@ from . import object_search
 from . import permissions
 from . import schemas
 from . import security_tokens
+from . import units
 from . import user_log
 from . import utils
 from . import where_filters

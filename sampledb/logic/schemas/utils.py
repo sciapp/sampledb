@@ -5,11 +5,9 @@
 
 import pint
 
+from ..units import ureg
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
-# TODO: global unit registry
-ureg = pint.UnitRegistry()
 
 
 def units_are_valid(units: str) -> bool:
