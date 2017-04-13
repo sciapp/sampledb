@@ -6,6 +6,7 @@ from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
 import sampledb
 import sampledb.models
+import sampledb.logic
 
 
 from ..test_utils import flask_server, app

@@ -129,7 +129,7 @@ def test_user_preferences_change_name(flask_server):
         'change': 'Change'
     })
 
-    #check, if email was changed
+    #check, if name was changed
     assert r.status_code == 200
     with flask_server.app.app_context():
         user = sampledb.models.users.User.query.filter_by(email="d.henkel@fz-juelich.de").one()
@@ -209,13 +209,11 @@ def test_user_preferences_change_contactemail(flask_server):
     assert confirmation_url.startswith(flask_server.base_url + 'users/confirm-email')
     r = session.get(confirmation_url)
 
-
     # check, if email was changed after open confirmation_url
     with flask_server.app.app_context():
         user = sampledb.models.users.User.query.filter_by(email="example@fz-juelich.de").one()
 
     assert user.name == "Doro Testaccount1"
-
 
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
@@ -519,5 +517,4 @@ def test_user_remove_authentication_method(flask_server):
     # Check if authentication-method remove from db
     with flask_server.app.app_context():
         assert len(sampledb.models.Authentication.query.all()) == 1
-
 

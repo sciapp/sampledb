@@ -100,7 +100,6 @@ def add_login(userid, login, password, authentication_method):
             raise AuthenticationMethodWrong('Login must be an email if the authentication_method is email')
         else:
             # send confirm link
-            print('send_confirm_email')
             logic.utils.send_confirm_email(login, userid, 'add_login')
             confirmed = False
     elif authentication_method == AuthenticationType.OTHER:

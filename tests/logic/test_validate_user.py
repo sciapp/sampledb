@@ -6,6 +6,7 @@ from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
 import sampledb
 import sampledb.models
+import sampledb.logic
 
 
 from ..test_utils import app_context, flask_server, app
@@ -77,4 +78,3 @@ def test_validate_user_db(users):
     user = sampledb.logic.authentication.validate_user_db('ombe', 'test456')
     # password wrong
     assert user is False
-
