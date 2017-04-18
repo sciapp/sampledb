@@ -321,6 +321,7 @@ def object_version(object_id, version_id):
     }.get(action.type, "Object")
     return flask.render_template(
         'objects/view/base.html',
+        is_archived=True,
         object_type=object_type,
         action=action,
         instrument=instrument,
