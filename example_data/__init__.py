@@ -10,6 +10,7 @@ import sqlalchemy
 import sampledb
 from sampledb.models import Objects, User, UserType, ActionType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user, create_action
+from sampledb.logic.object_log import create_object
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -52,7 +53,9 @@ def setup_data(app):
     with open('example_data/ombe-1.sampledb.json', 'r') as data_file:
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
+    create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
+    create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
 
     instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)

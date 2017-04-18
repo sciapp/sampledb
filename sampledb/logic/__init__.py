@@ -7,6 +7,7 @@ from . import authentication
 from . import datatypes
 from . import instruments
 from . import ldap
+from . import object_log
 from . import object_search
 from . import permissions
 from . import schemas

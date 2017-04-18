@@ -10,14 +10,14 @@ import flask_login
 import itsdangerous
 
 from . import frontend
-from ..logic import user_log
+from ..logic import user_log, object_log
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions, get_objects_with_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm
 from .. import db
-from ..models import User, Action, Objects, Permissions, ActionType
+from ..models import User, Action, Objects, Permissions, ActionType, ObjectLogEntryType
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -187,11 +187,28 @@ def show_object_form(object, action):
                 if object is None:
                     object = Objects.create_object(data=object_data, schema=schema, user_id=flask_login.current_user.id, action_id=action.id)
                     user_log.create_object(user_id=flask_login.current_user.id, object_id=object.object_id)
+                    object_log.create_object(object_id=object.object_id, user_id=flask_login.current_user.id)
                     flask.flash('The object was created successfully.', 'success')
                 else:
                     object = Objects.update_object(object_id=object.object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
                     user_log.edit_object(user_id=flask_login.current_user.id, object_id=object.object_id, version_id=object.version_id)
+                    object_log.edit_object(object_id=object.object_id, user_id=flask_login.current_user.id, version_id=object.version_id)
                     flask.flash('The object was updated successfully.', 'success')
+
+                # TODO: gather references to other objects more effectively
+                if Action.query.get(object.action_id).type == ActionType.MEASUREMENT:
+                    if 'sample' in object.schema.get('properties', {}) and object.schema['properties']['sample']['type'] == 'sample':
+                        if 'sample' in object.data and object.data['sample'] is not None:
+                            sample_id = object.data['sample']['object_id']
+                            previous_sample_id = None
+                            if object.version_id > 0:
+                                previous_object_version = Objects.get_object_version(object.object_id, object.version_id-1)
+                                if 'sample' in previous_object_version.schema.get('properties', {}) and previous_object_version.schema['properties']['sample']['type'] == 'sample':
+                                    if 'sample' in previous_object_version.data and previous_object_version.data['sample'] is not None:
+                                        previous_sample_id = previous_object_version.data['sample']['object_id']
+                            if sample_id != previous_sample_id:
+                                object_log.use_object_in_measurement(object_id=sample_id, user_id=flask_login.current_user.id, measurement_id=object.object_id)
+
                 return flask.redirect(flask.url_for('.object', object_id=object.object_id))
         elif any(name.startswith('action_object_') and (name.endswith('_delete') or name.endswith('_add')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
@@ -235,6 +252,7 @@ def object(object_id):
             ActionType.SAMPLE_CREATION: "Sample",
             ActionType.MEASUREMENT: "Measurement"
         }.get(action.type, "Object")
+        object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -242,6 +260,8 @@ def object(object_id):
             instrument=instrument,
             schema=object.schema,
             data=object.data,
+            object_log_entries=object_log_entries,
+            ObjectLogEntryType=ObjectLogEntryType,
             last_edit_datetime=object.utc_datetime,
             last_edit_user=User.query.get(object.user_id),
             object_id=object_id,
@@ -326,8 +346,9 @@ def restore_object_version(object_id, version_id):
         return flask.abort(404)
     form = ObjectVersionRestoreForm()
     if form.validate_on_submit():
-        Objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
+        object = Objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
         user_log.edit_object(user_id=flask_login.current_user.id, object_id=object_id, version_id=current_object.version_id+1)
+        object_log.restore_object_version(object_id=object_id, user_id=flask_login.current_user.id, restored_version_id=version_id, version_id=object.version_id)
         return flask.redirect(flask.url_for('.object', object_id=object_id))
     return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
 
