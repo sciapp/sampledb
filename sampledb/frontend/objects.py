@@ -231,8 +231,13 @@ def object(object_id):
         )
         action = Action.query.get(object.action_id)
         instrument = action.instrument
+        object_type = {
+            ActionType.SAMPLE_CREATION: "Sample",
+            ActionType.MEASUREMENT: "Measurement"
+        }.get(action.type, "Object")
         return flask.render_template(
             'objects/view/base.html',
+            object_type=object_type,
             action=action,
             instrument=instrument,
             schema=object.schema,
@@ -290,8 +295,13 @@ def object_version(object_id, version_id):
     user_may_grant = Permissions.GRANT in user_permissions
     action = Action.query.get(object.action_id)
     instrument = action.instrument
+    object_type = {
+        ActionType.SAMPLE_CREATION: "Sample",
+        ActionType.MEASUREMENT: "Measurement"
+    }.get(action.type, "Object")
     return flask.render_template(
         'objects/view/base.html',
+        object_type=object_type,
         action=action,
         instrument=instrument,
         schema=object.schema,

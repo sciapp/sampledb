@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Sample #{{ object_id }}: {{ data['name']['text'] }}</h3>
+  <h3>{{ object_type }} #{{ object_id }}: {{ data['name']['text'] }}</h3>
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">Instrument</label>
     <div class="col-md-9">{% if instrument is not none %}<a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name }}</a>{% else %}&mdash;{% endif %}</div>
