@@ -20,6 +20,7 @@ class UserLogEntryType(enum.Enum):
     REGISTER_USER = 4
     INVITE_USER = 5
     EDIT_USER_PREFERENCES = 6
+    RESTORE_OBJECT_VERSION = 7
 
 
 class UserLogEntry(db.Model):

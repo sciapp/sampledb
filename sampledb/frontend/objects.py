@@ -347,7 +347,7 @@ def restore_object_version(object_id, version_id):
     form = ObjectVersionRestoreForm()
     if form.validate_on_submit():
         object = Objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
-        user_log.edit_object(user_id=flask_login.current_user.id, object_id=object_id, version_id=current_object.version_id+1)
+        user_log.restore_object_version(user_id=flask_login.current_user.id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
         object_log.restore_object_version(object_id=object_id, user_id=flask_login.current_user.id, restored_version_id=version_id, version_id=object.version_id)
         return flask.redirect(flask.url_for('.object', object_id=object_id))
     return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
