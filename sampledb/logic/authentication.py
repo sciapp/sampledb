@@ -74,13 +74,11 @@ def login(login, password):
         if not validate_user(login, password):
             return None
 
-        new_user = get_user_info(login)
-        assert new_user.type == UserType.PERSON
-        user = User.query.filter_by(email=str(new_user.email), type=UserType.PERSON).first()
+        user = get_user_info(login)
         if user is None:
-            user = new_user
-            db.session.add(user)
-            db.session.commit()
+            return None
+        db.session.add(user)
+        db.session.commit()
         add_authentication_to_db({'login': login}, user_type=AuthenticationType.LDAP, confirmed=True, user_id=user.id)
         return user
     return None
@@ -89,6 +87,8 @@ def login(login, password):
 def add_login(userid, login, password, authentication_method):
     logins = Authentication.query.filter(Authentication.login['login'].astext == login,
                                          Authentication.user_id == userid).first()
+    ldaplogin = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP,
+                                            Authentication.user_id == userid).first()
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     log = {
         'login': login,
@@ -107,6 +107,8 @@ def add_login(userid, login, password, authentication_method):
     else:
         if logins is not None:
             # authentication-method already exists
+            raise LdapAccountAlreadyExist('Ldap-Account already exists')
+        if ldaplogin is not None:
             raise LdapAccountAlreadyExist('Ldap-Account already exists')
         if not validate_user(login, password):
             raise LdapAccountOrPasswordWrong('Ldap login or password wrong')
