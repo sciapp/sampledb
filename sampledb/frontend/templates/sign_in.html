@@ -29,6 +29,13 @@
         </div>
       </div>
     </div>
+    {% if has_authentication_error %}
+    <div class="form-group">
+      <div class="col-sm-offset-4 col-sm-8">
+        <a href="{{ url_for('frontend.password_route')}}">forgot your password? </a>
+      </div>
+    </div>
+    {% endif %}
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-8">
         <button type="submit" class="btn btn-primary">Sign in</button>
