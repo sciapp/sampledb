@@ -28,6 +28,7 @@ def sign_in():
         return flask.redirect(flask.url_for('.index'))
     form = SigninForm()
     has_errors = False
+    has_authentication_error = False
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
@@ -41,9 +42,10 @@ def sign_in():
                 next_url = index_url
             return flask.redirect(next_url)
         has_errors = True
+        has_authentication_error = True
     elif form.errors:
         has_errors = True
-    return flask.render_template('sign_in.html', form=form, has_errors=has_errors)
+    return flask.render_template('sign_in.html', form=form, has_errors=has_errors, has_authentication_error=has_authentication_error)
 
 
 @frontend.route('/users/me/sign_out', methods=['GET', 'POST'])

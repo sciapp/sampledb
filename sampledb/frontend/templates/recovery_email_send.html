@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{# hide user area in navbar #}
+{% block navbar_userarea %}
+  {% if current_user.is_authenticated %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if not current_user.is_authenticated %}
+<div class="container">
+  <div class="jumbotron">
+    <h2>Account recovery email send to {{email}} </h2>
+    <p>If you don't see this email in your inbox within 30 minutes, look for it in your junk mail folder.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}<p>Thanks!</p>

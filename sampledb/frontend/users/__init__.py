@@ -21,7 +21,7 @@ from sampledb.models import Authentication, AuthenticationType, User, UserType
 
 from sampledb.frontend.users_forms import SigninForm, SignoutForm, InvitationForm, RegistrationForm
 
-from . import invitation, preferences, activity, profile, authentication
+from . import invitation, preferences, activity, profile, authentication, password
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
