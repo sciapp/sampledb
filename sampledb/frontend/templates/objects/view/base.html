@@ -124,9 +124,11 @@
       <p>There are no comments for this object.</p>
     {% endif %}
     {% if user_may_comment %}
-      <form class="form" method="post" action="{{ url_for('frontend.post_object_comments', object_id=object_id) }}">
+      <form class="form" method="post" action="{{ url_for('frontend.post_object_comments', object_id=object_id) }}" id="new-comment-form">
         {{ comment_form.csrf_token }}
-        <textarea class="form-control" rows="3" placeholder="Comment" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ comment_form.content.name }}">{% if comment_form.content.data %}{{ comment_form.content.data }}{% endif %}</textarea>
+        <div class="form-group">
+          <textarea class="form-control" rows="3" placeholder="Comment" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ comment_form.content.name }}">{% if comment_form.content.data %}{{ comment_form.content.data }}{% endif %}</textarea>
+        </div>
         <div class="text-right">
           <button type="submit" class="btn btn-primary" style="width:10em; margin-bottom: 20px;">Submit</button>
         </div>
@@ -151,7 +153,22 @@
         $('.nav-tabs a').click(function (e) {
           e.preventDefault();
           $(this).tab('show');
-        })
+        });
+      {% if (not is_archived) and user_may_comment %}
+        var comment_form = $('#new-comment-form');
+        var comment_textarea = comment_form.find('textarea');
+        comment_textarea.on('input change propertychange', function() {
+            comment_textarea.closest('.form-group').removeClass('has-error');
+        });
+        comment_form.on('submit', function() {
+          if (comment_textarea.val() === "") {
+            comment_textarea.closest('.form-group').addClass('has-error');
+            comment_textarea.focus();
+            return false;
+          }
+          return true;
+        });
+      {% endif %}
     });
 </script>
 {% endblock %}
