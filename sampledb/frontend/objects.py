@@ -10,12 +10,12 @@ import flask_login
 import itsdangerous
 
 from . import frontend
-from ..logic import user_log, object_log
+from ..logic import user_log, object_log, comments
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions, get_objects_with_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm
 from .. import db
 from ..models import User, Action, Objects, Permissions, ActionType, ObjectLogEntryType
 from ..utils import object_permissions_required
@@ -266,6 +266,9 @@ def object(object_id):
             last_edit_user=User.query.get(object.user_id),
             object_id=object_id,
             user_may_edit=user_may_edit,
+            user_may_comment=user_may_edit,
+            comments=comments.get_comments_for_object(object_id),
+            comment_form=CommentForm(),
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
@@ -273,6 +276,21 @@ def object(object_id):
         )
 
     return show_object_form(object, action=Action.query.get(object.action_id))
+
+
+@frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def post_object_comments(object_id):
+    comment_form = CommentForm()
+    if comment_form.validate_on_submit():
+        content = comment_form.content.data
+        comments.create_comment(object_id=object_id, user_id=flask_login.current_user.id, content=content)
+        flask.flash('Successfully posted a comment.', 'success')
+    else:
+        print(comment_form.errors)
+        flask.flash('Please enter a comment text.', 'error')
+    return flask.redirect(flask.url_for('.object', object_id=object_id))
+
 
 
 @frontend.route('/objects/new', methods=['GET', 'POST'])

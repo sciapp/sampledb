@@ -19,6 +19,7 @@ class ObjectLogEntryType(enum.Enum):
     EDIT_OBJECT = 2
     RESTORE_OBJECT_VERSION = 3
     USE_OBJECT_IN_MEASUREMENT = 4
+    POST_COMMENT = 5
 
 
 class ObjectLogEntry(db.Model):

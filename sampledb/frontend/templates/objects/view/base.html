@@ -16,6 +16,8 @@
   {% endif %}
 
   <h3>{{ object_type }} #{{ object_id }}: {{ data['name']['text'] }}</h3>
+
+  <h4>Information</h4>
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">Instrument</label>
     <div class="col-md-9">{% if instrument is not none %}<a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name }}</a>{% else %}&mdash;{% endif %}</div>
@@ -53,7 +55,7 @@
     {% endif %}
 
   {% if object_log_entries %}
-    <h4>Object Log</h4>
+    <h4>Activity Log</h4>
     <table class="table">
       <thead>
         <tr>
@@ -96,6 +98,13 @@
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">View</a>
               {% endif %}
             </td>
+          {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
+            <td>A comment was posted for this object.</td>
+            <td>
+              {% if 'comment_id' in object_log_entry.data %}
+                <a href="#comment-{{ object_log_entry.data['comment_id'] }}">View</a>
+              {% endif %}
+            </td>
           {% else %}
             <td>Unknown event</td><td></td>
           {% endif %}
@@ -103,6 +112,28 @@
       {% endfor %}
       </tbody>
     </table>
+  {% endif %}
+  {% if not is_archived %}
+    <h4>Comments</h4>
+    {% if comments %}
+      {% for comment in comments %}
+        <div class="well" id="comment-{{ comment.id }}">
+          {{ comment.content }}
+          <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.name }}</a>, {{ comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>There are no comments for this object.</p>
+    {% endif %}
+    {% if user_may_comment %}
+      <form class="form" method="post" action="{{ url_for('frontend.post_object_comments', object_id=object_id) }}">
+        {{ comment_form.csrf_token }}
+        <textarea class="form-control" rows="3" placeholder="Comment" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ comment_form.content.name }}">{% if comment_form.content.data %}{{ comment_form.content.data }}{% endif %}</textarea>
+        <div class="text-right">
+          <button type="submit" class="btn btn-primary" style="width:10em; margin-bottom: 20px;">Submit</button>
+        </div>
+      </form>
+    {% endif %}
   {% endif %}
 {% endblock %}
 
@@ -119,6 +150,10 @@
             date: $(this).attr('data-datetime')
           });
         });
+        $('.nav-tabs a').click(function (e) {
+          e.preventDefault();
+          $(this).tab('show');
+        })
     });
 </script>
 {% endblock %}

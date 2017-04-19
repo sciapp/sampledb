@@ -80,3 +80,14 @@ def use_object_in_measurement(user_id: int, object_id: int, measurement_id: int)
             'measurement_id': measurement_id
         }
     )
+
+
+def post_comment(user_id: int, object_id: int, comment_id: int):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.POST_COMMENT,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'comment_id': comment_id
+        }
+    )

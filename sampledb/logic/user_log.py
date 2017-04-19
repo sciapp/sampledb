@@ -95,3 +95,14 @@ def edit_user_preferences(user_id: int):
         user_id=user_id,
         data={}
     )
+
+
+def post_comment(user_id: int, object_id: int, comment_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.POST_COMMENT,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'comment_id': comment_id
+        }
+    )

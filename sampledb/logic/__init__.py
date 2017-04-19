@@ -4,6 +4,7 @@
 """
 
 from . import authentication
+from . import comments
 from . import datatypes
 from . import instruments
 from . import ldap
