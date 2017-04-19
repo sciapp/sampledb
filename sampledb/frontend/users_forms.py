@@ -22,6 +22,10 @@ class InvitationForm(FlaskForm):
     email = StringField(validators=[InputRequired()])
 
 
+class RequestPasswordResetForm(FlaskForm):
+    email = StringField(validators=[InputRequired()])
+
+
 class RegistrationForm(FlaskForm):
     email = StringField('Contact Email', validators=[InputRequired("Please enter the contact email."),
                                                      Email("Please enter your contact email.")])
@@ -33,3 +37,27 @@ class RegistrationForm(FlaskForm):
     ])
     password2 = PasswordField('Confirm password', validators=[InputRequired()])
     submit = SubmitField('Register')
+
+
+class EmailPasswordForm(FlaskForm):
+    email = StringField(validators=[InputRequired()])
+    username = StringField(validators=[InputRequired()])
+    password = PasswordField('New Password', validators=[
+        InputRequired(),
+        Length(min=3),
+        EqualTo('password2', message='Passwords must match')
+    ])
+    password2 = PasswordField('Confirm password', validators=[InputRequired()])
+    submit = SubmitField('Change Password')
+
+
+class LoginPasswordForm(FlaskForm):
+    login = StringField(validators=[InputRequired()])
+    username = StringField(validators=[InputRequired()])
+    password = PasswordField('New Password', validators=[
+        InputRequired(),
+        Length(min=3),
+        EqualTo('password2', message='Passwords must match')
+    ])
+    password2 = PasswordField('Confirm password', validators=[InputRequired()])
+    submit = SubmitField('Change Password')
