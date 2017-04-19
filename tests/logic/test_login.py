@@ -92,21 +92,20 @@ def test_login_user(flask_server, users):
 
 
 def test_add_login(flask_server, users):
-    auth = get_authentication_methods(3)
-    with pytest.raises(LdapAccountAlreadyExist) as excinfo:
-        user = sampledb.logic.authentication.add_login(3, 'ombe', 'abc', auth)
-    # already exists
-    assert 'Ldap-Account already exists' in str(excinfo.value)
+    with pytest.raises(LdapAccountOrPasswordWrong) as excinfo:
+        sampledb.logic.authentication.add_login(1, 'henkel', 'abc', AuthenticationType.LDAP)
+    # wrong password
+    assert 'Ldap login or password wrong' in str(excinfo.value)
 
     username = flask_server.app.config['TESTING_LDAP_LOGIN']
     password = flask_server.app.config['TESTING_LDAP_PW']
     user = sampledb.logic.authentication.add_login(1, username, password, AuthenticationType.LDAP)
     assert user is True
 
-    with pytest.raises(LdapAccountOrPasswordWrong) as excinfo:
+    with pytest.raises(LdapAccountAlreadyExist) as excinfo:
         user = sampledb.logic.authentication.add_login(1, 'henkel', 'xxx', AuthenticationType.LDAP)
-    # password wrong
-    assert 'Ldap login or password wrong'
+    # no second ldap authentification possible
+    assert 'Ldap-Account already exists'
 
     with pytest.raises(AuthenticationMethodWrong) as excinfo:
         user = sampledb.logic.authentication.add_login(3, "web.de", 'abc123', AuthenticationType.EMAIL)
