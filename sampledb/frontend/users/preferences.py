@@ -27,6 +27,8 @@ def user_me_preferences():
 @frontend.route('/users/<int:user_id>/preferences', methods=['GET', 'POST'])
 @flask_login.login_required
 def user_preferences(user_id=None):
+    if 'token' in flask.request.args:
+        return confirm_email()
     if user_id is None:
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     if user_id != flask_login.current_user.id:
@@ -90,7 +92,6 @@ def user_preferences(user_id=None):
                                  authentication_form=authentication_form, authentications=authentication_methods)
 
 
-@frontend.route('/users/confirm-email', methods=['GET'])
 def confirm_email():
     salt = flask.request.args.get('salt')
     token = flask.request.args.get('token')
