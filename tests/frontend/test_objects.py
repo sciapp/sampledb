@@ -310,6 +310,7 @@ def test_edit_object(flask_server, user):
 
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
+        assert sampledb.logic.object_log.get_object_log_entries(object.object_id) == []
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
@@ -328,6 +329,14 @@ def test_edit_object(flask_server, user):
         assert user_log_entries[0].user_id == user.id
         assert user_log_entries[0].data == {
             'object_id': object.object_id,
+            'version_id': object.version_id
+        }
+        object_log_entries = sampledb.logic.object_log.get_object_log_entries(object.object_id)
+        assert len(object_log_entries) == 1
+        assert object_log_entries[0].type == sampledb.models.ObjectLogEntryType.EDIT_OBJECT
+        assert object_log_entries[0].user_id == user.id
+        assert object_log_entries[0].object_id == object.object_id
+        assert object_log_entries[0].data == {
             'version_id': object.version_id
         }
 
@@ -484,6 +493,12 @@ def test_new_object(flask_server, user):
         assert user_log_entries[0].data == {
             'object_id': object.object_id
         }
+        object_log_entries = sampledb.logic.object_log.get_object_log_entries(object.object_id)
+        assert len(object_log_entries) == 1
+        assert object_log_entries[0].type == sampledb.models.ObjectLogEntryType.CREATE_OBJECT
+        assert object_log_entries[0].user_id == user.id
+        assert object_log_entries[0].object_id == object.object_id
+        assert object_log_entries[0].data == {}
 
 
 def test_restore_object_version(flask_server, user):

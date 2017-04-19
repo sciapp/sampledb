@@ -47,6 +47,18 @@ def edit_object(user_id: int, object_id: int, version_id: int):
     )
 
 
+def restore_object_version(user_id: int, object_id: int, version_id: int, restored_version_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.RESTORE_OBJECT_VERSION,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'version_id': version_id,
+            'restored_version_id': restored_version_id
+        }
+    )
+
+
 def edit_object_permissions(user_id: int, object_id: int):
     _store_new_log_entry(
         type=UserLogEntryType.EDIT_OBJECT_PERMISSIONS,
@@ -82,4 +94,15 @@ def edit_user_preferences(user_id: int):
         type=UserLogEntryType.EDIT_USER_PREFERENCES,
         user_id=user_id,
         data={}
+    )
+
+
+def post_comment(user_id: int, object_id: int, comment_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.POST_COMMENT,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'comment_id': comment_id
+        }
     )

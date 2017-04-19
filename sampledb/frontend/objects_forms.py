@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, IntegerField
+from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField
 from wtforms.validators import InputRequired
 
 from ..models import Permissions
@@ -34,3 +34,7 @@ class ObjectForm(FlaskForm):
 
 class ObjectVersionRestoreForm(FlaskForm):
     pass
+
+
+class CommentForm(FlaskForm):
+    content = TextAreaField(validators=[InputRequired()])
