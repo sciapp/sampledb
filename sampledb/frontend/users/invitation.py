@@ -52,7 +52,6 @@ def invitation():
             has_error = True
         return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success,
                                      has_error=has_error)
-    return flask.render_template('index.html')
 
 
 def registration():
@@ -94,4 +93,3 @@ def registration():
                 return flask.redirect(flask.url_for('frontend.index'))
         else:
             return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
-    return flask.render_template('index.html')
