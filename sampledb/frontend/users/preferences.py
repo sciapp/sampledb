@@ -78,6 +78,7 @@ def user_preferences(user_id=None):
             }
             if authentication_form.authentication_method.data not in all_authentication_methods:
                 return flask.abort(400)
+
             authentication_method = all_authentication_methods[authentication_form.authentication_method.data]
             # check, if additional authentication is correct
             try:
