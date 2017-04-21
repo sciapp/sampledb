@@ -31,7 +31,7 @@ def user(flask_server):
 
 
 def test_get_objects(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
@@ -54,7 +54,7 @@ def test_get_objects(flask_server, user):
 
 
 def test_get_objects_by_action_id(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action1 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
@@ -84,7 +84,7 @@ def test_get_objects_by_action_id(flask_server, user):
 
 
 def test_get_objects_by_action_type(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action1 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
     action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
@@ -114,7 +114,7 @@ def test_get_objects_by_action_type(flask_server, user):
 
 
 def test_get_objects_by_action_id_and_type(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action1 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
@@ -144,7 +144,7 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
 
 
 def test_search_objects(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example12']
     objects = [
@@ -170,7 +170,7 @@ def test_search_objects(flask_server, user):
 
 
 def test_get_object(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -187,7 +187,7 @@ def test_get_object(flask_server, user):
 
 
 def test_get_object_no_permissions(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -207,7 +207,7 @@ def test_get_object_no_permissions(flask_server, user):
 
 
 def test_get_object_edit_form(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -224,7 +224,7 @@ def test_get_object_edit_form(flask_server, user):
 
 
 def test_get_object_edit_form_read_permissions(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -245,7 +245,7 @@ def test_get_object_edit_form_read_permissions(flask_server, user):
 
 
 def test_get_object_version(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -262,7 +262,7 @@ def test_get_object_version(flask_server, user):
 
 
 def test_get_object_version_no_permissions(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -282,7 +282,7 @@ def test_get_object_version_no_permissions(flask_server, user):
 
 
 def test_get_object_versions(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
@@ -298,8 +298,8 @@ def test_get_object_versions(flask_server, user):
 
 
 def test_edit_object(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
@@ -343,8 +343,8 @@ def test_edit_object(flask_server, user):
 
 
 def test_edit_object_action_add(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
@@ -365,8 +365,8 @@ def test_edit_object_action_add(flask_server, user):
 
 
 def test_edit_object_previous_actions(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
@@ -391,8 +391,8 @@ def test_edit_object_previous_actions(flask_server, user):
 
 
 def test_edit_object_previous_actions_invalid_key(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
@@ -415,8 +415,8 @@ def test_edit_object_previous_actions_invalid_key(flask_server, user):
 
 
 def test_edit_object_previous_actions_invalid_action(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
@@ -439,8 +439,8 @@ def test_edit_object_previous_actions_invalid_action(flask_server, user):
 
 
 def test_edit_object_action_delete(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.models.Objects.create_object(
         data=object_data,
@@ -468,8 +468,8 @@ def test_edit_object_action_delete(flask_server, user):
 
 
 def test_new_object(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json')))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json')))
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200

@@ -1,5 +1,6 @@
 .*
 !.gitignore
+!.gitlab-ci.yml
 _*
 !__init__.py
 ldapaccount.py
