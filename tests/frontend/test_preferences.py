@@ -5,11 +5,13 @@
 
 import requests
 import pytest
+import bcrypt
 from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
 import sampledb.logic
+from sampledb.logic.authentication import add_authentication_to_db
 
 
 from tests.test_utils import flask_server, app
@@ -22,7 +24,19 @@ def user(flask_server):
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh
+        password = 'abc.123'
+        confirmed = True
+        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        log = {
+            'login': 'example@fz-juelich.de',
+            'bcrypt_hash': pw_hash
+        }
+        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        # force attribute refresh
         assert user.id is not None
+        # Check if authentication-method add to db
+        with flask_server.app.app_context():
+            assert len(sampledb.models.Authentication.query.all()) == 1
     return user
 
 
@@ -154,6 +168,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
     assert confirmation_url.startswith(flask_server.base_url + 'users/1/preferences')
     r = session.get(confirmation_url)
+    print(confirmation_url)
 
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
@@ -214,7 +229,7 @@ def test_user_add_ldap_authentication_method(flask_server, user):
     assert r.status_code == 200
 
     with flask_server.app.app_context():
-        assert len(sampledb.models.Authentication.query.all()) == 0
+        assert len(sampledb.models.Authentication.query.all()) == 1
 
     document = BeautifulSoup(r.content, 'html.parser')
     # it also contains a hidden CSRF token
@@ -233,7 +248,7 @@ def test_user_add_ldap_authentication_method(flask_server, user):
 
     # Check if authentication-method add to db
     with flask_server.app.app_context():
-        assert len(sampledb.models.Authentication.query.all()) == 1
+        assert len(sampledb.models.Authentication.query.all()) == 2
 
 
 def test_user_add_general_authentication_method(flask_server):
@@ -357,7 +372,7 @@ def test_user_add_email_authentication_method(flask_server, user):
 
     # Check if authentication-method add to db
     with flask_server.app.app_context():
-        assert len(sampledb.models.Authentication.query.all()) == 1
+        assert len(sampledb.models.Authentication.query.all()) == 2
 
     # Create new session
     session = requests.session()
@@ -415,6 +430,56 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert r.status_code == 200
     # expect True, user is confirmed
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
+
+
+def test_user_add_email_authentication_method_already_exists(flask_server, user):
+    # Try logging in with ldap-test-account
+    session = requests.session()
+    r = session.get(flask_server.base_url + 'users/me/sign_in')
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
+    assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    # it also contains a hidden CSRF token
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    # submit the form
+    r = session.post(flask_server.base_url + 'users/me/sign_in', {
+        'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
+        'password': flask_server.app.config['TESTING_LDAP_PW'],
+        'remember_me': False,
+        'csrf_token': csrf_token
+    })
+
+    url = flask_server.base_url + 'users/me/preferences'
+    r = session.get(url, allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].endswith('/preferences')
+    url = r.headers['Location']
+
+    r = session.get(url, allow_redirects=False)
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    # submit the form
+
+    #  add valid email authentication-method
+    with sampledb.mail.record_messages() as outbox:
+        r = session.post(url, {
+            'login': 'example@fz-juelich.de',
+            'password': 'abc.123',
+            'authentication_method': 'E',
+            'csrf_token': csrf_token,
+            'add': 'Add'
+        })
+    assert r.status_code == 200
+    # Check if an confirmation mail was not sent
+    assert len(outbox) == 0
+    assert 'This Email-authentication-method already exists' in r.content.decode('utf-8')
 
 
 def test_user_remove_authentication_method(flask_server):
@@ -502,4 +567,3 @@ def test_user_remove_authentication_method(flask_server):
     # Check if authentication-method remove from db
     with flask_server.app.app_context():
         assert len(sampledb.models.Authentication.query.all()) == 1
-

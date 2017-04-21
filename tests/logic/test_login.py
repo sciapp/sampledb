@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
 from sampledb.logic.ldap import LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
-from sampledb.logic.authentication import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, remove_authentication_method
+from sampledb.logic.authentication import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, AuthenticationMethodAlreadyExists, remove_authentication_method
 
 import sampledb
 import sampledb.models
@@ -111,6 +111,12 @@ def test_add_login(flask_server, users):
         user = sampledb.logic.authentication.add_login(3, "web.de", 'abc123', AuthenticationType.EMAIL)
     # no email
     assert 'Login must be an email if the authentication_method is email'
+
+
+def test_add_login_email_method_already_exists(flask_server, users):
+    with pytest.raises(AuthenticationMethodAlreadyExists) as excinfo:
+        user = sampledb.logic.authentication.add_login(1, 'example1@fz-juelich.de', 'abc', AuthenticationType.EMAIL)
+    assert 'This Email-authentication-method already exists' in str(excinfo.value)
 
 
 def test_remove_authentication_method(flask_server, users):
