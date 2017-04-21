@@ -3,7 +3,7 @@ import flask
 import flask_login
 import flask_mail
 
-from .. import mail
+
 from .. import logic
 from sampledb.logic.ldap import validate_user, get_user_info, LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
 from .. import db
@@ -15,6 +15,10 @@ class OnlyOneAuthenticationMethod(Exception):
 
 
 class AuthenticationMethodWrong(Exception):
+    pass
+
+
+class AuthenticationMethodAlreadyExists(Exception):
     pass
 
 
@@ -99,6 +103,8 @@ def add_login(userid, login, password, authentication_method):
         if '@' not in login:
             raise AuthenticationMethodWrong('Login must be an email if the authentication_method is email')
         else:
+            if Authentication.query.filter(Authentication.login['login'].astext == login).first():
+                raise AuthenticationMethodAlreadyExists('This Email-authentication-method already exists')
             # send confirm link
             logic.utils.send_confirm_email(login, userid, 'add_login')
             confirmed = False
