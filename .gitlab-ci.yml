@@ -1,0 +1,28 @@
+image: ubuntu:17.04
+
+services:
+  - postgres:latest
+
+variables:
+  POSTGRES_HOST: postgres
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: ""
+  SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres:5432/postgres"
+
+before_script:
+  # update package repository
+  - apt-get update
+
+  # set up Python 3.6
+  - apt-get install -y curl python3.6
+  - curl -sLO https://bootstrap.pypa.io/get-pip.py
+  - python3.6 get-pip.py
+  - rm get-pip.py
+
+  # install dependencies
+  - python3.6 -m pip install -r requirements.txt
+
+pytest:
+  script:
+    - python3.6 -m pytest -s --cov=sampledb/ tests
