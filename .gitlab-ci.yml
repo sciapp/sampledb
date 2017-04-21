@@ -25,4 +25,4 @@ before_script:
 
 pytest:
   script:
-    - python3.6 -m pytest -s tests
+    - python3.6 -m pytest -s --cov=sampledb/ tests
