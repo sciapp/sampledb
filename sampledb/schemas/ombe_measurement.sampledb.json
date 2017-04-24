@@ -141,5 +141,8 @@
     "substrate",
     "dropdown",
     "multilayer"
+  ],
+  "displayProperties": [
+    "substrate"
   ]
 }

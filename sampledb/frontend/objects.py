@@ -67,32 +67,29 @@ def objects():
 
     # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
     display_properties = []
+    display_property_titles = {}
+    sample_ids = set()
+    if action_id is not None:
+        action_schema = Action.query.get(action_id).schema
+        display_properties = action_schema.get('displayProperties', [])
+        for property_name in display_properties:
+            display_property_titles[property_name] = action_schema['properties'][property_name]['title']
+
     for obj in objects:
         for property_name in display_properties:
             if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:
                 obj['display_properties'][property_name] = None
                 continue
             obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
+            if obj['schema']['properties'][property_name]['type'] == 'sample':
+                sample_ids.add(obj['data'][property_name]['object_id'])
 
-    display_property_titles = {}
-    for property_name in display_properties:
-        display_property_titles[property_name] = property_name
-        possible_title = None
-        title_is_shared = True
-        for obj in objects:
-            if obj['display_properties'][property_name] is None:
-                continue
-            if 'title' not in obj['display_properties'][property_name][1]:
-                continue
-            if possible_title is None:
-                possible_title = obj['display_properties'][property_name][1]['title']
-            elif possible_title != obj['display_properties'][property_name][1]['title']:
-                title_is_shared = False
-                break
-        if title_is_shared and possible_title is not None:
-            display_property_titles[property_name] = possible_title
     objects.sort(key=lambda obj: obj['object_id'])
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType)
+    samples = {
+        sample_id: Objects.get_current_object(object_id=sample_id)
+        for sample_id in sample_ids
+    }
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType, samples=samples)
 
 
 @jinja_filter
@@ -219,15 +216,16 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
 
-    objects = get_objects_with_permissions(
+    # TODO: make this search more narrow
+    samples = get_objects_with_permissions(
         user_id=flask_login.current_user.id,
         permissions=Permissions.READ,
         action_type=ActionType.SAMPLE_CREATION
     )
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects, datetime=datetime)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects, datetime=datetime)
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -241,7 +239,8 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        objects = get_objects_with_permissions(
+        # TODO: make this search more narrow
+        samples = get_objects_with_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
             action_type=ActionType.SAMPLE_CREATION
@@ -272,7 +271,7 @@ def object(object_id):
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
-            objects=objects
+            samples=samples
         )
 
     return show_object_form(object, action=Action.query.get(object.action_id))
