@@ -3,12 +3,14 @@
 
 """
 
+import os
 import typing
 import pint
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 ureg = pint.UnitRegistry()
+ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
 
 
 def prettify_units(units: typing.Union[str, ureg.Unit]):

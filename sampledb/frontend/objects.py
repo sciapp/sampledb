@@ -66,7 +66,7 @@ def objects():
         }
 
     # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
-    display_properties = ['substrate']
+    display_properties = []
     for obj in objects:
         for property_name in display_properties:
             if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:

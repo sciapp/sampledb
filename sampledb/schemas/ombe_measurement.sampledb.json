@@ -63,7 +63,7 @@
                 "oxygen_flow": {
                   "title": "Oxygen Flow",
                   "type": "quantity",
-                  "units": "cm**3 / s"
+                  "units": "sccm"
                 },
                 "substrate_temperature": {
                   "title": "Substrate Temperature",

@@ -42,7 +42,7 @@
                 "_type": "quantity",
                 "dimensionality": "[length] ** 3 / [time]",
                 "magnitude_in_base_units": 0,
-                "units": "cm**3/s"
+                "units": "sccm"
               },
               "substrate_temperature": {
                 "_type": "quantity",
@@ -89,7 +89,7 @@
                 "_type": "quantity",
                 "dimensionality": "[length] ** 3 / [time]",
                 "magnitude_in_base_units": 0,
-                "units": "cm**3/s"
+                "units": "sccm"
               },
               "substrate_temperature": {
                 "_type": "quantity",
@@ -136,7 +136,7 @@
                 "_type": "quantity",
                 "dimensionality": "[length] ** 3 / [time]",
                 "magnitude_in_base_units": 0,
-                "units": "cm**3/s"
+                "units": "sccm"
               },
               "substrate_temperature": {
                 "_type": "quantity",
@@ -173,7 +173,7 @@
                 "_type": "quantity",
                 "dimensionality": "[length] ** 3 / [time]",
                 "magnitude_in_base_units": 0,
-                "units": "cm**3/s"
+                "units": "sccm"
               },
               "substrate_temperature": {
                 "_type": "quantity",
@@ -220,7 +220,7 @@
                 "_type": "quantity",
                 "dimensionality": "[length] ** 3 / [time]",
                 "magnitude_in_base_units": 0,
-                "units": "cm**3/s"
+                "units": "sccm"
               },
               "substrate_temperature": {
                 "_type": "quantity",
