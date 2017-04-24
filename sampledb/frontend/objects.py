@@ -15,6 +15,7 @@ from ..logic.permissions import get_user_object_permissions, object_is_public, g
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
+from ..logic.instruments import get_action
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm
 from .. import db
 from ..models import User, Action, Objects, Permissions, ActionType, ObjectLogEntryType
@@ -61,7 +62,7 @@ def objects():
             'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
             'data': obj.data,
             'schema': obj.schema,
-            'action': Action.query.get(obj.action_id),
+            'action': get_action(obj.action_id),
             'display_properties': {}
         }
 
@@ -70,7 +71,7 @@ def objects():
     display_property_titles = {}
     sample_ids = set()
     if action_id is not None:
-        action_schema = Action.query.get(action_id).schema
+        action_schema = get_action(action_id).schema
         display_properties = action_schema.get('displayProperties', [])
         for property_name in display_properties:
             display_property_titles[property_name] = action_schema['properties'][property_name]['title']
@@ -151,7 +152,7 @@ def show_object_form(object, action):
     else:
         data = object.data
     # TODO: update schema
-    # schema = Action.query.get(object.action_id).schema
+    # schema = get_action(object.action_id).schema
     if object is not None:
         schema = object.schema
     else:
@@ -193,7 +194,7 @@ def show_object_form(object, action):
                     flask.flash('The object was updated successfully.', 'success')
 
                 # TODO: gather references to other objects more effectively
-                if Action.query.get(object.action_id).type == ActionType.MEASUREMENT:
+                if get_action(object.action_id).type == ActionType.MEASUREMENT:
                     if 'sample' in object.schema.get('properties', {}) and object.schema['properties']['sample']['type'] == 'sample':
                         if 'sample' in object.data and object.data['sample'] is not None:
                             sample_id = object.data['sample']['object_id']
@@ -245,7 +246,7 @@ def object(object_id):
             permissions=Permissions.READ,
             action_type=ActionType.SAMPLE_CREATION
         )
-        action = Action.query.get(object.action_id)
+        action = get_action(object.action_id)
         instrument = action.instrument
         object_type = {
             ActionType.SAMPLE_CREATION: "Sample",
@@ -274,7 +275,7 @@ def object(object_id):
             samples=samples
         )
 
-    return show_object_form(object, action=Action.query.get(object.action_id))
+    return show_object_form(object, action=get_action(object.action_id))
 
 
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
@@ -299,7 +300,7 @@ def new_object():
     if action_id is None or action_id == '':
         # TODO: handle error
         return flask.abort(404)
-    action = Action.query.get(action_id)
+    action = get_action(action_id)
     if action is None:
         # TODO: handle error
         return flask.abort(404)
@@ -330,7 +331,7 @@ def object_version(object_id, version_id):
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
-    action = Action.query.get(object.action_id)
+    action = get_action(object.action_id)
     instrument = action.instrument
     object_type = {
         ActionType.SAMPLE_CREATION: "Sample",
@@ -375,7 +376,7 @@ def restore_object_version(object_id, version_id):
 @object_permissions_required(Permissions.READ)
 def object_permissions(object_id):
     object = Objects.get_current_object(object_id, connection=db.engine)
-    action = Action.query.get(object.action_id)
+    action = get_action(object.action_id)
     instrument = action.instrument
     object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):

@@ -7,7 +7,7 @@ import flask
 import flask_login
 
 from . import frontend
-from ..models import Action, ActionType
+from ..logic.instruments import get_action, get_actions, ActionType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -22,14 +22,14 @@ def actions():
         'measurements': ActionType.MEASUREMENT
     }.get(action_type, None)
     if action_type is not None:
-        actions = Action.query.filter_by(type=action_type).all()
+        actions = get_actions(action_type)
     else:
-        actions = Action.query.all()
+        actions = get_actions()
     return flask.render_template('actions/actions.html', actions=actions, ActionType=ActionType)
 
 
 @frontend.route('/actions/<int:action_id>')
 @flask_login.login_required
 def action(action_id):
-    action = Action.query.get(action_id)
+    action = get_action(action_id)
     return flask.render_template('actions/action.html', action=action, ActionType=ActionType)

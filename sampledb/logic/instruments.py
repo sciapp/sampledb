@@ -67,7 +67,9 @@ def create_action(action_type: ActionType, name: str, description: str, schema: 
     return action
 
 
-def get_actions():
+def get_actions(action_type: ActionType=None):
+    if action_type:
+        return Action.query.filter_by(type=action_type).all()
     return Action.query.all()
 
 
