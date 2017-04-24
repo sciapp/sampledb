@@ -1,9 +1,11 @@
 # coding: utf-8
 """
-Script for running the SampleDB development server.
+Script for running the SampleDB server.
 
 Usage: python -m sampledb run [<port>]
 """
+
+import cherrypy
 
 from .. import create_app
 
@@ -24,4 +26,12 @@ def main(arguments):
     else:
         port = 8000
     app = create_app()
-    app.run(port=port, debug=True, use_evalex=False, use_reloader=False)
+    cherrypy.tree.graft(app, '/')
+    cherrypy.config.update({
+        'environment': 'production',
+        'server.socket_host': '0.0.0.0',
+        'server.socket_port': port,
+        'server.thread_pool': 4
+    })
+    cherrypy.engine.start()
+    cherrypy.engine.block()

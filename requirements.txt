@@ -4,6 +4,8 @@ beautifulsoup4==4.5.3
 blinker==1.4
 bs4==0.0.1
 cffi==1.9.1
+cheroot==5.4.0
+CherryPy==10.2.1
 click==6.7
 coverage==4.3.4
 Flask==0.12
@@ -22,6 +24,7 @@ packaging==16.8
 parse==1.8.0
 parse-type==0.3.4
 Pint==0.7.2
+portend==1.8
 psycopg2==2.7
 py==1.4.32
 pyasn1==0.2.3
@@ -30,8 +33,10 @@ pyparsing==2.2.0
 pytest==3.0.6
 pytest-bdd==2.18.1
 pytest-cov==2.4.0
+pytz==2017.2
 requests==2.13.0
 six==1.10.0
 SQLAlchemy==1.1.6
+tempora==1.6.1
 Werkzeug==0.11.15
 WTForms==2.1
