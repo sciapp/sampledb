@@ -221,6 +221,7 @@ def test_send_registration_with_wrong_invitation_email(flask_server):
     with flask_server.app.app_context():
         assert len(sampledb.models.User.query.all()) == len_old
 
+
 def test_send_registration_with_email_already_exists_in_authentication_method(flask_server, user):
     session = requests.session()
 
