@@ -168,7 +168,6 @@ def test_user_preferences_change_contactemail(flask_server, user):
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
     assert confirmation_url.startswith(flask_server.base_url + 'users/1/preferences')
     r = session.get(confirmation_url)
-    print(confirmation_url)
 
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user_id)
