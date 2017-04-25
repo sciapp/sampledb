@@ -21,11 +21,11 @@ def help_and_exit(return_code):
     exit(return_code)
 
 
-def main():
-    if len(sys.argv) < 2:
+def main(argv):
+    if len(argv) < 2:
         return help_and_exit(1)
-    script = sys.argv[1]
-    arguments = sys.argv[2:]
+    script = argv[1]
+    arguments = argv[2:]
     if script in ('help', '--help', '-h'):
         return help_and_exit(0)
     if script not in script_functions:
@@ -33,4 +33,4 @@ def main():
     script_functions[script](arguments)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
