@@ -35,30 +35,34 @@ def action(instrument, schema_file_name):
     )
 
 
-def test_export_action_schema(action):
+def test_export_action_schema(action, capsys):
     with tempfile.NamedTemporaryFile('r') as schema_file:
         scripts.main([scripts.__file__, 'export_action_schema', str(action.id), schema_file.name])
         schema = json.load(schema_file)
         assert action.schema == schema
+    assert 'Success' in capsys.readouterr()[0]
 
 
-def test_export_action_schema_missing_arguments(action):
+def test_export_action_schema_missing_arguments(action, capsys):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'export_action_schema', str(action.id)])
     assert exc_info.value != 0
+    assert 'Usage' in capsys.readouterr()[0]
 
 
-def test_export_action_schema_invalid_action_id(action):
+def test_export_action_schema_invalid_action_id(action, capsys):
     with tempfile.NamedTemporaryFile('r') as schema_file:
         with pytest.raises(SystemExit) as exc_info:
             scripts.main([scripts.__file__, 'export_action_schema', action.name, schema_file.name])
         assert exc_info.value != 0
         assert schema_file.read() == ''
+    assert 'Error: action_id must be an integer' in capsys.readouterr()[1]
 
 
-def test_export_action_schema_missing_action():
+def test_export_action_schema_missing_action(capsys):
     with tempfile.NamedTemporaryFile('r') as schema_file:
         with pytest.raises(SystemExit) as exc_info:
             scripts.main([scripts.__file__, 'export_action_schema', 1, schema_file.name])
         assert exc_info.value != 0
         assert schema_file.read() == ''
+    assert 'Error: no action with this id exists' in capsys.readouterr()[1]

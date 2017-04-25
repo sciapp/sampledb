@@ -20,7 +20,7 @@ def main(arguments):
     try:
         instrument_id = int(instrument_id)
     except ValueError:
-        print("Error: instrument_id must be an integer")
+        print("Error: instrument_id must be an integer", file=sys.stderr)
         exit(1)
     if action_type == 'sample':
         action_type = ActionType.SAMPLE_CREATION

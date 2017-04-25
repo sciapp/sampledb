@@ -34,13 +34,14 @@ def action(instrument, schema_file_name):
     )
 
 
-def test_update_action(action, schema_file_name):
+def test_update_action(action, schema_file_name, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     assert len(instruments.get_actions()) == 1
 
     scripts.main([scripts.__file__, 'update_action', str(action.id), name, '', schema_file_name])
 
+    assert 'Success' in capsys.readouterr()[0]
     assert len(instruments.get_actions()) == 1
     action = instruments.get_actions()[0]
     assert action.name == name
@@ -48,7 +49,7 @@ def test_update_action(action, schema_file_name):
     assert action.type == instruments.ActionType.SAMPLE_CREATION
 
 
-def test_update_action_missing_arguments(action):
+def test_update_action_missing_arguments(action, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     assert len(instruments.get_actions()) == 1
@@ -56,6 +57,7 @@ def test_update_action_missing_arguments(action):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'update_action', str(action.id), name, ''])
     assert exc_info.value != 0
+    assert 'Usage' in capsys.readouterr()[0]
 
     assert len(instruments.get_actions()) == 1
     action = instruments.get_actions()[0]
@@ -64,7 +66,7 @@ def test_update_action_missing_arguments(action):
     assert action.type == instruments.ActionType.SAMPLE_CREATION
 
 
-def test_update_action_invalid_action_id(action, schema_file_name):
+def test_update_action_invalid_action_id(action, schema_file_name, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     assert len(instruments.get_actions()) == 1
@@ -72,6 +74,7 @@ def test_update_action_invalid_action_id(action, schema_file_name):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'update_action', name, name, '', schema_file_name])
     assert exc_info.value != 0
+    assert 'Error: action_id must be an integer' in capsys.readouterr()[1]
 
     assert len(instruments.get_actions()) == 1
     action = instruments.get_actions()[0]
@@ -80,7 +83,7 @@ def test_update_action_invalid_action_id(action, schema_file_name):
     assert action.type == instruments.ActionType.SAMPLE_CREATION
 
 
-def test_update_action_missing_action(action, schema_file_name):
+def test_update_action_missing_action(action, schema_file_name, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     assert len(instruments.get_actions()) == 1
@@ -88,6 +91,7 @@ def test_update_action_missing_action(action, schema_file_name):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'update_action', str(action.id+1), name, '', schema_file_name])
     assert exc_info.value != 0
+    assert 'Error: no action with this id exists' in capsys.readouterr()[1]
 
     assert len(instruments.get_actions()) == 1
     action = instruments.get_actions()[0]
@@ -96,7 +100,7 @@ def test_update_action_missing_action(action, schema_file_name):
     assert action.type == instruments.ActionType.SAMPLE_CREATION
 
 
-def test_update_action_invalid_schema(action):
+def test_update_action_invalid_schema(action, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'action.json'))
@@ -105,6 +109,7 @@ def test_update_action_invalid_schema(action):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'update_action', str(action.id), name, '', schema_file_name])
     assert exc_info.value != 0
+    assert 'Error: invalid schema:' in capsys.readouterr()[1]
 
     assert len(instruments.get_actions()) == 1
     action = instruments.get_actions()[0]

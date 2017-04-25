@@ -35,18 +35,15 @@ def actions(instrument):
     ]
 
 
-def test_list_actions(instrument, actions):
-    stdout = sys.stdout
-    sys.stdout = io.StringIO()
+def test_list_actions(instrument, actions, capsys):
     scripts.main([scripts.__file__, 'list_actions'])
-    sys.stdout.seek(0)
-    output = sys.stdout.read()
-    sys.stdout = stdout
+    output = capsys.readouterr()[0]
     for action_id, action_name in [(1, 'Action 1'), (2, 'Action 2')]:
         assert '- #{0}: {1}'.format(action_id, action_name) in output
 
 
-def test_list_actions_arguments(instrument, actions):
+def test_list_actions_arguments(instrument, actions, capsys):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'list_actions', 1])
     assert exc_info.value != 0
+    assert 'Usage' in capsys.readouterr()[0]

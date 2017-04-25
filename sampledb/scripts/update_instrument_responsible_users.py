@@ -20,13 +20,13 @@ def main(arguments):
     try:
         instrument_id = int(instrument_id)
     except ValueError:
-        print("Error: instrument_id must be an integer")
+        print("Error: instrument_id must be an integer", file=sys.stderr)
         exit(1)
     for i, user_id in enumerate(instrument_responsible_user_ids):
         try:
             user_id = int(user_id)
         except ValueError:
-            print("Error: instrument_reponsible_user_ids must be integer")
+            print("Error: instrument_reponsible_user_ids must be integer", file=sys.stderr)
             exit(1)
         instrument_responsible_user_ids[i] = user_id
     app = create_app()

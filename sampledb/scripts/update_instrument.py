@@ -18,7 +18,7 @@ def main(arguments):
     try:
         instrument_id = int(instrument_id)
     except ValueError:
-        print("Error: instrument_id must be an integer")
+        print("Error: instrument_id must be an integer", file=sys.stderr)
         exit(1)
     app = create_app()
     with app.app_context():

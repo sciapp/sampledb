@@ -21,7 +21,7 @@ def main(arguments):
             if port < 1024 or port > 65535:
                 raise ValueError()
         except ValueError:
-            print("Error: port must be between 1024 and 65535")
+            print("Error: port must be between 1024 and 65535", file=sys.stderr)
             exit(1)
     else:
         port = 8000

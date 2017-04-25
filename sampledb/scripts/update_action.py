@@ -20,7 +20,7 @@ def main(arguments):
     try:
         action_id = int(action_id)
     except ValueError:
-        print("Error: action_id must be an integer")
+        print("Error: action_id must be an integer", file=sys.stderr)
         exit(1)
 
     app = create_app()
