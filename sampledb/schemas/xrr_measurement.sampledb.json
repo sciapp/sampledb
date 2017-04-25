@@ -61,5 +61,9 @@
     }
   },
   "propertyOrder": ["name", "sample", "created", "slitWidth", "type", "minZRange", "maxZRange", "stepSize", "stepTime", "temperature"],
-  "required": ["name", "sample", "created", "type"]
+  "required": ["name", "sample", "created", "type"],
+  "displayProperties": [
+    "sample",
+    "type"
+  ]
 }

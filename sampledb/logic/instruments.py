@@ -3,6 +3,8 @@
 
 """
 
+import typing
+
 from .. import db
 from ..models import User, Instrument, Action, ActionType
 from .schemas import validate_schema
@@ -10,7 +12,7 @@ from .schemas import validate_schema
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def create_instrument(name: str, description: str):
+def create_instrument(name: str, description: str) -> Instrument:
     instrument = Instrument(
         name=name,
         description=description
@@ -20,15 +22,15 @@ def create_instrument(name: str, description: str):
     return instrument
 
 
-def get_instruments():
+def get_instruments() -> typing.List[Instrument]:
     return Instrument.query.all()
 
 
-def get_instrument(instrument_id: int):
+def get_instrument(instrument_id: int) -> Instrument:
     return Instrument.query.get(instrument_id)
 
 
-def update_instrument(instrument_id: int, name: str, description: str):
+def update_instrument(instrument_id: int, name: str, description: str) -> Instrument:
     instrument = Instrument.query.get(instrument_id)
     instrument.name = name
     instrument.description = description
@@ -53,7 +55,7 @@ def remove_instrument_responsible_user(instrument_id: int, user_id: int):
     db.session.commit()
 
 
-def create_action(action_type: ActionType, name: str, description: str, schema: dict, instrument_id: int=None):
+def create_action(action_type: ActionType, name: str, description: str, schema: dict, instrument_id: int=None) -> Action:
     validate_schema(schema)
     action = Action(
         action_type=action_type,
@@ -67,15 +69,17 @@ def create_action(action_type: ActionType, name: str, description: str, schema: 
     return action
 
 
-def get_actions():
+def get_actions(action_type: ActionType=None) -> typing.List[Action]:
+    if action_type:
+        return Action.query.filter_by(type=action_type).all()
     return Action.query.all()
 
 
-def get_action(action_id: int):
+def get_action(action_id: int) -> Action:
     return Action.query.get(action_id)
 
 
-def update_action(action_id: int, name: str, description: str, schema: dict):
+def update_action(action_id: int, name: str, description: str, schema: dict) -> Action:
     validate_schema(schema)
     action = Action.query.get(action_id)
     action.name = name

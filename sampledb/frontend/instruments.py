@@ -7,7 +7,7 @@ import flask
 import flask_login
 
 from . import frontend
-from ..logic.instruments import get_instruments, get_instrument
+from ..logic.instruments import get_instruments, get_instrument, ActionType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -27,5 +27,5 @@ def instrument(instrument_id):
     if instrument is None:
         return flask.abort(404)
     # TODO: check instrument permissions
-    return flask.render_template('instruments/instrument.html', instrument=instrument)
+    return flask.render_template('instruments/instrument.html', instrument=instrument, ActionType=ActionType)
 

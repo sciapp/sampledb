@@ -15,6 +15,7 @@ from ..logic.permissions import get_user_object_permissions, object_is_public, g
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
+from ..logic.instruments import get_action
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm
 from .. import db
 from ..models import User, Action, Objects, Permissions, ActionType, ObjectLogEntryType
@@ -61,38 +62,35 @@ def objects():
             'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
             'data': obj.data,
             'schema': obj.schema,
-            'action': Action.query.get(obj.action_id),
+            'action': get_action(obj.action_id),
             'display_properties': {}
         }
 
     # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
-    display_properties = ['substrate']
+    display_properties = []
+    display_property_titles = {}
+    sample_ids = set()
+    if action_id is not None:
+        action_schema = get_action(action_id).schema
+        display_properties = action_schema.get('displayProperties', [])
+        for property_name in display_properties:
+            display_property_titles[property_name] = action_schema['properties'][property_name]['title']
+
     for obj in objects:
         for property_name in display_properties:
             if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:
                 obj['display_properties'][property_name] = None
                 continue
             obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
+            if obj['schema']['properties'][property_name]['type'] == 'sample':
+                sample_ids.add(obj['data'][property_name]['object_id'])
 
-    display_property_titles = {}
-    for property_name in display_properties:
-        display_property_titles[property_name] = property_name
-        possible_title = None
-        title_is_shared = True
-        for obj in objects:
-            if obj['display_properties'][property_name] is None:
-                continue
-            if 'title' not in obj['display_properties'][property_name][1]:
-                continue
-            if possible_title is None:
-                possible_title = obj['display_properties'][property_name][1]['title']
-            elif possible_title != obj['display_properties'][property_name][1]['title']:
-                title_is_shared = False
-                break
-        if title_is_shared and possible_title is not None:
-            display_property_titles[property_name] = possible_title
     objects.sort(key=lambda obj: obj['object_id'])
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType)
+    samples = {
+        sample_id: Objects.get_current_object(object_id=sample_id)
+        for sample_id in sample_ids
+    }
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType, samples=samples)
 
 
 @jinja_filter
@@ -154,7 +152,7 @@ def show_object_form(object, action):
     else:
         data = object.data
     # TODO: update schema
-    # schema = Action.query.get(object.action_id).schema
+    # schema = get_action(object.action_id).schema
     if object is not None:
         schema = object.schema
     else:
@@ -196,7 +194,7 @@ def show_object_form(object, action):
                     flask.flash('The object was updated successfully.', 'success')
 
                 # TODO: gather references to other objects more effectively
-                if Action.query.get(object.action_id).type == ActionType.MEASUREMENT:
+                if get_action(object.action_id).type == ActionType.MEASUREMENT:
                     if 'sample' in object.schema.get('properties', {}) and object.schema['properties']['sample']['type'] == 'sample':
                         if 'sample' in object.data and object.data['sample'] is not None:
                             sample_id = object.data['sample']['object_id']
@@ -219,15 +217,16 @@ def show_object_form(object, action):
         except ValueError:
             flask.abort(400)
 
-    objects = get_objects_with_permissions(
+    # TODO: make this search more narrow
+    samples = get_objects_with_permissions(
         user_id=flask_login.current_user.id,
         permissions=Permissions.READ,
         action_type=ActionType.SAMPLE_CREATION
     )
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects, datetime=datetime)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, objects=objects, datetime=datetime)
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -241,12 +240,13 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
-        objects = get_objects_with_permissions(
+        # TODO: make this search more narrow
+        samples = get_objects_with_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
             action_type=ActionType.SAMPLE_CREATION
         )
-        action = Action.query.get(object.action_id)
+        action = get_action(object.action_id)
         instrument = action.instrument
         object_type = {
             ActionType.SAMPLE_CREATION: "Sample",
@@ -272,10 +272,10 @@ def object(object_id):
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
-            objects=objects
+            samples=samples
         )
 
-    return show_object_form(object, action=Action.query.get(object.action_id))
+    return show_object_form(object, action=get_action(object.action_id))
 
 
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
@@ -300,7 +300,7 @@ def new_object():
     if action_id is None or action_id == '':
         # TODO: handle error
         return flask.abort(404)
-    action = Action.query.get(action_id)
+    action = get_action(action_id)
     if action is None:
         # TODO: handle error
         return flask.abort(404)
@@ -331,7 +331,7 @@ def object_version(object_id, version_id):
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
-    action = Action.query.get(object.action_id)
+    action = get_action(object.action_id)
     instrument = action.instrument
     object_type = {
         ActionType.SAMPLE_CREATION: "Sample",
@@ -376,7 +376,7 @@ def restore_object_version(object_id, version_id):
 @object_permissions_required(Permissions.READ)
 def object_permissions(object_id):
     object = Objects.get_current_object(object_id, connection=db.engine)
-    action = Action.query.get(object.action_id)
+    action = get_action(object.action_id)
     instrument = action.instrument
     object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):

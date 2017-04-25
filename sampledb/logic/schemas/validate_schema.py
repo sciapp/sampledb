@@ -102,6 +102,9 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     :raises: ValidationError, if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default'}
+    if not path:
+        # the top level object may contain a list of properties to be displayed in a table of objects
+        valid_keys.add('displayProperties')
     required_keys = {'type', 'title', 'properties'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -132,6 +135,13 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema:
         validate(schema['default'], schema)
+
+    if 'displayProperties' in schema:
+        if not isinstance(schema['displayProperties'], list):
+            raise ValidationError('displayProperties must be list', path)
+        for property_name in schema['displayProperties']:
+            if property_name not in schema['properties']:
+                raise ValidationError('unknown display property: {}'.format(property_name), path)
 
 
 def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:

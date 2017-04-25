@@ -1,0 +1,5 @@
+{% if data.object_id in samples %}
+  <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">{{ samples[data.object_id].data['name']['text'] }}</a>
+{% else %}
+  &mdash;
+{% endif %}

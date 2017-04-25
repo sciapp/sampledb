@@ -3,4 +3,5 @@
 !.gitlab-ci.yml
 _*
 !__init__.py
+!__main__.py
 ldapaccount.py

@@ -128,11 +128,21 @@ def test_validate_text_with_choices():
     validate_schema(schema)
 
 
-def test_validate_text_with_invalid_choices():
+def test_validate_text_with_invalid_choice():
     schema = {
         'title': 'Example',
         'type': 'text',
         'choices': ['1', '2', 3]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_invalid_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': '123'
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -162,6 +172,16 @@ def test_validate_text_with_invalid_pattern():
         'title': 'Example',
         'type': 'text',
         'pattern': '['
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_with_invalid_pattern_type():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'pattern': b'^[1-9][0-9]*/[A-Za-z]+$'
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -750,3 +770,81 @@ def test_validate_sample_schema():
         'type': 'sample'
     }
     validate_schema(schema)
+
+
+def test_validate_sample_schema_with_missing_title():
+    schema = {
+        'type': 'sample'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_sample_schema_with_unknown_property():
+    schema = {
+        'title': 'Example',
+        'type': 'sample',
+        'action_id': 0
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_display_properties():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'example': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
+        'displayProperties': ['example']
+    }
+    validate_schema(schema)
+
+
+def test_validate_object_schema_with_unknown_display_property():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {},
+        'displayProperties': ['example']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_nested_schema_with_display_properties():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'example': {
+                'title': 'Example Property',
+                'type': 'object',
+                'properties': {},
+                'displayProperties': []
+            }
+        },
+        'displayProperties': ['example']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_invalid_display_properties():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'example': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
+        'displayProperties': 'example'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

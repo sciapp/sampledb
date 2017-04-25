@@ -8,7 +8,8 @@ import datetime
 import typing
 
 from .errors import ValidationError, ValidationMultiError
-from ...models import objects, Action, ActionType
+from ...logic import instruments
+from ...models import objects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -246,6 +247,6 @@ def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> No
     sample = objects.Objects.get_current_object(object_id=instance['object_id'])
     if sample is None:
         raise ValidationError('object does not exist', path)
-    action = Action.query.get(sample.action_id)
-    if action.type != ActionType.SAMPLE_CREATION:
+    action = instruments.get_action(sample.action_id)
+    if action.type != instruments.ActionType.SAMPLE_CREATION:
         raise ValidationError('object must be sample', path)
