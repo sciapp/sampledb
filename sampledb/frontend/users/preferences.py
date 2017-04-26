@@ -33,11 +33,9 @@ def user_preferences(user_id):
         token = flask.request.args.get('token')
         data = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
         if data is not None:
-            print('reset_password')
             return reset_password()
         else:
             # es ist egal, ob eingeloggt oder nicht
-            print('confirm_email')
             return confirm_email()
     elif flask_login.current_user.is_authenticated:
         if user_id != flask_login.current_user.id:
@@ -127,7 +125,6 @@ def confirm_email():
         if data2 is not None:
             data = data2
             salt = 'add_login'
-        print(salt)
         if len(data) != 2:
             return flask.abort(400)
         email = data[0]
@@ -140,13 +137,11 @@ def confirm_email():
             auth = Authentication.query.filter(Authentication.user_id == user_id,
                                                Authentication.login['login'].astext == email).first()
             auth.confirmed = True
-            print('confirmed')
             db.session.add(auth)
         else:
             return flask.abort(400)
         db.session.commit()
         user_log.edit_user_preferences(user_id=user_id)
-        print('return')
         return flask.redirect(flask.url_for('.user_preferences', user_id=user_id))
 
 
@@ -166,19 +161,15 @@ def email_for_resetting_password():
                 auth = Authentication.query.filter(Authentication.login['login'].astext == email).first()
                 users = User.query.filter_by(email=str(email)).all()
                 userlist = []
-                if auth is not None or len(users) > 0:
-                    if auth is not None:
-                        user = User.query.filter_by(email=str(email), id=auth.user.id).first()
-                        if user is None:
-                            # eine authentifizierungs email sonst nichts
-                            userlist.append(auth.user)
-                    if len(users) >0:
-                        for user in users:
-                            userlist.append(user)
-                        # send confirm link of all userids with this email
-                    print('userlist')
-                    print(userlist)
-                    send_recovery_email(email, userlist, 'password')
+                if auth is not None:
+                    user = User.query.filter_by(email=str(email), id=auth.user.id).first()
+                    if user is None:
+                        userlist.append(auth.user)
+                if len(users) >0:
+                    for user in users:
+                        userlist.append(user)
+                    # send recovery link of all userids with this email
+                send_recovery_email(email, userlist, 'password')
                 return flask.render_template('recovery_email_send.html',
                                              email=email, has_error=has_error)
         return flask.render_template('reset_password_by_email.html',
@@ -188,15 +179,12 @@ def email_for_resetting_password():
 
 def reset_password():
     token = flask.request.args.get('token')
-    print('reset password')
-    print(token)
     data = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
     email = data[0]
     authentication_id = data[1]
     userid = data[2]
-    print(userid)
-    print(authentication_id)
-    print(email)
+    if not userid or not authentication_id:
+        return flask.abort(404)
     if email is None or '@' not in email:
         return flask.abort(404)
     authentication_method = Authentication.query.filter(Authentication.id == authentication_id,
@@ -206,16 +194,10 @@ def reset_password():
     if authentication_method is None:
         return flask.abort(404)
     username = authentication_method.login['login']
-    print('USERNAME')
-    print(username)
-    print(flask.request.method)
     if flask.request.method == "GET":
         # confirmation dialog
-        if not userid or not authentication_id:
-            return flask.redirect(flask.url_for('.sign_in'))
-        else:
-            return flask.render_template('password.html', password_form=password_form, has_error=has_error,
-                                         email=email, username=username)
+        return flask.render_template('password.html', password_form=password_form, has_error=has_error,
+                                     email=email, username=username)
     else:
         if password_form.validate_on_submit():
             pw_hash = bcrypt.hashpw(password_form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
