@@ -36,7 +36,7 @@ def sign_in():
         user = login(username, password)
         if user:
             flask_login.login_user(user, remember=remember_me)
-            next_url = flask.request.args.get('next', '/')
+            next_url = flask.request.args.get('next', flask.url_for('.index'))
             index_url = flask.url_for('.index')
             if not next_url.startswith('/') or not all(c in '/=?&_' or c.isalnum() for c in next_url):
                 next_url = index_url

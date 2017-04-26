@@ -26,7 +26,7 @@ def main(arguments):
     else:
         port = 8000
     app = create_app()
-    cherrypy.tree.graft(app, '/')
+    cherrypy.tree.graft(app, app.config['SERVER_PATH'])
     cherrypy.config.update({
         'environment': 'production',
         'server.socket_host': '0.0.0.0',

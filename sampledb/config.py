@@ -20,6 +20,9 @@ def use_environment_configuration(env_prefix):
         globals()[name] = value
 
 
+# prefix for all routes (used by run script)
+SERVER_PATH = '/'
+
 CSRF_ENABLED = True
 
 SECRET_KEY = generate_secret_key(num_bits=256)

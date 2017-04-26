@@ -1,5 +1,6 @@
 
 import flask
+from werkzeug.contrib.fixers import ProxyFix
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
@@ -17,6 +18,7 @@ import sampledb.rest_api
 
 def create_app():
     app = flask.Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app)
     app.config.from_object('sampledb.config')
     login_manager.init_app(app)
     mail.init_app(app)
