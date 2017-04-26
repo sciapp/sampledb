@@ -4,8 +4,8 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import InputRequired, Email, Length, EqualTo
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
+from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired
 
 
 class SigninForm(FlaskForm):
@@ -39,25 +39,10 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('Register')
 
 
-class EmailPasswordForm(FlaskForm):
-    email = StringField(validators=[InputRequired()])
-    username = StringField(validators=[InputRequired()])
+class PasswordForm(FlaskForm):
     password = PasswordField('New Password', validators=[
         InputRequired(),
-        Length(min=3),
-        EqualTo('password2', message='Passwords must match')
+        Length(min=3)
     ])
-    password2 = PasswordField('Confirm password', validators=[InputRequired()])
     submit = SubmitField('Change Password')
 
-
-class LoginPasswordForm(FlaskForm):
-    login = StringField(validators=[InputRequired()])
-    username = StringField(validators=[InputRequired()])
-    password = PasswordField('New Password', validators=[
-        InputRequired(),
-        Length(min=3),
-        EqualTo('password2', message='Passwords must match')
-    ])
-    password2 = PasswordField('Confirm password', validators=[InputRequired()])
-    submit = SubmitField('Change Password')

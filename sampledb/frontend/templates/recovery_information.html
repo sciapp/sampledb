@@ -1,0 +1,16 @@
+
+  <h1 class="text-center">Recovery Request</h1>
+  <div class="text-center"> We received an account account recovery request for {{email}}</div>
+  <div class="text-center"> If you initiated this request, click one of the following links to reset your password</div>
+    <h3 class="text-center">You have the following authentication-methods</h3>
+    {% for data in datalist%}
+      {% if data['type'] == "LDAP" %}
+        <div class="text-center"> You can use the PGI/JCNS account {{data['login']}} to log in to your account.</div>
+        <div class="text-center"> To get a new password of this PGI/JCNS account, please contact the administrator (d.henkel@fz-juelich.de) </div><br>
+      {% else %}
+        <div class="text-center"> You can use {{data['login']}} to log in to your account. Click this link to reset the password:</div>
+        <div class="text-center"> {{data['confirm_url']}}</div><br><br>
+      {% endif %}
+    {% endfor %}
+  <div class="text-center"> If you did not initiate this account recovery request, just ignore this email. We'll keep your account safe</div>
+

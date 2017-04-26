@@ -45,7 +45,19 @@
                    <form class="form-group" {% if authentication_form.login.errors  or error %} has-error{% endif %} method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
                        <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
-                       <input type="submit" class="btn btn-primary" name="remove" value="Remove" >
+                       {% if authentications|length > 1 %}
+                          {% if confirmed_authentication_methods > 1 %}
+                               <input type="submit" class="btn btn-primary" name="remove" value="Remove" >
+                          {% else %}
+                               {% if authentication.confirmed  %}
+                                    <input type="submit" class="btn btn-primary" name="remove" value="Remove" disabled>
+                               {% else %}
+                                    <input type="submit" class="btn btn-primary" name="remove" value="Remove" >
+                               {% endif %}
+                          {% endif %}
+                       {% else %}
+                       <input type="submit" class="btn btn-primary" name="remove" value="Remove" disabled>
+                       {% endif %}
                        {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                    </form>
               </td>
@@ -62,8 +74,9 @@
     <div class="form-group{% if authentication_form.login.errors  or error_add %} has-error{% endif %}">
         <label for="input-login" class="col-sm-4 control-label">Login</label>
         <div class="col-sm-8">
-            <input class="form-control" type="text" id="input-login" name="login"  placeholder="Username / Email">
+            <input class="form-control" type="text" id="input-login" name="login"  placeholder="Username / Email" value="{{ authentication_form.login.data }}">
             {% if error_add %} <span class='help-block'>{{error_add}} </span> {%endif%}
+            {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
         </div>
     </div>
     <div class="form-group{% if authentication_form.password.errors%} has-error {% endif %}">

@@ -34,8 +34,18 @@ def user(flask_server):
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
-        with flask_server.app.app_context():
-            assert len(sampledb.models.Authentication.query.all()) == 1
+        assert len(sampledb.models.Authentication.query.all()) == 1
+    return user
+
+
+@pytest.fixture
+def user_without_authentication(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.models.User(name="Basic User", email="example1@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        # force attribute refresh
+        assert user.id is not None
     return user
 
 
@@ -64,19 +74,20 @@ def test_login_failed_link_to_change_password_will_appear(flask_server):
 def test_link_to_change_password(flask_server):
     session = requests.session()
 
-    url = flask_server.base_url + 'users/password'
+    url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url)
     assert r.status_code == 200
 
     assert 'send you a recovery link' in r.content.decode('utf-8')
 
 
-def test_recovery_email_send(flask_server, user):
+def test_recovery_email_not_send(flask_server, user_without_authentication):
+    user = user_without_authentication
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
-    url = flask_server.base_url + 'users/password'
+    url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url)
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
@@ -91,8 +102,43 @@ def test_recovery_email_send(flask_server, user):
         })
     assert r.status_code == 200
 
+    # Check if an recovery mail was not sent, No authentication-method exist
+    assert len(outbox) == 0
+
+
+def test_recovery_email_send(flask_server, user):
+    session = requests.session()
+    url = flask_server.base_url + 'users/me/preferences'
+    r = session.get(url)
+    assert r.status_code == 200
+
+    assert 'send you a recovery link' in r.content.decode('utf-8')
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    #  send recovery email
+    with sampledb.mail.record_messages() as outbox:
+        r = session.post(url, {
+            'email': 'example@fz-juelich.de',
+            'csrf_token': csrf_token
+        })
+    assert r.status_code == 200
+
     # Check if an recovery mail was sent
     assert len(outbox) == 1
-    assert 'example@fz-juelich.de' in outbox[0].recipients
-    message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
+
+    token = generate_token(['example@fz-juelich', 1, 1], salt='password',
+                           secret_key=flask_server.app.config['SECRET_KEY'])
+    data = {'token': token}
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
+
+    url = flask_server.base_url + 'users/me/preferences'
+    print(data)
+    r = session.get(url, params=data)
+
+    assert r.status_code == 200
+    print(r.content)
+
+
+
