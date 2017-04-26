@@ -6,6 +6,7 @@
 import base64
 import binascii
 import functools
+import os
 
 import flask
 import flask_login
@@ -13,7 +14,6 @@ import flask_login
 from sampledb import logic
 from sampledb.logic.authentication import login
 from sampledb.models import Permissions, Objects
-from . import login_manager
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -74,3 +74,30 @@ def object_permissions_required(required_object_permissions: Permissions):
             return func(**kwargs)
         return wrapper
     return decorator
+
+
+def load_environment_configuration(env_prefix):
+    """
+    Loads configuration data from environment variables with a given prefix.
+    
+    :return: a dict containing the configuration values
+    """
+    config = {
+        key[len(env_prefix):]: value
+        for key, value in os.environ.items()
+        if key.startswith(env_prefix)
+    }
+    return config
+
+
+def generate_secret_key(num_bits):
+    """
+    Generates a secure, random key for the application.
+    
+    :param num_bits: number of bits of random data in the secret key
+    :return: the base64 encoded secret key
+    """
+    num_bytes = num_bits // 8
+    binary_key = os.urandom(num_bytes)
+    base64_key = base64.b64encode(binary_key).decode('ascii')
+    return base64_key
