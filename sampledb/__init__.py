@@ -17,7 +17,7 @@ import sampledb.rest_api
 
 def create_app():
     app = flask.Flask(__name__)
-    app.config.from_object('config')
+    app.config.from_object('sampledb.config')
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
