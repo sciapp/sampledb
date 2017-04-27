@@ -4,7 +4,7 @@ Basic configuration for SampleDB
 
 This configuration is the pure base, representing defaults. These values may be altered or expanded in several ways:
 - For tests, the configuration is modified in tests/conftest.py.
-- For local, interactive testing and demonstrations, the configuration modified in run.py.
+- For local, interactive testing and demonstrations, the configuration modified in demo.py.
 - environment variables starting with the prefix SAMPLEDB_ will further override any hardcoded configuration data.
 """
 
