@@ -295,7 +295,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'The password must be of minimum 4 characters'
+    assert 'The password must be of minimum 3 characters' in r.content.decode('utf-8')
 
     #  add identically authentication_method
     r = session.post(url, {
@@ -328,7 +328,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Login must be an email if the authentication_method is email'
+    assert 'Login must be an email if the authentication_method is email' in r.content.decode('utf-8')
 
 
 def test_user_add_email_authentication_method(flask_server, user):

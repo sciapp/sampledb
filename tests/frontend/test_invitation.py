@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 from sampledb.logic.security_tokens import generate_token
-from sampledb.logic.authentication import add_authentication_to_db
+from sampledb.logic.authentication import add_authentication_to_db, validate_user_db
 
 
 from tests.test_utils import flask_server, app
@@ -110,21 +110,8 @@ def test_send_invitation(flask_server, user):
         assert len(sampledb.models.User.query.all()) == 2
 
     # test login
-    r = session.get(flask_server.base_url + 'users/me/sign_in')
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    # Try logging in
-    r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': 'd.henkel@fz-juelich.de',
-        'password': 'test',
-        'remember_me': False,
-        'csrf_token': csrf_token
-    })
-
-    assert r.status_code == 200
-    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
+    with flask_server.app.app_context():
+        assert validate_user_db('d.henkel@fz-juelich.de', 'test')
 
 
 def test_registration_without_token_not_available(flask_server):
@@ -255,20 +242,6 @@ def test_send_registration_with_email_already_exists_in_authentication_method(fl
         assert len(sampledb.models.Authentication.query.all()) == 1
 
     #check, if new password works
+    with flask_server.app.app_context():
+        assert validate_user_db('example@fz-juelich.de', 'test')
 
-    # test login
-    r = session.get(flask_server.base_url + 'users/me/sign_in')
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    # Try logging in
-    r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': 'example@fz-juelich.de',
-        'password': 'test',
-        'remember_me': False,
-        'csrf_token': csrf_token
-    })
-
-    assert r.status_code == 200
-    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True

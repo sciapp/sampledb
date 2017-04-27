@@ -61,22 +61,18 @@ def send_recovery_email(email, users, salt):
                 data = build_confirm_url(authentication_method, email, salt)
                 if data:
                     datalist.append(data)
-    if len(datalist) > 0:
-        subject = "Recovery email"
-        html = flask.render_template('recovery_information.html', email=email, datalist=datalist)
-        try:
-            mail.send(flask_mail.Message(
-                subject,
-                sender=flask.current_app.config['MAIL_SENDER'],
-                recipients=[email],
-                html=html
-            ))
-        except smtplib.SMTPRecipientsRefused:
-            pass
-        return True
-    else:
-        return False
-
+    subject = "Recovery email"
+    html = flask.render_template('recovery_information.html', email=email, datalist=datalist)
+    try:
+        mail.send(flask_mail.Message(
+            subject,
+            sender=flask.current_app.config['MAIL_SENDER'],
+            recipients=[email],
+            html=html
+        ))
+    except smtplib.SMTPRecipientsRefused:
+        pass
+    return True
 
 def build_confirm_url(authentication_method, email, salt):
     data = {}

@@ -2,6 +2,7 @@
 """
 
 """
+import re
 import flask
 import requests
 import pytest
@@ -10,8 +11,7 @@ from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
-from sampledb.logic.security_tokens import generate_token
-from sampledb.logic.authentication import add_authentication_to_db
+from sampledb.logic.authentication import add_authentication_to_db, validate_user_db
 
 
 from tests.test_utils import flask_server, app
@@ -81,11 +81,9 @@ def test_link_to_change_password(flask_server):
     assert 'send you a recovery link' in r.content.decode('utf-8')
 
 
-def test_recovery_email_not_send(flask_server, user_without_authentication):
+def test_recovery_email_send_no_authentication_method_exists(flask_server, user_without_authentication):
     user = user_without_authentication
     session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url)
@@ -97,13 +95,15 @@ def test_recovery_email_not_send(flask_server, user_without_authentication):
     #  send recovery email
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'email': 'example@fz-juelich.de',
+            'email': 'example1@fz-juelich.de',
             'csrf_token': csrf_token
         })
     assert r.status_code == 200
 
-    # Check if an recovery mail was not sent, No authentication-method exist
-    assert len(outbox) == 0
+    # Check if an recovery mail was sent, No authentication-method exist
+    assert len(outbox) == 1
+    message = outbox[0].html
+    assert 'There is no authentication-method found' in message
 
 
 def test_recovery_email_send(flask_server, user):
@@ -127,18 +127,62 @@ def test_recovery_email_send(flask_server, user):
 
     # Check if an recovery mail was sent
     assert len(outbox) == 1
+    message = outbox[0].html
+    document = BeautifulSoup(message, 'html.parser')
+    preference_url = flask_server.base_url + 'users/1/preferences'
+    urls = document.find_all('a', attrs={'href': re.compile(preference_url)})
+    for url in urls:
+        r = session.get(url.get('href'))
 
-    token = generate_token(['example@fz-juelich', 1, 1], salt='password',
-                           secret_key=flask_server.app.config['SECRET_KEY'])
-    data = {'token': token}
-    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
+        assert r.status_code == 200
+        assert 'Recovery account for example@fz-juelich.de' in r.content.decode('utf-8')
+        assert 'New Password' in r.content.decode('utf-8')
 
+
+def test_new_password_send(flask_server, user):
+    session = requests.session()
     url = flask_server.base_url + 'users/me/preferences'
-    print(data)
-    r = session.get(url, params=data)
+    r = session.get(url)
+    assert r.status_code == 200
+
+    assert 'send you a recovery link' in r.content.decode('utf-8')
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    #  send recovery email
+    with sampledb.mail.record_messages() as outbox:
+        r = session.post(url, {
+            'email': 'example@fz-juelich.de',
+            'csrf_token': csrf_token
+        })
+    assert r.status_code == 200
+
+    # Check if an recovery mail was sent
+    assert len(outbox) == 1
+    message = outbox[0].html
+    document = BeautifulSoup(message, 'html.parser')
+    preference_url = flask_server.base_url + 'users/1/preferences'
+    anchors = document.find_all('a', attrs={'href': re.compile(preference_url)})
+    assert len(anchors) == 1
+    anchor = anchors[0]
+    url = anchor.get('href')
+    r = session.get(url)
+
 
     assert r.status_code == 200
-    print(r.content)
+    assert 'Recovery account for example@fz-juelich.de' in r.content.decode('utf-8')
+    assert 'New Password' in r.content.decode('utf-8')
 
 
+    document = BeautifulSoup(r.content, 'html.parser')
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+
+    r = session.post(url, {
+        'password': 'test',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 200
+    with flask_server.app.app_context():
+        assert validate_user_db('example@fz-juelich.de', 'test')
 
