@@ -21,21 +21,19 @@
       </div>
     </div>
     <div class="form-group">
-      <div class="col-sm-offset-4 col-sm-8">
+      <div class="col-sm-offset-4 col-sm-4">
         <div class="checkbox">
           <label>
             <input type="checkbox" id="input-rememberme" name="remember_me"> Remember me
           </label>
         </div>
       </div>
-    </div>
-    {% if has_authentication_error %}
-    <div class="form-group">
-      <div class="col-sm-offset-4 col-sm-8">
-        <a href="{{ url_for('frontend.user_me_preferences')}}">forgot your password? </a>
+      <div class="col-sm-4">
+        <div id="link-request-password-reset">
+          <a href="{{ url_for('frontend.user_me_preferences')}}" {% if not has_errors %}style="color:#cccccc;"{% endif %}>Forgot your password? </a>
+        </div>
       </div>
     </div>
-    {% endif %}
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-8">
         <button type="submit" class="btn btn-primary">Sign in</button>

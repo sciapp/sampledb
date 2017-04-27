@@ -22,6 +22,17 @@ body > footer {
     margin: 3em auto;
 }
 
+#form-signin #link-request-password-reset {
+    padding-top: 7px;
+    min-height:27px;
+    text-align: right;
+}
+
+#form-request-password-reset {
+    max-width: 600px;
+    margin: 3em auto;
+}
+
 .form-navbar-signout {
     display:block;
     padding:0;

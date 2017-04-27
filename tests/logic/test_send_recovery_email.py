@@ -122,7 +122,7 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
         assert user.email in outbox[0].recipients
         message = outbox[0].html
         assert 'Recovery Request' in message
-        assert 'There is no authentication-method found' in message
+        assert 'There is no authentication method' in message
 
 
 def test_send_recovery_email_for_ldap_authentication(app):
