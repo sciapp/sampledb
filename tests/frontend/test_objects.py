@@ -13,10 +13,11 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.rest_api.objects import SCHEMA_DIR
 
 
 from tests.test_utils import flask_server, app, app_context
+
+SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(sampledb.__file__), 'schemas'))
 
 
 @pytest.fixture

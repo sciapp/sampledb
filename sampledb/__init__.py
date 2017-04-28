@@ -13,7 +13,6 @@ db = SQLAlchemy()
 
 import sampledb.frontend
 import sampledb.models
-import sampledb.rest_api
 
 
 def create_app():
@@ -25,7 +24,6 @@ def create_app():
     db.init_app(app)
 
     app.register_blueprint(sampledb.frontend.frontend)
-    app.register_blueprint(sampledb.rest_api.rest_api, url_prefix='/api')
 
     login_manager.login_view = 'frontend.sign_in'
     app.jinja_env.globals.update(signout_form=sampledb.frontend.users_forms.SignoutForm)
