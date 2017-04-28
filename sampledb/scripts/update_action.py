@@ -29,8 +29,8 @@ def main(arguments):
         if action is None:
             print('Error: no action with this id exists', file=sys.stderr)
             exit(1)
-        with open(schema_file_name, 'r') as schema_file:
-            schema = json.load(schema_file, encoding='utf-8')
+        with open(schema_file_name, 'r', encoding='utf-8') as schema_file:
+            schema = json.load(schema_file)
         try:
             validate_schema(schema)
         except ValidationError as e:

@@ -8,8 +8,11 @@
 {% endblock %}
 
 {% block content %}
-{% if not current_user.is_authenticated %}
 <div class="container">
+  <div class="alert alert-warning">
+    <p><strong>Warning:</strong> This is a preview installation of SampleDB at PGI / JCNS. It will be updated frequently and while we try to keep everything running smoothly, we ask that you do not yet rely on SampleDB to be available. If you have further questions or encounter any issues, please <a href="mailto:f.rhiem@fz-juelich.de&subject=SampleDB">let us know</a>. Thank you!</p>
+  </div>
+{% if not current_user.is_authenticated %}
   <div class="jumbotron">
     <h1>Welcome to SampleDB</h1>
     <p>SampleDB is the sample and measurement metadata database at PGI and JCNS.</p>
@@ -29,9 +32,7 @@
     </div>
     </div>
   </div>
-</div>
 {% else %}
-<div class="container">
   <div class="jumbotron">
     <h1>Welcome to SampleDB</h1>
     <p>SampleDB is the sample and measurement metadata database at PGI and JCNS.</p>
@@ -54,6 +55,6 @@
       </div>
     </div>
   </div>
-</div>
 {% endif %}
+</div>
 {% endblock %}
