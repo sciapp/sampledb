@@ -76,6 +76,7 @@ def change_preferences(user, user_id):
             try:
                 remove_authentication_method(user_id, authentication_method_id)
             except Exception as e:
+                flask.flash("Failed to remove the authentication method.", 'error')
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                              authentication_method_form=authentication_method_form,
                                              authentication_form=authentication_form,
