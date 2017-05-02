@@ -1,25 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1 class="text-center">Invite a person</h1>
+  <h1 class="text-center">Invite a guest</h1>
+  <div class="container" style="max-width:600px">
+  <p class="text-center">To invite a guest to SampleDB, please submit their email address using the form below. They will then receive an email which can be used to complete the registration process.</p>
   <form class="form-horizontal" method="post" id="form-invitation">
     {{ invitation_form.csrf_token() }}
     <div class="form-group{% if invitation_form.email.errors or has_error %} has-error{% endif %}">
-      <label for="input-email" class="col-sm-4 control-label">Email</label>
+      <label for="input-email" class="col-sm-2 control-label">Email</label>
       <div class="col-sm-8">
-        <input class=form-control type="text" class="form-control" id="input-email" name="email" placeholder="Email">
+        <input class=form-control type="text" id="input-email" name="email" placeholder="Email">
         {% if has_success%}
           <span class='help-block'>The invitation to {{invitation_form.email.data}} has been sent.</span>
         {% endif %}
         {% if has_error%}
-          <span class='help-block'>Emails is required or email doesn't seems to be an email</span>
+          <span class='help-block'>Please enter a valid email address.</span>
         {% endif %}
       </div>
-    </div>
-    <div class="form-group">
-      <div class="col-sm-offset-4 col-sm-8">
-        <button type="submit" class="btn btn-primary">Invite</button>
-      </div>
+        <button type="submit" class="btn btn-primary col-sm-2">Invite</button>
     </div>
   </form>
+  </div>
 {% endblock %}

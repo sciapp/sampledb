@@ -48,7 +48,7 @@ def test_invitation_with_authenticated_user_is_possible(flask_server, user):
     r = session.get(url)
     assert r.status_code == 200
 
-    assert 'Invite a person' in r.content.decode('utf-8')
+    assert 'Invite a guest' in r.content.decode('utf-8')
 
 
 def test_send_invitation(flask_server, user):
