@@ -196,6 +196,10 @@ def test_get_object_no_permissions(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
+
+    # TODO: remove this for production
+    sampledb.logic.permissions.set_object_public(object.object_id, False)
+    
     session = requests.session()
     with flask_server.app.app_context():
         new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
@@ -271,6 +275,10 @@ def test_get_object_version_no_permissions(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
+
+    # TODO: remove this for production
+    sampledb.logic.permissions.set_object_public(object.object_id, False)
+
     session = requests.session()
     with flask_server.app.app_context():
         new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
@@ -606,6 +614,10 @@ def test_update_object_permissions(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
+
+    # TODO: remove this for production
+    sampledb.logic.permissions.set_object_public(object.object_id, False)
+
     current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
     assert current_permissions == {
         None: sampledb.logic.permissions.Permissions.NONE,
@@ -703,6 +715,10 @@ def test_object_permissions_add_user(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
+
+    # TODO: remove this for production
+    sampledb.logic.permissions.set_object_public(object.object_id, False)
+
     current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
     assert current_permissions == {
         None: sampledb.logic.permissions.Permissions.NONE,

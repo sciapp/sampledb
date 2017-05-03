@@ -91,6 +91,8 @@ def set_user_object_permissions(object_id, user_id, permissions: Permissions):
 
 def set_initial_permissions(obj):
     set_user_object_permissions(object_id=obj.object_id, user_id=obj.user_id, permissions=Permissions.GRANT)
+    # TODO: remove this for production use
+    set_object_public(object_id=obj.object_id)
 
 Objects.create_object_callbacks.append(set_initial_permissions)
 
