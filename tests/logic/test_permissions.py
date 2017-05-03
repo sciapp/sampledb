@@ -104,6 +104,10 @@ def user(users):
 
 def test_public_objects(independent_action_object):
     object_id = independent_action_object.object_id
+
+    # TODO: remove this for production
+    permissions.set_object_public(object_id=object_id, is_public=False)
+
     assert not permissions.object_is_public(object_id)
     permissions.set_object_public(object_id)
     assert permissions.object_is_public(object_id)
@@ -114,6 +118,10 @@ def test_public_objects(independent_action_object):
 def test_default_user_object_permissions(user, independent_action_object):
     user_id = user.id
     object_id = independent_action_object.object_id
+
+    # TODO: remove this for production
+    permissions.set_object_public(object_id=object_id, is_public=False)
+
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
 
 
@@ -145,6 +153,10 @@ def test_get_user_public_object_permissions(user, independent_action_object):
 def test_get_object_permissions(users, instrument, instrument_action_object):
     user_id = users[0].id
     object_id = instrument_action_object.object_id
+
+    # TODO: remove this for production
+    permissions.set_object_public(object_id=object_id, is_public=False)
+
     # by default, only the user who created an object has access to it
     assert permissions.get_object_permissions(object_id=object_id) == {
         None: Permissions.NONE,
@@ -175,6 +187,9 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
 def test_update_object_permissions(users, independent_action_object):
     user_id = users[0].id
     object_id = independent_action_object.object_id
+
+    # TODO: remove this for production
+    permissions.set_object_public(object_id=object_id, is_public=False)
 
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.WRITE)
