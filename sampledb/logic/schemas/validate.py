@@ -164,7 +164,7 @@ def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> 
     try:
         datetime.datetime.strptime(instance['utc_datetime'], '%Y-%m-%d %H:%M:%S')
     except ValueError:
-        raise ValidationError('Please enter the date and time in the format: YYYY-MM-DD HH-MM-SS.', path)
+        raise ValidationError('Please enter the date and time in the format: YYYY-MM-DD HH:MM:SS.', path)
 
 
 def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None:
