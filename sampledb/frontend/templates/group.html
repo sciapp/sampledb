@@ -17,13 +17,20 @@
     {% endwith %}
   {% endfor %}
   </ul>
-  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editGroupModal">Edit Group</button>
+  {% if edit_group_form %}
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editGroupModal">Edit Group</button>
+  {% endif %}
+  {% if invite_user_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Add User</button>
+  {% endif %}
+  {% if leave_group_form %}
   <form method="post" style="display: inline" action="{{ url_for('.group', group_id=group.id) }}" id="leaveGroupForm">
     {{ leave_group_form.csrf_token() }}
     <button type="submit" class="btn btn-danger" name="leave" value="leave">Leave Group</button>
   </form>
+  {% endif %}
 
+  {% if edit_group_form %}
   <div class="modal fade" id="editGroupModal" tabindex="-1" role="dialog" aria-labelledby="editGroupModalLabel">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -56,7 +63,9 @@
       </div>
     </div>
   </div>
+  {% endif %}
 
+  {% if invite_user_form %}
   <div class="modal fade" id="inviteUserModal" tabindex="-1" role="dialog" aria-labelledby="inviteUserModalLabel">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -88,6 +97,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 {% endblock %}
 

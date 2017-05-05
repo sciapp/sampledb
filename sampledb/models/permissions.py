@@ -55,7 +55,7 @@ class GroupObjectPermissions(db.Model):
     __tablename__ = 'group_object_permissions'
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
-    group_id = db.Column(db.Integer, db.ForeignKey(Group.id), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey(Group.id, ondelete="CASCADE"), nullable=False)
     permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
 
     __table_args__ = (
