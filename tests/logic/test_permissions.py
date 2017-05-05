@@ -6,7 +6,7 @@
 import pytest
 
 import sampledb
-from sampledb.logic import permissions
+from sampledb.logic import permissions, groups
 from sampledb.models import User, UserType, Action, ActionType, Instrument, Permissions, UserObjectPermissions, Objects
 
 from ..test_utils import app_context
@@ -204,3 +204,75 @@ def test_update_object_permissions(users, independent_action_object):
         None: Permissions.NONE,
         users[1].id: Permissions.GRANT
     }
+
+
+def test_group_permissions(users, independent_action_object):
+    user, creator = users
+    object_id = independent_action_object.object_id
+    group_id = groups.create_group("Example Group", "", creator.id)
+
+    # TODO: remove this for production
+    permissions.set_object_public(object_id=object_id, is_public=False)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
+
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
+
+    groups.add_user_to_group(group_id=group_id, user_id=user.id)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.WRITE
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
+
+    permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.READ)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.WRITE
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
+
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.READ)
+    permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.WRITE
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
+
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.NONE)
+    permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.NONE)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
+
+    permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.READ)
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.GRANT)
+    groups.remove_user_from_group(group_id=group_id, user_id=user.id)
+
+    assert permissions.get_object_permissions(object_id=object_id) == {
+        None: Permissions.NONE,
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.READ
+    }
+    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.READ
+
