@@ -60,7 +60,7 @@
           {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
             <td class="text-center" style="vertical-align: middle">
               <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-              <input type="radio" name="{{ form.public_permissions.name }}" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if object_permissions[none] == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
+              <input type="radio" name="{{ form.public_permissions.name }}" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
             </td>
           {% endfor %}
           <td></td>

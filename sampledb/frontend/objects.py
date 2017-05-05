@@ -11,7 +11,7 @@ import itsdangerous
 
 from . import frontend
 from ..logic import user_log, object_log, comments
-from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions, set_object_public, set_user_object_permissions, get_objects_with_permissions
+from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, get_objects_with_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
@@ -378,17 +378,15 @@ def object_permissions(object_id):
     object = Objects.get_current_object(object_id, connection=db.engine)
     action = get_action(object.action_id)
     instrument = action.instrument
-    object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
+    object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False)
+    public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
-        public_permissions = 'none'
-        if Permissions.READ in object_permissions[None]:
-            public_permissions = 'read'
         user_permissions = []
         for user_id, permissions in object_permissions.items():
             if user_id is None:
                 continue
             user_permissions.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions, user_permissions=user_permissions)
+        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permissions)
         users = User.query.all()
         users = [user for user in users if user.id not in object_permissions]
         add_user_permissions_form = ObjectUserPermissionsForm()
@@ -396,7 +394,7 @@ def object_permissions(object_id):
         edit_user_permissions_form = None
         add_user_permissions_form = None
         users = []
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, User=User, Permissions=Permissions, form=edit_user_permissions_form, users=users, add_user_permissions_form=add_user_permissions_form)
+    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, object_permissions=object_permissions, public_permissions=public_permissions, User=User, Permissions=Permissions, form=edit_user_permissions_form, users=users, add_user_permissions_form=add_user_permissions_form)
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
@@ -419,7 +417,7 @@ def update_object_permissions(object_id):
     elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
         user_id = add_user_permissions_form.user_id.data
         permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-        object_permissions = get_object_permissions(object_id=object_id, include_instrument_responsible_users=False)
+        object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False)
         assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
         assert user_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)

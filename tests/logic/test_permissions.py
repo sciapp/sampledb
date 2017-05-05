@@ -158,30 +158,33 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
     permissions.set_object_public(object_id=object_id, is_public=False)
 
     # by default, only the user who created an object has access to it
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         users[1].id: Permissions.GRANT
     }
+    assert not permissions.object_is_public(object_id)
+
     permissions.set_object_public(object_id)
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.READ,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         users[1].id: Permissions.GRANT
     }
+    assert permissions.object_is_public(object_id)
+
     sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
     sampledb.db.session.commit()
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.READ,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         user_id: Permissions.WRITE,
         users[1].id: Permissions.GRANT
     }
+    assert permissions.object_is_public(object_id)
+
     instrument.responsible_users.append(users[0])
     sampledb.db.session.add(instrument)
     sampledb.db.session.commit()
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.READ,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         user_id: Permissions.GRANT,
         users[1].id: Permissions.GRANT
     }
+    assert permissions.object_is_public(object_id)
 
 
 def test_update_object_permissions(users, independent_action_object):
@@ -200,10 +203,10 @@ def test_update_object_permissions(users, independent_action_object):
 
     permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.NONE)
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         users[1].id: Permissions.GRANT
     }
+    assert not permissions.object_is_public(object_id)
 
 
 def test_group_permissions(users, independent_action_object):
@@ -214,65 +217,73 @@ def test_group_permissions(users, independent_action_object):
     # TODO: remove this for production
     permissions.set_object_public(object_id=object_id, is_public=False)
 
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
     }
+    assert not permissions.object_is_public(object_id)
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
 
     permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.WRITE)
 
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
     }
+    assert not permissions.object_is_public(object_id)
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
 
     groups.add_user_to_group(group_id=group_id, user_id=user.id)
 
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
+    assert not permissions.object_is_public(object_id)
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
 
     permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.READ)
 
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
+    assert not permissions.object_is_public(object_id)
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
 
     permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.READ)
     permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.WRITE)
 
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
+    assert not permissions.object_is_public(object_id)
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
-
-    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.NONE)
-    permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.NONE)
-
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
-        creator.id: Permissions.GRANT
-    }
-    assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
 
     permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.READ)
     permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.GRANT)
     groups.remove_user_from_group(group_id=group_id, user_id=user.id)
 
-    assert permissions.get_object_permissions(object_id=object_id) == {
-        None: Permissions.NONE,
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.READ
     }
+    assert not permissions.object_is_public(object_id)
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.READ
 
+
+def test_object_permissions_for_groups(users, independent_action_object):
+    user, creator = users
+    object_id = independent_action_object.object_id
+    group_id = groups.create_group("Example Group", "", creator.id)
+
+    assert permissions.get_object_permissions_for_groups(object_id) == {}
+
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions_for_groups(object_id) == {
+        group_id: Permissions.WRITE
+    }
+
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.NONE)
+
+    assert permissions.get_object_permissions_for_groups(object_id) == {}

@@ -38,12 +38,8 @@ def set_object_public(object_id, is_public=True):
     db.session.commit()
 
 
-def get_object_permissions(object_id, include_instrument_responsible_users=True, include_groups=True):
+def get_object_permissions_for_users(object_id, include_instrument_responsible_users=True, include_groups=True):
     object_permissions = {}
-    if object_is_public(object_id):
-        object_permissions[None] = Permissions.READ
-    else:
-        object_permissions[None] = Permissions.NONE
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=object_id).all():
         object_permissions[user_object_permissions.user_id] = user_object_permissions.permissions
     if include_instrument_responsible_users:
@@ -54,6 +50,14 @@ def get_object_permissions(object_id, include_instrument_responsible_users=True,
             for user_id in get_group_member_ids(group_object_permissions.group_id):
                 if user_id not in object_permissions or object_permissions[user_id] in group_object_permissions.permissions:
                     object_permissions[user_id] = group_object_permissions.permissions
+    return object_permissions
+
+
+def get_object_permissions_for_groups(object_id: int) -> typing.Dict[int, Permissions]:
+    object_permissions = {}
+    for group_object_permissions in GroupObjectPermissions.query.filter_by(object_id=object_id).all():
+        if group_object_permissions.permissions != Permissions.NONE:
+            object_permissions[group_object_permissions.group_id] = group_object_permissions.permissions
     return object_permissions
 
 

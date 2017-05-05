@@ -618,9 +618,8 @@ def test_update_object_permissions(flask_server, user):
     # TODO: remove this for production
     sampledb.logic.permissions.set_object_public(object.object_id, False)
 
-    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        None: sampledb.logic.permissions.Permissions.NONE,
         user.id: sampledb.logic.permissions.Permissions.GRANT
     }
     assert not sampledb.logic.permissions.object_is_public(object.object_id)
@@ -644,9 +643,8 @@ def test_update_object_permissions(flask_server, user):
         assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        None: sampledb.logic.permissions.Permissions.READ,
         user.id: sampledb.logic.permissions.Permissions.GRANT
     }
     assert sampledb.logic.permissions.object_is_public(object.object_id)
@@ -669,9 +667,8 @@ def test_update_object_permissions(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        None: sampledb.logic.permissions.Permissions.NONE,
         user.id: sampledb.logic.permissions.Permissions.GRANT
     }
     assert not sampledb.logic.permissions.object_is_public(object.object_id)
@@ -686,9 +683,8 @@ def test_update_object_permissions(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        None: sampledb.logic.permissions.Permissions.NONE,
         user.id: sampledb.logic.permissions.Permissions.READ
     }
     assert not sampledb.logic.permissions.object_is_public(object.object_id)
@@ -719,9 +715,8 @@ def test_object_permissions_add_user(flask_server, user):
     # TODO: remove this for production
     sampledb.logic.permissions.set_object_public(object.object_id, False)
 
-    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        None: sampledb.logic.permissions.Permissions.NONE,
         user.id: sampledb.logic.permissions.Permissions.GRANT
     }
     assert not sampledb.logic.permissions.object_is_public(object.object_id)
@@ -749,9 +744,8 @@ def test_object_permissions_add_user(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions(object.object_id)
+    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        None: sampledb.logic.permissions.Permissions.NONE,
         user.id: sampledb.logic.permissions.Permissions.GRANT,
         user2.id: sampledb.logic.permissions.Permissions.WRITE
     }
