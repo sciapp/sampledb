@@ -758,3 +758,56 @@ def test_object_permissions_add_user(flask_server, user):
         assert user_log_entries[0].data == {
             'object_id': object.object_id
         }
+
+
+def test_object_permissions_add_group(flask_server, user):
+    action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }
+    })
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    object = sampledb.models.Objects.create_object(
+        data=data,
+        schema=action.schema,
+        user_id=user.id,
+        action_id=action.id
+    )
+
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user.id)
+
+    assert sampledb.logic.permissions.get_object_permissions_for_groups(object.object_id) == {}
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find_all('input', {'name': 'csrf_token'})[2]['value']
+
+    with flask_server.app.app_context():
+        assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
+    form_data = {
+        'add_group_permissions': 'add_group_permissions',
+        'csrf_token': csrf_token,
+        'group_id': str(group_id),
+        'permissions': 'write',
+    }
+    r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
+    assert r.status_code == 200
+    assert sampledb.logic.permissions.get_object_permissions_for_groups(object.object_id) == {
+        group_id: sampledb.logic.permissions.Permissions.WRITE
+    }
+
+    with flask_server.app.app_context():
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
+        assert len(user_log_entries) == 1
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        assert user_log_entries[0].user_id == user.id
+        assert user_log_entries[0].data == {
+            'object_id': object.object_id
+        }
