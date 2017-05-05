@@ -126,10 +126,10 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
 {% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
 {% endblock %}
