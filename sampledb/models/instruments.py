@@ -5,7 +5,7 @@
 
 import enum
 
-from sampledb import db
+from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

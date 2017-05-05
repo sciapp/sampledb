@@ -44,10 +44,14 @@ class InvalidGroupNameError(ValueError):
     pass
 
 
-def create_group(name: str, description: str='') -> int:
+def create_group(name: str, description: str, initial_user_id: int) -> int:
     if not 1 <= len(name) <= 100:
         raise InvalidGroupNameError()
+    user = User.query.get(initial_user_id)
+    if user is None:
+        raise UserDoesNotExistError()
     group = groups.Group(name=name, description=description)
+    group.members.append(user)
     db.session.add(group)
     try:
         db.session.commit()
@@ -131,3 +135,6 @@ def remove_user_from_group(group_id: int, user_id: int) -> None:
     if user not in group.members:
         raise UserNotMemberOfGroupError()
     group.members.remove(user)
+    if not group.members:
+        db.session.delete(group)
+    db.session.commit()

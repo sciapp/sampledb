@@ -6,8 +6,8 @@
 import flask
 import flask_login
 
-from sampledb.frontend import frontend
-from sampledb.logic import user_log
+from .. import frontend
+from ...logic import user_log
 
 
 @frontend.route('/users/me/activity')

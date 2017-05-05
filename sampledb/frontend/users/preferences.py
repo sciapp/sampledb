@@ -7,17 +7,18 @@ import flask
 import flask_login
 import bcrypt
 
-from sampledb import db
+from ... import db
 
-from sampledb.frontend import frontend
-from sampledb.logic import user_log
-from sampledb.frontend.authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
-from sampledb.frontend.users_forms import RequestPasswordResetForm, PasswordForm
-from sampledb.logic.authentication import login, add_login, remove_authentication_method
-from sampledb.logic.utils import send_confirm_email, send_recovery_email
-from sampledb.logic.security_tokens import verify_token
+from .. import frontend
+from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
+from ..users_forms import RequestPasswordResetForm, PasswordForm
 
-from sampledb.models import Authentication, AuthenticationType, User
+from ...logic import user_log
+from ...logic.authentication import login, add_login, remove_authentication_method
+from ...logic.utils import send_confirm_email, send_recovery_email
+from ...logic.security_tokens import verify_token
+
+from ...models import Authentication, AuthenticationType, User
 
 
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])

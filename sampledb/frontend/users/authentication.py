@@ -6,11 +6,11 @@
 import flask
 import flask_login
 
-from sampledb.frontend import frontend
-from sampledb.logic.authentication import login
-from sampledb.frontend.users_forms import SigninForm, SignoutForm
-from sampledb.models import User
-from sampledb import login_manager
+from .. import frontend
+from ...logic.authentication import login
+from ...frontend.users_forms import SigninForm, SignoutForm
+from ...models import User
+from ... import login_manager
 
 
 @login_manager.user_loader

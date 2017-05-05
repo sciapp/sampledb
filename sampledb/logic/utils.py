@@ -9,7 +9,7 @@ import flask_mail
 
 from .. import mail
 from .security_tokens import generate_token
-from sampledb.models import Authentication, AuthenticationType
+from ..models import Authentication
 
 
 def send_confirm_email(email, id, salt):
