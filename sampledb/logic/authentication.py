@@ -4,10 +4,9 @@ import flask_login
 import flask_mail
 
 
-from .. import logic
-from sampledb.logic.ldap import validate_user, get_user_info, LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
-from .. import db
-from ..models import Authentication, AuthenticationType, User, UserType
+from .. import logic, db
+from ..logic.ldap import validate_user, get_user_info, LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
+from ..models import Authentication, AuthenticationType
 
 
 class OnlyOneAuthenticationMethod(Exception):

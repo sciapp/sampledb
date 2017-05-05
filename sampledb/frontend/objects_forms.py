@@ -20,12 +20,23 @@ class ObjectUserPermissionsForm(FlaskForm):
     )
 
 
+class ObjectGroupPermissionsForm(FlaskForm):
+    group_id = IntegerField(
+        validators=[InputRequired()]
+    )
+    permissions = SelectField(
+        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
+        validators=[InputRequired()]
+    )
+
+
 class ObjectPermissionsForm(FlaskForm):
     public_permissions = SelectField(
         choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ)],
         validators=[InputRequired()]
     )
     user_permissions = FieldList(FormField(ObjectUserPermissionsForm), min_entries=0)
+    group_permissions = FieldList(FormField(ObjectGroupPermissionsForm), min_entries=0)
 
 
 class ObjectForm(FlaskForm):

@@ -6,7 +6,7 @@
 import flask
 import flask_login
 
-from sampledb.frontend import frontend
+from .. import frontend
 
 
 @frontend.route('/users/me')

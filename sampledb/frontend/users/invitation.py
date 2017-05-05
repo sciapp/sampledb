@@ -7,16 +7,16 @@ import flask
 import flask_login
 import bcrypt
 
-from sampledb import db
+from ... import db
 
-from sampledb.frontend import frontend
-from sampledb.logic.authentication import insert_user_and_authentication_method_to_db
-from sampledb.logic.utils import send_confirm_email
-from sampledb.logic.security_tokens import verify_token
+from .. import frontend
+from ...logic.authentication import insert_user_and_authentication_method_to_db
+from ...logic.utils import send_confirm_email
+from ...logic.security_tokens import verify_token
 
-from sampledb.models import Authentication, AuthenticationType, User, UserType
+from ...models import Authentication, AuthenticationType, User, UserType
 
-from sampledb.frontend.users_forms import InvitationForm, RegistrationForm
+from ..users_forms import InvitationForm, RegistrationForm
 
 
 @frontend.route('/users/invitation', methods=['GET', 'POST'])

@@ -11,9 +11,9 @@ import os
 import flask
 import flask_login
 
-from sampledb import logic
-from sampledb.logic.authentication import login
-from sampledb.models import Permissions, Objects
+from . import logic
+from .logic.authentication import login
+from .models import Permissions, Objects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

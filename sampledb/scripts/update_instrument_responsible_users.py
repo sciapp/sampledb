@@ -8,7 +8,7 @@ Usage: python -m sampledb update_instrument_responsible_users <instrument_id> <i
 import sys
 from .. import create_app
 from ..logic.instruments import get_instrument, add_instrument_responsible_user, remove_instrument_responsible_user
-from ..logic.authentication import User
+from ..models import User
 
 
 def main(arguments):

@@ -11,6 +11,7 @@ import sampledb
 from sampledb.models import Objects, User, UserType, ActionType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user, create_action
 from sampledb.logic.object_log import create_object
+from sampledb.logic import groups, permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -31,6 +32,8 @@ def setup_data(app):
         sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
+    group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id)
+
     # Setup autologin for testing
     @app.route('/users/me/autologin')
     @app.route('/users/<int:user_id>/autologin')
@@ -38,7 +41,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object', object_id=1))
+        return flask.redirect(flask.url_for('frontend.object_permissions', object_id=2))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -56,6 +59,8 @@ def setup_data(app):
     create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+
+    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
 
     instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)

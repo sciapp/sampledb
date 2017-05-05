@@ -5,6 +5,7 @@
 
 import enum
 from .. import db
+from .groups import Group
 from .users import User
 from .objects import Objects
 
@@ -46,6 +47,19 @@ class UserObjectPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(object_id, user_id),
+        {},
+    )
+
+
+class GroupObjectPermissions(db.Model):
+    __tablename__ = 'group_object_permissions'
+
+    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey(Group.id, ondelete="CASCADE"), nullable=False)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(object_id, group_id),
         {},
     )
 

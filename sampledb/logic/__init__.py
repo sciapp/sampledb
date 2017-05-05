@@ -6,6 +6,7 @@
 from . import authentication
 from . import comments
 from . import datatypes
+from . import groups
 from . import instruments
 from . import ldap
 from . import object_log
