@@ -20,7 +20,7 @@ import typing
 from .. import db
 from .instruments import get_action
 from .groups import get_user_groups, get_group_member_ids
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, Objects, ActionType, Action, Object
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, Objects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -125,9 +125,14 @@ def set_group_object_permissions(object_id: int, group_id: int, permissions: Per
 
 
 def set_initial_permissions(obj):
-    set_user_object_permissions(object_id=obj.object_id, user_id=obj.user_id, permissions=Permissions.GRANT)
-    # TODO: remove this for production use
-    set_object_public(object_id=obj.object_id)
+    default_user_permissions = get_default_permissions_for_users(creator_id=obj.user_id)
+    for user_id, permissions in default_user_permissions.items():
+        set_user_object_permissions(object_id=obj.object_id, user_id=user_id, permissions=permissions)
+    default_group_permissions = get_default_permissions_for_groups(creator_id=obj.user_id)
+    for group_id, permissions in default_group_permissions.items():
+        set_group_object_permissions(object_id=obj.object_id, group_id=group_id, permissions=permissions)
+    should_be_public = default_is_public(creator_id=obj.user_id)
+    set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
 Objects.create_object_callbacks.append(set_initial_permissions)
 
@@ -147,3 +152,66 @@ def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_
     objects = Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter)
     objects = [obj for obj in objects if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
     return objects
+
+
+class InvalidDefaultPermissionsError(Exception):
+    pass
+
+
+def get_default_permissions_for_users(creator_id: int) -> typing.Dict[int, Permissions]:
+    default_permissions = {}
+    for user_permissions in DefaultUserPermissions.query.filter_by(creator_id=creator_id).all():
+        if user_permissions.permissions != Permissions.NONE:
+            default_permissions[user_permissions.user_id] = user_permissions.permissions
+    default_permissions[creator_id] = Permissions.GRANT
+    return default_permissions
+
+
+def set_default_permissions_for_user(creator_id: int, user_id: int, permissions: Permissions) -> None:
+    if user_id == creator_id:
+        if permissions == Permissions.GRANT:
+            return
+        else:
+            raise InvalidDefaultPermissionsError("creator will always get GRANT permissions")
+    user_permissions = DefaultUserPermissions.query.filter_by(creator_id=creator_id, user_id=user_id).first()
+    if user_permissions is None:
+        user_permissions = DefaultUserPermissions(creator_id=creator_id, user_id=user_id, permissions=permissions)
+    else:
+        user_permissions.permissions = permissions
+    db.session.add(user_permissions)
+    db.session.commit()
+
+
+def get_default_permissions_for_groups(creator_id: int) -> typing.Dict[int, Permissions]:
+    default_permissions = {}
+    for group_permissions in DefaultGroupPermissions.query.filter_by(creator_id=creator_id).all():
+        if group_permissions.permissions != Permissions.NONE:
+            default_permissions[group_permissions.group_id] = group_permissions.permissions
+    return default_permissions
+
+
+def set_default_permissions_for_group(creator_id: int, group_id: int, permissions: Permissions) -> None:
+    group_permissions = DefaultGroupPermissions.query.filter_by(creator_id=creator_id, group_id=group_id).first()
+    if group_permissions is None:
+        group_permissions = DefaultGroupPermissions(creator_id=creator_id, group_id=group_id, permissions=permissions)
+    else:
+        group_permissions.permissions = permissions
+    db.session.add(group_permissions)
+    db.session.commit()
+
+
+def default_is_public(creator_id: int) -> bool:
+    public_permissions = DefaultPublicPermissions.query.filter_by(creator_id=creator_id).first()
+    if public_permissions is None:
+        return False
+    return public_permissions.is_public
+
+
+def set_default_public(creator_id: int, is_public: bool=True) -> None:
+    public_permissions = DefaultPublicPermissions.query.filter_by(creator_id=creator_id).first()
+    if public_permissions is None:
+        public_permissions = DefaultPublicPermissions(creator_id=creator_id, is_public=is_public)
+    else:
+        public_permissions.is_public = is_public
+    db.session.add(public_permissions)
+    db.session.commit()

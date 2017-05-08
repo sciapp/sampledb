@@ -105,9 +105,6 @@ def user(users):
 def test_public_objects(independent_action_object):
     object_id = independent_action_object.object_id
 
-    # TODO: remove this for production
-    permissions.set_object_public(object_id=object_id, is_public=False)
-
     assert not permissions.object_is_public(object_id)
     permissions.set_object_public(object_id)
     assert permissions.object_is_public(object_id)
@@ -118,9 +115,6 @@ def test_public_objects(independent_action_object):
 def test_default_user_object_permissions(user, independent_action_object):
     user_id = user.id
     object_id = independent_action_object.object_id
-
-    # TODO: remove this for production
-    permissions.set_object_public(object_id=object_id, is_public=False)
 
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
 
@@ -153,9 +147,6 @@ def test_get_user_public_object_permissions(user, independent_action_object):
 def test_get_object_permissions(users, instrument, instrument_action_object):
     user_id = users[0].id
     object_id = instrument_action_object.object_id
-
-    # TODO: remove this for production
-    permissions.set_object_public(object_id=object_id, is_public=False)
 
     # by default, only the user who created an object has access to it
     assert permissions.get_object_permissions_for_users(object_id=object_id) == {
@@ -191,9 +182,6 @@ def test_update_object_permissions(users, independent_action_object):
     user_id = users[0].id
     object_id = independent_action_object.object_id
 
-    # TODO: remove this for production
-    permissions.set_object_public(object_id=object_id, is_public=False)
-
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
     permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.WRITE)
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
@@ -213,9 +201,6 @@ def test_group_permissions(users, independent_action_object):
     user, creator = users
     object_id = independent_action_object.object_id
     group_id = groups.create_group("Example Group", "", creator.id)
-
-    # TODO: remove this for production
-    permissions.set_object_public(object_id=object_id, is_public=False)
 
     assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
@@ -287,3 +272,106 @@ def test_object_permissions_for_groups(users, independent_action_object):
     permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.NONE)
 
     assert permissions.get_object_permissions_for_groups(object_id) == {}
+
+
+def test_default_permissions_for_users(users, independent_action):
+    user, creator = users
+
+    # unless set otherwise, no user beside the creator (and instrument responsible users) will get initial permissions
+    assert permissions.get_default_permissions_for_users(creator_id=creator.id) == {
+        creator.id: Permissions.GRANT
+    }
+    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
+    assert permissions.get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False) == {
+        creator.id: Permissions.GRANT
+    }
+
+    permissions.set_default_permissions_for_user(creator_id=creator.id, user_id=user.id, permissions=Permissions.READ)
+
+    assert permissions.get_default_permissions_for_users(creator_id=creator.id) == {
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.READ
+    }
+
+    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
+    assert permissions.get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False) == {
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.READ
+    }
+
+    # the default permissions are only used when creating a new object.
+    permissions.set_default_permissions_for_user(creator_id=creator.id, user_id=user.id, permissions=Permissions.WRITE)
+
+    assert permissions.get_default_permissions_for_users(creator_id=creator.id) == {
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.WRITE
+    }
+    assert permissions.get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False) == {
+        creator.id: Permissions.GRANT,
+        user.id: Permissions.READ
+    }
+
+
+def test_default_permissions_for_creator(users):
+    user, creator = users
+
+    assert permissions.get_default_permissions_for_users(creator_id=creator.id) == {
+        creator.id: Permissions.GRANT
+    }
+
+    # the creator cannot receive less than GRANT default permissions
+    with pytest.raises(permissions.InvalidDefaultPermissionsError):
+        permissions.set_default_permissions_for_user(creator_id=creator.id, user_id=creator.id, permissions=Permissions.WRITE)
+
+    # setting the creator's default permissions to GRANT does nothing, but is acceptable
+    permissions.set_default_permissions_for_user(creator_id=creator.id, user_id=creator.id, permissions=Permissions.GRANT)
+    assert permissions.get_default_permissions_for_users(creator_id=creator.id) == {
+        creator.id: Permissions.GRANT
+    }
+
+
+def test_default_permissions_for_groups(users, independent_action):
+    user, creator = users
+    group_id = groups.create_group("Example Group", "", creator.id)
+
+    assert permissions.get_default_permissions_for_groups(creator_id=creator.id) == {}
+    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
+    assert permissions.get_object_permissions_for_groups(object_id=object_id) == {}
+
+    permissions.set_default_permissions_for_group(creator_id=creator.id, group_id=group_id, permissions=Permissions.READ)
+
+    assert permissions.get_default_permissions_for_groups(creator_id=creator.id) == {
+        group_id: Permissions.READ
+    }
+
+    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
+    assert permissions.get_object_permissions_for_groups(object_id=object_id) == {
+        group_id: Permissions.READ
+    }
+
+    # the default permissions are only used when creating a new object.
+    permissions.set_default_permissions_for_group(creator_id=creator.id, group_id=group_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_default_permissions_for_groups(creator_id=creator.id) == {
+        group_id: Permissions.WRITE
+    }
+    assert permissions.get_object_permissions_for_groups(object_id=object_id) == {
+        group_id: Permissions.READ
+    }
+
+
+def test_default_public_permissions(users, independent_action):
+    user, creator = users
+
+    assert not permissions.default_is_public(creator_id=creator.id)
+    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
+    assert not permissions.object_is_public(object_id=object_id)
+
+    permissions.set_default_public(creator_id=creator.id, is_public=True)
+    assert permissions.default_is_public(creator_id=creator.id)
+    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
+    assert permissions.object_is_public(object_id=object_id)
+
+    permissions.set_default_public(creator_id=creator.id, is_public=False)
+    assert not permissions.default_is_public(creator_id=creator.id)
+    assert permissions.object_is_public(object_id=object_id)
