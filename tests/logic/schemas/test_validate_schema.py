@@ -277,6 +277,25 @@ def test_validate_text_schema_invalid_key():
         validate_schema(schema)
 
 
+def test_validate_text_invalid_multiline_type():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'multiline': 'true'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_text_valid_multiline_type():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'multiline': True
+    }
+    validate_schema(schema)
+
+
 def test_validate_datetime_schema():
     schema = {
         'title': 'Example',

@@ -151,7 +151,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raises: ValidationError, if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -184,6 +184,8 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
             re.compile(schema['pattern'])
         except re.error:
             raise ValidationError('pattern is no valid regular expression', path)
+    if 'multiline' in schema and not isinstance(schema['multiline'], bool):
+        raise ValidationError('multiline must be bool', path)
 
 
 def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
