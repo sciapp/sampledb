@@ -68,3 +68,36 @@ class PublicObjects(db.Model):
     __tablename__ = 'public_objects'
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
+
+
+class DefaultUserPermissions(db.Model):
+    __tablename__ = 'default_user_permissions'
+
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(creator_id, user_id),
+        {},
+    )
+
+
+class DefaultGroupPermissions(db.Model):
+    __tablename__ = 'default_group_permissions'
+
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey(Group.id, ondelete="CASCADE"), nullable=False)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(creator_id, group_id),
+        {},
+    )
+
+
+class DefaultPublicPermissions(db.Model):
+    __tablename__ = 'default_public_permissions'
+
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), primary_key=True)
+    is_public = db.Column(db.Boolean, default=False, nullable=False)

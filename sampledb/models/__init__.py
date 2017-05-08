@@ -16,6 +16,6 @@ from .groups import Group
 from .instruments import Instrument, Action, ActionType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
-from .permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects
+from .permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
 from .users import User, UserType
 from .user_log import UserLogEntry, UserLogEntryType
