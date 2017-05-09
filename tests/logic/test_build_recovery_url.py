@@ -45,20 +45,8 @@ def users(app):
 def test_build_recovery_url_with_wrong_parameter(users):
     # build recovery_url_of_every_authentication_method not possible
     authentication_method = Authentication.query.filter(Authentication.user_id == users[0].id).first()
-    data = sampledb.logic.utils.build_confirm_url(authentication_method, 'example@fz-juelich.de', None)
-    assert data is False
-
-    data = sampledb.logic.utils.build_confirm_url(authentication_method, None,  'password')
-
-    assert data is False
-
-    data = sampledb.logic.utils.build_confirm_url(authentication_method, 'example@fz-juelich.de', 'pw')
-
-    assert data is False
-
-    data = sampledb.logic.utils.build_confirm_url(None, 'example@fz-juelich.de',  'password')
-
-    assert data is False
+    with pytest.raises(Exception):
+        sampledb.logic.utils.build_confirm_url(None)
 
 
 def test_build_recovery_url_email(app, users):
@@ -66,11 +54,8 @@ def test_build_recovery_url_email(app, users):
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         authentication_method = Authentication.query.filter(Authentication.user_id == users[0].id).first()
-        data = sampledb.logic.utils.build_confirm_url(authentication_method, 'example@fz-juelich.de', 'password')
-
-        assert data is not False
-        assert data['confirm_url'].startswith('http://localhost/users')
-        assert data['type'] is 'EMAIL'
+        confirm_url = sampledb.logic.utils.build_confirm_url(authentication_method)
+        assert confirm_url.startswith('http://localhost/users')
 
 
 def test_build_recovery_url_ldap(app, users):
@@ -80,13 +65,7 @@ def test_build_recovery_url_ldap(app, users):
     user = sampledb.logic.authentication.login(username, password)
     assert user is not None
 
-    app.config['SERVER_NAME'] = 'localhost'
-    with app.app_context():
-        authentication_method = Authentication.query.filter(Authentication.user_id == user.id).first()
-        data = sampledb.logic.utils.build_confirm_url(authentication_method, 'd.henkel@fz-juelich.de', 'password')
-
-        assert data is not False
-
-        assert data['confirm_url'] is None
-        assert data['type'] is 'LDAP'
+    authentication_method = Authentication.query.filter(Authentication.user_id == user.id).first()
+    with pytest.raises(AssertionError):
+        sampledb.logic.utils.build_confirm_url(authentication_method)
 

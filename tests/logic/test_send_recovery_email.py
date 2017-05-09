@@ -69,38 +69,6 @@ def user2(app):
     return user
 
 
-
-def test_send_recovery_email_with_wrong_parameters(app):
-    with app.app_context():
-        # Send recovery email
-        username = app.config['TESTING_LDAP_LOGIN']
-        password = app.config['TESTING_LDAP_PW']
-        user = sampledb.logic.authentication.login(username, password)
-        users = []
-        assert user is not None
-
-        result = sampledb.logic.utils.send_recovery_email(user.email, None, 'password')
-
-        assert result is False
-
-        result = sampledb.logic.utils.send_recovery_email(user.email, users, 'pw')
-
-        assert result is False
-        users.append(user)
-
-        result = sampledb.logic.utils.send_recovery_email(user.email, users, 'pw')
-
-        assert result is False
-
-        result = sampledb.logic.utils.send_recovery_email('', users, 'pw')
-
-        assert result is False
-
-        result = sampledb.logic.utils.send_recovery_email(None, users, 'pw')
-
-        assert result is False
-
-
 def test_send_recovery_email_no_authentification_method(app, user_without_authentication):
     with app.app_context():
         # Send recovery email
@@ -109,20 +77,18 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
         assert user is not None
         users.append(user)
 
-        # not authentication_method
-        result = sampledb.logic.utils.send_recovery_email(user.email, users, 'password')
-        assert result is True
+        # no authentication_method
+        sampledb.logic.utils.send_recovery_email(user.email)
 
-        # email authentication for ldap-user
         with sampledb.mail.record_messages() as outbox:
-            sampledb.logic.utils.send_recovery_email(user.email, users, 'password')
+            sampledb.logic.utils.send_recovery_email(user.email)
 
         # check, if email was sent
         assert len(outbox) == 1
         assert user.email in outbox[0].recipients
         message = outbox[0].html
         assert 'Recovery Request' in message
-        assert 'There is no authentication method' in message
+        assert 'There is no way to sign in to your SampleDB account' in message
 
 
 def test_send_recovery_email_for_ldap_authentication(app):
@@ -137,7 +103,7 @@ def test_send_recovery_email_for_ldap_authentication(app):
 
         # email authentication for ldap-user
         with sampledb.mail.record_messages() as outbox:
-            sampledb.logic.utils.send_recovery_email(user.email, users, 'password')
+            sampledb.logic.utils.send_recovery_email(user.email)
 
         assert len(outbox) == 1
         assert user.email in outbox[0].recipients
@@ -157,13 +123,13 @@ def test_send_recovery_email_for_email_authentication(app, user):
         users.append(user)
 
         with sampledb.mail.record_messages() as outbox:
-            sampledb.logic.utils.send_recovery_email(user.email, users, 'password')
+            sampledb.logic.utils.send_recovery_email(user.email)
 
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
         assert 'Recovery Request' in message
-        assert 'Click this link to reset the password' in message
+        assert 'click here' in message
 
 
 def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, user2):
@@ -175,13 +141,13 @@ def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, us
         users.append(user2)
 
         with sampledb.mail.record_messages() as outbox:
-            sampledb.logic.utils.send_recovery_email(user.email, users, 'password')
+            sampledb.logic.utils.send_recovery_email(user.email)
 
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
         assert 'Recovery Request' in message
-        assert 'Click this link to reset the password' in message
+        assert 'click here' in message
         document = BeautifulSoup(message, 'html.parser')
         for user in users:
             preference_url = 'localhost/users/{}/preferences'.format(user.id)
