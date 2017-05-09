@@ -49,7 +49,7 @@ def user_preferences(user_id):
             user = flask_login.current_user
             return change_preferences(user, user_id)
     else:
-        return flask.redirect(flask.url_for('frontend.index'))
+        return flask.current_app.login_manager.unauthorized()
 
 
 def change_preferences(user, user_id):
