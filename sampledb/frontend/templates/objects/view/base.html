@@ -56,49 +56,49 @@
 
   {% if object_log_entries %}
     <h4>Activity Log</h4>
-    <table class="table">
+    <table class="table" id="activity_log">
       <thead>
         <tr>
           <th scope="col" style="white-space: nowrap;width: 1%;">Datetime</th>
           <th scope="col"></th>
-          <th scope="col" style="white-space: nowrap;width: 1%;"></th>
+          <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;"><button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="<label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot; id=&quot;activity_log_filter_versions&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'versions', ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}']);&quot;/> Versions</label><br /><label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot; id=&quot;activity_log_filter_measurements&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'measurements', ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}']);&quot; /> Measurements</label><br /><label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot;  id=&quot;activity_log_filter_comments&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'comments', ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}']);&quot; /> Comments</label><br /><label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot; id=&quot;activity_log_filter_other&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'other', ['{{ ObjectLogEntryType.OTHER.name.lower() }}']);&quot; /> Other</label><script>window.update_activity_log_filter_states();</script>"><i class="fa fa-filter" style="font-size: 1.5rem"></i>  <span class="badge" id="activity_log_counter">2&thinsp;/&thinsp;2</span></button></th>
         </tr>
       </thead>
       <tbody>
       {% for object_log_entry in object_log_entries %}
-        <tr>
+        <tr data-activity-log-type="{{ object_log_entry.type.name.lower() }}">
           <td style="white-space: nowrap;width: 1%;">{{ object_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
           {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
             <td>
               <a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> created the object.
             </td>
-            <td>
+            <td class="text-right">
               <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">View</a>
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> edited the object.</td>
-            <td>
+            <td class="text-right">
               {% if 'version_id' in object_log_entry.data %}
                 <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']) }}">View</a>
               {% endif %}
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> restored object <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']) }}">version #{{ object_log_entry.data['restored_version_id'] }}</a>.</td>
-            <td>
+            <td class="text-right">
               {% if 'version_id' in object_log_entry.data %}
                 <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']) }}">View</a>
               {% endif %}
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> used the object in measurement <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ object_log_entry.data['measurement'].data['name']['text'] }}</a>.</td>
-            <td>
+            <td class="text-right">
               {% if 'measurement_id' in object_log_entry.data %}
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">View</a>
               {% endif %}
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> posted a comment for this object.</td>
-            <td>
+            <td class="text-right">
               {% if 'comment_id' in object_log_entry.data %}
                 <a href="#comment-{{ object_log_entry.data['comment_id'] }}">View</a>
               {% endif %}
@@ -169,6 +169,42 @@
           return true;
         });
       {% endif %}
+      $(function () {
+        $('[data-toggle="popover"]').popover()
+      });
+      window.activity_log_toggle = function(should_show, category, type_list) {
+        var activity_log = $('#activity_log').find('> tbody');
+        type_list.forEach(function(activity_log_type) {
+          var activity_log_rows = activity_log.find('tr[data-activity-log-type='+activity_log_type+']');
+          if (should_show) {
+            activity_log_rows.css({display: 'table-row'});
+          } else {
+            activity_log_rows.css({display: 'none'});
+          }
+        });
+        $('#activity_log_counter').html(''+activity_log.find('tr:visible').length+'&thinsp;/&thinsp;'+activity_log.find('tr').length);
+        window.activity_log_toggle.current_state[category] = should_show;
+      };
+      window.activity_log_toggle.current_state = {
+        "versions": true,
+        "measurements": true,
+        "comments": true,
+        "other": true
+      };
+      window.update_activity_log_filter_states = function() {
+        if (window.activity_log_toggle.current_state['versions']) {
+          $('#activity_log_filter_versions').attr('checked', 'checked');
+        }
+        if (window.activity_log_toggle.current_state['measurements']) {
+          $('#activity_log_filter_measurements').attr('checked', 'checked');
+        }
+        if (window.activity_log_toggle.current_state['comments']) {
+          $('#activity_log_filter_comments').attr('checked', 'checked');
+        }
+        if (window.activity_log_toggle.current_state['other']) {
+          $('#activity_log_filter_other').attr('checked', 'checked');
+        }
+      };
     });
 </script>
 {% endblock %}
