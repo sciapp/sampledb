@@ -148,6 +148,47 @@ def apply_action_to_data(data, schema, action, form_data):
     return new_form_data
 
 
+def object_properties(object):
+    """
+    Returns a list of all properties of an object, as 3-tuples consisting of
+    the path to the property, its schema and the actual data.
+    """
+    def iter_object_properties(previous_path, schema, data):
+        if schema['type'] == 'object':
+            for property_name in schema['properties']:
+                if property_name in data:
+                    for property in iter_object_properties(previous_path + [property_name], schema['properties'][property_name], data[property_name]):
+                        yield property
+        elif schema['type'] == 'array':
+            for index, item in enumerate(data):
+                for property in iter_object_properties(previous_path + [index], schema['items'], item):
+                    yield property
+        else:
+            yield previous_path, schema, data
+    return list(iter_object_properties([], object.schema, object.data))
+
+
+def update_object_references(object):
+    action_type = get_action(object.action_id).type
+    for path, schema, data in object_properties(object):
+        if schema['type'] == 'sample' and data is not None and data['object_id'] is not None:
+            referenced_object_id = data['object_id']
+            previous_referenced_object_id = None
+            if object.version_id > 0:
+                previous_object_version = Objects.get_object_version(object.object_id, object.version_id-1)
+                previous_data = previous_object_version.data
+                try:
+                    for path_element in path:
+                        previous_data = previous_data[path_element]
+                except (KeyError, IndexError):
+                    pass
+                if previous_data is not None and previous_data['object_id'] is not None:
+                    previous_referenced_object_id = previous_data['object_id']
+            if referenced_object_id != previous_referenced_object_id:
+                if action_type == ActionType.MEASUREMENT:
+                    object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=flask_login.current_user.id, measurement_id=object.object_id)
+
+
 def show_object_form(object, action):
     if object is None:
         data = generate_placeholder(action.schema)
@@ -195,19 +236,7 @@ def show_object_form(object, action):
                     object_log.edit_object(object_id=object.object_id, user_id=flask_login.current_user.id, version_id=object.version_id)
                     flask.flash('The object was updated successfully.', 'success')
 
-                # TODO: gather references to other objects more effectively
-                if get_action(object.action_id).type == ActionType.MEASUREMENT:
-                    if 'sample' in object.schema.get('properties', {}) and object.schema['properties']['sample']['type'] == 'sample':
-                        if 'sample' in object.data and object.data['sample'] is not None:
-                            sample_id = object.data['sample']['object_id']
-                            previous_sample_id = None
-                            if object.version_id > 0:
-                                previous_object_version = Objects.get_object_version(object.object_id, object.version_id-1)
-                                if 'sample' in previous_object_version.schema.get('properties', {}) and previous_object_version.schema['properties']['sample']['type'] == 'sample':
-                                    if 'sample' in previous_object_version.data and previous_object_version.data['sample'] is not None:
-                                        previous_sample_id = previous_object_version.data['sample']['object_id']
-                            if sample_id != previous_sample_id:
-                                object_log.use_object_in_measurement(object_id=sample_id, user_id=flask_login.current_user.id, measurement_id=object.object_id)
+                update_object_references(object)
 
                 return flask.redirect(flask.url_for('.object', object_id=object.object_id))
         elif any(name.startswith('action_object_') and (name.endswith('_delete') or name.endswith('_add')) for name in form_data):
