@@ -19,7 +19,6 @@ from ..test_utils import flask_server, app
 def user_without_authentication(app):
     with app.app_context():
         user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        print(user)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh

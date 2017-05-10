@@ -11,11 +11,11 @@ from ... import db
 
 from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
-from ..users_forms import RequestPasswordResetForm, PasswordForm
+from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm
 
 from ...logic import user_log
-from ...logic.authentication import login, add_login, remove_authentication_method
+from ...logic.authentication import login, add_login, remove_authentication_method, change_password_in_authentication_method
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, default_is_public, set_default_public
@@ -58,6 +58,7 @@ def change_preferences(user, user_id):
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     authentication_method_form = AuthenticationMethodForm()
+    authentication_password_form = AuthenticationPasswordForm()
 
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
@@ -86,10 +87,33 @@ def change_preferences(user, user_id):
         change_user_form.name.data = user.name
     if change_user_form.email.data is None or change_user_form.email.data == "":
         change_user_form.email.data = user.email
-    if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
-        if change_user_form.validate_on_submit():
-            pass
 
+    if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
+        if authentication_password_form.validate_on_submit():
+            authentication_method_id = authentication_password_form.id.data
+            try:
+                change_password_in_authentication_method(user_id, authentication_method_id, authentication_password_form.password.data)
+            except Exception as e:
+                flask.flash("Failed to change password.", 'error')
+                return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
+                                             authentication_password_form=authentication_password_form,
+                                             default_permissions_form=default_permissions_form,
+                                             add_user_permissions_form=add_user_permissions_form,
+                                             add_group_permissions_form=add_group_permissions_form,
+                                             Permissions=Permissions,
+                                             User=User,
+                                             users=users,
+                                             groups=groups,
+                                             get_group=get_group,
+                                             user_permissions=user_permissions,
+                                             group_permissions=group_permissions,
+                                             public_permissions=public_permissions,
+                                             authentication_method_form=authentication_method_form,
+                                             authentication_form=authentication_form,
+                                             confirmed_authentication_methods=confirmed_authentication_methods,
+                                             authentications=authentication_methods, error=str(e))
+            user_log.edit_user_preferences(user_id=user_id)
+            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
             if change_user_form.name.data != user.name:
@@ -110,6 +134,7 @@ def change_preferences(user, user_id):
             except Exception as e:
                 flask.flash("Failed to remove the authentication method.", 'error')
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
+                                             authentication_password_form=authentication_password_form,
                                              default_permissions_form=default_permissions_form,
                                              add_user_permissions_form=add_user_permissions_form,
                                              add_group_permissions_form=add_group_permissions_form,
@@ -144,6 +169,7 @@ def change_preferences(user, user_id):
                 add_login(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
             except Exception as e:
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
+                                             authentication_password_form=authentication_password_form,
                                              default_permissions_form=default_permissions_form,
                                              add_user_permissions_form=add_user_permissions_form,
                                              add_group_permissions_form=add_group_permissions_form,
@@ -198,6 +224,7 @@ def change_preferences(user, user_id):
         flask.flash("Successfully updated default permissions.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
+                                 authentication_password_form=authentication_password_form,
                                  default_permissions_form=default_permissions_form,
                                  add_user_permissions_form=add_user_permissions_form,
                                  add_group_permissions_form=add_group_permissions_form,
