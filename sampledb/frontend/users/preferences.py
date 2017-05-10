@@ -86,6 +86,10 @@ def change_preferences(user, user_id):
         change_user_form.name.data = user.name
     if change_user_form.email.data is None or change_user_form.email.data == "":
         change_user_form.email.data = user.email
+    if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
+        if change_user_form.validate_on_submit():
+            pass
+
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
             if change_user_form.name.data != user.name:
