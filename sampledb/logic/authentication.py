@@ -152,13 +152,3 @@ def change_password_in_authentication_method(user_id, authentication_method_id, 
     db.session.commit()
     return True
 
-
-def get_authentication_method_id_of_login_of_user(user_id, login):
-    if login is None or login == '':
-        return False
-    if user_id is None or user_id <= 0:
-        return False
-    authentication_method = Authentication.query.filter(Authentication.login['login'].astext == login, Authentication.user_id==user_id).first()
-    if authentication_method is None:
-        return False
-    return authentication_method.id

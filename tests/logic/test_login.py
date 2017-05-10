@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
 from sampledb.logic.ldap import LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
 from sampledb.logic.authentication import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, AuthenticationMethodAlreadyExists
-from sampledb.logic.authentication import remove_authentication_method, change_password_in_authentication_method, get_authentication_method_id_of_login_of_user
+from sampledb.logic.authentication import remove_authentication_method, change_password_in_authentication_method
 import sampledb
 import sampledb.models
 
@@ -134,9 +134,8 @@ def test_remove_authentication_method(flask_server, users):
 
 
     assert len(user.authentication_methods) == 2
-    authentication_id = get_authentication_method_id_of_login_of_user(user.id, username)
+    authentication_id = user.authentication_methods[0].id
     result = remove_authentication_method(user.id, authentication_id)
-
 
     assert len(user.authentication_methods) == 1
 
@@ -169,35 +168,19 @@ def test_change_password_in_authentication_method(flask_server, users):
     user = sampledb.logic.authentication.login(username, password)
     assert user is not None
     user_id = user.id
-    authentication_id = get_authentication_method_id_of_login_of_user(user_id, username)
+    authentication_id = user.authentication_methods[0].id
     result = change_password_in_authentication_method(user_id, authentication_id, 'abc')
     # authentication_method is LDAP, password not changed
     assert result is False
 
     user_id = users[2].id
-    authentication_id = get_authentication_method_id_of_login_of_user(user_id, 'ombe')
+    user = users[2]
+    authentication_id = user.authentication_methods[0].id
     result = change_password_in_authentication_method(user_id, authentication_id, 'abc')
     # change password if authentication_method is OTHER
     assert result is True
 
 
-def test_get_authentication_method_id_of_login_of_user(flask_server, users):
-
-    user_id = users[0].id
-    result = get_authentication_method_id_of_login_of_user(user_id, '')
-    # authentication_method_login is empty
-    assert result is False
-
-    result = get_authentication_method_id_of_login_of_user(0, 'example@fz-juelich.de')
-    # authentication_method_login is empty
-    assert result is False
-
-    result = get_authentication_method_id_of_login_of_user(None, 'example@fz-juelich.de')
-    # authentication_method_login is empty
-    assert result is False
-
-    result = get_authentication_method_id_of_login_of_user(user_id, 'example@fz-juelich.de')
-    assert result == 1
 
 
 
