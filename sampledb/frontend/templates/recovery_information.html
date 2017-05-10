@@ -1,19 +1,53 @@
-
-<h1 class="text-center">Recovery Request</h1>
-<div class="text-center">We received an account account recovery request for {{email}}. If you did not initiate this account recovery request, you can simply ignore this email.</div>
-{% if datalist|length > 0 %}
-<div class="text-center">If you initiated this request, click one of the following links to reset your password</div>
-  <h3 class="text-center">You have the following authentication methods:</h3>
-  {% for data in datalist%}
-    {% if data['type'] == "LDAP" %}
-      <div class="text-center"> You can use the PGI/JCNS account {{data['login']}} to log in to your account.</div>
-      <div class="text-center"> To set a new password for your PGI/JCNS account, please <a href="mailto:d.henkel@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administrator</a>.</div><br>
+<h1>Account Recovery Request</h1>
+<p>We received an account recovery request for {{email}}. If you did not initiate this account recovery request, you can simply ignore this email.</p>
+{% if users | length == 1 %}
+  {% with user = users[0] %}
+  {% if user.authentication_methods | length == 0 %}
+    <p>There is no way to sign in to your SampleDB account <b>{{ user.name }}</b> at this time. Please <a href="mailto:d.henkel@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administrator</a> to regain access to your account.</p>
+  {% elif user.authentication_methods | length == 1 %}
+    {% with authentication_method = user.authentication_methods[0] %}
+    {% if authentication_method.type.name.lower() == 'ldap' %}
+      <p>You can use the PGI/JCNS account <b>{{authentication_method.login['login']}}</b> to sign in to your SampleDB account <b>{{ user.name }}</b>. To set a new password for your PGI/JCNS account, please <a href="mailto:d.henkel@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administrator</a>.</p>
+    {% elif authentication_method.type.name.lower() == 'email' %}
+      <p>You can use the email address <b>{{authentication_method.login['login']}}</b> to sign in to your SampleDB account <b>{{ user.name }}</b>. To set a new password, please <a href="{{ password_reset_urls[authentication_method] }}">click here</a> or visit the following URL in your browser: <br />{{ password_reset_urls[authentication_method] }}</p>
     {% else %}
-      <div class="text-center"> You can use {{data['login']}} to log in to your account. Click this link to reset the password:</div>
-      <div class="text-center"><a href="{{data['confirm_url']}}" >{{data['confirm_url']}}</a></div><br><br>
+      <p>You can use the username <b>{{authentication_method.login['login']}}</b> to sign in to your SampleDB account <b>{{ user.name }}</b>. To set a new password, please <a href="{{ password_reset_urls[authentication_method] }}">click here</a> or visit the following URL in your browser: <br />{{ password_reset_urls[authentication_method] }}</p>
     {% endif %}
-  {% endfor %}
+    {% endwith %}
+  {% else %}
+    <p>Your SampleDB account <b>{{ user.name }}</b> has the following authentication methods:</p>
+    <ul>
+    {% for authentication_method in user.authentication_methods %}
+      <li>
+      {% if authentication_method.type.name.lower() == 'ldap' %}
+        You can use the PGI/JCNS account <b>{{authentication_method.login['login']}}</b> to sign in to your SampleDB account. To set a new password for your PGI/JCNS account, please <a href="mailto:d.henkel@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administrator</a>.
+      {% elif authentication_method.type.name.lower() == 'email' %}
+        You can use the email address <b>{{authentication_method.login['login']}}</b> to sign in to your SampleDB account. To set a new password, please <a href="{{ password_reset_urls[authentication_method] }}">click here</a> or visit the following URL in your browser: <br />{{ password_reset_urls[authentication_method] }}
+      {% else %}
+        You can use the username <b>{{authentication_method.login['login']}}</b> to sign in to your SampleDB account. To set a new password, please <a href="{{ password_reset_urls[authentication_method] }}">click here</a> or visit the following URL in your browser: <br />{{ password_reset_urls[authentication_method] }}
+      {% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  {% endwith %}
 {% else %}
-  <div class="text-center">There is no authentication method for {{email}} to log in. Please <a href="mailto:d.henkel@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administrator</a> to regain access to your account.</div>
+  <p>You have the following SampleDB accounts:</p>
+  {% for user in users %}
+    <li><b>{{ user.name }}</b>:
+      <ul>
+      {% for authentication_method in user.authentication_methods %}
+        <li>
+        {% if authentication_method.type.name.lower() == 'ldap' %}
+          You can use the PGI/JCNS account <b>{{authentication_method.login['login']}}</b> to sign in to this SampleDB account. To set a new password for your PGI/JCNS account, please <a href="mailto:d.henkel@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administrator</a>.
+        {% elif authentication_method.type.name.lower() == 'email' %}
+          You can use the email address <b>{{authentication_method.login['login']}}</b> to sign in to this SampleDB account. To set a new password, please <a href="{{ password_reset_urls[authentication_method] }}">click here</a> or visit the following URL in your browser: <br />{{ password_reset_urls[authentication_method] }}
+        {% else %}
+          You can use the username <b>{{authentication_method.login['login']}}</b> to sign in to this SampleDB account. To set a new password, please <a href="{{ password_reset_urls[authentication_method] }}">click here</a> or visit the following URL in your browser: <br />{{ password_reset_urls[authentication_method] }}
+        {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+    </li>
+  {% endfor %}
 {% endif %}
-

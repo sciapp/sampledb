@@ -261,18 +261,7 @@ def email_for_resetting_password():
             if '@' not in email:
                 has_error = True
             else:
-                auth = Authentication.query.filter(Authentication.login['login'].astext == email).first()
-                users = User.query.filter_by(email=str(email)).all()
-                userlist = []
-                if auth is not None:
-                    user = User.query.filter_by(email=str(email), id=auth.user.id).first()
-                    if user is None:
-                        userlist.append(auth.user)
-                if len(users) >0:
-                    for user in users:
-                        userlist.append(user)
-                    # send recovery link of all userids with this email
-                send_recovery_email(email, userlist, 'password')
+                send_recovery_email(email)
                 return flask.render_template('recovery_email_send.html',
                                              email=email, has_error=has_error)
         return flask.render_template('reset_password_by_email.html',
@@ -282,16 +271,10 @@ def email_for_resetting_password():
 
 def reset_password():
     token = flask.request.args.get('token')
-    data = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
-    email = data[0]
-    authentication_id = data[1]
-    userid = data[2]
-    if not userid or not authentication_id:
+    authentication_id = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
+    if not authentication_id:
         return flask.abort(404)
-    if email is None or '@' not in email:
-        return flask.abort(404)
-    authentication_method = Authentication.query.filter(Authentication.id == authentication_id,
-                                         Authentication.user_id == userid).first()
+    authentication_method = Authentication.query.filter(Authentication.id == authentication_id).first()
     password_form = PasswordForm()
     has_error = False
     if authentication_method is None:
@@ -300,7 +283,7 @@ def reset_password():
     if flask.request.method == "GET":
         # confirmation dialog
         return flask.render_template('password.html', password_form=password_form, has_error=has_error,
-                                     email=email, username=username)
+                                     user=authentication_method.user, username=username)
     else:
         if password_form.validate_on_submit():
             pw_hash = bcrypt.hashpw(password_form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
