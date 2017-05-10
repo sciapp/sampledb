@@ -61,7 +61,19 @@
         <tr>
           <th scope="col" style="white-space: nowrap;width: 1%;">Datetime</th>
           <th scope="col"></th>
-          <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;"><button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="<label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot; id=&quot;activity_log_filter_versions&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'versions', ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}']);&quot;/> Versions</label><br /><label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot; id=&quot;activity_log_filter_measurements&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'measurements', ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}']);&quot; /> Measurements</label><br /><label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot;  id=&quot;activity_log_filter_comments&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'comments', ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}']);&quot; /> Comments</label><br /><label style=&quot;font-weight:400&quot;><input type=&quot;checkbox&quot; id=&quot;activity_log_filter_other&quot; onclick=&quot;activity_log_toggle($(this).is(':checked'), 'other', ['{{ ObjectLogEntryType.OTHER.name.lower() }}']);&quot; /> Other</label><script>window.update_activity_log_filter_states();</script>"><i class="fa fa-filter" style="font-size: 1.5rem"></i>  <span class="badge" id="activity_log_counter"></span></button></th>
+          <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
+            <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
+              <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;versions&quot;);'/> Versions</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> Measurements</label><br />
+              <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> Comments</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> Other</label>
+              <script>
+                window.update_activity_log_filter_states();
+              </script>
+            ">
+              <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="activity_log_counter"></span>
+            </button>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -142,6 +154,7 @@
   <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/js.cookie.js') }}"></script>
 <script type="text/javascript">
     $(function () {
         $('.input-group.date').each(function() {
@@ -169,44 +182,61 @@
           return true;
         });
       {% endif %}
-      $(function () {
-        $('[data-toggle="popover"]').popover()
-      });
-      window.activity_log_toggle = function(should_show, category, type_list) {
-        var activity_log = $('#activity_log').find('> tbody');
-        type_list.forEach(function(activity_log_type) {
-          var activity_log_rows = activity_log.find('tr[data-activity-log-type='+activity_log_type+']');
-          if (should_show) {
-            activity_log_rows.css({display: 'table-row'});
-          } else {
-            activity_log_rows.css({display: 'none'});
-          }
+      {% if object_log_entries %}
+        $(function () {
+          $('[data-toggle="popover"]').popover()
         });
-        $('#activity_log_counter').html(''+activity_log.find('tr:visible').length+'&thinsp;/&thinsp;'+activity_log.find('tr').length);
-        window.activity_log_toggle.current_state[category] = should_show;
-      };
-      window.activity_log_toggle.current_state = {
-        "versions": true,
-        "measurements": true,
-        "comments": true,
-        "other": true
-      };
-      var activity_log = $('#activity_log').find('> tbody');
-      $('#activity_log_counter').html(''+activity_log.find('tr:visible').length+'&thinsp;/&thinsp;'+activity_log.find('tr').length);
-      window.update_activity_log_filter_states = function() {
-        if (window.activity_log_toggle.current_state['versions']) {
-          $('#activity_log_filter_versions').attr('checked', 'checked');
+        var activity_log_filter_type_list = {
+          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
+          "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
+          "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
+          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}']
+        };
+        window.activity_log_toggle = function(should_show, category) {
+          var type_list = activity_log_filter_type_list[category];
+          var activity_log = $('#activity_log').find('> tbody');
+          type_list.forEach(function(activity_log_type) {
+            var activity_log_rows = activity_log.find('tr[data-activity-log-type='+activity_log_type+']');
+            if (should_show) {
+              activity_log_rows.css({display: 'table-row'});
+            } else {
+              activity_log_rows.css({display: 'none'});
+            }
+          });
+          $('#activity_log_counter').html(''+activity_log.find('tr:visible').length+'&thinsp;/&thinsp;'+activity_log.find('tr').length);
+          window.activity_log_toggle.current_state[category] = should_show;
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', window.activity_log_toggle.current_state);
+        };
+        window.activity_log_toggle.current_state = {};
+        var activity_log_filter_state = Cookies.getJSON('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE');
+        if (activity_log_filter_state === undefined) {
+          activity_log_filter_state = {
+            "versions": true,
+            "measurements": true,
+            "comments": true,
+            "other": true
+          };
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
         }
-        if (window.activity_log_toggle.current_state['measurements']) {
-          $('#activity_log_filter_measurements').attr('checked', 'checked');
-        }
-        if (window.activity_log_toggle.current_state['comments']) {
-          $('#activity_log_filter_comments').attr('checked', 'checked');
-        }
-        if (window.activity_log_toggle.current_state['other']) {
-          $('#activity_log_filter_other').attr('checked', 'checked');
-        }
-      };
+        window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
+        window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
+        window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
+        window.activity_log_toggle(activity_log_filter_state['other'], "other");
+        window.update_activity_log_filter_states = function() {
+          if (window.activity_log_toggle.current_state['versions']) {
+            $('#activity_log_filter_versions').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['measurements']) {
+            $('#activity_log_filter_measurements').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['comments']) {
+            $('#activity_log_filter_comments').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['other']) {
+            $('#activity_log_filter_other').attr('checked', 'checked');
+          }
+        };
+      {% endif %}
     });
 </script>
 {% endblock %}
