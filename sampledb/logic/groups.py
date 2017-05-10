@@ -98,6 +98,10 @@ def get_group(group_id: int) -> Group:
     return Group.from_database(group)
 
 
+def get_groups() -> typing.List[Group]:
+    return [Group.from_database(group) for group in groups.Group.query.all()]
+
+
 def get_group_member_ids(group_id: int) -> typing.List[int]:
     group = groups.Group.query.get(group_id)
     if group is None:

@@ -5,7 +5,7 @@
   <h1>Groups</h1>
   <ul id="groups_list">
     {% for group in groups %}
-    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name }}</a></li>
+    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name }}</a>{% if group.is_member %} <span class="label label-default">Member</span>{% endif %}</li>
     {% endfor %}
   </ul>
   <button type="button" class="btn btn-success" data-toggle="modal" data-target="#createGroupModal">Create Group</button>
@@ -16,7 +16,7 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
           <h4 class="modal-title" id="createGroupModalLabel">Create Group</h4>
         </div>
-        <form method="post" action="{{ url_for('.user_groups', user_id=current_user.id) }}" class="form-horizontal">
+        <form method="post" action="{{ request.url }}" class="form-horizontal">
           {{ create_group_form.csrf_token() }}
           <div class="modal-body">
             <div class="form-group {% if create_group_form.name.errors %}has-error{% endif %}">

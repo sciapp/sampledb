@@ -12,18 +12,23 @@ from ...models import User
 from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm
 
 
-@frontend.route('/users/me/groups')
+@frontend.route('/groups/', methods=['GET', 'POST'])
 @flask_login.login_required
-def current_user_groups():
-    return flask.redirect(flask.url_for('.user_groups', user_id=flask_login.current_user.id))
-
-
-@frontend.route('/users/<int:user_id>/groups', methods=['GET', 'POST'])
-@flask_login.login_required
-def user_groups(user_id):
-    if user_id != flask_login.current_user.id and not flask_login.current_user.is_admin:
-        return flask.abort(403)
-    groups = logic.groups.get_user_groups(user_id)
+def groups():
+    user_id = None
+    if 'user_id' in flask.request.args:
+        try:
+            user_id = int(flask.request.args['user_id'])
+        except ValueError:
+            pass
+    if user_id is not None:
+        if user_id != flask_login.current_user.id and not flask_login.current_user.is_admin:
+            return flask.abort(403)
+        groups = logic.groups.get_user_groups(user_id)
+    else:
+        groups = logic.groups.get_groups()
+    for group in groups:
+        group.is_member = (flask_login.current_user.id in logic.groups.get_group_member_ids(group.id))
     create_group_form = CreateGroupForm()
     if create_group_form.name.data is None:
         create_group_form.name.data = ''
@@ -43,12 +48,6 @@ def user_groups(user_id):
                 flask.flash('The group has been created successfully.', 'success')
                 return flask.redirect(flask.url_for('.group', group_id=group_id))
     return flask.render_template("groups.html", groups=groups, create_group_form=create_group_form, show_create_form=show_create_form)
-
-
-@frontend.route('/groups/')
-@flask_login.login_required
-def groups():
-    return flask.redirect(flask.url_for('.user_groups', user_id=flask_login.current_user.id))
 
 
 @frontend.route('/groups/<int:group_id>', methods=['GET', 'POST'])
