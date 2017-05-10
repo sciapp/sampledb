@@ -127,7 +127,28 @@ def remove_authentication_method(user_id, authentication_method_id):
     if authentication_methods_count <= 1:
         raise OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
     authentication_methods = Authentication.query.filter(Authentication.id == authentication_method_id).first()
-    assert authentication_methods
+    if authentication_methods is None:
+        return False
     db.session.delete(authentication_methods)
     db.session.commit()
     return True
+
+
+def change_password_in_authentication_method(user_id, authentication_method_id, password):
+    if user_id is None or user_id <= 0:
+        return False
+    if authentication_method_id is None or authentication_method_id <= 0:
+        return False
+    authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id, Authentication.user_id==user_id).first()
+    if authentication_method is None:
+        return False
+    if password is None or password == '':
+        return False
+    if authentication_method.type.name == 'LDAP':
+        return False
+    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    authentication_method.login = {'login': authentication_method.login['login'], 'bcrypt_hash': pw_hash}
+    db.session.add(authentication_method)
+    db.session.commit()
+    return True
+

@@ -46,3 +46,12 @@ class PasswordForm(FlaskForm):
     ])
     submit = SubmitField('Change Password')
 
+
+class AuthenticationPasswordForm(FlaskForm):
+    id = IntegerField('Authentication_method_id', validators=[DataRequired()])
+    password = PasswordField('New Password', validators=[
+        InputRequired(),
+        Length(min=3)
+    ])
+    submit = SubmitField('Change Password')
+
