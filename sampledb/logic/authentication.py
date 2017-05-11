@@ -88,6 +88,10 @@ def login(login, password):
 
 
 def add_login(userid, login, password, authentication_method):
+    if password is None or password =='':
+        return False
+    if login is None or login == '':
+        return False
     logins = Authentication.query.filter(Authentication.login['login'].astext == login,
                                          Authentication.user_id == userid).first()
     ldaplogin = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP,
@@ -109,7 +113,8 @@ def add_login(userid, login, password, authentication_method):
             confirmed = False
     elif authentication_method == AuthenticationType.OTHER:
         confirmed = True
-    else:
+        return False
+    elif authentication_method == AuthenticationType.LDAP:
         if logins is not None:
             # authentication-method already exists
             raise LdapAccountAlreadyExist('Ldap-Account already exists')
@@ -118,6 +123,8 @@ def add_login(userid, login, password, authentication_method):
         if not validate_user(login, password):
             raise LdapAccountOrPasswordWrong('Ldap login or password wrong')
         confirmed = True
+    else:
+        return False
     add_authentication_to_db(log, authentication_method, confirmed, userid)
     return True
 
