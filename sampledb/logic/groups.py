@@ -8,6 +8,7 @@ import collections
 import typing
 from .. import db
 from ..models import groups, User
+from .user import get_user
 
 
 class Group(collections.namedtuple('Group', ['id', 'name', 'description'])):
@@ -47,7 +48,7 @@ class InvalidGroupNameError(ValueError):
 def create_group(name: str, description: str, initial_user_id: int) -> int:
     if not 1 <= len(name) <= 100:
         raise InvalidGroupNameError()
-    user = User.query.get(initial_user_id)
+    user = get_user(initial_user_id)
     if user is None:
         raise UserDoesNotExistError()
     group = groups.Group(name=name, description=description)
@@ -110,7 +111,7 @@ def get_group_member_ids(group_id: int) -> typing.List[int]:
 
 
 def get_user_groups(user_id: int) -> typing.List[Group]:
-    user = User.query.get(user_id)
+    user = get_user(user_id)
     if user is None:
         raise UserDoesNotExistError()
     return [Group.from_database(group) for group in user.groups]
@@ -120,7 +121,7 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
     group = groups.Group.query.get(group_id)
     if group is None:
         raise GroupDoesNotExistError()
-    user = User.query.get(user_id)
+    user = get_user(user_id)
     if user is None:
         raise UserDoesNotExistError()
     if user in group.members:
@@ -133,7 +134,7 @@ def remove_user_from_group(group_id: int, user_id: int) -> None:
     group = groups.Group.query.get(group_id)
     if group is None:
         raise GroupDoesNotExistError()
-    user = User.query.get(user_id)
+    user = get_user(user_id)
     if user is None:
         raise UserDoesNotExistError()
     if user not in group.members:

@@ -8,6 +8,7 @@ import typing
 from .. import db
 from ..models import User, Instrument, Action, ActionType
 from .schemas import validate_schema
+from .user import get_user
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -41,7 +42,7 @@ def update_instrument(instrument_id: int, name: str, description: str) -> Instru
 
 def add_instrument_responsible_user(instrument_id: int, user_id: int):
     instrument = Instrument.query.get(instrument_id)
-    user = User.query.get(user_id)
+    user = get_user(user_id)
     instrument.responsible_users.append(user)
     db.session.add(instrument)
     db.session.commit()
@@ -49,7 +50,7 @@ def add_instrument_responsible_user(instrument_id: int, user_id: int):
 
 def remove_instrument_responsible_user(instrument_id: int, user_id: int):
     instrument = Instrument.query.get(instrument_id)
-    user = User.query.get(user_id)
+    user = get_user(user_id)
     instrument.responsible_users.remove(user)
     db.session.add(instrument)
     db.session.commit()

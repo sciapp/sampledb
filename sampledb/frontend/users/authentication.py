@@ -8,6 +8,7 @@ import flask_login
 
 from .. import frontend
 from ...logic.authentication import login
+from ...logic.user import get_user
 from ...frontend.users_forms import SigninForm, SignoutForm
 from ...models import User
 from ... import login_manager
@@ -19,7 +20,7 @@ def load_user(user_id):
         user_id = int(user_id)
     except ValueError:
         return None
-    return User.query.get(user_id)
+    return get_user(user_id)
 
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])

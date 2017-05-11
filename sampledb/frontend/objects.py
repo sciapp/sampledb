@@ -13,6 +13,7 @@ from . import frontend
 from ..logic import user_log, object_log, comments
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups
 from ..logic.datatypes import JSONEncoder
+from ..logic.user import get_user
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
 from ..logic.instruments import get_action
@@ -57,9 +58,9 @@ def objects():
         objects[i] = {
             'object_id': obj.object_id,
             'version_id': obj.version_id,
-            'created_by': User.query.get(original_object.user_id),
+            'created_by': get_user(original_object.user_id),
             'created_at': original_object.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
-            'modified_by': User.query.get(obj.user_id),
+            'modified_by': get_user(obj.user_id),
             'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
             'data': obj.data,
             'schema': obj.schema,
@@ -264,7 +265,7 @@ def object(object_id):
             object_log_entries=object_log_entries,
             ObjectLogEntryType=ObjectLogEntryType,
             last_edit_datetime=object.utc_datetime,
-            last_edit_user=User.query.get(object.user_id),
+            last_edit_user=get_user(object.user_id),
             object_id=object_id,
             user_may_edit=user_may_edit,
             user_may_comment=user_may_edit,
@@ -347,7 +348,7 @@ def object_version(object_id, version_id):
         schema=object.schema,
         data=object.data,
         last_edit_datetime=object.utc_datetime,
-        last_edit_user=User.query.get(object.user_id),
+        last_edit_user=get_user(object.user_id),
         object_id=object_id,
         version_id=version_id,
         restore_form=form,
@@ -420,7 +421,7 @@ def update_object_permissions(object_id):
         set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
         for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
-            user = User.query.get(user_id)
+            user = get_user(user_id)
             if user is None:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
