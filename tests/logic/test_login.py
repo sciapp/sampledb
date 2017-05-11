@@ -91,7 +91,7 @@ def test_login_user(flask_server, users):
     assert user is None
 
 
-def test_add_login(flask_server, users):
+def test_add_login_ldap(flask_server, users):
     with pytest.raises(LdapAccountOrPasswordWrong) as excinfo:
         sampledb.logic.authentication.add_login(1, 'henkel', 'abc', AuthenticationType.LDAP)
     # wrong password
@@ -104,13 +104,41 @@ def test_add_login(flask_server, users):
 
     with pytest.raises(LdapAccountAlreadyExist) as excinfo:
         user = sampledb.logic.authentication.add_login(1, 'henkel', 'xxx', AuthenticationType.LDAP)
-    # no second ldap authentification possible
+    # no second ldap authentication possible
     assert 'Ldap-Account already exists'
 
+
+def test_add_login(flask_server, users):
     with pytest.raises(AuthenticationMethodWrong) as excinfo:
         user = sampledb.logic.authentication.add_login(3, "web.de", 'abc123', AuthenticationType.EMAIL)
     # no email
     assert 'Login must be an email if the authentication_method is email'
+
+    # add authentication-method without password not allowed
+    result = sampledb.logic.authentication.add_login(3, "www@web.de", '', AuthenticationType.EMAIL)
+    assert result is False
+
+    # add authentication-method without login not allowed
+    result = sampledb.logic.authentication.add_login(3, None, 'xxx', AuthenticationType.EMAIL)
+    assert result is False
+
+    # add authentication-method without login not allowed
+    result = sampledb.logic.authentication.add_login(3, 'www@web.de', 'xxx', None)
+    assert result is False
+
+
+def test_add_login_email(app, users):
+    # add authentication-method email
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        result = sampledb.logic.authentication.add_login(3, 'www@web.de', 'xxx', AuthenticationType.EMAIL)
+        assert result is True
+
+
+def test_add_login_other_not_allowed(flask_server, users):
+    # add other authentication-method not allowed
+    result = sampledb.logic.authentication.add_login(3, "experiment", 'abc123', AuthenticationType.OTHER)
+    assert result is False
 
 
 def test_add_login_email_method_already_exists(flask_server, users):
@@ -120,18 +148,16 @@ def test_add_login_email_method_already_exists(flask_server, users):
 
 
 def test_remove_authentication_method(flask_server, users):
+    user = users[0]
     username = flask_server.app.config['TESTING_LDAP_LOGIN']
     password = flask_server.app.config['TESTING_LDAP_PW']
-    user = sampledb.logic.authentication.login(username, password)
-    assert user is not None
 
     with pytest.raises(OnlyOneAuthenticationMethod) as excinfo:
         remove_authentication_method(user.id, 1)
 
     assert 'one authentication-method must at least exist, delete not possible' in str(excinfo.value)
 
-    sampledb.logic.authentication.add_login(user.id, 'test', 'xxx', AuthenticationType.OTHER)
-
+    sampledb.logic.authentication.add_login(user.id, username, password, AuthenticationType.LDAP)
 
     assert len(user.authentication_methods) == 2
     authentication_id = user.authentication_methods[0].id
@@ -179,8 +205,3 @@ def test_change_password_in_authentication_method(flask_server, users):
     result = change_password_in_authentication_method(user_id, authentication_id, 'abc')
     # change password if authentication_method is OTHER
     assert result is True
-
-
-
-
-
