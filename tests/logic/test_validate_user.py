@@ -32,9 +32,9 @@ def users():
         # force attribute refresh
         assert user.id is not None
         if not confirmed:
-            auth = Authentication(log, AuthenticationType.OTHER, confirmed, user.id)
+            auth = Authentication(log, AuthenticationType.EMAIL, confirmed, user.id)
         else:
-            auth = Authentication(log1, AuthenticationType.OTHER, confirmed, user.id)
+            auth = Authentication(log1, AuthenticationType.EMAIL, confirmed, user.id)
         confirmed = True
         sampledb.db.session.add(auth)
         sampledb.db.session.commit()

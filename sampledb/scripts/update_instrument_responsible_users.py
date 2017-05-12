@@ -8,6 +8,7 @@ Usage: python -m sampledb update_instrument_responsible_users <instrument_id> <i
 import sys
 from .. import create_app
 from ..logic.instruments import get_instrument, add_instrument_responsible_user, remove_instrument_responsible_user
+from ..logic.user import get_user
 from ..models import User
 
 
@@ -36,7 +37,7 @@ def main(arguments):
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)
         for user_id in instrument_responsible_user_ids:
-            user = User.query.get(user_id)
+            user = get_user(user_id)
             if user is None:
                 print('Error: no user with th id #{} exists'.format(user_id), file=sys.stderr)
                 exit(1)
