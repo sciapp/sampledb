@@ -20,7 +20,8 @@ from ...logic.user import get_user
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, default_is_public, set_default_public
-from ...logic.groups import get_user_groups, get_group, GroupDoesNotExistError
+from ...logic.groups import get_user_groups, get_group
+from ...logic.errors import GroupDoesNotExistError
 
 from ...models import Authentication, AuthenticationType, User
 

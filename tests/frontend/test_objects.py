@@ -36,9 +36,8 @@ def test_get_objects(flask_server, user):
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
-        sampledb.models.Objects.create_object(
+        sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
-            schema=action.schema,
             user_id=user.id,
             action_id=action.id
         )
@@ -60,17 +59,15 @@ def test_get_objects_by_action_id(flask_server, user):
     action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
-        sampledb.models.Objects.create_object(
+        sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
-            schema=action1.schema,
             user_id=user.id,
             action_id=action1.id
         )
         for name in names
     ]
-    sampledb.models.Objects.create_object(
+    sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Other Object'}},
-        schema=action2.schema,
         user_id=user.id,
         action_id=action2.id
     )
@@ -90,17 +87,15 @@ def test_get_objects_by_action_type(flask_server, user):
     action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
-        sampledb.models.Objects.create_object(
+        sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
-            schema=action1.schema,
             user_id=user.id,
             action_id=action1.id
         )
         for name in names
     ]
-    sampledb.models.Objects.create_object(
+    sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Other Object'}},
-        schema=action2.schema,
         user_id=user.id,
         action_id=action2.id
     )
@@ -120,17 +115,15 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
     action2 = sampledb.logic.instruments.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
-        sampledb.models.Objects.create_object(
+        sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
-            schema=action1.schema,
             user_id=user.id,
             action_id=action1.id
         )
         for name in names
     ]
-    sampledb.models.Objects.create_object(
+    sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Other Object'}},
-        schema=action2.schema,
         user_id=user.id,
         action_id=action2.id
     )
@@ -149,9 +142,8 @@ def test_search_objects(flask_server, user):
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example12']
     objects = [
-        sampledb.models.Objects.create_object(
+        sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
-            schema=action.schema,
             user_id=user.id,
             action_id=action.id
         )
@@ -173,9 +165,8 @@ def test_search_objects(flask_server, user):
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -190,9 +181,8 @@ def test_get_object(flask_server, user):
 def test_get_object_no_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -211,9 +201,8 @@ def test_get_object_no_permissions(flask_server, user):
 def test_get_object_edit_form(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -228,9 +217,8 @@ def test_get_object_edit_form(flask_server, user):
 def test_get_object_edit_form_read_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -249,9 +237,8 @@ def test_get_object_edit_form_read_permissions(flask_server, user):
 def test_get_object_version(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -266,9 +253,8 @@ def test_get_object_version(flask_server, user):
 def test_get_object_version_no_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -287,9 +273,8 @@ def test_get_object_version_no_permissions(flask_server, user):
 def test_get_object_versions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -304,16 +289,19 @@ def test_edit_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=object_data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
 
     with flask_server.app.app_context():
-        assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
-        assert sampledb.logic.object_log.get_object_log_entries(object.object_id) == []
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
+        object_log_entries = sampledb.logic.object_log.get_object_log_entries(object.object_id)
+        assert len(user_log_entries) == 1
+        assert len(object_log_entries) == 1
+        creation_user_log_entry = user_log_entries[0]
+        creation_object_log_entry = object_log_entries[0]
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
@@ -322,24 +310,33 @@ def test_edit_object(flask_server, user):
     form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object_multilayer_2_films_0_elements_0_name_text': 'Pd', 'object_multilayer_3_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_1_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_0_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_checkbox_hidden': 'checkbox exists', 'object_multilayer_2_films_1_substrate_temperature_magnitude': '130', 'object_multilayer_1_films_0_elements_0_rate_magnitude': '1', 'object_multilayer_0_films_0_thickness_magnitude': '5', 'object_multilayer_1_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_films_0_elements_0_name_text': 'Ag', 'object_multilayer_2_films_1_elements_0_rate_magnitude': '0.05', 'object_multilayer_0_films_0_elements_0_name_text': 'Fe', 'object_multilayer_2_films_1_oxygen_flow_magnitude': '0', 'object_multilayer_3_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_films_0_thickness_magnitude': '1500', 'object_multilayer_0_films_0_thickness_units': 'Å', 'object_multilayer_0_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_2_films_1_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_elements_0_name_text': 'Pd', 'object_substrate_text': 'GaAs', 'object_multilayer_3_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_3_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_2_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_2_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_2_films_0_elements_0_rate_magnitude': '0.01', 'object_multilayer_2_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_2_films_1_name_text': 'Fe', 'object_multilayer_2_films_1_oxygen_flow_units': 'cm**3/s', 'object_created_datetime': '2017-02-24 11:56:00', 'object_multilayer_2_films_0_substrate_temperature_magnitude': '100', 'object_multilayer_1_films_0_name_text': 'Buffer Layer', 'object_multilayer_2_repetitions_magnitude': '10', 'object_multilayer_2_films_1_elements_0_name_text': 'Fe', 'object_multilayer_2_films_1_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_elements_0_rate_magnitude': '0.1', 'object_multilayer_3_films_0_thickness_magnitude': '150', 'object_multilayer_2_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_repetitions_magnitude': '1', 'object_name_text': 'OMBE-100', 'object_multilayer_2_films_1_substrate_temperature_units': 'degC', 'object_multilayer_2_films_1_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_2_films_0_thickness_magnitude': '150', 'object_multilayer_0_films_0_substrate_temperature_magnitude': '130', 'object_multilayer_2_films_0_name_text': 'Pd', 'object_multilayer_1_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_2_films_1_elements_0_fraction_magnitude': '', 'object_multilayer_2_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_2_films_1_thickness_magnitude': '10', 'object_multilayer_3_films_0_thickness_units': 'Å', 'object_multilayer_1_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_0_repetitions_magnitude': '2', 'object_multilayer_1_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_2_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_3_films_0_elements_0_rate_magnitude': '0.1', 'object_multilayer_1_films_0_substrate_temperature_magnitude': '130', 'object_multilayer_0_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_2_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_2_films_1_thickness_units': 'Å', 'object_multilayer_0_films_0_name_text': 'Seed Layer', 'object_multilayer_1_films_0_thickness_units': 'Å', 'object_multilayer_3_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_3_films_0_name_text': 'Pd Layer', 'object_multilayer_2_films_0_thickness_units': 'Å', 'object_multilayer_1_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_0_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_substrate_temperature_magnitude': '100', 'object_multilayer_3_repetitions_magnitude': '1', 'object_dropdown_text': 'Option A'}
     r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    object = sampledb.models.Objects.get_object_version(object_id=object.object_id, version_id=1)
+    object = sampledb.logic.objects.get_object(object_id=object.object_id, version_id=1)
     assert object is not None
     assert object.data['name']['text'] == 'OMBE-100'
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
-        assert len(user_log_entries) == 1
-        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.EDIT_OBJECT
+        user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(user_log_entries) == 2
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
         assert user_log_entries[0].user_id == user.id
-        assert user_log_entries[0].data == {
+        assert user_log_entries[0].data == creation_user_log_entry.data
+        assert user_log_entries[1].type == sampledb.models.UserLogEntryType.EDIT_OBJECT
+        assert user_log_entries[1].user_id == user.id
+        assert user_log_entries[1].data == {
             'object_id': object.object_id,
             'version_id': object.version_id
         }
         object_log_entries = sampledb.logic.object_log.get_object_log_entries(object.object_id)
-        assert len(object_log_entries) == 1
-        assert object_log_entries[0].type == sampledb.models.ObjectLogEntryType.EDIT_OBJECT
+        object_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(object_log_entries) == 2
+        assert object_log_entries[0].type == sampledb.models.ObjectLogEntryType.CREATE_OBJECT
         assert object_log_entries[0].user_id == user.id
         assert object_log_entries[0].object_id == object.object_id
-        assert object_log_entries[0].data == {
+        assert object_log_entries[0].data == creation_object_log_entry.data
+        assert object_log_entries[1].type == sampledb.models.ObjectLogEntryType.EDIT_OBJECT
+        assert object_log_entries[1].user_id == user.id
+        assert object_log_entries[1].object_id == object.object_id
+        assert object_log_entries[1].data == {
             'version_id': object.version_id
         }
 
@@ -349,9 +346,8 @@ def test_edit_object_action_add(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=object_data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -371,9 +367,8 @@ def test_edit_object_previous_actions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=object_data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -397,9 +392,8 @@ def test_edit_object_previous_actions_invalid_key(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=object_data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -421,9 +415,8 @@ def test_edit_object_previous_actions_invalid_action(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=object_data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -445,9 +438,8 @@ def test_edit_object_action_delete(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=object_data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -478,15 +470,15 @@ def test_new_object(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
     assert r.status_code == 200
-    assert len(sampledb.models.Objects.get_current_objects()) == 0
+    assert len(sampledb.logic.objects.get_objects()) == 0
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
     csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
     form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object_multilayer_2_films_0_elements_0_name_text': 'Pd', 'object_multilayer_3_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_1_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_0_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_checkbox_hidden': 'checkbox exists', 'object_multilayer_2_films_1_substrate_temperature_magnitude': '130', 'object_multilayer_1_films_0_elements_0_rate_magnitude': '1', 'object_multilayer_0_films_0_thickness_magnitude': '5', 'object_multilayer_1_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_films_0_elements_0_name_text': 'Ag', 'object_multilayer_2_films_1_elements_0_rate_magnitude': '0.05', 'object_multilayer_0_films_0_elements_0_name_text': 'Fe', 'object_multilayer_2_films_1_oxygen_flow_magnitude': '0', 'object_multilayer_3_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_films_0_thickness_magnitude': '1500', 'object_multilayer_0_films_0_thickness_units': 'Å', 'object_multilayer_0_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_2_films_1_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_elements_0_name_text': 'Pd', 'object_substrate_text': 'GaAs', 'object_multilayer_3_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_3_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_2_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_2_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_2_films_0_elements_0_rate_magnitude': '0.01', 'object_multilayer_2_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_2_films_1_name_text': 'Fe', 'object_multilayer_2_films_1_oxygen_flow_units': 'cm**3/s', 'object_created_datetime': '2017-02-24 11:56:00', 'object_multilayer_2_films_0_substrate_temperature_magnitude': '100', 'object_multilayer_1_films_0_name_text': 'Buffer Layer', 'object_multilayer_2_repetitions_magnitude': '10', 'object_multilayer_2_films_1_elements_0_name_text': 'Fe', 'object_multilayer_2_films_1_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_substrate_temperature_units': 'degC', 'object_multilayer_0_films_0_elements_0_rate_magnitude': '0.1', 'object_multilayer_3_films_0_thickness_magnitude': '150', 'object_multilayer_2_films_0_elements_0_frequency_change_magnitude': '', 'object_multilayer_1_repetitions_magnitude': '1', 'object_name_text': 'OMBE-100', 'object_multilayer_2_films_1_substrate_temperature_units': 'degC', 'object_multilayer_2_films_1_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_2_films_0_thickness_magnitude': '150', 'object_multilayer_0_films_0_substrate_temperature_magnitude': '130', 'object_multilayer_2_films_0_name_text': 'Pd', 'object_multilayer_1_films_0_elements_0_frequency_change_units': 'Hz / s', 'object_multilayer_2_films_1_elements_0_fraction_magnitude': '', 'object_multilayer_2_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_2_films_1_thickness_magnitude': '10', 'object_multilayer_3_films_0_thickness_units': 'Å', 'object_multilayer_1_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_0_repetitions_magnitude': '2', 'object_multilayer_1_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_2_films_0_oxygen_flow_units': 'cm**3/s', 'object_multilayer_3_films_0_elements_0_rate_magnitude': '0.1', 'object_multilayer_1_films_0_substrate_temperature_magnitude': '130', 'object_multilayer_0_films_0_elements_0_fraction_magnitude': '', 'object_multilayer_2_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_2_films_1_thickness_units': 'Å', 'object_multilayer_0_films_0_name_text': 'Seed Layer', 'object_multilayer_1_films_0_thickness_units': 'Å', 'object_multilayer_3_films_0_oxygen_flow_magnitude': '0', 'object_multilayer_3_films_0_name_text': 'Pd Layer', 'object_multilayer_2_films_0_thickness_units': 'Å', 'object_multilayer_1_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_0_films_0_elements_0_rate_units': 'Å/s', 'object_multilayer_3_films_0_substrate_temperature_magnitude': '100', 'object_multilayer_3_repetitions_magnitude': '1', 'object_dropdown_text': 'Option A'}
     r = session.post(flask_server.base_url + 'objects/new', params={'action_id': action.id}, data=form_data)
     assert r.status_code == 200
-    assert len(sampledb.models.Objects.get_current_objects()) == 1
-    object = sampledb.models.Objects.get_current_objects()[0]
+    assert len(sampledb.logic.objects.get_objects()) == 1
+    object = sampledb.logic.objects.get_objects()[0]
     assert len(object.data['multilayer']) == 4
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
@@ -517,16 +509,15 @@ def test_restore_object_version(flask_server, user):
     }
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
     data['name']['text'] = 'object_version_1'
     sampledb.models.Objects.update_object(object.object_id, data=data, schema=schema, user_id=user.id)
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -536,7 +527,7 @@ def test_restore_object_version(flask_server, user):
     r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 0), data={'csrf_token': csrf_token})
     assert r.status_code == 200
 
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
 
 
 def test_restore_object_version_invalid_data(flask_server, user):
@@ -552,26 +543,25 @@ def test_restore_object_version_invalid_data(flask_server, user):
     }
     action = sampledb.logic.instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_0'
     data['name']['text'] = 'object_version_1'
     sampledb.models.Objects.update_object(object.object_id, data=data, schema=schema, user_id=user.id)
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(42, 0))
     assert r.status_code == 404
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
     r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 2))
     assert r.status_code == 404
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
     r = session.get(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 0))
     assert r.status_code == 200
@@ -579,15 +569,15 @@ def test_restore_object_version_invalid_data(flask_server, user):
 
     r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(42, 0), data={'csrf_token': csrf_token})
     assert r.status_code == 404
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
     r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 2), data={'csrf_token': csrf_token})
     assert r.status_code == 404
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
     r = session.post(flask_server.base_url + 'objects/{}/versions/{}/restore'.format(object.object_id, 1), data={'csrf_token': csrf_token})
     assert r.status_code == 404
-    assert sampledb.models.Objects.get_current_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
+    assert sampledb.logic.objects.get_object(object_id=object.object_id).data['name']['text'] == 'object_version_1'
 
 
 def test_update_object_permissions(flask_server, user):
@@ -602,9 +592,8 @@ def test_update_object_permissions(flask_server, user):
         }
     })
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -631,7 +620,10 @@ def test_update_object_permissions(flask_server, user):
         'user_permissions-0-permissions': 'grant',
     }
     with flask_server.app.app_context():
-        assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
+        assert len(user_log_entries) == 1
+        assert user_log_entries[0].type == sampledb.logic.user_log.UserLogEntryType.CREATE_OBJECT
+
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
     current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
@@ -641,10 +633,13 @@ def test_update_object_permissions(flask_server, user):
     assert sampledb.logic.permissions.object_is_public(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
-        assert len(user_log_entries) == 1
-        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(user_log_entries) == 2
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
         assert user_log_entries[0].user_id == user.id
-        assert user_log_entries[0].data == {
+        assert user_log_entries[1].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        assert user_log_entries[1].user_id == user.id
+        assert user_log_entries[1].data == {
             'object_id': object.object_id
         }
 
@@ -696,9 +691,8 @@ def test_object_permissions_add_user(flask_server, user):
         }
     })
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -723,7 +717,11 @@ def test_object_permissions_add_user(flask_server, user):
         assert user2.id is not None
 
     with flask_server.app.app_context():
-        assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
+        user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(user_log_entries) == 1
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
+        assert user_log_entries[0].user_id == user.id
     form_data = {
         'add_user_permissions': 'add_user_permissions',
         'csrf_token': csrf_token,
@@ -740,10 +738,13 @@ def test_object_permissions_add_user(flask_server, user):
     assert not sampledb.logic.permissions.object_is_public(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
-        assert len(user_log_entries) == 1
-        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(user_log_entries) == 2
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
         assert user_log_entries[0].user_id == user.id
-        assert user_log_entries[0].data == {
+        assert user_log_entries[1].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        assert user_log_entries[1].user_id == user.id
+        assert user_log_entries[1].data == {
             'object_id': object.object_id
         }
 
@@ -760,9 +761,8 @@ def test_object_permissions_add_group(flask_server, user):
         }
     })
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
-    object = sampledb.models.Objects.create_object(
+    object = sampledb.logic.objects.create_object(
         data=data,
-        schema=action.schema,
         user_id=user.id,
         action_id=action.id
     )
@@ -778,7 +778,11 @@ def test_object_permissions_add_group(flask_server, user):
     csrf_token = BeautifulSoup(r.content, 'html.parser').find_all('input', {'name': 'csrf_token'})[2]['value']
 
     with flask_server.app.app_context():
-        assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
+        user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(user_log_entries) == 1
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
+        assert user_log_entries[0].user_id == user.id
     form_data = {
         'add_group_permissions': 'add_group_permissions',
         'csrf_token': csrf_token,
@@ -793,9 +797,12 @@ def test_object_permissions_add_group(flask_server, user):
 
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
-        assert len(user_log_entries) == 1
-        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
+        assert len(user_log_entries) == 2
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
         assert user_log_entries[0].user_id == user.id
-        assert user_log_entries[0].data == {
+        assert user_log_entries[1].type == sampledb.models.UserLogEntryType.EDIT_OBJECT_PERMISSIONS
+        assert user_log_entries[1].user_id == user.id
+        assert user_log_entries[1].data == {
             'object_id': object.object_id
         }

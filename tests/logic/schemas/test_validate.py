@@ -7,6 +7,7 @@ import pytest
 
 import sampledb
 import sqlalchemy as db
+from sampledb.logic.objects import create_object, get_object
 from sampledb.logic.schemas import validate, ValidationError
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -834,7 +835,6 @@ def test_validate_object_invalid_property():
 def test_validate_sample():
     from sampledb.models.users import User, UserType
     from sampledb.models.instruments import Action, ActionType
-    from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -846,10 +846,10 @@ def test_validate_sample():
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    object = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
-        'object_id': objects.object_id
+        'object_id': object.id
     }
     validate(instance, schema)
 
@@ -857,7 +857,6 @@ def test_validate_sample():
 def test_validate_sample_invalid_type():
     from sampledb.models.users import User, UserType
     from sampledb.models.instruments import Action, ActionType
-    from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -869,8 +868,8 @@ def test_validate_sample_invalid_type():
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
-    instance = objects.object_id
+    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    instance = object_id
     with pytest.raises(ValidationError):
         validate(instance, schema)
 
@@ -878,7 +877,6 @@ def test_validate_sample_invalid_type():
 def test_validate_sample_unexpected_keys():
     from sampledb.models.users import User, UserType
     from sampledb.models.instruments import Action, ActionType
-    from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -890,10 +888,10 @@ def test_validate_sample_unexpected_keys():
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
-        'object_id': objects.object_id,
+        'object_id': object_id,
         'action_id': action.id
     }
     with pytest.raises(ValidationError):
@@ -915,7 +913,6 @@ def test_validate_sample_missing_keys():
 def test_validate_sample_wrong_type():
     from sampledb.models.users import User, UserType
     from sampledb.models.instruments import Action, ActionType
-    from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -927,10 +924,10 @@ def test_validate_sample_wrong_type():
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'object_reference',
-        'object_id': objects.object_id
+        'object_id': object_id
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
@@ -939,7 +936,6 @@ def test_validate_sample_wrong_type():
 def test_validate_sample_wrong_object_id_type():
     from sampledb.models.users import User, UserType
     from sampledb.models.instruments import Action, ActionType
-    from sampledb.models.objects import Objects
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -951,10 +947,10 @@ def test_validate_sample_wrong_object_id_type():
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    objects = Objects.create_object(data={'_type': 'text', 'text': 'example'}, schema=action.schema, user_id=user.id, action_id=action.id)
+    object = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
-        'object_id': objects
+        'object_id': object
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
