@@ -15,13 +15,13 @@ from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups
 from ..logic.datatypes import JSONEncoder
-from ..logic.user import get_user
+from ..logic.users import get_user
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
 from ..logic.instruments import get_action
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, update_object, get_object, get_object_versions
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm
 from ..models import User, Permissions, ActionType, ObjectLogEntryType
 from ..utils import object_permissions_required
@@ -398,7 +398,6 @@ def object_permissions(object_id):
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id):
-
     edit_user_permissions_form = ObjectPermissionsForm()
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
@@ -406,8 +405,9 @@ def update_object_permissions(object_id):
         set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
         for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
-            user = get_user(user_id)
-            if user is None:
+            try:
+                get_user(user_id)
+            except UserDoesNotExistError:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
             set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)

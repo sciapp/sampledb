@@ -1,8 +1,6 @@
 import pytest
-import bcrypt
-from bs4 import BeautifulSoup
 
-from sampledb.models import User, UserType,  Authentication, AuthenticationType
+from sampledb.models import User, UserType
 
 import sampledb
 import sampledb.models
@@ -27,19 +25,15 @@ def users():
 
 def test_get_user(users):
     user = users[0]
-    user = sampledb.logic.user.get_user(user.id)
+    user = sampledb.logic.users.get_user(user.id)
     assert 1 == user.id
     assert 'example@fz-juelich.de' == user.email
 
 
-def test_get_user_failed(users):
-    user = users[0]
-    user = sampledb.logic.user.get_user(None)
-    assert user is None
-
-    user = sampledb.logic.user.get_user(0)
-    assert user is None
+def test_get_user_failed():
+    with pytest.raises(TypeError):
+        sampledb.logic.users.get_user(None)
 
     # user.id 10 doesn't exists in db
-    user = sampledb.logic.user.get_user(10)
-    assert user is None
+    with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
+        sampledb.logic.users.get_user(10)

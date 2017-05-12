@@ -57,7 +57,7 @@ def test_update_instrument_responsible_users_missing_user(instrument, capsys):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'update_instrument_responsible_users', str(instrument.id), '42'])
     assert exc_info.value != 0
-    assert "Error: no user with th id #42 exists" in capsys.readouterr()[1]
+    assert "Error: no user with the id #42 exists" in capsys.readouterr()[1]
 
     instrument = instruments.get_instruments()[0]
     assert len(instrument.responsible_users) == 0

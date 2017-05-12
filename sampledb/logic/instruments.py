@@ -8,7 +8,7 @@ import typing
 from .. import db
 from ..models import User, Instrument, Action, ActionType
 from .schemas import validate_schema
-from .user import get_user
+from .users import get_user
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
