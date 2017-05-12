@@ -40,9 +40,9 @@ def groups():
         if create_group_form.validate_on_submit():
             try:
                 group_id = logic.groups.create_group(create_group_form.name.data, create_group_form.description.data, flask_login.current_user.id)
-            except logic.groups.GroupAlreadyExistsError:
+            except logic.errors.GroupAlreadyExistsError:
                 create_group_form.name.errors.append('A group with this name already exists.')
-            except logic.groups.InvalidGroupNameError:
+            except logic.errors.InvalidGroupNameError:
                 create_group_form.name.errors.append('This group name is invalid.')
             else:
                 flask.flash('The group has been created successfully.', 'success')
@@ -55,7 +55,7 @@ def groups():
 def group(group_id):
     try:
         group_member_ids = logic.groups.get_group_member_ids(group_id)
-    except logic.groups.GroupDoesNotExistError:
+    except logic.errors.GroupDoesNotExistError:
         return flask.abort(404)
     user_is_member = flask_login.current_user.id in group_member_ids
     group = logic.groups.get_group(group_id)
@@ -75,12 +75,12 @@ def group(group_id):
             if edit_group_form.validate_on_submit():
                 try:
                     logic.groups.update_group(group_id, edit_group_form.name.data, edit_group_form.description.data)
-                except logic.groups.GroupDoesNotExistError:
+                except logic.errors.GroupDoesNotExistError:
                     flask.flash('This group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
-                except logic.groups.GroupAlreadyExistsError:
+                except logic.errors.GroupAlreadyExistsError:
                     edit_group_form.name.errors.append('A group with this name already exists.')
-                except logic.groups.InvalidGroupNameError:
+                except logic.errors.InvalidGroupNameError:
                     edit_group_form.name.errors.append('This group name is invalid.')
                 else:
                     flask.flash('Group information updated successfully.', 'success')
@@ -90,12 +90,12 @@ def group(group_id):
                 try:
                     # TODO: invitation instead of simple adding
                     logic.groups.add_user_to_group(group_id, invite_user_form.user_id.data)
-                except logic.groups.GroupDoesNotExistError:
+                except logic.errors.GroupDoesNotExistError:
                     flask.flash('This group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
-                except logic.groups.UserDoesNotExistError:
+                except logic.errors.UserDoesNotExistError:
                     flask.flash('This user does not exist.', 'error')
-                except logic.groups.UserAlreadyMemberOfGroupError:
+                except logic.errors.UserAlreadyMemberOfGroupError:
                     flask.flash('This user is already a member of this group', 'error')
                 else:
                     flask.flash('The user was successfully added to the group.', 'success')
@@ -104,12 +104,12 @@ def group(group_id):
             if leave_group_form.validate_on_submit():
                 try:
                     logic.groups.remove_user_from_group(group_id, flask_login.current_user.id)
-                except logic.groups.GroupDoesNotExistError:
+                except logic.errors.GroupDoesNotExistError:
                     flask.flash('This group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
-                except logic.groups.UserDoesNotExistError:
+                except logic.errors.UserDoesNotExistError:
                     return flask.abort(500)
-                except logic.groups.UserNotMemberOfGroupError:
+                except logic.errors.UserNotMemberOfGroupError:
                     flask.flash('You have already left the group.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
                 else:
@@ -122,4 +122,4 @@ def group(group_id):
         edit_group_form = None
         invite_user_form = None
 
-    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, User=User, leave_group_form=leave_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)
+    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, User=User, get_user=logic.users.get_user, leave_group_form=leave_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)

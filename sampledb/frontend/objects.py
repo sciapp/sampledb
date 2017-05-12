@@ -304,7 +304,7 @@ def object_versions(object_id):
         return flask.abort(404)
     object_versions = get_object_versions(object_id=object_id)
     object_versions.sort(key=lambda object_version: -object_version.version_id)
-    return flask.render_template('objects/object_versions.html', User=User, object=object, object_versions=object_versions)
+    return flask.render_template('objects/object_versions.html', get_user=get_user, object=object, object_versions=object_versions)
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
@@ -392,7 +392,7 @@ def object_permissions(object_id):
         add_group_permissions_form = None
         users = []
         groups = []
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, user_permissions=user_permissions, group_permissions=group_permissions, public_permissions=public_permissions, User=User, Permissions=Permissions, form=edit_user_permissions_form, users=users, groups=groups, add_user_permissions_form=add_user_permissions_form, add_group_permissions_form=add_group_permissions_form, get_group=get_group)
+    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, user_permissions=user_permissions, group_permissions=group_permissions, public_permissions=public_permissions, get_user=get_user, Permissions=Permissions, form=edit_user_permissions_form, users=users, groups=groups, add_user_permissions_form=add_user_permissions_form, add_group_permissions_form=add_group_permissions_form, get_group=get_group)
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])

@@ -167,7 +167,7 @@
       {% endif %}
       {% for user_permissions_form in default_permissions_form.user_permissions %}
         {% set user_id = user_permissions_form.user_id.data | int %}
-        {% set user = User.query.get(user_id) %}
+        {% set user = get_user(user_id) %}
         {% set permissions = user_permissions.get(user_id, Permissions.NONE) %}
         <tr>
           <td>
