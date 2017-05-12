@@ -16,12 +16,12 @@ from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, Ob
 
 from ...logic import user_log
 from ...logic.authentication import login, add_login, remove_authentication_method, change_password_in_authentication_method
-from ...logic.user import get_user
+from ...logic.users import get_user
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, default_is_public, set_default_public
 from ...logic.groups import get_user_groups, get_group
-from ...logic.errors import GroupDoesNotExistError
+from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError
 
 from ...models import Authentication, AuthenticationType, User
 
@@ -192,8 +192,9 @@ def change_preferences(user, user_id):
         set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
         for user_permissions_data in default_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
-            user = get_user(user_id)
-            if user is None:
+            try:
+                get_user(user_id)
+            except UserDoesNotExistError:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
             set_default_permissions_for_user(creator_id=flask_login.current_user.id, user_id=user_id, permissions=permissions)

@@ -8,7 +8,7 @@ import collections
 import typing
 from .. import db
 from ..models import groups
-from .user import get_user
+from .users import get_user
 from . import errors
 
 
@@ -26,8 +26,6 @@ def create_group(name: str, description: str, initial_user_id: int) -> int:
     if not 1 <= len(name) <= 100:
         raise errors.InvalidGroupNameError()
     user = get_user(initial_user_id)
-    if user is None:
-        raise errors.UserDoesNotExistError()
     group = groups.Group(name=name, description=description)
     group.members.append(user)
     db.session.add(group)
@@ -89,8 +87,6 @@ def get_group_member_ids(group_id: int) -> typing.List[int]:
 
 def get_user_groups(user_id: int) -> typing.List[Group]:
     user = get_user(user_id)
-    if user is None:
-        raise errors.UserDoesNotExistError()
     return [Group.from_database(group) for group in user.groups]
 
 
@@ -99,8 +95,6 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
     if group is None:
         raise errors.GroupDoesNotExistError()
     user = get_user(user_id)
-    if user is None:
-        raise errors.UserDoesNotExistError()
     if user in group.members:
         raise errors.UserAlreadyMemberOfGroupError()
     group.members.append(user)
@@ -112,8 +106,6 @@ def remove_user_from_group(group_id: int, user_id: int) -> None:
     if group is None:
         raise errors.GroupDoesNotExistError()
     user = get_user(user_id)
-    if user is None:
-        raise errors.UserDoesNotExistError()
     if user not in group.members:
         raise errors.UserNotMemberOfGroupError()
     group.members.remove(user)

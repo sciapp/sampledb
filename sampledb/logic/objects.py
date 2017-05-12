@@ -5,8 +5,8 @@
 
 
 import typing
-from ..models import Objects, Object, Action, ActionType, User
-from . import object_log, user_log, permissions, instruments, errors, user
+from ..models import Objects, Object, Action, ActionType
+from . import object_log, user_log, permissions, instruments, errors, users
 import sqlalchemy.exc
 
 
@@ -15,7 +15,7 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
         object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
     except sqlalchemy.exc.IntegrityError:
         instruments.get_action(action_id)
-        if user.get_user(user_id) is None:
+        if users.get_user(user_id) is None:
             raise errors.UserDoesNotExistError()
         raise
     object_log.create_object(object_id=object.object_id, user_id=user_id)
