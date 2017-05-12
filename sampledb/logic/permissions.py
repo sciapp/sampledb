@@ -20,7 +20,8 @@ import typing
 from .. import db
 from .instruments import get_action
 from .groups import get_user_groups, get_group_member_ids
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, Objects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
+from .objects import get_object, get_objects
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -62,7 +63,7 @@ def get_object_permissions_for_groups(object_id: int) -> typing.Dict[int, Permis
 
 
 def _get_object_responsible_user_ids(object_id):
-    object = Objects.get_current_object(object_id, connection=db.engine)
+    object = get_object(object_id)
     action = get_action(object.action_id)
     if action is None or action.instrument is None:
         return []
@@ -134,11 +135,8 @@ def set_initial_permissions(obj):
     should_be_public = default_is_public(creator_id=obj.user_id)
     set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
-Objects.create_object_callbacks.append(set_initial_permissions)
-
 
 def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_id: int=None, action_type: ActionType=None) -> typing.List[Object]:
-    action_table = Action.__table__
     if action_type is not None and action_id is not None:
         action_filter = db.and_(Action.type == action_type, Action.id == action_id)
     elif action_type is not None:
@@ -146,10 +144,9 @@ def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_
     elif action_id is not None:
         action_filter = (Action.id == action_id)
     else:
-        action_table = None
         action_filter = None
 
-    objects = Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter)
+    objects = get_objects(filter_func=filter_func, action_filter=action_filter)
     objects = [obj for obj in objects if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
     return objects
 

@@ -28,18 +28,22 @@ class VersionedJSONSerializableObjectTables(object):
     For information on JSON schemas, see http://json-schema.org/.
     """
 
-    VersionedJSONSerializableObject = collections.namedtuple(
-        'VersionedJSONSerializableObject',
-        [
-            'object_id',
-            'version_id',
-            'action_id',
-            'data',
-            'schema',
-            'user_id',
-            'utc_datetime'
-        ]
-    )
+    class VersionedJSONSerializableObject(collections.namedtuple(
+            'VersionedJSONSerializableObject',
+            [
+                'object_id',
+                'version_id',
+                'action_id',
+                'data',
+                'schema',
+                'user_id',
+                'utc_datetime'
+            ]
+        )):
+        @property
+        def id(self) -> int:
+            return self.object_id
+
 
     def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None, data_validator=None, schema_validator=None):
         """
@@ -93,9 +97,6 @@ class VersionedJSONSerializableObjectTables(object):
         self._action_schema_column = action_schema_column
         self.object_type = object_type
         self.object_id_column = self._current_table.c.object_id
-        if create_object_callbacks is None:
-            create_object_callbacks = []
-        self.create_object_callbacks = create_object_callbacks
         self.bind = bind
         if self.bind is not None:
             self.metadata.create_all(self.bind)
@@ -158,8 +159,6 @@ class VersionedJSONSerializableObjectTables(object):
             user_id=user_id,
             utc_datetime=utc_datetime
         )
-        for create_object_callback in  self.create_object_callbacks:
-            create_object_callback(obj)
         return obj
 
     def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None):
@@ -171,23 +170,30 @@ class VersionedJSONSerializableObjectTables(object):
 
         :param object_id: the ID of the existing object
         :param data: a JSON serializable object containing the updated object data
-        :param schema: a JSON schema describing data
+        :param schema: a JSON schema describing data (optional, defaults to the current object schema)
         :param user_id: the ID of the user who updated the object
         :param utc_datetime: the datetime (in UTC) when the object was updated (optional, defaults to utcnow())
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
-        :return: the updated object as object_type
+        :return: the updated object as object_type or None, if the object does not exist
         """
         if connection is None:
             connection = self.bind.connect()
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
+        if schema is None:
+            schema = connection.execute(
+                db.select([self._current_table.c.schema]).where(self._current_table.c.object_id == object_id)
+            ).fetchone()
+            if schema is None:
+                return None
+            schema = schema[0]
         if self._schema_validator:
             self._schema_validator(schema)
         if self._data_validator:
             self._data_validator(data, schema)
         with connection.begin() as transaction:
             # Copy current version to previous versions
-            assert connection.execute(
+            if connection.execute(
                 self._previous_table
                 .insert()
                 .from_select(
@@ -197,9 +203,10 @@ class VersionedJSONSerializableObjectTables(object):
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
                 ),
                 [{'oid': object_id}]
-            ).rowcount == 1
+            ).rowcount != 1:
+                return None
             # Update current version to new version
-            version_id = connection.execute(
+            connection.execute(
                 self._current_table
                 .update()
                 .where(self._current_table.c.object_id == db.bindparam('oid'))
@@ -209,12 +216,9 @@ class VersionedJSONSerializableObjectTables(object):
                     schema=schema,
                     user_id=user_id,
                     utc_datetime=utc_datetime
-                )
-                .returning(
-                    self._current_table.c.version_id
                 ),
                 [{'oid': object_id}]
-            ).scalar()
+            )
             transaction.commit()
         return self.get_current_object(object_id, connection=connection)
 
@@ -266,7 +270,7 @@ class VersionedJSONSerializableObjectTables(object):
             self._current_table.c.user_id,
             self._current_table.c.utc_datetime
         ])
-        if action_table is not None or action_filter is not None:
+        if action_table is not None and action_filter is not None:
             assert self._action_id_column is not None
             assert action_table is not None
             assert action_filter is not None
@@ -349,31 +353,3 @@ class VersionedJSONSerializableObjectTables(object):
         if current_object is not None and current_object.version_id == version_id:
             return current_object
         return None
-
-    def restore_object_version(self, object_id, version_id, user_id, utc_datetime=None, connection=None):
-        """
-        Reverts the changes made to an object and restores a specific version of it, while keeping the version history.
-        This function merely adds a new version which sets the data and schema to those of the given version.
-
-        :param object_id: the ID of the existing object
-        :param version_id: the ID of the object's existing version
-        :param user_id: the ID of the user who restored the object version
-        :param utc_datetime: the datetime (in UTC) when the version was restored (optional, defaults to utcnow())
-        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
-        :return: the object as object_type or None if the object or this version of it does not exist
-        """
-        if connection is None:
-            connection = self.bind.connect()
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        object_version = self.get_object_version(object_id=object_id, version_id=version_id)
-        if object_version is None:
-            return None
-        return self.update_object(
-            object_id=object_id,
-            data=object_version.data,
-            schema=object_version.schema,
-            user_id=user_id,
-            utc_datetime=utc_datetime,
-            connection=connection
-        )

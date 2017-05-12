@@ -7,8 +7,8 @@ import datetime
 import pytest
 
 import sampledb
-from sampledb.models import User, UserType, Action, ActionType, Objects, Object
-from sampledb.logic import comments
+from sampledb.models import User, UserType, Action, ActionType, Object
+from sampledb.logic import comments, objects
 
 from ..test_utils import app_context
 
@@ -52,7 +52,7 @@ def action():
 @pytest.fixture
 def object(user: User, action: Action):
     data = {'name': {'_type': 'text', 'text': 'Object'}}
-    return Objects.create_object(user_id=user.id, action_id=action.id, data=data, schema=action.schema)
+    return objects.create_object(user_id=user.id, action_id=action.id, data=data)
 
 
 def test_comments(user: User, object: Object):
