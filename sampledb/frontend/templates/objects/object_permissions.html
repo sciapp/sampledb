@@ -103,7 +103,7 @@
         {% endif %}
         {% for user_permissions_form in form.user_permissions %}
           {% set user_id = user_permissions_form.user_id.data | int %}
-          {% set user = User.query.get(user_id) %}
+          {% set user = get_user(user_id) %}
           {% set permissions = user_permissions.get(user_id, Permissions.NONE) %}
           <tr>
             <td>
@@ -167,7 +167,7 @@
         {% endif %}
         {% for user_id, permissions in user_permissions.items() %}
           {% if user_id is not none %}
-            {% set user = User.query.get(user_id) %}
+            {% set user = get_user(user_id) %}
             <tr>
               <td style="vertical-align: middle">
                 <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>

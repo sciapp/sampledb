@@ -12,7 +12,7 @@
   <h4>Members</h4>
   <ul>
     {% for user_id in group_member_ids %}
-    {% with user = User.query.get(user_id) %}
+    {% with user = get_user(user_id) %}
       <li><a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a></li>
     {% endwith %}
   {% endfor %}
