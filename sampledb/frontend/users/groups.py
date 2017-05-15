@@ -39,7 +39,7 @@ def groups():
         show_create_form = True
         if create_group_form.validate_on_submit():
             try:
-                group_id = logic.groups.create_group(create_group_form.name.data, create_group_form.description.data, flask_login.current_user.id)
+                group_id = logic.groups.create_group(create_group_form.name.data, create_group_form.description.data, flask_login.current_user.id).id
             except logic.errors.GroupAlreadyExistsError:
                 create_group_form.name.errors.append('A group with this name already exists.')
             except logic.errors.InvalidGroupNameError:

@@ -200,7 +200,7 @@ def test_update_object_permissions(users, independent_action_object):
 def test_group_permissions(users, independent_action_object):
     user, creator = users
     object_id = independent_action_object.object_id
-    group_id = groups.create_group("Example Group", "", creator.id)
+    group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
@@ -259,7 +259,7 @@ def test_group_permissions(users, independent_action_object):
 def test_object_permissions_for_groups(users, independent_action_object):
     user, creator = users
     object_id = independent_action_object.object_id
-    group_id = groups.create_group("Example Group", "", creator.id)
+    group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert permissions.get_object_permissions_for_groups(object_id) == {}
 
@@ -332,7 +332,7 @@ def test_default_permissions_for_creator(users):
 
 def test_default_permissions_for_groups(users, independent_action):
     user, creator = users
-    group_id = groups.create_group("Example Group", "", creator.id)
+    group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert permissions.get_default_permissions_for_groups(creator_id=creator.id) == {}
     object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})

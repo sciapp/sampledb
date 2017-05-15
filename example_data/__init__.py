@@ -32,7 +32,7 @@ def setup_data(app):
         sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
-    group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id)
+    group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id).id
 
     # Setup autologin for testing
     @app.route('/users/me/autologin')

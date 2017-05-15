@@ -767,7 +767,7 @@ def test_object_permissions_add_group(flask_server, user):
         action_id=action.id
     )
 
-    group_id = sampledb.logic.groups.create_group("Example Group", "", user.id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
 
     assert sampledb.logic.permissions.get_object_permissions_for_groups(object.object_id) == {}
 
