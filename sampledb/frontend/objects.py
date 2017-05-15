@@ -9,19 +9,18 @@ import flask
 import flask_login
 import itsdangerous
 
-from .. import db
 from . import frontend
 from .. import logic
 from ..logic import user_log, object_log, comments
+from ..logic.actions import get_action
 from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user
 from ..logic.schemas import validate, generate_placeholder, ValidationError
 from ..logic.object_search import generate_filter_func
-from ..logic.instruments import get_action
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, update_object, get_object, get_object_versions
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm
 from ..models import User, Permissions, ActionType, ObjectLogEntryType
 from ..utils import object_permissions_required
@@ -287,9 +286,9 @@ def new_object():
     if action_id is None or action_id == '':
         # TODO: handle error
         return flask.abort(404)
-    action = get_action(action_id)
-    if action is None:
-        # TODO: handle error
+    try:
+        action = get_action(action_id)
+    except ActionDoesNotExistError:
         return flask.abort(404)
 
     # TODO: check instrument permissions

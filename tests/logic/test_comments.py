@@ -8,7 +8,7 @@ import pytest
 
 import sampledb
 from sampledb.models import User, UserType, Action, ActionType, Object
-from sampledb.logic import comments, objects
+from sampledb.logic import comments, objects, actions
 
 from ..test_utils import app_context
 
@@ -18,14 +18,12 @@ def user():
     user = User(name='User', email="example@fz-juelich.de", type=UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    # force attribute refresh
-    assert user.id is not None
     return user
 
 
 @pytest.fixture
 def action():
-    action = Action(
+    action = actions.create_action(
         action_type=ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
@@ -42,10 +40,6 @@ def action():
         description='',
         instrument_id=None
     )
-    sampledb.db.session.add(action)
-    sampledb.db.session.commit()
-    # force attribute refresh
-    assert action.id is not None
     return action
 
 

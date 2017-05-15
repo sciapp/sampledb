@@ -8,8 +8,10 @@ Usage: python -m sampledb create_action <instrument_id> <type: sample or measure
 import json
 import sys
 from .. import create_app
-from ..logic.instruments import create_action, get_instrument, ActionType
+from ..logic.actions import create_action, ActionType
+from ..logic.instruments import get_instrument
 from ..logic.schemas import validate_schema, ValidationError
+from ..logic.errors import InstrumentDoesNotExistError
 
 
 def main(arguments):
@@ -31,8 +33,9 @@ def main(arguments):
         exit(1)
     app = create_app()
     with app.app_context():
-        instrument = get_instrument(instrument_id)
-        if instrument is None:
+        try:
+            instrument = get_instrument(instrument_id)
+        except InstrumentDoesNotExistError:
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)
         with open(schema_file_name, 'r', encoding='utf-8') as schema_file:

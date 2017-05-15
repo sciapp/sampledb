@@ -18,8 +18,10 @@ Objects can be made public, which grants READ permissions to any logged-in user 
 
 import typing
 from .. import db
-from .instruments import get_action
+from . import errors
+from .actions import get_action
 from .groups import get_user_groups, get_group_member_ids
+from .instruments import get_instrument
 from .objects import get_object, get_objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
 
@@ -64,10 +66,14 @@ def get_object_permissions_for_groups(object_id: int) -> typing.Dict[int, Permis
 
 def _get_object_responsible_user_ids(object_id):
     object = get_object(object_id)
-    action = get_action(object.action_id)
-    if action is None or action.instrument is None:
+    try:
+        action = get_action(object.action_id)
+    except errors.ActionDoesNotExistError:
         return []
-    return [user.id for user in action.instrument.responsible_users]
+    if action.instrument_id is None:
+        return []
+    instrument = get_instrument(action.instrument_id)
+    return [user.id for user in instrument.responsible_users]
 
 
 def get_user_object_permissions(object_id, user_id, include_instrument_responsible_users=True, include_groups=True):

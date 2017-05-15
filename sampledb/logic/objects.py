@@ -14,7 +14,7 @@ the functions in this module should be called from within a Flask app context.
 
 import typing
 from ..models import Objects, Object, Action, ActionType
-from . import object_log, user_log, permissions, instruments, errors, users
+from . import object_log, user_log, permissions, errors, users, actions
 import sqlalchemy.exc
 
 
@@ -32,11 +32,11 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
+    actions.get_action(action_id)
+    users.get_user(user_id)
     try:
         object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
     except sqlalchemy.exc.IntegrityError:
-        instruments.get_action(action_id)
-        users.get_user(user_id)
         raise
     object_log.create_object(object_id=object.object_id, user_id=user_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
@@ -188,7 +188,7 @@ def _update_object_references(object: Object, user_id: int) -> None:
     :param object: the updated (or newly created) object
     :param user_id: the user who caused the object update or creation
     """
-    action_type = instruments.get_action(object.action_id).type
+    action_type = actions.get_action(object.action_id).type
     for path, schema, data in _get_object_properties(object):
         if schema['type'] == 'sample' and data is not None and data['object_id'] is not None:
             referenced_object_id = data['object_id']

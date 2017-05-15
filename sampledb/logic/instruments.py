@@ -6,11 +6,8 @@
 import typing
 
 from .. import db
-from ..models import User, Instrument, Action, ActionType
-from .schemas import validate_schema
-from .users import get_user
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+from ..models import Instrument
+from . import users, errors
 
 
 def create_instrument(name: str, description: str) -> Instrument:
@@ -28,11 +25,16 @@ def get_instruments() -> typing.List[Instrument]:
 
 
 def get_instrument(instrument_id: int) -> Instrument:
-    return Instrument.query.get(instrument_id)
+    instrument = Instrument.query.get(instrument_id)
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    return instrument
 
 
 def update_instrument(instrument_id: int, name: str, description: str) -> Instrument:
     instrument = Instrument.query.get(instrument_id)
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
     instrument.name = name
     instrument.description = description
     db.session.add(instrument)
@@ -42,7 +44,9 @@ def update_instrument(instrument_id: int, name: str, description: str) -> Instru
 
 def add_instrument_responsible_user(instrument_id: int, user_id: int):
     instrument = Instrument.query.get(instrument_id)
-    user = get_user(user_id)
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    user = users.get_user(user_id)
     instrument.responsible_users.append(user)
     db.session.add(instrument)
     db.session.commit()
@@ -50,42 +54,9 @@ def add_instrument_responsible_user(instrument_id: int, user_id: int):
 
 def remove_instrument_responsible_user(instrument_id: int, user_id: int):
     instrument = Instrument.query.get(instrument_id)
-    user = get_user(user_id)
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    user = users.get_user(user_id)
     instrument.responsible_users.remove(user)
     db.session.add(instrument)
     db.session.commit()
-
-
-def create_action(action_type: ActionType, name: str, description: str, schema: dict, instrument_id: int=None) -> Action:
-    validate_schema(schema)
-    action = Action(
-        action_type=action_type,
-        name=name,
-        description=description,
-        schema=schema,
-        instrument_id=instrument_id
-    )
-    db.session.add(action)
-    db.session.commit()
-    return action
-
-
-def get_actions(action_type: ActionType=None) -> typing.List[Action]:
-    if action_type:
-        return Action.query.filter_by(type=action_type).all()
-    return Action.query.all()
-
-
-def get_action(action_id: int) -> Action:
-    return Action.query.get(action_id)
-
-
-def update_action(action_id: int, name: str, description: str, schema: dict) -> Action:
-    validate_schema(schema)
-    action = Action.query.get(action_id)
-    action.name = name
-    action.description = description
-    action.schema = schema
-    db.session.add(action)
-    db.session.commit()
-    return action

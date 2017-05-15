@@ -38,3 +38,11 @@ class UserAlreadyMemberOfGroupError(ValueError):
 
 class InvalidGroupNameError(ValueError):
     pass
+
+
+class ActionDoesNotExistError(Exception):
+    pass
+
+
+class InstrumentDoesNotExistError(Exception):
+    pass
