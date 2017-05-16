@@ -131,7 +131,7 @@ def delete_group(group_id: int) -> None:
 
 def get_group(group_id: int) -> Group:
     """
-    Returns the group with the given ID
+    Returns the group with the given ID.
 
     :param group_id: the ID of an existing group
     :return: the group

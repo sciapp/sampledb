@@ -16,27 +16,27 @@ class ObjectVersionDoesNotExistError(Exception):
     pass
 
 
-class GroupDoesNotExistError(ValueError):
+class GroupDoesNotExistError(Exception):
     pass
 
 
-class GroupAlreadyExistsError(ValueError):
+class GroupAlreadyExistsError(Exception):
     pass
 
 
-class UserDoesNotExistError(ValueError):
+class UserDoesNotExistError(Exception):
     pass
 
 
-class UserNotMemberOfGroupError(ValueError):
+class UserNotMemberOfGroupError(Exception):
     pass
 
 
-class UserAlreadyMemberOfGroupError(ValueError):
+class UserAlreadyMemberOfGroupError(Exception):
     pass
 
 
-class InvalidGroupNameError(ValueError):
+class InvalidGroupNameError(Exception):
     pass
 
 
@@ -45,4 +45,12 @@ class ActionDoesNotExistError(Exception):
 
 
 class InstrumentDoesNotExistError(Exception):
+    pass
+
+
+class UserAlreadyResponsibleForInstrumentError(Exception):
+    pass
+
+
+class UserNotResponsibleForInstrumentError(Exception):
     pass

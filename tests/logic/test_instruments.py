@@ -48,8 +48,20 @@ def test_instrument_responsible_users():
     assert len(instrument.responsible_users) == 0
     instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     assert len(instrument.responsible_users) == 1
+    with pytest.raises(errors.UserAlreadyResponsibleForInstrumentError):
+        instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     assert len(instrument.responsible_users) == 0
+    with pytest.raises(errors.UserNotResponsibleForInstrumentError):
+        instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.add_instrument_responsible_user(instrument_id=instrument.id+1, user_id=user.id)
+    with pytest.raises(errors.UserDoesNotExistError):
+        instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id+1)
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.remove_instrument_responsible_user(instrument_id=instrument.id+1, user_id=user.id)
+    with pytest.raises(errors.UserDoesNotExistError):
+        instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id+1)
 
 
 def test_get_missing_instrument():
