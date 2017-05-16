@@ -8,7 +8,6 @@ import flask_login
 
 from .. import frontend
 from ... import logic
-from ...models import User
 from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm
 
 
@@ -122,4 +121,4 @@ def group(group_id):
         edit_group_form = None
         invite_user_form = None
 
-    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, User=User, get_user=logic.users.get_user, leave_group_form=leave_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)
+    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, get_users=logic.users.get_users, get_user=logic.users.get_user, leave_group_form=leave_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)

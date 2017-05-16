@@ -15,8 +15,8 @@ from ..users_forms import RequestPasswordResetForm, PasswordForm, Authentication
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm
 
 from ...logic import user_log
-from ...logic.authentication import login, add_login, remove_authentication_method, change_password_in_authentication_method
-from ...logic.users import get_user
+from ...logic.authentication import add_login, remove_authentication_method, change_password_in_authentication_method
+from ...logic.users import get_user, get_users
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, default_is_public, set_default_public
@@ -80,7 +80,7 @@ def change_preferences(user, user_id):
         group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
     default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
 
-    users = User.query.all()
+    users = get_users()
     users = [user for user in users if user.id not in user_permissions]
     groups = get_user_groups(flask_login.current_user.id)
     groups = [group for group in groups if group.id not in group_permissions]
