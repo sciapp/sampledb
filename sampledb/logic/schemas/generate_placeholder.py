@@ -1,23 +1,23 @@
 # coding: utf-8
 """
-
+Implementation of generate_placeholder(schema)
 """
 
 import typing
-from .errors import SchemaError
-from .utils import units_are_valid, get_dimensionality_for_units
 
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
+from ..errors import UndefinedUnitError, SchemaError
+from .utils import get_dimensionality_for_units
 
 
 def generate_placeholder(schema: dict, path: typing.Union[None, typing.List[str]]=None) -> typing.Union[dict, list, None]:
     """
     Generates a placeholder object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object or None, if there is no default
+    :raise SchemaError: if the type is missing or invalid, or if the schema
+        contains a quantity with invalid units
     """
     if path is None:
         path = []
@@ -44,6 +44,7 @@ def generate_placeholder(schema: dict, path: typing.Union[None, typing.List[str]
 def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
     """
     Generates a placeholder array object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object
@@ -63,6 +64,7 @@ def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
 def _generate_object_placeholder(schema: dict, path: typing.List[str]) -> dict:
     """
     Generates a placeholder object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object
@@ -79,6 +81,7 @@ def _generate_object_placeholder(schema: dict, path: typing.List[str]) -> dict:
 def _generate_bool_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
     """
     Generates a placeholder boolean object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object or None, if there is no default value
@@ -95,6 +98,7 @@ def _generate_bool_placeholder(schema: dict, path: typing.List[str]) -> typing.U
 def _generate_text_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
     """
     Generates a placeholder text object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object or None, if there is no default text
@@ -111,6 +115,7 @@ def _generate_text_placeholder(schema: dict, path: typing.List[str]) -> typing.U
 def _generate_datetime_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
     """
     Generates a placeholder datetime object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object or None, if there is no default datetime
@@ -127,18 +132,21 @@ def _generate_datetime_placeholder(schema: dict, path: typing.List[str]) -> typi
 def _generate_quantity_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
     """
     Generates a placeholder quantity object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: the generated object or None, if there is no default magnitude (in base units)
+    :raise SchemaError: if the units are invalid
     """
     if 'default' not in schema:
         return None
     magnitude_in_base_units = schema['default']
     units = schema['units']
 
-    if not units_are_valid(units):
+    try:
+        dimensionality = get_dimensionality_for_units(units)
+    except UndefinedUnitError:
         raise SchemaError('invalid units', path)
-    dimensionality = get_dimensionality_for_units(units)
     return {
         '_type': 'quantity',
         'dimensionality': dimensionality,
@@ -150,6 +158,7 @@ def _generate_quantity_placeholder(schema: dict, path: typing.List[str]) -> typi
 def _generate_sample_placeholder(schema: dict, path: typing.List[str]) -> None:
     """
     Generates a placeholder sample object based on an object schema.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: None, as there can be no default sample

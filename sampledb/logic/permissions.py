@@ -19,10 +19,10 @@ Objects can be made public, which grants READ permissions to any logged-in user 
 import typing
 from .. import db
 from . import errors
-from .actions import get_action
+from . import actions
 from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
-from .objects import get_object, get_objects
+from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
 
 
@@ -65,9 +65,9 @@ def get_object_permissions_for_groups(object_id: int) -> typing.Dict[int, Permis
 
 
 def _get_object_responsible_user_ids(object_id):
-    object = get_object(object_id)
+    object = objects.get_object(object_id)
     try:
-        action = get_action(object.action_id)
+        action = actions.get_action(object.action_id)
     except errors.ActionDoesNotExistError:
         return []
     if action.instrument_id is None:
@@ -152,9 +152,9 @@ def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_
     else:
         action_filter = None
 
-    objects = get_objects(filter_func=filter_func, action_filter=action_filter)
-    objects = [obj for obj in objects if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
-    return objects
+    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter)
+    objs = [obj for obj in objs if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
+    return objs
 
 
 class InvalidDefaultPermissionsError(Exception):

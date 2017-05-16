@@ -8,7 +8,8 @@ import pytest
 import sampledb
 import sqlalchemy as db
 from sampledb.logic.objects import create_object, get_object
-from sampledb.logic.schemas import validate, ValidationError
+from sampledb.logic.schemas import validate
+from sampledb.logic.errors import ValidationError
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

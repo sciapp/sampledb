@@ -9,8 +9,8 @@ import json
 import sys
 from .. import create_app
 from ..logic.actions import update_action, get_action
-from ..logic.schemas import validate_schema, ValidationError
-from ..logic.errors import ActionDoesNotExistError
+from ..logic.schemas import validate_schema
+from ..logic.errors import ActionDoesNotExistError, ValidationError
 
 
 def main(arguments):
@@ -38,7 +38,7 @@ def main(arguments):
         except ValidationError as e:
             print('Error: invalid schema: {}'.format(str(e)), file=sys.stderr)
             exit(1)
-        action = update_action(
+        update_action(
             action_id=action.id,
             name=name,
             description=description,

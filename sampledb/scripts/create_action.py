@@ -10,8 +10,8 @@ import sys
 from .. import create_app
 from ..logic.actions import create_action, ActionType
 from ..logic.instruments import get_instrument
-from ..logic.schemas import validate_schema, ValidationError
-from ..logic.errors import InstrumentDoesNotExistError
+from ..logic.schemas import validate_schema
+from ..logic.errors import InstrumentDoesNotExistError, ValidationError
 
 
 def main(arguments):

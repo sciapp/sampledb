@@ -1,26 +1,24 @@
 # coding: utf-8
 """
-
+Implementation of validate(instance, schema)
 """
 
 import re
 import datetime
 import typing
 
-from .errors import ValidationError, ValidationMultiError
-from ...logic import actions
-from ...models import objects
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+from ...logic import actions, objects
+from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError
 
 
 def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Union[None, typing.List[str]]=None) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if path is None:
         path = []
@@ -49,10 +47,11 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Unio
 def _validate_array(instance: list, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, list):
         raise ValidationError('instance must be list', path)
@@ -75,10 +74,11 @@ def _validate_array(instance: list, schema: dict, path: typing.List[str]) -> Non
 def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given object schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
@@ -104,10 +104,11 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> No
 def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
@@ -141,10 +142,11 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
 def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given datetime object schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
@@ -170,10 +172,11 @@ def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> 
 def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given boolean object schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
@@ -195,10 +198,11 @@ def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None
 def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given quantity object schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
@@ -224,10 +228,11 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
 def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given sample object schema and raises a ValidationError if it is invalid.
+
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
-    :raises: ValidationError, if the schema is invalid. 
+    :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
@@ -244,8 +249,9 @@ def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> No
         raise ValidationError('expected _type "sample"', path)
     if not isinstance(instance['object_id'], int):
         raise ValidationError('object_id must be int', path)
-    sample = objects.Objects.get_current_object(object_id=instance['object_id'])
-    if sample is None:
+    try:
+        sample = objects.get_object(object_id=instance['object_id'])
+    except ObjectDoesNotExistError:
         raise ValidationError('object does not exist', path)
     action = actions.get_action(sample.action_id)
     if action.type != actions.ActionType.SAMPLE_CREATION:

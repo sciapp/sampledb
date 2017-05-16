@@ -53,7 +53,7 @@ def test_create_action_invalid_schema():
     schema = {
         'type': 'invalid'
     }
-    with pytest.raises(schemas.ValidationError):
+    with pytest.raises(errors.ValidationError):
         actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
 
 
