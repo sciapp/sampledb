@@ -61,12 +61,10 @@ def test_comments(user: User, object: Object):
     assert comment.content == "Test 1"
     assert comment.utc_datetime >= start_datetime
     assert comment.utc_datetime <= datetime.datetime.utcnow()
-    comment_datetime = start_datetime-datetime.timedelta(days=1)
-    comments.create_comment(object_id=object.object_id, user_id=user.id, content="Test 2", utc_datetime=comment_datetime)
+    comments.create_comment(object_id=object.object_id, user_id=user.id, content="Test 2")
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 2
-    comment1, comment2 = comments.get_comments_for_object(object_id=object.object_id)
+    comment2, comment1 = comments.get_comments_for_object(object_id=object.object_id)
     assert comment1.content == "Test 2"
-    assert comment1.utc_datetime == comment_datetime
     assert comment2.content == "Test 1"
     assert comment2.utc_datetime >= start_datetime
     assert comment2.utc_datetime <= datetime.datetime.utcnow()
