@@ -5,7 +5,7 @@
 
 import os
 import pytest
-from sampledb.logic import instruments
+from sampledb.logic import instruments, actions
 import sampledb.__main__ as scripts
 from ..test_utils import app_context
 
@@ -20,17 +20,17 @@ def test_create_sample_action(instrument, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
     assert 'Success' in capsys.readouterr()[0]
 
-    assert len(instruments.get_actions()) == 1
-    action = instruments.get_actions()[0]
+    assert len(actions.get_actions()) == 1
+    action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == description
     assert action.instrument_id == instrument.id
-    assert action.type == instruments.ActionType.SAMPLE_CREATION
+    assert action.type == actions.ActionType.SAMPLE_CREATION
 
 
 def test_create_measurement_action(instrument, capsys):
@@ -38,27 +38,27 @@ def test_create_measurement_action(instrument, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
     assert 'Success' in capsys.readouterr()[0]
 
-    assert len(instruments.get_actions()) == 1
-    action = instruments.get_actions()[0]
+    assert len(actions.get_actions()) == 1
+    action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == description
     assert action.instrument_id == instrument.id
-    assert action.type == instruments.ActionType.MEASUREMENT
+    assert action.type == actions.ActionType.MEASUREMENT
 
 
 def test_create_action_missing_arguments(instrument, capsys):
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'create_action', str(instrument.id)])
     assert exc_info.value != 0
     assert 'Usage' in capsys.readouterr()[0]
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
 
 def test_create_action_invalid_instrument_id(instrument, capsys):
@@ -66,13 +66,13 @@ def test_create_action_invalid_instrument_id(instrument, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'create_action', instrument.name, action_type, name, description, schema_file_name])
     assert exc_info.value != 0
     assert 'Error: instrument_id must be an integer' in capsys.readouterr()[1]
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
 
 def test_create_action_missing_instrument(capsys):
@@ -80,13 +80,13 @@ def test_create_action_missing_instrument(capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'create_action', '1', action_type, name, description, schema_file_name])
     assert exc_info.value != 0
     assert 'Error: no instrument with this id exists' in capsys.readouterr()[1]
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
 
 def test_create_action_invalid_type(instrument, capsys):
@@ -94,13 +94,13 @@ def test_create_action_invalid_type(instrument, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
     assert exc_info.value != 0
     assert 'Error: action type must be "sample" or "measurement"' in capsys.readouterr()[1]
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
 
 def test_create_action_invalid_schema(instrument, capsys):
@@ -108,10 +108,10 @@ def test_create_action_invalid_schema(instrument, capsys):
     name = 'Example Action'
     description = 'Example Action Description'
     schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'action.json'))
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
     assert exc_info.value != 0
     assert 'Error: invalid schema:' in capsys.readouterr()[1]
-    assert len(instruments.get_actions()) == 0
+    assert len(actions.get_actions()) == 0

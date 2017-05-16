@@ -6,8 +6,7 @@
 import pytest
 import sampledb
 from sampledb.models import User, UserType
-from sampledb.logic import instruments
-from sampledb.logic import schemas
+from sampledb.logic import instruments, errors
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -49,52 +48,29 @@ def test_instrument_responsible_users():
     assert len(instrument.responsible_users) == 0
     instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     assert len(instrument.responsible_users) == 1
+    with pytest.raises(errors.UserAlreadyResponsibleForInstrumentError):
+        instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     assert len(instrument.responsible_users) == 0
+    with pytest.raises(errors.UserNotResponsibleForInstrumentError):
+        instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.add_instrument_responsible_user(instrument_id=instrument.id+1, user_id=user.id)
+    with pytest.raises(errors.UserDoesNotExistError):
+        instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id+1)
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.remove_instrument_responsible_user(instrument_id=instrument.id+1, user_id=user.id)
+    with pytest.raises(errors.UserDoesNotExistError):
+        instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id+1)
 
 
-def test_create_action():
-    schema = {
-        'title': 'Example Action',
-        'type': 'object',
-        'properties': {
-            'example': {
-                'title': 'Example Attribute',
-                'type': 'text'
-            }
-        }
-    }
-    assert len(instruments.get_actions()) == 0
-    action = instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
-    assert action.name == "Example Action"
-    assert action.description == ""
-    assert action.schema == schema
-    assert len(instruments.get_actions()) == 1
-    assert action == instruments.get_action(action_id=action.id)
+def test_get_missing_instrument():
+    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.get_instrument(instrument_id=instrument.id+1)
 
 
-def test_create_action_invalid_schema():
-    schema = {
-        'type': 'invalid'
-    }
-    with pytest.raises(schemas.ValidationError):
-        instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
-
-
-def test_update_action():
-    schema = {
-        'title': 'Example Action',
-        'type': 'object',
-        'properties': {
-            'example': {
-                'title': 'Example Attribute',
-                'type': 'text'
-            }
-        }
-    }
-    action = instruments.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=schema)
-    instruments.update_action(action_id=action.id, name="Test", description="desc", schema=schema)
-    action = instruments.get_action(action_id=action.id)
-    assert action.name == "Test"
-    assert action.description == "desc"
-    assert action.schema == schema
+def test_update_missing_instrument():
+    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.update_instrument(instrument_id=instrument.id+1, name="Test", description="desc")

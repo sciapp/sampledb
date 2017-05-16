@@ -8,6 +8,7 @@ Usage: python -m sampledb update_instrument <instrument_id> <name> <description>
 import sys
 from .. import create_app
 from ..logic.instruments import update_instrument, get_instrument
+from ..logic.errors import InstrumentDoesNotExistError
 
 
 def main(arguments):
@@ -22,8 +23,9 @@ def main(arguments):
         exit(1)
     app = create_app()
     with app.app_context():
-        instrument = get_instrument(instrument_id)
-        if instrument is None:
+        try:
+            instrument = get_instrument(instrument_id)
+        except InstrumentDoesNotExistError:
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)
         update_instrument(instrument_id, name, description)

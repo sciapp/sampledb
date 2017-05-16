@@ -1,0 +1,105 @@
+# coding: utf-8
+"""
+Logic module for management of actions
+
+Actions are used to represent all kinds of methods or processes that result
+in the creation of a new sample or measurement. What kind of object is
+created when performing an action is defined by the action's ActionType. 
+The action's schema defines what information should or may be recorded in
+SampleDB for a newly created object.
+
+Actions can be related to an instrument, which serves both to group actions
+together and to provide instrument responsible users with permissions for
+samples or measurements created with their instrument.
+
+As actions form the basis for objects, they cannot be deleted. However, an
+action can be altered as long as the type and instrument stay the same.
+"""
+
+import typing
+
+from .. import db
+from ..models import Action, ActionType
+from . import errors, instruments, schemas
+
+
+def create_action(action_type: ActionType, name: str, description: str, schema: dict, instrument_id: int=None) -> Action:
+    """
+    Creates a new action with the given type, name, description and schema. If
+    instrument_id is not None, the action will belong to the instrument with
+    this ID.
+    
+    :param action_type: the type of the action
+    :param name: the name of the action
+    :param description: a (possibly empty) description for the action 
+    :param schema: the schema for objects created using this action
+    :param instrument_id: None or the ID of an existing instrument
+    :return: the created action
+    :raise errors.SchemaValidationError: when the schema is invalid
+    :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
+        and no instrument with the given instrument ID exists
+    """
+    schemas.validate_schema(schema)
+    if instrument_id is not None:
+        # ensure that the instrument can be found
+        instruments.get_instrument(instrument_id)
+    action = Action(
+        action_type=action_type,
+        name=name,
+        description=description,
+        schema=schema,
+        instrument_id=instrument_id
+    )
+    db.session.add(action)
+    db.session.commit()
+    return action
+
+
+def get_actions(action_type: ActionType=None) -> typing.List[Action]:
+    """
+    Returns all actions, optionally only actions of a given type.
+    
+    :param action_type: None or the type of actions' that should be returned
+    :return: the list of actions
+    """
+    if action_type is not None:
+        return Action.query.filter_by(type=action_type).all()
+    return Action.query.all()
+
+
+def get_action(action_id: int) -> Action:
+    """
+    Returns the action with the given action ID.
+    
+    :param action_id: the ID of an existing action
+    :return: the action
+    :raise errors.ActionDoesNotExistError: when no action with the given
+        action ID exists
+    """
+    action = Action.query.get(action_id)
+    if action is None:
+        raise errors.ActionDoesNotExistError()
+    return action
+
+
+def update_action(action_id: int, name: str, description: str, schema: dict) -> None:
+    """
+    Updates the action with the given action ID, setting its name, description and schema.
+    
+    :param action_id: the ID of an existing action
+    :param name: the new name of the action
+    :param description: the new (possibly empty) description of the action
+    :param schema: the new schema for objects created using this action
+    :raise errors.SchemaValidationError: when the schema is invalid
+    :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
+        and no instrument with the given instrument ID exists
+    """
+    schemas.validate_schema(schema)
+    action = Action.query.get(action_id)
+    if action is None:
+        raise errors.ActionDoesNotExistError()
+    action.name = name
+    action.description = description
+    action.schema = schema
+    db.session.add(action)
+    db.session.commit()

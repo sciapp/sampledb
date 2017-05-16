@@ -6,7 +6,7 @@ Usage: python -m sampledb list_actions
 """
 
 from .. import create_app
-from ..logic.instruments import get_actions
+from ..logic.actions import get_actions
 
 
 def main(arguments):

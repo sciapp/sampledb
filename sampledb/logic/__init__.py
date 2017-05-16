@@ -3,6 +3,7 @@
 
 """
 
+from . import actions
 from . import authentication
 from . import comments
 from . import datatypes

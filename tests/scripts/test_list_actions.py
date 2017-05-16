@@ -6,16 +6,14 @@
 import json
 import os
 import pytest
-import io
-import sys
-from sampledb.logic import instruments
+import sampledb.logic
 import sampledb.__main__ as scripts
 from ..test_utils import app_context
 
 
 @pytest.fixture
 def instrument():
-    return instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    return sampledb.logic.instruments.create_instrument('Example Instrument', 'Example Instrument Description')
 
 
 @pytest.fixture
@@ -24,9 +22,9 @@ def actions(instrument):
     with open(schema_file_name) as schema_file:
         schema = json.load(schema_file)
     return [
-        instruments.create_action(
+        sampledb.logic.actions.create_action(
             instrument_id=instrument.id,
-            action_type=instruments.ActionType.SAMPLE_CREATION,
+            action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
             name=name,
             description='',
             schema=schema

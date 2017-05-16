@@ -3,6 +3,8 @@
 
 """
 
+import typing
+
 from . import errors
 from .. models import User
 
@@ -12,3 +14,12 @@ def get_user(user_id: int) -> User:
     if user is None:
         raise errors.UserDoesNotExistError()
     return user
+
+
+def get_users() -> typing.List[User]:
+    """
+    Returns all users.
+    
+    :return: the list of users
+    """
+    return User.query.all()

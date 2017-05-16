@@ -3,10 +3,6 @@
 
 """
 
-# These are imported to allow uniform access to logic errors
-# noinspection PyUnresolvedReferences
-from .schemas.errors import SchemaError, ValidationError
-
 
 class ObjectDoesNotExistError(Exception):
     pass
@@ -16,25 +12,67 @@ class ObjectVersionDoesNotExistError(Exception):
     pass
 
 
-class GroupDoesNotExistError(ValueError):
+class GroupDoesNotExistError(Exception):
     pass
 
 
-class GroupAlreadyExistsError(ValueError):
+class GroupAlreadyExistsError(Exception):
     pass
 
 
-class UserDoesNotExistError(ValueError):
+class UserDoesNotExistError(Exception):
     pass
 
 
-class UserNotMemberOfGroupError(ValueError):
+class UserNotMemberOfGroupError(Exception):
     pass
 
 
-class UserAlreadyMemberOfGroupError(ValueError):
+class UserAlreadyMemberOfGroupError(Exception):
     pass
 
 
-class InvalidGroupNameError(ValueError):
+class InvalidGroupNameError(Exception):
     pass
+
+
+class ActionDoesNotExistError(Exception):
+    pass
+
+
+class InstrumentDoesNotExistError(Exception):
+    pass
+
+
+class UserAlreadyResponsibleForInstrumentError(Exception):
+    pass
+
+
+class UserNotResponsibleForInstrumentError(Exception):
+    pass
+
+
+class UndefinedUnitError(Exception):
+    pass
+
+
+class SchemaError(Exception):
+    def __init__(self, message, path):
+        if path:
+            message += ' (at ' + ' -> '.join(path) + ')'
+        super(SchemaError, self).__init__(message)
+        self.path = path
+        self.message = message
+        self.paths = [path]
+
+
+class ValidationError(SchemaError):
+    def __init__(self, message, path):
+        super(ValidationError, self).__init__(message, path)
+
+
+class ValidationMultiError(ValidationError):
+    def __init__(self, errors):
+        message = '\n'.join(error.message for error in errors)
+        super(ValidationMultiError, self).__init__(message, [])
+        self.paths = [error.path for error in errors]

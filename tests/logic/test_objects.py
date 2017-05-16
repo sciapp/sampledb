@@ -11,8 +11,7 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 from sampledb import db
-from sampledb.models import User, UserType
-from sampledb.logic.instruments import ActionType, create_action
+from sampledb.models import User, UserType, ActionType
 
 from ..test_utils import flask_server, app, app_context
 
@@ -36,7 +35,7 @@ def user2():
 
 @pytest.fixture
 def action():
-    action = create_action(
+    action = sampledb.logic.actions.create_action(
         action_type=ActionType.SAMPLE_CREATION,
         name="",
         description="",
@@ -81,7 +80,7 @@ def test_create_object_with_missing_action(user, action) -> None:
             'text': 'Example'
         }
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(sampledb.logic.errors.ActionDoesNotExistError):
         sampledb.logic.objects.create_object(action_id=action.id+1, data=data, user_id=user.id)
 
 
@@ -92,7 +91,7 @@ def test_create_object_with_missing_user(user, action) -> None:
             'text': 'Example'
         }
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
         sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id+1)
 
 
@@ -135,7 +134,7 @@ def test_get_objects(user, action) -> None:
 
 def test_get_objects_action_filter(user, action) -> None:
     action1 = action
-    action2 = create_action(
+    action2 = sampledb.logic.actions.create_action(
         action_type=ActionType.SAMPLE_CREATION,
         name="",
         description="",
@@ -305,7 +304,7 @@ def test_restore_object_version_invalid_data(user, action) -> None:
 
 
 def test_measurement_referencing_sample(flask_server, user) -> None:
-    sample_action = sampledb.logic.instruments.create_action(
+    sample_action = sampledb.logic.actions.create_action(
         action_type=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Sample Action',
         description='',
@@ -320,7 +319,7 @@ def test_measurement_referencing_sample(flask_server, user) -> None:
             },
             'required': ['name']
         })
-    measurement_action = sampledb.logic.instruments.create_action(
+    measurement_action = sampledb.logic.actions.create_action(
         action_type=sampledb.models.ActionType.MEASUREMENT,
         name='Measurement Action',
         description='',

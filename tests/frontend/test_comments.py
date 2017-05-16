@@ -31,7 +31,7 @@ def user(flask_server):
 
 @pytest.fixture
 def action():
-    action = sampledb.logic.instruments.create_action(
+    action = sampledb.logic.actions.create_action(
         action_type=ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={

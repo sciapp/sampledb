@@ -7,7 +7,8 @@ import flask
 import flask_login
 
 from . import frontend
-from ..logic.instruments import get_action, get_actions, ActionType
+from ..logic.actions import get_action, get_actions, ActionType
+from ..logic import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -31,5 +32,8 @@ def actions():
 @frontend.route('/actions/<int:action_id>')
 @flask_login.login_required
 def action(action_id):
-    action = get_action(action_id)
+    try:
+        action = get_action(action_id)
+    except errors.ActionDoesNotExistError:
+        return flask.abort(404)
     return flask.render_template('actions/action.html', action=action, ActionType=ActionType)

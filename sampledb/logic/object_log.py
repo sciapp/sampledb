@@ -5,8 +5,8 @@
 
 import datetime
 import typing
-from .permissions import get_user_object_permissions, Permissions
-from ..models.objects import Objects
+from . import objects
+from . import permissions
 from ..models import ObjectLogEntry, ObjectLogEntryType
 from .. import db
 
@@ -18,9 +18,9 @@ def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[Obj
     processed_object_log_entries = []
     for object_log_entry in object_log_entries:
         if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
-            measurement = Objects.get_current_object(object_id=object_log_entry.data['measurement_id'])
+            measurement = objects.get_object(object_id=object_log_entry.data['measurement_id'])
             object_log_entry.data['measurement'] = measurement
-            if user_id is not None and Permissions.READ not in get_user_object_permissions(object_id=measurement.object_id, user_id=user_id):
+            if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=measurement.object_id, user_id=user_id):
                 continue
         processed_object_log_entries.append(object_log_entry)
     return processed_object_log_entries

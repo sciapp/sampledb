@@ -8,7 +8,8 @@ Usage: python -m sampledb update_action <action_id> <schema_file_name>
 import json
 import sys
 from .. import create_app
-from ..logic.instruments import get_action
+from ..logic.actions import get_action
+from ..logic.errors import ActionDoesNotExistError
 
 
 def main(arguments):
@@ -24,8 +25,9 @@ def main(arguments):
 
     app = create_app()
     with app.app_context():
-        action = get_action(action_id)
-        if action is None:
+        try:
+            action = get_action(action_id)
+        except ActionDoesNotExistError:
             print('Error: no action with this id exists', file=sys.stderr)
             exit(1)
         schema = action.schema
