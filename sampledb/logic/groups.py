@@ -9,6 +9,7 @@ import typing
 from .. import db
 from ..models import groups, User
 from .user import get_user
+from .utils import send_confirm_email_to_invite_user_to_group
 
 
 class Group(collections.namedtuple('Group', ['id', 'name', 'description'])):
@@ -115,6 +116,19 @@ def get_user_groups(user_id: int) -> typing.List[Group]:
     if user is None:
         raise UserDoesNotExistError()
     return [Group.from_database(group) for group in user.groups]
+
+
+def invite_user_to_group(group_id: int, user_id: int) -> None:
+    group = groups.Group.query.get(group_id)
+    if group is None:
+        raise GroupDoesNotExistError()
+    user = get_user(user_id)
+    if user is None:
+        raise UserDoesNotExistError()
+    if user in group.members:
+        raise UserAlreadyMemberOfGroupError()
+    send_confirm_email_to_invite_user_to_group(group_id, user_id)
+    return True
 
 
 def add_user_to_group(group_id: int, user_id: int) -> None:
