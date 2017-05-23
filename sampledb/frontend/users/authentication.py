@@ -8,9 +8,8 @@ import flask_login
 
 from .. import frontend
 from ...logic.authentication import login
-from ...logic.user import get_user
+from ...logic.users import get_user
 from ...frontend.users_forms import SigninForm, SignoutForm
-from ...models import User
 from ... import login_manager
 
 

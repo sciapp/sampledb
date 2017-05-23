@@ -3,12 +3,11 @@
 
 """
 
-import datetime
 import functools
 import pint
-from ..logic import datatypes
 from ..logic import schemas
 from ..logic.units import ureg
+from ..logic.errors import ValidationError
 
 
 def form_data_parser(func):
@@ -21,7 +20,7 @@ def form_data_parser(func):
                 if name.startswith(id_prefix) and '_' not in name[len(id_prefix)+1:]:
                     errors[name] = str(e)
             return None
-        except schemas.ValidationError as e:
+        except ValidationError as e:
             for name in form_data:
                 if name.startswith(id_prefix) and '_' not in name[len(id_prefix)+1:]:
                     errors[name] = e.message

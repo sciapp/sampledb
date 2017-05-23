@@ -3,19 +3,22 @@
 
 """
 
+from . import actions
 from . import authentication
 from . import comments
 from . import datatypes
+from . import errors
 from . import groups
 from . import instruments
 from . import ldap
+from . import objects
 from . import object_log
 from . import object_search
 from . import permissions
 from . import schemas
 from . import security_tokens
 from . import units
-from . import user
+from . import users
 from . import user_log
 from . import utils
 from . import where_filters

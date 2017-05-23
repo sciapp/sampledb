@@ -675,7 +675,7 @@ def test_edit_default_user_permissions(flask_server, user):
 
 def test_edit_default_group_permissions(flask_server, user):
     with flask_server.app.app_context():
-        group_id = groups.create_group("Example Group", "", user.id)
+        group_id = groups.create_group("Example Group", "", user.id).id
         permissions.set_default_permissions_for_group(creator_id=user.id, group_id=group_id, permissions=permissions.Permissions.WRITE)
         assert permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == permissions.Permissions.WRITE
 
@@ -740,7 +740,7 @@ def test_add_default_user_permissions(flask_server, user):
 
 def test_add_default_group_permissions(flask_server, user):
     with flask_server.app.app_context():
-        group_id = groups.create_group("Example Group", "", user.id)
+        group_id = groups.create_group("Example Group", "", user.id).id
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200

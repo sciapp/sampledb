@@ -8,8 +8,8 @@ Usage: python -m sampledb update_instrument_responsible_users <instrument_id> <i
 import sys
 from .. import create_app
 from ..logic.instruments import get_instrument, add_instrument_responsible_user, remove_instrument_responsible_user
-from ..logic.user import get_user
-from ..models import User
+from ..logic.users import get_user
+from ..logic.errors import UserDoesNotExistError, InstrumentDoesNotExistError
 
 
 def main(arguments):
@@ -32,14 +32,16 @@ def main(arguments):
         instrument_responsible_user_ids[i] = user_id
     app = create_app()
     with app.app_context():
-        instrument = get_instrument(instrument_id)
-        if instrument is None:
+        try:
+            instrument = get_instrument(instrument_id)
+        except InstrumentDoesNotExistError:
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)
         for user_id in instrument_responsible_user_ids:
-            user = get_user(user_id)
-            if user is None:
-                print('Error: no user with th id #{} exists'.format(user_id), file=sys.stderr)
+            try:
+                get_user(user_id)
+            except UserDoesNotExistError:
+                print('Error: no user with the id #{} exists'.format(user_id), file=sys.stderr)
                 exit(1)
         previous_instrument_responsible_user_ids = [user.id for user in instrument.responsible_users]
         for user_id in instrument_responsible_user_ids:

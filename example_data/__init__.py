@@ -9,7 +9,8 @@ import flask_login
 import sqlalchemy
 import sampledb
 from sampledb.models import Objects, User, UserType, ActionType
-from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user, create_action
+from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
+from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
 from sampledb.logic import groups, permissions
 
@@ -32,7 +33,7 @@ def setup_data(app):
         sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
-    group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id)
+    group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id).id
 
     # Setup autologin for testing
     @app.route('/users/me/autologin')

@@ -10,17 +10,19 @@ import flask_login
 import itsdangerous
 
 from . import frontend
+from .. import logic
 from ..logic import user_log, object_log, comments
-from ..logic.permissions import get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups
+from ..logic.actions import ActionType, get_action
+from ..logic.permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups
 from ..logic.datatypes import JSONEncoder
-from ..logic.user import get_user
-from ..logic.schemas import validate, generate_placeholder, ValidationError
+from ..logic.users import get_user, get_users
+from ..logic.schemas import validate, generate_placeholder
 from ..logic.object_search import generate_filter_func
-from ..logic.instruments import get_action
-from ..logic.groups import get_group, get_user_groups, GroupDoesNotExistError
+from ..logic.groups import get_group, get_user_groups
+from ..logic.objects import create_object, update_object, get_object, get_object_versions
+from ..logic.object_log import ObjectLogEntryType
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm
-from .. import db
-from ..models import User, Action, Objects, Permissions, ActionType, ObjectLogEntryType
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -54,7 +56,7 @@ def objects():
         if obj.version_id == 0:
             original_object = obj
         else:
-            original_object = Objects.get_object_version(object_id=obj.object_id, version_id=0)
+            original_object = get_object(object_id=obj.object_id, version_id=0)
         objects[i] = {
             'object_id': obj.object_id,
             'version_id': obj.version_id,
@@ -89,7 +91,7 @@ def objects():
 
     objects.sort(key=lambda obj: obj['object_id'])
     samples = {
-        sample_id: Objects.get_current_object(object_id=sample_id)
+        sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids
     }
     return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType, samples=samples)
@@ -185,31 +187,13 @@ def show_object_form(object, action):
                     # TODO: handle error
                     flask.abort(400)
                 if object is None:
-                    object = Objects.create_object(data=object_data, schema=schema, user_id=flask_login.current_user.id, action_id=action.id)
-                    user_log.create_object(user_id=flask_login.current_user.id, object_id=object.object_id)
-                    object_log.create_object(object_id=object.object_id, user_id=flask_login.current_user.id)
+                    object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id)
                     flask.flash('The object was created successfully.', 'success')
                 else:
-                    object = Objects.update_object(object_id=object.object_id, data=object_data, schema=schema, user_id=flask_login.current_user.id)
-                    user_log.edit_object(user_id=flask_login.current_user.id, object_id=object.object_id, version_id=object.version_id)
-                    object_log.edit_object(object_id=object.object_id, user_id=flask_login.current_user.id, version_id=object.version_id)
+                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data)
                     flask.flash('The object was updated successfully.', 'success')
 
-                # TODO: gather references to other objects more effectively
-                if get_action(object.action_id).type == ActionType.MEASUREMENT:
-                    if 'sample' in object.schema.get('properties', {}) and object.schema['properties']['sample']['type'] == 'sample':
-                        if 'sample' in object.data and object.data['sample'] is not None:
-                            sample_id = object.data['sample']['object_id']
-                            previous_sample_id = None
-                            if object.version_id > 0:
-                                previous_object_version = Objects.get_object_version(object.object_id, object.version_id-1)
-                                if 'sample' in previous_object_version.schema.get('properties', {}) and previous_object_version.schema['properties']['sample']['type'] == 'sample':
-                                    if 'sample' in previous_object_version.data and previous_object_version.data['sample'] is not None:
-                                        previous_sample_id = previous_object_version.data['sample']['object_id']
-                            if sample_id != previous_sample_id:
-                                object_log.use_object_in_measurement(object_id=sample_id, user_id=flask_login.current_user.id, measurement_id=object.object_id)
-
-                return flask.redirect(flask.url_for('.object', object_id=object.object_id))
+                return flask.redirect(flask.url_for('.object', object_id=object.id))
         elif any(name.startswith('action_object_') and (name.endswith('_delete') or name.endswith('_add')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
             previous_actions.append(action)
@@ -234,7 +218,7 @@ def show_object_form(object, action):
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.READ)
 def object(object_id):
-    object = Objects.get_current_object(object_id=object_id)
+    object = get_object(object_id=object_id)
 
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
@@ -302,9 +286,9 @@ def new_object():
     if action_id is None or action_id == '':
         # TODO: handle error
         return flask.abort(404)
-    action = get_action(action_id)
-    if action is None:
-        # TODO: handle error
+    try:
+        action = get_action(action_id)
+    except ActionDoesNotExistError:
         return flask.abort(404)
 
     # TODO: check instrument permissions
@@ -314,22 +298,22 @@ def new_object():
 @frontend.route('/objects/<int:object_id>/versions/')
 @object_permissions_required(Permissions.READ)
 def object_versions(object_id):
-    object = Objects.get_current_object(object_id=object_id)
+    object = get_object(object_id=object_id)
     if object is None:
         return flask.abort(404)
-    object_versions = Objects.get_object_versions(object_id=object_id)
+    object_versions = get_object_versions(object_id=object_id)
     object_versions.sort(key=lambda object_version: -object_version.version_id)
-    return flask.render_template('objects/object_versions.html', User=User, object=object, object_versions=object_versions)
+    return flask.render_template('objects/object_versions.html', get_user=get_user, object=object, object_versions=object_versions)
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
 @object_permissions_required(Permissions.READ)
 def object_version(object_id, version_id):
-    object = Objects.get_object_version(object_id=object_id, version_id=version_id)
+    object = get_object(object_id=object_id, version_id=version_id)
     form = None
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     if Permissions.WRITE in user_permissions:
-        current_object = Objects.get_current_object(object_id=object_id)
+        current_object = get_object(object_id=object_id)
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
@@ -359,17 +343,17 @@ def object_version(object_id, version_id):
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>/restore', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.WRITE)
 def restore_object_version(object_id, version_id):
-    object_version = Objects.get_object_version(object_id=object_id, version_id=version_id)
-    if object_version is None:
+    if version_id < 0 or object_id < 0:
         return flask.abort(404)
-    current_object = Objects.get_current_object(object_id=object_id)
-    if current_object.version_id == version_id:
+    try:
+        current_object = get_object(object_id=object_id)
+    except ObjectDoesNotExistError:
+        return flask.abort(404)
+    if current_object.version_id <= version_id:
         return flask.abort(404)
     form = ObjectVersionRestoreForm()
     if form.validate_on_submit():
-        object = Objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
-        user_log.restore_object_version(user_id=flask_login.current_user.id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
-        object_log.restore_object_version(object_id=object_id, user_id=flask_login.current_user.id, restored_version_id=version_id, version_id=object.version_id)
+        logic.objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
         return flask.redirect(flask.url_for('.object', object_id=object_id))
     return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
 
@@ -377,7 +361,7 @@ def restore_object_version(object_id, version_id):
 @frontend.route('/objects/<int:object_id>/permissions')
 @object_permissions_required(Permissions.READ)
 def object_permissions(object_id):
-    object = Objects.get_current_object(object_id, connection=db.engine)
+    object = get_object(object_id)
     action = get_action(object.action_id)
     instrument = action.instrument
     user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False)
@@ -395,7 +379,7 @@ def object_permissions(object_id):
                 continue
             group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
         edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
-        users = User.query.all()
+        users = get_users()
         users = [user for user in users if user.id not in user_permissions]
         add_user_permissions_form = ObjectUserPermissionsForm()
         groups = get_user_groups(flask_login.current_user.id)
@@ -407,13 +391,12 @@ def object_permissions(object_id):
         add_group_permissions_form = None
         users = []
         groups = []
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, user_permissions=user_permissions, group_permissions=group_permissions, public_permissions=public_permissions, User=User, Permissions=Permissions, form=edit_user_permissions_form, users=users, groups=groups, add_user_permissions_form=add_user_permissions_form, add_group_permissions_form=add_group_permissions_form, get_group=get_group)
+    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, user_permissions=user_permissions, group_permissions=group_permissions, public_permissions=public_permissions, get_user=get_user, Permissions=Permissions, form=edit_user_permissions_form, users=users, groups=groups, add_user_permissions_form=add_user_permissions_form, add_group_permissions_form=add_group_permissions_form, get_group=get_group)
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id):
-
     edit_user_permissions_form = ObjectPermissionsForm()
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
@@ -421,8 +404,9 @@ def update_object_permissions(object_id):
         set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
         for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
-            user = get_user(user_id)
-            if user is None:
+            try:
+                get_user(user_id)
+            except UserDoesNotExistError:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
             set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)

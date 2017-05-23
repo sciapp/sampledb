@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-
+Implementation of validate_schema(schema)
 """
 
 
@@ -8,7 +8,7 @@ import datetime
 import typing
 import re
 
-from .errors import ValidationError
+from ..errors import ValidationError
 from .utils import units_are_valid
 from .validate import validate
 
@@ -18,9 +18,10 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def validate_schema(schema: dict, path: typing.Union[None, typing.List[str]]=None) -> None:
     """
     Validates the given schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     if path is None:
         path = []
@@ -55,9 +56,10 @@ def validate_schema(schema: dict, path: typing.Union[None, typing.List[str]]=Non
 def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given array schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'default'}
     required_keys = {'type', 'title', 'items'}
@@ -97,9 +99,10 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given object schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default'}
     if not path:
@@ -147,9 +150,10 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given text object schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline'}
     schema_keys = set(schema.keys())
@@ -191,9 +195,10 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given datetime object schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'default'}
     schema_keys = set(schema.keys())
@@ -214,9 +219,10 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given boolean object schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'default'}
     schema_keys = set(schema.keys())
@@ -231,9 +237,10 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given quantity object schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'units', 'default'}
     required_keys = {'type', 'title', 'units'}
@@ -257,9 +264,10 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given sample object schema and raises a ValidationError if it is invalid.
+
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :raises: ValidationError, if the schema is invalid.
+    :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title'}
     required_keys = valid_keys

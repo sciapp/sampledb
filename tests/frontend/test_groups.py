@@ -61,7 +61,7 @@ def test_list_groups(flask_server, user_session):
     group_anchors = document.find('ul', id='groups_list').find_all('a')
     assert len(group_anchors) == 0
 
-    group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
 
     r = user_session.get(flask_server.base_url + 'groups/')
     assert r.status_code == 200
@@ -83,7 +83,7 @@ def test_list_user_groups(flask_server, user_session):
     group_anchors = document.find('ul', id='groups_list').find_all('a')
     assert len(group_anchors) == 0
 
-    group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id)
+    sampledb.logic.groups.create_group("Example Group", "", other_user.id)
 
     r = user_session.get(flask_server.base_url + 'groups?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
@@ -91,7 +91,7 @@ def test_list_user_groups(flask_server, user_session):
     group_anchors = document.find('ul', id='groups_list').find_all('a')
     assert len(group_anchors) == 0
 
-    group_id = sampledb.logic.groups.create_group("Example Group 2", "", user_session.user_id)
+    group_id = sampledb.logic.groups.create_group("Example Group 2", "", user_session.user_id).id
 
     r = user_session.get(flask_server.base_url + 'groups?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
@@ -103,7 +103,7 @@ def test_list_user_groups(flask_server, user_session):
 
 
 def test_view_group(flask_server, user_session):
-    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
     r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
     assert r.status_code == 200
@@ -140,7 +140,7 @@ def test_create_group(flask_server, user_session):
 
 
 def test_leave_group(flask_server, user_session):
-    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
     r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
     assert r.status_code == 200
@@ -160,7 +160,7 @@ def test_leave_group(flask_server, user_session):
 
 
 def test_edit_group(flask_server, user_session):
-    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
     r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
     assert r.status_code == 200
@@ -184,7 +184,7 @@ def test_edit_group(flask_server, user_session):
 
 
 def test_send_confirm_email_to_invite_user_to_group(flask_server, user_session, user):
-    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
     new_user = user
 
@@ -217,7 +217,7 @@ def test_send_confirm_email_to_invite_user_to_group(flask_server, user_session, 
 
 
 def test_add_user(flask_server, user_session, user):
-    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
     new_user = user
 

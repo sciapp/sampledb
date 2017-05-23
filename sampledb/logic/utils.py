@@ -11,7 +11,7 @@ import flask_login
 from .. import mail, db
 from .security_tokens import generate_token
 from ..models import Authentication, AuthenticationType, User
-from .user import get_user
+from .users import get_user
 from . import groups
 
 

@@ -8,8 +8,9 @@ Usage: python -m sampledb update_action <action_id> <name> <description> <schema
 import json
 import sys
 from .. import create_app
-from ..logic.instruments import update_action, get_action
-from ..logic.schemas import validate_schema, ValidationError
+from ..logic.actions import update_action, get_action
+from ..logic.schemas import validate_schema
+from ..logic.errors import ActionDoesNotExistError, ValidationError
 
 
 def main(arguments):
@@ -25,8 +26,9 @@ def main(arguments):
 
     app = create_app()
     with app.app_context():
-        action = get_action(action_id)
-        if action is None:
+        try:
+            action = get_action(action_id)
+        except ActionDoesNotExistError:
             print('Error: no action with this id exists', file=sys.stderr)
             exit(1)
         with open(schema_file_name, 'r', encoding='utf-8') as schema_file:
@@ -36,7 +38,7 @@ def main(arguments):
         except ValidationError as e:
             print('Error: invalid schema: {}'.format(str(e)), file=sys.stderr)
             exit(1)
-        action = update_action(
+        update_action(
             action_id=action.id,
             name=name,
             description=description,

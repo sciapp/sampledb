@@ -6,8 +6,9 @@
 import pytest
 
 import sampledb
+import sampledb.logic
 from sampledb.logic import permissions, groups
-from sampledb.models import User, UserType, Action, ActionType, Instrument, Permissions, UserObjectPermissions, Objects
+from sampledb.models import User, UserType, Action, ActionType, Instrument, Permissions, UserObjectPermissions
 
 from ..test_utils import app_context
 
@@ -83,8 +84,7 @@ def instrument_action(instrument):
 @pytest.fixture
 def objects(users, instrument_action, independent_action):
     actions = [instrument_action, independent_action]
-    objects = [Objects.create_object(user_id=users[1].id, action_id=action.id, data={}, schema=action.schema) for action in actions]
-    return objects
+    return [sampledb.logic.objects.create_object(user_id=users[1].id, action_id=action.id, data={}) for action in actions]
 
 
 @pytest.fixture
@@ -200,7 +200,7 @@ def test_update_object_permissions(users, independent_action_object):
 def test_group_permissions(users, independent_action_object):
     user, creator = users
     object_id = independent_action_object.object_id
-    group_id = groups.create_group("Example Group", "", creator.id)
+    group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
@@ -259,7 +259,7 @@ def test_group_permissions(users, independent_action_object):
 def test_object_permissions_for_groups(users, independent_action_object):
     user, creator = users
     object_id = independent_action_object.object_id
-    group_id = groups.create_group("Example Group", "", creator.id)
+    group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert permissions.get_object_permissions_for_groups(object_id) == {}
 
@@ -281,8 +281,8 @@ def test_default_permissions_for_users(users, independent_action):
     assert permissions.get_default_permissions_for_users(creator_id=creator.id) == {
         creator.id: Permissions.GRANT
     }
-    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
-    assert permissions.get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False) == {
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.get_object_permissions_for_users(object_id=object.id, include_instrument_responsible_users=False, include_groups=False) == {
         creator.id: Permissions.GRANT
     }
 
@@ -293,8 +293,8 @@ def test_default_permissions_for_users(users, independent_action):
         user.id: Permissions.READ
     }
 
-    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
-    assert permissions.get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False) == {
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.get_object_permissions_for_users(object_id=object.id, include_instrument_responsible_users=False, include_groups=False) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.READ
     }
@@ -306,7 +306,7 @@ def test_default_permissions_for_users(users, independent_action):
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
-    assert permissions.get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False) == {
+    assert permissions.get_object_permissions_for_users(object_id=object.id, include_instrument_responsible_users=False, include_groups=False) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.READ
     }
@@ -332,11 +332,11 @@ def test_default_permissions_for_creator(users):
 
 def test_default_permissions_for_groups(users, independent_action):
     user, creator = users
-    group_id = groups.create_group("Example Group", "", creator.id)
+    group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert permissions.get_default_permissions_for_groups(creator_id=creator.id) == {}
-    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
-    assert permissions.get_object_permissions_for_groups(object_id=object_id) == {}
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.get_object_permissions_for_groups(object_id=object.id) == {}
 
     permissions.set_default_permissions_for_group(creator_id=creator.id, group_id=group_id, permissions=Permissions.READ)
 
@@ -344,8 +344,8 @@ def test_default_permissions_for_groups(users, independent_action):
         group_id: Permissions.READ
     }
 
-    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
-    assert permissions.get_object_permissions_for_groups(object_id=object_id) == {
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.get_object_permissions_for_groups(object_id=object.id) == {
         group_id: Permissions.READ
     }
 
@@ -355,7 +355,7 @@ def test_default_permissions_for_groups(users, independent_action):
     assert permissions.get_default_permissions_for_groups(creator_id=creator.id) == {
         group_id: Permissions.WRITE
     }
-    assert permissions.get_object_permissions_for_groups(object_id=object_id) == {
+    assert permissions.get_object_permissions_for_groups(object_id=object.id) == {
         group_id: Permissions.READ
     }
 
@@ -364,14 +364,14 @@ def test_default_public_permissions(users, independent_action):
     user, creator = users
 
     assert not permissions.default_is_public(creator_id=creator.id)
-    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
-    assert not permissions.object_is_public(object_id=object_id)
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert not permissions.object_is_public(object_id=object.id)
 
     permissions.set_default_public(creator_id=creator.id, is_public=True)
     assert permissions.default_is_public(creator_id=creator.id)
-    object_id = Objects.create_object(user_id=creator.id, action_id=independent_action.id, data={}, schema=independent_action.schema).object_id
-    assert permissions.object_is_public(object_id=object_id)
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.object_is_public(object_id=object.id)
 
     permissions.set_default_public(creator_id=creator.id, is_public=False)
     assert not permissions.default_is_public(creator_id=creator.id)
-    assert permissions.object_is_public(object_id=object_id)
+    assert permissions.object_is_public(object_id=object.id)

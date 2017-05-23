@@ -234,6 +234,7 @@ class Boolean(object):
         'required': ['_type', 'value'],
         'additionalProperties': False
     }
+
     def __init__(self, value):
         self.value = bool(value)
 

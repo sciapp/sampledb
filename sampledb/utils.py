@@ -4,7 +4,6 @@
 """
 
 import base64
-import binascii
 import functools
 import os
 
@@ -12,8 +11,7 @@ import flask
 import flask_login
 
 from . import logic
-from .logic.authentication import login
-from .models import Permissions, Objects
+from .models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -25,7 +23,9 @@ def object_permissions_required(required_object_permissions: Permissions):
         def wrapper(**kwargs):
             assert 'object_id' in kwargs
             object_id = kwargs['object_id']
-            if Objects.get_current_object(object_id) is None:
+            try:
+                logic.objects.get_object(object_id)
+            except logic.errors.ObjectDoesNotExistError:
                 return flask.abort(404)
             if not logic.permissions.object_is_public(object_id):
                 user_id = flask_login.current_user.id
