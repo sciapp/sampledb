@@ -289,7 +289,7 @@ def test_add_user_to_group():
 def test_send_confirm_email_to_invite_user_to_group(app):
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
-        user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+        user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
@@ -307,8 +307,8 @@ def test_send_confirm_email_to_invite_user_to_group(app):
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Invite a user to be a member of group ' in message
-        assert 'Please follow this link to confirm your email' in message
+        assert 'Join group {}'.format(group.name) in message
+        assert 'You have been invited to be a member of the group {}.'.format(group.name) in message
 
         with sampledb.mail.record_messages() as outbox:
             with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
@@ -356,7 +356,7 @@ def test_invite_user_that_is_already_a_member_to_group():
 def test_invite_user_to_group(app):
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
-        user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+        user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
@@ -374,8 +374,8 @@ def test_invite_user_to_group(app):
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Invite a user to be a member of group ' in message
-        assert 'Please follow this link to confirm your email'
+        assert 'Join group {}'.format(group.name) in message
+        assert 'You have been invited to be a member of the group {}.'.format(group.name) in message
 
 
 def test_add_user_to_group_that_does_not_exist():

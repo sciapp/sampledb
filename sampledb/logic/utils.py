@@ -86,7 +86,7 @@ def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> N
 
     confirm_url = flask.url_for("frontend.group", group_id=group.id, token=token, _external=True)
 
-    subject = "Please confirm your email"
+    subject = "Invitation to SampleDB group"
     html = flask.render_template('invitation_to_group.html', user=flask_login.current_user, group=group, confirm_url=confirm_url)
     try:
         mail.send(flask_mail.Message(

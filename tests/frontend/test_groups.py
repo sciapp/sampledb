@@ -212,8 +212,8 @@ def test_send_confirm_email_to_invite_user_to_group(flask_server, user_session, 
     assert len(outbox) == 1
     assert 'example2@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Invite a user to be a member of group ' in message
-    assert 'Please follow this link to confirm your email' in message
+    assert 'Join group Example Group' in message
+    assert 'You have been invited to be a member of the group Example Group.' in message
 
 
 def test_add_user(flask_server, user_session, user):
@@ -244,8 +244,8 @@ def test_add_user(flask_server, user_session, user):
     assert len(outbox) == 1
     assert 'example2@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Invite a user to be a member of group ' in message
-    assert 'Please follow this link to confirm your email' in message
+    assert 'Join group Example Group' in message
+    assert 'You have been invited to be a member of the group Example Group.' in message
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
 
@@ -254,7 +254,7 @@ def test_add_user(flask_server, user_session, user):
     assert confirmation_url.startswith(flask_server.base_url + 'groups/1')
     r = user_session.get(confirmation_url)
     assert r.status_code == 403
-    assert 'Please login to sampledb before confirming your email' in r.content.decode('utf-8')
+    assert 'Please sign in as user &#34;{}&#34; to accept this invitation'.format(user.name) in r.content.decode('utf-8')
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
 
