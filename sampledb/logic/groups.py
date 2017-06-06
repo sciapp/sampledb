@@ -21,8 +21,9 @@ from sqlalchemy.exc import IntegrityError
 import collections
 import typing
 from .. import db
-from ..models import groups
+from ..models import groups, User
 from .users import get_user
+from .utils import send_confirm_email_to_invite_user_to_group
 from . import errors
 
 
@@ -181,6 +182,19 @@ def get_user_groups(user_id: int) -> typing.List[Group]:
     """
     user = get_user(user_id)
     return [Group.from_database(group) for group in user.groups]
+
+
+def invite_user_to_group(group_id: int, user_id: int) -> None:
+    group = groups.Group.query.get(group_id)
+    if group is None:
+        raise errors.GroupDoesNotExistError()
+    user = get_user(user_id)
+    if user is None:
+        raise errors.UserDoesNotExistError()
+    if user in group.members:
+        raise errors.UserAlreadyMemberOfGroupError()
+    send_confirm_email_to_invite_user_to_group(group_id, user_id)
+    return True
 
 
 def add_user_to_group(group_id: int, user_id: int) -> None:

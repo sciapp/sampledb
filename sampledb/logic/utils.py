@@ -6,14 +6,17 @@
 import smtplib
 import flask
 import flask_mail
+import flask_login
 
 from .. import mail, db
 from .security_tokens import generate_token
 from ..models import Authentication, AuthenticationType, User
+from .users import get_user
+from . import groups
 
 
 def send_confirm_email(email, id, salt):
-    if id == None:
+    if id is None:
         route = "frontend.%s_route" % salt
         token = generate_token(email, salt=salt,
                                secret_key=flask.current_app.config['SECRET_KEY'])
@@ -71,3 +74,26 @@ def build_confirm_url(authentication_method, salt='password'):
     token = generate_token(authentication_method.id, salt=salt,
                            secret_key=flask.current_app.config['SECRET_KEY'])
     return flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True)
+
+
+def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> None:
+    user = get_user(user_id)
+    group = groups.get_group(group_id)
+    if user is None:
+        return
+    token = generate_token(user.id, salt='invite_to_group',
+                           secret_key=flask.current_app.config['SECRET_KEY'])
+
+    confirm_url = flask.url_for("frontend.group", group_id=group.id, token=token, _external=True)
+
+    subject = "Invitation to SampleDB group"
+    html = flask.render_template('invitation_to_group.html', user=flask_login.current_user, group=group, confirm_url=confirm_url)
+    try:
+        mail.send(flask_mail.Message(
+            subject,
+            sender=flask.current_app.config['MAIL_SENDER'],
+            recipients=[user.email],
+            html=html
+        ))
+    except smtplib.SMTPRecipientsRefused:
+        pass

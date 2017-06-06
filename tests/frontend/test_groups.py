@@ -6,11 +6,13 @@
 import flask
 import requests
 import pytest
+import bcrypt
 from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
 import sampledb.logic
+from sampledb.logic.authentication import add_authentication_to_db
 
 from tests.test_utils import flask_server, app, app_context
 
@@ -24,6 +26,28 @@ def user_session(flask_server):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     session.user_id = user.id
     return session
+
+
+@pytest.fixture
+def user(flask_server):
+    user = sampledb.models.User(name="Basic User2", email="example2@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    # force attribute refresh
+    password = 'abc.123'
+    confirmed = True
+    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    log = {
+        'login': 'example@fz-juelich.de',
+        'bcrypt_hash': pw_hash
+    }
+    add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+    # force attribute refresh
+    assert user.id is not None
+    # Check if authentication-method add to db
+    with flask_server.app.app_context():
+        assert len(sampledb.models.Authentication.query.all()) == 1
+    return user
 
 
 def test_list_groups(flask_server, user_session):
@@ -159,29 +183,91 @@ def test_edit_group(flask_server, user_session):
     assert group.description == 'Test Description'
 
 
-def test_add_user(flask_server, user_session):
+def test_send_confirm_email_to_invite_user_to_group(flask_server, user_session, user):
     group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
-    new_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-    sampledb.db.session.add(new_user)
-    sampledb.db.session.commit()
+    new_user = user
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
 
     r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
+    url = flask_server.base_url + 'groups/{}'.format(group_id)
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
 
     invite_user_form = document.find(id='inviteUserModal').find('form')
     csrf_token = invite_user_form.find('input', {'name': 'csrf_token'})['value']
-    r = user_session.post(flask_server.base_url + 'groups/{}'.format(group_id), data={
-        'add_user': 'add_user',
-        'csrf_token': csrf_token,
-        'user_id': str(new_user.id)
-    })
+
+    #  send invitation
+    with sampledb.mail.record_messages() as outbox:
+        r = user_session.post(url, {
+            'add_user': 'add_user',
+            'csrf_token': csrf_token,
+            'user_id': str(new_user.id)
+        })
     assert r.status_code == 200
-    # Force reloading of objects
-    sampledb.db.session.rollback()
+
+
+    # Check if an invitation mail was sent
+    assert len(outbox) == 1
+    assert 'example2@fz-juelich.de' in outbox[0].recipients
+    message = outbox[0].html
+    assert 'Join group Example Group' in message
+    assert 'You have been invited to be a member of the group Example Group.' in message
+
+
+def test_add_user(flask_server, user_session, user):
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
+
+    new_user = user
+
+    assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
+
+    r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
+    url = flask_server.base_url + 'groups/{}'.format(group_id)
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    invite_user_form = document.find(id='inviteUserModal').find('form')
+    csrf_token = invite_user_form.find('input', {'name': 'csrf_token'})['value']
+
+    #  send invitation
+    with sampledb.mail.record_messages() as outbox:
+        r = user_session.post(url, {
+            'add_user': 'add_user',
+            'csrf_token': csrf_token,
+            'user_id': str(new_user.id)
+        })
+    assert r.status_code == 200
+
+    # Check if an invitation mail was sent
+    assert len(outbox) == 1
+    assert 'example2@fz-juelich.de' in outbox[0].recipients
+    message = outbox[0].html
+    assert 'Join group Example Group' in message
+    assert 'You have been invited to be a member of the group Example Group.' in message
+
+    assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
+
+    # Get the confirmation url from the mail and open it without logged in
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    assert confirmation_url.startswith(flask_server.base_url + 'groups/1')
+    r = user_session.get(confirmation_url)
+    assert r.status_code == 403
+    assert 'Please sign in as user &#34;{}&#34; to accept this invitation'.format(user.name) in r.content.decode('utf-8')
+
+    assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user.id)).status_code == 200
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
+
+    # Get the confirmation url from the mail and open it without logged in
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    assert confirmation_url.startswith(flask_server.base_url + 'groups/1')
+
+    r = session.get(confirmation_url)
+    assert r.status_code == 200
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 1
     assert sampledb.logic.groups.get_user_groups(new_user.id)[0].id == group_id

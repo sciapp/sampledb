@@ -9,6 +9,7 @@ import flask_login
 from .. import frontend
 from ... import logic
 from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm
+from ...logic.security_tokens import verify_token
 
 
 @frontend.route('/groups/', methods=['GET', 'POST'])
@@ -52,9 +53,21 @@ def groups():
 @frontend.route('/groups/<int:group_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def group(group_id):
+    if 'token' in flask.request.args:
+        token = flask.request.args.get('token')
+        user_id = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'])
+        if user_id != flask_login.current_user.id:
+            try:
+                invited_user = logic.users.get_user(user_id)
+                flask.flash('Please sign in as user "{}" to accept this invitation.'.format(invited_user.name), 'error')
+            except logic.errors.UserDoesNotExistError:
+                pass
+            return flask.abort(403)
+        logic.groups.add_user_to_group(group_id, user_id)
     try:
         group_member_ids = logic.groups.get_group_member_ids(group_id)
     except logic.errors.GroupDoesNotExistError:
+        flask.flash('This group does not exist.', 'error')
         return flask.abort(404)
     user_is_member = flask_login.current_user.id in group_member_ids
     group = logic.groups.get_group(group_id)
@@ -87,8 +100,7 @@ def group(group_id):
         elif 'add_user' in flask.request.form:
             if invite_user_form.validate_on_submit():
                 try:
-                    # TODO: invitation instead of simple adding
-                    logic.groups.add_user_to_group(group_id, invite_user_form.user_id.data)
+                    logic.groups.invite_user_to_group(group_id, invite_user_form.user_id.data)
                 except logic.errors.GroupDoesNotExistError:
                     flask.flash('This group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
