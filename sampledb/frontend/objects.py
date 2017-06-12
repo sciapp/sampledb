@@ -105,25 +105,25 @@ def to_datatype(obj):
 def apply_action_to_data(data, schema, action, form_data):
     new_form_data = form_data
     if action.endswith('_delete'):
-        id_prefix = action[len('action_object_'):-len('_delete')]
-        deleted_item_index = int(id_prefix.split('_')[-1])
-        parent_id_prefix = 'object_'+'_'.join(id_prefix.split('_')[:-1]) + '_'
+        id_prefix = action[len('action_object__'):-len('_delete')]
+        deleted_item_index = int(id_prefix.split('__')[-1])
+        parent_id_prefix = 'object__'+'_'.join(id_prefix.split('_')[:-1]) + '__'
         new_form_data = {}
         for name in form_data:
             if not name.startswith(parent_id_prefix):
                 new_form_data[name] = form_data[name]
             else:
-                item_index = int(name[len(parent_id_prefix):].split('_')[0])
+                item_index = int(name[len(parent_id_prefix):].split('__')[0])
                 if item_index < deleted_item_index:
                     new_form_data[name] = form_data[name]
                 if item_index > deleted_item_index:
                     new_name = parent_id_prefix + str(item_index-1) + name[len(parent_id_prefix+str(item_index)):]
                     new_form_data[new_name] = form_data[name]
     elif action.endswith('_add'):
-        id_prefix = action[len('action_object_'):-len('_add')]
+        id_prefix = action[len('action_object__'):-len('_add')]
     else:
         raise ValueError('invalid action')
-    keys = id_prefix.split('_')
+    keys = id_prefix.split('__')
     sub_data = data
     sub_schema = schema
     try:

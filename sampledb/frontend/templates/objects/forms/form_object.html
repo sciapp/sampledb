@@ -5,7 +5,7 @@
   {% for property_name, property_schema in schema.properties.items() %}
     {% set name = property_name %}
     {% set schema = property_schema %}
-    {% set id_prefix = id_prefix + '_' + name %}
+    {% set id_prefix = id_prefix + '_' + name + '_' %}
     {% if data is not none and property_name in data %}
     {% set data = data[property_name] %}
     {% else %}
@@ -18,7 +18,7 @@
     {% if property_name in schema.properties %}
       {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
-      {% set id_prefix = id_prefix + '_' + name %}
+      {% set id_prefix = id_prefix + '_' + name + '_' %}
       {% if data is not none and property_name in data %}
       {% set data = data[property_name] %}
       {% else %}
@@ -31,7 +31,7 @@
     {% if property_name not in schema.propertyOrder %}
       {% set name = property_name %}
       {% set schema = property_schema %}
-      {% set id_prefix = id_prefix + '_' + name %}
+      {% set id_prefix = id_prefix + '_' + name + '_' %}
       {% if data is not none and property_name in data %}
       {% set data = data[property_name] %}
       {% else %}

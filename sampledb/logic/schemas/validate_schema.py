@@ -120,6 +120,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if not isinstance(schema['properties'], dict):
         raise ValidationError('properties must be dict', path)
     for property_name, property_schema in schema['properties'].items():
+        if '__' in property_name:
+            raise ValidationError('invalid property name: {}'.format(property_name), path)
         validate_schema(property_schema, path + [property_name])
 
     if 'required' in schema:
