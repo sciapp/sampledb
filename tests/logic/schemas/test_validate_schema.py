@@ -868,3 +868,20 @@ def test_validate_object_schema_with_invalid_display_properties():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_object_schema_with_double_underscore_in_name():
+    # To prevent name conflicts between properties, double underscores are not permitted in property names
+    # They are used as separators for nested property names and property form field names
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'property__1': {
+                'title': 'Invalid Property Name',
+                'type': 'text'
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

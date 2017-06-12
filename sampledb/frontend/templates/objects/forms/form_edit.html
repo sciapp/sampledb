@@ -4,7 +4,7 @@
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode='edit') }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
-    {% set id_prefix = "object" %}
+    {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-2 col-md-offset-8">
