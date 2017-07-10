@@ -42,7 +42,8 @@ def flask_server(app):
     # short delay to allow the web server to start
     time.sleep(0.1)
     yield server_thread
-    requests.post(server_thread.base_url + 'shutdown')
+    r = requests.post(server_thread.base_url + 'shutdown')
+    assert r.status_code == 200
     server_thread.join()
 
 

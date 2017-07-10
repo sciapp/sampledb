@@ -12,6 +12,18 @@ class ObjectVersionDoesNotExistError(Exception):
     pass
 
 
+class FileNameTooLongError(Exception):
+    pass
+
+
+class TooManyFilesForObjectError(Exception):
+    pass
+
+
+class InvalidFileSourceError(Exception):
+    pass
+
+
 class GroupDoesNotExistError(Exception):
     pass
 

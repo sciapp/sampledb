@@ -4,8 +4,8 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField
-from wtforms.validators import InputRequired
+from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField
+from wtforms.validators import InputRequired, ValidationError
 
 from ..logic.permissions import Permissions
 
@@ -49,3 +49,13 @@ class ObjectVersionRestoreForm(FlaskForm):
 
 class CommentForm(FlaskForm):
     content = TextAreaField(validators=[InputRequired()])
+
+
+class FileForm(FlaskForm):
+    file_source = HiddenField(validators=[InputRequired()])
+    file_names = HiddenField()
+    local_files = FileField()
+
+    def validate_file_source(form, field):
+        if field.data not in ['local', 'instrument', 'jupyterhub']:
+            raise ValidationError('Invalid file source')

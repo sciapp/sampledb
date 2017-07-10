@@ -9,6 +9,7 @@ This configuration is the pure base, representing defaults. These values may be 
 """
 
 from .utils import generate_secret_key, load_environment_configuration
+from .logic.files import SudoFileSource, LocalFileSource
 
 
 def use_environment_configuration(env_prefix):
@@ -30,10 +31,22 @@ SECRET_KEY = generate_secret_key(num_bits=256)
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 LDAP_HOST = "ldaps://iffldap.iff.kfa-juelich.de"
-LDAP_BASE_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
+LDAP_USER_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
+LDAP_GROUP_DN = "ou=Groups,dc=iff,dc=kfa-juelich,dc=de"
 
 MAIL_SERVER='mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
+
+FILE_STORAGE_PATH = '/tmp/sampledb/'
+FILE_SOURCES = {
+    # 'jupyterhub': SudoFileSource(lambda user_id: None),
+    # 'instrument': LocalFileSource(lambda user_id: '/')
+}
+MIME_TYPES = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg'
+}
+
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

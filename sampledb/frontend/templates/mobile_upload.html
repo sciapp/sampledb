@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sample and Measurement Database File Upload</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Mobile File Upload</h1>
+    <form method="post" enctype="multipart/form-data">
+      <input type="file" id="input-file-upload" name="file_input" multiple style="display: none"/>
+      <label class="btn btn-primary btn-block btn-lg" for="input-file-upload">Select files</label>
+      <button class="btn btn-primary btn-block btn-lg disabled" type="submit" disabled="disabled">Upload</button>
+    </form>
+  </div>
+  <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
+  <script>
+    $('#input-file-upload').on('change', function() {
+      var files = $(this).get(0).files;
+      var submitButton = $('button[type=submit]');
+      if (files.length === 0) {
+        submitButton.attr('disabled', 'disabled');
+        submitButton.addClass('disabled');
+      } else {
+        submitButton.removeAttr('disabled');
+        submitButton.removeClass('disabled');
+      }
+    });
+  </script>
+</body>
+</html>

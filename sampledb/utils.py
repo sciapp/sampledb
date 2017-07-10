@@ -5,6 +5,7 @@
 
 import base64
 import functools
+import json
 import os
 
 import flask
@@ -41,13 +42,21 @@ def object_permissions_required(required_object_permissions: Permissions):
 def load_environment_configuration(env_prefix):
     """
     Loads configuration data from environment variables with a given prefix.
+    If the prefixed environment variable B64_JSON_ENV exists, its content
+    will be treated as an Base64 encoded JSON object and it's attributes
+    starting with the prefix will be added to the environment.
     
     :return: a dict containing the configuration values
     """
+    b64_json_env = os.environ.get(env_prefix + 'B64_JSON_ENV', None)
+    if b64_json_env:
+        for key, value in json.loads(base64.b64decode(b64_json_env.encode('utf-8')).decode('utf-8')).items():
+            if key.startswith(env_prefix):
+                os.environ[key] = value
     config = {
         key[len(env_prefix):]: value
         for key, value in os.environ.items()
-        if key.startswith(env_prefix)
+        if key.startswith(env_prefix) and key != env_prefix + 'B64_JSON_ENV'
     }
     return config
 

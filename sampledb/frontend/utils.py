@@ -3,6 +3,9 @@
 
 """
 
+import os
+import flask
+
 from ..logic.units import prettify_units
 
 
@@ -15,4 +18,9 @@ _jinja_filters = {}
 jinja_filter.filters = _jinja_filters
 
 
+def has_preview(file_name):
+    file_extension = os.path.splitext(file_name)[1]
+    return file_extension in flask.current_app.config.get('MIME_TYPES', {})
+
 _jinja_filters['prettify_units'] = prettify_units
+_jinja_filters['has_preview'] = has_preview

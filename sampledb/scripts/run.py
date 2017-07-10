@@ -5,6 +5,7 @@ Script for running the SampleDB server.
 Usage: python -m sampledb run [<port>]
 """
 
+import sys
 import cherrypy
 
 from .. import create_app

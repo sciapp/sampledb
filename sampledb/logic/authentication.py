@@ -1,7 +1,5 @@
 import bcrypt
-import flask
-import flask_login
-import flask_mail
+import typing
 
 
 from .. import logic, db
@@ -159,3 +157,9 @@ def change_password_in_authentication_method(user_id, authentication_method_id, 
     db.session.commit()
     return True
 
+
+def get_user_ldap_uid(user_id: int) -> typing.Optional[str]:
+    authentication_method = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP, Authentication.user_id==user_id).first()
+    if not authentication_method:
+        return None
+    return authentication_method.login['login']
