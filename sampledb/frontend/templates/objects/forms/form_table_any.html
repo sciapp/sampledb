@@ -1,7 +1,7 @@
 {% if schema['type'] == 'text' %}
   {% include "objects/forms/form_table_text.html" %}
-{#{% elif schema['$ref'] == '#/definitions/datetime' %}#}
-{#  {% include "form_datetime.html" %}#}
+{% elif schema['type'] == 'datetime' %}
+  {% include "objects/forms/form_table_datetime.html" %}
 {% elif schema['type'] == 'quantity' %}
   {% include "objects/forms/form_table_quantity.html" %}
 {#{% elif schema.type == 'object' %}#}
