@@ -102,32 +102,11 @@ def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
-def apply_action_to_data(data, schema, action, form_data):
-    new_form_data = form_data
-    if action.endswith('_delete'):
-        id_prefix = action[len('action_object__'):-len('_delete')]
-        deleted_item_index = int(id_prefix.split('__')[-1])
-        parent_id_prefix = 'object__'+'_'.join(id_prefix.split('_')[:-1]) + '__'
-        new_form_data = {}
-        for name in form_data:
-            if not name.startswith(parent_id_prefix):
-                new_form_data[name] = form_data[name]
-            else:
-                item_index = int(name[len(parent_id_prefix):].split('__')[0])
-                if item_index < deleted_item_index:
-                    new_form_data[name] = form_data[name]
-                if item_index > deleted_item_index:
-                    new_name = parent_id_prefix + str(item_index-1) + name[len(parent_id_prefix+str(item_index)):]
-                    new_form_data[new_name] = form_data[name]
-    elif action.endswith('_add'):
-        id_prefix = action[len('action_object__'):-len('_add')]
-    else:
-        raise ValueError('invalid action')
-    keys = id_prefix.split('__')
+def get_sub_data_and_schema(data, schema, id_prefix):
     sub_data = data
     sub_schema = schema
     try:
-        for key in keys[:-1]:
+        for key in id_prefix.split('__'):
             if sub_schema['type'] == 'array':
                 key = int(key)
                 sub_schema = sub_schema['items']
@@ -138,16 +117,46 @@ def apply_action_to_data(data, schema, action, form_data):
             sub_data = sub_data[key]
         if sub_schema['type'] != 'array':
             raise ValueError('invalid type')
-        if action.endswith('_delete'):
-            if 'minItems' not in sub_schema or len(sub_data) > sub_schema["minItems"]:
-                del sub_data[int(keys[-1])]
-        elif action.endswith('_add'):
-            if 'maxItems' not in sub_schema or len(sub_data) < sub_schema["maxItems"]:
-                sub_data.append(generate_placeholder(sub_schema["items"]))
     except (ValueError, KeyError, IndexError, TypeError):
         # TODO: error handling/logging?
         raise ValueError('invalid action')
+    return sub_data, sub_schema
+
+
+def apply_action_to_form_data(action, form_data):
+    new_form_data = form_data
+    action_id_prefix, action_index, action_type = action[len('action_'):].rsplit('__', 2)
+    if action_type == 'delete':
+        deleted_item_index = int(action_index)
+        parent_id_prefix = action_id_prefix
+        new_form_data = {}
+        for name in form_data:
+            if not name.startswith(parent_id_prefix):
+                new_form_data[name] = form_data[name]
+            else:
+                item_index, id_suffix = name[len(parent_id_prefix)+2:].split('__', 1)
+                item_index = int(item_index)
+                if item_index < deleted_item_index:
+                    new_form_data[name] = form_data[name]
+                if item_index > deleted_item_index:
+                    new_name = parent_id_prefix + '__' + str(item_index-1) + '__' + id_suffix
+                    new_form_data[new_name] = form_data[name]
     return new_form_data
+
+
+def apply_action_to_data(action, data, schema):
+    action_id_prefix, action_index, action_type = action[len('action_'):].rsplit('__', 2)
+    if action_type not in ('add', 'delete'):
+        raise ValueError('invalid action')
+    sub_data, sub_schema = get_sub_data_and_schema(data, schema, action_id_prefix.split('__', 1)[1])
+    num_existing_items = len(sub_data)
+    if action_type == 'add':
+        if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
+            sub_data.append(generate_placeholder(sub_schema["items"]))
+    if action_type == 'delete':
+        action_index = int(action_index)
+        if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
+            del sub_data[action_index]
 
 
 def show_object_form(object, action):
@@ -194,12 +203,15 @@ def show_object_form(object, action):
                     flask.flash('The object was updated successfully.', 'success')
 
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
-        elif any(name.startswith('action_object_') and (name.endswith('_delete') or name.endswith('_add')) for name in form_data):
+        elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
             previous_actions.append(action)
-    for action in previous_actions:
+
+    if previous_actions:
         try:
-            form_data = apply_action_to_data(data, schema, action, form_data)
+            for action in previous_actions:
+                apply_action_to_data(action, data, schema)
+            form_data = apply_action_to_form_data(previous_actions[-1], form_data)
         except ValueError:
             flask.abort(400)
 

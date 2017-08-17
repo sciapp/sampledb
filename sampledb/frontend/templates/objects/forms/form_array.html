@@ -80,7 +80,7 @@
           <th scope="col"></th>
         {% endfor %}
   {% if maxItems is none or numItems < maxItems %}
-        <th><button type="submit" name="action_{{ id_prefix }}__?_add" class="btn btn-success pull-right">+</button></th>
+        <th><button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
   {% else %}
         <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
   {% endif %}
