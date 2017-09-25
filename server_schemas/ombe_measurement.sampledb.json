@@ -1,0 +1,227 @@
+{
+  "title": "Sample Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "default": "OMBE-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^OMBE-[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "substrate": {
+      "title": "Substrate",
+      "type": "text",
+      "minLength": 1
+    },
+    "substratePreparation": {
+      "title": "Substrate Preparation",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    },
+    "rateCalibration": {
+      "title": "RateCalibration",
+      "type": "array",
+      "style": "table",
+      "minItems": 0,
+      "items": {
+        "title": "Element",
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "datetime"
+          },
+          "name": {
+            "title": "Element Name",
+            "type": "text",
+            "minLength": 1
+          },
+          "temperature": {
+            "title": "Temperature",
+            "type": "quantity",
+            "units": "degC"
+          },
+          "frequency_change": {
+            "title": "Frequency Change",
+            "type": "quantity",
+            "units": "Hz / s"
+          },
+          "rate": {
+            "title": "Rate",
+            "type": "quantity",
+            "units": "Å / s"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "text"
+          }
+        },
+        "propertyOrder": [
+          "timestamp",
+          "name",
+          "temperature",
+          "frequency_change",
+          "rate",
+          "comment"
+        ]
+      }
+    },
+    "multilayer": {
+      "title": "Multilayers",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "title": "Multilayer",
+        "type": "object",
+        "properties": {
+          "repetitions": {
+            "title": "Film Layer Repetitions",
+            "type": "quantity",
+            "units": "1",
+            "default": 1
+          },
+          "films": {
+            "title": "Films",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "title": "Film",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "title": "Film Name",
+                  "type": "text",
+                  "minLength": 1
+                },
+                "thickness": {
+                  "title": "Film Thickness",
+                  "type": "quantity",
+                  "units": "Å"
+                },
+                "deposition_time": {
+                  "title": "Deposition Time",
+                  "type": "quantity",
+                  "units": "s"
+                },
+                "oxygen_flow": {
+                  "title": "Oxygen Flow",
+                  "type": "quantity",
+                  "units": "sccm"
+                },
+                "substrate_temperature": {
+                  "title": "Substrate Temperature",
+                  "type": "quantity",
+                  "units": "degC"
+                },
+                "annealing_temperature": {
+                  "title": "Annealing Temperature",
+                  "type": "quantity",
+                  "units": "degC"
+                },
+                "annealing_time": {
+                  "title": "Annealing Time",
+                  "type": "quantity",
+                  "units": "s"
+                },
+                "elements": {
+                  "title": "Elements",
+                  "type": "array",
+                  "style": "table",
+                  "minItems": 1,
+                  "items": {
+                    "title": "Element",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "title": "Element Name",
+                        "type": "text",
+                        "minLength": 1
+                      },
+                      "temperature": {
+                        "title": "Temperature",
+                        "type": "quantity",
+                        "units": "degC"
+                      },
+                      "frequency_change": {
+                        "title": "Frequency Change",
+                        "type": "quantity",
+                        "units": "Hz / s"
+                      },
+                      "rate": {
+                        "title": "Rate",
+                        "type": "quantity",
+                        "units": "Å / s"
+                      },
+                      "fraction": {
+                        "title": "Fraction",
+                        "type": "quantity",
+                        "units": "1"
+                      },
+                      "comment": {
+                        "title": "Comment",
+                        "type": "text"
+                      }
+                    },
+                    "propertyOrder": [
+                      "name",
+                      "temperature",
+                      "frequency_change",
+                      "fraction",
+                      "rate",
+                      "comment"
+                    ]
+                  }
+                }
+              },
+              "propertyOrder": [
+                "name",
+                "thickness",
+                "deposition_time",
+                "oxygen_flow",
+                "substrate_temperature",
+                "annealing_temperature",
+                "annealing_time",
+                "elements"
+              ]
+            }
+          }
+        },
+        "propertyOrder": [
+          "repetitions",
+          "films"
+        ]
+      }
+    },
+    "comment": {
+      "title": "Comment",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": [
+    "name",
+    "created",
+    "substrate",
+    "substratePreparation",
+    "rateCalibration",
+    "multilayer",
+    "comment"
+  ],
+  "required": [
+    "name",
+    "created",
+    "substrate",
+    "multilayer"
+  ],
+  "displayProperties": [
+    "substrate"
+  ]
+}
