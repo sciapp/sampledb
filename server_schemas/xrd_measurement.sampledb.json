@@ -5,10 +5,10 @@
     "name": {
       "title": "Measurement Name",
       "type": "text",
-      "default": "XRR-",
+      "default": "XRD-",
       "minLength": 1,
       "maxLength": 100,
-      "pattern": "^XRR-[0-9]+$"
+      "pattern": "^XRD-[0-9]+$"
     },
     "sample": {
       "title": "Sample",
