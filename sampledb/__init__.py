@@ -12,13 +12,16 @@ mail = Mail()
 db = SQLAlchemy()
 
 import sampledb.frontend
+import sampledb.logic
 import sampledb.models
+import sampledb.config
 
 
 def create_app():
     app = flask.Flask(__name__)
     app.wsgi_app = ProxyFix(app.wsgi_app)
-    app.config.from_object('sampledb.config')
+
+    app.config.from_object(sampledb.config)
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
@@ -28,6 +31,9 @@ def create_app():
     login_manager.login_view = 'frontend.sign_in'
     app.jinja_env.globals.update(signout_form=sampledb.frontend.users_forms.SignoutForm)
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
+
+    sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
+    sampledb.logic.files.FILE_SOURCES = app.config['FILE_SOURCES']
 
     with app.app_context():
         db.metadata.create_all(bind=db.engine)

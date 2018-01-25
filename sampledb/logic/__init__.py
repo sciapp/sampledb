@@ -8,6 +8,7 @@ from . import authentication
 from . import comments
 from . import datatypes
 from . import errors
+from . import files
 from . import groups
 from . import instruments
 from . import ldap

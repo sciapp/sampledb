@@ -3,11 +3,17 @@
 
 """
 
+import base64
 import datetime
+from io import BytesIO
 import json
+import os
 import flask
 import flask_login
 import itsdangerous
+import werkzeug.utils
+import qrcode
+import qrcode.image.svg
 
 from . import frontend
 from .. import logic
@@ -22,7 +28,7 @@ from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, FileForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -251,6 +257,20 @@ def object(object_id):
             ActionType.MEASUREMENT: "Measurement"
         }.get(action.type, "Object")
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
+
+        if user_may_edit:
+            serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
+            token = serializer.dumps([flask_login.current_user.id, object_id])
+            mobile_upload_url = flask.url_for('.mobile_file_upload', object_id=object_id, token=token, _external=True)
+            image = qrcode.make(mobile_upload_url, image_factory=qrcode.image.svg.SvgPathFillImage)
+            image_stream = BytesIO()
+            image.save(image_stream)
+            image_stream.seek(0)
+            mobile_upload_qrcode = 'data:image/svg+xml;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
+        else:
+            mobile_upload_url = None
+            mobile_upload_qrcode = None
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -267,6 +287,12 @@ def object(object_id):
             user_may_comment=user_may_edit,
             comments=comments.get_comments_for_object(object_id),
             comment_form=CommentForm(),
+            files=logic.files.get_files_for_object(object_id),
+            file_source_instrument_exists=False,
+            file_source_jupyterhub_exists=False,
+            file_form=FileForm(),
+            mobile_upload_url=mobile_upload_url,
+            mobile_upload_qrcode=mobile_upload_qrcode,
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
@@ -285,10 +311,94 @@ def post_object_comments(object_id):
         comments.create_comment(object_id=object_id, user_id=flask_login.current_user.id, content=content)
         flask.flash('Successfully posted a comment.', 'success')
     else:
-        print(comment_form.errors)
         flask.flash('Please enter a comment text.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
+
+@frontend.route('/files/')
+@flask_login.login_required
+def existing_files_from_source():
+    if 'file_source' not in flask.request.args:
+        return flask.abort(400)
+    file_source = flask.request.args['file_source']
+    relative_path = flask.request.args.get('relative_path', '')
+    while relative_path.startswith('/'):
+        relative_path = relative_path[1:]
+    try:
+        return json.dumps(logic.files.get_existing_files_for_source(file_source, flask_login.current_user.id, relative_path, max_depth=2))
+    except (logic.errors.InvalidFileSourceError, FileNotFoundError) as e:
+        return flask.abort(404)
+
+
+@frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
+@object_permissions_required(Permissions.READ)
+def object_file(object_id, file_id):
+    file = logic.files.get_file_for_object(object_id, file_id)
+    if file is None:
+        return flask.abort(404)
+    if 'preview' in flask.request.args:
+        file_extension = os.path.splitext(file.original_file_name)[1]
+        mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
+        if mime_type is not None:
+            return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
+    return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+
+
+@frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])
+def mobile_file_upload(object_id: int, token: str):
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
+    try:
+        user_id, object_id = serializer.loads(token, max_age=15*60)
+    except itsdangerous.BadSignature:
+        return flask.abort(400)
+    return flask.render_template('mobile_upload.html', user_id=logic.users.get_user(user_id), object=logic.objects.get_object(object_id))
+
+
+@frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['POST'])
+def post_mobile_file_upload(object_id: int, token: str):
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
+    try:
+        user_id, object_id = serializer.loads(token, max_age=15*60)
+    except itsdangerous.BadSignature:
+        return flask.abort(400)
+    files = flask.request.files.getlist('file_input')
+    for file_storage in files:
+        file_name = werkzeug.utils.secure_filename(file_storage.filename)
+        logic.files.create_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
+    return flask.render_template('mobile_upload_success.html', num_files=len(files))
+
+
+@frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def post_object_files(object_id):
+    file_form = FileForm()
+    if file_form.validate_on_submit():
+        file_source = file_form.file_source.data
+        if file_source == 'local':
+            files = flask.request.files.getlist(file_form.local_files.name)
+            for file_storage in files:
+                file_name = werkzeug.utils.secure_filename(file_storage.filename)
+                logic.files.create_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
+            flask.flash('Successfully uploaded files.', 'success')
+        elif file_source in logic.files.FILE_SOURCES.keys():
+            file_names = file_form.file_names.data
+            try:
+                file_names = json.loads(file_names)
+            except json.JSONDecodeError:
+                flask.flash('Failed to upload files.', 'error')
+                return flask.redirect(flask.url_for('.object', object_id=object_id))
+            for file_name in file_names:
+                try:
+                    logic.files.copy_file(object_id, flask_login.current_user.id, file_source, file_name)
+                except (FileNotFoundError, logic.errors.InvalidFileSourceError):
+                    flask.flash('Failed to upload files.', 'error')
+                    return flask.redirect(flask.url_for('.object', object_id=object_id))
+            flask.flash('Successfully uploaded files.', 'success')
+        else:
+            flask.flash('Failed to upload files.', 'error')
+    else:
+        flask.flash('Failed to upload files.', 'error')
+    return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
 @frontend.route('/objects/new', methods=['GET', 'POST'])

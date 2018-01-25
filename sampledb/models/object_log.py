@@ -20,6 +20,7 @@ class ObjectLogEntryType(enum.Enum):
     RESTORE_OBJECT_VERSION = 3
     USE_OBJECT_IN_MEASUREMENT = 4
     POST_COMMENT = 5
+    UPLOAD_FILE = 6
 
 
 class ObjectLogEntry(db.Model):
