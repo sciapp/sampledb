@@ -12,7 +12,7 @@
   <table class="table">
   <thead>
     <tr>
-      <th scope="col" rowspan="2">ID</th><th scope="col" rowspan="2">Name</th><th scope="col" colspan="2">Created</th><th scope="col" colspan="2">Last modified</th><th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>
+      <th scope="col" rowspan="2">ID</th><th scope="col" rowspan="2">Name</th><th scope="col" colspan="2">Created</th><th scope="col" colspan="2">Last modified</th>{% if show_action %}<th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>{% endif %}
       {% for property_name in display_properties %}
         <th scope="col" rowspan="2">{{ display_property_titles[property_name] }}</th>
       {% endfor %}
@@ -30,6 +30,7 @@
       <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>
       <td>{{ object.last_modified_at }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.name }}</a></td>
+      {% if show_action %}
       {% if object.action is not none %}
         {% if object.action.instrument is not none %}
           <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name }}</a></td>
@@ -40,6 +41,7 @@
       {% else %}
         <td>&mdash;</td>
         <td>&mdash;</td>
+      {% endif %}
       {% endif %}
       {% for property_name in display_properties %}
         <td>
