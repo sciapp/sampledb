@@ -43,6 +43,7 @@ FILE_SOURCES = {
     # 'instrument': LocalFileSource(lambda user_id: '/')
 }
 MIME_TYPES = {
+    '.txt': 'text/plain',
     '.png': 'image/png',
     '.jpg': 'image/jpeg'
 }

@@ -67,9 +67,9 @@ def objects():
             'object_id': obj.object_id,
             'version_id': obj.version_id,
             'created_by': get_user(original_object.user_id),
-            'created_at': original_object.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            'created_at': original_object.utc_datetime.strftime('%Y-%m-%d'),
             'modified_by': get_user(obj.user_id),
-            'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d'),
             'data': obj.data,
             'schema': obj.schema,
             'action': get_action(obj.action_id),
@@ -100,7 +100,11 @@ def objects():
         sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids
     }
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType, samples=samples)
+    if action_id is None:
+        show_action = True
+    else:
+        show_action = False
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType, samples=samples, show_action=show_action)
 
 
 @jinja_filter
