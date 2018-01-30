@@ -28,6 +28,8 @@ def main(arguments):
         action_type = ActionType.SAMPLE_CREATION
     elif action_type == 'measurement':
         action_type = ActionType.MEASUREMENT
+    elif action_type == 'simulation':
+        action_type = ActionType.SIMULATION
     else:
         print('Error: action type must be "sample" or "measurement"', file=sys.stderr)
         exit(1)
