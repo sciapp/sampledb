@@ -8,6 +8,10 @@ class ObjectDoesNotExistError(Exception):
     pass
 
 
+class FileDoesNotExistError(Exception):
+    pass
+
+
 class ObjectVersionDoesNotExistError(Exception):
     pass
 
