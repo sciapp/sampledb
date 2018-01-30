@@ -30,6 +30,7 @@
         <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
         <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
         <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
+        <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
         <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
       </ul>
       {% endif %}
@@ -39,6 +40,8 @@
           <input type="hidden" name="t" value="samples" />
           {% elif action_type == ActionType.MEASUREMENT %}
           <input type="hidden" name="t" value="measurements" />
+          {% elif action_type == ActionType.SIMULATION %}
+          <input type="hidden" name="t" value="simulations" />
           {% endif %}
         {% endif %}
         <div class="input-group">

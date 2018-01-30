@@ -42,6 +42,7 @@ class Instrument(db.Model):
 class ActionType(enum.Enum):
     SAMPLE_CREATION = 1
     MEASUREMENT = 2
+    SIMULATION = 3
 
 
 class Action(db.Model):

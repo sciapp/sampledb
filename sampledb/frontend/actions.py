@@ -20,7 +20,8 @@ def actions():
     action_type = flask.request.args.get('t', None)
     action_type = {
         'samples': ActionType.SAMPLE_CREATION,
-        'measurements': ActionType.MEASUREMENT
+        'measurements': ActionType.MEASUREMENT,
+        'simulations': ActionType.SIMULATION
     }.get(action_type, None)
     if action_type is not None:
         actions = get_actions(action_type)

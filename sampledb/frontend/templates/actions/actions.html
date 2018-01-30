@@ -15,6 +15,9 @@
     {% if action.type == ActionType.MEASUREMENT %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
       <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Measurement</a>
+    {% elif action.type == ActionType.SIMULATION %}
+      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
+      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Simulation</a>
     {% else %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
       <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Create Sample</a>

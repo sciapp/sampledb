@@ -53,6 +53,14 @@
           <a href="{{ url_for('frontend.objects', t='measurements') }}" class="btn btn-block btn-lg btn-default">View Measurements</a>
         </div>
       </div>
+      <div class="row" style="margin-top: 10px">
+        <div class="col-md-offset-2 col-md-4">
+          <a href="{{ url_for('frontend.actions', t='simulations') }}" class="btn btn-block btn-lg btn-default">Perform a Simulation</a>
+        </div>
+        <div class="col-md-4">
+          <a href="{{ url_for('frontend.objects', t='simulations') }}" class="btn btn-block btn-lg btn-default">View Simulations</a>
+        </div>
+      </div>
     </div>
   </div>
 {% endif %}

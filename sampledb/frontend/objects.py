@@ -46,7 +46,8 @@ def objects():
     action_type = flask.request.args.get('t', '')
     action_type = {
         'samples': ActionType.SAMPLE_CREATION,
-        'measurements': ActionType.MEASUREMENT
+        'measurements': ActionType.MEASUREMENT,
+        'simulations': ActionType.SIMULATION
     }.get(action_type, None)
     query_string = flask.request.args.get('q', '')
     filter_func = generate_filter_func(query_string)
@@ -258,7 +259,8 @@ def object(object_id):
         instrument = action.instrument
         object_type = {
             ActionType.SAMPLE_CREATION: "Sample",
-            ActionType.MEASUREMENT: "Measurement"
+            ActionType.MEASUREMENT: "Measurement",
+            ActionType.SIMULATION: "Simulation"
         }.get(action.type, "Object")
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
 
@@ -447,7 +449,8 @@ def object_version(object_id, version_id):
     instrument = action.instrument
     object_type = {
         ActionType.SAMPLE_CREATION: "Sample",
-        ActionType.MEASUREMENT: "Measurement"
+        ActionType.MEASUREMENT: "Measurement",
+        ActionType.SIMULATION: "Simulation"
     }.get(action.type, "Object")
     return flask.render_template(
         'objects/view/base.html',
