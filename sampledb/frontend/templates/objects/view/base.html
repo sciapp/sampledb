@@ -177,50 +177,7 @@
       <p>There are no files for this {{ object_type.lower() }}.</p>
     {% endif %}
 
-    {% if user_may_edit %}
-    <div class="form-group row clearfix" style="padding-right:0.75em">
-      <div class="col-md-12">
-            <form class="form" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}" enctype="multipart/form-data">
-              <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-file"></i></span>
-                <input id="input-file-text" type="text" class="form-control disabled" disabled />
-                <span class="input-group-btn">
-                  <input type="hidden" value="" id="input-file-names-hidden" name="{{ file_form.file_names.name }}" />
-                  <input type="hidden" value="" id="input-file-source-hidden" name="{{ file_form.file_source.name }}" />
-                  {{ file_form.csrf_token }}
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width:10em;">
-                    <i class="fa fa-folder-open"></i> Browse... <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <label class="btn btn-link btn-file" style="color:#333333;"><i class="fa fa-hdd-o fa-fw"></i> Local files<input id="input-file-upload" type="file" name="{{ file_form.local_files.name }}" multiple style="display: none;"></label>
-                      </li>
-                      <li role="separator" class="divider"></li>
-                      {% if file_source_instrument_exists %}
-                      <li>
-                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-instrument-files-modal"><i class="fa fa-book fa-fw"></i> Instrument files</button>
-                      </li>
-                      {% endif %}
-                      {% if file_source_jupyterhub_exists %}
-                      <li>
-                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-jupyterhub-files-modal"><img src="{{ url_for('static', filename='img/jupyter-80.png') }}" style="height:14px; margin-left:2px; margin-right:2px;"> JupyterHub files</button>
-                      </li>
-                      {% endif %}
-                      {% if file_source_instrument_exists or file_source_jupyterhub_exists %}
-                      <li role="separator" class="divider"></li>
-                      {% endif %}
-                      <li>
-                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-mobile-file-upload-modal"><i class="fa fa-mobile-phone fa-fw"></i> Smartphone</button>
-                      </li>
-                    </ul>
-                  </div>
-                  <button type="submit" class="btn btn-primary disabled" style="width:10em;" id="button-upload-files"><i class="fa fa-upload fa-fw"></i> Upload</button>
-                </span>
-              </div>
-            </form>
-      </div>
-    </div>
+
 
     {% for file in files %}
     <div class="modal fade" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog" aria-labelledby="fileInfoModalLabel-{{ file.id }}">
@@ -299,6 +256,51 @@
       </div>
     </div>
     {% endfor %}
+
+    {% if user_may_edit %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-12">
+            <form class="form" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}" enctype="multipart/form-data">
+              <div class="input-group">
+                <span class="input-group-addon"><i class="fa fa-file"></i></span>
+                <input id="input-file-text" type="text" class="form-control disabled" disabled />
+                <span class="input-group-btn">
+                  <input type="hidden" value="" id="input-file-names-hidden" name="{{ file_form.file_names.name }}" />
+                  <input type="hidden" value="" id="input-file-source-hidden" name="{{ file_form.file_source.name }}" />
+                  {{ file_form.csrf_token }}
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width:10em;">
+                    <i class="fa fa-folder-open"></i> Browse... <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <label class="btn btn-link btn-file" style="color:#333333;"><i class="fa fa-hdd-o fa-fw"></i> Local files<input id="input-file-upload" type="file" name="{{ file_form.local_files.name }}" multiple style="display: none;"></label>
+                      </li>
+                      <li role="separator" class="divider"></li>
+                      {% if file_source_instrument_exists %}
+                      <li>
+                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-instrument-files-modal"><i class="fa fa-book fa-fw"></i> Instrument files</button>
+                      </li>
+                      {% endif %}
+                      {% if file_source_jupyterhub_exists %}
+                      <li>
+                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-jupyterhub-files-modal"><img src="{{ url_for('static', filename='img/jupyter-80.png') }}" style="height:14px; margin-left:2px; margin-right:2px;"> JupyterHub files</button>
+                      </li>
+                      {% endif %}
+                      {% if file_source_instrument_exists or file_source_jupyterhub_exists %}
+                      <li role="separator" class="divider"></li>
+                      {% endif %}
+                      <li>
+                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-mobile-file-upload-modal"><i class="fa fa-mobile-phone fa-fw"></i> Smartphone</button>
+                      </li>
+                    </ul>
+                  </div>
+                  <button type="submit" class="btn btn-primary disabled" style="width:10em;" id="button-upload-files"><i class="fa fa-upload fa-fw"></i> Upload</button>
+                </span>
+              </div>
+            </form>
+      </div>
+    </div>
 
     <div class="modal fade" id="fileAddModal" tabindex="-1" role="dialog" aria-labelledby="fileAddModalLabel">
       <div class="modal-dialog" role="document">
