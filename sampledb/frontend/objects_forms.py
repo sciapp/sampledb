@@ -64,3 +64,7 @@ class FileForm(FlaskForm):
 class FileInformationForm(FlaskForm):
     title = StringField()
     description = TextAreaField()
+
+
+class FileHidingForm(FlaskForm):
+    reason = TextAreaField()

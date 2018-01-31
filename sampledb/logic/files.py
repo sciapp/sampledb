@@ -54,6 +54,10 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'origin
 
     def __new__(cls, id: int, object_id: int, user_id: int, original_file_name: str, utc_datetime: datetime.datetime=None):
         self = super(File, cls).__new__(cls, id, object_id, user_id, original_file_name, utc_datetime)
+        self._is_hidden = None
+        self._hide_reason = None
+        self._title = None
+        self._description = None
         return self
 
     @classmethod
@@ -76,25 +80,29 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'origin
 
     @property
     def title(self) -> typing.Union[str, None]:
-        log_entry = FileLogEntry.query.filter_by(
-            object_id=self.object_id,
-            file_id=self.id,
-            type=FileLogEntryType.EDIT_TITLE
-        ).order_by(FileLogEntry.utc_datetime.desc()).first()
-        if log_entry is None:
-            return self.original_file_name
-        return log_entry.data['title']
+        if self._title is None:
+            log_entry = FileLogEntry.query.filter_by(
+                object_id=self.object_id,
+                file_id=self.id,
+                type=FileLogEntryType.EDIT_TITLE
+            ).order_by(FileLogEntry.utc_datetime.desc()).first()
+            if log_entry is None:
+                return self.original_file_name
+            self._title = log_entry.data['title']
+        return self._title
 
     @property
     def description(self) -> typing.Union[str, None]:
-        log_entry = FileLogEntry.query.filter_by(
-            object_id=self.object_id,
-            file_id=self.id,
-            type=FileLogEntryType.EDIT_DESCRIPTION
-        ).order_by(FileLogEntry.utc_datetime.desc()).first()
-        if log_entry is None:
-            return None
-        return log_entry.data['description']
+        if self._description is None:
+            log_entry = FileLogEntry.query.filter_by(
+                object_id=self.object_id,
+                file_id=self.id,
+                type=FileLogEntryType.EDIT_DESCRIPTION
+            ).order_by(FileLogEntry.utc_datetime.desc()).first()
+            if log_entry is None:
+                return None
+            self._description = log_entry.data['description']
+        return self._description
 
     @property
     def log_entries(self):
@@ -102,6 +110,37 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'origin
             object_id=self.object_id,
             file_id=self.id
         ).order_by(FileLogEntry.utc_datetime.asc()).all()
+
+    @property
+    def is_hidden(self):
+        if self._is_hidden is None:
+            log_entry = FileLogEntry.query.filter_by(
+                object_id=self.object_id,
+                file_id=self.id,
+                type=FileLogEntryType.HIDE_FILE
+            ).order_by(FileLogEntry.utc_datetime.desc()).first()
+            if log_entry is None:
+                self._is_hidden = False
+                return False
+            hide_time = log_entry.utc_datetime
+            self._hide_reason = log_entry.data['reason']
+            log_entry = FileLogEntry.query.filter_by(
+                object_id=self.object_id,
+                file_id=self.id,
+                type=FileLogEntryType.UNHIDE_FILE
+            ).order_by(FileLogEntry.utc_datetime.desc()).first()
+            if log_entry is None:
+                self._is_hidden = True
+                return True
+            unhide_time = log_entry.utc_datetime
+            self._is_hidden = hide_time > unhide_time
+        return self._is_hidden
+
+    @property
+    def hide_reason(self):
+        if self.is_hidden:
+            return self._hide_reason
+        return None
 
     def open(self, read_only: bool=True) -> typing.BinaryIO:
         file_name = self.real_file_name
@@ -197,6 +236,29 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
         })
         db.session.add(log_entry)
         db.session.commit()
+
+
+def hide_file(object_id: int, file_id: int, user_id: int, reason: str) -> None:
+    """
+    Hides a file.
+
+    :param object_id: the ID of an existing object
+    :param file_id: the ID of a file for the object
+    :param user_id: the ID of an existing user
+    :param reason: the reason for hiding the file
+    :raise errors.FileDoesNotExistError: when no file with the given object ID
+        and file ID exists
+    """
+    file = get_file_for_object(object_id=object_id, file_id=file_id)
+    if file is None:
+        raise FileDoesNotExistError()
+    if not reason:
+        reason = ''
+    log_entry = FileLogEntry(type=FileLogEntryType.HIDE_FILE, object_id=object_id, file_id=file_id, user_id=user_id, data={
+        'reason': reason
+    })
+    db.session.add(log_entry)
+    db.session.commit()
 
 
 def copy_file(object_id: int, user_id: int, file_source: str, file_name: str) -> None:

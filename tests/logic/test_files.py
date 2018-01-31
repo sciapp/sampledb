@@ -259,6 +259,7 @@ def test_file_information(user: User, object: Object, tmpdir):
     assert file.title == file.original_file_name
     assert file.description is None
     files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='Title', description='')
+    file = files.get_file_for_object(object.object_id, 0)
     assert file.title == 'Title'
     assert file.description is None
     assert len(file.log_entries) == 1
@@ -266,6 +267,7 @@ def test_file_information(user: User, object: Object, tmpdir):
     assert log_entry.type == files.FileLogEntryType.EDIT_TITLE
     assert log_entry.data == {'title': 'Title'}
     files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='Title', description='Description')
+    file = files.get_file_for_object(object.object_id, 0)
     assert file.title == 'Title'
     assert file.description == 'Description'
     assert len(file.log_entries) == 2
@@ -273,6 +275,7 @@ def test_file_information(user: User, object: Object, tmpdir):
     assert log_entry.type == files.FileLogEntryType.EDIT_DESCRIPTION
     assert log_entry.data == {'description': 'Description'}
     files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='', description='Description')
+    file = files.get_file_for_object(object.object_id, 0)
     assert file.title == file.original_file_name
     assert file.description == 'Description'
     assert len(file.log_entries) == 3
