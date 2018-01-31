@@ -147,7 +147,7 @@
               <script>
                 window.update_file_table_filter_states();
               </script>
-            ">
+            " style="display: none">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
             </button>
           </th>
@@ -155,6 +155,7 @@
       </thead>
       <tbody>
       {% for file in files %}
+        {% if not file.is_hidden %}
         <tr id="file-{{ file.id }}">
           <td style="white-space: nowrap;width: 1%;">{% if file.original_file_name | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
           <td>{{ file.title }}</td>
@@ -170,6 +171,17 @@
             </span>
           </td>
         </tr>
+        {% else %}
+        <tr>
+          <td style="white-space: nowrap;width: 1%;"></td>
+          <td>&mdash;</td>
+          <td>
+            <span class="pull-right" style="display:flex;">
+              <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}"><i class="fa fa-question"></i></button>
+            </span>
+          </td>
+        </tr>
+        {% endif %}
       {% endfor %}
       </tbody>
     </table>
@@ -177,12 +189,37 @@
       <p>There are no files for this {{ object_type.lower() }}.</p>
     {% endif %}
 
-
-
     {% for file in files %}
-    <div class="modal fade" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog" aria-labelledby="fileInfoModalLabel-{{ file.id }}">
+    {% if file.is_hidden %}
+    <div class="modal fade modal-file-info" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog" aria-labelledby="fileInfoModalLabel-{{ file.id }}">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="fileInfoModalLabel-{{ file.id }}">Hidden File Information</h4>
+            </div>
+            <div class="modal-body">
+              {% if file.hide_reason %}
+              This file has been hidden for the following reason:
+              <pre style="font-family: inherit">{{ file.hide_reason }}</pre>
+              {% else %}
+              This file has been hidden.
+              {% endif %}
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {% for file in files %}
+    {% if not file.is_hidden %}
+    <div class="modal fade modal-file-info" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog" aria-labelledby="fileInfoModalLabel-{{ file.id }}">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content file-info-main">
           <form method="post" action="{{ url_for('.update_file_information', object_id=object_id, file_id=file.id) }}">
           {{ file_information_form.csrf_token() }}
             <div class="modal-header">
@@ -247,14 +284,36 @@
               <button type="submit" class="btn btn-primary file-info-edit-mode">Save</button>
               <button type="button" class="btn btn-default file-info-edit-mode button-file-info-cancel">Cancel</button>
               <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">Edit</button>
+              <button type="button" class="btn btn-default file-info-view-mode button-file-info-hide">Hide</button>
               {% endif %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-default file-info-view-mode">Download</a>
               <button type="button" class="btn btn-default file-info-view-mode" data-dismiss="modal">Close</button>
             </div>
           </form>
         </div>
+        <div class="modal-content file-info-hide">
+          <form method="post" action="{{ url_for('.hide_file', object_id=object_id, file_id=file.id) }}">
+          {{ file_hiding_form.csrf_token() }}
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title">Hide File</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>Reason:</label>
+                <textarea class="form-control" rows="3" name="{{ file_hiding_form.reason.name }}" title="Reason"></textarea>
+              </div>
+              <strong>Note</strong>: Other users will still see that a file has been hidden. The file may be restored by an administrator upon request.
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-danger">Hide</button>
+              <button type="button" class="btn btn-default button-file-info-hide-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
+    {% endif %}
     {% endfor %}
 
     {% if user_may_edit %}
@@ -675,6 +734,7 @@
       var file_id = $(this).attr('data-file_id');
       $('#fileInfoModal-'+file_id).modal('show');
     });
+    $('.file-info-hide').hide();
     $('.file-info-edit-mode').hide();
     $('.file-info-view-mode').show();
     $('.button-file-info-edit').on('click', function() {
@@ -696,6 +756,18 @@
       $('.input-file-info-description').each(function() {
         $(this).val($(this).attr('data-value'));
       });
+    });
+    $('.button-file-info-hide-cancel').on('click', function() {
+      $('.file-info-main').show();
+      $('.file-info-hide').hide();
+    });
+    $('.button-file-info-hide').on('click', function() {
+      $('.file-info-main').hide();
+      $('.file-info-hide').show();
+    });
+    $('.modal-file-info').on('hidden.bs.modal', function (e) {
+      $('.file-info-hide').hide();
+      $('.file-info-main').show();
     });
     });
   </script>

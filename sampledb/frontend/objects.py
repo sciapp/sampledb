@@ -29,7 +29,7 @@ from ..logic.objects import create_object, update_object, get_object, get_object
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, FileForm, FileInformationForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, FileForm, FileInformationForm, FileHidingForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -305,7 +305,8 @@ def object(object_id):
             user_may_grant=user_may_grant,
             samples=samples,
             FileLogEntryType=FileLogEntryType,
-            file_information_form=FileInformationForm()
+            file_information_form=FileInformationForm(),
+            file_hiding_form=FileHidingForm()
         )
 
     return show_object_form(object, action=get_action(object.action_id))
@@ -345,6 +346,8 @@ def object_file(object_id, file_id):
     file = logic.files.get_file_for_object(object_id, file_id)
     if file is None:
         return flask.abort(404)
+    if file.is_hidden:
+        return flask.abort(403)
     if 'preview' in flask.request.args:
         file_extension = os.path.splitext(file.original_file_name)[1]
         mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
@@ -371,6 +374,26 @@ def update_file_information(object_id, file_id):
         )
     except logic.errors.FileDoesNotExistError:
         return flask.abort(404)
+    return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
+
+
+@frontend.route('/objects/<int:object_id>/files/<int:file_id>/hide', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def hide_file(object_id, file_id):
+    form = FileHidingForm()
+    if not form.validate_on_submit():
+        return flask.abort(400)
+    reason = form.reason.data
+    try:
+        logic.files.hide_file(
+            object_id=object_id,
+            file_id=file_id,
+            user_id=flask_login.current_user.id,
+            reason=reason
+        )
+    except logic.errors.FileDoesNotExistError:
+        return flask.abort(404)
+    flask.flash('The file was hidden successfully.', 'success')
     return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
 
 
