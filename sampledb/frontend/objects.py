@@ -27,8 +27,9 @@ from ..logic.object_search import generate_filter_func
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
+from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, FileForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, FileForm, FileInformationForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter
 from .object_form_parser import parse_form_data
@@ -302,7 +303,9 @@ def object(object_id):
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
-            samples=samples
+            samples=samples,
+            FileLogEntryType=FileLogEntryType,
+            file_information_form=FileInformationForm()
         )
 
     return show_object_form(object, action=get_action(object.action_id))
@@ -348,6 +351,27 @@ def object_file(object_id, file_id):
         if mime_type is not None:
             return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
     return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+
+
+@frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def update_file_information(object_id, file_id):
+    form = FileInformationForm()
+    if not form.validate_on_submit():
+        return flask.abort(400)
+    title = form.title.data
+    description = form.description.data
+    try:
+        logic.files.update_file_information(
+            object_id=object_id,
+            file_id=file_id,
+            user_id=flask_login.current_user.id,
+            title=title,
+            description=description
+        )
+    except logic.errors.FileDoesNotExistError:
+        return flask.abort(404)
+    return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
 
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])

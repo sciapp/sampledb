@@ -1,0 +1,45 @@
+{
+  "title": "Simulation Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Simulation Name",
+      "type": "text",
+      "default": "MC-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^MC-[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "program": {
+      "title": "Program",
+      "type": "text",
+      "minLength": 1
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "text",
+      "minLength": 1
+    },
+    "file_location": {
+      "title": "File Location",
+      "type": "text",
+      "minLength": 0
+    },
+    "description": {
+      "title": "Description",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "created", "program", "keywords", "file_location", "description"],
+  "required": ["name", "created", "program", "keywords"],
+  "displayProperties": [
+    "program",
+    "keywords"
+  ]
+}

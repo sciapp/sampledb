@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField
+from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField
 from wtforms.validators import InputRequired, ValidationError
 
 from ..logic.permissions import Permissions
@@ -59,3 +59,8 @@ class FileForm(FlaskForm):
     def validate_file_source(form, field):
         if field.data not in ['local', 'instrument', 'jupyterhub']:
             raise ValidationError('Invalid file source')
+
+
+class FileInformationForm(FlaskForm):
+    title = StringField()
+    description = TextAreaField()

@@ -311,3 +311,34 @@ def test_file_tree_for_unknown_file_source(flask_server, user: sampledb.models.U
 
     r = session.get(flask_server.base_url + 'files/', params={'file_source': 'instrument'})
     assert r.status_code == 404
+
+
+def test_update_file_information(flask_server, user, tmpdir):
+    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
+
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example Object'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+
+    sampledb.logic.files.create_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    file_form = document.find('form', {'action': '/objects/{}/files/0'.format(object.id)})
+    csrf_token = file_form.find('input', {'name': 'csrf_token'})['value']
+    r = session.post(flask_server.base_url + 'objects/{}/files/0'.format(object.id), data={
+        'csrf_token': csrf_token,
+        'title': 'Title',
+        'description': 'Description'
+    })
+    assert r.status_code == 200
+    file = sampledb.logic.files.get_file_for_object(object.id, 0)
+    assert file.title == 'Title'
+    assert file.description == 'Description'

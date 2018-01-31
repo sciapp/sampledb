@@ -1,0 +1,56 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Simulation Name",
+      "type": "text",
+      "default": "SIM-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^SIM-[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "type": {
+      "title": "Simulation Type",
+      "type": "text",
+      "choices": [
+        "Finite Element Methods FEM",
+        "Computational Fluid Dynamics CFD ",
+        "Monte Carlo MC",
+        "CAD"
+      ]
+    },
+    "program": {
+      "title": "Program",
+      "type": "text",
+      "minLength": 1
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "text",
+      "minLength": 1
+    },
+    "file_location": {
+      "title": "File Location",
+      "type": "text",
+      "minLength": 0
+    },
+    "description": {
+      "title": "Description",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "created", "type", "program", "keywords", "file_location", "description"],
+  "required": ["name", "created", "type", "program", "keywords"],
+  "displayProperties": [
+    "type",
+    "program",
+    "keywords"
+  ]
+}

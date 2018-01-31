@@ -246,3 +246,42 @@ def test_file_tree_with_max_depth(user: User, tmpdir):
         'example.txt': 'File',
         'subdirectory': 'Directory'
     }
+
+
+def test_file_information(user: User, object: Object, tmpdir):
+    files.FILE_STORAGE_PATH = tmpdir
+
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 0
+    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(b"1"))
+
+    file = files.get_file_for_object(object.object_id, 0)
+
+    assert file.title == file.original_file_name
+    assert file.description is None
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='Title', description='')
+    assert file.title == 'Title'
+    assert file.description is None
+    assert len(file.log_entries) == 1
+    log_entry = file.log_entries[0]
+    assert log_entry.type == files.FileLogEntryType.EDIT_TITLE
+    assert log_entry.data == {'title': 'Title'}
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='Title', description='Description')
+    assert file.title == 'Title'
+    assert file.description == 'Description'
+    assert len(file.log_entries) == 2
+    log_entry = file.log_entries[1]
+    assert log_entry.type == files.FileLogEntryType.EDIT_DESCRIPTION
+    assert log_entry.data == {'description': 'Description'}
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='', description='Description')
+    assert file.title == file.original_file_name
+    assert file.description == 'Description'
+    assert len(file.log_entries) == 3
+    log_entry = file.log_entries[2]
+    assert log_entry.type == files.FileLogEntryType.EDIT_TITLE
+    assert log_entry.data == {'title': file.original_file_name}
+
+    with pytest.raises(files.FileDoesNotExistError):
+        files.update_file_information(object_id=object.object_id, file_id=file.id+1, user_id=user.id, title='Title', description='Description')
+    assert len(file.log_entries) == 3
+
+

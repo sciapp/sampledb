@@ -138,9 +138,8 @@
     <table class="table" id="file_table">
       <thead>
         <tr>
-          <th scope="col" style="white-space: nowrap;width: 1%;">Datetime</th>
-          <th scope="col" style="white-space: nowrap;width: 1%;">Uploaded by</th>
-          <th scope="col">Filename</th>
+          <th scope="col" style="white-space: nowrap;width: 1%;"></th>
+          <th scope="col">Title</th>
           <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
             <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
               <label style='font-weight:400'><input type='checkbox' id='file_table_filter_notebooks' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;notebooks&quot;);'/> Notebooks</label><br />
@@ -157,15 +156,18 @@
       <tbody>
       {% for file in files %}
         <tr id="file-{{ file.id }}">
-          <td style="white-space: nowrap;width: 1%;">{{ file.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-          <td><a href="{{ url_for('.user_profile', user_id=file.user_id) }}">{{ file.uploader.name }}</a></td>
-          <td><a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">{{ file.original_file_name }}</a></td>
+          <td style="white-space: nowrap;width: 1%;">{% if file.original_file_name | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
+          <td>{{ file.title }}</td>
           <td>
-            {% if file.original_file_name | has_preview %}
-            <span class="pull-right">
-              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview">View</a>
+            <span class="pull-right" style="display:flex;">
+              <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}"><i class="fa fa-info"></i></button>
+              {% if file.original_file_name | has_preview %}
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-search"></i></a>
+              {% else %}
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i class="fa fa-search"></i></a>
+              {% endif %}
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-download"></i></a>
             </span>
-            {% endif %}
           </td>
         </tr>
       {% endfor %}
@@ -219,6 +221,84 @@
             </form>
       </div>
     </div>
+
+    {% for file in files %}
+    <div class="modal fade" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog" aria-labelledby="fileInfoModalLabel-{{ file.id }}">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form method="post" action="{{ url_for('.update_file_information', object_id=object_id, file_id=file.id) }}">
+          {{ file_information_form.csrf_token() }}
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="fileInfoModalLabel-{{ file.id }}">File Information</h4>
+            </div>
+            <div class="modal-body">
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>Title:</label></div>
+              <div class="col-sm-9"><span class="file-info-view-mode">{% if file.title %}{{ file.title }}{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><input type="text" name="{{ file_information_form.title.name }}" class="input-file-info-title" style="width:100%" value="{% if file.title %}{{ file.title }}{% endif %}"></span></div>
+            </div>
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>Name:</label></div>
+              <div class="col-sm-9">{{ file.original_file_name }}</div>
+            </div>
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>Uploaded by:</label></div>
+              <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+            </div>
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>Description:</label></div>
+              <div class="col-sm-9"><span class="file-info-view-mode">{% if file.description %}<pre style="font-family: inherit">{{ file.description }}</pre>{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><textarea name="{{ file_information_form.description.name }}"class="input-file-info-description" style="width:100%;resize: vertical;">{% if file.description %}{{ file.description }}{% endif %}</textarea></span></div>
+            </div>
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>History:</label></div>
+              <div class="col-sm-9"><a role="button" data-toggle="collapse" href="#fileInfoModalCollapse-{{ file.id }}" aria-expanded="false" aria-controls="fileInfoModalCollapse-{{ file.id }}">Show/Hide</a></div>
+            </div>
+            <div class="collapse" id="fileInfoModalCollapse-{{ file.id }}">
+              <table class="table" id="activity_log">
+                <thead>
+                  <tr>
+                    <th scope="col" style="white-space: nowrap;width: 1%;">Datetime</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{{ file.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a> has uploaded the file.</td>
+                  </tr>
+                  {% for log_entry in file.log_entries %}
+                    {% if log_entry.type == FileLogEntryType.EDIT_TITLE %}
+                      <tr>
+                        <td>{{ log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td><a href="{{ url_for('.user_profile', user_id=log_entry.user.id) }}">{{ log_entry.user.name }}</a> updated the title to:<br />{{ log_entry.data['title'] }}</td>
+                      </tr>
+                    {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
+                      <tr>
+                        <td>{{ log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ log_entry.user.name }}</a> updated the description to: <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
+                      </tr>
+                    {% else %}
+                      <tr>{{ log_entry.type }}</tr>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            </div>
+            <div class="modal-footer">
+              {% if user_may_edit %}
+              <button type="submit" class="btn btn-primary file-info-edit-mode">Save</button>
+              <button type="button" class="btn btn-default file-info-edit-mode button-file-info-cancel">Cancel</button>
+              <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">Edit</button>
+              {% endif %}
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-default file-info-view-mode">Download</a>
+              <button type="button" class="btn btn-default file-info-view-mode" data-dismiss="modal">Close</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
 
     <div class="modal fade" id="fileAddModal" tabindex="-1" role="dialog" aria-labelledby="fileAddModalLabel">
       <div class="modal-dialog" role="document">
@@ -588,6 +668,33 @@
           $('#button-upload-files').removeClass('disabled');
         });
       {% endif %}
+
+    $('.button-file-info').on('click', function() {
+      var file_id = $(this).attr('data-file_id');
+      $('#fileInfoModal-'+file_id).modal('show');
+    });
+    $('.file-info-edit-mode').hide();
+    $('.file-info-view-mode').show();
+    $('.button-file-info-edit').on('click', function() {
+      $('.input-file-info-title').each(function() {
+        $(this).attr('data-value', $(this).attr('value'));
+      });
+      $('.input-file-info-description').each(function() {
+        $(this).attr('data-value', $(this).val());
+      });
+      $('.file-info-edit-mode').show();
+      $('.file-info-view-mode').hide();
+    });
+    $('.button-file-info-cancel').on('click', function() {
+      $('.file-info-edit-mode').hide();
+      $('.file-info-view-mode').show();
+      $('.input-file-info-title').each(function() {
+        $(this).val($(this).attr('data-value'));
+      });
+      $('.input-file-info-description').each(function() {
+        $(this).val($(this).attr('data-value'));
+      });
+    });
     });
   </script>
 {% endblock %}

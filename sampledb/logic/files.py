@@ -34,7 +34,8 @@ import typing
 from .. import db
 from . import user_log, object_log, objects, users
 from ..models import files
-from .errors import FileNameTooLongError, TooManyFilesForObjectError, InvalidFileSourceError
+from ..models.file_log import FileLogEntry, FileLogEntryType
+from .errors import FileNameTooLongError, TooManyFilesForObjectError, InvalidFileSourceError, FileDoesNotExistError
 from .ldap import get_posix_info, search_user
 from .authentication import get_user_ldap_uid
 
@@ -72,6 +73,35 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'origin
     @property
     def uploader(self) -> users.User:
         return users.get_user(self.user_id)
+
+    @property
+    def title(self) -> typing.Union[str, None]:
+        log_entry = FileLogEntry.query.filter_by(
+            object_id=self.object_id,
+            file_id=self.id,
+            type=FileLogEntryType.EDIT_TITLE
+        ).order_by(FileLogEntry.utc_datetime.desc()).first()
+        if log_entry is None:
+            return self.original_file_name
+        return log_entry.data['title']
+
+    @property
+    def description(self) -> typing.Union[str, None]:
+        log_entry = FileLogEntry.query.filter_by(
+            object_id=self.object_id,
+            file_id=self.id,
+            type=FileLogEntryType.EDIT_DESCRIPTION
+        ).order_by(FileLogEntry.utc_datetime.desc()).first()
+        if log_entry is None:
+            return None
+        return log_entry.data['description']
+
+    @property
+    def log_entries(self):
+        return FileLogEntry.query.filter_by(
+            object_id=self.object_id,
+            file_id=self.id
+        ).order_by(FileLogEntry.utc_datetime.asc()).all()
 
     def open(self, read_only: bool=True) -> typing.BinaryIO:
         file_name = self.real_file_name
@@ -136,6 +166,37 @@ def create_file(object_id: int, user_id: int, file_name: str, save_content: typi
         raise
     object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
     user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+
+
+def update_file_information(object_id: int, file_id: int, user_id: int, title: str, description: str) -> None:
+    """
+    Creates new file log entries for updating a file's information.
+
+    :param object_id: the ID of an existing object
+    :param file_id: the ID of a file for the object
+    :param user_id: the ID of an existing user
+    :param title: the new title
+    :param description: the new description
+    :raise errors.FileDoesNotExistError: when no file with the given object ID
+        and file ID exists
+    """
+    file = get_file_for_object(object_id=object_id, file_id=file_id)
+    if file is None:
+        raise FileDoesNotExistError()
+    if not title:
+        title = file.original_file_name
+    if title != file.title:
+        log_entry = FileLogEntry(type=FileLogEntryType.EDIT_TITLE, object_id=object_id, file_id=file_id, user_id=user_id, data={
+            'title': title
+        })
+        db.session.add(log_entry)
+        db.session.commit()
+    if description != file.description and not (description == "" and file.description is None):
+        log_entry = FileLogEntry(type=FileLogEntryType.EDIT_DESCRIPTION, object_id=object_id, file_id=file_id, user_id=user_id, data={
+            'description': description
+        })
+        db.session.add(log_entry)
+        db.session.commit()
 
 
 def copy_file(object_id: int, user_id: int, file_source: str, file_name: str) -> None:
