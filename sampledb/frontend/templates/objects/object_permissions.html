@@ -8,6 +8,11 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
 {% endblock %}
 
 {% block content %}
@@ -23,9 +28,9 @@
       <tr>
         <th scope="col" style="width: 40%">Special Groups</th>
         <th scope="col" class="text-center">None</th>
-        <th scope="col" class="text-center">Read</th>
-        <th scope="col" class="text-center">Write</th>
-        <th scope="col" class="text-center">Grant</th></tr>
+        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th></tr>
     </thead>
     <tbody>
       <tr>
@@ -198,9 +203,10 @@
           <tr>
             <th scope="col" style="width: 40%">User</th>
             <th scope="col" class="text-center">None</th>
-            <th scope="col" class="text-center">Read</th>
-            <th scope="col" class="text-center">Write</th>
-            <th scope="col" class="text-center">Grant</th></tr>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          </tr>
         </thead>
         <tbody>
         <tr>
@@ -234,9 +240,10 @@
           <tr>
             <th scope="col" style="width: 40%">Group</th>
             <th scope="col" class="text-center">None</th>
-            <th scope="col" class="text-center">Read</th>
-            <th scope="col" class="text-center">Write</th>
-            <th scope="col" class="text-center">Grant</th></tr>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          </tr>
         </thead>
         <tbody>
         <tr>
