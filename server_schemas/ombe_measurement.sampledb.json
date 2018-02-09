@@ -25,54 +25,6 @@
       "minLength": 0,
       "multiline": true
     },
-    "rateCalibration": {
-      "title": "RateCalibration",
-      "type": "array",
-      "style": "table",
-      "minItems": 0,
-      "items": {
-        "title": "Element",
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "title": "Timestamp",
-            "type": "datetime"
-          },
-          "name": {
-            "title": "Element Name",
-            "type": "text",
-            "minLength": 1
-          },
-          "temperature": {
-            "title": "Temperature",
-            "type": "quantity",
-            "units": "degC"
-          },
-          "frequency_change": {
-            "title": "Frequency Change",
-            "type": "quantity",
-            "units": "Hz / s"
-          },
-          "rate": {
-            "title": "Rate",
-            "type": "quantity",
-            "units": "Å / s"
-          },
-          "comment": {
-            "title": "Comment",
-            "type": "text"
-          }
-        },
-        "propertyOrder": [
-          "timestamp",
-          "name",
-          "temperature",
-          "frequency_change",
-          "rate",
-          "comment"
-        ]
-      }
-    },
     "multilayer": {
       "title": "Multilayers",
       "type": "array",
@@ -81,11 +33,65 @@
         "title": "Multilayer",
         "type": "object",
         "properties": {
+          "rateCalibration": {
+            "title": "Rate Calibration",
+            "type": "array",
+            "style": "table",
+            "minItems": 0,
+            "items": {
+              "title": "Element",
+              "type": "object",
+              "properties": {
+                "timestamp": {
+                  "title": "Timestamp",
+                  "type": "datetime"
+                },
+                "name": {
+                  "title": "Element Name",
+                  "type": "text",
+                  "minLength": 1
+                },
+                "temperature": {
+                  "title": "Temperature",
+                  "type": "quantity",
+                  "units": "degC"
+                },
+                "frequency_change": {
+                  "title": "Frequency Change",
+                  "type": "quantity",
+                  "units": "Hz / s"
+                },
+                "rate": {
+                  "title": "Rate",
+                  "type": "quantity",
+                  "units": "Å / s"
+                },
+                "comment": {
+                  "title": "Comment",
+                  "type": "text"
+                }
+              },
+              "propertyOrder": [
+                "timestamp",
+                "name",
+                "temperature",
+                "frequency_change",
+                "rate",
+                "comment"
+              ]
+            }
+          },
           "repetitions": {
             "title": "Film Layer Repetitions",
             "type": "quantity",
             "units": "1",
             "default": 1
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
           },
           "films": {
             "title": "Films",
@@ -129,6 +135,60 @@
                   "title": "Annealing Time",
                   "type": "quantity",
                   "units": "s"
+                },
+                "rateCalibration": {
+                  "title": "Rate Calibration",
+                  "type": "array",
+                  "style": "table",
+                  "minItems": 0,
+                  "items": {
+                    "title": "Element",
+                    "type": "object",
+                    "properties": {
+                      "timestamp": {
+                        "title": "Timestamp",
+                        "type": "datetime"
+                      },
+                      "name": {
+                        "title": "Element Name",
+                        "type": "text",
+                        "minLength": 1
+                      },
+                      "temperature": {
+                        "title": "Temperature",
+                        "type": "quantity",
+                        "units": "degC"
+                      },
+                      "frequency_change": {
+                        "title": "Frequency Change",
+                        "type": "quantity",
+                        "units": "Hz / s"
+                      },
+                      "rate": {
+                        "title": "Rate",
+                        "type": "quantity",
+                        "units": "Å / s"
+                      },
+                      "comment": {
+                        "title": "Comment",
+                        "type": "text"
+                      }
+                    },
+                    "propertyOrder": [
+                      "timestamp",
+                      "name",
+                      "temperature",
+                      "frequency_change",
+                      "rate",
+                      "comment"
+                    ]
+                  }
+                },
+                "comment": {
+                  "title": "Comment",
+                  "type": "text",
+                  "minLength": 0,
+                  "multiline": true
                 },
                 "elements": {
                   "title": "Elements",
@@ -188,6 +248,8 @@
                 "substrate_temperature",
                 "annealing_temperature",
                 "annealing_time",
+                "comment",
+                "rateCalibration",
                 "elements"
               ]
             }
@@ -195,6 +257,8 @@
         },
         "propertyOrder": [
           "repetitions",
+          "comment",
+          "rateCalibration",
           "films"
         ]
       }
@@ -211,7 +275,6 @@
     "created",
     "substrate",
     "substratePreparation",
-    "rateCalibration",
     "multilayer",
     "comment"
   ],

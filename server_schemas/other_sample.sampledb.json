@@ -1,0 +1,34 @@
+{
+  "title": "Sample Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "default": "Sample-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^Sample-[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "text",
+      "minLength": 0
+    },
+    "description": {
+      "title": "Description",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "created", "keywords", "description"],
+  "required": ["name", "created"],
+  "displayProperties": [
+    "keywords"
+  ]
+}

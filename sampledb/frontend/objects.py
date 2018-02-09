@@ -44,12 +44,17 @@ def objects():
         action_id = int(flask.request.args.get('action', ''))
     except ValueError:
         action_id = None
-    action_type = flask.request.args.get('t', '')
-    action_type = {
-        'samples': ActionType.SAMPLE_CREATION,
-        'measurements': ActionType.MEASUREMENT,
-        'simulations': ActionType.SIMULATION
-    }.get(action_type, None)
+    if action_id is not None:
+        action = get_action(action_id)
+        action_type = action.type
+    else:
+        action = None
+        action_type = flask.request.args.get('t', '')
+        action_type = {
+            'samples': ActionType.SAMPLE_CREATION,
+            'measurements': ActionType.MEASUREMENT,
+            'simulations': ActionType.SIMULATION
+        }.get(action_type, None)
     query_string = flask.request.args.get('q', '')
     filter_func = generate_filter_func(query_string)
     objects = get_objects_with_permissions(
@@ -82,8 +87,8 @@ def objects():
     display_properties = []
     display_property_titles = {}
     sample_ids = set()
-    if action_id is not None:
-        action_schema = get_action(action_id).schema
+    if action is not None:
+        action_schema = action.schema
         display_properties = action_schema.get('displayProperties', [])
         for property_name in display_properties:
             display_property_titles[property_name] = action_schema['properties'][property_name]['title']
@@ -106,7 +111,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_type=action_type, ActionType=ActionType, samples=samples, show_action=show_action)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_id=action_id, action_type=action_type, ActionType=ActionType, samples=samples, show_action=show_action)
 
 
 @jinja_filter

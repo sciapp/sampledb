@@ -1,0 +1,61 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "MBE-AES-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^MBE-AES-[A-Za-z0-9-_]+$"
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "electronEnergy": {
+      "title": "Electron Energy",
+      "type": "quantity",
+      "units": "eV"
+    },
+    "filamentCurrent": {
+      "title": "Filament Current",
+      "type": "quantity",
+      "units": "A"
+    },
+    "effusionCurrent": {
+      "title": "Effusion Current",
+      "type": "quantity",
+      "units": "µA"
+    },
+    "minMeasurementRange": {
+      "title": "Min. Measurement Range",
+      "type": "quantity",
+      "units": "eV"
+    },
+    "maxMeasurementRange": {
+      "title": "Max. Measurement Range",
+      "type": "quantity",
+      "units": "eV"
+    },
+    "comment": {
+      "title": "Comment",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "sample", "created", "electronEnergy", "filamentCurrent", "effusionCurrent", "minMeasurementRange", "maxMeasurementRange", "comment"],
+  "required": ["name", "sample", "created", "electronEnergy", "filamentCurrent", "effusionCurrent"],
+  "displayProperties": [
+    "sample",
+    "electronEnergy",
+    "filamentCurrent",
+    "effusionCurrent"
+  ]
+}

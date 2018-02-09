@@ -1,0 +1,39 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "Measurement-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^Measurement-[0-9]+$"
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "text",
+      "minLength": 0
+    },
+    "description": {
+      "title": "Description",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "sample", "created", "keywords", "description"],
+  "required": ["name", "sample", "created"],
+  "displayProperties": [
+    "sample",
+    "keywords"
+  ]
+}
