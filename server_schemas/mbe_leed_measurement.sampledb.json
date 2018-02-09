@@ -1,0 +1,57 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "MBE-LEED-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^MBE-LEED-[A-Za-z0-9-_]+$"
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "electronEnergy": {
+      "title": "Electron Energy",
+      "type": "quantity",
+      "units": "eV"
+    },
+    "wehneltVoltage": {
+      "title": "Wehnelt Voltage",
+      "type": "quantity",
+      "units": "V"
+    },
+    "suppressorVoltage": {
+      "title": "Suppressor Voltage",
+      "type": "quantity",
+      "units": "V"
+    },
+    "filamentCurrent": {
+      "title": "Filament Current",
+      "type": "quantity",
+      "units": "A"
+    },
+    "comment": {
+      "title": "Comment",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "sample", "created", "electronEnergy", "wehneltVoltage", "suppressorVoltage", "filamentCurrent", "comment"],
+  "required": ["name", "sample", "created", "electronEnergy", "wehneltVoltage", "suppressorVoltage", "filamentCurrent"],
+  "displayProperties": [
+    "sample",
+    "electronEnergy",
+    "wehneltVoltage",
+    "suppressorVoltage",
+    "filamentCurrent"
+  ]
+}
