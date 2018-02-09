@@ -12,7 +12,7 @@
 </head>
 <body>
 <nav class="navbar navbar-default navbar-static-top">
-  <div class="container">
+  <div class="container-fluid">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
         <span class="sr-only">Toggle navigation</span>
@@ -35,19 +35,49 @@
       </ul>
       {% endif %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left">
+        {% if action_id %}
+          <input type="hidden" name="action" value="{{ action_id }}" id="input-search-action-id" />
+        {% endif %}
         {% if ActionType %}
           {% if action_type == ActionType.SAMPLE_CREATION %}
-          <input type="hidden" name="t" value="samples" />
+          <input type="hidden" name="t" value="samples" id="input-search-action-type" />
           {% elif action_type == ActionType.MEASUREMENT %}
-          <input type="hidden" name="t" value="measurements" />
+          <input type="hidden" name="t" value="measurements" id="input-search-action-type" />
           {% elif action_type == ActionType.SIMULATION %}
-          <input type="hidden" name="t" value="simulations" />
+          <input type="hidden" name="t" value="simulations" id="input-search-action-type" />
           {% endif %}
         {% endif %}
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
+          <input type="text" id="input-search" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+            {% if action_type %}
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="caret"></span>
+              <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+              {% if action_id %}
+                {% if action_type == ActionType.SAMPLE_CREATION %}
+                <li><a href="#" id="button-search-action-id">Search samples from this action</a></li>
+                {% elif action_type == ActionType.MEASUREMENT %}
+                <li><a href="#" id="button-search-action-id">Search measurements from this action</a></li>
+                {% elif action_type == ActionType.SIMULATION %}
+                <li><a href="#" id="button-search-action-id">Search simulations from this action</a></li>
+                {% else %}
+                <li><a href="#" id="button-search-action-id">Search objects from this action</a></li>
+                {% endif %}
+              {% endif %}
+              {% if action_type == ActionType.SAMPLE_CREATION %}
+              <li><a href="#" id="button-search-action-type">Search all samples</a></li>
+              {% elif action_type == ActionType.MEASUREMENT %}
+              <li><a href="#" id="button-search-action-type">Search all measurements</a></li>
+              {% elif action_type == ActionType.SIMULATION %}
+              <li><a href="#" id="button-search-action-type">Search all simulations</a></li>
+              {% endif %}
+              <li><a href="#" id="button-search-all">Search all objects</a></li>
+            </ul>
+            {% endif %}
           </span>
         </div>
       </form>
@@ -101,6 +131,29 @@
  {% block scripts %}
   <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+   <script>
+   $(function() {
+     $('#button-search-all').on('click', function() {
+       $('#input-search-action-type').attr('name', 't_');
+       $('#input-search-action-id').attr('name', 'action_');
+       $('#input-search').attr('placeholder', 'Search...')
+     });
+     $('#button-search-action-id').on('click', function() {
+       $('#input-search-action-type').attr('name', 't');
+       $('#input-search-action-id').attr('name', 'action');
+       $('#input-search').attr('placeholder', 'Search (by action)...')
+     });
+     $('#button-search-action-type').on('click', function() {
+       $('#input-search-action-type').attr('name', 't');
+       $('#input-search-action-id').attr('name', 'action_');
+       $('#input-search').attr('placeholder', 'Search (by type)...')
+     });
+     /* don't limit search by default*/
+     $('#input-search-action-type').attr('name', 't_');
+     $('#input-search-action-id').attr('name', 'action_');
+     $('#input-search').attr('placeholder', 'Search...')
+   });
+   </script>
   {% endblock %}
 </body>
 </html>
