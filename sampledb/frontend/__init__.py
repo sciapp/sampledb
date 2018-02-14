@@ -16,6 +16,7 @@ from . import index
 from . import instruments
 from . import objects
 from . import objects_forms
+from . import projects
 from . import users
 from . import users_forms
 from . import errors
