@@ -24,6 +24,12 @@ class Permissions(enum.Enum):
     def __str__(self):
         return self.name.lower()
 
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __lt__(self, other):
+        return self.value < other.value
+
     @staticmethod
     def from_name(name):
         members = {

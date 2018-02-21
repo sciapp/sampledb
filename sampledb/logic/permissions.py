@@ -23,8 +23,8 @@ from . import actions
 from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
-
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
+from . import projects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -41,7 +41,7 @@ def set_object_public(object_id, is_public=True):
     db.session.commit()
 
 
-def get_object_permissions_for_users(object_id, include_instrument_responsible_users=True, include_groups=True):
+def get_object_permissions_for_users(object_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True):
     object_permissions = {}
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=object_id).all():
         object_permissions[user_object_permissions.user_id] = user_object_permissions.permissions
@@ -53,14 +53,26 @@ def get_object_permissions_for_users(object_id, include_instrument_responsible_u
             for user_id in get_group_member_ids(group_object_permissions.group_id):
                 if user_id not in object_permissions or object_permissions[user_id] in group_object_permissions.permissions:
                     object_permissions[user_id] = group_object_permissions.permissions
+    if include_projects:
+        for project_object_permissions in ProjectObjectPermissions.query.filter_by(object_id=object_id).all():
+            for user_id, permissions in projects.get_project_member_user_ids_and_permissions(project_object_permissions.project_id, include_groups=include_groups).items():
+                permissions = min(permissions, project_object_permissions.permissions)
+                previous_permissions = object_permissions.get(user_id, Permissions.NONE)
+                object_permissions[user_id] = max(previous_permissions, permissions)
     return object_permissions
 
 
-def get_object_permissions_for_groups(object_id: int) -> typing.Dict[int, Permissions]:
+def get_object_permissions_for_groups(object_id: int, include_projects=False) -> typing.Dict[int, Permissions]:
     object_permissions = {}
     for group_object_permissions in GroupObjectPermissions.query.filter_by(object_id=object_id).all():
         if group_object_permissions.permissions != Permissions.NONE:
             object_permissions[group_object_permissions.group_id] = group_object_permissions.permissions
+    if include_projects:
+        for project_object_permissions in ProjectObjectPermissions.query.filter_by(object_id=object_id).all():
+            for group_id, permissions in projects.get_project_member_group_ids_and_permissions(project_object_permissions.project_id).items():
+                permissions = min(permissions, project_object_permissions.permissions)
+                previous_permissions = object_permissions.get(group_id, Permissions.NONE)
+                object_permissions[group_id] = max(previous_permissions, permissions)
     return object_permissions
 
 
@@ -76,7 +88,7 @@ def _get_object_responsible_user_ids(object_id):
     return [user.id for user in instrument.responsible_users]
 
 
-def get_user_object_permissions(object_id, user_id, include_instrument_responsible_users=True, include_groups=True):
+def get_user_object_permissions(object_id, user_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True):
     assert user_id is not None
 
     if include_instrument_responsible_users:
@@ -89,11 +101,22 @@ def get_user_object_permissions(object_id, user_id, include_instrument_responsib
         permissions = Permissions.NONE
     else:
         permissions = user_object_permissions.permissions
+    if Permissions.GRANT in permissions:
+        return permissions
     if include_groups:
         for group in get_user_groups(user_id):
             group_object_permissions = GroupObjectPermissions.query.filter_by(object_id=object_id, group_id=group.id).first()
             if group_object_permissions is not None and permissions in group_object_permissions.permissions:
                 permissions = group_object_permissions.permissions
+    if Permissions.GRANT in permissions:
+        return permissions
+    if include_projects:
+        for user_project in projects.get_user_projects(user_id, include_groups=include_groups):
+            user_project_permissions = projects.get_user_project_permissions(user_project.id, user_id, include_groups=include_groups)
+            if user_project_permissions not in permissions:
+                project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=object_id, project_id=user_project.id).first()
+                if project_object_permissions is not None:
+                    permissions = min(user_project_permissions, project_object_permissions.permissions)
     if Permissions.READ in permissions:
         return permissions
     # lastly, the object may be public, so all users have READ permissions
@@ -128,6 +151,32 @@ def set_group_object_permissions(object_id: int, group_id: int, permissions: Per
         else:
             group_object_permissions.permissions = permissions
         db.session.add(group_object_permissions)
+    db.session.commit()
+
+
+def set_project_object_permissions(object_id: int, project_id: int, permissions: Permissions) -> None:
+    """
+    Sets the permissions for a project for an object. Clears the permissions
+    if called with Permissions.NONE.
+
+    :param object_id: the object ID of an existing object
+    :param project_id: the project ID of an existing probject
+    :param permissions: the new permissions
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.ProjectDoesNotExistError: when no project with the given
+        project ID exists
+    """
+    projects.get_project(project_id)
+    if permissions == Permissions.NONE:
+        ProjectObjectPermissions.query.filter_by(object_id=object_id, project_id=project_id).delete()
+    else:
+        project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=object_id, project_id=project_id).first()
+        if project_object_permissions is None:
+            project_object_permissions = ProjectObjectPermissions(project_id=project_id, object_id=object_id, permissions=permissions)
+        else:
+            project_object_permissions.permissions = permissions
+        db.session.add(project_object_permissions)
     db.session.commit()
 
 
