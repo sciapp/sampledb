@@ -23,7 +23,7 @@ from . import actions
 from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -76,6 +76,14 @@ def get_object_permissions_for_groups(object_id: int, include_projects=False) ->
     return object_permissions
 
 
+def get_object_permissions_for_projects(object_id: int) -> typing.Dict[int, Permissions]:
+    object_permissions = {}
+    for project_object_permissions in ProjectObjectPermissions.query.filter_by(object_id=object_id).all():
+        if project_object_permissions.permissions != Permissions.NONE:
+            object_permissions[project_object_permissions.project_id] = project_object_permissions.permissions
+    return object_permissions
+
+
 def _get_object_responsible_user_ids(object_id):
     object = objects.get_object(object_id)
     try:
@@ -95,7 +103,7 @@ def get_user_object_permissions(object_id, user_id, include_instrument_responsib
         # instrument responsible users always have GRANT permissions for an object
         if user_id in _get_object_responsible_user_ids(object_id):
             return Permissions.GRANT
-    # other users might have been granted permissions, either individually or as group members
+    # other users might have been granted permissions, either individually or as group or project members
     user_object_permissions = UserObjectPermissions.query.filter_by(object_id=object_id, user_id=user_id).first()
     if user_object_permissions is None:
         permissions = Permissions.NONE
@@ -187,6 +195,9 @@ def set_initial_permissions(obj):
     default_group_permissions = get_default_permissions_for_groups(creator_id=obj.user_id)
     for group_id, permissions in default_group_permissions.items():
         set_group_object_permissions(object_id=obj.object_id, group_id=group_id, permissions=permissions)
+    default_project_permissions = get_default_permissions_for_projects(creator_id=obj.user_id)
+    for project_id, permissions in default_project_permissions.items():
+        set_project_object_permissions(object_id=obj.object_id, project_id=project_id, permissions=permissions)
     should_be_public = default_is_public(creator_id=obj.user_id)
     set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
@@ -249,6 +260,24 @@ def set_default_permissions_for_group(creator_id: int, group_id: int, permission
     else:
         group_permissions.permissions = permissions
     db.session.add(group_permissions)
+    db.session.commit()
+
+
+def get_default_permissions_for_projects(creator_id: int) -> typing.Dict[int, Permissions]:
+    default_permissions = {}
+    for project_permissions in DefaultProjectPermissions.query.filter_by(creator_id=creator_id).all():
+        if project_permissions.permissions != Permissions.NONE:
+            default_permissions[project_permissions.project_id] = project_permissions.permissions
+    return default_permissions
+
+
+def set_default_permissions_for_project(creator_id: int, project_id: int, permissions: Permissions) -> None:
+    project_permissions = DefaultProjectPermissions.query.filter_by(creator_id=creator_id, project_id=project_id).first()
+    if project_permissions is None:
+        project_permissions = DefaultProjectPermissions(creator_id=creator_id, project_id=project_id, permissions=permissions)
+    else:
+        project_permissions.permissions = permissions
+    db.session.add(project_permissions)
     db.session.commit()
 
 

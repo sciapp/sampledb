@@ -19,7 +19,7 @@ from .groups import Group
 from .instruments import Instrument, Action, ActionType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
-from .permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultPublicPermissions
+from .permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions
 from .users import User, UserType
 from .user_log import UserLogEntry, UserLogEntryType
