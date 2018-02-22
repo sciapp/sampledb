@@ -109,7 +109,7 @@ def group(group_id):
                 except logic.errors.UserAlreadyMemberOfGroupError:
                     flask.flash('This user is already a member of this group', 'error')
                 else:
-                    flask.flash('The user was successfully added to the group.', 'success')
+                    flask.flash('The user was successfully invited to the group.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'leave' in flask.request.form:
             if leave_group_form.validate_on_submit():
