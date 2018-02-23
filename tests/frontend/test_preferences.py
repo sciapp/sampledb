@@ -12,7 +12,7 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 from sampledb.logic.authentication import add_authentication_to_db
-from sampledb.logic import permissions, groups
+from sampledb.logic import permissions, groups, projects
 
 
 from tests.test_utils import flask_server, app
@@ -709,6 +709,42 @@ def test_edit_default_group_permissions(flask_server, user):
         assert permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == permissions.Permissions.READ
 
 
+def test_edit_default_project_permissions(flask_server, user):
+    with flask_server.app.app_context():
+        project_id = projects.create_project("Example Project", "", user.id).id
+        permissions.set_default_permissions_for_project(creator_id=user.id, project_id=project_id, permissions=permissions.Permissions.WRITE)
+        assert permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == permissions.Permissions.WRITE
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'users/{}/preferences'.format(user.id))
+    assert r.status_code == 200
+
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+
+    data = {}
+    project_field_name = None
+    for hidden_field in default_permissions_form.find_all('input', {'type': 'hidden'}):
+        data[hidden_field['name']] = hidden_field['value']
+        if hidden_field['name'].endswith('project_id') and hidden_field['value'] == str(project_id):
+            # the associated radio button is the first radio button in the same table row
+            project_field_name = hidden_field.find_parent('tr').find('input', {'type': 'radio'})['name']
+    for radio_button in default_permissions_form.find_all('input', {'type': 'radio'}):
+        if radio_button.has_attr('checked') and not radio_button.has_attr('disabled'):
+            data[radio_button['name']] = radio_button['value']
+    assert project_field_name is not None
+    assert data[project_field_name] == 'write'
+
+    data[project_field_name] = 'read'
+    data['edit_user_permissions'] = 'edit_user_permissions'
+    assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
+
+    with flask_server.app.app_context():
+        assert permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == permissions.Permissions.READ
+
+
 def test_add_default_user_permissions(flask_server, user):
     with flask_server.app.app_context():
         new_user = sampledb.models.User(name="New User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
@@ -762,6 +798,32 @@ def test_add_default_group_permissions(flask_server, user):
 
     with flask_server.app.app_context():
         assert permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == permissions.Permissions.READ
+
+
+def test_add_default_project_permissions(flask_server, user):
+    with flask_server.app.app_context():
+        project_id = projects.create_project("Example Project", "", user.id).id
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'users/{}/preferences'.format(user.id))
+    assert r.status_code == 200
+
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    default_permissions_form = document.find(attrs={'name': 'add_project_permissions', 'value': 'add_project_permissions'}).find_parent('form')
+
+    data = {}
+    for hidden_field in default_permissions_form.find_all('input', {'type': 'hidden'}):
+        data[hidden_field['name']] = hidden_field['value']
+
+    data['project_id'] = str(project_id)
+    data['permissions'] = 'read'
+    data['add_project_permissions'] = 'add_project_permissions'
+    assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
+
+    with flask_server.app.app_context():
+        assert permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == permissions.Permissions.READ
 
 
 def test_user_preferences_change_password(flask_server, user):

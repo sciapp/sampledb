@@ -12,16 +12,17 @@ from ... import db
 from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
-from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm
+from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
 
 from ...logic import user_log
 from ...logic.authentication import add_login, remove_authentication_method, change_password_in_authentication_method
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
-from ...logic.permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, default_is_public, set_default_public
+from ...logic.permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
+from ...logic.projects import get_user_projects, get_project
 from ...logic.groups import get_user_groups, get_group
-from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError
+from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
 
 from ...models import Authentication, AuthenticationType, User
 
@@ -64,9 +65,11 @@ def change_preferences(user, user_id):
 
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
+    add_project_permissions_form = ObjectProjectPermissionsForm()
 
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
+    project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
     public_permissions = Permissions.READ if default_is_public(creator_id=flask_login.current_user.id) else Permissions.NONE
     user_permission_form_data = []
     for user_id, permissions in user_permissions.items():
@@ -78,12 +81,19 @@ def change_preferences(user, user_id):
         if group_id is None:
             continue
         group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-    default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
+    project_permission_form_data = []
+    for project_id, permissions in project_permissions.items():
+        if project_id is None:
+            continue
+        project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
+    default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
 
     users = get_users()
     users = [user for user in users if user.id not in user_permissions]
     groups = get_user_groups(flask_login.current_user.id)
     groups = [group for group in groups if group.id not in group_permissions]
+    projects = get_user_projects(flask_login.current_user.id)
+    projects = [project for project in projects if project.id not in project_permissions]
 
     if change_user_form.name.data is None or change_user_form.name.data == "":
         change_user_form.name.data = user.name
@@ -206,6 +216,14 @@ def change_preferences(user, user_id):
                 continue
             permissions = Permissions.from_name(group_permissions_data['permissions'])
             set_default_permissions_for_group(creator_id=flask_login.current_user.id, group_id=group_id, permissions=permissions)
+        for project_permissions_data in default_permissions_form.project_permissions.data:
+            project_id = project_permissions_data['project_id']
+            try:
+                get_project(project_id)
+            except ProjectDoesNotExistError:
+                continue
+            permissions = Permissions.from_name(project_permissions_data['permissions'])
+            set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
         flask.flash("Successfully updated default permissions.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     if 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
@@ -226,18 +244,31 @@ def change_preferences(user, user_id):
         set_default_permissions_for_group(creator_id=flask_login.current_user.id, group_id=group_id, permissions=permissions)
         flask.flash("Successfully updated default permissions.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+    if 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
+        project_id = add_project_permissions_form.project_id.data
+        permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
+        default_project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
+        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
+        assert project_id not in default_project_permissions
+        set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
+        flask.flash("Successfully updated default permissions.", 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                  authentication_password_form=authentication_password_form,
                                  default_permissions_form=default_permissions_form,
                                  add_user_permissions_form=add_user_permissions_form,
                                  add_group_permissions_form=add_group_permissions_form,
+                                 add_project_permissions_form=add_project_permissions_form,
                                  Permissions=Permissions,
-                                 get_user=get_user,
                                  users=users,
+                                 get_user=get_user,
                                  groups=groups,
                                  get_group=get_group,
+                                 projects=projects,
+                                 get_project=get_project,
                                  user_permissions=user_permissions,
                                  group_permissions=group_permissions,
+                                 project_permissions=project_permissions,
                                  public_permissions=public_permissions,
                                  authentication_method_form=authentication_method_form,
                                  authentication_form=authentication_form,
