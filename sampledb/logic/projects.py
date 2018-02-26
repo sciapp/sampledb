@@ -208,6 +208,8 @@ def get_user_project_permissions(project_id: int, user_id: int, include_groups: 
     if user_permissions:
         permissions = user_permissions.permissions
     else:
+        # verify that project exists or raise error
+        get_project(project_id)
         permissions = Permissions.NONE
     if include_groups:
         group_permissions = projects.GroupProjectPermissions.query.filter_by(project_id=project_id).all()
@@ -444,6 +446,8 @@ def update_user_project_permissions(project_id: int, user_id: int, permissions: 
     ).first()
     if existing_permissions is None:
         raise errors.UserNotMemberOfProjectError()
+    if existing_permissions.permissions == permissions:
+        return
 
     if existing_permissions.permissions == Permissions.GRANT:
         other_user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id).filter(UserProjectPermissions.user_id != user_id).all()

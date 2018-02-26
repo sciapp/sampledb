@@ -30,6 +30,7 @@
   {% endif %}
   {% if invite_group_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteGroupModal">Add Group</button>
+  <a href="{{ url_for('.project_permissions', project_id=project.id) }}" class="btn btn-primary" >Edit Permissions</a>
   {% endif %}
   {% if leave_project_form %}
   <form method="post" style="display: inline" action="{{ url_for('.project', project_id=project.id) }}" id="leaveProjectForm">

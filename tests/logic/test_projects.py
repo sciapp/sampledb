@@ -1088,8 +1088,10 @@ def test_update_last_grant_user_project_permissions():
         user2.id: sampledb.models.Permissions.WRITE
     }
 
+    sampledb.logic.projects.update_user_project_permissions(project_id, user.id, permissions=sampledb.models.Permissions.GRANT)
+
     with pytest.raises(sampledb.logic.errors.NoMemberWithGrantPermissionsForProjectError):
-        sampledb.logic.projects.update_user_project_permissions(project_id, user.id, permissions=sampledb.models.Permissions.GRANT)
+        sampledb.logic.projects.update_user_project_permissions(project_id, user.id, permissions=sampledb.models.Permissions.READ)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT,

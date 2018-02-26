@@ -29,7 +29,7 @@ from ..logic.objects import create_object, update_object, get_object, get_object
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects
 from ..logic.files import FileLogEntryType
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter
@@ -612,6 +612,14 @@ def update_object_permissions(object_id):
                 continue
             permissions = Permissions.from_name(group_permissions_data['permissions'])
             set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=permissions)
+        for project_permissions_data in edit_user_permissions_form.project_permissions.data:
+            project_id = project_permissions_data['project_id']
+            try:
+                get_project(project_id)
+            except ProjectDoesNotExistError:
+                continue
+            permissions = Permissions.from_name(project_permissions_data['permissions'])
+            set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=permissions)
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         flask.flash("Successfully updated object permissions.", 'success')
     elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():

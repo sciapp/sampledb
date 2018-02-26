@@ -162,6 +162,31 @@
           <td></td>
           <td></td>
         </tr>
+        {% if project_permissions.items() | length > 0 %}
+        <tr>
+          <th scope="col" style="width: 40%">Groups</th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        </tr>
+        {% endif %}
+        {% for project_id, permissions in project_permissions.items() %}
+          {% if project_id is not none %}
+            {% set project = get_project(project_id) %}
+            <tr>
+              <td style="vertical-align: middle">
+                <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
+              </td>
+              {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                <td class="text-center" style="vertical-align: middle">
+                  <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_user_{{ user_id }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} disabled />
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
         {% if group_permissions.items() | length > 0 %}
         <tr>
           <th scope="col" style="width: 40%">Groups</th>

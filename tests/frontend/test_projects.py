@@ -275,3 +275,173 @@ def test_view_project(flask_server, user_session):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('h3').text == 'Project #{}: Example Project'.format(project_id)
+
+
+def test_remove_last_user_from_project_permissions(flask_server, user_session):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': csrf_token,
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': str(user_session.user_id),
+        'user_permissions-0-permissions': 'none',
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 200
+    assert r.url == flask_server.base_url + 'projects/'
+    with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
+        sampledb.logic.projects.get_project(project_id)
+
+
+def test_keep_project_permissions(flask_server, user_session):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': csrf_token,
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': str(user_session.user_id),
+        'user_permissions-0-permissions': 'grant',
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 200
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+
+
+def test_change_last_user_project_permissions(flask_server, user_session):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': csrf_token,
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': str(user_session.user_id),
+        'user_permissions-0-permissions': 'write',
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 200
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+
+
+def test_update_user_project_permissions(flask_server, user_session, user):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': csrf_token,
+        'user_permissions-0-csrf_token': user_csrf_token,
+        'user_permissions-0-user_id': str(user.id),
+        'user_permissions-0-permissions': 'write',
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 200
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.WRITE
+
+
+def test_swap_grant_project_permissions(flask_server, user_session, user):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    user_csrf_token_0 = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
+    user_csrf_token_1 = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-1-csrf_token'})['value']
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': csrf_token,
+        'user_permissions-0-csrf_token': user_csrf_token_0,
+        'user_permissions-0-user_id': str(user_session.user_id),
+        'user_permissions-0-permissions': 'write',
+        'user_permissions-1-csrf_token': user_csrf_token_1,
+        'user_permissions-1-user_id': str(user.id),
+        'user_permissions-1-permissions': 'grant'
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 200
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.WRITE
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+
+
+def test_update_project_permissions_without_grant(flask_server, user_session, user):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user.id).id
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    assert BeautifulSoup(r.content, 'html.parser').find('form', {'id': 'form-project-permissions'}) is None
+    assert BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'}) is None
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': '',
+        'user_permissions-0-csrf_token': '',
+        'user_permissions-0-user_id': str(user.id),
+        'user_permissions-0-permissions': 'write',
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 403
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+
+
+def test_update_project_permissions_without_project(flask_server, user_session):
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(10))
+    assert r.status_code == 404
+
+
+def test_update_group_project_permissions(flask_server, user_session, user):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
+    sampledb.logic.projects.add_group_to_project(project_id, group_id, permissions=sampledb.logic.permissions.Permissions.READ)
+
+    r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
+    assert r.status_code == 200
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
+    group_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'group_permissions-0-csrf_token'})['value']
+
+    form_data = {
+        'edit_user_permissions': 'edit_user_permissions',
+        'csrf_token': csrf_token,
+        'group_permissions-0-csrf_token': group_csrf_token,
+        'group_permissions-0-group_id': str(group_id),
+        'group_permissions-0-permissions': 'write',
+    }
+
+    r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
+    assert r.status_code == 200
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id) == {
+        group_id: sampledb.logic.permissions.Permissions.WRITE
+    }
