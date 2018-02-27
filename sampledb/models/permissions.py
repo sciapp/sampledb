@@ -24,6 +24,12 @@ class Permissions(enum.Enum):
     def __str__(self):
         return self.name.lower()
 
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __lt__(self, other):
+        return self.value < other.value
+
     @staticmethod
     def from_name(name):
         members = {
@@ -64,6 +70,19 @@ class GroupObjectPermissions(db.Model):
     )
 
 
+class ProjectObjectPermissions(db.Model):
+    __tablename__ = 'project_object_permissions'
+
+    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"), nullable=False)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(object_id, project_id),
+        {},
+    )
+
+
 class PublicObjects(db.Model):
     __tablename__ = 'public_objects'
 
@@ -92,6 +111,19 @@ class DefaultGroupPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(creator_id, group_id),
+        {},
+    )
+
+
+class DefaultProjectPermissions(db.Model):
+    __tablename__ = 'default_project_permissions'
+
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"), nullable=False)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(creator_id, project_id),
         {},
     )
 

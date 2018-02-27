@@ -72,6 +72,38 @@ class UndefinedUnitError(Exception):
     pass
 
 
+class ProjectAlreadyExistsError(Exception):
+    pass
+
+
+class InvalidProjectNameError(Exception):
+    pass
+
+
+class ProjectDoesNotExistError(Exception):
+    pass
+
+
+class UserNotMemberOfProjectError(Exception):
+    pass
+
+
+class UserAlreadyMemberOfProjectError(Exception):
+    pass
+
+
+class GroupAlreadyMemberOfProjectError(Exception):
+    pass
+
+
+class GroupNotMemberOfProjectError(Exception):
+    pass
+
+
+class NoMemberWithGrantPermissionsForProjectError(Exception):
+    pass
+
+
 class SchemaError(Exception):
     def __init__(self, message, path):
         if path:

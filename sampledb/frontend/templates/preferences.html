@@ -130,6 +130,32 @@
         <td></td>
         <td></td>
       </tr>
+      {% if default_permissions_form.project_permissions | length > 0 %}
+      <tr>
+        <th scope="col" style="width: 40%">Projects</th>
+        <th scope="col" class="text-center"></th>
+        <th scope="col" class="text-center"></th>
+        <th scope="col" class="text-center"></th>
+        <th scope="col" class="text-center"></th>
+      </tr>
+      {% endif %}
+      {% for project_permissions_form in default_permissions_form.project_permissions %}
+      {% set project_id = project_permissions_form.project_id.data | int %}
+      {% set project = get_project(project_id) %}
+        <tr>
+          <td>
+            <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
+            {{ project_permissions_form.csrf_token }}
+            <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
+          </td>
+          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+            <td class="text-center" style="vertical-align: middle">
+              <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+              <input type="radio" name="{{ project_permissions_form.permissions.name }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} />
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
       {% if default_permissions_form.group_permissions | length > 0 %}
       <tr>
         <th scope="col" style="width: 40%">Groups</th>
@@ -261,6 +287,42 @@
     </table>
     <div class="container">
       <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">Add</button>
+    </div>
+    </form>
+  {% endif %}
+  {% if projects %}
+    <h3>Add Project</h3>
+    <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
+    {{ add_project_permissions_form.csrf_token }}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 40%">Project</th>
+          <th scope="col" class="text-center">None</th>
+          <th scope="col" class="text-center">Read</th>
+          <th scope="col" class="text-center">Write</th>
+          <th scope="col" class="text-center">Grant</th></tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>
+          <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%">
+          {% for project in projects %}
+            <option value="{{ project.id }}">{{ project.name }} (#{{ project.id }})</option>
+          {% endfor %}
+          </select>
+        </td>
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+          <td class="text-center" style="vertical-align: middle">
+            <label for="permissions_new_project_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="{{ add_project_permissions_form.permissions.name }}" id="permissions_new_project_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
+          </td>
+        {% endfor %}
+      </tr>
+      </tbody>
+    </table>
+    <div class="container">
+      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">Add</button>
     </div>
     </form>
   {% endif %}

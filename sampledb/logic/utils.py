@@ -13,6 +13,7 @@ from .security_tokens import generate_token
 from ..models import Authentication, AuthenticationType, User
 from .users import get_user
 from . import groups
+from . import projects
 
 
 def send_confirm_email(email, id, salt):
@@ -88,6 +89,29 @@ def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> N
 
     subject = "Invitation to SampleDB group"
     html = flask.render_template('invitation_to_group.html', user=flask_login.current_user, group=group, confirm_url=confirm_url)
+    try:
+        mail.send(flask_mail.Message(
+            subject,
+            sender=flask.current_app.config['MAIL_SENDER'],
+            recipients=[user.email],
+            html=html
+        ))
+    except smtplib.SMTPRecipientsRefused:
+        pass
+
+
+def send_confirm_email_to_invite_user_to_project(project_id: int, user_id: int) -> None:
+    user = get_user(user_id)
+    project = projects.get_project(project_id)
+    if user is None:
+        return
+    token = generate_token(user.id, salt='invite_to_project',
+                           secret_key=flask.current_app.config['SECRET_KEY'])
+
+    confirm_url = flask.url_for("frontend.project", project_id=project.id, token=token, _external=True)
+
+    subject = "Invitation to SampleDB project"
+    html = flask.render_template('invitation_to_project.html', user=flask_login.current_user, project=project, confirm_url=confirm_url)
     try:
         mail.send(flask_mail.Message(
             subject,

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h3>Project #{{ project.id }}: {{ project.name }}</h3>
+  <p>{{ project.description }}</p>
+  <h4>Members</h4>
+  <ul>
+    {% for user_id in project_member_user_ids_and_permissions %}
+      {% with user = get_user(user_id) %}
+        <li><i class="fa fa-user" aria-hidden="true"></i> <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a></li>
+      {% endwith %}
+    {% endfor %}
+    {% for group_id in project_member_group_ids_and_permissions %}
+      {% with group = get_group(group_id) %}
+        <li><i class="fa fa-users" aria-hidden="true"></i> <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name }}</a></li>
+      {% endwith %}
+    {% endfor %}
+  </ul>
+  {% if edit_project_form %}
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProjectModal">Edit Project</button>
+  {% endif %}
+  {% if invite_user_form %}
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Add User</button>
+  {% endif %}
+  {% if invite_group_form %}
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteGroupModal">Add Group</button>
+  <a href="{{ url_for('.project_permissions', project_id=project.id) }}" class="btn btn-primary" >Edit Permissions</a>
+  {% endif %}
+  {% if leave_project_form %}
+  <form method="post" style="display: inline" action="{{ url_for('.project', project_id=project.id) }}" id="leaveProjectForm">
+    {{ leave_project_form.csrf_token() }}
+    <button type="submit" class="btn btn-danger" name="leave" value="leave">Leave Project</button>
+  </form>
+  {% endif %}
+
+  {% if edit_project_form %}
+  <div class="modal fade" id="editProjectModal" tabindex="-1" role="dialog" aria-labelledby="editProjectModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="editProjectModalLabel">Edit Project</h4>
+        </div>
+        <form method="post" action="{{ url_for('.project', project_id=project.id) }}" class="form-horizontal">
+          {{ edit_project_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group {% if edit_project_form.name.errors %}has-error{% endif %}">
+              <label for="editProjectName" class="col-sm-2 control-label">Name</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="editProjectName" name="{{ edit_project_form.name.name }}" placeholder="Name" value="{{ edit_project_form.name.data }}">
+                {% for error_message in edit_project_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="editProjectDescription" class="col-sm-2 control-label">Description</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="editProjectDescription" name="{{ edit_project_form.description.name }}" placeholder="Description">{{ edit_project_form.description.data }}</textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" name="edit" value="edit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if invite_user_form %}
+  <div class="modal fade" id="inviteUserModal" tabindex="-1" role="dialog" aria-labelledby="inviteUserModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="inviteUserModalLabel">Add User</h4>
+        </div>
+        <form method="post" action="{{ url_for('.project', project_id=project.id) }}" class="form-horizontal">
+          {{ invite_user_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="inviteUserId" class="col-sm-2 control-label">User</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" name="{{ invite_user_form.user_id.name }}" id="inviteUserId" data-width="100%">
+                {% for user in invitable_user_list %}
+                  <option value="{{ user.id }}" {% if invite_user_form.user_id.data == user_id %}selected="selected"{% endif %}>{{ user.name }} (#{{ user.id }})</option>
+                {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" name="add_user" value="add_user">Add User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if invite_group_form %}
+  <div class="modal fade" id="inviteGroupModal" tabindex="-1" role="dialog" aria-labelledby="inviteGroupModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="inviteFroupModalLabel">Add Group</h4>
+        </div>
+        <form method="post" action="{{ url_for('.project', project_id=project.id) }}" class="form-horizontal">
+          {{ invite_group_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="inviteGroupId" class="col-sm-2 control-label">Group</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" name="{{ invite_group_form.group_id.name }}" id="inviteGroupId" data-width="100%">
+                {% for group in invitable_group_list %}
+                  <option value="{{ group.id }}" {% if invite_group_form.group_id.data == group_id %}selected="selected"{% endif %}>{{ group.name }} (#{{ group.id }})</option>
+                {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" name="add_group" value="add_group">Add Group</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  {% if show_edit_form %}
+  <script>
+    $(document).ready(function() {
+      var edit_modal = $('#editProjectModal');
+      edit_modal.removeClass('fade');
+      edit_modal.modal('show');
+      edit_modal.addClass('fade');
+    });
+  </script>
+  {% endif %}
+{% endblock %}

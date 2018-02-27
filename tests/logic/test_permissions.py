@@ -127,6 +127,41 @@ def test_get_user_object_permissions(user, independent_action_object):
     assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
 
 
+def test_get_user_object_permissions_with_project(users, independent_action_object):
+    user_id = users[0].id
+    object_id = independent_action_object.object_id
+    project_id = sampledb.logic.projects.create_project("Example Project", "", users[1].id).id
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
+    permissions.set_project_object_permissions(project_id=project_id, object_id=object_id, permissions=Permissions.GRANT)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
+    sampledb.logic.projects.add_user_to_project(project_id, user_id, Permissions.READ)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
+    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
+    sampledb.db.session.commit()
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
+    sampledb.logic.projects.update_user_project_permissions(project_id, user_id, Permissions.GRANT)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.GRANT
+
+
+def test_get_user_object_permissions_with_group_project(users, independent_action_object):
+    user_id = users[0].id
+    object_id = independent_action_object.object_id
+    project_id = sampledb.logic.projects.create_project("Example Project", "", users[1].id).id
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
+    permissions.set_project_object_permissions(project_id=project_id, object_id=object_id, permissions=Permissions.GRANT)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
+    group_id = sampledb.logic.groups.create_group("Example Group", "", users[1].id).id
+    sampledb.logic.projects.add_group_to_project(project_id, group_id, Permissions.READ)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.NONE
+    sampledb.logic.groups.add_user_to_group(group_id=group_id, user_id=user_id)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
+    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
+    sampledb.db.session.commit()
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
+    sampledb.logic.projects.update_group_project_permissions(project_id, group_id, Permissions.GRANT)
+    assert permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.GRANT
+
+
 def test_get_instrument_responsible_user_object_permissions(user, instrument, instrument_action_object):
     user_id = user.id
     object_id = instrument_action_object.object_id
@@ -176,6 +211,62 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
         users[1].id: Permissions.GRANT
     }
     assert permissions.object_is_public(object_id)
+
+
+def test_get_object_permissions_with_projects(users, independent_action_object):
+    user_id = users[0].id
+    object_id = independent_action_object.object_id
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
+        users[1].id: Permissions.GRANT
+    }
+
+    project_id = sampledb.logic.projects.create_project("Example Project", "", users[1].id).id
+
+    permissions.set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
+        users[1].id: Permissions.GRANT
+    }
+
+    sampledb.logic.projects.add_user_to_project(project_id, user_id, Permissions.READ)
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id, include_projects=False) == {
+        users[1].id: Permissions.GRANT
+    }
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
+
+    group_id = sampledb.logic.groups.create_group("Example Group", "", users[1].id).id
+
+    sampledb.logic.projects.add_group_to_project(project_id=project_id, group_id=group_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
+
+    sampledb.logic.groups.add_user_to_group(group_id=group_id, user_id=user_id)
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id, include_groups=False) == {
+        user_id: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.WRITE,
+        users[1].id: Permissions.GRANT
+    }
+
+    sampledb.logic.groups.remove_user_from_group(group_id=group_id, user_id=user_id)
+
+    assert permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
 
 
 def test_update_object_permissions(users, independent_action_object):
@@ -256,6 +347,47 @@ def test_group_permissions(users, independent_action_object):
     assert permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.READ
 
 
+def test_object_permissions_for_groups_with_project(users, independent_action_object):
+    user, creator = users
+    object_id = independent_action_object.object_id
+    group_id = groups.create_group("Example Group", "", creator.id).id
+
+    permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.READ)
+
+    assert permissions.get_object_permissions_for_groups(object_id) == {
+        group_id: Permissions.READ
+    }
+
+    project_id = sampledb.logic.projects.create_project("Example Project", "", creator.id).id
+    permissions.set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=Permissions.GRANT)
+
+    assert permissions.get_object_permissions_for_groups(object_id) == {
+        group_id: Permissions.READ
+    }
+
+    sampledb.logic.projects.add_group_to_project(project_id=project_id, group_id=group_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions_for_groups(object_id) == {
+        group_id: Permissions.READ
+    }
+
+    assert permissions.get_object_permissions_for_groups(object_id, include_projects=True) == {
+        group_id: Permissions.WRITE
+    }
+
+    sampledb.logic.projects.update_group_project_permissions(project_id=project_id, group_id=group_id, permissions=Permissions.GRANT)
+
+    assert permissions.get_object_permissions_for_groups(object_id, include_projects=True) == {
+        group_id: Permissions.GRANT
+    }
+
+    sampledb.logic.projects.remove_group_from_project(project_id=project_id, group_id=group_id)
+
+    assert permissions.get_object_permissions_for_groups(object_id, include_projects=True) == {
+        group_id: Permissions.READ
+    }
+
+
 def test_object_permissions_for_groups(users, independent_action_object):
     user, creator = users
     object_id = independent_action_object.object_id
@@ -272,6 +404,30 @@ def test_object_permissions_for_groups(users, independent_action_object):
     permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.NONE)
 
     assert permissions.get_object_permissions_for_groups(object_id) == {}
+
+
+def test_object_permissions_for_projects(users, independent_action_object):
+    user, creator = users
+    object_id = independent_action_object.object_id
+    project_id = sampledb.logic.projects.create_project("Example Project", "", creator.id).id
+
+    assert permissions.get_object_permissions_for_projects(object_id) == {}
+
+    permissions.set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_object_permissions_for_projects(object_id) == {
+        project_id: Permissions.WRITE
+    }
+
+    permissions.set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=Permissions.GRANT)
+
+    assert permissions.get_object_permissions_for_projects(object_id) == {
+        project_id: Permissions.GRANT
+    }
+
+    permissions.set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=Permissions.NONE)
+
+    assert permissions.get_object_permissions_for_projects(object_id) == {}
 
 
 def test_default_permissions_for_users(users, independent_action):
@@ -357,6 +513,36 @@ def test_default_permissions_for_groups(users, independent_action):
     }
     assert permissions.get_object_permissions_for_groups(object_id=object.id) == {
         group_id: Permissions.READ
+    }
+
+
+def test_default_permissions_for_projects(users, independent_action):
+    user, creator = users
+    project_id = sampledb.logic.projects.create_project("Example Project", "", creator.id).id
+
+    assert permissions.get_default_permissions_for_projects(creator_id=creator.id) == {}
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.get_object_permissions_for_projects(object_id=object.id) == {}
+
+    permissions.set_default_permissions_for_project(creator_id=creator.id, project_id=project_id, permissions=Permissions.READ)
+
+    assert permissions.get_default_permissions_for_projects(creator_id=creator.id) == {
+        project_id: Permissions.READ
+    }
+
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    assert permissions.get_object_permissions_for_projects(object_id=object.id) == {
+        project_id: Permissions.READ
+    }
+
+    # the default permissions are only used when creating a new object.
+    permissions.set_default_permissions_for_project(creator_id=creator.id, project_id=project_id, permissions=Permissions.WRITE)
+
+    assert permissions.get_default_permissions_for_projects(creator_id=creator.id) == {
+        project_id: Permissions.WRITE
+    }
+    assert permissions.get_object_permissions_for_projects(object_id=object.id) == {
+        project_id: Permissions.READ
     }
 
 
