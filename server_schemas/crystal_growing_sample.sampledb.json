@@ -1,0 +1,142 @@
+{
+  "title": "Crystal Growing",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "default": "",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9]+-[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "produced_for": {
+      "title": "Produced For",
+      "type": "text",
+      "minLength": 0
+    },
+    "growing_method": {
+      "title": "Growing Method",
+      "type": "text",
+      "minLength": 0
+    },
+    "growth_preparation": {
+      "title": "Growth preparation / setup",
+      "type": "array",
+      "style": "table",
+      "minItems": 0,
+      "items": {
+        "title": "Entry",
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "text",
+            "minLength": 1,
+            "multiline": true
+          },
+          "value": {
+            "title": "Value",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          }
+        },
+        "propertyOrder": [
+          "key",
+          "value"
+        ]
+      }
+    },
+    "growth_parameters": {
+      "title": "Growth parameters",
+      "type": "array",
+      "style": "table",
+      "minItems": 0,
+      "items": {
+        "title": "Entry",
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "text",
+            "minLength": 1,
+            "multiline": true
+          },
+          "value": {
+            "title": "Value",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          }
+        },
+        "propertyOrder": [
+          "key",
+          "value"
+        ]
+      }
+    },
+    "growth_details": {
+      "title": "Growth details",
+      "type": "array",
+      "style": "table",
+      "minItems": 0,
+      "items": {
+        "title": "Entry",
+        "type": "object",
+        "properties": {
+          "field1": {
+            "title": "Field 1",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          },
+          "field2": {
+            "title": "Field 2",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          },
+          "field3": {
+            "title": "Field 3",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          },
+          "field4": {
+            "title": "Field 4",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          },
+          "field5": {
+            "title": "Field 5",
+            "type": "text",
+            "minLength": 0,
+            "multiline": true
+          }
+        },
+        "propertyOrder": [
+          "field1",
+          "field2",
+          "field3",
+          "field4",
+          "field5"
+        ]
+      }
+    },
+    "growth_result": {
+      "title": "Growth result",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "created", "produced_for", "growing_method", "growth_preparation", "growth_parameters", "growth_details", "growth_result"],
+  "required": ["name", "created"],
+  "displayProperties": []
+}

@@ -45,7 +45,8 @@ FILE_SOURCES = {
 MIME_TYPES = {
     '.txt': 'text/plain',
     '.png': 'image/png',
-    '.jpg': 'image/jpeg'
+    '.jpg': 'image/jpeg',
+    '.pdf': 'application/pdf'
 }
 
 
