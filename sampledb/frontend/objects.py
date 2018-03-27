@@ -177,12 +177,22 @@ def apply_action_to_data(action, data, schema):
         action_index = int(action_index)
         if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
             del sub_data[action_index]
-    elif action_type == 'addcolumn':
+    else:
+        num_existing_columns = sub_schema["items"].get("minItems", 1)
         for row in sub_data:
-            row.append(generate_placeholder(sub_schema["items"]["items"]))
-    elif action_type == 'deletecolumn':
-        for row in sub_data:
-            del row[-1]
+            num_existing_columns = max(num_existing_columns, len(row))
+        if action_type == 'addcolumn':
+            if 'maxItems' not in sub_schema["items"] or num_existing_columns < sub_schema["items"]["maxItems"]:
+                num_existing_columns += 1
+                for row in sub_data:
+                    while len(row) < num_existing_columns:
+                        row.append(generate_placeholder(sub_schema["items"]["items"]))
+        elif action_type == 'deletecolumn':
+            if num_existing_columns > sub_schema.get("minItems", 1):
+                num_existing_columns -= 1
+                for row in sub_data:
+                    while len(row) > num_existing_columns:
+                        del row[-1]
 
 
 def show_object_form(object, action):
