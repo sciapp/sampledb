@@ -164,17 +164,25 @@ def apply_action_to_form_data(action, form_data):
 
 def apply_action_to_data(action, data, schema):
     action_id_prefix, action_index, action_type = action[len('action_'):].rsplit('__', 2)
-    if action_type not in ('add', 'delete'):
+    if action_type not in ('add', 'delete', 'addcolumn', 'deletecolumn'):
         raise ValueError('invalid action')
     sub_data, sub_schema = get_sub_data_and_schema(data, schema, action_id_prefix.split('__', 1)[1])
+    if action_type in ('addcolumn', 'deletecolumn') and (sub_schema["style"] != "table" or sub_schema["items"]["type"] != "array"):
+        raise ValueError('invalid action')
     num_existing_items = len(sub_data)
     if action_type == 'add':
         if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
             sub_data.append(generate_placeholder(sub_schema["items"]))
-    if action_type == 'delete':
+    elif action_type == 'delete':
         action_index = int(action_index)
         if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
             del sub_data[action_index]
+    elif action_type == 'addcolumn':
+        for row in sub_data:
+            row.append(generate_placeholder(sub_schema["items"]["items"]))
+    elif action_type == 'deletecolumn':
+        for row in sub_data:
+            del row[-1]
 
 
 def show_object_form(object, action):
@@ -221,7 +229,7 @@ def show_object_form(object, action):
                     flask.flash('The object was updated successfully.', 'success')
 
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
-        elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add')) for name in form_data):
+        elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
             previous_actions.append(action)
 
