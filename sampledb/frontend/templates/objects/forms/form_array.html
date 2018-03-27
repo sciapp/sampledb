@@ -9,6 +9,7 @@
 {% set maxItems = schema.get('maxItems', None) %}
 {% set numItems = (data | length) %}
 {% if schema.style == "table" %}
+  {% if schema['items']['type'] == 'object' %}
   <table class="table">
     <thead>
       <tr>
@@ -87,6 +88,70 @@
       </tr>
     </tfoot>
   </table>
+  {% elif schema['items']['type'] == 'array' %}
+  <table class="table">
+  {% set max_used_fields = [0] %}
+  {% if data is not none %}
+    {% for item in data %}
+      {% if (item | length) > max_used_fields[-1] %}
+        {% set tmp = max_used_fields.append(item | length) %}
+      {% endif %}
+    {% endfor %}
+    {% set max_used_fields = max_used_fields [-1] %}
+    <thead>
+    <tr>
+    {% for i in range(max_used_fields) %}
+      <th>Field {{ (i+1) }}</th>
+    {% endfor %}
+      <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in data %}
+      {% set item_index = loop.index0 %}
+      <tr>
+      {% for field in item %}
+        <td>
+          {% set name = "field_".format(loop.index0) %}
+          {% set schema = schema["items"]["items"] %}
+          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
+          {% set data = field %}
+          {% include "objects/forms/form_table_any.html" %}
+        </td>
+      {% endfor %}
+      {% if (item | length) < max_used_fields %}
+        {% for i in range((item | length), max_used_fields) %}
+        <td>
+          {% set name ="field_".format(loop.index0) %}
+          {% set schema = schema["items"]["items"] %}
+          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
+          {% set data = null %}
+          {% include "objects/forms/form_table_any.html" %}
+        </td>{% endfor %}
+      {% endif %}
+      {% if "maxItems" not in schema["items"] or max_used_fields < schema["items"]["maxItems"] %}
+            <th><button type="submit" name="action_{{ id_prefix }}_0__?__add" class="btn btn-success pull-right">+</button></th>
+      {% else %}
+            <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
+      {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  {% endif %}
+  <tfoot>
+  <tr>
+  {% for i in range(max_used_fields) %}
+    <th>Field {{ (i+1) }}</th>
+  {% endfor %}
+  {% if maxItems is none or numItems < maxItems %}
+        <th><button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
+  {% else %}
+        <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
+  {% endif %}
+  </tr>
+  </tfoot>
+  </table>
+  {% endif %}
 {% else %}
   {% set itemName = schema['items'].title %}
   {% if data is not none %}
