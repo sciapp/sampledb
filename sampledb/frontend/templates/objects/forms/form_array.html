@@ -103,7 +103,20 @@
     {% for i in range(max_used_fields) %}
       <th>Field {{ (i+1) }}</th>
     {% endfor %}
-      <th></th>
+      <th>
+        <div class="btn-group pull-right" role="group" aria-label="Column Controls">
+      {% if (data | length) > 0 and max_used_fields > schema["items"].get("minItems", 1) %}
+          <button type="submit" name="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger"><i class="fa fa-arrow-left"></i></button>
+      {% else %}
+          <button type="button" class="btn btn-danger disabled"><i class="fa fa-arrow-left"></i></button>
+      {% endif %}
+      {% if (data | length) > 0 and ("maxItems" not in schema["items"] or max_used_fields < schema["items"]["maxItems"]) %}
+          <button type="submit" name="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success"><i class="fa fa-arrow-right"></i></button>
+      {% else %}
+          <button type="button" class="btn btn-success disabled"><i class="fa fa-arrow-right"></i></button>
+      {% endif %}
+        </div>
+      </th>
     </tr>
     </thead>
     <tbody>
@@ -129,10 +142,10 @@
           {% include "objects/forms/form_table_any.html" %}
         </td>{% endfor %}
       {% endif %}
-      {% if "maxItems" not in schema["items"] or max_used_fields < schema["items"]["maxItems"] %}
-            <th><button type="submit" name="action_{{ id_prefix }}_0__?__add" class="btn btn-success pull-right">+</button></th>
+      {% if numItems > minItems %}
+        <td><button type="submit" name="action_{{ id_prefix }}_{{ item_index }}__delete" class="btn btn-danger pull-right">&times;</button></td>
       {% else %}
-            <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
+        <td><button type="button" class="btn btn-danger pull-right disabled">&times;</button></td>
       {% endif %}
       </tr>
     {% endfor %}
