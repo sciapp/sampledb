@@ -22,6 +22,11 @@ def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[Obj
             object_log_entry.data['measurement'] = measurement
             if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=measurement.object_id, user_id=user_id):
                 continue
+        elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
+            sample = objects.get_object(object_id=object_log_entry.data['sample_id'])
+            object_log_entry.data['sample'] = sample
+            if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=sample.object_id, user_id=user_id):
+                continue
         processed_object_log_entries.append(object_log_entry)
     return processed_object_log_entries
 
@@ -78,6 +83,17 @@ def use_object_in_measurement(user_id: int, object_id: int, measurement_id: int)
         user_id=user_id,
         data={
             'measurement_id': measurement_id
+        }
+    )
+
+
+def use_object_in_sample(user_id: int, object_id: int, sample_id: int):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'sample_id': sample_id
         }
     )
 
