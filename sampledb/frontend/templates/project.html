@@ -22,7 +22,9 @@
       {% endwith %}
     {% endfor %}
   </ul>
-  <a href="{{ url_for('.objects', project=project.id) }}" class="btn btn-primary" >View Objects</a>
+  {% if show_objects_link %}
+    <a href="{{ url_for('.objects', project=project.id) }}" class="btn btn-primary" >View Objects</a>
+  {% endif %}
   {% if edit_project_form %}
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProjectModal">Edit Project</button>
   {% endif %}

@@ -35,6 +35,10 @@ def project(project_id):
         return flask.abort(404)
     user_permissions = logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_id, include_groups=True)
     if Permissions.READ in user_permissions:
+        show_objects_link = True
+    else:
+        show_objects_link = False
+    if Permissions.READ in user_permissions:
         leave_project_form = LeaveProjectForm()
     else:
         leave_project_form = None
@@ -138,7 +142,7 @@ def project(project_id):
             else:
                 flask.flash('The group was successfully added to the project.', 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    return flask.render_template('project.html', get_user=logic.users.get_user, get_group=logic.groups.get_group, project=project, project_member_user_ids_and_permissions=project_member_user_ids_and_permissions, project_member_group_ids_and_permissions=project_member_group_ids_and_permissions, leave_project_form=leave_project_form, edit_project_form=edit_project_form, show_edit_form=show_edit_form, invite_user_form=invite_user_form, invitable_user_list=invitable_user_list, invite_group_form=invite_group_form, invitable_group_list=invitable_group_list)
+    return flask.render_template('project.html', get_user=logic.users.get_user, get_group=logic.groups.get_group, project=project, project_member_user_ids_and_permissions=project_member_user_ids_and_permissions, project_member_group_ids_and_permissions=project_member_group_ids_and_permissions, leave_project_form=leave_project_form, edit_project_form=edit_project_form, show_edit_form=show_edit_form, invite_user_form=invite_user_form, invitable_user_list=invitable_user_list, invite_group_form=invite_group_form, invitable_group_list=invitable_group_list, show_objects_link=show_objects_link)
 
 
 @frontend.route('/projects/', methods=['GET', 'POST'])
