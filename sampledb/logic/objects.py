@@ -207,3 +207,5 @@ def _update_object_references(object: Object, user_id: int) -> None:
             if referenced_object_id != previous_referenced_object_id:
                 if action_type == ActionType.MEASUREMENT:
                     object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=user_id, measurement_id=object.object_id)
+                elif action_type == ActionType.SAMPLE_CREATION:
+                    object_log.use_object_in_sample(object_id=referenced_object_id, user_id=user_id, sample_id=object.object_id)

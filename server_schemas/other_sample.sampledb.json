@@ -8,7 +8,11 @@
       "default": "Sample-",
       "minLength": 1,
       "maxLength": 100,
-      "pattern": "^Sample-[0-9]+$"
+      "pattern": "^.+$"
+    },
+    "sample": {
+      "title": "Previous Sample",
+      "type": "sample"
     },
     "created": {
       "title": "Creation Datetime",
@@ -26,7 +30,7 @@
       "multiline": true
     }
   },
-  "propertyOrder": ["name", "created", "keywords", "description"],
+  "propertyOrder": ["sample", "name", "created", "keywords", "description"],
   "required": ["name", "created"],
   "displayProperties": [
     "keywords"
