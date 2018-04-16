@@ -1,14 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-  {% if action_type == ActionType.SAMPLE_CREATION %}
-  <h1>Samples</h1>
-  {% elif action_type == ActionType.MEASUREMENT %}
-  <h1>Measurements</h1>
-  {% elif action_type == ActionType.SIMULATION %}
-  <h1>Simulations</h1>
+  {% if project_id %}
+    {% set object_suffix = " for <a href=\"{}\">Project #{}: {}</a>".format(url_for('.project', project_id=project_id), project_id, project.name | e) | safe %}
+  {% elif action_id %}
+    {% set object_suffix = " for <a href=\"{}\">Action #{}: {}</a>".format(url_for('.action', action_id=action_id), action_id, action.name | e) | safe %}
   {% else %}
-  <h1>Objects</h1>
+    {% set object_suffix = "" %}
+  {% endif %}
+  {% if action_type == ActionType.SAMPLE_CREATION %}
+  <h1>Samples{{ object_suffix }}</h1>
+  {% elif action_type == ActionType.MEASUREMENT %}
+  <h1>Measurements{{ object_suffix }}</h1>
+  {% elif action_type == ActionType.SIMULATION %}
+  <h1>Simulations{{ object_suffix }}</h1>
+  {% else %}
+  <h1>Objects{{ object_suffix }}</h1>
   {% endif %}
 
   <table class="table">

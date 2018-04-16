@@ -39,6 +39,9 @@
         {% if action_id %}
           <input type="hidden" name="action" value="{{ action_id }}" id="input-search-action-id" />
         {% endif %}
+        {% if project_id %}
+          <input type="hidden" name="action" value="{{ project_id }}" id="input-search-project-id" />
+        {% endif %}
         {% if ActionType %}
           {% if action_type == ActionType.SAMPLE_CREATION %}
           <input type="hidden" name="t" value="samples" id="input-search-action-type" />
@@ -52,12 +55,23 @@
           <input type="text" id="input-search" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-            {% if action_type %}
+            {% if action_type or project_id %}
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="caret"></span>
               <span class="sr-only">Toggle Dropdown</span>
             </button>
             <ul class="dropdown-menu">
+              {% if project_id %}
+                {% if action_type == ActionType.SAMPLE_CREATION %}
+                <li><a href="#" id="button-search-project-id">Search samples from this project</a></li>
+                {% elif action_type == ActionType.MEASUREMENT %}
+                <li><a href="#" id="button-search-project-id">Search measurements from this project</a></li>
+                {% elif action_type == ActionType.SIMULATION %}
+                <li><a href="#" id="button-search-project-id">Search simulations from this project</a></li>
+                {% else %}
+                <li><a href="#" id="button-search-project-id">Search objects from this project</a></li>
+                {% endif %}
+              {% endif %}
               {% if action_id %}
                 {% if action_type == ActionType.SAMPLE_CREATION %}
                 <li><a href="#" id="button-search-action-id">Search samples from this action</a></li>
@@ -137,21 +151,31 @@
      $('#button-search-all').on('click', function() {
        $('#input-search-action-type').attr('name', 't_');
        $('#input-search-action-id').attr('name', 'action_');
+       $('#input-search-project-id').attr('name', 'project_');
        $('#input-search').attr('placeholder', 'Search...')
      });
      $('#button-search-action-id').on('click', function() {
        $('#input-search-action-type').attr('name', 't');
        $('#input-search-action-id').attr('name', 'action');
+       $('#input-search-project-id').attr('name', 'project_');
        $('#input-search').attr('placeholder', 'Search (by action)...')
+     });
+     $('#button-search-project-id').on('click', function() {
+       $('#input-search-action-type').attr('name', 't');
+       $('#input-search-action-id').attr('name', 'action_');
+       $('#input-search-project-id').attr('name', 'project');
+       $('#input-search').attr('placeholder', 'Search (by project)...')
      });
      $('#button-search-action-type').on('click', function() {
        $('#input-search-action-type').attr('name', 't');
        $('#input-search-action-id').attr('name', 'action_');
+       $('#input-search-project-id').attr('name', 'project_');
        $('#input-search').attr('placeholder', 'Search (by type)...')
      });
      /* don't limit search by default*/
      $('#input-search-action-type').attr('name', 't_');
      $('#input-search-action-id').attr('name', 'action_');
+     $('#input-search-project-id').attr('name', 'project_');
      $('#input-search').attr('placeholder', 'Search...')
    });
    </script>
