@@ -67,15 +67,23 @@ def objects():
     else:
         project = None
     query_string = flask.request.args.get('q', '')
-    filter_func = generate_filter_func(query_string)
-    objects = get_objects_with_permissions(
-        user_id=flask_login.current_user.id,
-        permissions=Permissions.READ,
-        filter_func=filter_func,
-        action_id=action_id,
-        action_type=action_type,
-        project_id=project_id
-    )
+    use_advanced_search = flask.request.args.get('advanced', None) is not None
+    try:
+        filter_func = generate_filter_func(query_string, use_advanced_search)
+        objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            filter_func=filter_func,
+            action_id=action_id,
+            action_type=action_type,
+            project_id=project_id
+        )
+    except:
+        # TODO: ensure that advanced search does not cause exceptions
+        if use_advanced_search:
+            objects = []
+        else:
+            raise
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -123,7 +131,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search)
 
 
 @jinja_filter

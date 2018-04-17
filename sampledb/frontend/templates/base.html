@@ -52,15 +52,17 @@
           {% endif %}
         {% endif %}
         <div class="input-group">
-          <input type="text" id="input-search" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
+          <input type="text" id="input-search" class="form-control" style="width:250px" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-            {% if action_type or project_id %}
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="caret"></span>
               <span class="sr-only">Toggle Dropdown</span>
             </button>
             <ul class="dropdown-menu">
+              <li><a><label id="button-search-advanced" style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" id="input-search-advanced" name="advanced" style="margin-right: 2px;" {% if use_advanced_search %}checked="checked"{% endif %}> Advanced Search</label></a></li>
+            {% if action_type or project_id %}
+              <li class="divider"></li>
               {% if project_id %}
                 {% if action_type == ActionType.SAMPLE_CREATION %}
                 <li><a href="#" id="button-search-project-id">Search samples from this project</a></li>
@@ -91,8 +93,8 @@
               <li><a href="#" id="button-search-action-type">Search all simulations</a></li>
               {% endif %}
               <li><a href="#" id="button-search-all">Search all objects</a></li>
-            </ul>
             {% endif %}
+            </ul>
           </span>
         </div>
       </form>
@@ -152,31 +154,63 @@
        $('#input-search-action-type').attr('name', 't_');
        $('#input-search-action-id').attr('name', 'action_');
        $('#input-search-project-id').attr('name', 'project_');
-       $('#input-search').attr('placeholder', 'Search...')
+       if ($('#input-search-advanced')[0].checked) {
+         $('#input-search').attr('placeholder', 'Advanced Search...');
+       } else {
+         $('#input-search').attr('placeholder', 'Search...');
+       }
      });
      $('#button-search-action-id').on('click', function() {
        $('#input-search-action-type').attr('name', 't');
        $('#input-search-action-id').attr('name', 'action');
        $('#input-search-project-id').attr('name', 'project_');
-       $('#input-search').attr('placeholder', 'Search (by action)...')
+       if ($('#input-search-advanced')[0].checked) {
+         $('#input-search').attr('placeholder', 'Advanced Search (by action)...');
+       } else {
+         $('#input-search').attr('placeholder', 'Search (by action)...');
+       }
      });
      $('#button-search-project-id').on('click', function() {
        $('#input-search-action-type').attr('name', 't');
        $('#input-search-action-id').attr('name', 'action_');
        $('#input-search-project-id').attr('name', 'project');
-       $('#input-search').attr('placeholder', 'Search (by project)...')
+       if ($('#input-search-advanced')[0].checked) {
+         $('#input-search').attr('placeholder', 'Advanced Search (by project)...');
+       } else {
+         $('#input-search').attr('placeholder', 'Search (by project)...');
+       }
      });
      $('#button-search-action-type').on('click', function() {
        $('#input-search-action-type').attr('name', 't');
        $('#input-search-action-id').attr('name', 'action_');
        $('#input-search-project-id').attr('name', 'project_');
-       $('#input-search').attr('placeholder', 'Search (by type)...')
+       if ($('#input-search-advanced')[0].checked) {
+         $('#input-search').attr('placeholder', 'Advanced Search (by type)...');
+       } else {
+         $('#input-search').attr('placeholder', 'Search (by type)...');
+       }
+     });
+     $('#input-search-advanced').on('change', function() {
+       var current_placeholder = $('#input-search').attr('placeholder');
+       if ($('#input-search-advanced')[0].checked) {
+         if (!current_placeholder.startsWith('Advanced ')) {
+          $('#input-search').attr('placeholder', 'Advanced '+current_placeholder);
+         }
+       } else {
+         if (current_placeholder.startsWith('Advanced ')) {
+           $('#input-search').attr('placeholder', current_placeholder.substring('Advanced '.length, current_placeholder.length));
+         }
+       }
      });
      /* don't limit search by default*/
      $('#input-search-action-type').attr('name', 't_');
      $('#input-search-action-id').attr('name', 'action_');
      $('#input-search-project-id').attr('name', 'project_');
-     $('#input-search').attr('placeholder', 'Search...')
+     if ($('#input-search-advanced')[0].checked) {
+       $('#input-search').attr('placeholder', 'Advanced Search...');
+     } else {
+       $('#input-search').attr('placeholder', 'Search...');
+     }
    });
    </script>
   {% endblock %}
