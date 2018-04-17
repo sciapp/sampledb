@@ -1,0 +1,17 @@
+{
+  "title": "Minimal Object",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Object Name",
+      "type": "text"
+    },
+    "mass": {
+      "title": "Mass",
+      "type": "quantity",
+      "units": "kg"
+    }
+  },
+  "propertyOrder": ["name"],
+  "required": ["name"]
+}

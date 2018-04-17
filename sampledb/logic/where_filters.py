@@ -18,7 +18,6 @@ def quantity_binary_operator(db_obj, other, operator):
         operator(db_obj['magnitude_in_base_units'].astext.cast(db.Float), other.maginitude_in_base_units)
     )
 
-
 def quantity_equals(db_obj, other):
     return quantity_binary_operator(db_obj, other, operator.eq)
 

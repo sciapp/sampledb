@@ -68,4 +68,36 @@ def setup_data(app):
     with open('sampledb/schemas/xrr_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "XRR Measurement", "", schema, instrument.id)
+    with open('sampledb/schemas/searchable_quantity.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    action = create_action(ActionType.SAMPLE_CREATION, "Searchable Object", "", schema, None)
+    independent_object = Objects.create_object(data={
+        "name": {
+            "_type": "text",
+            "text": "TEST-1"
+        },
+        "mass": {
+            "_type": "quantity",
+            "dimensionality": "[mass]",
+            "magnitude_in_base_units": 0.00001,
+            "units": "mg"
+
+        }
+    }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
+    create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    independent_object = Objects.create_object(data={
+        "name": {
+            "_type": "text",
+            "text": "TEST-2"
+        },
+        "mass": {
+            "_type": "quantity",
+            "dimensionality": "[mass]",
+            "magnitude_in_base_units": 0.000005,
+            "units": "mg"
+        }
+    }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
+    create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
     sampledb.db.session.commit()
