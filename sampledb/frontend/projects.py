@@ -10,7 +10,7 @@ from . import frontend
 from .. import logic
 from ..logic.permissions import Permissions
 from ..logic.security_tokens import verify_token
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, OtherProjectIdForm
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
@@ -18,7 +18,10 @@ from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm
 def project(project_id):
     if 'token' in flask.request.args:
         token = flask.request.args.get('token')
-        user_id = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'])
+        token_data = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'])
+        if token_data.get('project_id', None) != project_id:
+            return flask.abort(403)
+        user_id = token_data.get('user_id', None)
         if user_id != flask_login.current_user.id:
             if user_id is not None:
                 try:
@@ -27,7 +30,11 @@ def project(project_id):
                 except logic.errors.UserDoesNotExistError:
                     pass
             return flask.abort(403)
-        logic.projects.add_user_to_project(project_id, user_id, logic.permissions.Permissions.READ)
+        other_project_ids = token_data.get('other_project_ids', [])
+        try:
+            logic.projects.add_user_to_project(project_id, user_id, logic.permissions.Permissions.READ, other_project_ids=other_project_ids)
+        except logic.errors.UserAlreadyMemberOfProjectError:
+            flask.flash('You are already a member of this project', 'error')
     user_id = flask_login.current_user.id
     try:
         project = logic.projects.get_project(project_id)
@@ -58,10 +65,15 @@ def project(project_id):
         for user in logic.users.get_users():
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
+        parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
     else:
         invitable_user_list = []
+        parent_projects_with_add_permissions = []
     if invitable_user_list:
-        invite_user_form = InviteUserToProjectForm()
+        other_project_ids_data = []
+        for parent_project_id in parent_projects_with_add_permissions:
+            other_project_ids_data.append({'project_id': parent_project_id})
+        invite_user_form = InviteUserToProjectForm(other_project_ids=other_project_ids_data)
     else:
         invite_user_form = None
     if Permissions.GRANT in user_permissions:
@@ -72,9 +84,32 @@ def project(project_id):
     else:
         invitable_group_list = []
     if invitable_group_list:
-        invite_group_form = InviteGroupToProjectForm()
+        other_project_ids_data = []
+        for parent_project_id in parent_projects_with_add_permissions:
+            other_project_ids_data.append({'project_id': parent_project_id})
+        invite_group_form = InviteGroupToProjectForm(other_project_ids=other_project_ids_data)
     else:
         invite_group_form = None
+    child_project_ids = logic.projects.get_child_project_ids(project_id)
+    child_project_ids_can_add_to_parent = {child_project_id: logic.projects.can_child_add_users_to_parent_project(parent_project_id=project_id, child_project_id=child_project_id) for child_project_id in child_project_ids}
+    parent_project_ids = logic.projects.get_parent_project_ids(project_id)
+    add_subproject_form = None
+    remove_subproject_form = None
+    addable_projects = []
+    addable_project_ids = []
+    if Permissions.GRANT in user_permissions:
+        for other_project in logic.projects.get_user_projects(flask_login.current_user.id, include_groups=True):
+            if other_project.id == project.id:
+                continue
+            if Permissions.GRANT in logic.projects.get_user_project_permissions(other_project.id, flask_login.current_user.id, include_groups=True):
+                addable_projects.append(other_project)
+        addable_project_ids = logic.projects.filter_child_project_candidates(project_id, [child_project.id for child_project in addable_projects])
+        addable_projects = [logic.projects.get_project(child_project_id) for child_project_id in addable_project_ids]
+        if addable_projects:
+            add_subproject_form = AddSubprojectForm()
+        if child_project_ids:
+            remove_subproject_form = RemoveSubprojectForm()
+
     if 'leave' in flask.request.form and Permissions.READ in user_permissions:
         if leave_project_form.validate_on_submit():
             try:
@@ -114,7 +149,14 @@ def project(project_id):
                 flask.flash('You cannot add this user.', 'error')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
             try:
-                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data)
+                other_project_ids = []
+                for other_project_id_form in invite_user_form.other_project_ids:
+                    try:
+                        if other_project_id_form.add_user.data:
+                            other_project_ids.append(int(other_project_id_form.project_id.data))
+                    except (KeyError, ValueError):
+                        pass
+                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, other_project_ids)
             except logic.errors.ProjectDoesNotExistError:
                 flask.flash('This project does not exist.', 'error')
                 return flask.redirect(flask.url_for('.projects'))
@@ -142,7 +184,25 @@ def project(project_id):
             else:
                 flask.flash('The group was successfully added to the project.', 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    return flask.render_template('project.html', get_user=logic.users.get_user, get_group=logic.groups.get_group, project=project, project_member_user_ids_and_permissions=project_member_user_ids_and_permissions, project_member_group_ids_and_permissions=project_member_group_ids_and_permissions, leave_project_form=leave_project_form, edit_project_form=edit_project_form, show_edit_form=show_edit_form, invite_user_form=invite_user_form, invitable_user_list=invitable_user_list, invite_group_form=invite_group_form, invitable_group_list=invitable_group_list, show_objects_link=show_objects_link)
+    if 'remove_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
+        if remove_subproject_form is not None and remove_subproject_form.validate_on_submit():
+            child_project_id = remove_subproject_form.child_project_id.data
+            if child_project_id not in child_project_ids:
+                flask.flash('Project #{} is not a subproject of this project.'.format(int(child_project_id)), 'error')
+            else:
+                logic.projects.delete_subproject_relationship(project_id, child_project_id)
+                flask.flash('The subproject was successfully removed from this project.', 'success')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+    if 'add_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
+        if add_subproject_form is not None and add_subproject_form.validate_on_submit():
+            child_project_id = add_subproject_form.child_project_id.data
+            if child_project_id not in addable_project_ids:
+                flask.flash('Project #{} cannot become a subproject of this project.'.format(int(child_project_id)), 'error')
+            else:
+                logic.projects.create_subproject_relationship(project_id, child_project_id, child_can_add_users_to_parent=add_subproject_form.child_can_add_users_to_parent.data)
+                flask.flash('The subproject was successfully added to this project.', 'success')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+    return flask.render_template('project.html', get_user=logic.users.get_user, get_group=logic.groups.get_group, get_project=logic.projects.get_project, project=project, project_member_user_ids_and_permissions=project_member_user_ids_and_permissions, project_member_group_ids_and_permissions=project_member_group_ids_and_permissions, leave_project_form=leave_project_form, edit_project_form=edit_project_form, show_edit_form=show_edit_form, invite_user_form=invite_user_form, invitable_user_list=invitable_user_list, invite_group_form=invite_group_form, invitable_group_list=invitable_group_list, show_objects_link=show_objects_link, child_project_ids=child_project_ids, child_project_ids_can_add_to_parent=child_project_ids_can_add_to_parent, parent_project_ids=parent_project_ids, add_subproject_form=add_subproject_form, addable_projects=addable_projects, remove_subproject_form=remove_subproject_form)
 
 
 @frontend.route('/projects/', methods=['GET', 'POST'])
@@ -249,3 +309,4 @@ def update_project_permissions(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.redirect(flask.url_for('.projects'))
     return flask.redirect(flask.url_for('.project_permissions', project_id=project_id))
+

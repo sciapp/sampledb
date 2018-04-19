@@ -7,6 +7,7 @@ import getpass
 import shutil
 import tempfile
 import os
+import sqlalchemy
 from sampledb import create_app
 import sampledb.config
 from example_data import setup_data
@@ -25,6 +26,8 @@ try:
     os.mkdir(os.path.join(temp_dir, 'uploaded_files'))
     sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
 
+    # fully empty the database first
+    sqlalchemy.MetaData(reflect=True, bind=sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)).drop_all()
     app = create_app()
 
     with app.app_context():

@@ -8,7 +8,7 @@
       "default": "",
       "minLength": 1,
       "maxLength": 100,
-      "pattern": "^[A-Za-z0-9]+-[0-9]+$"
+      "pattern": "^.+$"
     },
     "created": {
       "title": "Creation Datetime",

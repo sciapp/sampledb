@@ -7,6 +7,7 @@ import smtplib
 import flask
 import flask_mail
 import flask_login
+import typing
 
 from .. import mail, db
 from .security_tokens import generate_token
@@ -82,7 +83,11 @@ def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> N
     group = groups.get_group(group_id)
     if user is None:
         return
-    token = generate_token(user.id, salt='invite_to_group',
+    token_data = {
+        'user_id': user.id,
+        'group_id': group_id
+    }
+    token = generate_token(token_data, salt='invite_to_group',
                            secret_key=flask.current_app.config['SECRET_KEY'])
 
     confirm_url = flask.url_for("frontend.group", group_id=group.id, token=token, _external=True)
@@ -100,12 +105,17 @@ def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> N
         pass
 
 
-def send_confirm_email_to_invite_user_to_project(project_id: int, user_id: int) -> None:
+def send_confirm_email_to_invite_user_to_project(project_id: int, user_id: int, other_project_ids: typing.Sequence[int]=()) -> None:
     user = get_user(user_id)
     project = projects.get_project(project_id)
     if user is None:
         return
-    token = generate_token(user.id, salt='invite_to_project',
+    token_data = {
+        'user_id': user.id,
+        'project_id': project_id,
+        'other_project_ids': other_project_ids
+    }
+    token = generate_token(token_data, salt='invite_to_project',
                            secret_key=flask.current_app.config['SECRET_KEY'])
 
     confirm_url = flask.url_for("frontend.project", project_id=project.id, token=token, _external=True)

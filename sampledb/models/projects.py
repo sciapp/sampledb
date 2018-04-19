@@ -41,3 +41,16 @@ class GroupProjectPermissions(db.Model):
         db.PrimaryKeyConstraint(project_id, group_id),
         {},
     )
+
+
+class SubprojectRelationship(db.Model):
+    __tablename__ = 'subproject_relationship'
+
+    parent_project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), nullable=False)
+    child_project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), nullable=False)
+    child_can_add_users_to_parent = db.Column(db.Boolean, nullable=False, default=False)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint(parent_project_id, child_project_id),
+        {},
+    )

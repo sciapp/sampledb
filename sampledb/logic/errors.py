@@ -104,6 +104,14 @@ class NoMemberWithGrantPermissionsForProjectError(Exception):
     pass
 
 
+class InvalidSubprojectRelationshipError(Exception):
+    pass
+
+
+class SubprojectRelationshipDoesNotExistError(Exception):
+    pass
+
+
 class SchemaError(Exception):
     def __init__(self, message, path):
         if path:
