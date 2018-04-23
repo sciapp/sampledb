@@ -12,16 +12,16 @@ from . import datatypes
 from . import node
 import sqlalchemy as db
 
-def trans(data, tree, fkt1, fkt2):
+def trans(data, tree, get_quantity, get_wherefilter):
     """converts tree by Post-Order pass in the type of data,
-    which is set through fkt2"""
+    which is set through get_wherefilter"""
     if tree.left is None:
-        return fkt1(data, tree.operator)
+        return get_quantity(data, tree.operator)
     else:
-        return fkt2(trans(data, tree.left, fkt1, fkt2),
-                    trans(data, tree.right, fkt1, fkt2), tree.operator)
+        return get_wherefilter(trans(data, tree.left, get_quantity, get_wherefilter),
+                    trans(data, tree.right, get_quantity, get_wherefilter), tree.operator)
 
-def fkt1(data, cond:str):
+def get_quantity(data, cond:str):
     """gets treeelement, creates quantity"""
     magnitude=0
     units=""
@@ -38,7 +38,7 @@ def fkt1(data, cond:str):
         quantity = datatypes.Quantity(magnitude, units)
         return quantity
 
-def fkt2(rg1, rg2, operator) -> Any:
+def get_wherefilter(rg1, rg2, operator) -> Any:
     """returns a filter_func"""
     if (operator == "&&"):
         return db.and_(rg1, rg2)
@@ -77,7 +77,7 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                 """ Filter objects based on search query string """
                 query_string = node.replace(query_string)
                 binary_tree = node.parsing_in_tree(query_string)
-                return trans(data, binary_tree, fkt1, fkt2)
+                return trans(data, binary_tree, get_quantity, get_wherefilter)
         else:
             # Simple search in values
             def filter_func(data, query_string=query_string):
