@@ -18,6 +18,7 @@
   <h1>Objects{{ object_suffix }}</h1>
   {% endif %}
 
+  {% if objects %}
   <table class="table">
   <thead>
     <tr>
@@ -67,4 +68,13 @@
   {% endfor %}
   </tbody>
   </table>
+  {% else %}
+    <div class="alert alert-warning" role="alert">
+    {% if use_advanced_search and advanced_search_had_error %}
+    Failed to interpret advanced search query. Please check your query or try the regular search instead.
+    {% else %}
+    No objects were found.
+    {% endif %}
+    </div>
+  {% endif %}
 {% endblock %}

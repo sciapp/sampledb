@@ -99,8 +99,8 @@ def test_get_objects_by_project_id(flask_server, user):
     r = session.get(flask_server.base_url + 'objects/?project={}'.format(project.id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    assert len(document.find('tbody').find_all('tr')) == 0
-    assert 'Example1' not in str(document.find('tbody'))
+    assert document.find('tbody') is None or len(document.find('tbody').find_all('tr')) == 0
+    assert document.find('tbody') is None or 'Example1' not in str(document.find('tbody'))
 
     sampledb.logic.permissions.set_project_object_permissions(objects[0].id, project.id, sampledb.logic.permissions.Permissions.READ)
     r = session.get(flask_server.base_url + 'objects/?project={}'.format(project.id))

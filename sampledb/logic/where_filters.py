@@ -1,14 +1,40 @@
 # coding: utf-8
 """
-This module defines functions which can help filtering objects by using the sampledb.datetypes types. Each function
-returns a SQLAlchemy object which can be used for the filter_func in
+This module defines functions which can help filtering objects by using the
+sampledb.datetypes types. Each function returns a SQLAlchemy object which can
+be used for the filter_func in
 VersionedJSONSerializableObjectTables.get_current_objects().
+
+Filters that use equality cannot be expected to be exact due to floating point
+precision. These filters use operators that include a range of EPSILON of the
+left operand's magnitude in base units.
 """
 
 import operator
 import sqlalchemy as db
 
+EPSILON = 1e-7
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+def float_operator_equals(left, right):
+    return db.and_(
+        left * (1 - EPSILON) < right,
+        left * (1 + EPSILON) > right
+    )
+
+
+def float_operator_less_than_equals(left, right):
+    return db.and_(
+        left * (1 - EPSILON) < right
+    )
+
+
+def float_operator_greater_than_equals(left, right):
+    return db.and_(
+        left * (1 + EPSILON) > right
+    )
 
 
 def quantity_binary_operator(db_obj, other, operator):
@@ -18,8 +44,9 @@ def quantity_binary_operator(db_obj, other, operator):
         operator(db_obj['magnitude_in_base_units'].astext.cast(db.Float), other.maginitude_in_base_units)
     )
 
+
 def quantity_equals(db_obj, other):
-    return quantity_binary_operator(db_obj, other, operator.eq)
+    return quantity_binary_operator(db_obj, other, float_operator_equals)
 
 
 def quantity_less_than(db_obj, other):
@@ -27,7 +54,7 @@ def quantity_less_than(db_obj, other):
 
 
 def quantity_less_than_equals(db_obj, other):
-    return quantity_binary_operator(db_obj, other, operator.le)
+    return quantity_binary_operator(db_obj, other, float_operator_less_than_equals)
 
 
 def quantity_greater_than(db_obj, other):
@@ -35,7 +62,7 @@ def quantity_greater_than(db_obj, other):
 
 
 def quantity_greater_than_equals(db_obj, other):
-    return quantity_binary_operator(db_obj, other, operator.ge)
+    return quantity_binary_operator(db_obj, other, float_operator_greater_than_equals)
 
 
 def quantity_between(db_obj, left, right, including=True):
@@ -45,8 +72,8 @@ def quantity_between(db_obj, left, right, including=True):
         return db.and_(
             db_obj['_type'].astext == 'quantity',
             db_obj['dimensionality'].astext == str(left.dimensionality),
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) >= left.maginitude_in_base_units,
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) <= right.maginitude_in_base_units
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 + EPSILON) >= left.maginitude_in_base_units,
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 - EPSILON) <= right.maginitude_in_base_units
         )
     else:
         return db.and_(

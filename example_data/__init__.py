@@ -58,6 +58,7 @@ def setup_data(app):
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
+    data['multilayer'][0]['repetitions']['magnitude_in_base_units'] = 2
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
 

@@ -68,6 +68,7 @@ def objects():
         project = None
     query_string = flask.request.args.get('q', '')
     use_advanced_search = flask.request.args.get('advanced', None) is not None
+    advanced_search_had_error = False
     try:
         filter_func = generate_filter_func(query_string, use_advanced_search)
         objects = get_objects_with_permissions(
@@ -81,6 +82,7 @@ def objects():
     except:
         # TODO: ensure that advanced search does not cause exceptions
         if use_advanced_search:
+            advanced_search_had_error = True
             objects = []
         else:
             raise
@@ -131,7 +133,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, advanced_search_had_error=advanced_search_had_error)
 
 
 @jinja_filter

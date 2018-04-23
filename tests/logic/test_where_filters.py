@@ -85,6 +85,12 @@ def test_quantity_equals(objects):
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(100, 'centimeters')))
 
 
+def test_quantity_equals_epsilon(objects):
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(10, 'mg')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(9.99, 'mg')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(0.00001, 'kg')))
+
+
 def test_quantity_less_than(objects):
     object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'meter')}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'kilometer')}, schema={}, user_id=0)

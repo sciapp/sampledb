@@ -5,12 +5,13 @@
 
 import json
 import typing
-from sqlalchemy import String
+from sqlalchemy import String, and_, or_
+from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.elements import BinaryExpression
 from typing import Any
 from . import where_filters
 from . import datatypes
 from . import node
-import sqlalchemy as db
 
 def trans(data, tree, get_quantity, get_wherefilter):
     """converts tree by Post-Order pass in the type of data,
@@ -21,29 +22,39 @@ def trans(data, tree, get_quantity, get_wherefilter):
         return get_wherefilter(trans(data, tree.left, get_quantity, get_wherefilter),
                     trans(data, tree.right, get_quantity, get_wherefilter), tree.operator)
 
-def get_quantity(data, cond:str):
+
+def get_quantity(data: Column, cond: str) -> typing.Union[datatypes.Quantity, BinaryExpression]:
     """gets treeelement, creates quantity"""
-    magnitude=0
-    units=""
-    len_magnitude = 0
-    for i in range(0,len(cond)):
-        if(cond[i:i+1].isdigit() == False and cond[i:i] is not "."):
-            len_magnitude = i
-            break
-    if (len_magnitude == 0):
-        return data[cond]
+
+    # Try parsing cond as quantity
+    had_decimal_point = False
+    for index, character in enumerate(cond):
+        if not character.isdigit():
+            if not had_decimal_point and character == ".":
+                had_decimal_point = True
+            else:
+                len_magnitude = index
+                break
     else:
-        magnitude = float(cond[0:len_magnitude])
-        units = cond[len_magnitude:len(cond)]
+        len_magnitude = len(cond)
+    if len_magnitude > 0:
+        magnitude = float(cond[:len_magnitude])
+        units = cond[len_magnitude:]
+        if not units:
+            units = None
         quantity = datatypes.Quantity(magnitude, units)
         return quantity
+
+    attributes = cond.split('.')
+    return data[attributes]
+
 
 def get_wherefilter(rg1, rg2, operator) -> Any:
     """returns a filter_func"""
     if (operator == "&&"):
-        return db.and_(rg1, rg2)
+        return and_(rg1, rg2)
     if (operator == "||"):
-        return db.or_(rg1, rg2)
+        return or_(rg1, rg2)
     if (operator == "=="):
         return where_filters.quantity_equals(rg1, rg2)
     if (operator == ">"):
@@ -68,8 +79,6 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
     :return: filter func
     """
     if query_string:
-
-
         if use_advanced_search:
             # Advanced search using parser and where_filters
             def filter_func(data, query_string=query_string):
