@@ -56,7 +56,7 @@ def fkt2(rg1, rg2, operator) -> Any:
         return where_filters.quantity_less_than_equals(rg1, rg2)
 
 
-def generate_filter_func(query_string: str) -> typing.Callable:
+def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Callable:
     """
     Generates a filter function for use with SQLAlchemy and the JSONB data
     attribute in the object tables.
@@ -64,16 +64,27 @@ def generate_filter_func(query_string: str) -> typing.Callable:
     The generated filter functions can be used for objects.get_objects()
 
     :param query_string: the query string
+    :param use_advanced_search: whether to use simple text search (False) or advanced search (True)
     :return: filter func
     """
     if query_string:
-        def filter_func(data, query_string=query_string):
 
-            #query_string="mass>=15mg or mass>= 7mg and mass <=11mg"
-            """ Filter objects based on search query string """
-            query_string = node.replace(query_string)
-            Binary_tree = node.parsing_in_tree(query_string)
-            return trans(data, Binary_tree, fkt1, fkt2)
+
+        if use_advanced_search:
+            # Advanced search using parser and where_filters
+            def filter_func(data, query_string=query_string):
+
+                """ Filter objects based on search query string """
+                query_string = node.replace(query_string)
+                binary_tree = node.parsing_in_tree(query_string)
+                return trans(data, binary_tree, fkt1, fkt2)
+        else:
+            # Simple search in values
+            def filter_func(data, query_string=query_string):
+                """ Filter objects based on search query string """
+                # The query string is converted to json to escape quotes, backslashes, etc
+                query_string = json.dumps(query_string)[1:-1]
+                return data.cast(String).like('%: "%'+query_string+'%"%')
 
     else:
         def filter_func(data):

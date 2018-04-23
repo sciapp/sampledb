@@ -27,7 +27,7 @@ from ..logic.object_search import generate_filter_func
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
-from ..logic.projects import get_project, get_user_projects
+from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm
@@ -56,15 +56,34 @@ def objects():
             'measurements': ActionType.MEASUREMENT,
             'simulations': ActionType.SIMULATION
         }.get(action_type, None)
+    try:
+        project_id = int(flask.request.args.get('project', ''))
+    except ValueError:
+        project_id = None
+    if project_id is not None:
+        if Permissions.READ not in get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
+            return flask.abort(403)
+        project = get_project(project_id)
+    else:
+        project = None
     query_string = flask.request.args.get('q', '')
-    filter_func = generate_filter_func(query_string)
-    objects = get_objects_with_permissions(
-        user_id=flask_login.current_user.id,
-        permissions=Permissions.READ,
-        filter_func=filter_func,
-        action_id=action_id,
-        action_type=action_type
-    )
+    use_advanced_search = flask.request.args.get('advanced', None) is not None
+    try:
+        filter_func = generate_filter_func(query_string, use_advanced_search)
+        objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            filter_func=filter_func,
+            action_id=action_id,
+            action_type=action_type,
+            project_id=project_id
+        )
+    except:
+        # TODO: ensure that advanced search does not cause exceptions
+        if use_advanced_search:
+            objects = []
+        else:
+            raise
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -112,7 +131,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action_id=action_id, action_type=action_type, ActionType=ActionType, samples=samples, show_action=show_action)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search)
 
 
 @jinja_filter
@@ -164,17 +183,35 @@ def apply_action_to_form_data(action, form_data):
 
 def apply_action_to_data(action, data, schema):
     action_id_prefix, action_index, action_type = action[len('action_'):].rsplit('__', 2)
-    if action_type not in ('add', 'delete'):
+    if action_type not in ('add', 'delete', 'addcolumn', 'deletecolumn'):
         raise ValueError('invalid action')
     sub_data, sub_schema = get_sub_data_and_schema(data, schema, action_id_prefix.split('__', 1)[1])
+    if action_type in ('addcolumn', 'deletecolumn') and (sub_schema["style"] != "table" or sub_schema["items"]["type"] != "array"):
+        raise ValueError('invalid action')
     num_existing_items = len(sub_data)
     if action_type == 'add':
         if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
             sub_data.append(generate_placeholder(sub_schema["items"]))
-    if action_type == 'delete':
+    elif action_type == 'delete':
         action_index = int(action_index)
         if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
             del sub_data[action_index]
+    else:
+        num_existing_columns = sub_schema["items"].get("minItems", 1)
+        for row in sub_data:
+            num_existing_columns = max(num_existing_columns, len(row))
+        if action_type == 'addcolumn':
+            if 'maxItems' not in sub_schema["items"] or num_existing_columns < sub_schema["items"]["maxItems"]:
+                num_existing_columns += 1
+                for row in sub_data:
+                    while len(row) < num_existing_columns:
+                        row.append(generate_placeholder(sub_schema["items"]["items"]))
+        elif action_type == 'deletecolumn':
+            if num_existing_columns > sub_schema.get("minItems", 1):
+                num_existing_columns -= 1
+                for row in sub_data:
+                    while len(row) > num_existing_columns:
+                        del row[-1]
 
 
 def show_object_form(object, action):
@@ -221,7 +258,7 @@ def show_object_form(object, action):
                     flask.flash('The object was updated successfully.', 'success')
 
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
-        elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add')) for name in form_data):
+        elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
             previous_actions.append(action)
 

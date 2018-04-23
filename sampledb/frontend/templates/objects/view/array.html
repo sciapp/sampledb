@@ -6,6 +6,7 @@
 </div>
 <div style="padding-left:2.5em;">
 {% if schema.style == "table" %}
+  {% if schema["items"]["type"] == 'object' %}
   <table class="table">
     <thead>
       <tr>
@@ -70,6 +71,45 @@
       </tr>
     </tfoot>
   </table>
+  {% elif schema["items"]["type"] == "array" %}
+  {% set max_used_fields = [0] %}
+  {% if data is not none %}
+    {% for item in data %}
+      {% if (item | length) > max_used_fields[-1] %}
+        {% set tmp = max_used_fields.append(item | length) %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% set max_used_fields = max_used_fields [-1] %}
+  <table class="table">
+  <thead>
+  <tr>
+    {% for i in range(max_used_fields) %}
+      <th>Field {{ (i+1) }}</th>
+    {% endfor %}
+  </tr>
+  </thead>
+  {% for item in data %}
+    <tr>
+    {% for field in item %}
+      <td>
+          {% set name = "field_".format(loop.index0) %}
+          {% set schema = schema["items"]["items"] %}
+          {% set data = field %}
+          {% include "objects/view/table_any.html" %}
+      </td>
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  <tfoot>
+  <tr>
+    {% for i in range(max_used_fields) %}
+      <th>Field {{ (i+1) }}</th>
+    {% endfor %}
+  </tr>
+  </tfoot>
+  </table>
+  {% endif %}
 {% else %}
   {% if data is not none %}
     {% for item in data %}

@@ -14,6 +14,10 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
+    "sample": {
+      "title": "Previous Sample",
+      "type": "sample"
+    },
     "substrate": {
       "title": "Substrate",
       "type": "text",
@@ -271,6 +275,7 @@
     }
   },
   "propertyOrder": [
+    "sample",
     "name",
     "created",
     "substrate",

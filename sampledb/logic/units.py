@@ -13,7 +13,7 @@ ureg = pint.UnitRegistry()
 ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
 
 
-def prettify_units(units: typing.Union[str, ureg.Unit]):
+def prettify_units(units: typing.Union[str, ureg.Unit]) -> str:
     """
     Returns a prettified version of the units, if defined, otherwise returns the units unaltered.
     :param units: The pint units or their string representation

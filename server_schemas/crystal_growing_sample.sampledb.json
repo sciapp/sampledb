@@ -87,46 +87,15 @@
       "minItems": 0,
       "items": {
         "title": "Entry",
-        "type": "object",
-        "properties": {
-          "field1": {
-            "title": "Field 1",
-            "type": "text",
-            "minLength": 0,
-            "multiline": true
-          },
-          "field2": {
-            "title": "Field 2",
-            "type": "text",
-            "minLength": 0,
-            "multiline": true
-          },
-          "field3": {
-            "title": "Field 3",
-            "type": "text",
-            "minLength": 0,
-            "multiline": true
-          },
-          "field4": {
-            "title": "Field 4",
-            "type": "text",
-            "minLength": 0,
-            "multiline": true
-          },
-          "field5": {
-            "title": "Field 5",
-            "type": "text",
-            "minLength": 0,
-            "multiline": true
-          }
-        },
-        "propertyOrder": [
-          "field1",
-          "field2",
-          "field3",
-          "field4",
-          "field5"
-        ]
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 5,
+        "items": {
+          "title": "",
+          "type": "text",
+          "minLength": 0,
+          "multiline": true
+        }
       }
     },
     "growth_result": {

@@ -21,6 +21,7 @@ class ObjectLogEntryType(enum.Enum):
     USE_OBJECT_IN_MEASUREMENT = 4
     POST_COMMENT = 5
     UPLOAD_FILE = 6
+    USE_OBJECT_IN_SAMPLE_CREATION = 7
 
 
 class ObjectLogEntry(db.Model):

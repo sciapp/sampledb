@@ -81,6 +81,35 @@ def test_get_objects_by_action_id(flask_server, user):
         assert name in str(document.find('tbody'))
 
 
+def test_get_objects_by_project_id(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    names = ['Example1', 'Example2']
+    objects = [
+        sampledb.logic.objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            user_id=user.id,
+            action_id=action.id
+        )
+        for name in names
+    ]
+    project = sampledb.logic.projects.create_project("Example Project", "", user.id)
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/?project={}'.format(project.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 0
+    assert 'Example1' not in str(document.find('tbody'))
+
+    sampledb.logic.permissions.set_project_object_permissions(objects[0].id, project.id, sampledb.logic.permissions.Permissions.READ)
+    r = session.get(flask_server.base_url + 'objects/?project={}'.format(project.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 1
+    assert 'Example1' in str(document.find('tbody'))
+
+
 def test_get_objects_by_action_type(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
