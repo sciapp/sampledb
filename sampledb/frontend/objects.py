@@ -16,6 +16,7 @@ import qrcode
 import qrcode.image.svg
 
 from . import frontend
+from .. import db
 from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
@@ -79,7 +80,7 @@ def objects():
             action_type=action_type,
             project_id=project_id
         )
-    except:
+    except Exception as e:
         # TODO: ensure that advanced search does not cause exceptions
         if use_advanced_search:
             advanced_search_had_error = True

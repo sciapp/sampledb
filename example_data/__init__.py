@@ -42,7 +42,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object', object_id=1))
+        return flask.redirect(flask.url_for('frontend.objects', q="multilayer.?.films.0.thickness > 2000Å", advanced="on"))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -58,7 +58,8 @@ def setup_data(app):
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
-    data['multilayer'][0]['repetitions']['magnitude_in_base_units'] = 2
+    data['multilayer'][0]['repetitions']['magnitude_in_base_units'] = 20000
+    data['multilayer'][1]['films'][0]['thickness']['magnitude_in_base_units'] = 1
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
 
