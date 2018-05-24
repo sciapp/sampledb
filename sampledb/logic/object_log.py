@@ -17,16 +17,24 @@ def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[Obj
     object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
     processed_object_log_entries = []
     for object_log_entry in object_log_entries:
+        use_object_entry = False
         if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
-            measurement = objects.get_object(object_id=object_log_entry.data['measurement_id'])
-            object_log_entry.data['measurement'] = measurement
-            if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=measurement.object_id, user_id=user_id):
-                continue
+            use_object_entry = True
+            using_object_type = 'measurement'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
-            sample = objects.get_object(object_id=object_log_entry.data['sample_id'])
-            object_log_entry.data['sample'] = sample
-            if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=sample.object_id, user_id=user_id):
-                continue
+            use_object_entry = True
+            using_object_type = 'sample'
+        if use_object_entry:
+            using_object_id = using_object_type + '_id'
+            object_id = object_log_entry.data[using_object_id]
+            object = objects.get_object(object_id=object_id)
+            if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
+                # Clear the using object ID, the user may only know that the
+                # object was used for some other object, but not for which
+                object_log_entry.data[using_object_id] = None
+            else:
+                object_log_entry.data[using_object_type] = object
+
         processed_object_log_entries.append(object_log_entry)
     return processed_object_log_entries
 
