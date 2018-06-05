@@ -52,6 +52,9 @@ def setup_data(app):
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation", "This is an example action", schema, instrument.id)
     independent_action = create_action(ActionType.SAMPLE_CREATION, "Alternative Process", "This is an example action", schema)
+    with open('sampledb/schemas/ombe_measurement_batch.sampledb.json', 'r') as schema_file:
+        batch_schema = json.load(schema_file)
+    create_action(ActionType.SAMPLE_CREATION, "Sample Creation (Batch)", "This is an example action", batch_schema, instrument.id)
     sampledb.db.session.commit()
 
     with open('example_data/ombe-1.sampledb.json', 'r') as data_file:
