@@ -4,6 +4,15 @@
   <form class="form-horizontal" method="post" action="{{ url_for('.new_object', action_id=action_id) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
+    {% if 'batch' in schema and schema['batch'] %}
+    <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">Batch Information</strong>
+    <div class="form-group row{% if 'input_num_batch_objects' in errors %} has-error{% elif 'input_num_batch_objects' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
+      <label class="control-label col-md-3">Number of Objects in Batch</label>
+      <div class="col-md-9">
+        <input type="number" min="1" max="100" step="1" value="{% if 'input_num_batch_objects' in form_data %}{{ form_data['input_num_batch_objects'] }}{% else %}1{% endif %}" class="form-control" name="input_num_batch_objects" />
+      </div>
+    </div>
+    {% endif %}
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">

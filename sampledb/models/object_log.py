@@ -22,6 +22,7 @@ class ObjectLogEntryType(enum.Enum):
     POST_COMMENT = 5
     UPLOAD_FILE = 6
     USE_OBJECT_IN_SAMPLE_CREATION = 7
+    CREATE_BATCH = 8
 
 
 class ObjectLogEntry(db.Model):
