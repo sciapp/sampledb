@@ -126,3 +126,14 @@ def upload_file(user_id: int, object_id: int, file_id: int):
             'file_id': file_id
         }
     )
+
+
+def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int]):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.CREATE_BATCH,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'object_ids': batch_object_ids
+        }
+    )

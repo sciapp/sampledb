@@ -885,3 +885,99 @@ def test_validate_object_schema_with_double_underscore_in_name():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_object_schema_with_batch():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'batch': True,
+        'properties': {
+            'property': {
+                'title': 'Property',
+                'type': 'text'
+            }
+        }
+    }
+    validate_schema(schema)
+
+
+def test_validate_object_schema_with_invalid_batch_value():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'batch': "true",
+        'properties': {
+            'property': {
+                'title': 'Property',
+                'type': 'text'
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_batch_not_in_toplevel():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'property': {
+                'title': 'Property',
+                'type': 'text',
+                'batch': True
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_batch_name_format():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'batch': True,
+        'batch_name_format': "{:02d}",
+        'properties': {
+            'property': {
+                'title': 'Property',
+                'type': 'text'
+            }
+        }
+    }
+    validate_schema(schema)
+
+
+def test_validate_object_schema_with_batch_name_format_but_without_batch():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'batch_name_format': "{:02d}",
+        'properties': {
+            'property': {
+                'title': 'Property',
+                'type': 'text'
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_invalid_batch_name_format():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'batch': True,
+        'batch_name_format': "{x}",
+        'properties': {
+            'property': {
+                'title': 'Property',
+                'type': 'text'
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
