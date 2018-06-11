@@ -5,6 +5,7 @@
 
 import json
 import typing
+import datetime
 from sqlalchemy import String, and_, or_
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.elements import BinaryExpression
@@ -12,6 +13,7 @@ from typing import Any
 from . import where_filters
 from . import datatypes
 from . import node
+
 
 def trans(data, tree, get_quantity, get_wherefilter):
     """converts tree by Post-Order pass in the type of data,
@@ -22,12 +24,25 @@ def trans(data, tree, get_quantity, get_wherefilter):
         return get_wherefilter(trans(data, tree.left, get_quantity, get_wherefilter),
                     trans(data, tree.right, get_quantity, get_wherefilter), tree.operator)
 
+def validate(date_text):
+    try:
+        datetime.datetime.strptime(date_text, '%Y-%m-%d')
 
-def get_quantity(data: Column, cond: str) -> typing.Union[datatypes.Quantity, BinaryExpression]:
+        return True
+    except ValueError:
+        return False
+
+def get_quantity(data: Column, cond: str) -> typing.Union[datatypes.Quantity, datatypes.DateTime, BinaryExpression]:
     """gets treeelement, creates quantity"""
 
-    # Try parsing cond as quantity
+    # Try parsing cond as quantity or date
+    if validate(cond):
+        cond = datetime.datetime.strptime(cond, '%Y-%m-%d')
+        date = datatypes.DateTime(cond)
+        return date
+
     had_decimal_point = False
+    len_magnitude = 0
     for index, character in enumerate(cond):
         if not character.isdigit():
             if not had_decimal_point and character == ".":
@@ -35,8 +50,8 @@ def get_quantity(data: Column, cond: str) -> typing.Union[datatypes.Quantity, Bi
             else:
                 len_magnitude = index
                 break
-    else:
-        len_magnitude = len(cond)
+        else:
+            len_magnitude = len(cond)
     if len_magnitude > 0:
         magnitude = float(cond[:len_magnitude])
         units = cond[len_magnitude:]
@@ -51,20 +66,40 @@ def get_quantity(data: Column, cond: str) -> typing.Union[datatypes.Quantity, Bi
 
 def get_wherefilter(rg1, rg2, operator) -> Any:
     """returns a filter_func"""
-    if (operator == "&&"):
+
+    rg2_is_date = False
+    if isinstance(rg2, datatypes.DateTime):
+        rg2_is_date = True
+
+    if operator == "&&":
         return and_(rg1, rg2)
-    if (operator == "||"):
+    if operator == "||":
         return or_(rg1, rg2)
-    if (operator == "=="):
-        return where_filters.quantity_equals(rg1, rg2)
-    if (operator == ">"):
-        return where_filters.quantity_greater_than(rg1, rg2)
-    if (operator == "<"):
-        return where_filters.quantity_less_than(rg1, rg2)
-    if (operator == ">="):
-        return where_filters.quantity_greater_than_equals(rg1, rg2)
-    if (operator == "<="):
-        return where_filters.quantity_less_than_equals(rg1, rg2)
+    if operator == "==":
+        if rg2_is_date:
+            return where_filters.datetime_equals(rg1, rg2)
+        else:
+            return where_filters.quantity_equals(rg1, rg2)
+    if operator == ">":
+        if rg2_is_date:
+            return where_filters.datetime_greater_than(rg1, rg2)
+        else:
+            return where_filters.quantity_greater_than(rg1, rg2)
+    if operator == "<":
+        if rg2_is_date:
+            return where_filters.datetime_less_than(rg1, rg2)
+        else:
+            return where_filters.quantity_less_than(rg1, rg2)
+    if operator == ">=":
+        if rg2_is_date:
+            return where_filters.datetime_greater_than_equals(rg1, rg2)
+        else:
+            return where_filters.quantity_greater_than_equals(rg1, rg2)
+    if operator == "<=":
+        if rg2_is_date:
+            return where_filters.datetime_less_than_equals(rg1, rg2)
+        else:
+            return where_filters.quantity_less_than_equals(rg1, rg2)
 
 
 def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Callable:
@@ -100,3 +135,4 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
             """ Return all objects"""
             return True
     return filter_func
+
