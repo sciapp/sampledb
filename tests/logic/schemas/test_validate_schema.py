@@ -84,6 +84,25 @@ def test_validate_bool_schema_invalid_default():
         validate_schema(schema)
 
 
+def test_validate_bool_schema_note():
+    schema = {
+        'title': 'Example',
+        'type': 'bool',
+        'note': 'Example Note'
+    }
+    validate_schema(schema)
+
+
+def test_validate_bool_schema_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'bool',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_bool_schema_invalid_key():
     schema = {
         'title': 'Example',
@@ -100,6 +119,25 @@ def test_validate_text_schema():
         'type': 'text'
     }
     validate_schema(schema)
+
+
+def test_validate_text_schema_note():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'note': 'Example Note'
+    }
+    validate_schema(schema)
+
+
+def test_validate_text_schema_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
 
 
 def test_validate_text_with_min_length():
@@ -324,6 +362,25 @@ def test_validate_datetime_schema_invalid_default_type():
         validate_schema(schema)
 
 
+def test_validate_datetime_schema_note():
+    schema = {
+        'title': 'Example',
+        'type': 'datetime',
+        'note': 'Example Note'
+    }
+    validate_schema(schema)
+
+
+def test_validate_datetime_schema_invalid_note_type():
+    schema = {
+        'title': 'Example',
+        'type': 'datetime',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_datetime_schema_invalid_default():
     schema = {
         'title': 'Example',
@@ -369,6 +426,27 @@ def test_validate_quantity_schema_invalid_default():
         'type': 'quantity',
         'units': 'm',
         'default': '1.5'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_quantity_schema_note():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'note': 'Example Note'
+    }
+    validate_schema(schema)
+
+
+def test_validate_quantity_schema_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'note': 1
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
