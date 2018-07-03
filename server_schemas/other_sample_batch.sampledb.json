@@ -1,0 +1,40 @@
+{
+  "title": "Sample Information",
+  "type": "object",
+  "batch": true,
+  "batch_name_format": "-{:03d}",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "default": "Sample",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^.+-[0-9]+$"
+    },
+    "sample": {
+      "title": "Previous Sample",
+      "type": "sample"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "text",
+      "minLength": 0
+    },
+    "description": {
+      "title": "Description",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["sample", "name", "created", "keywords", "description"],
+  "required": ["name", "created"],
+  "displayProperties": [
+    "keywords"
+  ]
+}

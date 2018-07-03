@@ -174,7 +174,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'note'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -210,6 +210,9 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     if 'multiline' in schema and not isinstance(schema['multiline'], bool):
         raise ValidationError('multiline must be bool', path)
 
+    if 'note' in schema and not isinstance(schema['note'], str):
+        raise ValidationError('note must be str', path)
+
 
 def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     """
@@ -219,7 +222,7 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default'}
+    valid_keys = {'type', 'title', 'default', 'note'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -235,6 +238,10 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
                 raise ValidationError('invalid default value', path)
 
 
+    if 'note' in schema and not isinstance(schema['note'], str):
+        raise ValidationError('note must be str', path)
+
+
 def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given boolean object schema and raises a ValidationError if it is invalid.
@@ -243,7 +250,7 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default'}
+    valid_keys = {'type', 'title', 'default', 'note'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -251,6 +258,9 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema and not isinstance(schema['default'], bool):
         raise ValidationError('default must be bool', path)
+
+    if 'note' in schema and not isinstance(schema['note'], str):
+        raise ValidationError('note must be str', path)
 
 
 def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
@@ -261,7 +271,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -278,6 +288,9 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
         raise ValidationError('default must be float or int', path)
+
+    if 'note' in schema and not isinstance(schema['note'], str):
+        raise ValidationError('note must be str', path)
 
 
 def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
