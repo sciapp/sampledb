@@ -22,7 +22,7 @@ from sqlalchemy.exc import IntegrityError
 import collections
 import typing
 from .. import db
-from ..models import projects, User, Permissions, UserProjectPermissions, GroupProjectPermissions
+from ..models import projects, User, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .users import get_user
 from . import groups
 from . import utils
@@ -31,7 +31,6 @@ from . import errors
 
 # project names are limited to this (semi-arbitrary) length
 MAX_PROJECT_NAME_LENGTH = 100
-
 
 class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
     """
@@ -265,12 +264,14 @@ def get_user_projects(user_id: int, include_groups: bool=False) -> typing.List[P
     return [get_project(project_id) for project_id in project_ids]
 
 
-def invite_user_to_project(project_id: int, user_id: int) -> None:
+def invite_user_to_project(project_id: int, user_id: int, add_to_parent_project_ids: typing.Sequence[int]=()) -> None:
     """
     Sends an invitation mail for a project to a user.
 
     :param project_id: the ID of an existing project
     :param user_id:  the ID of an existing users
+    :param add_to_parent_project_ids: list of IDs of parent projects to which
+        the user should also be added
     """
     project = projects.Project.query.get(project_id)
     if project is None:
@@ -278,15 +279,18 @@ def invite_user_to_project(project_id: int, user_id: int) -> None:
     get_user(user_id)
     if Permissions.READ in get_user_project_permissions(project_id, user_id):
         raise errors.UserAlreadyMemberOfProjectError()
-    utils.send_confirm_email_to_invite_user_to_project(project_id, user_id)
+    utils.send_confirm_email_to_invite_user_to_project(project_id, user_id, other_project_ids=add_to_parent_project_ids)
 
 
-def add_user_to_project(project_id: int, user_id: int, permissions: Permissions) -> None:
+def add_user_to_project(project_id: int, user_id: int, permissions: Permissions, other_project_ids: typing.Sequence[int]=()) -> None:
     """
     Adds the user with the given user ID to the project with the given project ID.
 
     :param project_id: the ID of an existing project
     :param user_id: the ID of an existing user
+    :param permissions: the permissions of the user for this project
+    :param other_project_ids: IDs of (parent) projects this user should also
+        be added to
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
@@ -310,6 +314,14 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions)
     user_permissions = UserProjectPermissions(project_id=project_id, user_id=user_id, permissions=permissions)
     db.session.add(user_permissions)
     db.session.commit()
+    if other_project_ids:
+        ancestor_project_ids = get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
+        for other_project_id in other_project_ids:
+            if other_project_id in ancestor_project_ids:
+                try:
+                    add_user_to_project(other_project_id, user_id, permissions)
+                except errors.UserAlreadyMemberOfProjectError:
+                    pass
 
 
 def add_group_to_project(project_id: int, group_id: int, permissions: Permissions) -> None:
@@ -514,3 +526,166 @@ def get_group_projects(group_id: int) -> typing.List[Project]:
     }
     return [get_project(project_id) for project_id in project_ids]
 
+
+def filter_child_project_candidates(parent_project_id: int, child_project_ids: typing.List[int]) -> typing.List[int]:
+    """
+    Filters a list of project IDs to find which of them may become child
+    projects of another given project.
+
+    :param parent_project_id: the ID of an existing project
+    :param child_project_ids: a list of IDs of existing projects
+    :return: child_project_ids without IDs of projects which may not become
+        child projects of parent_project_id
+    """
+    # Prevent relationship of a project with itself
+    for child_project_id in child_project_ids[:]:
+        if child_project_id == parent_project_id:
+            child_project_ids.remove(child_project_id)
+    # Prevent relationship duplication
+    for child_project_id in child_project_ids[:]:
+        if SubprojectRelationship.query.filter_by(parent_project_id=parent_project_id, child_project_id=child_project_id).first():
+            child_project_ids.remove(child_project_id)
+    # Prevent cycles
+    if child_project_ids:
+        ancestor_project_ids = get_ancestor_project_ids(parent_project_id)
+        for child_project_id in child_project_ids[:]:
+            if child_project_id in ancestor_project_ids:
+                child_project_ids.remove(child_project_id)
+                continue
+    return child_project_ids
+
+
+def create_subproject_relationship(parent_project_id: int, child_project_id: int, child_can_add_users_to_parent: bool=False) -> None:
+    """
+    Creates a subproject relationship between two existing projects.
+
+    :param parent_project_id: the ID of an existing project
+    :param child_project_id: the ID of an existing project
+    :param child_can_add_users_to_parent: whether or not to allow users with
+        GRANT permission on the child project to add users to the parent
+    :raise errors.InvalidSubprojectRelationshipError: if the relationship
+        would cause a cyclic relationship or exceed the maximum subproject
+        depth
+    """
+    if not filter_child_project_candidates(parent_project_id, [child_project_id]):
+            raise errors.InvalidSubprojectRelationshipError()
+    subproject_relationship = SubprojectRelationship(parent_project_id=parent_project_id, child_project_id=child_project_id, child_can_add_users_to_parent=child_can_add_users_to_parent)
+    db.session.add(subproject_relationship)
+    db.session.commit()
+
+
+def delete_subproject_relationship(parent_project_id: int, child_project_id: int) -> None:
+    """
+    Deletes an existing subproject relationship between two existing projects.
+
+    :param parent_project_id: the ID of an existing project
+    :param child_project_id: the ID of an existing project
+    :raise errors.SubprojectRelationshipDoesNotExistError: if the relationship
+        does not exist
+    """
+    subproject_relationship = SubprojectRelationship.query.filter_by(
+        parent_project_id=parent_project_id,
+        child_project_id=child_project_id
+    ).first()
+    if subproject_relationship is None:
+        raise errors.SubprojectRelationshipDoesNotExistError()
+    db.session.delete(subproject_relationship)
+    db.session.commit()
+
+
+def get_parent_project_ids(project_id: int, only_if_child_can_add_users_to_parent: bool=False) -> typing.List[int]:
+    """
+    Return the list of parent project IDs for an existing project.
+
+    :param project_id: the ID of an existing project
+    :param only_if_child_can_add_users_to_parent: whether or not to only show
+        those parent projects, which someone with GRANT permissions on this
+        project can add users to (transitively)
+    :return: list of project IDs
+    """
+    subproject_relationships: typing.Iterable[SubprojectRelationship] = SubprojectRelationship.query.filter_by(
+        child_project_id=project_id
+    ).all()
+    parent_project_ids = []
+    for subproject_relationship in subproject_relationships:
+        if subproject_relationship.child_can_add_users_to_parent or not only_if_child_can_add_users_to_parent:
+            parent_project_ids.append(subproject_relationship.parent_project_id)
+    return parent_project_ids
+
+
+def get_child_project_ids(project_id: int) -> typing.List[int]:
+    """
+    Return the list of child project IDs for an existing project.
+
+    :param project_id: the ID of an existing project
+    :return: list of project IDs
+    """
+    subproject_relationships = SubprojectRelationship.query.filter_by(
+        parent_project_id=project_id
+    ).all()
+    child_project_ids = []
+    for subproject_relationship in subproject_relationships:
+        child_project_ids.append(subproject_relationship.child_project_id)
+    return child_project_ids
+
+
+def get_ancestor_project_ids(project_id: int, only_if_child_can_add_users_to_ancestor: bool=False) -> typing.Set[int]:
+    """
+    Return the list of (transitive) ancestor project IDs for an existing
+    project.
+
+    :param project_id: the ID of an existing project
+    :param only_if_child_can_add_users_to_ancestor: whether or not to only show
+        those ancestor projects, which someone with GRANT permissions on this
+        project can add users to (transitively)
+    :return: set of project IDs
+    """
+    ancestor_project_ids = set()
+    project_id_queue = [project_id]
+    while project_id_queue:
+        ancestor_project_id = project_id_queue.pop(0)
+        if ancestor_project_id in ancestor_project_ids:
+            continue
+        if ancestor_project_id != project_id:
+            ancestor_project_ids.add(ancestor_project_id)
+        project_id_queue.extend(get_parent_project_ids(ancestor_project_id, only_if_child_can_add_users_to_parent=only_if_child_can_add_users_to_ancestor))
+    return ancestor_project_ids
+
+
+def get_descendent_project_ids(project_id: int) -> typing.Set[int]:
+    """
+    Return the list of (transitive) descendent project IDs for an existing
+    project.
+
+    :param project_id: the ID of an existing project
+    :return: set of project IDs
+    """
+    descendent_project_ids = set()
+    project_id_queue = [project_id]
+    while project_id_queue:
+        descendent_project_id = project_id_queue.pop(0)
+        if descendent_project_id in descendent_project_ids:
+            continue
+        if descendent_project_id != project_id:
+            descendent_project_ids.add(descendent_project_id)
+        project_id_queue.extend(get_child_project_ids(descendent_project_id))
+    return descendent_project_ids
+
+
+def can_child_add_users_to_parent_project(child_project_id: int, parent_project_id: int) -> bool:
+    """
+    Return whether or not the subproject relationship allows adding users to
+    the parent project.
+
+    :param child_project_id: the ID of an existing child project
+    :param parent_project_id: the ID of an existing parent project
+    :return: whether or not someone with GRANT permissions on the child
+        project can add users to the parent project
+    """
+    subproject_relationship: typing.Optional[SubprojectRelationship] = SubprojectRelationship.query.filter_by(
+        child_project_id=child_project_id,
+        parent_project_id=parent_project_id
+    ).first()
+    if subproject_relationship is None:
+        return False
+    return subproject_relationship.child_can_add_users_to_parent
