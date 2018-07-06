@@ -1059,3 +1059,40 @@ def test_validate_object_schema_with_invalid_batch_name_format():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_tags_schema():
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    validate_schema(schema)
+
+
+def test_validate_tags_schema_default():
+    schema = {
+        'title': 'Example',
+        'type': 'tags',
+        'default': ['example']
+    }
+    validate_schema(schema)
+
+
+def test_validate_tags_schema_invalid_default():
+    schema = {
+        'title': 'Example',
+        'type': 'tags',
+        'default': [1]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_tags_schema_invalid_key():
+    schema = {
+        'title': 'Example',
+        'type': 'tags',
+        'minItems': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

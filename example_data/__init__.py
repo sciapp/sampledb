@@ -77,3 +77,16 @@ def setup_data(app):
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
     sampledb.db.session.commit()
+
+    instrument = create_instrument(name="Powder Diffractometer", description="Huber Imaging Plate Guinier Camera G670 at JCNS-2")
+    add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
+    with open('server_schemas/powder_diffractometer_measurement.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+    sampledb.db.session.commit()
+
+    with open('server_schemas/other_sample.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    create_action(ActionType.SAMPLE_CREATION, "Other Sample", "", schema, None)
+    sampledb.db.session.commit()
+

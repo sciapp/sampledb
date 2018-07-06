@@ -968,3 +968,53 @@ def test_validate_sample_invalid_object_id():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_tags():
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    instance = {
+        '_type': 'tags',
+        'tags': ['tag', 'other', 'keyword']
+    }
+    validate(instance, schema)
+
+
+def test_validate_tags_empty():
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    instance = {
+        '_type': 'tags',
+        'tags': []
+    }
+    validate(instance, schema)
+
+
+def test_validate_tags_invalid_content():
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    instance = {
+        '_type': 'tags',
+        'tags': 'tag,other,keyword'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_tags_duplicate_tags():
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    instance = {
+        '_type': 'tags',
+        'tags': ['tag', 'other', 'tag']
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)

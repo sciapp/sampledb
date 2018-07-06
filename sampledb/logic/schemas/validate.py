@@ -40,6 +40,8 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Unio
         return _validate_quantity(instance, schema, path)
     elif schema['type'] == 'sample':
         return _validate_sample(instance, schema, path)
+    elif schema['type'] == 'tags':
+        return _validate_tags(instance, schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -65,6 +67,46 @@ def _validate_array(instance: list, schema: dict, path: typing.List[str]) -> Non
             validate(item, schema['items'], path + [str(index)])
         except ValidationError as e:
             errors.append(e)
+    if len(errors) == 1:
+        raise errors[0]
+    elif len(errors) > 1:
+        raise ValidationMultiError(errors)
+
+
+def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None:
+    """
+    Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    valid_keys = {'_type', 'tags'}
+    required_keys = valid_keys
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if instance['_type'] != 'tags':
+        raise ValidationError('expected _type "tags"', path)
+    if not isinstance(instance['tags'], list):
+        raise ValidationError('tags must be list', path)
+    errors = []
+    tags = []
+    for index, item in enumerate(instance['tags']):
+        if not isinstance(item, str):
+            errors.append(ValidationError('invalid tag type: {}'.format(type(item)), path + ['tags', str(index)]))
+        elif item in tags:
+            errors.append(ValidationError('duplicate tag: {}'.format(item), path + ['tags', str(index)]))
+        else:
+            tags.append(item)
+
     if len(errors) == 1:
         raise errors[0]
     elif len(errors) > 1:

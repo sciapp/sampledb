@@ -44,6 +44,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_boolean_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'quantity':
         return parse_quantity_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'tags':
+        return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
@@ -56,6 +58,26 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     data = {
         '_type': 'text',
         'text': str(text)
+    }
+    schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    if keys != [id_prefix + '__tags']:
+        raise ValueError('invalid tags form data')
+    text = form_data.get(id_prefix + '__tags', [''])[0]
+    tags = [tag.strip().lower() for tag in text.split(',') if tag.strip()]
+    unique_tags = []
+    for tag in tags:
+        if tag not in unique_tags:
+            unique_tags.append(tag)
+    tags = unique_tags
+    data = {
+        '_type': 'tags',
+        'tags': tags
     }
     schemas.validate(data, schema)
     return data
