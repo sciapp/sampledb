@@ -8,7 +8,7 @@
       "default": "Measurement-",
       "minLength": 1,
       "maxLength": 100,
-      "pattern": "^Measurement-[0-9]+$"
+      "pattern": "^.+$"
     },
     "sample": {
       "title": "Sample",
@@ -31,7 +31,7 @@
     }
   },
   "propertyOrder": ["name", "sample", "created", "keywords", "description"],
-  "required": ["name", "sample", "created"],
+  "required": ["name", "created"],
   "displayProperties": [
     "sample",
     "keywords"
