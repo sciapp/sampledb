@@ -8,7 +8,7 @@
       "default": "Simulation-",
       "minLength": 1,
       "maxLength": 100,
-      "pattern": "^Simulation-[0-9]+$"
+      "pattern": "^.+$"
     },
     "created": {
       "title": "Creation Datetime",
