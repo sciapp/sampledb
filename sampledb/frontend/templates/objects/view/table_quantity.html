@@ -1,6 +1,6 @@
 
 {% if schema['units'] == "1" %}
-  {{ data.magnitude_in_base_units }}
+  {% if data is not none %}{{ data.magnitude_in_base_units }}{% endif %}
 {% else %}
   {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) }} {{ (data | to_datatype).units | prettify_units }}{% endif %}
 {% endif %}
