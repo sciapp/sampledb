@@ -2,7 +2,7 @@
   <label class="col-md-3" style="text-align: right">{{ schema.title }}</label>
   {% if schema['units'] == "1" %}
     <div class="col-md-9">
-      {{ data.magnitude_in_base_units }}
+      {% if data is not none %}{{ '%g'| format(data.magnitude_in_base_units) }}{% endif %}
     </div>
   {% else %}
     <div class="col-md-9">
