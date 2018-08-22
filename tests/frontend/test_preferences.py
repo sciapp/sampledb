@@ -249,6 +249,46 @@ def test_user_add_ldap_authentication_method(flask_server, user):
     # Check if authentication-method add to db
     with flask_server.app.app_context():
         assert len(sampledb.models.Authentication.query.all()) == 2
+        authentication_method = sampledb.models.Authentication.query.filter_by(type=sampledb.models.AuthenticationType.LDAP).first()
+        assert authentication_method.login['login'] == flask_server.app.config['TESTING_LDAP_LOGIN']
+
+
+def test_user_add_ldap_authentication_method_case_insensitive(flask_server, user):
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
+    url = flask_server.base_url + 'users/me/preferences'
+    r = session.get(url, allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].endswith('/preferences')
+    url = r.headers['Location']
+    r = session.get(url, allow_redirects=False)
+    assert r.status_code == 200
+
+    with flask_server.app.app_context():
+        assert len(sampledb.models.Authentication.query.all()) == 1
+
+    document = BeautifulSoup(r.content, 'html.parser')
+    # it also contains a hidden CSRF token
+    assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    # submit the form
+    #  add ldap-account
+    r = session.post(url, {
+        'login': flask_server.app.config['TESTING_LDAP_LOGIN'].upper(),
+        'password': flask_server.app.config['TESTING_LDAP_PW'],
+        'authentication_method': 'L',
+        'csrf_token': csrf_token,
+        'add': 'Add'
+    })
+    assert r.status_code == 200
+
+    # Check if authentication-method add to db
+    with flask_server.app.app_context():
+        assert len(sampledb.models.Authentication.query.all()) == 2
+        authentication_method = sampledb.models.Authentication.query.filter_by(type=sampledb.models.AuthenticationType.LDAP).first()
+        assert authentication_method.login['login'] == flask_server.app.config['TESTING_LDAP_LOGIN']
 
 
 def test_user_add_other_authentication_method_not_allowed(flask_server, user):
