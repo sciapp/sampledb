@@ -23,6 +23,7 @@ class UserLogEntryType(enum.Enum):
     RESTORE_OBJECT_VERSION = 7
     POST_COMMENT = 8
     UPLOAD_FILE = 9
+    CREATE_BATCH = 10
 
 
 class UserLogEntry(db.Model):

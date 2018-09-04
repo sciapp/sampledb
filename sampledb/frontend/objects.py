@@ -4,6 +4,7 @@
 """
 
 import base64
+from copy import deepcopy
 import datetime
 from io import BytesIO
 import json
@@ -16,6 +17,7 @@ import qrcode
 import qrcode.image.svg
 
 from . import frontend
+from .. import db
 from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
@@ -25,7 +27,7 @@ from ..logic.users import get_user, get_users
 from ..logic.schemas import validate, generate_placeholder
 from ..logic.object_search import generate_filter_func
 from ..logic.groups import get_group, get_user_groups
-from ..logic.objects import create_object, update_object, get_object, get_object_versions
+from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
 from ..logic.files import FileLogEntryType
@@ -41,36 +43,70 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
-    try:
-        action_id = int(flask.request.args.get('action', ''))
-    except ValueError:
+    object_ids = flask.request.args.get('ids', '')
+    objects = []
+    if object_ids:
+        object_ids = object_ids.split(',')
+        try:
+            object_ids = [int(object_id) for object_id in object_ids]
+        except ValueError:
+            object_ids = []
+        readable_object_ids = []
+        for object_id in object_ids:
+            if Permissions.READ in get_user_object_permissions(object_id, user_id=flask_login.current_user.id):
+                readable_object_ids.append(object_id)
+        object_ids = readable_object_ids
+        for object_id in object_ids:
+            try:
+                objects.append(get_object(object_id))
+            except logic.errors.ObjectDoesNotExistError:
+                pass
         action_id = None
-    if action_id is not None:
-        action = get_action(action_id)
-        action_type = action.type
-    else:
         action = None
-        action_type = flask.request.args.get('t', '')
-        action_type = {
-            'samples': ActionType.SAMPLE_CREATION,
-            'measurements': ActionType.MEASUREMENT,
-            'simulations': ActionType.SIMULATION
-        }.get(action_type, None)
-    try:
-        project_id = int(flask.request.args.get('project', ''))
-    except ValueError:
+        action_type = None
         project_id = None
-    if project_id is not None:
-        if Permissions.READ not in get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
-            return flask.abort(403)
-        project = get_project(project_id)
-    else:
         project = None
-    query_string = flask.request.args.get('q', '')
-    use_advanced_search = flask.request.args.get('advanced', None) is not None
-    advanced_search_had_error = False
-    try:
-        filter_func = generate_filter_func(query_string, use_advanced_search)
+        query_string = ''
+        use_advanced_search = False
+        advanced_search_had_error = False
+    else:
+        try:
+            action_id = int(flask.request.args.get('action', ''))
+        except ValueError:
+            action_id = None
+        if action_id is not None:
+            action = get_action(action_id)
+            action_type = action.type
+        else:
+            action = None
+            action_type = flask.request.args.get('t', '')
+            action_type = {
+                'samples': ActionType.SAMPLE_CREATION,
+                'measurements': ActionType.MEASUREMENT,
+                'simulations': ActionType.SIMULATION
+            }.get(action_type, None)
+        try:
+            project_id = int(flask.request.args.get('project', ''))
+        except ValueError:
+            project_id = None
+        if project_id is not None:
+            if Permissions.READ not in get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
+                return flask.abort(403)
+            project = get_project(project_id)
+        else:
+            project = None
+        query_string = flask.request.args.get('q', '')
+        use_advanced_search = flask.request.args.get('advanced', None) is not None
+        advanced_search_had_error = False
+        try:
+            filter_func = generate_filter_func(query_string, use_advanced_search)
+        except Exception as e:
+            # TODO: ensure that advanced search does not cause exceptions
+            if use_advanced_search:
+                advanced_search_had_error = True
+                objects = []
+            else:
+                raise
         objects = get_objects_with_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
@@ -79,13 +115,6 @@ def objects():
             action_type=action_type,
             project_id=project_id
         )
-    except:
-        # TODO: ensure that advanced search does not cause exceptions
-        if use_advanced_search:
-            advanced_search_had_error = True
-            objects = []
-        else:
-            raise
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -234,7 +263,30 @@ def show_object_form(object, action):
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
-        form_data = {k: v[0] for k, v in dict(flask.request.form).items()}
+        raw_form_data = dict(flask.request.form)
+        form_data = {k: v[0] for k, v in raw_form_data.items()}
+
+        if 'input_num_batch_objects' in form_data:
+            try:
+                num_objects_in_batch = int(form_data['input_num_batch_objects'])
+            except ValueError:
+                try:
+                    # The form allows notations like '1.2e1' for '12', however
+                    # Python can only parse these as floats
+                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
+                    if num_objects_in_batch == int(num_objects_in_batch):
+                        num_objects_in_batch = int(num_objects_in_batch)
+                    else:
+                        raise
+                except ValueError:
+                    errors.append('input_num_batch_objects')
+                    num_objects_in_batch = None
+                else:
+                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+            else:
+                form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+        else:
+            num_objects_in_batch = None
 
         if 'previous_actions' in flask.request.form:
             try:
@@ -243,8 +295,25 @@ def show_object_form(object, action):
                 flask.abort(400)
 
         if "action_submit" in form_data:
-            object_data, errors = parse_form_data(dict(flask.request.form), schema)
-            if object_data is not None  and not errors:
+            # The object name might need the batch number to match the pattern
+            if schema.get('batch', False) and num_objects_in_batch is not None:
+                batch_base_name = form_data['object__name__text']
+                name_suffix_format = schema.get('batch_name_format', '{:d}')
+                try:
+                    name_suffix_format.format(1)
+                except (ValueError, KeyError):
+                    name_suffix_format = '{:d}'
+                if name_suffix_format:
+                    example_name_suffix = name_suffix_format.format(1)
+                else:
+                    example_name_suffix = ''
+                raw_form_data['object__name__text'] = [batch_base_name + example_name_suffix]
+            else:
+                batch_base_name = None
+                name_suffix_format = None
+            object_data, object_errors = parse_form_data(raw_form_data, schema)
+            errors += object_errors
+            if object_data is not None and not errors:
                 try:
                     validate(object_data, schema)
                 except ValidationError:
@@ -253,12 +322,28 @@ def show_object_form(object, action):
                     # TODO: handle error
                     flask.abort(400)
                 if object is None:
-                    object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id)
-                    flask.flash('The object was created successfully.', 'success')
+                    if schema.get('batch', False) and num_objects_in_batch is not None:
+                        if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
+                            data_sequence = []
+                            for i in range(1, num_objects_in_batch+1):
+                                if name_suffix_format:
+                                    name_suffix = name_suffix_format.format(i)
+                                else:
+                                    name_suffix = ''
+                                object_data['name']['text'] = batch_base_name + name_suffix
+                                data_sequence.append(deepcopy(object_data))
+                        else:
+                            data_sequence = [object_data] * num_objects_in_batch
+                        objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id)
+                        object_ids = [object.id for object in objects]
+                        flask.flash('The objects were created successfully.', 'success')
+                        return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
+                    else:
+                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id)
+                        flask.flash('The object was created successfully.', 'success')
                 else:
                     update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data)
                     flask.flash('The object was updated successfully.', 'success')
-
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
         elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]

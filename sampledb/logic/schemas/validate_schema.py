@@ -108,6 +108,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
+        valid_keys.add('batch')
+        valid_keys.add('batch_name_format')
     required_keys = {'type', 'title', 'properties'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -147,6 +149,21 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
         for property_name in schema['displayProperties']:
             if property_name not in schema['properties']:
                 raise ValidationError('unknown display property: {}'.format(property_name), path)
+
+    if 'batch' in schema:
+        if not isinstance(schema['batch'], bool):
+            raise ValidationError('batch must be bool', path)
+
+    if 'batch_name_format' in schema:
+        if not schema.get('batch', False):
+            raise ValidationError('batch must be True for batch_name_format to be set', path)
+        if not isinstance(schema['batch_name_format'], str):
+            raise ValidationError('batch_name_format must be a string', path)
+        try:
+            schema['batch_name_format'].format(1)
+        except (ValueError, KeyError):
+            raise ValidationError('invalid batch_name_format', path)
+
 
 
 def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
