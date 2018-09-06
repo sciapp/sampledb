@@ -2,11 +2,12 @@
   "title": "Measurement Information",
   "type": "object",
   "properties": {
-    "name": {
-      "title": "Date File Name",
+    "data_file_name": {
+      "title": "Data File Name",
       "type": "text",
       "default": "",
-      "minLength": 1
+      "minLength": 0,
+      "note": "optional"
     },
     "sample": {
       "title": "Sample",
@@ -16,7 +17,7 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
-    "sequence_file_name": {
+    "name": {
       "title": "Sequence File Name",
       "type": "text",
       "minLength": 1
@@ -107,8 +108,8 @@
       "multiline": true
     }
   },
-  "propertyOrder": ["name", "sequence_file_name", "sample", "created", "rso_magnetic_moment", "dc_magnetic_moment", "ac_susceptibility", "dc_oven_magnetic_moment", "dc_rotator_magnetic_moment", "me_ac_susceptibility", "ultra_low_field_option", "service", "other_option", "transport_unit", "he_level", "straw_with_plateau", "straw_with_gelatine_capsule", "electrical_connection_sample_holder", "other_sample_holder", "sample_description", "measurement_description", "problems"],
-  "required": ["name", "sample", "created", "sequence_file_name", "transport_unit"],
+  "propertyOrder": ["name", "data_file_name", "sample", "created", "rso_magnetic_moment", "dc_magnetic_moment", "ac_susceptibility", "dc_oven_magnetic_moment", "dc_rotator_magnetic_moment", "me_ac_susceptibility", "ultra_low_field_option", "service", "other_option", "transport_unit", "he_level", "straw_with_plateau", "straw_with_gelatine_capsule", "electrical_connection_sample_holder", "other_sample_holder", "sample_description", "measurement_description", "problems"],
+  "required": ["sample", "created", "name", "transport_unit"],
   "displayProperties": [
     "sample"
   ]
