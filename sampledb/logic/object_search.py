@@ -18,6 +18,7 @@ import sqlalchemy.dialects.postgresql as postgresql
 
 def transform_tree(data, tree, unary_transformation, binary_transformation):
 
+
     if tree.left is None:
         return unary_transformation(data, tree.operator)
     else:
@@ -52,8 +53,8 @@ def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Unio
             else:
                 len_magnitude = index
                 break
-    else:
-        len_magnitude = len(operand)
+        else:
+            len_magnitude = len(operand)
     if len_magnitude > 0:
         magnitude = float(operand[:len_magnitude])
         units = operand[len_magnitude:]

@@ -42,7 +42,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.objects', q="multilayer.?.films.0.thickness > 2000Å", advanced="on"))
+        return flask.redirect(flask.url_for('frontend.objects', q="created after 2015-01-01 or (mass > 1mg and mass < 15mg)", advanced="on"))
 
     sampledb.login_manager.login_view = 'autologin'
 
