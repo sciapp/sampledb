@@ -12,6 +12,7 @@ left operand's magnitude in base units.
 
 import operator
 import sqlalchemy as db
+from . import datatypes
 
 EPSILON = 1e-7
 
@@ -85,9 +86,11 @@ def quantity_between(db_obj, left, right, including=True):
 
 
 def datetime_binary_operator(db_obj, other, operator):
+    if isinstance(other, datatypes.DateTime):
+        other = other.utc_datetime
     return db.and_(
         db_obj['_type'].astext == 'datetime',
-        operator(db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS'), other.utc_datetime)
+        operator(db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS'), other)
     )
 
 
@@ -127,6 +130,8 @@ def datetime_between(db_obj, left, right, including=True):
 
 
 def boolean_equals(db_obj, value):
+    if isinstance(value, datatypes.Boolean):
+        value = value.value
     return db.and_(
         db_obj['_type'].astext == 'bool',
         db_obj['value'].astext.cast(db.Boolean) == value
@@ -142,6 +147,8 @@ def boolean_false(db_obj):
 
 
 def text_equals(db_obj, text):
+    if isinstance(text, datatypes.Text):
+        text = text.text
     return db.and_(
         db_obj['_type'].astext == 'text',
         db_obj['text'].astext == text

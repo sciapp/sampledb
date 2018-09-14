@@ -7,7 +7,7 @@ from sqlalchemy import String, and_, or_
 from sqlalchemy import String, Float, and_, or_
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.elements import BinaryExpression
-from sqlalchemy.sql.expression import select, exists
+from sqlalchemy.sql.expression import select, exists, true, false
 from typing import Any
 from . import where_filters
 from . import datatypes
@@ -35,7 +35,7 @@ def validate(date_text):
         return False
 
 
-def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Union[datatypes.Quantity, BinaryExpression], typing.Optional[typing.Callable]]:
+def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Union[datatypes.Quantity, datatypes.DateTime, datatypes.Text, datatypes.Boolean, BinaryExpression], typing.Optional[typing.Callable]]:
     """gets treeelement, creates quantity or date"""
 
     if validate(operand):
@@ -62,6 +62,15 @@ def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Unio
             units = None
         quantity = datatypes.Quantity(magnitude, units)
         return quantity, None
+
+    if operand.startswith('"') and operand.endswith('"') and len(operand) >= 2:
+        return datatypes.Text(operand[1:-1]), None
+
+    if operand.lower() == 'true':
+        return datatypes.Boolean(True), None
+
+    if operand.lower() == 'false':
+        return datatypes.Boolean(False), None
 
     # Try parsing cond as attribute
     attributes = operand.split('.')
@@ -92,48 +101,170 @@ def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Unio
     return data[attributes], None
 
 
-def binary_transformation(rg1, rg2, operator) -> (Any,Any):
+def binary_transformation(left_operand_and_filter, right_operand_and_filter, operator) -> (Any, typing.Optional[typing.Callable]):
     """returns a filter_func"""
 
-    outer_filter = lambda filter: filter
-    if rg1[1] and rg2[1]:
+    left_operand, left_outer_filter = left_operand_and_filter
+    right_operand, right_outer_filter = right_operand_and_filter
+
+    if left_outer_filter and right_outer_filter:
         raise ValueError("Only one outer filter is supported")
-    if rg1[1]:
-        outer_filter = rg1[1]
-    if rg2[1]:
-        outer_filter = rg2[1]
-    rg2_is_date = False
-    if isinstance(rg2[0], datatypes.DateTime):
-        rg2_is_date = True
-    if (operator == "&&"):
-        return outer_filter(and_(rg1[0], rg2[0])),None
-    if (operator == "||"):
-        return outer_filter(or_(rg1[0], rg2[0])),None
-    if (operator == "=="):
-        if rg2_is_date:
-            return outer_filter(where_filters.datetime_equals(rg1[0], rg2[0])),None
+    if left_outer_filter:
+        outer_filter = left_outer_filter
+    elif right_outer_filter:
+        outer_filter = right_outer_filter
+    else:
+        outer_filter = lambda filter: filter
+
+    left_operand_is_boolean = False
+    left_operand_is_date = False
+    left_operand_is_quantity = False
+    left_operand_is_text = False
+    left_operand_is_attribute = False
+    left_operand_is_expression = False
+    if isinstance(left_operand, datatypes.Boolean):
+        left_operand_is_boolean = True
+    elif isinstance(left_operand, datatypes.DateTime):
+        left_operand_is_date = True
+    elif isinstance(left_operand, datatypes.Quantity):
+        left_operand_is_quantity = True
+    elif isinstance(left_operand, datatypes.Text):
+        left_operand_is_text = True
+    elif isinstance(left_operand, BinaryExpression):
+        left_operand_is_attribute = True
+    else:
+        left_operand_is_expression = True
+
+    right_operand_is_boolean = False
+    right_operand_is_date = False
+    right_operand_is_quantity = False
+    right_operand_is_text = False
+    right_operand_is_attribute = False
+    right_operand_is_expression = False
+    if isinstance(right_operand, datatypes.Boolean):
+        right_operand_is_boolean = True
+    elif isinstance(right_operand, datatypes.DateTime):
+        right_operand_is_date = True
+    elif isinstance(right_operand, datatypes.Quantity):
+        right_operand_is_quantity = True
+    elif isinstance(right_operand, datatypes.Text):
+        right_operand_is_text = True
+    elif isinstance(right_operand, BinaryExpression):
+        right_operand_is_attribute = True
+    else:
+        right_operand_is_expression = True
+
+    if operator == "&&":
+        if left_operand_is_expression and right_operand_is_expression:
+            return outer_filter(and_(left_operand, right_operand)), None
+        elif left_operand_is_boolean and right_operand_is_expression:
+            if left_operand.value:
+                return outer_filter(right_operand), None
+            else:
+                return outer_filter(false()), None
+        elif left_operand_is_expression and right_operand_is_boolean:
+            if right_operand.value:
+                return outer_filter(left_operand), None
+            else:
+                return outer_filter(false()), None
+        elif left_operand_is_boolean and right_operand_is_boolean:
+            if left_operand == right_operand:
+                return outer_filter(true()), None
+            else:
+                return outer_filter(false()), None
+        elif left_operand_is_attribute and right_operand_is_expression:
+            return outer_filter(and_(where_filters.boolean_true(left_operand), right_operand)), None
+        elif left_operand_is_expression and right_operand_is_attribute:
+            return outer_filter(and_(left_operand, where_filters.boolean_true(right_operand))), None
+        elif left_operand_is_attribute and right_operand_is_boolean:
+            if right_operand.value:
+                return outer_filter(where_filters.boolean_true(left_operand)), None
+            else:
+                return outer_filter(false()), None
+        elif left_operand_is_boolean and right_operand_is_attribute:
+            if left_operand.value:
+                return outer_filter(where_filters.boolean_true(right_operand)), None
+            else:
+                return outer_filter(false()), None
+        elif left_operand_is_attribute and right_operand_is_attribute:
+            return outer_filter(and_(where_filters.boolean_true(left_operand), where_filters.boolean_true(right_operand))), None
         else:
-            return outer_filter(where_filters.quantity_equals(rg1[0], rg2[0])),None
-    if (operator == ">"):
-        if rg2_is_date:
-            return outer_filter(where_filters.datetime_greater_than(rg1[0], rg2[0])),None
+            # TODO: print warning for user
+            return outer_filter(false()), None
+    if operator == "||":
+        return outer_filter(or_(left_operand, right_operand)), None
+    if operator == "==" or operator == '=':
+        if left_operand_is_boolean or right_operand_is_boolean:
+            if left_operand_is_boolean and right_operand_is_boolean:
+                if left_operand == right_operand:
+                    return outer_filter(true()), None
+                else:
+                    return outer_filter(false()), None
+            elif left_operand_is_attribute and right_operand_is_boolean:
+                return outer_filter(where_filters.boolean_equals(left_operand, right_operand)), None
+            elif left_operand_is_boolean and right_operand_is_attribute:
+                return outer_filter(where_filters.boolean_equals(right_operand, left_operand)), None
+            else:
+                # TODO: print warning for user
+                return outer_filter(false()), None
+        if left_operand_is_date or right_operand_is_date:
+            if left_operand_is_date and right_operand_is_date:
+                return left_operand == right_operand
+            elif left_operand_is_attribute and right_operand_is_date:
+                return outer_filter(where_filters.datetime_equals(left_operand, right_operand)), None
+            elif left_operand_is_date and right_operand_is_attribute:
+                return outer_filter(where_filters.datetime_equals(right_operand, left_operand)), None
+            else:
+                # TODO: print warning for user
+                return outer_filter(false()), None
+        if left_operand_is_quantity or right_operand_is_quantity:
+            if left_operand_is_quantity and right_operand_is_quantity:
+                return left_operand == right_operand
+            elif left_operand_is_attribute and right_operand_is_quantity:
+                return outer_filter(where_filters.quantity_equals(left_operand, right_operand)), None
+            elif left_operand_is_quantity and right_operand_is_attribute:
+                return outer_filter(where_filters.quantity_equals(right_operand, left_operand)), None
+            else:
+                # TODO: print warning for user
+                return outer_filter(false()), None
+        if left_operand_is_text or right_operand_is_text:
+            if left_operand_is_text and right_operand_is_text:
+                return left_operand == right_operand
+            elif left_operand_is_attribute and right_operand_is_text:
+                return outer_filter(where_filters.text_equals(left_operand, right_operand)), None
+            elif left_operand_is_text and right_operand_is_attribute:
+                return outer_filter(where_filters.text_equals(right_operand, left_operand)), None
+            else:
+                # TODO: print warning for user
+                return outer_filter(false()), None
+        if left_operand_is_attribute and right_operand_is_attribute:
+            return left_operand == right_operand, None
+        if left_operand_is_expression and right_operand_is_expression:
+            return left_operand == right_operand, None
+        # TODO: print warning for user
+        return outer_filter(false()), None
+    if operator == ">":
+        if right_operand_is_date:
+            return outer_filter(where_filters.datetime_greater_than(left_operand, right_operand)), None
         else:
-            return outer_filter(where_filters.quantity_greater_than(rg1[0], rg2[0])),None
-    if (operator == "<"):
-        if rg2_is_date:
-            return outer_filter(where_filters.datetime_less_than(rg1[0], rg2[0])),None
+            return outer_filter(where_filters.quantity_greater_than(left_operand, right_operand)), None
+    if operator == "<":
+        if right_operand_is_date:
+            return outer_filter(where_filters.datetime_less_than(left_operand, right_operand)), None
         else:
-            return outer_filter(where_filters.quantity_less_than(rg1[0], rg2[0])),None
-    if (operator == ">="):
-        if rg2_is_date:
-            return outer_filter(where_filters.datetime_greater_than_equals(rg1[0], rg2[0])),None
+            return outer_filter(where_filters.quantity_less_than(left_operand, right_operand)), None
+    if operator == ">=":
+        if right_operand_is_date:
+            return outer_filter(where_filters.datetime_greater_than_equals(left_operand, right_operand)), None
         else:
-            return outer_filter(where_filters.quantity_greater_than_equals(rg1[0], rg2[0])),None
-    if (operator == "<="):
-        if rg2_is_date:
-            return outer_filter(where_filters.datetime_less_than_equals(rg1[0], rg2[0])),None
+            return outer_filter(where_filters.quantity_greater_than_equals(left_operand, right_operand)), None
+    if operator == "<=":
+        if right_operand_is_date:
+            return outer_filter(where_filters.datetime_less_than_equals(left_operand, right_operand)), None
         else:
-            return outer_filter(where_filters.quantity_less_than_equals(rg1[0], rg2[0])),None
+            return outer_filter(where_filters.quantity_less_than_equals(left_operand, right_operand)), None
+
+    return False
 
 
 def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Callable:
