@@ -69,6 +69,7 @@ def objects():
         query_string = ''
         use_advanced_search = False
         advanced_search_had_error = False
+        search_notes = []
     else:
         try:
             action_id = int(flask.request.args.get('action', ''))
@@ -104,9 +105,15 @@ def objects():
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
                 advanced_search_had_error = True
-                objects = []
+
+                def filter_func(data, search_notes):
+                    """ Return all objects"""
+                    search_notes.append(('error', "Unable to parse search expression: {}".format(query_string)))
+                    return False
             else:
                 raise
+        search_notes = []
+        filter_func = lambda data, search_notes=search_notes, filter_func_impl=filter_func: filter_func_impl(data, search_notes)
         objects = get_objects_with_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
@@ -162,7 +169,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, advanced_search_had_error=advanced_search_had_error)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes)
 
 
 @jinja_filter

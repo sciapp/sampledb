@@ -16,26 +16,24 @@ from .. import db
 import sqlalchemy.dialects.postgresql as postgresql
 
 
-def transform_tree(data, tree, unary_transformation, binary_transformation):
-
-
+def transform_tree(data, tree, unary_transformation, binary_transformation, *args, **kwargs):
     if tree.left is None:
-        return unary_transformation(data, tree.operator)
+        return unary_transformation(data, tree.operator, *args, **kwargs)
     else:
-        left_operand = transform_tree(data, tree.left, unary_transformation, binary_transformation)
-        right_operand = transform_tree(data, tree.right, unary_transformation, binary_transformation)
-        return binary_transformation(left_operand, right_operand, tree.operator)
+        left_operand = transform_tree(data, tree.left, unary_transformation, binary_transformation, *args, **kwargs)
+        right_operand = transform_tree(data, tree.right, unary_transformation, binary_transformation, *args, **kwargs)
+        return binary_transformation(left_operand, right_operand, tree.operator, *args, **kwargs)
+
 
 def validate(date_text):
     try:
         datetime.datetime.strptime(date_text, '%Y-%m-%d')
-
         return True
     except ValueError:
         return False
 
 
-def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Union[datatypes.Quantity, datatypes.DateTime, datatypes.Text, datatypes.Boolean, BinaryExpression], typing.Optional[typing.Callable]]:
+def unary_transformation(data: Column, operand: str, search_notes: typing.List[typing.Tuple[typing.Text, typing.Text]]) -> typing.Tuple[typing.Union[datatypes.Quantity, datatypes.DateTime, datatypes.Text, datatypes.Boolean, BinaryExpression], typing.Optional[typing.Callable]]:
     """gets treeelement, creates quantity or date"""
 
     if validate(operand):
@@ -101,7 +99,7 @@ def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Unio
     return data[attributes], None
 
 
-def binary_transformation(left_operand_and_filter, right_operand_and_filter, operator) -> (Any, typing.Optional[typing.Callable]):
+def binary_transformation(left_operand_and_filter, right_operand_and_filter, operator: typing.Text, search_notes: typing.List[typing.Tuple[typing.Text, typing.Text]]) -> (Any, typing.Optional[typing.Callable]):
     """returns a filter_func"""
 
     left_operand, left_outer_filter = left_operand_and_filter
@@ -189,7 +187,8 @@ def binary_transformation(left_operand_and_filter, right_operand_and_filter, ope
         elif left_operand_is_attribute and right_operand_is_attribute:
             return outer_filter(and_(where_filters.boolean_true(left_operand), where_filters.boolean_true(right_operand))), None
         else:
-            # TODO: print warning for user
+            # TODO: better message
+            search_notes.append(('error', 'Invalid operands for &&'))
             return outer_filter(false()), None
     if operator == "||":
         return outer_filter(or_(left_operand, right_operand)), None
@@ -281,20 +280,20 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
     if query_string:
         if use_advanced_search:
             # Advanced search using parser and where_filters
-            def filter_func(data, query_string=query_string):
+            def filter_func(data, search_notes, query_string=query_string):
                 """ Filter objects based on search query string """
                 query_string = node.replace(query_string)
                 binary_tree = node.parsing_in_tree(query_string)
-                return transform_tree(data, binary_tree, unary_transformation, binary_transformation)[0]
+                return transform_tree(data, binary_tree, unary_transformation, binary_transformation, search_notes)[0]
         else:
             # Simple search in values
-            def filter_func(data, query_string=query_string):
+            def filter_func(data, search_notes, query_string=query_string):
                 """ Filter objects based on search query string """
                 # The query string is converted to json to escape quotes, backslashes, etc
                 query_string = json.dumps(query_string)[1:-1]
                 return data.cast(String).like('%: "%'+query_string+'%"%')
     else:
-        def filter_func(data):
+        def filter_func(data, search_notes):
             """ Return all objects"""
             return True
     return filter_func
