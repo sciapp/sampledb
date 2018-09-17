@@ -1,0 +1,100 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^.+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "text",
+      "minLength": 0
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "geometry": {
+      "title": "Geometry",
+      "type": "text",
+      "choices": ["Flat", "Capillary"]
+    },
+    "diameter": {
+      "title": "Diameter / Thickness",
+      "type": "quantity",
+      "units": "mm"
+    },
+    "standards": {
+      "title": "Standard Additives",
+      "type": "text",
+      "choices": ["SiO2", "LaB6", "Other"]
+    },
+    "additives": {
+      "title": "Other Additives",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    },
+    "wavelength": {
+      "title": "Wavelength",
+      "type": "text",
+      "choices": ["1.54 Å", "0.71 Å"],
+      "default": "1.54 Å"
+    },
+    "options": {
+      "title": "Options",
+      "type": "text",
+      "choices": ["None", "Closed-Cycle Cryostat", "Laser Heating Module", "Cryo-heating Module", "High Pressure Cell"],
+      "default": "None"
+    },
+    "temperatures": {
+      "title": "Temperatures",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "style": "table",
+      "items": {
+        "title": "Temperature",
+        "type": "object",
+        "properties": {
+          "temperature": {
+            "title": "Temperature",
+            "type": "quantity",
+            "units": "K"
+          }
+        },
+        "required": ["temperature"]
+      }
+    },
+    "pressure": {
+      "title": "Pressure",
+      "type": "quantity",
+      "units": "GPa"
+    },
+    "duration": {
+      "title": "Duration",
+      "type": "quantity",
+      "units": "min"
+    },
+    "scans": {
+      "title": "Number of Detector Scans",
+      "type": "quantity",
+      "units": "1"
+    }
+  },
+  "propertyOrder": ["name", "created", "keywords", "sample", "geometry", "diameter", "standards", "additives", "wavelength", "options", "temperatures", "pressure", "duration", "scans"],
+  "required": ["name", "sample", "created", "wavelength", "geometry", "diameter", "additives", "standards", "duration", "temperatures", "pressure", "scans"],
+  "displayProperties": [
+    "sample",
+    "keywords"
+  ]
+}
