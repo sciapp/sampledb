@@ -1,0 +1,8 @@
+<div class="form-group row{% if id_prefix+'_tags' in errors %} has-error{% elif id_prefix+'_tags' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
+  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <div class="col-md-9">
+    <input type="text" class="form-control" {% if id_prefix+'_tags' in form_data %}value="{{ form_data[id_prefix+'_tags'] }}"{% elif data is not none and "tags" in data %}value="{{ data.tags | join(', ') }}"{% endif %} data-role="tagsinput" id="{{ id_prefix }}_input" name="{{ id_prefix }}_tags"/>
+    {% if id_prefix+'_tags' in errors %}<span class="help-block">{{ errors[id_prefix+'_tags'] }}</span>{% endif %}
+    {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
+  </div>
+</div>
