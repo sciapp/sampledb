@@ -14,7 +14,7 @@ the functions in this module should be called from within a Flask app context.
 
 import typing
 from ..models import Objects, Object, Action, ActionType
-from . import object_log, user_log, permissions, errors, users, actions
+from . import object_log, user_log, permissions, errors, users, actions, tags
 import sqlalchemy.exc
 
 
@@ -42,6 +42,7 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
     permissions.set_initial_permissions(object)
+    tags.update_object_tag_usage(object)
     return object
 
 
@@ -81,6 +82,7 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
                 permissions.set_initial_permissions(object)
+                tags.update_object_tag_usage(object)
     return objects
 
 
@@ -103,6 +105,7 @@ def update_object(object_id: int, data: dict, user_id: int) -> None:
     user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
     object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
     _update_object_references(object, user_id=user_id)
+    tags.update_object_tag_usage(object)
 
 
 def restore_object_version(object_id: int, version_id: int, user_id: int) -> None:
@@ -131,6 +134,7 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     )
     user_log.restore_object_version(user_id=user_id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
     object_log.restore_object_version(object_id=object_id, user_id=user_id, restored_version_id=version_id, version_id=object.version_id)
+    tags.update_object_tag_usage(object)
 
 
 def get_object(object_id: int, version_id: int=None) -> Object:

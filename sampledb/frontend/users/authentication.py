@@ -30,6 +30,9 @@ def sign_in():
     has_errors = False
     if form.validate_on_submit():
         username = form.username.data
+        # enforce lowercase for username to ensure case insensitivity
+        # TODO: move this to the model and logic layer
+        username = username.lower()
         password = form.password.data
         remember_me = form.remember_me.data
         user = login(username, password)
@@ -37,7 +40,7 @@ def sign_in():
             flask_login.login_user(user, remember=remember_me)
             next_url = flask.request.args.get('next', flask.url_for('.index'))
             index_url = flask.url_for('.index')
-            if not next_url.startswith('/') or not all(c in '/=?&_' or c.isalnum() for c in next_url):
+            if not next_url.startswith('/') or not all(c in '/=?&_.+-' or c.isalnum() for c in next_url):
                 next_url = index_url
             return flask.redirect(next_url)
         has_errors = True

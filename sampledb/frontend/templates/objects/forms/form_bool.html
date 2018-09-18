@@ -7,6 +7,7 @@
         <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
         <input type="checkbox" name="{{ id_prefix }}_value" {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data%}checked{% endif %}{% elif data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
     </label>
+    {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
     </div>
   </div>
 </div>

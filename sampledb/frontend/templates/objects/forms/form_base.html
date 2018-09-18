@@ -4,6 +4,7 @@
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}" />
 {% endblock %}
 
 {% block scripts %}
@@ -11,6 +12,8 @@
   <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
 <script type="text/javascript">
     $(function () {
         $('.input-group.date').each(function() {
@@ -20,5 +23,44 @@
           });
         });
     });
+
+  var tags = new Bloodhound({
+    initialize: true,
+    local: {{ tags | tojson }},
+    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
+    queryTokenizer: Bloodhound.tokenizers.whitespace
+  });
+  $('input[name^=\'object__\'][name$=\'__tags\']').each(function() {
+    var tagsinput = $(this);
+    tagsinput.tagsinput({
+      trimValue: true,
+      typeaheadjs: {
+        name: 'Tags',
+        valueKey: 'name',
+        displayKey: 'name',
+        source: tags.ttAdapter(),
+        templates: {
+          'suggestion': function(item) {return '<div>' + item.name + ' (×' + item.uses + ')' + '</div>'}
+        }
+      }
+    });
+    tagsinput.on('beforeItemAdd', function(event) {
+      if (event.item.toLowerCase() !== event.item) {
+        if (!event.options || !event.options.fromHandler) {
+          event.cancel = true;
+          $(this).tagsinput('add', event.item.toLowerCase(), {fromHandler: true});
+        }
+      }
+    });
+    $(tagsinput.tagsinput('input')).on('blur', function() {
+      var item = $(this).tagsinput('input').val();
+      $(this).tagsinput('input').val('');
+      item = item.trim();
+      if (item) {
+        $(this).tagsinput('add', item);
+      }
+    }.bind(tagsinput));
+  });
+
 </script>
 {% endblock %}
