@@ -11,6 +11,7 @@ left operand's magnitude in base units.
 """
 
 import operator
+import json
 import sqlalchemy as db
 from . import datatypes
 
@@ -166,4 +167,12 @@ def sample_equals(db_obj, object_id):
     return db.and_(
         db_obj['_type'].astext == 'sample',
         db_obj['object_id'].astext.cast(db.Integer) == object_id
+    )
+
+
+def tags_contain(db_obj, tag):
+    tag = tag.strip().lower()
+    return db.and_(
+        db_obj['_type'].astext == 'tags',
+        db_obj['tags'].contains(json.dumps(tag))
     )

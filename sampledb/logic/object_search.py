@@ -3,7 +3,6 @@
 import json
 import typing
 import datetime
-from sqlalchemy import String, and_, or_
 from sqlalchemy import String, Float, and_, or_
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.elements import BinaryExpression
@@ -69,6 +68,9 @@ def unary_transformation(data: Column, operand: str, search_notes: typing.List[t
 
     if operand.lower() == 'false':
         return datatypes.Boolean(False), None
+
+    if operand.startswith('#'):
+        return where_filters.tags_contain(data[('keywords',)], operand[1:]), None
 
     # Try parsing cond as attribute
     attributes = operand.split('.')
@@ -284,7 +286,13 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                 """ Filter objects based on search query string """
                 query_string = node.replace(query_string)
                 binary_tree = node.parsing_in_tree(query_string)
-                return transform_tree(data, binary_tree, unary_transformation, binary_transformation, search_notes)[0]
+                filter_func, outer_filter = transform_tree(data, binary_tree, unary_transformation, binary_transformation, search_notes)
+                if outer_filter:
+                    filter_func = outer_filter(filter_func)
+                # check bool if filter_func is only an attribute
+                if isinstance(filter_func, BinaryExpression):
+                    filter_func = where_filters.boolean_true(filter_func)
+                return filter_func
         else:
             # Simple search in values
             def filter_func(data, search_notes, query_string=query_string):

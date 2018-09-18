@@ -79,6 +79,10 @@ def setup_data(app):
             "_type": "text",
             "text": "TEST-1"
         },
+        "keywords": {
+            "_type": "tags",
+            "tags": ["tag1", "tag2"]
+        },
         "mass": {
             "_type": "quantity",
             "dimensionality": "[mass]",
@@ -93,6 +97,10 @@ def setup_data(app):
         "name": {
             "_type": "text",
             "text": "TEST-2"
+        },
+        "keywords": {
+            "_type": "tags",
+            "tags": ["tag2", "tag3"]
         },
         "mass": {
             "_type": "quantity",
