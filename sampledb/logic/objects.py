@@ -18,7 +18,7 @@ from . import object_log, user_log, permissions, errors, users, actions, tags
 import sqlalchemy.exc
 
 
-def create_object(action_id: int, data: dict, user_id: int) -> Object:
+def create_object(action_id: int, data: dict, user_id: int, previous_object_id: typing.Optional[int]=None, schema: typing.Optional[dict]=None) -> Object:
     """
     Creates an object using the given action and its schema. This function
     also handles logging, object references and default object permissions.
@@ -26,6 +26,8 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
     :param action_id: the ID of an existing action
     :param data: the object's data, which must fit to the action's schema
     :param user_id: the ID of the user who created the object
+    :param previous_object_id: the ID of the base object
+    :param schema: the object schema used for validation. If schema is None the action schema is used
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -35,10 +37,10 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
     actions.get_action(action_id)
     users.get_user(user_id)
     try:
-        object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
+        object = Objects.create_object(data=data, schema=schema, user_id=user_id, action_id=action_id)
     except sqlalchemy.exc.IntegrityError:
         raise
-    object_log.create_object(object_id=object.object_id, user_id=user_id)
+    object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
     permissions.set_initial_permissions(object)

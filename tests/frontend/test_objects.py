@@ -1046,3 +1046,49 @@ def test_edit_object_similar_property_names(flask_server, user):
             "text": "Test-2"
         }
     }
+
+
+def test_copy_object(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    name = 'Example1'
+    object = sampledb.logic.objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            user_id=user.id,
+            action_id=action.id
+        )
+    schema["properties"]["name"]["type"] = "bool"
+    sampledb.logic.actions.update_action(action.id, 'New Example Action', '', schema)
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/new', params={'previous_object_id': object.id})
+    assert r.status_code == 200
+    assert len(sampledb.logic.objects.get_objects()) == 1
+    with flask_server.app.app_context():
+        assert len(sampledb.logic.user_log.get_user_log_entries(user.id)) == 1
+    document = BeautifulSoup(r.content, 'html.parser')
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    object_name = document.find('input', {'name': 'object__name__text'})['value']
+    assert object_name == name
+    form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object__name__text': name}
+    r = session.post(flask_server.base_url + 'objects/new', params={'action_id': object.action_id, 'previous_object_id': object.id}, data=form_data)
+    assert r.status_code == 200
+    assert len(sampledb.logic.objects.get_objects()) == 2
+    new_object = sampledb.logic.objects.get_objects()[1]
+    assert object.data["name"]["text"] == name
+    with flask_server.app.app_context():
+        user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
+        assert len(user_log_entries) == 2
+        assert user_log_entries[0].type == sampledb.models.UserLogEntryType.CREATE_OBJECT
+        assert user_log_entries[0].user_id == user.id
+        assert user_log_entries[0].data == {
+            'object_id': new_object.object_id
+        }
+        object_log_entries = sampledb.logic.object_log.get_object_log_entries(new_object.object_id)
+        assert len(object_log_entries) == 1
+        assert object_log_entries[0].type == sampledb.models.ObjectLogEntryType.CREATE_OBJECT
+        assert object_log_entries[0].user_id == user.id
+        assert object_log_entries[0].object_id == new_object.object_id
+        assert object_log_entries[0].data == {
+            'previous_object_id': object.id
+        }
