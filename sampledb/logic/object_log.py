@@ -51,13 +51,15 @@ def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int,
     db.session.commit()
 
 
-def create_object(user_id: int, object_id: int):
+def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int]=None):
+    data = {}
+    if previous_object_id:
+        data['previous_object_id'] = previous_object_id
     _store_new_log_entry(
         type=ObjectLogEntryType.CREATE_OBJECT,
         object_id=object_id,
         user_id=user_id,
-        data={
-        }
+        data=data
     )
 
 

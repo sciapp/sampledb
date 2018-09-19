@@ -43,6 +43,11 @@
       </div>
     </div>
     {% endif %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary pull-right" style="width:10em">Use as Template</a>
+      </div>
+    </div>
   {% endif %}
     {% if restore_form is not none %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
@@ -373,7 +378,7 @@
           <td style="white-space: nowrap;width: 1%;">{{ object_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
           {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
             <td>
-              <a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> created the object.
+              <a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> created the object{% if 'previous_object_id' in object_log_entry.data %} using data from <a href="{{ url_for('.object', object_id=object_log_entry.data['previous_object_id']) }}"> Object {{ object_log_entry.data['previous_object_id'] }}</a>{% endif %}.
             </td>
             <td class="text-right">
               <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">View</a>
