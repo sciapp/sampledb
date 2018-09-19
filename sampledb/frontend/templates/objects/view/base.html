@@ -176,7 +176,7 @@
               <div class="col-sm-9"><a role="button" data-toggle="collapse" href="#fileInfoModalCollapse-{{ file.id }}" aria-expanded="false" aria-controls="fileInfoModalCollapse-{{ file.id }}">Show/Hide</a></div>
             </div>
             <div class="collapse" id="fileInfoModalCollapse-{{ file.id }}">
-              <table class="table" id="activity_log">
+              <table class="table">
                 <thead>
                   <tr>
                     <th scope="col" style="white-space: nowrap;width: 1%;">Datetime</th>
@@ -362,6 +362,7 @@
               <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;versions&quot;);'/> Versions</label><br />
               <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> Measurements</label><br />
               <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> Comments</label><br />
+              <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> Files</label><br />
               <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> Other</label>
               <script>
                 window.update_activity_log_filter_states();
@@ -489,10 +490,11 @@
       });
       {% if object_log_entries %}
         var activity_log_filter_type_list = {
-          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
+          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
           "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
           "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
-          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}']
+          "files": ['{{ ObjectLogEntryType.UPLOAD_FILE.name.lower() }}'],
+          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}']
         };
         window.activity_log_toggle = function(should_show, category) {
           var type_list = activity_log_filter_type_list[category];
@@ -516,6 +518,7 @@
             "versions": true,
             "measurements": true,
             "comments": true,
+            "files": true,
             "other": true
           };
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
@@ -523,6 +526,7 @@
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
         window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
+        window.activity_log_toggle(activity_log_filter_state['files'], "files");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
         window.update_activity_log_filter_states = function() {
           if (window.activity_log_toggle.current_state['versions']) {
@@ -533,6 +537,9 @@
           }
           if (window.activity_log_toggle.current_state['comments']) {
             $('#activity_log_filter_comments').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['files']) {
+            $('#activity_log_filter_files').attr('checked', 'checked');
           }
           if (window.activity_log_toggle.current_state['other']) {
             $('#activity_log_filter_other').attr('checked', 'checked');
