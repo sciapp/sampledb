@@ -602,6 +602,8 @@ def new_object():
         except ActionDoesNotExistError:
             return flask.abort(404)
     if previous_object_id:
+        if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
+            return flask.abort(404)
         try:
             previous_object = get_object(previous_object_id)
         except ObjectDoesNotExistError:
