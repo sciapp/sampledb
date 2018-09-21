@@ -40,7 +40,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.new_object', action_id=5))
+        return flask.redirect(flask.url_for('frontend.object', object_id=1, mode='upgrade'))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -61,6 +61,10 @@ def setup_data(app):
     create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+
+    with open('server_schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    sampledb.logic.actions.update_action(instrument_action.id, "Updated Sample Creation", "", schema)
 
     permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
 

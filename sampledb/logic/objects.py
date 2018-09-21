@@ -88,7 +88,7 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
     return objects
 
 
-def update_object(object_id: int, data: dict, user_id: int) -> None:
+def update_object(object_id: int, data: dict, user_id: int, schema: dict=None) -> None:
     """
     Updates the object to a new version. This function also handles logging
     and object references.
@@ -96,12 +96,13 @@ def update_object(object_id: int, data: dict, user_id: int) -> None:
     :param object_id: the ID of the existing object
     :param data: the object's new data, which must fit to the object's schema
     :param user_id: the ID of the user who updated the object
+    :param schema: the schema for the new object data
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = Objects.update_object(object_id=object_id, data=data, schema=None, user_id=user_id)
+    object = Objects.update_object(object_id=object_id, data=data, schema=schema, user_id=user_id)
     if object is None:
         raise errors.ObjectDoesNotExistError()
     user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
