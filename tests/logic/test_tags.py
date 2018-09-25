@@ -37,8 +37,8 @@ def action():
                     'title': 'Object Name',
                     'type': 'text'
                 },
-                'keywords': {
-                    'title': 'Keywords',
+                'tags': {
+                    'title': 'Tags',
                     'type': 'tags'
                 }
             },
@@ -54,7 +54,7 @@ def test_create_object_with_tags(user, action) -> None:
             '_type': 'text',
             'text': 'Example'
         },
-        'keywords': {
+        'tags': {
             '_type': 'tags',
             'tags': ['Tag1', 'Tag2', 'Tag3']
         }
@@ -73,13 +73,13 @@ def test_edit_object_with_tags(user, action) -> None:
             '_type': 'text',
             'text': 'Example'
         },
-        'keywords': {
+        'tags': {
             '_type': 'tags',
             'tags': ['Tag1', 'Tag2', 'Tag3']
         }
     }
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
-    data['keywords']['tags'] = ['Tag2', 'Tag4']
+    data['tags']['tags'] = ['Tag2', 'Tag4']
     sampledb.logic.objects.update_object(object_id=object.object_id, data=data, user_id=user.id)
     tags = sampledb.logic.tags.get_tags()
     assert len(tags) == 2
@@ -93,13 +93,13 @@ def test_create_multiple_objects_with_tags(user, action) -> None:
             '_type': 'text',
             'text': 'Example'
         },
-        'keywords': {
+        'tags': {
             '_type': 'tags',
             'tags': ['Tag1', 'Tag2', 'Tag3']
         }
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
-    data['keywords']['tags'] = ['Tag2', 'Tag4']
+    data['tags']['tags'] = ['Tag2', 'Tag4']
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     tags = sampledb.logic.tags.get_tags()
     assert {tag.name: tag.uses for tag in tags} == {'Tag1': 1, 'Tag2': 2, 'Tag3': 1, 'Tag4': 1}

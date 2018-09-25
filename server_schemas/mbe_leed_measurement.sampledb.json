@@ -18,6 +18,10 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
+    "tags": {
+      "title": "Tags",
+      "type": "tags"
+    },
     "electronEnergy": {
       "title": "Electron Energy",
       "type": "quantity",
@@ -45,10 +49,11 @@
       "multiline": true
     }
   },
-  "propertyOrder": ["name", "sample", "created", "electronEnergy", "wehneltVoltage", "suppressorVoltage", "filamentCurrent", "comment"],
+  "propertyOrder": ["name", "sample", "created", "tags", "electronEnergy", "wehneltVoltage", "suppressorVoltage", "filamentCurrent", "comment"],
   "required": ["name", "sample", "created", "electronEnergy", "wehneltVoltage", "suppressorVoltage", "filamentCurrent"],
   "displayProperties": [
     "sample",
+    "tags",
     "electronEnergy",
     "wehneltVoltage",
     "suppressorVoltage",

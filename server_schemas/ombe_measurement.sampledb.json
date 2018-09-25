@@ -18,6 +18,10 @@
       "title": "Previous Sample",
       "type": "sample"
     },
+    "tags": {
+      "title": "Tags",
+      "type": "tags"
+    },
     "substrate": {
       "title": "Substrate",
       "type": "text",
@@ -278,6 +282,7 @@
     "sample",
     "name",
     "created",
+    "tags",
     "substrate",
     "substratePreparation",
     "multilayer",
@@ -290,6 +295,7 @@
     "multilayer"
   ],
   "displayProperties": [
+    "tags",
     "substrate"
   ]
 }

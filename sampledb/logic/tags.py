@@ -29,10 +29,10 @@ class Tag(collections.namedtuple('Tag', ['id', 'name', 'uses'])):
 
 
 def get_object_tags(object: objects.Object) -> typing.Sequence[str]:
-    if 'keywords' in object.data:
-        keywords_entry = object.data['keywords']
-        if keywords_entry['_type'] == 'tags' and 'tags' in keywords_entry:
-            return [tag.strip() for tag in keywords_entry["tags"]]
+    if 'tags' in object.data:
+        tags_entry = object.data['tags']
+        if tags_entry['_type'] == 'tags' and 'tags' in tags_entry:
+            return [tag.strip() for tag in tags_entry["tags"]]
     return ()
 
 
