@@ -18,8 +18,8 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
-    "keywords": {
-      "title": "Keywords",
+    "tags": {
+      "title": "Tags",
       "type": "tags"
     },
     "description": {
@@ -29,9 +29,9 @@
       "multiline": true
     }
   },
-  "propertyOrder": ["sample", "name", "created", "keywords", "description"],
+  "propertyOrder": ["sample", "name", "created", "tags", "description"],
   "required": ["name", "created"],
   "displayProperties": [
-    "keywords"
+    "tags"
   ]
 }

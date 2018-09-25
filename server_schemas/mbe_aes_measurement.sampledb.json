@@ -18,6 +18,10 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
+    "tags": {
+      "title": "Tags",
+      "type": "tags"
+    },
     "electronEnergy": {
       "title": "Electron Energy",
       "type": "quantity",
@@ -50,10 +54,11 @@
       "multiline": true
     }
   },
-  "propertyOrder": ["name", "sample", "created", "electronEnergy", "filamentCurrent", "effusionCurrent", "minMeasurementRange", "maxMeasurementRange", "comment"],
+  "propertyOrder": ["name", "sample", "created", "tags", "electronEnergy", "filamentCurrent", "effusionCurrent", "minMeasurementRange", "maxMeasurementRange", "comment"],
   "required": ["name", "sample", "created", "electronEnergy", "filamentCurrent", "effusionCurrent"],
   "displayProperties": [
     "sample",
+    "tags",
     "electronEnergy",
     "filamentCurrent",
     "effusionCurrent"
