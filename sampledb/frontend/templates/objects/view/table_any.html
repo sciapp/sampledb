@@ -2,6 +2,8 @@
   {% include "objects/view/table_text.html" %}
 {% elif schema['type'] == 'datetime' %}
   {% include "objects/view/table_datetime.html" %}
+{% elif schema['type'] == 'tags' %}
+  {% include "objects/view/table_tags.html" %}
 {% elif schema['type'] == 'quantity' %}
   {% include "objects/view/table_quantity.html" %}
 {% elif schema['type'] == 'sample' %}
