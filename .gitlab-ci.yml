@@ -1,5 +1,3 @@
-image: ubuntu:17.10
-
 stages:
   - test
   - deploy
@@ -11,46 +9,37 @@ variables:
   POSTGRES_PASSWORD: ""
   SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres:5432/postgres"
 
-before_script:
-  # update package repository
-  - apt-get update
-
 test:
   stage: test
-
+  image: ubuntu:18.04
   services:
     - postgres:latest
-
   script:
+    - apt-get update
     # set up Python 3.6
-    - apt-get install -y curl python3.6
-    - curl -sLO https://bootstrap.pypa.io/get-pip.py
-    - python3.6 get-pip.py
-    - rm get-pip.py
-
+    - apt-get install -y curl python3-pip
     # install dependencies
-    - python3.6 -m pip install -r requirements.txt
-
+    - python3 -m pip install -r requirements.txt
     # run tests and gather coverage data
-    - python3.6 -m pytest -s --cov=sampledb/ tests
+    - python3 -m pytest -s --cov=sampledb/ --junitxml=pytest.xml tests
+  artifacts:
+    reports:
+      junit: pytest.xml
 
 deploy:
   stage: deploy
-
+  image: ubuntu:18.04
   environment: staging
-
   only:
     - master@Scientific-IT-Systems/SampleDB
-
   script:
+    - apt-get update
     - apt-get install -y ssh
-
     # Set up SSH for access to deployment server
     - mkdir -p --mode=700 ~/.ssh/
     - echo "$DEPLOYMENT_PRIVATE_KEY" > ~/.ssh/deployment_key
     - chmod 400 ~/.ssh/deployment_key
     - echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts
     - chmod 400 ~/.ssh/known_hosts
-
     # actual deployment is handled via authorized_keys command
     - ssh -i ~/.ssh/deployment_key administrator@docker.iff.kfa-juelich.de "$CI_COMMIT_SHA"
