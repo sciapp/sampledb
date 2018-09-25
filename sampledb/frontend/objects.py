@@ -252,18 +252,36 @@ def apply_action_to_data(action, data, schema):
                         del row[-1]
 
 
-def show_object_form(object, action):
-    if object is None:
+def show_object_form(object, action, previous_object=None, should_upgrade_schema=False):
+    if object is None and previous_object is None:
         data = generate_placeholder(action.schema)
+    elif object is None and previous_object is not None:
+        data = previous_object.data
     else:
         data = object.data
-    # TODO: update schema
-    # schema = get_action(object.action_id).schema
-    if object is not None:
+    previous_object_schema = None
+    mode = 'edit'
+    if should_upgrade_schema:
+        mode = 'upgrade'
+        assert object is not None
+        schema = action.schema
+        data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, object.schema, action.schema)
+        for upgrade_warning in upgrade_warnings:
+            flask.flash(upgrade_warning, 'warning')
+    elif object is not None:
         schema = object.schema
+    elif previous_object is not None:
+        schema = previous_object.schema
+        previous_object_schema = schema
     else:
         schema = action.schema
-    action_id = action.id
+
+    if previous_object is not None:
+        action_id = previous_object.action_id
+        previous_object_id = previous_object.id
+    else:
+        action_id = action.id
+        previous_object_id = None
     errors = []
     form_data = {}
     previous_actions = []
@@ -346,10 +364,10 @@ def show_object_form(object, action):
                         flask.flash('The objects were created successfully.', 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
-                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id)
+                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema)
                         flask.flash('The object was created successfully.', 'success')
                 else:
-                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data)
+                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
                     flask.flash('The object was updated successfully.', 'success')
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
         elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
@@ -373,9 +391,9 @@ def show_object_form(object, action):
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, previous_object_id=previous_object_id)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags)
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, mode=mode)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -386,16 +404,22 @@ def object(object_id):
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
     user_may_grant = Permissions.GRANT in user_permissions
+    action = get_action(object.action_id)
+    if action.schema != object.schema:
+        new_schema_available = True
+    else:
+        new_schema_available = False
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         return flask.abort(403)
-    if flask.request.method == 'GET' and flask.request.args.get('mode', '') != 'edit':
+    if not user_may_edit and flask.request.args.get('mode', '') == 'upgrade':
+        return flask.abort(403)
+    if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
         # TODO: make this search more narrow
         samples = get_objects_with_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
             action_type=ActionType.SAMPLE_CREATION
         )
-        action = get_action(object.action_id)
         instrument = action.instrument
         object_type = {
             ActionType.SAMPLE_CREATION: "Sample",
@@ -445,10 +469,14 @@ def object(object_id):
             samples=samples,
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),
-            file_hiding_form=FileHidingForm()
+            file_hiding_form=FileHidingForm(),
+            new_schema_available=new_schema_available
         )
-
-    return show_object_form(object, action=get_action(object.action_id))
+    if flask.request.args.get('mode', '') == 'upgrade':
+        should_upgrade_schema = True
+    else:
+        should_upgrade_schema = False
+    return show_object_form(object, action=get_action(object.action_id), should_upgrade_schema=should_upgrade_schema)
 
 
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
@@ -597,16 +625,28 @@ def post_object_files(object_id):
 @flask_login.login_required
 def new_object():
     action_id = flask.request.args.get('action_id', None)
-    if action_id is None or action_id == '':
+    previous_object_id = flask.request.args.get('previous_object_id', None)
+    if not action_id and not previous_object_id:
         # TODO: handle error
         return flask.abort(404)
-    try:
-        action = get_action(action_id)
-    except ActionDoesNotExistError:
-        return flask.abort(404)
+
+    previous_object = None
+    action = None
+    if action_id:
+        try:
+            action = get_action(action_id)
+        except ActionDoesNotExistError:
+            return flask.abort(404)
+    if previous_object_id:
+        if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
+            return flask.abort(404)
+        try:
+            previous_object = get_object(previous_object_id)
+        except ObjectDoesNotExistError:
+            return flask.abort(404)
 
     # TODO: check instrument permissions
-    return show_object_form(None, action)
+    return show_object_form(None, action, previous_object)
 
 
 @frontend.route('/objects/<int:object_id>/versions/')
