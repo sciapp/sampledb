@@ -25,7 +25,7 @@ from ..logic.permissions import Permissions, get_user_object_permissions, object
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users
 from ..logic.schemas import validate, generate_placeholder
-from ..logic.object_search import generate_filter_func
+from ..logic.object_search import generate_filter_func, wrap_filter_func
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
@@ -112,8 +112,7 @@ def objects():
                     return False
             else:
                 raise
-        search_notes = []
-        filter_func = lambda data, search_notes=search_notes, filter_func_impl=filter_func: filter_func_impl(data, search_notes)
+        filter_func, search_notes = wrap_filter_func(filter_func)
         objects = get_objects_with_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,

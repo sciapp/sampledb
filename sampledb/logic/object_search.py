@@ -70,7 +70,7 @@ def unary_transformation(data: Column, operand: str, search_notes: typing.List[t
         return datatypes.Boolean(False), None
 
     if operand.startswith('#'):
-        return where_filters.tags_contain(data[('keywords',)], operand[1:]), None
+        return where_filters.tags_contain(data[('tags',)], operand[1:]), None
 
     # Try parsing cond as attribute
     attributes = operand.split('.')
@@ -305,3 +305,15 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
             """ Return all objects"""
             return True
     return filter_func
+
+
+def wrap_filter_func(filter_func):
+    """
+    Wrap a filter function so that a new list will be filled with the search notes.
+
+    :param filter_func: the filter function to wrap
+    :return: the wrapped filter function and the search notes list
+    """
+    search_notes = []
+    wrapped_filter_func = lambda *args, search_notes=search_notes, filter_func_impl=filter_func, **kwargs: filter_func_impl(*args, search_notes=search_notes, **kwargs)
+    return wrapped_filter_func, search_notes
