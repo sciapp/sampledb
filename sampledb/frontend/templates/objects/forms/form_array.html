@@ -7,7 +7,11 @@
 <div style="padding-left:2.5em;">
 {% set minItems = schema.get('minItems', 0) %}
 {% set maxItems = schema.get('maxItems', None) %}
+{% if data is not none %}
 {% set numItems = (data | length) %}
+{% else %}
+{% set numItems = 0 %}
+{% endif %}
 {% if schema.style == "table" %}
   {% if schema['items']['type'] == 'object' %}
   <table class="table">

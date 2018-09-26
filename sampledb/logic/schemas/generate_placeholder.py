@@ -37,6 +37,8 @@ def generate_placeholder(schema: dict, path: typing.Union[None, typing.List[str]
         return _generate_quantity_placeholder(schema, path)
     elif schema['type'] == 'sample':
         return _generate_sample_placeholder(schema, path)
+    elif schema['type'] == 'tags':
+        return _generate_tags_placeholder(schema, path)
     else:
         raise SchemaError('invalid type', path)
 
@@ -59,6 +61,25 @@ def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
         generate_placeholder(item_schema, path + ['[?]'])
         for _ in range(min_items)
     ]
+
+
+def _generate_tags_placeholder(schema: dict, path: typing.List[str]) -> dict:
+    """
+    Generates a placeholder tags object based on an object schema.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :return: the generated object
+    """
+    if 'default' in schema:
+        return {
+            '_type': 'tags',
+            'tags': schema['default']
+        }
+    return {
+        '_type': 'tags',
+        'tags': []
+    }
 
 
 def _generate_object_placeholder(schema: dict, path: typing.List[str]) -> dict:

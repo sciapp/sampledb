@@ -9,6 +9,36 @@
 <div class="container">
   <h3>Project #{{ project.id }}: {{ project.name }}</h3>
   <p>{{ project.description }}</p>
+  {% if parent_project_ids %}
+    This project is a part of
+      {% if parent_project_ids | length > 2 %}
+      {% for project_id in parent_project_ids[:-2] %}
+        {% with project = get_project(project_id) %}
+          <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>,
+        {% endwith %}
+      {% endfor %}
+      {% endif %}
+      {% if parent_project_ids | length > 1 %}
+      {% with project = get_project(parent_project_ids[-2]) %}
+        <a href="{{ url_for('.project', project_id=parent_project_ids[-2]) }}">{{ project.name }}</a> and
+      {% endwith %}
+      {% endif %}
+      {% if parent_project_ids | length > 0 %}
+      {% with project = get_project(parent_project_ids[-1]) %}
+        <a href="{{ url_for('.project', project_id=parent_project_ids[-1]) }}">{{ project.name }}</a>.
+      {% endwith %}
+      {% endif %}
+  {% endif %}
+  {% if child_project_ids %}
+    <h4>Subprojects</h4>
+    <ul>
+      {% for project_id in child_project_ids %}
+        {% with project = get_project(project_id) %}
+          <li><a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>{% if child_project_ids_can_add_to_parent.get(project_id, False) %} <span class="label label-default"><span data-toggle="tooltip" data-placement="bottom" title="Users of this subproject may invite other users to its parent project.">GRANT <i class="fa fa-question-circle" aria-hidden="true"></i></span></span>{% endif %}</li>
+        {% endwith %}
+      {% endfor %}
+    </ul>
+  {% endif %}
   <h4>Members</h4>
   <ul>
     {% for user_id in project_member_user_ids_and_permissions %}
@@ -27,6 +57,12 @@
   {% endif %}
   {% if edit_project_form %}
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProjectModal">Edit Project</button>
+  {% endif %}
+  {% if add_subproject_form %}
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSubprojectModal">Add Subproject</button>
+  {% endif %}
+  {% if remove_subproject_form %}
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#removeSubprojectModal">Remove Subproject</button>
   {% endif %}
   {% if invite_user_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Add User</button>
@@ -98,6 +134,22 @@
                 </select>
               </div>
             </div>
+            {% if invite_user_form.other_project_ids %}
+            <strong>Add user to parent projects:</strong>
+            {% endif %}
+            {% for other_project_id_form in invite_user_form.other_project_ids %}
+              {% set parent_project = get_project(other_project_id_form.project_id.data | int) %}
+              <div class="row">
+              <div class="col-sm-2">
+                <div class="checkbox text-right">
+                  <input type="checkbox" name="{{ other_project_id_form.add_user.name }}" id="{{ other_project_id_form.add_user.id }}" />
+                </div>
+              </div>
+              {{ other_project_id_form.csrf_token() }}
+              <input type="hidden" name="{{ other_project_id_form.project_id.name }}" value="{{ parent_project.id }}" />
+              <label for="{{ other_project_id_form.add_user.id }}" class="col-sm-10 control-label" style="text-align: left">{{ parent_project.name }} (#{{ parent_project.id }})</label>
+            </div>
+            {% endfor %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -134,6 +186,78 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-primary" name="add_group" value="add_group">Add Group</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if add_subproject_form %}
+  <div class="modal fade" id="addSubprojectModal" tabindex="-1" role="dialog" aria-labelledby="addSubprojectModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="addSubprojectModalLabel">Add Subproject</h4>
+        </div>
+        <form method="post" action="{{ url_for('.project', project_id=project.id) }}" class="form-horizontal" id="addSubprojectForm">
+          {{ add_subproject_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="addSubprojectId" class="col-sm-2 control-label">Project</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" name="{{ add_subproject_form.child_project_id.name }}" id="addSubprojectId" data-width="100%">
+                {% for project in addable_projects %}
+                    <option value="{{ project.id }}" {% if add_subproject_form.child_project_id.data == project.id %}selected="selected"{% endif %}>{{ project.name }} (#{{ project.id }})</option>
+                {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="childCanAddUsersToParentId" class="col-sm-11 control-label">Subproject may add users to this project</label>
+              <div class="col-sm-1 checkbox">
+                <input type="checkbox" name="{{ add_subproject_form.child_can_add_users_to_parent.name }}" id="childCanAddUsersToParentId" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" name="add_subproject" value="add_subproject">Add Subproject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if remove_subproject_form %}
+  <div class="modal fade" id="removeSubprojectModal" tabindex="-1" role="dialog" aria-labelledby="removeSubprojectModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="removeSubprojectModalLabel">Remove Subproject</h4>
+        </div>
+        <form method="post" action="{{ url_for('.project', project_id=project.id) }}" class="form-horizontal" id="removeSubprojectForm">
+          {{ remove_subproject_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="addSubprojectId" class="col-sm-2 control-label">Project</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" name="{{ remove_subproject_form.child_project_id.name }}" id="removeSubprojectId" data-width="100%">
+                {% for project_id in child_project_ids %}
+                  {% with project = get_project(project_id) %}
+                    <option value="{{ project_id }}" {% if remove_subproject_form.child_project_id.data == project_id %}selected="selected"{% endif %}>{{ project.name }} (#{{ project.id }})</option>
+                  {% endwith %}
+                {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" name="remove_subproject" value="remove_subproject">Remove Subproject</button>
           </div>
         </form>
       </div>

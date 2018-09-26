@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectField, FieldList, FormField
+from wtforms import StringField, IntegerField, SelectField, FieldList, FormField, BooleanField
 from wtforms.validators import Length, InputRequired
 
 from ..logic.permissions import Permissions
@@ -24,8 +24,16 @@ class LeaveProjectForm(FlaskForm):
     pass
 
 
+class OtherProjectIdForm(FlaskForm):
+    project_id = IntegerField(
+        validators=[InputRequired()]
+    )
+    add_user = BooleanField(default=False)
+
+
 class InviteUserToProjectForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
+    other_project_ids = FieldList(FormField(OtherProjectIdForm), min_entries=0)
 
 
 class InviteGroupToProjectForm(FlaskForm):
@@ -55,3 +63,12 @@ class ProjectGroupPermissionsForm(FlaskForm):
 class ProjectPermissionsForm(FlaskForm):
     user_permissions = FieldList(FormField(ProjectUserPermissionsForm), min_entries=0)
     group_permissions = FieldList(FormField(ProjectGroupPermissionsForm), min_entries=0)
+
+
+class AddSubprojectForm(FlaskForm):
+    child_project_id = IntegerField(validators=[InputRequired()])
+    child_can_add_users_to_parent = BooleanField(default=False)
+
+
+class RemoveSubprojectForm(FlaskForm):
+    child_project_id = IntegerField(validators=[InputRequired()])

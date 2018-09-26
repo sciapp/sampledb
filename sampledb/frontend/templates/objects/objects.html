@@ -1,6 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
+  {% if search_notes is defined %}
+  {% for category, note in search_notes %}
+    {% if category == "error" %}
+      {% set alert_class="alert-danger" %}
+    {% elif category == "warning" %}
+      {% set alert_class="alert-warning" %}
+    {% else %}
+      {% set alert_class="alert-info" %}
+    {% endif %}
+    <div class="alert {{ alert_class }} alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      {% if category == "error" %}
+        <strong>Error:</strong>
+      {% elif category == "warning" %}
+        <strong>Warning:</strong>
+      {% else %}
+        <strong>Note:</strong>
+      {% endif %}
+      {{ note }}
+    </div>
+  {% endfor %}
+  {% endif %}
+
   {% if project_id %}
     {% set object_suffix = " for <a href=\"{}\">Project #{}: {}</a>".format(url_for('.project', project_id=project_id), project_id, project.name | e) | safe %}
   {% elif action_id %}

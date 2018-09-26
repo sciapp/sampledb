@@ -1,0 +1,8 @@
+<div class="row" style="padding-right:0.75em">
+  <label class="col-md-3" style="text-align: right">{{ schema.title }}</label>
+  <div class="col-md-9">
+    {% for tag in data.tags %}
+    <a href="{{ url_for('.objects', q='#'+tag, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>
+    {% endfor %}
+  </div>
+</div>

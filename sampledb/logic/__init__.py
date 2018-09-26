@@ -19,6 +19,7 @@ from . import permissions
 from . import projects
 from . import schemas
 from . import security_tokens
+from . import tags
 from . import units
 from . import users
 from . import user_log

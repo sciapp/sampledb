@@ -20,7 +20,7 @@ class AuthenticationMethodAlreadyExists(Exception):
 
 
 def validate_user_db(login, password):
-    authentication_methods = Authentication.query.filter(Authentication.login['login'].astext == login).all()
+    authentication_methods = Authentication.query.filter(Authentication.login['login'].astext == login.lower()).all()
     for authentication_method in authentication_methods:
         if authentication_method.confirmed:
             if bcrypt.checkpw(password.encode('utf-8'), authentication_method.login['bcrypt_hash'].encode('utf-8')):
@@ -34,7 +34,7 @@ def insert_user_and_authentication_method_to_db(user, password, login, user_type
     db.session.commit()
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     login_data = {
-        'login': login,
+        'login': login.lower(),
         'bcrypt_hash': pw_hash
     }
     add_authentication_to_db(login_data, user_type, True, user.id)
@@ -47,6 +47,8 @@ def add_authentication_to_db(log, user_type, confirmed, user_id):
 
 
 def login(login, password):
+    # convert to lower case to enforce case insensitivity
+    login = login.lower()
     # filter email + password or username + password or username (ldap)
     authentication_methods = Authentication.query.filter(
         db.or_(
@@ -90,6 +92,8 @@ def add_login(userid, login, password, authentication_method):
         return False
     if login is None or login == '':
         return False
+    # convert to lower case to enforce case insensitivity
+    login = login.lower()
     logins = Authentication.query.filter(Authentication.login['login'].astext == login,
                                          Authentication.user_id == userid).first()
     ldaplogin = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP,

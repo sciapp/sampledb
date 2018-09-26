@@ -14,11 +14,11 @@ the functions in this module should be called from within a Flask app context.
 
 import typing
 from ..models import Objects, Object, Action, ActionType
-from . import object_log, user_log, permissions, errors, users, actions
+from . import object_log, user_log, permissions, errors, users, actions, tags
 import sqlalchemy.exc
 
 
-def create_object(action_id: int, data: dict, user_id: int) -> Object:
+def create_object(action_id: int, data: dict, user_id: int, previous_object_id: typing.Optional[int]=None, schema: typing.Optional[dict]=None) -> Object:
     """
     Creates an object using the given action and its schema. This function
     also handles logging, object references and default object permissions.
@@ -26,6 +26,8 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
     :param action_id: the ID of an existing action
     :param data: the object's data, which must fit to the action's schema
     :param user_id: the ID of the user who created the object
+    :param previous_object_id: the ID of the base object
+    :param schema: the object schema used for validation. If schema is None the action schema is used
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -35,13 +37,14 @@ def create_object(action_id: int, data: dict, user_id: int) -> Object:
     actions.get_action(action_id)
     users.get_user(user_id)
     try:
-        object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
+        object = Objects.create_object(data=data, schema=schema, user_id=user_id, action_id=action_id)
     except sqlalchemy.exc.IntegrityError:
         raise
-    object_log.create_object(object_id=object.object_id, user_id=user_id)
+    object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
     permissions.set_initial_permissions(object)
+    tags.update_object_tag_usage(object)
     return object
 
 
@@ -81,10 +84,11 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
                 permissions.set_initial_permissions(object)
+                tags.update_object_tag_usage(object)
     return objects
 
 
-def update_object(object_id: int, data: dict, user_id: int) -> None:
+def update_object(object_id: int, data: dict, user_id: int, schema: dict=None) -> None:
     """
     Updates the object to a new version. This function also handles logging
     and object references.
@@ -92,17 +96,19 @@ def update_object(object_id: int, data: dict, user_id: int) -> None:
     :param object_id: the ID of the existing object
     :param data: the object's new data, which must fit to the object's schema
     :param user_id: the ID of the user who updated the object
+    :param schema: the schema for the new object data
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = Objects.update_object(object_id=object_id, data=data, schema=None, user_id=user_id)
+    object = Objects.update_object(object_id=object_id, data=data, schema=schema, user_id=user_id)
     if object is None:
         raise errors.ObjectDoesNotExistError()
     user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
     object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
     _update_object_references(object, user_id=user_id)
+    tags.update_object_tag_usage(object)
 
 
 def restore_object_version(object_id: int, version_id: int, user_id: int) -> None:
@@ -131,6 +137,7 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     )
     user_log.restore_object_version(user_id=user_id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
     object_log.restore_object_version(object_id=object_id, user_id=user_id, restored_version_id=version_id, version_id=object.version_id)
+    tags.update_object_tag_usage(object)
 
 
 def get_object(object_id: int, version_id: int=None) -> Object:

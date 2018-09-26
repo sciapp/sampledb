@@ -7,8 +7,21 @@ import pytest
 import sampledb
 import sampledb.logic
 import sampledb.models
+import requests
+from bs4 import BeautifulSoup
 
-from ..test_utils import app_context, app
+from ..test_utils import app_context, app, flask_server
+
+
+@pytest.fixture
+def user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        # force attribute refresh
+        assert user.id is not None
+    return user
 
 
 def test_create_group():
@@ -376,6 +389,31 @@ def test_invite_user_to_group(app):
         message = outbox[0].html
         assert 'Join group {}'.format(group.name) in message
         assert 'You have been invited to be a member of the group {}.'.format(group.name) in message
+
+
+def test_use_group_invitation_email(flask_server, app, user):
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(inviting_user)
+        sampledb.db.session.commit()
+        group_id = sampledb.logic.groups.create_group("Example Group", "", inviting_user.id).id
+        group = sampledb.models.groups.Group.query.get(group_id)
+
+        with sampledb.mail.record_messages() as outbox:
+            sampledb.logic.utils.send_confirm_email_to_invite_user_to_group(group.id, user.id)
+        message = outbox[0].html
+
+    app.config['SERVER_NAME'] = server_name
+    document = BeautifulSoup(message, 'html.parser')
+    invitation_link = document.find('a')
+    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
+    r = session.get(invitation_url)
+    assert r.status_code == 200
+    assert user.id in sampledb.logic.groups.get_group_member_ids(group_id=group.id)
 
 
 def test_add_user_to_group_that_does_not_exist():

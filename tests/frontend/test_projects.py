@@ -445,3 +445,185 @@ def test_update_group_project_permissions(flask_server, user_session, user):
     assert sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id) == {
         group_id: sampledb.logic.permissions.Permissions.WRITE
     }
+
+
+def test_add_subproject(flask_server, user_session):
+    parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
+    child_project_id = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
+
+    r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    add_subproject_form = document.find('form', id='addSubprojectForm')
+    add_subproject_dropdown = add_subproject_form.find('select')
+    assert add_subproject_dropdown.find('option', value=str(child_project_id)) is not None
+    csrf_token = add_subproject_form.find('input', {'name': 'csrf_token'})['value']
+    r = user_session.post(flask_server.base_url + 'projects/{}'.format(parent_project_id), data={
+        'add_subproject': 'add_subproject',
+        'csrf_token': csrf_token,
+        add_subproject_dropdown['name']: str(child_project_id)
+    })
+    assert r.status_code == 200
+
+    assert sampledb.logic.projects.get_child_project_ids(parent_project_id) == [child_project_id]
+
+
+def test_fail_add_subproject(flask_server, user_session):
+    parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
+    sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id)
+
+    r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    add_subproject_form = document.find('form', id='addSubprojectForm')
+    add_subproject_dropdown = add_subproject_form.find('select')
+    assert add_subproject_dropdown.find('option', value=str(parent_project_id)) is None
+    csrf_token = add_subproject_form.find('input', {'name': 'csrf_token'})['value']
+    r = user_session.post(flask_server.base_url + 'projects/{}'.format(parent_project_id), data={
+        'add_subproject': 'add_subproject',
+        'csrf_token': csrf_token,
+        add_subproject_dropdown['name']: str(parent_project_id)
+    })
+    assert r.status_code == 200
+    assert 'Project #{} cannot become a subproject of this project.'.format(int(parent_project_id)) in r.content.decode('utf-8')
+
+    assert sampledb.logic.projects.get_child_project_ids(parent_project_id) == []
+
+
+def test_remove_subproject(flask_server, user_session):
+    parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
+    child_project_id = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id, child_project_id)
+
+    r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    add_subproject_form = document.find('form', id='removeSubprojectForm')
+    remove_subproject_dropdown = add_subproject_form.find('select')
+    assert remove_subproject_dropdown.find('option', value=str(child_project_id)) is not None
+    csrf_token = add_subproject_form.find('input', {'name': 'csrf_token'})['value']
+    r = user_session.post(flask_server.base_url + 'projects/{}'.format(parent_project_id), data={
+        'remove_subproject': 'remove_subproject',
+        'csrf_token': csrf_token,
+        remove_subproject_dropdown['name']: str(child_project_id)
+    })
+    assert r.status_code == 200
+
+    assert sampledb.logic.projects.get_child_project_ids(parent_project_id) == []
+
+
+def test_fail_remove_subproject(flask_server, user_session):
+    parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
+    child_project_id = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
+    child_project_id2 = sampledb.logic.projects.create_project("Example Project 3", "", user_session.user_id).id
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id, child_project_id2)
+
+    r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    add_subproject_form = document.find('form', id='removeSubprojectForm')
+    remove_subproject_dropdown = add_subproject_form.find('select')
+    assert remove_subproject_dropdown.find('option', value=str(child_project_id)) is None
+    csrf_token = add_subproject_form.find('input', {'name': 'csrf_token'})['value']
+    r = user_session.post(flask_server.base_url + 'projects/{}'.format(parent_project_id), data={
+        'remove_subproject': 'remove_subproject',
+        'csrf_token': csrf_token,
+        remove_subproject_dropdown['name']: str(child_project_id)
+    })
+    assert r.status_code == 200
+    assert 'Project #{} is not a subproject of this project.'.format(int(child_project_id)) in r.content.decode('utf-8')
+
+    assert sampledb.logic.projects.get_child_project_ids(parent_project_id) == [child_project_id2]
+
+
+def test_view_subprojects(flask_server, user_session):
+    parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
+    child_project_id1 = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
+    sampledb.logic.projects.create_project("Example Project 3", "", user_session.user_id).id
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id, child_project_id1)
+    r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    for header in document.find_all('h4'):
+        if 'Subprojects' in header.text:
+            subprojects_header = header
+            break
+    else:
+        assert False
+    subprojects_list = subprojects_header.find_next_sibling('ul')
+    subprojects_items = subprojects_list.find_all('li')
+    assert len(subprojects_items) == 1
+    assert subprojects_items[0].find('a')['href'].endswith('projects/{}'.format(child_project_id1))
+
+
+def test_use_project_invitation_email(flask_server, app, user):
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(inviting_user)
+        sampledb.db.session.commit()
+        project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
+        project = sampledb.models.projects.Project.query.get(project_id)
+
+        with sampledb.mail.record_messages() as outbox:
+            sampledb.logic.utils.send_confirm_email_to_invite_user_to_project(project.id, user.id)
+        message = outbox[0].html
+
+    app.config['SERVER_NAME'] = server_name
+    document = BeautifulSoup(message, 'html.parser')
+    invitation_link = document.find('a')
+    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
+    r = session.get(invitation_url)
+    assert r.status_code == 200
+    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
+
+
+def test_use_project_and_parent_project_invitation_email(flask_server, app, user):
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(inviting_user)
+        sampledb.db.session.commit()
+        parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
+        project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
+        sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
+        project = sampledb.models.projects.Project.query.get(project_id)
+
+        with sampledb.mail.record_messages() as outbox:
+            sampledb.logic.utils.send_confirm_email_to_invite_user_to_project(project.id, user.id, other_project_ids=[parent_project_id])
+        message = outbox[0].html
+
+    app.config['SERVER_NAME'] = server_name
+    document = BeautifulSoup(message, 'html.parser')
+    invitation_link = document.find('a')
+    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
+    r = session.get(invitation_url)
+    assert r.status_code == 200
+    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
+    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
+
+
+def test_add_user_to_parent_project_already_a_member(user):
+    inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(inviting_user)
+    sampledb.db.session.commit()
+    parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
+    project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
+    sampledb.logic.projects.add_user_to_project(parent_project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    assert user.id not in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
+    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ, other_project_ids=[parent_project_id])
+    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
+    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)

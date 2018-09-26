@@ -1416,3 +1416,64 @@ def test_get_user_projects_including_groups():
     assert project.id == project_id
     assert project.name == "Example Project"
     assert project.description == ""
+
+
+def test_filter_child_project_candidates():
+    user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    project_id1 = sampledb.logic.projects.create_project("Test Project 1", "", user.id).id
+    project_id2 = sampledb.logic.projects.create_project("Test Project 2", "", user.id).id
+    project_id3 = sampledb.logic.projects.create_project("Test Project 3", "", user.id).id
+    project_id4 = sampledb.logic.projects.create_project("Test Project 4", "", user.id).id
+    assert sampledb.logic.projects.filter_child_project_candidates(project_id1, [
+        project_id2, project_id3
+    ]) == [
+        project_id2, project_id3
+    ]
+    sampledb.logic.projects.create_subproject_relationship(project_id1, project_id2)
+    assert sampledb.logic.projects.filter_child_project_candidates(project_id1, [
+        project_id2, project_id3
+    ]) == [
+        project_id3
+    ]
+    sampledb.logic.projects.create_subproject_relationship(project_id3, project_id4)
+    assert sampledb.logic.projects.filter_child_project_candidates(project_id1, [
+        project_id3, project_id4
+    ]) == [
+        project_id3, project_id4
+    ]
+    sampledb.logic.projects.create_subproject_relationship(project_id4, project_id1)
+    assert sampledb.logic.projects.filter_child_project_candidates(project_id1, [
+        project_id3, project_id4
+    ]) == []
+
+
+def test_existing_subproject_relationships():
+    user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    project_id1 = sampledb.logic.projects.create_project("Test Project 1", "", user.id).id
+    project_id2 = sampledb.logic.projects.create_project("Test Project 2", "", user.id).id
+    sampledb.logic.projects.create_subproject_relationship(project_id1, project_id2)
+    with pytest.raises(sampledb.logic.errors.InvalidSubprojectRelationshipError):
+        sampledb.logic.projects.create_subproject_relationship(project_id1, project_id2)
+
+
+def test_cyclic_subproject_relationships():
+    user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    project_id1 = sampledb.logic.projects.create_project("Test Project 1", "", user.id).id
+    project_id2 = sampledb.logic.projects.create_project("Test Project 2", "", user.id).id
+    project_id3 = sampledb.logic.projects.create_project("Test Project 3", "", user.id).id
+
+    sampledb.logic.projects.create_subproject_relationship(project_id1, project_id2)
+    # Direct cycle
+    with pytest.raises(sampledb.logic.errors.InvalidSubprojectRelationshipError):
+        sampledb.logic.projects.create_subproject_relationship(project_id2, project_id1)
+
+    sampledb.logic.projects.create_subproject_relationship(project_id2, project_id3)
+    # Indirect cycle
+    with pytest.raises(sampledb.logic.errors.InvalidSubprojectRelationshipError):
+        sampledb.logic.projects.create_subproject_relationship(project_id3, project_id1)

@@ -1,0 +1,116 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "data_file_name": {
+      "title": "Data File Name",
+      "type": "text",
+      "default": "",
+      "minLength": 0,
+      "note": "optional"
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "name": {
+      "title": "Sequence File Name",
+      "type": "text",
+      "minLength": 1
+    },
+    "rso_magnetic_moment": {
+      "title": "Option: RSO magnetic moment",
+      "type": "bool"
+    },
+    "dc_magnetic_moment": {
+      "title": "Option: DC magnetic moment",
+      "type": "bool"
+    },
+    "ac_susceptibility": {
+      "title": "Option: AC susceptibility",
+      "type": "bool"
+    },
+    "dc_oven_magnetic_moment": {
+      "title": "Option: DC oven magnetic moment",
+      "type": "bool"
+    },
+    "dc_rotator_magnetic_moment": {
+      "title": "Option: DC rotator magnetic moment",
+      "type": "bool"
+    },
+    "me_ac_susceptibility": {
+      "title": "Option: ME AC susceptibility",
+      "type": "bool"
+    },
+    "ultra_low_field_option": {
+      "title": "Option: Ultra-Low-Field option",
+      "type": "bool"
+    },
+    "service": {
+      "title": "Option: Service",
+      "type": "bool"
+    },
+    "other_option": {
+      "title": "Option: Other",
+      "type": "text",
+      "minLength": 0,
+      "maxLength": 200
+    },
+    "transport_unit": {
+      "title": "Transport Unit",
+      "type": "text",
+      "choices": ["RSO head", "DC head"]
+    },
+    "he_level": {
+      "title": "He Level",
+      "type": "quantity",
+      "units": "percent",
+      "note": "He Level must be always >50%"
+    },
+    "straw_with_plateau": {
+      "title": "Sample Holder: Straw with plateau",
+      "type": "bool"
+    },
+    "straw_with_gelatine_capsule": {
+      "title": "Sample Holder: Straw with gelatine capsule",
+      "type": "bool"
+    },
+    "electrical_connection_sample_holder": {
+      "title": "Sample Holder: Electrical connection sample holder",
+      "type": "bool"
+    },
+    "other_sample_holder": {
+      "title": "Sample Holder: Other",
+      "type": "text",
+      "minLength": 0,
+      "maxLength": 200
+    },
+    "sample_description": {
+      "title": "Sample Description",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    },
+    "measurement_description": {
+      "title": "Measurement Description and Comments",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    },
+    "problems": {
+      "title": "Technical Problems",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "data_file_name", "sample", "created", "rso_magnetic_moment", "dc_magnetic_moment", "ac_susceptibility", "dc_oven_magnetic_moment", "dc_rotator_magnetic_moment", "me_ac_susceptibility", "ultra_low_field_option", "service", "other_option", "transport_unit", "he_level", "straw_with_plateau", "straw_with_gelatine_capsule", "electrical_connection_sample_holder", "other_sample_holder", "sample_description", "measurement_description", "problems"],
+  "required": ["sample", "created", "name", "transport_unit"],
+  "displayProperties": [
+    "sample"
+  ]
+}

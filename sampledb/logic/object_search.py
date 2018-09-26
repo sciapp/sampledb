@@ -3,7 +3,6 @@
 import json
 import typing
 import datetime
-from sqlalchemy import String, and_, or_
 from sqlalchemy import String, Float, and_, or_
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.elements import BinaryExpression
@@ -15,6 +14,7 @@ from . import node
 from .. import db
 import types
 import sqlalchemy.dialects.postgresql as postgresql
+
 
 
 from typing import List, Tuple, Optional
@@ -458,26 +458,27 @@ operator_handlers[(datatypes.Quantity, datatypes.Text, "[]")] = handle_expressio
 operator_handlers[(datatypes.Text, datatypes.Quantity, "[]")] = handle_text_expression_contains
 
 
-def transform_tree(data, tree: Node, unary_transformation: typing.Callable, binary_transformation: typing.Callable):
 
+
+def transform_tree(data, tree: Node, unary_transformation: typing.Callable, binary_transformation: typing.Callable, *args, **kwargs):
 
     if tree.left is None:
-        return unary_transformation(data, tree.operator)
+        return unary_transformation(data, tree.operator, *args, **kwargs)
     else:
-        left_operand = transform_tree(data, tree.left, unary_transformation, binary_transformation)
-        right_operand = transform_tree(data, tree.right, unary_transformation, binary_transformation)
-        return binary_transformation(left_operand, right_operand, tree.operator)
+        left_operand = transform_tree(data, tree.left, unary_transformation, binary_transformation, *args, **kwargs)
+        right_operand = transform_tree(data, tree.right, unary_transformation, binary_transformation, *args, **kwargs)
+        return binary_transformation(left_operand, right_operand, tree.operator, *args, **kwargs)
+
 
 def validate(date_text):
     try:
         datetime.datetime.strptime(date_text, '%Y-%m-%d')
-
         return True
     except ValueError:
         return False
 
 
-def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Union[datatypes.Quantity, datatypes.DateTime, datatypes.Text, datatypes.Boolean, BinaryExpression], typing.Optional[typing.Callable]]:
+def unary_transformation(data: Column, operand: str, search_notes: typing.List[typing.Tuple[typing.Text, typing.Text]]) -> typing.Tuple[typing.Union[datatypes.Quantity, datatypes.DateTime, datatypes.Text, datatypes.Boolean, BinaryExpression], typing.Optional[typing.Callable]]:
     """gets treeelement, creates quantity or date"""
 
     if validate(operand):
@@ -514,6 +515,9 @@ def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Unio
     if operand.lower() == 'false':
         return datatypes.Boolean(False), None
 
+    if operand.startswith('#'):
+        return where_filters.tags_contain(data[('tags',)], operand[1:]), None
+
     # Try parsing cond as attribute
     attributes = operand.split('.')
     for attribute in attributes:
@@ -543,7 +547,9 @@ def unary_transformation(data: Column, operand: str) -> typing.Tuple[typing.Unio
     return data[attributes], None
 
 
-def binary_transformation(left_operand_and_filter: typing.Tuple[Any, Any], right_operand_and_filter: typing.Tuple[Any, Any], operator: str) -> (Any, typing.Optional[typing.Callable]):
+
+
+def binary_transformation(left_operand_and_filter: typing.Tuple[Any, Any], right_operand_and_filter: typing.Tuple[Any, Any], operator: typing.Text, search_notes: typing.List[typing.Tuple[typing.Text, typing.Text]]) -> (Any, typing.Optional[typing.Callable]):
     """returns a filter_func"""
 
     left_operand, left_outer_filter = left_operand_and_filter
@@ -611,8 +617,12 @@ def binary_transformation(left_operand_and_filter: typing.Tuple[Any, Any], right
     else:
         right_operand_is_expression = True
 
+
     if (left_operand_type, right_operand_type, operator) in operator_handlers:
         return operator_handlers[(left_operand_type, right_operand_type, operator)](left_operand, right_operand, outer_filter)
+    else:
+        return False
+
 
 
 def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Callable:
@@ -629,20 +639,39 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
     if query_string:
         if use_advanced_search:
             # Advanced search using parser and where_filters
-            def filter_func(data, query_string=query_string):
+            def filter_func(data, search_notes, query_string=query_string):
                 """ Filter objects based on search query string """
+
                 query_string = replace(query_string)
                 binary_tree = parsing_in_tree(query_string)
-                return transform_tree(data, binary_tree, unary_transformation, binary_transformation)[0]
+                filter_func, outer_filter = transform_tree(data, binary_tree, unary_transformation, binary_transformation, search_notes)
+                if outer_filter:
+                    filter_func = outer_filter(filter_func)
+                # check bool if filter_func is only an attribute
+                if isinstance(filter_func, BinaryExpression):
+                    filter_func = where_filters.boolean_true(filter_func)
+                return filter_func
         else:
             # Simple search in values
-            def filter_func(data, query_string=query_string):
+            def filter_func(data, search_notes, query_string=query_string):
                 """ Filter objects based on search query string """
                 # The query string is converted to json to escape quotes, backslashes, etc
                 query_string = json.dumps(query_string)[1:-1]
                 return data.cast(String).like('%: "%'+query_string+'%"%')
     else:
-        def filter_func(data):
+        def filter_func(data, search_notes):
             """ Return all objects"""
             return True
     return filter_func
+
+
+def wrap_filter_func(filter_func):
+    """
+    Wrap a filter function so that a new list will be filled with the search notes.
+
+    :param filter_func: the filter function to wrap
+    :return: the wrapped filter function and the search notes list
+    """
+    search_notes = []
+    wrapped_filter_func = lambda *args, search_notes=search_notes, filter_func_impl=filter_func, **kwargs: filter_func_impl(*args, search_notes=search_notes, **kwargs)
+    return wrapped_filter_func, search_notes

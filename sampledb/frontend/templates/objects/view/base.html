@@ -36,6 +36,13 @@
       </div>
     </div>
     {% endif %}
+    {% if user_may_edit and new_schema_available %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary pull-right" style="width:10em">Update Schema</a>
+      </div>
+    </div>
+    {% endif %}
     {% if user_may_grant %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-9 col-md-offset-3">
@@ -43,6 +50,11 @@
       </div>
     </div>
     {% endif %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary pull-right" style="width:10em">Use as Template</a>
+      </div>
+    </div>
   {% endif %}
     {% if restore_form is not none %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
@@ -171,7 +183,7 @@
               <div class="col-sm-9"><a role="button" data-toggle="collapse" href="#fileInfoModalCollapse-{{ file.id }}" aria-expanded="false" aria-controls="fileInfoModalCollapse-{{ file.id }}">Show/Hide</a></div>
             </div>
             <div class="collapse" id="fileInfoModalCollapse-{{ file.id }}">
-              <table class="table" id="activity_log">
+              <table class="table">
                 <thead>
                   <tr>
                     <th scope="col" style="white-space: nowrap;width: 1%;">Datetime</th>
@@ -357,6 +369,7 @@
               <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;versions&quot;);'/> Versions</label><br />
               <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> Measurements</label><br />
               <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> Comments</label><br />
+              <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> Files</label><br />
               <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> Other</label>
               <script>
                 window.update_activity_log_filter_states();
@@ -373,7 +386,7 @@
           <td style="white-space: nowrap;width: 1%;">{{ object_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
           {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
             <td>
-              <a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> created the object.
+              <a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> created the object{% if 'previous_object_id' in object_log_entry.data %} using data from <a href="{{ url_for('.object', object_id=object_log_entry.data['previous_object_id']) }}"> Object {{ object_log_entry.data['previous_object_id'] }}</a>{% endif %}.
             </td>
             <td class="text-right">
               <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">View</a>
@@ -451,7 +464,6 @@
   <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/js.cookie.js') }}"></script>
   <script type="text/javascript">
     $(function () {
@@ -485,10 +497,11 @@
       });
       {% if object_log_entries %}
         var activity_log_filter_type_list = {
-          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
+          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
           "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
           "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
-          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}']
+          "files": ['{{ ObjectLogEntryType.UPLOAD_FILE.name.lower() }}'],
+          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}']
         };
         window.activity_log_toggle = function(should_show, category) {
           var type_list = activity_log_filter_type_list[category];
@@ -512,6 +525,7 @@
             "versions": true,
             "measurements": true,
             "comments": true,
+            "files": true,
             "other": true
           };
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
@@ -519,6 +533,7 @@
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
         window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
+        window.activity_log_toggle(activity_log_filter_state['files'], "files");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
         window.update_activity_log_filter_states = function() {
           if (window.activity_log_toggle.current_state['versions']) {
@@ -529,6 +544,9 @@
           }
           if (window.activity_log_toggle.current_state['comments']) {
             $('#activity_log_filter_comments').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['files']) {
+            $('#activity_log_filter_files').attr('checked', 'checked');
           }
           if (window.activity_log_toggle.current_state['other']) {
             $('#activity_log_filter_other').attr('checked', 'checked');

@@ -2,7 +2,11 @@
   <label class="col-md-3" style="text-align: right">{{ schema.title }}</label>
   <div class="col-md-9">
     {% if 'multiline' in schema and schema['multiline']  %}
-<pre style="font-family: inherit">{{ data.text }}</pre>
+      {% if data.text %}
+<pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text }}</pre>
+        {% else %}
+          &mdash;
+        {% endif %}
     {% else %}
     {{ data.text }}
     {% endif %}

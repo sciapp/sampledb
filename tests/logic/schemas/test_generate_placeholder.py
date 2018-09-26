@@ -256,3 +256,32 @@ def test_generate_sample_object():
     }
     placeholder_object = generate_placeholder(object_schema)
     assert placeholder_object is None
+
+
+def test_generate_tags():
+    object_schema = {
+        'title': 'Keywords',
+        'type': 'tags'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'tags',
+        'tags': []
+    }
+
+
+def test_generate_tags_default():
+    object_schema = {
+        'title': 'Keywords',
+        'type': 'tags',
+        'default': [
+            'example'
+        ]
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'tags',
+        'tags': [
+            'example'
+        ]
+    }
