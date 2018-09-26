@@ -30,6 +30,7 @@ def replace(string: str) -> str:
     """deletes Spaces and converts Operators"""
     string = string.replace(" and ", "&&")
     string = string.replace(" or ", "||")
+    string = string.replace("=", "==")
     string = string.replace(" above ", ">")
     string = string.replace(" under ", "<")
     string = string.replace(" from ", ">=")
