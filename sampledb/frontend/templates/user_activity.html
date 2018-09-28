@@ -9,23 +9,23 @@
 
 {% block content %}
 <div class="container">
-<h1>User Activity for {{ current_user.name }}</h1>
+<h1>User Activity for {{ user.name }}</h1>
 <ol class="user-activity-log">
   {% for user_log_entry in user_log_entries %}
     {% if user_log_entry.type in (UserLogEntryType.CREATE_OBJECT, UserLogEntryType.CREATE_BATCH, UserLogEntryType.EDIT_OBJECT, UserLogEntryType.EDIT_OBJECT_PERMISSIONS, UserLogEntryType.RESTORE_OBJECT_VERSION, UserLogEntryType.POST_COMMENT) %}
       <li><time datetime="{{ user_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}">{{ user_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</time>
       {% if user_log_entry.type == UserLogEntryType.CREATE_OBJECT %}
-        <span>{{ current_user.name }} created object <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=0) }}">#{{ user_log_entry.data['object_id'] }}</a></span>
+        <span>{{ user.name }} created object <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=0) }}">#{{ user_log_entry.data['object_id'] }}</a></span>
       {% elif user_log_entry.type == UserLogEntryType.CREATE_BATCH %}
-        <span>{{ current_user.name }} created a <a href="{{ url_for('frontend.objects', ids=(user_log_entry.data['object_ids'] | tojson)[1:-1]) }}">batch of objects</a></span>
+        <span>{{ user.name }} created a <a href="{{ url_for('frontend.objects', ids=(user_log_entry.data['object_ids'] | tojson)[1:-1]) }}">batch of objects</a></span>
       {% elif user_log_entry.type == UserLogEntryType.EDIT_OBJECT %}
-        <span>{{ current_user.name }} edited object <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=user_log_entry.data['version_id']) }}">#{{ user_log_entry.data['object_id'] }}</a></span>
+        <span>{{ user.name }} edited object <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=user_log_entry.data['version_id']) }}">#{{ user_log_entry.data['object_id'] }}</a></span>
       {% elif user_log_entry.type == UserLogEntryType.RESTORE_OBJECT_VERSION %}
-        <span>{{ current_user.name }} restored object <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=user_log_entry.data['version_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> version <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=user_log_entry.data['restored_version_id']) }}">#{{ user_log_entry.data['restored_version_id'] }}</a></span>
+        <span>{{ user.name }} restored object <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=user_log_entry.data['version_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> version <a href="{{ url_for('frontend.object_version', object_id=user_log_entry.data['object_id'], version_id=user_log_entry.data['restored_version_id']) }}">#{{ user_log_entry.data['restored_version_id'] }}</a></span>
       {% elif user_log_entry.type == UserLogEntryType.EDIT_OBJECT_PERMISSIONS %}
-        <span>{{ current_user.name }} edited object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> permissions</span>
+        <span>{{ user.name }} edited object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> permissions</span>
       {% elif user_log_entry.type == UserLogEntryType.POST_COMMENT %}
-        <span>{{ current_user.name }} posted comment <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id'], _anchor='comment-{}'.format(user_log_entry.data['comment_id'])) }}">#{{ user_log_entry.data['object_id'] }}</a> for object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a>.</span>
+        <span>{{ user.name }} posted comment <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id'], _anchor='comment-{}'.format(user_log_entry.data['comment_id'])) }}">#{{ user_log_entry.data['object_id'] }}</a> for object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a>.</span>
       {% endif %}
       </li>
     {% endif %}
