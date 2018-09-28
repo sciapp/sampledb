@@ -5,14 +5,38 @@
 
 import datetime
 import typing
+from .errors import ObjectDoesNotExistError
+from .users import get_user
+from .permissions import get_user_object_permissions, Permissions
 from ..models import UserLogEntry, UserLogEntryType
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_user_log_entries(user_id: int) -> typing.List[UserLogEntry]:
-    return UserLogEntry.query.filter_by(user_id=user_id).order_by(db.desc(UserLogEntry.utc_datetime)).all()
+def get_user_log_entries(user_id: int, as_user_id: typing.Optional[int]=None) -> typing.List[UserLogEntry]:
+    user_log_entries = UserLogEntry.query.filter_by(user_id=user_id).order_by(db.desc(UserLogEntry.utc_datetime)).all()
+    if as_user_id is None or as_user_id == user_id or get_user(as_user_id).is_admin:
+        return user_log_entries
+    visible_user_log_entries = []
+    for user_log_entry in user_log_entries:
+        if 'object_id' in user_log_entry.data:
+            object_id = user_log_entry.data['object_id']
+            try:
+                if Permissions.READ in get_user_object_permissions(user_id=as_user_id, object_id=object_id):
+                    visible_user_log_entries.append(user_log_entry)
+            except ObjectDoesNotExistError:
+                pass
+        elif 'object_ids' in user_log_entry.data:
+            object_ids = user_log_entry.data['object_ids']
+            for object_id in object_ids:
+                try:
+                    if Permissions.READ in get_user_object_permissions(user_id=as_user_id, object_id=object_id):
+                        visible_user_log_entries.append(user_log_entry)
+                        break
+                except ObjectDoesNotExistError:
+                    pass
+    return visible_user_log_entries
 
 
 def _store_new_log_entry(type: UserLogEntryType, user_id: int, data: dict):

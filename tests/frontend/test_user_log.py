@@ -26,6 +26,17 @@ def user(flask_server):
     return user
 
 
+@pytest.fixture
+def other_user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.models.User(name="Other User", email="example2@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        # force attribute refresh
+        assert user.id is not None
+    return user
+
+
 def test_get_current_user_log(flask_server, user):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -60,8 +71,8 @@ def test_get_user_log(flask_server, user):
     assert len(document.findAll('ol', {'class': 'user-activity-log'})[0].findAll('li')) == 1
 
 
-def test_get_other_user_log(flask_server, user):
+def test_get_other_user_log(flask_server, user, other_user):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'users/42/activity')
-    assert r.status_code == 403
+    assert session.get(flask_server.base_url + 'users/{}/activity'.format(other_user.id)).status_code == 200
+    assert session.get(flask_server.base_url + 'users/42/activity').status_code == 404
