@@ -1,0 +1,97 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "SCD-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^SCD-[0-9]+-.+$",
+      "note": "Format: SCD-<Experiment Number>-<Free Text>"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "tags"
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "measurement_type": {
+      "title": "Measurement Type",
+      "type": "text",
+      "choices": ["Single Crystal Diffractometry", "Powder Diffractometry", "Other"],
+      "default": "Single Crystal Diffractometry"
+    },
+    "measurement_type_other": {
+      "title": "Measurement Type (if 'Other')",
+      "type": "text",
+      "note": "If 'Other' was selected above."
+    },
+    "radiation": {
+      "title": "Radiation",
+      "type": "text",
+      "choices": ["0.71 Å (MoKα)", "1.54 Å (CuKα)"],
+      "default": "0.71 Å (MoKα)"
+    },
+    "diameter": {
+      "title": "Diameter",
+      "type": "quantity",
+      "units": "µm"
+    },
+    "temperatures": {
+      "title": "Temperatures",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "style": "table",
+      "items": {
+        "title": "Temperature",
+        "type": "object",
+        "properties": {
+          "temperature": {
+            "title": "Temperature",
+            "type": "quantity",
+            "units": "K",
+            "default": 293.15
+          }
+        },
+        "required": ["temperature"]
+      }
+    },
+    "options": {
+      "title": "Special Options",
+      "type": "text",
+      "choices": ["Cryojet", "Helijet", "Pressure Cell", "Other", "None"],
+      "default": "Cryojet"
+    },
+    "options_other": {
+      "title": "Special Options (if 'Other')",
+      "type": "text",
+      "note": "If 'Other' was selected above."
+    },
+    "duration": {
+      "title": "Duration",
+      "type": "quantity",
+      "units": "min"
+    },
+    "remarks": {
+      "title": "Additional Remarks",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": ["name", "created", "keywords", "sample", "measurement_type", "measurement_type_other", "radiation", "diameter", "temperatures", "options", "options_other", "duration", "remarks"],
+  "required": ["name", "sample", "created", "measurement_type", "radiation", "temperatures", "options"],
+  "displayProperties": [
+    "sample",
+    "keywords"
+  ]
+}
