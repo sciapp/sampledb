@@ -1,563 +1,616 @@
 # coding: utf-8
-
+import functools
 import json
 import typing
 import datetime
 from sqlalchemy import String, Float, and_, or_
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.elements import BinaryExpression
-from sqlalchemy.sql.expression import select, exists, true, false
-from typing import Any
+from sqlalchemy.sql.expression import select, exists, true, false, not_
 from . import where_filters
 from . import datatypes
-from . import node
+from . import object_search_parser
 from .. import db
-import types
 import sqlalchemy.dialects.postgresql as postgresql
 
 
-
-from typing import List, Tuple, Optional
-
-
-OPERATORLIST = {"<": 2, "<=": 2, ">": 2, ">=": 2, "==": 2, "&&": 1,
-                "||": 0}
-
-
-class Node:
-    def __init__(self, operator: str, stringleft:
-                 Optional[str], stringright: Optional[str]) -> None:
-        """constructor creates tree with operator
-        to create left and right tree the strings which are
-        left and right from the operator"""
-        self.operator = operator
-        if stringleft is None:
-            self.left = None
-        elif stringleft is not None:
-            self.left = parsing_in_tree(stringleft)
-        else:
-            self.left = None
-        if stringright is None:
-            self.right = None
-        elif stringright is not None:
-            self.right = parsing_in_tree(stringright)
-        else:
-            self.right = None
+class Attribute:
+    def __init__(self, input_text: str, start_position: int, value):
+        self.value = value
+        self.input_text = input_text
+        self.start_position = start_position
+        self.end_position = self.start_position + len(self.input_text)
 
 
-def replace(string: str) -> str:
-    """deletes Spaces and converts Operators"""
-    string = string.replace(" and ", "&&")
-    string = string.replace(" or ", "||")
-    string = string.replace(" = ", "==")
-    string = string.replace(" above ", ">")
-    string = string.replace(" under ", "<")
-    string = string.replace(" from ", ">=")
-    string = string.replace(" after ", ">")
-    string = string.replace("before", "<")
-    string = string.replace(" in ", "[]")
-    string = string.replace(" ","")
-    return string
+class Expression:
+    def __init__(self, input_text: str, start_position: int, value):
+        self.value = value
+        self.input_text = input_text
+        self.start_position = start_position
+        self.end_position = self.start_position + len(self.input_text)
 
 
-def search_for_wrong_brackets(input: str) -> bool:
-    """returns Ture if Expressions parentheses is correct"""
-    if input == "":
-        return False
-    counter = 0
-    for i in range(len(input)):
-        if input[i] == "(":
-            counter += 1
-        if input[i] == ")":
-            counter -= 1
-            if counter < 0:
-                return False
-    if counter != 0:
-        return False
-    return True
+unary_operator_handlers = {}
+binary_operator_handlers = {}
 
 
-def remove_unnecessary_brackets(string: str) -> str:
-    """removes Outer brackets recursively"""
-    while ("(" in string and
-           search_for_wrong_brackets(string[1:len(string)-1]) is True):
-        string = string[1:len(string)-1]
-    return string
+def unary_operator_handler(operand_type, operator):
+    def unary_operator_handler_decorator(func, operand_type=operand_type, operator=operator):
+        @functools.wraps(func)
+        def unary_operator_handler_wrapper(operator, operand, outer_filter, search_notes):
+            input_text = operator.input_text + operand.input_text
+            start_position = operator.start_position
+            end_position = operand.end_position
+            filter_func, outer_filter = func(operand.value, outer_filter, search_notes, input_text, start_position, end_position)
+            filter_func = Expression(input_text, start_position, filter_func)
+            return filter_func, outer_filter
+        assert (operand_type, operator) not in unary_operator_handlers
+        unary_operator_handlers[(operand_type, operator)] = unary_operator_handler_wrapper
+        return unary_operator_handler_wrapper
+
+    return unary_operator_handler_decorator
 
 
-def search_operator(string: str) -> Optional[Tuple[str, int]]:
-    """returns tuple with:
-    ("Operator with lowest priority as String","his position")"""
-    lomgest_operator = 2  # length of the longest operator
-    string = remove_unnecessary_brackets(string)
-    found_operators = []  # List ("operator as String","position")
-    bracketcounter = 0
-    for i in range(0, len(string)):
-        if string[i] == "(":
-            bracketcounter += 1
-        if string[i] == ")":
-            bracketcounter -= 1
-        if bracketcounter == 0:
-            for j in range(0, lomgest_operator):
-                if (string[i:i+1+j] in OPERATORLIST and
-                        (string[i:i+2+j] not in OPERATORLIST)):
-                    found_operators.append((string[i:i+1+j], i))
-                    i += j+1  # dont find < when operator is <=
-    found_operators = sorting_list_by_priority(found_operators)
-    if len(found_operators) is not 0:
-        return found_operators[0]
+def binary_operator_handler(left_operand_type, right_operand_type, operator):
+    def binary_operator_handler_decorator(func, left_operand_type=left_operand_type, right_operand_type=right_operand_type, operator=operator):
+        @functools.wraps(func)
+        def binary_operator_handler_wrapper(left_operand, operator, right_operand, outer_filter, search_notes):
+            input_text = left_operand.input_text + operator.input_text + right_operand.input_text
+            start_position = left_operand.start_position
+            end_position = right_operand.end_position
+            filter_func, outer_filter = func(left_operand.value, right_operand.value, outer_filter, search_notes, input_text, start_position, end_position)
+            filter_func = Expression(input_text, start_position, filter_func)
+            return filter_func, outer_filter
+        assert (left_operand_type, right_operand_type, operator) not in binary_operator_handlers
+        binary_operator_handlers[(left_operand_type, right_operand_type, operator)] = binary_operator_handler_wrapper
+        return binary_operator_handler_wrapper
+
+    return binary_operator_handler_decorator
+
+
+@unary_operator_handler(datatypes.Boolean, 'not')
+def _(operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if not operand.value:
+        search_notes.append(('warning', 'This expression will always be true', start_position, end_position))
+        return outer_filter(true()), None
     else:
-        return None
+        search_notes.append(('warning', 'This expression will always be false', start_position, end_position))
+        return outer_filter(false()), None
 
 
-def parsing_in_tree(string: str) -> Node:
-    """recursive
-    creates tree calls the constructor of class Node
-     abort condition if no operator in string anymore"""
-    string = remove_unnecessary_brackets(string)
-    pos_and_op = search_operator(string)
-    if pos_and_op is None:
-        baum = Node(string, None, None)
-    else:
-        ope = pos_and_op[0]
-        left = string[0:pos_and_op[1]]
-        right = string[pos_and_op[1]+len(pos_and_op[0]):]
-        baum = Node(ope, left, right)
-    return baum
+@unary_operator_handler(Attribute, 'not')
+def _(operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.boolean_false(operand)), None
 
 
-def sorting_list_by_priority(found_operators: List) -> List:
-    """search operator in string with lowest priority,
-    which is furthest forward"""
-    found_operators.sort(key=lambda operator: OPERATORLIST[operator[0]],
-                         reverse=False)
-    return found_operators
+@unary_operator_handler(None, 'not')
+def _(operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(not_(operand)), None
 
 
-#!!!!!!!!!!and!!!!!!!!
-def handle_boolean_boolean_and(left_operand, right_operand, outer_filter):
+@binary_operator_handler(datatypes.Boolean, datatypes.Boolean, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if left_operand.value and right_operand.value:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
 
-def handle_expression_expression_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(None, None, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(and_(left_operand, right_operand)), None
 
-def handle_expression_boolean_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(None, datatypes.Boolean, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if right_operand.value:
         return outer_filter(left_operand), None
     else:
         return outer_filter(false()), None
 
-def handle_boolean_expression_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Boolean, None, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if left_operand.value:
         return outer_filter(right_operand), None
     else:
         return outer_filter(false()), None
 
-def handle_expression_attribute_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(None, Attribute, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(and_(left_operand, where_filters.boolean_true(right_operand))), None
 
-def handle_attribute_expression_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, None, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(and_(where_filters.boolean_true(left_operand), right_operand)), None
 
-def handle_attribute_boolean_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, datatypes.Boolean, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if right_operand.value:
         return outer_filter(where_filters.boolean_true(left_operand)), None
     else:
-        return outer_filter(false())
+        return outer_filter(false()), None
 
-def handle_boolean_attribute_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Boolean, Attribute, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if left_operand.value:
         return outer_filter(where_filters.boolean_true(right_operand)), None
     else:
-        return outer_filter(false())
+        return outer_filter(false()), None
 
-def handle_attribute_attribute_and(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, Attribute, 'and')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(and_(where_filters.boolean_true(left_operand), where_filters.boolean_true(right_operand))), None
 
-#!!!!!!!!!or!!!!!!!!
-def handle_boolean_boolean_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Boolean, datatypes.Boolean, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if left_operand.value or right_operand.value:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
 
-def handle_expression_expression_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(None, None, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(or_(left_operand, right_operand)), None
 
-def handle_expression_boolean_or(left_operand, right_operand, outer_filter):
-    if right_operand.value:
-        return outer_filter(true), None
-    else:
-        return outer_filter(left_operand), None
 
-def handle_boolean_expression_or(left_operand, right_operand, outer_filter):
-    if left_operand.value:
+@binary_operator_handler(None, datatypes.Boolean, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if right_operand.value:
         return outer_filter(true()), None
     else:
         return outer_filter(left_operand), None
 
-def handle_expression_attribute_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Boolean, None, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.value:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(right_operand), None
+
+
+@binary_operator_handler(None, Attribute, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(or_(left_operand, where_filters.boolean_true(right_operand))), None
 
-def handle_attribute_expression_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, None, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(or_(where_filters.boolean_true(left_operand), right_operand)), None
 
-def handle_attribute_boolean_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, datatypes.Boolean, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if right_operand.value:
         return outer_filter(true()), None
     else:
-        return outer_filter(where_filters.boolean_true(left_operand))
+        return outer_filter(where_filters.boolean_true(left_operand)), None
 
-def handle_boolean_attribute_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Boolean, Attribute, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     if left_operand.value:
         return outer_filter(true()), None
     else:
-        return outer_filter(where_filters.boolean_true(right_operand))
+        return outer_filter(where_filters.boolean_true(right_operand)), None
 
-def handle_attribute_attribute_or(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, Attribute, 'or')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(or_(where_filters.boolean_true(left_operand), where_filters.boolean_true(right_operand))), None
 
-#!!!!!!!!!!==!!!!!!!!!!!
 
-def handle_boolean_boolean_equal(left_operand, right_operand, outer_filter):
-    if left_operand.value == right_operand.value:
+@binary_operator_handler(datatypes.Boolean, datatypes.Boolean, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
 
-def handle_boolean_attributee_equal(left_operand, right_operand, outer_filter):
-    if left_operand.value == where_filters.boolean_true(right_operand):
+
+@binary_operator_handler(datatypes.DateTime, datatypes.DateTime, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
 
-def handle_attributee_boolean_equal(left_operand, right_operand, outer_filter):
-    if right_operand.value == where_filters.boolean_true(left_operand):
+
+@binary_operator_handler(datatypes.Text, datatypes.Text, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
 
-def handle_date_date_equal(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Quantity, datatypes.Quantity, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.dimensionality != right_operand.dimensionality:
+        search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
+        return outer_filter(false()), None
+    if left_operand == right_operand:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.Boolean, datatypes.Boolean, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if not (left_operand == right_operand):
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.DateTime, datatypes.DateTime, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if not (left_operand == right_operand):
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.Text, datatypes.Text, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if not (left_operand == right_operand):
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.Quantity, datatypes.Quantity, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.dimensionality != right_operand.dimensionality:
+        search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
+        return outer_filter(true()), None
+    if not (left_operand == right_operand):
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.Boolean, Attribute, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.boolean_equals(right_operand, left_operand)), None
+
+
+@binary_operator_handler(Attribute, datatypes.Boolean, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.boolean_equals(left_operand, right_operand)), None
+
+
+@binary_operator_handler(datatypes.Boolean, Attribute, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.boolean_equals(right_operand, not left_operand.value)), None
+
+
+@binary_operator_handler(Attribute, datatypes.Boolean, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.boolean_equals(left_operand, not right_operand.value)), None
+
+
+@binary_operator_handler(Attribute, datatypes.DateTime, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.datetime_equals(left_operand, right_operand)), None
 
-def handle_attribute_date_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_equals(left_operand, right_operand)), None
 
-def handle_date_attribute_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_equals(left_operand, right_operand)), None
+@binary_operator_handler(datatypes.DateTime, Attribute, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.datetime_equals(right_operand, left_operand)), None
 
-def handle_quantity_quantity_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(left_operand == right_operand)
 
-def handle_quantity_attribute_equal(left_operand, right_operand, outer_filter):
+@binary_operator_handler(datatypes.Quantity, Attribute, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.quantity_equals(right_operand, left_operand)), None
 
-def handle_attribute_quantity_equal(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, datatypes.Quantity, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.quantity_equals(left_operand, right_operand)), None
 
-def handle_text_text_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(left_operand == right_operand)
 
-def handle_text_attribute_equal(left_operand, right_operand, outer_filter):
+@binary_operator_handler(datatypes.Quantity, Attribute, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(not_(where_filters.quantity_equals(right_operand, left_operand))), None
+
+
+@binary_operator_handler(Attribute, datatypes.Quantity, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(not_(where_filters.quantity_equals(left_operand, right_operand))), None
+
+
+@binary_operator_handler(datatypes.Text, Attribute, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.text_equals(right_operand, left_operand)), None
 
-def handle_attribute_text_equal(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, datatypes.Text, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.text_equals(left_operand, right_operand)), None
 
-def handle_attribute_attribute_equal(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, Attribute, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(left_operand == right_operand), None
 
-def handle_expression_expression_equal(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(None, None, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(left_operand == right_operand), None
 
-#!!!!!!!!!<!!!!!!!!!
 
-def handle_date_date_lower(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_less_than(left_operand, right_operand)), None
+@binary_operator_handler(datatypes.DateTime, datatypes.DateTime, '<')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.utc_datetime < right_operand.utc_datetime:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
 
-def handle_quantity_quantity_lower(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(datatypes.Quantity, datatypes.Quantity, '<')
+def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.dimensionality != right_operand.dimensionality:
+        search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
+        return outer_filter(false()), None
+    if left_operand.maginitude_in_base_units < right_operand.maginitude_in_base_units:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(Attribute, datatypes.Quantity, '<')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.quantity_less_than(left_operand, right_operand)), None
 
-def handle_attribute_quantity_lower(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_less_than(left_operand, right_operand)), None
 
-def handle_quantity_attribute_lower(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_greater_than_equals(left_operand, right_operand)), None
+@binary_operator_handler(datatypes.Quantity, Attribute, '<')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.quantity_greater_than(right_operand, left_operand)), None
 
-def handle_attribute_date_lower(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, datatypes.DateTime, '<')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.datetime_less_than(left_operand, right_operand)), None
 
-def handle_date_attribute_lower(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_greater_than_equals(left_operand, right_operand)), None
 
-#!!!!!!!!!!>!!!!!!!!!!!
+@binary_operator_handler(datatypes.DateTime, Attribute, '<')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.datetime_greater_than(right_operand, left_operand)), None
 
-def handle_date_date_higher(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_greater_than(left_operand, right_operand)), None
 
-def handle_quantity_quantity_higher(left_operand, right_operand, outer_filter):
+@binary_operator_handler(datatypes.DateTime, datatypes.DateTime, '>')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.utc_datetime > right_operand.utc_datetime:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.Quantity, datatypes.Quantity, '>')
+def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.dimensionality != right_operand.dimensionality:
+        search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
+        return outer_filter(false()), None
+    if left_operand.maginitude_in_base_units > right_operand.maginitude_in_base_units:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(Attribute, datatypes.Quantity, '>')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.quantity_greater_than(left_operand, right_operand)), None
 
-def handle_attribute_quantity_higher(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_greater_than(left_operand, right_operand)), None
 
-def handle_quantity_attribute_higher(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_less_than_equals(left_operand, right_operand)), None
+@binary_operator_handler(datatypes.Quantity, Attribute, '>')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.quantity_less_than(right_operand, left_operand)), None
 
-def handle_attribute_date_higher(left_operand, right_operand, outer_filter):
+
+@binary_operator_handler(Attribute, datatypes.DateTime, '>')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.datetime_greater_than(left_operand, right_operand)), None
 
-def handle_date_attribute_higher(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_less_than_equals(left_operand, right_operand)), None
 
-#!!!!!!!!!<=!!!!!!!!!!
-
-def handle_date_date_lower_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_less_than_equals(left_operand, right_operand)), None
-
-def handle_quantity_quantity_lower_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_less_than_equals(left_operand, right_operand)), None
-
-def handle_attribute_quantity_lower_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_less_than_equals(left_operand, right_operand)), None
-
-def handle_quantity_attribute_lower_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_greater_than_equals(right_operand, left_operand)), None
-
-def handle_attribute_date_lower_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_less_than_equals(left_operand, right_operand)), None
-
-def handle_date_attribute_lower_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_greater_than_equals(right_operand, left_operand)), None
-
-#!!!!!!!!>=!!!!!!!!!!
-
-def handle_date_date_higher_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_greater_than_equals(left_operand, right_operand)), None
-
-def handle_quantity_quantity_higher_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_greater_than_equals(left_operand, right_operand)), None
-
-def handle_attribute_quantity_higher_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_greater_than_equals(left_operand, right_operand)), None
-
-def handle_quantity_attribute_higher_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.quantity_less_than_equals(right_operand, left_operand)), None
-
-def handle_attribute_date_higher_or_equal(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.datetime_greater_than_equals(left_operand, right_operand)), None
-
-def handle_date_attribute_higher_or_equal(left_operand, right_operand, outer_filter):
+@binary_operator_handler(datatypes.DateTime, Attribute, '>')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.datetime_less_than_equals(right_operand, left_operand)), None
 
-#!!!!!!![]!!!!!!!!!!! in
 
-def handle_attribute_text_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(left_operand,right_operand)), None
-
-def handle_text_attribute_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(right_operand, left_operand)), None
-
-def handle_text_text_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(left_operand, right_operand)), None
-
-def handle_expression_text_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(left_operand, right_operand)), None
-
-def handle_text_expression_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(right_operand, left_operand)), None
-
-def handle_date_text_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(left_operand, right_operand)), None
-
-def handle_text_date_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(right_operand, left_operand)), None
-
-def handle_quantity_text_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(left_operand, right_operand)), None
-
-def handle_text_quantity_contains(left_operand, right_operand, outer_filter):
-    return outer_filter(where_filters.text_contains(right_operand, left_operand)), None
-
-
-operator_handlers = {}
-operator_handlers[(datatypes.Boolean, datatypes.Boolean, "&&")] = handle_boolean_boolean_and
-operator_handlers[(None,None, "&&")] = handle_expression_expression_and
-operator_handlers[(None, datatypes.Boolean, "&&")] = handle_expression_boolean_and
-operator_handlers[(datatypes.Boolean, None, "&&")] = handle_boolean_expression_and
-operator_handlers[(None, BinaryExpression, "&&")] = handle_expression_attribute_and
-operator_handlers[(BinaryExpression, None, "&&")] = handle_attribute_expression_and
-operator_handlers[(BinaryExpression, datatypes.Boolean, "&&")] = handle_attribute_boolean_and
-operator_handlers[(datatypes.Boolean, BinaryExpression, "&&")] = handle_boolean_attribute_and
-operator_handlers[(BinaryExpression, BinaryExpression, "&&")] = handle_attribute_attribute_and
-
-operator_handlers[(datatypes.Boolean, datatypes.Boolean, "||")] = handle_boolean_boolean_or
-operator_handlers[(None, None, "||")] = handle_expression_expression_or
-operator_handlers[(None, datatypes.Boolean, "||")] = handle_expression_boolean_or
-operator_handlers[(datatypes.Boolean, None, "||")] = handle_boolean_expression_or
-operator_handlers[(None, BinaryExpression, "||")] = handle_expression_attribute_or
-operator_handlers[(BinaryExpression, None, "||")] = handle_attribute_expression_or
-operator_handlers[(BinaryExpression, datatypes.Boolean, "||")] = handle_attribute_boolean_or
-operator_handlers[(datatypes.Boolean, BinaryExpression, "||")] = handle_boolean_attribute_or
-operator_handlers[(BinaryExpression, BinaryExpression, "||")] = handle_attribute_attribute_or
-
-operator_handlers[(datatypes.Boolean, datatypes.Boolean, "==")] = handle_boolean_boolean_equal
-operator_handlers[(datatypes.Boolean, BinaryExpression, "==")] = handle_boolean_attributee_equal
-operator_handlers[(BinaryExpression, datatypes.Boolean, "==")] = handle_attributee_boolean_equal
-operator_handlers[(datatypes.DateTime, datatypes.DateTime, "==")] = handle_date_date_equal
-operator_handlers[(BinaryExpression, datatypes.DateTime, "==")] = handle_attribute_date_equal
-operator_handlers[(datatypes.DateTime, BinaryExpression, "==")] = handle_date_attribute_equal
-operator_handlers[(datatypes.Quantity, datatypes.Quantity, "==")] = handle_quantity_quantity_equal
-operator_handlers[(datatypes.Quantity, BinaryExpression, "==")] = handle_quantity_attribute_equal
-operator_handlers[(BinaryExpression, datatypes.Quantity, "==")] = handle_attribute_quantity_equal
-operator_handlers[(datatypes.Text, datatypes.Text, "==")] = handle_text_text_equal
-operator_handlers[(datatypes.Text, BinaryExpression, "==")] = handle_text_attribute_equal
-operator_handlers[(BinaryExpression, datatypes.Text, "==")] = handle_attribute_text_equal
-operator_handlers[(BinaryExpression, BinaryExpression, "==")] = handle_attribute_attribute_equal
-operator_handlers[(None, None, "==")] = handle_expression_expression_equal
-
-operator_handlers[(datatypes.DateTime, datatypes.DateTime,"<")] = handle_date_date_lower
-operator_handlers[(datatypes.Quantity, datatypes.Quantity, "<")] = handle_quantity_quantity_lower
-operator_handlers[(BinaryExpression, datatypes.Quantity, "<")] = handle_attribute_quantity_lower
-operator_handlers[(datatypes.Quantity, BinaryExpression, "<")] = handle_quantity_attribute_lower
-operator_handlers[(BinaryExpression, datatypes.DateTime, "<")] = handle_attribute_date_lower
-operator_handlers[(datatypes.DateTime, BinaryExpression, "<")] = handle_date_attribute_lower
-
-operator_handlers[(datatypes.DateTime, datatypes.DateTime, ">")] = handle_date_date_higher
-operator_handlers[(datatypes.Quantity, datatypes.Quantity, ">")] = handle_quantity_quantity_higher
-operator_handlers[(BinaryExpression, datatypes.Quantity, ">")] = handle_attribute_quantity_higher
-operator_handlers[(datatypes.Quantity, BinaryExpression, ">")] = handle_quantity_attribute_higher
-operator_handlers[(BinaryExpression, datatypes.DateTime, ">")] = handle_attribute_date_higher
-operator_handlers[(datatypes.DateTime, BinaryExpression, ">")] = handle_date_attribute_higher
-
-operator_handlers[(datatypes.DateTime, datatypes.DateTime, "<=")] = handle_date_date_lower_or_equal
-operator_handlers[(datatypes.Quantity, datatypes.Quantity, "<=")] = handle_quantity_quantity_lower_or_equal
-operator_handlers[(BinaryExpression, datatypes.Quantity, "<=")] = handle_attribute_quantity_lower_or_equal
-operator_handlers[(datatypes.Quantity, BinaryExpression, "<=")] = handle_quantity_attribute_lower_or_equal
-operator_handlers[(BinaryExpression, datatypes.DateTime, "<=")] = handle_attribute_date_lower_or_equal
-operator_handlers[(datatypes.DateTime, BinaryExpression, "<=")] = handle_date_attribute_lower_or_equal
-
-operator_handlers[(datatypes.DateTime, datatypes.DateTime, ">=")] = handle_date_date_higher_or_equal
-operator_handlers[(datatypes.Quantity, datatypes.Quantity, ">=")] = handle_quantity_quantity_higher_or_equal
-operator_handlers[(BinaryExpression, datatypes.Quantity, ">=")] = handle_attribute_quantity_higher_or_equal
-operator_handlers[(datatypes.Quantity, BinaryExpression, ">=")] = handle_quantity_attribute_higher_or_equal
-operator_handlers[(BinaryExpression, datatypes.DateTime, ">=")] = handle_attribute_date_higher_or_equal
-operator_handlers[(datatypes.DateTime, BinaryExpression, ">=")] = handle_date_attribute_higher_or_equal
-
-operator_handlers[(BinaryExpression, datatypes.Text, "[]")] = handle_attribute_text_contains
-operator_handlers[(datatypes.Text, BinaryExpression, "[]")] = handle_text_attribute_contains
-operator_handlers[(datatypes.Text, datatypes.Text, "[]")] = handle_text_text_contains
-operator_handlers[(None, datatypes.Text, "[]")] = handle_expression_text_contains
-operator_handlers[(datatypes.Text, None, "[]")] = handle_text_expression_contains
-operator_handlers[(datatypes.DateTime, datatypes.Text, "[]")] = handle_date_text_contains
-operator_handlers[(datatypes.Text, datatypes.DateTime, "[]")] = handle_text_date_contains
-operator_handlers[(datatypes.Quantity, datatypes.Text, "[]")] = handle_expression_text_contains
-operator_handlers[(datatypes.Text, datatypes.Quantity, "[]")] = handle_text_expression_contains
-
-
-
-
-def transform_tree(data, tree: Node, unary_transformation: typing.Callable, binary_transformation: typing.Callable, *args, **kwargs):
-
-    if tree.left is None:
-        return unary_transformation(data, tree.operator, *args, **kwargs)
+@binary_operator_handler(datatypes.DateTime, datatypes.DateTime, '<=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.utc_datetime <= right_operand.utc_datetime:
+        return outer_filter(true()), None
     else:
-        left_operand = transform_tree(data, tree.left, unary_transformation, binary_transformation, *args, **kwargs)
-        right_operand = transform_tree(data, tree.right, unary_transformation, binary_transformation, *args, **kwargs)
-        return binary_transformation(left_operand, right_operand, tree.operator, *args, **kwargs)
+        return outer_filter(false()), None
 
 
-def validate(date_text):
-    try:
-        datetime.datetime.strptime(date_text, '%Y-%m-%d')
-        return True
-    except ValueError:
-        return False
+@binary_operator_handler(datatypes.Quantity, datatypes.Quantity, '<=')
+def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.dimensionality != right_operand.dimensionality:
+        search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
+        return outer_filter(false()), None
+    if left_operand.maginitude_in_base_units <= right_operand.maginitude_in_base_units:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
 
 
-def unary_transformation(data: Column, operand: str, search_notes: typing.List[typing.Tuple[typing.Text, typing.Text]]) -> typing.Tuple[typing.Union[datatypes.Quantity, datatypes.DateTime, datatypes.Text, datatypes.Boolean, BinaryExpression], typing.Optional[typing.Callable]]:
-    """gets treeelement, creates quantity or date"""
-
-    if validate(operand):
-        operand = datetime.datetime.strptime(operand, '%Y-%m-%d')
-        date = datatypes.DateTime(operand)
-        return date, None
-
-    had_decimal_point = False
-    len_magnitude = 0
-
-    for index, character in enumerate(operand):
-        if not character.isdigit():
-            if not had_decimal_point and character == ".":
-                had_decimal_point = True
-            else:
-                len_magnitude = index
-                break
-        else:
-            len_magnitude = len(operand)
-    if len_magnitude > 0:
-        magnitude = float(operand[:len_magnitude])
-        units = operand[len_magnitude:]
-        if not units:
-            units = None
-        quantity = datatypes.Quantity(magnitude, units)
-        return quantity, None
-
-    if operand.startswith('"') and operand.endswith('"') and len(operand) >= 2:
-        return datatypes.Text(operand[1:-1]), None
-
-    if operand.lower() == 'true':
-        return datatypes.Boolean(True), None
-
-    if operand.lower() == 'false':
-        return datatypes.Boolean(False), None
-
-    if operand.startswith('#'):
-        return where_filters.tags_contain(data[('tags',)], operand[1:]), None
-
-    # Try parsing cond as attribute
-    attributes = operand.split('.')
-    for attribute in attributes:
-        if not all(character.isalnum() or character in '_?' for character in attribute):
-            # TODO: better error
-            raise ValueError("Invalid attribute name")
-        if '?' in attribute and attribute != '?':
-            raise ValueError("Array index placeholder must stand alone")
-    # covert any numeric arguments to integers (array indices)
-    for i, attribute in enumerate(attributes):
-        try:
-            attributes[i] = int(attribute)
-        except ValueError:
-            pass
-    if '?' in attributes:
-        if attributes.count('?') > 1:
-            raise ValueError("Only one array index placeholder is supported")
-        array_placeholder_index = attributes.index('?')
-        # no danger of SQL injection as attributes may only consist of
-        # characters and underscores at this point
-        jsonb_selector = '\'' + '\' -> \''.join(attributes[:array_placeholder_index]) + '\''
-        array_items = select(columns=[db.text('value FROM jsonb_array_elements_text(data -> {})'.format(jsonb_selector))])
-        db_obj = db.literal_column('value').cast(postgresql.JSONB)
-        for attribute in attributes[array_placeholder_index+1:]:
-            db_obj = db_obj[attribute]
-        return db_obj, lambda filter: db.Query(db.literal(True)).select_entity_from(array_items).filter(filter).exists()
-    return data[attributes], None
+@binary_operator_handler(Attribute, datatypes.Quantity, '<=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.quantity_less_than_equals(left_operand, right_operand)), None
 
 
+@binary_operator_handler(datatypes.Quantity, Attribute, '<=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.quantity_greater_than_equals(right_operand, left_operand)), None
 
 
-def binary_transformation(left_operand_and_filter: typing.Tuple[Any, Any], right_operand_and_filter: typing.Tuple[Any, Any], operator: typing.Text, search_notes: typing.List[typing.Tuple[typing.Text, typing.Text]]) -> (Any, typing.Optional[typing.Callable]):
-    """returns a filter_func"""
+@binary_operator_handler(Attribute, datatypes.DateTime, '<=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.datetime_less_than_equals(left_operand, right_operand)), None
 
-    left_operand, left_outer_filter = left_operand_and_filter
-    right_operand, right_outer_filter = right_operand_and_filter
 
+@binary_operator_handler(datatypes.DateTime, Attribute, '<=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.datetime_greater_than_equals(right_operand, left_operand)), None
+
+
+@binary_operator_handler(datatypes.DateTime, datatypes.DateTime, '>=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.utc_datetime >= right_operand.utc_datetime:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(datatypes.DateTime, Attribute, '>=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.datetime_less_than_equals(right_operand, left_operand)), None
+
+
+@binary_operator_handler(datatypes.Quantity, datatypes.Quantity, '>=')
+def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.dimensionality != right_operand.dimensionality:
+        search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
+        return outer_filter(false()), None
+    if left_operand.maginitude_in_base_units >= right_operand.maginitude_in_base_units:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(Attribute, datatypes.Quantity, '>=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.quantity_greater_than_equals(left_operand, right_operand)), None
+
+
+@binary_operator_handler(datatypes.Quantity, Attribute, '>=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.quantity_less_than_equals(right_operand, left_operand)), None
+
+
+@binary_operator_handler(Attribute, datatypes.DateTime, '>=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.datetime_greater_than_equals(left_operand, right_operand)), None
+
+
+@binary_operator_handler(datatypes.Text, Attribute, 'in')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.text_contains(right_operand, left_operand.text)), None
+
+
+@binary_operator_handler(datatypes.Text, datatypes.Text, 'in')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.text in right_operand.text:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+def transform_literal_to_query(data, literal: object_search_parser.Literal, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable]]:
+    if isinstance(literal, object_search_parser.Tag):
+        return where_filters.tags_contain(data[('tags',)], literal.value), None
+
+    if isinstance(literal, object_search_parser.Attribute):
+        attributes = literal.value
+        # covert any numeric arguments to integers (array indices)
+        for i, attribute in enumerate(attributes):
+            try:
+                attributes[i] = int(attribute)
+            except ValueError:
+                pass
+        if '?' in attributes:
+            array_placeholder_index = attributes.index('?')
+            # no danger of SQL injection as attributes may only consist of
+            # characters and underscores at this point
+            jsonb_selector = '\'' + '\' -> \''.join(attributes[:array_placeholder_index]) + '\''
+            array_items = select(columns=[db.text('value FROM jsonb_array_elements_text(data -> {})'.format(jsonb_selector))])
+            db_obj = db.literal_column('value').cast(postgresql.JSONB)
+            for attribute in attributes[array_placeholder_index+1:]:
+                db_obj = db_obj[attribute]
+            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: db.Query(db.literal(True)).select_entity_from(array_items).filter(filter).exists()
+        return Attribute(literal.input_text, literal.start_position, data[attributes]), None
+
+    if isinstance(literal, object_search_parser.Boolean):
+        return literal, None
+
+    if isinstance(literal, object_search_parser.Date):
+        return literal, None
+
+    if isinstance(literal, object_search_parser.Quantity):
+        return literal, None
+
+    if isinstance(literal, object_search_parser.Text):
+        return literal, None
+
+    search_notes.append(('error', "Invalid search query", 0, None))
+    return false(), None
+
+
+def transform_unary_operation_to_query(data, operator, operand, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Tuple[Expression, typing.Optional[typing.Callable]]:
+    start_token = operator
+    start = start_token.start_position
+    end_token = operand
+    while isinstance(end_token, list):
+        end_token = end_token[0]
+    end = end_token.start_position + len(end_token.input_text)
+    operand, outer_filter = transform_tree_to_query(data, operand, search_notes)
+    if not outer_filter:
+        outer_filter = lambda filter: filter
+
+    str_operator = operator.operator
+    operator_aliases = {
+        '!': 'not'
+    }
+    if str_operator in operator_aliases:
+        str_operator = operator_aliases[str_operator]
+
+    if isinstance(operand, object_search_parser.Boolean):
+        operand_type = datatypes.Boolean
+    elif isinstance(operand, object_search_parser.Date):
+        operand_type = datatypes.DateTime
+    elif isinstance(operand, object_search_parser.Quantity):
+        operand_type = datatypes.Quantity
+    elif isinstance(operand, object_search_parser.Text):
+        operand_type = datatypes.Text
+    elif isinstance(operand, Attribute):
+        operand_type = Attribute
+    else:
+        operand_type = None
+
+    if (operand_type, str_operator) in unary_operator_handlers:
+        return unary_operator_handlers[(operand_type, str_operator)](operator, operand, outer_filter, search_notes)
+
+    search_notes.append(('error', "Unknown unary operation", start, end))
+    return Expression(operator.input_text + operand.input_text, operator.start_position, false()), None
+
+
+def transform_binary_operation_to_query(data, left_operand, operator, right_operand, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Tuple[Expression, typing.Optional[typing.Callable]]:
+    start_token = left_operand
+    while isinstance(start_token, list):
+        start_token = start_token[0]
+    start = start_token.start_position
+    end_token = right_operand
+    while isinstance(end_token, list):
+        end_token = end_token[-1]
+    end = end_token.start_position + len(end_token.input_text)
+
+    left_operand, left_outer_filter = transform_tree_to_query(data, left_operand, search_notes)
+    right_operand, right_outer_filter = transform_tree_to_query(data, right_operand, search_notes)
 
     if left_outer_filter and right_outer_filter:
-        raise ValueError("Only one outer filter is supported")
+        search_notes.append(('error', "Multiple array placeholders", start, end))
+        return Expression(left_operand.input_text + operator.input_text + right_operand.input_text, left_operand.start_position, false()), None
     if left_outer_filter:
         outer_filter = left_outer_filter
     elif right_outer_filter:
@@ -565,67 +618,80 @@ def binary_transformation(left_operand_and_filter: typing.Tuple[Any, Any], right
     else:
         outer_filter = lambda filter: filter
 
-    left_operand_type = None
+    str_operator = operator.operator
+    operator_aliases = {
+        '||': 'or',
+        '&&': 'and',
+        '=': '=='
+    }
+    if str_operator in operator_aliases:
+        str_operator = operator_aliases[str_operator]
 
-    left_operand_is_boolean = False
-    left_operand_is_date = False
-    left_operand_is_quantity = False
-    left_operand_is_text = False
-    left_operand_is_attribute = False
-    left_operand_is_expression = False
-    if isinstance(left_operand, datatypes.Boolean): #sets left_operand_type and left_operand_is_datetype=True
-        left_operand_is_boolean = True
+    if isinstance(left_operand, object_search_parser.Boolean):
         left_operand_type = datatypes.Boolean
-    elif isinstance(left_operand, datatypes.DateTime):
-        left_operand_is_date = True
+    elif isinstance(left_operand, object_search_parser.Date):
         left_operand_type = datatypes.DateTime
-    elif isinstance(left_operand, datatypes.Quantity):
-        left_operand_is_quantity = True
+    elif isinstance(left_operand, object_search_parser.Quantity):
         left_operand_type = datatypes.Quantity
-    elif isinstance(left_operand, datatypes.Text):
-        left_operand_is_text = True
+    elif isinstance(left_operand, object_search_parser.Text):
         left_operand_type = datatypes.Text
-    elif isinstance(left_operand, BinaryExpression):
-        left_operand_is_attribute = True
-        left_operand_type = BinaryExpression
+    elif isinstance(left_operand, Attribute):
+        left_operand_type = Attribute
     else:
-        left_operand_is_expression = True
+        left_operand_type = None
 
-    right_operand_type = None
-
-    right_operand_is_boolean = False
-    right_operand_is_date = False
-    right_operand_is_quantity = False
-    right_operand_is_text = False
-    right_operand_is_attribute = False
-    right_operand_is_expression = False
-    if isinstance(right_operand, datatypes.Boolean): #sets right_operand_type and right_operand_is_datetype=True
-        right_operand_is_boolean = True
+    if isinstance(right_operand, object_search_parser.Boolean):
         right_operand_type = datatypes.Boolean
-    elif isinstance(right_operand, datatypes.DateTime):
-        right_operand_is_date = True
+    elif isinstance(right_operand, object_search_parser.Date):
         right_operand_type = datatypes.DateTime
-    elif isinstance(right_operand, datatypes.Quantity):
-        right_operand_is_quantity = True
+    elif isinstance(right_operand, object_search_parser.Quantity):
         right_operand_type = datatypes.Quantity
-    elif isinstance(right_operand, datatypes.Text):
-        right_operand_is_text = True
+    elif isinstance(right_operand, object_search_parser.Text):
         right_operand_type = datatypes.Text
-    elif isinstance(right_operand, BinaryExpression):
-        right_operand_is_attribute = True
-        right_operand_type = BinaryExpression
+    elif isinstance(right_operand, Attribute):
+        right_operand_type = Attribute
     else:
-        right_operand_is_expression = True
+        right_operand_type = None
+
+    if datatypes.DateTime in (left_operand_type, right_operand_type):
+        if str_operator.strip() == 'after':
+            str_operator = '>'
+        elif str_operator.strip() == 'before':
+            str_operator = '<'
+        elif str_operator.strip() == 'on':
+            str_operator = '=='
+
+    if (left_operand_type, right_operand_type, str_operator) in binary_operator_handlers:
+        return binary_operator_handlers[(left_operand_type, right_operand_type, str_operator)](left_operand, operator, right_operand, outer_filter, search_notes)
+
+    search_notes.append(('error', "Unknown binary operation", start, end))
+    return Expression(left_operand.input_text + operator.input_text + right_operand.input_text, left_operand.start_position, false()), None
 
 
-    if (left_operand_type, right_operand_type, operator) in operator_handlers:
-        return operator_handlers[(left_operand_type, right_operand_type, operator)](left_operand, right_operand, outer_filter)
-    else:
-        return False
+def transform_tree_to_query(data, tree: typing.Union[object_search_parser.Literal, list], search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Tuple[Expression, typing.Optional[typing.Callable]]:
+    if isinstance(tree, object_search_parser.Literal):
+        return transform_literal_to_query(data, tree, search_notes)
+    if not isinstance(tree, list):
+        search_notes.append(('error', "Invalid search query", 0, None))
+        return false(), None
+    if len(tree) == 1:
+        value, = tree
+        return transform_tree_to_query(data, value, search_notes)
+    if len(tree) == 2:
+        operator, operand = tree
+        if isinstance(operator, object_search_parser.Operator):
+            return transform_unary_operation_to_query(data, operator, operand, search_notes)
+        search_notes.append(('error', "Invalid search query (missing operator)", 0, None))
+        return false(), None
+    if len(tree) == 3:
+        left_operand, operator, right_operand = tree
+        if isinstance(operator, object_search_parser.Operator):
+            return transform_binary_operation_to_query(data, left_operand, operator, right_operand, search_notes)
+        search_notes.append(('error', "Invalid search query (missing operator)", 0, None))
+        return false(), None
 
 
-
-def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Callable:
+def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Tuple[typing.Callable, typing.Any]:
     """
     Generates a filter function for use with SQLAlchemy and the JSONB data
     attribute in the object tables.
@@ -636,20 +702,65 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
     :param use_advanced_search: whether to use simple text search (False) or advanced search (True)
     :return: filter func
     """
+    tree = None
     if query_string:
         if use_advanced_search:
             # Advanced search using parser and where_filters
-            def filter_func(data, search_notes, query_string=query_string):
-                """ Filter objects based on search query string """
+            try:
+                tree = object_search_parser.parse_query_string(query_string)
+            except object_search_parser.ParseError as e:
+                def filter_func(data, search_notes, e=e):
+                    """ Return no objects and set search_notes"""
+                    search_notes.append(('error', e.message, e.start, e.end))
+                    return False
+                return filter_func, None
+            except Exception:
+                def filter_func(data, search_notes, start=0, end=len(query_string)):
+                    """ Return no objects and set search_notes"""
+                    search_notes.append(('error', "Failed to parse query string", start, end))
+                    return False
+                return filter_func, None
+            if isinstance(tree, list) and not tree:
+                def filter_func(data, search_notes, start=0, end=len(query_string)):
+                    """ Return no objects and set search_notes"""
+                    search_notes.append(('error', 'Empty search', start, end))
+                    return False
+                return filter_func, None
+            if isinstance(tree, object_search_parser.Literal):
+                if isinstance(tree, object_search_parser.Boolean):
+                    if tree.value.value:
+                        def filter_func(data, search_notes, start=0, end=len(query_string)):
+                            """ Return all objects and set search_notes"""
+                            search_notes.append(('warning', 'This search will always return all objects', start, end))
+                            return True
+                        return filter_func, tree
+                    else:
+                        def filter_func(data, search_notes, start=0, end=len(query_string)):
+                            """ Return no objects and set search_notes"""
+                            search_notes.append(('warning', 'This search will never return any objects', start, end))
+                            return False
+                        return filter_func, tree
+                elif isinstance(tree, object_search_parser.Attribute):
+                    pass
+                elif isinstance(tree, object_search_parser.Tag):
+                    pass
+                else:
+                    def filter_func(data, search_notes, start=0, end=len(query_string)):
+                        """ Return no objects and set search_notes"""
+                        search_notes.append(('error', 'Unable to use literal as search query', start, end))
+                        return False
+                    return filter_func, None
 
-                query_string = replace(query_string)
-                binary_tree = parsing_in_tree(query_string)
-                filter_func, outer_filter = transform_tree(data, binary_tree, unary_transformation, binary_transformation, search_notes)
+            def filter_func(data, search_notes, tree=tree):
+                """ Filter objects based on search query string """
+                filter_func, outer_filter = transform_tree_to_query(data, tree, search_notes)
+                # check bool if filter_func is only an attribute
+                if isinstance(filter_func, Expression):
+                    filter_func = filter_func.value
+                if isinstance(filter_func, Attribute):
+                    filter_func = where_filters.boolean_true(filter_func.value)
                 if outer_filter:
                     filter_func = outer_filter(filter_func)
-                # check bool if filter_func is only an attribute
-                if isinstance(filter_func, BinaryExpression):
-                    filter_func = where_filters.boolean_true(filter_func)
                 return filter_func
         else:
             # Simple search in values
@@ -662,7 +773,7 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
         def filter_func(data, search_notes):
             """ Return all objects"""
             return True
-    return filter_func
+    return filter_func, tree
 
 
 def wrap_filter_func(filter_func):

@@ -70,6 +70,7 @@ def objects():
         use_advanced_search = False
         advanced_search_had_error = False
         search_notes = []
+        search_tree = None
     else:
         try:
             action_id = int(flask.request.args.get('action', ''))
@@ -97,10 +98,11 @@ def objects():
         else:
             project = None
         query_string = flask.request.args.get('q', '')
+        search_tree = None
         use_advanced_search = flask.request.args.get('advanced', None) is not None
         advanced_search_had_error = False
         try:
-            filter_func = generate_filter_func(query_string, use_advanced_search)
+            filter_func, search_tree = generate_filter_func(query_string, use_advanced_search)
         except Exception as e:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
@@ -108,19 +110,25 @@ def objects():
 
                 def filter_func(data, search_notes):
                     """ Return all objects"""
-                    search_notes.append(('error', "Unable to parse search expression: {}".format(query_string)))
+                    search_notes.append(('error', "Unable to parse search expression".format(query_string), 0, len(query_string)))
                     return False
             else:
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
-        objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ,
-            filter_func=filter_func,
-            action_id=action_id,
-            action_type=action_type,
-            project_id=project_id
-        )
+        try:
+            objects = get_objects_with_permissions(
+                user_id=flask_login.current_user.id,
+                permissions=Permissions.READ,
+                filter_func=filter_func,
+                action_id=action_id,
+                action_type=action_type,
+                project_id=project_id
+            )
+        except Exception:
+            search_notes.append(('error', "Error during search".format(query_string), 0, 0))
+            objects = []
+        if any(note[0] == 'error' for note in search_notes):
+            objects = []
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
@@ -168,7 +176,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
 
 
 @jinja_filter

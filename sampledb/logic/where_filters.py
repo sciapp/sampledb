@@ -89,9 +89,10 @@ def quantity_between(db_obj, left, right, including=True):
 def datetime_binary_operator(db_obj, other, operator):
     if isinstance(other, datatypes.DateTime):
         other = other.utc_datetime
+    other = other.date()
     return db.and_(
         db_obj['_type'].astext == 'datetime',
-        operator(db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS'), other)
+        operator(db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD'), other)
     )
 
 
@@ -116,17 +117,23 @@ def datetime_greater_than_equals(db_obj, other):
 
 
 def datetime_between(db_obj, left, right, including=True):
+    if isinstance(left, datatypes.DateTime):
+        left = left.utc_datetime
+    if isinstance(right, datatypes.DateTime):
+        right = right.utc_datetime
+    left = left.date()
+    right = right.date()
     if including:
         return db.and_(
             db_obj['_type'].astext == 'datetime',
-            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS') >= left.utc_datetime,
-            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS') <= right.utc_datetime,
+            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD') >= left,
+            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD') <= right,
         )
     else:
         return db.and_(
             db_obj['_type'].astext == 'datetime',
-            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS') > left.utc_datetime,
-            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS') < right.utc_datetime,
+            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD') > left,
+            db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD') < right,
         )
 
 
