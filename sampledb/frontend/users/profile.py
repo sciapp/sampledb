@@ -19,4 +19,4 @@ def current_user_profile():
 @flask_login.login_required
 def user_profile(user_id):
     # TODO: this is a placeholder for now. user profiles will be implemented in the future.
-    return flask.redirect(flask.url_for('.index'))
+    return flask.redirect(flask.url_for('.user_activity', user_id=user_id))
