@@ -533,7 +533,15 @@ def transform_literal_to_query(data, literal: object_search_parser.Literal, sear
             array_placeholder_index = attributes.index('?')
             # no danger of SQL injection as attributes may only consist of
             # characters and underscores at this point
-            jsonb_selector = '\'' + '\' -> \''.join(attributes[:array_placeholder_index]) + '\''
+            jsonb_selector = ''
+            for i, attribute in enumerate(attributes[:array_placeholder_index]):
+                if isinstance(attribute, int):
+                    attribute = str(attribute)
+                else:
+                    attribute = "'" + attribute + "'"
+                if i > 0:
+                    jsonb_selector += " -> "
+                jsonb_selector += attribute
             array_items = select(columns=[db.text('value FROM jsonb_array_elements_text(data -> {})'.format(jsonb_selector))])
             db_obj = db.literal_column('value').cast(postgresql.JSONB)
             for attribute in attributes[array_placeholder_index+1:]:
