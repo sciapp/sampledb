@@ -14,6 +14,10 @@
       "title": "Creation Datetime",
       "type": "datetime"
     },
+    "tags": {
+      "title": "Tags",
+      "type": "tags"
+    },
     "produced_for": {
       "title": "Produced for",
       "type": "text",
@@ -113,7 +117,7 @@
       "multiline": true
     }
   },
-  "propertyOrder": ["name", "created", "produced_for", "chemical_equation", "precursors", "initial_weight", "preparation", "result"],
+  "propertyOrder": ["name", "created", "tags", "produced_for", "chemical_equation", "precursors", "initial_weight", "preparation", "result"],
   "required": ["name", "created"],
-  "displayProperties": []
+  "displayProperties": ["tags"]
 }
