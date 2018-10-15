@@ -129,6 +129,7 @@ def objects():
             objects = []
         if any(note[0] == 'error' for note in search_notes):
             objects = []
+            advanced_search_had_error = True
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:

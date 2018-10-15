@@ -33,8 +33,12 @@
     </div>
   {% endfor %}
   {% endif %}
+  {% if not advanced_search_had_error %}
   {% if search_tree %}
-    {% macro render_search_tree(search_tree) -%}
+    {% macro render_search_tree(search_tree, depth=0) -%}
+      {% if depth > 100 %}
+        ...
+      {% else %}
       {% if search_tree.input_text %}
       {{ search_tree.input_text }}
       {% elif search_tree | length  == 2 %}
@@ -43,7 +47,7 @@
           {% if search_tree[1].input_text %}
             <span style="margin:5px; ">{{ search_tree[1].input_text }}</span>
           {% else %}
-            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[1]) }}</span>
+            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[1], depth=depth+1) }}</span>
           {% endif %}
         </span>
       {% elif search_tree | length  == 3 %}
@@ -51,15 +55,16 @@
           {% if search_tree[0].input_text %}
             <span style="margin:5px; ">{{ search_tree[0].input_text }}</span>
           {% else %}
-            <div style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[0]) }}</div>
+            <div style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[0], depth=depth+1) }}</div>
           {% endif %}
           <span style="margin:5px; font-weight: 800; ">{{ search_tree[1].operator }}</span>
           {% if search_tree[2].input_text %}
             <span style="margin:5px; ">{{ search_tree[2].input_text }}</span>
           {% else %}
-            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[2]) }}</span>
+            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[2], depth=depth+1) }}</span>
           {% endif %}
         </span>
+      {% endif %}
       {% endif %}
     {%- endmacro %}
     {% if search_tree.input_text %}
@@ -71,6 +76,7 @@
         <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree) }}</span>
       </span>
     {% endif %}
+  {% endif %}
   {% endif %}
 
   {% if objects or not search_notes %}
