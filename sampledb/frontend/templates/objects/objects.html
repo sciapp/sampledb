@@ -33,6 +33,45 @@
     </div>
   {% endfor %}
   {% endif %}
+  {% if search_tree %}
+    {% macro render_search_tree(search_tree) -%}
+      {% if search_tree.input_text %}
+      {{ search_tree.input_text }}
+      {% elif search_tree | length  == 2 %}
+        <span style="display:flex;flex-direction:row;justify-content: center; align-items:center; background-color: rgba(0, 128, 255, 0.075)">
+          <span style="margin:5px; font-weight: 800;">{{ search_tree[0].operator }}</span>
+          {% if search_tree[1].input_text %}
+            <span style="margin:5px; ">{{ search_tree[1].input_text }}</span>
+          {% else %}
+            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[1]) }}</span>
+          {% endif %}
+        </span>
+      {% elif search_tree | length  == 3 %}
+        <span style="display:flex;flex-direction:row;justify-content: center; align-items:center; background-color: rgba(0, 128, 255, 0.075)">
+          {% if search_tree[0].input_text %}
+            <span style="margin:5px; ">{{ search_tree[0].input_text }}</span>
+          {% else %}
+            <div style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[0]) }}</div>
+          {% endif %}
+          <span style="margin:5px; font-weight: 800; ">{{ search_tree[1].operator }}</span>
+          {% if search_tree[2].input_text %}
+            <span style="margin:5px; ">{{ search_tree[2].input_text }}</span>
+          {% else %}
+            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[2]) }}</span>
+          {% endif %}
+        </span>
+      {% endif %}
+    {%- endmacro %}
+    {% if search_tree.input_text %}
+      <span style="display:flex; flex-direction:row;justify-content: center;">
+        <span style="padding:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px; background-color: rgba(0, 128, 255, 0.075)">{{ search_tree.input_text }}</span>
+      </span>
+    {% else %}
+      <span style="display:flex; flex-direction:row;justify-content: center;">
+        <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree) }}</span>
+      </span>
+    {% endif %}
+  {% endif %}
 
   {% if objects or not search_notes %}
   {% if project_id %}
