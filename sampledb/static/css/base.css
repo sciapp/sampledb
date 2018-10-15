@@ -179,3 +179,14 @@ body > footer {
     border-color: #843534;
     outline: 0;
 }
+
+.alert-warning .search-error {
+    border-bottom: 2px solid #8a6d3b;
+}
+.alert-danger .search-error {
+    border-bottom: 2px solid #a94442;
+}
+
+.search-error-full {
+    font-family: monospace;
+}

@@ -21,7 +21,7 @@ idna==2.5
 itsdangerous==0.24
 Jinja2==2.9.6
 jsonschema==2.6.0
-ldap3==2.2.4
+ldap3==2.5.1
 Mako==1.0.7
 MarkupSafe==1.0
 mypy==0.521
@@ -32,7 +32,7 @@ Pint==0.8.1
 portend==2.1.2
 psycopg2==2.7.3.2
 py==1.4.34
-pyasn1==0.3.1
+pyasn1==0.4.4
 pycparser==2.18
 pyparsing==2.2.0
 pytest==3.1.3

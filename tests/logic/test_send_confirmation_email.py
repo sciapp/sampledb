@@ -27,7 +27,7 @@ def test_send_confirm_email(app):
             sampledb.logic.utils.send_confirm_email(user.email, user.id, 'add_login')
 
         assert len(outbox) == 1
-        assert 'd.henkel@fz-juelich.de' in outbox[0].recipients
+        assert sampledb.logic.ldap.get_user_info(username).email in outbox[0].recipients
         message = outbox[0].html
         assert 'Welcome to iffsample!' in message
 

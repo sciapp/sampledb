@@ -40,7 +40,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object', object_id=1, mode='upgrade'))
+        return flask.redirect(flask.url_for('frontend.objects', q="created after 2012-01-01 or (mass > 1mg and mass < 15mg)", advanced="on"))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -59,6 +59,8 @@ def setup_data(app):
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
+    data['multilayer'][0]['repetitions']['magnitude_in_base_units'] = 20000
+    data['multilayer'][1]['films'][0]['thickness']['magnitude_in_base_units'] = 1
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
 
@@ -73,6 +75,46 @@ def setup_data(app):
     with open('sampledb/schemas/xrr_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "XRR Measurement", "", schema, instrument.id)
+    with open('sampledb/schemas/searchable_quantity.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    action = create_action(ActionType.SAMPLE_CREATION, "Searchable Object", "", schema, None)
+    independent_object = Objects.create_object(data={
+        "name": {
+            "_type": "text",
+            "text": "TEST-1"
+        },
+        "keywords": {
+            "_type": "tags",
+            "tags": ["tag1", "tag2"]
+        },
+        "mass": {
+            "_type": "quantity",
+            "dimensionality": "[mass]",
+            "magnitude_in_base_units": 0.00001,
+            "units": "mg"
+
+        }
+    }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
+    create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    independent_object = Objects.create_object(data={
+        "name": {
+            "_type": "text",
+            "text": "TEST-2"
+        },
+        "keywords": {
+            "_type": "tags",
+            "tags": ["tag2", "tag3"]
+        },
+        "mass": {
+            "_type": "quantity",
+            "dimensionality": "[mass]",
+            "magnitude_in_base_units": 0.000005,
+            "units": "mg"
+        }
+    }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
+    create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
     sampledb.db.session.commit()
 
     instrument = create_instrument(name="MPMS SQUID", description="MPMS SQUID Magnetometer JCNS-2")
