@@ -22,20 +22,20 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 def float_operator_equals(left, right):
     return db.and_(
-        left * (1 - EPSILON) < right,
-        left * (1 + EPSILON) > right
+        left * (1 - EPSILON) <= right,
+        left * (1 + EPSILON) >= right
     )
 
 
 def float_operator_less_than_equals(left, right):
     return db.and_(
-        left * (1 - EPSILON) < right
+        left * (1 - EPSILON) <= right
     )
 
 
 def float_operator_greater_than_equals(left, right):
     return db.and_(
-        left * (1 + EPSILON) > right
+        left * (1 + EPSILON) >= right
     )
 
 
