@@ -20,11 +20,11 @@
 
   <h4>Information</h4>
   <div class="row" style="padding-right:0.75em">
-    <label class="col-md-3" style="text-align: right">Instrument</label>
+    <label class="col-md-3" style="text-align: right">Instrument <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
     <div class="col-md-9">{% if instrument is not none %}<a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name }}</a>{% else %}&mdash;{% endif %}</div>
   </div>
   <div class="row" style="padding-right:0.75em">
-    <label class="col-md-3" style="text-align: right">Action</label>
+    <label class="col-md-3" style="text-align: right">Action <a href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
     <div class="col-md-9"><a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.name }}</a></div>
   </div>
   {% include "objects/view/any.html" %}

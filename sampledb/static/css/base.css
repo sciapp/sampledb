@@ -190,3 +190,16 @@ body > footer {
 .search-error-full {
     font-family: monospace;
 }
+
+.search-helper {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+label:hover .search-helper {
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+th:hover .search-helper {
+    opacity: 1;
+    transition: opacity 0.5s;
+}
