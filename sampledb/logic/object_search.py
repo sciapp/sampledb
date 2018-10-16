@@ -519,7 +519,7 @@ def _(left_operand, right_operand, outer_filter, search_notes, input_text, start
 
 def transform_literal_to_query(data, literal: object_search_parser.Literal, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable]]:
     if isinstance(literal, object_search_parser.Tag):
-        return where_filters.tags_contain(data[('tags',)], literal.value), None
+        return Expression(literal.input_text, literal.start_position, where_filters.tags_contain(data[('tags',)], literal.value)), None
 
     if isinstance(literal, object_search_parser.Attribute):
         attributes = literal.value

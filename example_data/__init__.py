@@ -83,7 +83,7 @@ def setup_data(app):
             "_type": "text",
             "text": "TEST-1"
         },
-        "keywords": {
+        "tags": {
             "_type": "tags",
             "tags": ["tag1", "tag2"]
         },
@@ -102,7 +102,7 @@ def setup_data(app):
             "_type": "text",
             "text": "TEST-2"
         },
-        "keywords": {
+        "tags": {
             "_type": "tags",
             "tags": ["tag2", "tag3"]
         },

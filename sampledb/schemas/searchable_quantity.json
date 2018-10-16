@@ -6,8 +6,8 @@
       "title": "Object Name",
       "type": "text"
     },
-    "keywords": {
-      "title": "Keywords",
+    "tags": {
+      "title": "Tags",
       "type": "tags"
     },
     "mass": {
@@ -16,6 +16,6 @@
       "units": "kg"
     }
   },
-  "propertyOrder": ["name", "keywords", "mass"],
+  "propertyOrder": ["name", "tags", "mass"],
   "required": ["name"]
 }

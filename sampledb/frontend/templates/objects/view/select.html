@@ -1,5 +1,10 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right">{{ schema.title }}</label>
+  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+    {% if data is not none and "text" in data %}
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + data.text + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+    {% else %}
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+    {% endif %}
   <div class="col-md-9">
   {% for option in schema['choices'] %}
     {% if data is not none and "text" in data and data.text == option %}

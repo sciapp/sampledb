@@ -124,8 +124,8 @@ def objects():
                 action_type=action_type,
                 project_id=project_id
             )
-        except Exception:
-            search_notes.append(('error', "Error during search".format(query_string), 0, 0))
+        except Exception as e:
+            search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
         if any(note[0] == 'error' for note in search_notes):
             objects = []
