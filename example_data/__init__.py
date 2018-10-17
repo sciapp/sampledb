@@ -131,6 +131,13 @@ def setup_data(app):
     instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
     sampledb.db.session.commit()
 
+    instrument = create_instrument(name="GALAXI", description="Gallium Anode Low-Angle X-ray Instrument")
+    add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
+    with open('server_schemas/galaxi_measurement.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+    sampledb.db.session.commit()
+
     with open('server_schemas/other_sample.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     create_action(ActionType.SAMPLE_CREATION, "Other Sample", "", schema, None)

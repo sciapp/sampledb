@@ -26,6 +26,28 @@ test:
     reports:
       junit: pytest.xml
 
+pages:
+  stage: test
+  image: ubuntu:18.04
+  services:
+    - postgres:latest
+  script:
+    - apt-get update
+    # set up Python 3.6
+    - apt-get install -y curl python3-pip
+    # install dependencies
+    - python3 -m pip install -r requirements.txt
+    # generate documentation images using current version
+    - apt-get install -y xvfb chromium-browser
+    - Xvfb :0 -ac -screen 0 1920x1080x24 &
+    - export DISPLAY=:0
+    - python3 docs/generate_images.py
+    # build documentation
+    - python3 -m sphinx -b html docs/ public/
+  artifacts:
+    paths:
+    - public
+
 deploy:
   stage: deploy
   image: ubuntu:18.04

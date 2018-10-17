@@ -1,0 +1,94 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "GALAXI-",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^GALAXI-.+_[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "tags": {
+      "title": "Tags",
+      "type": "tags"
+    },
+    "measurement_type": {
+      "title": "Measurement Type",
+      "type": "text",
+      "choices": ["SAXS", "GISAXS", "Reflectometry"]
+    },
+    "temperature": {
+      "title": "Temperature",
+      "type": "quantity",
+      "units": "degC",
+      "default": 298.15
+    },
+    "magnetic_field": {
+      "title": "Magnetic Field",
+      "type": "quantity",
+      "units": "mT",
+      "default": 0
+    },
+    "beam_center_x": {
+      "title": "Beam Center (X)",
+      "type": "quantity",
+      "units": "1"
+    },
+    "beam_center_y": {
+      "title": "Beam Center (Y)",
+      "type": "quantity",
+      "units": "1"
+    },
+    "detector_z": {
+      "title": "Detector Z",
+      "type": "quantity",
+      "units": "mm"
+    },
+    "sample_detector_distance": {
+      "title": "Sample to Detector Distance",
+      "type": "quantity",
+      "units": "mm"
+    },
+    "comment": {
+      "title": "Comment",
+      "type": "text",
+      "minLength": 0,
+      "multiline": true
+    }
+  },
+  "propertyOrder": [
+    "sample",
+    "name",
+    "created",
+    "tags",
+    "measurement_type",
+    "temperature",
+    "magnetic_field",
+    "beam_center_x",
+    "beam_center_y",
+    "detector_z",
+    "sample_detector_distance",
+    "comment"
+  ],
+  "required": [
+    "sample",
+    "name",
+    "created",
+    "measurement_type",
+    "temperature",
+    "magnetic_field"
+  ],
+  "displayProperties": [
+    "tags"
+  ]
+}
