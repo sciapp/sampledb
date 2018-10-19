@@ -55,6 +55,11 @@
         <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary pull-right" style="width:10em">Use as Template</a>
       </div>
     </div>
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <button type="button" class="btn btn-primary pull-right" style="width:10em" id="button-show-object-qrcode-modal">Show QR Code</button>
+      </div>
+    </div>
   {% endif %}
     {% if restore_form is not none %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
@@ -330,6 +335,23 @@
       </div>
     </div>
     {% endif %}
+  {% endif %}
+
+  {% if object_qrcode %}
+    <div class="modal fade" id="mobileObjectLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileObjectLinkModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="mobileObjectLinkModalLabel">Object QR Code</h4>
+          </div>
+          <div class="modal-body">
+            <p class="text-center">To view this object in the future, scan this QR code:</p>
+            <a href="{{ object_qrcode }}"><img src="{{ object_qrcode }}" alt="{{ object_url }}" style="width: 100%"/></a>
+          </div>
+        </div>
+      </div>
+    </div>
   {% endif %}
 
   {% if not is_archived %}
@@ -697,6 +719,9 @@
         });
         $('#button-show-jupyterhub-files-modal').click(function() {
           setUpTreeView('jupyterhub');
+        });
+        $('#button-show-object-qrcode-modal').click(function() {
+            $('#mobileObjectLinkModal').modal('show');
         });
 
         function getTreeviewNodeFromPathArray(treeview, path_array) {
