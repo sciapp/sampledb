@@ -12,7 +12,7 @@ from sampledb.models import Objects, User, UserType, ActionType, AuthenticationT
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
-from sampledb.logic import groups, permissions, projects
+from sampledb.logic import groups, permissions, projects, comments, files
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -43,7 +43,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.new_object', action_id=8))
+        return flask.redirect(flask.url_for('frontend.object', object_id=1))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -66,6 +66,9 @@ def setup_data(app):
     data['multilayer'][1]['films'][0]['thickness']['magnitude_in_base_units'] = 1
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+    comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
+    comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
+    files.create_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
 
     with open('server_schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
@@ -95,7 +98,6 @@ def setup_data(app):
             "dimensionality": "[mass]",
             "magnitude_in_base_units": 0.00001,
             "units": "mg"
-
         }
     }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
