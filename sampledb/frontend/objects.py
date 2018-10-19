@@ -6,15 +6,12 @@
 import base64
 from copy import deepcopy
 import datetime
-from io import BytesIO
 import json
 import os
 import flask
 import flask_login
 import itsdangerous
 import werkzeug.utils
-import qrcode
-import qrcode.image.svg
 
 from . import frontend
 from .. import db
@@ -34,7 +31,7 @@ from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm
 from ..utils import object_permissions_required
-from .utils import jinja_filter
+from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -440,14 +437,13 @@ def object(object_id):
             serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
             token = serializer.dumps([flask_login.current_user.id, object_id])
             mobile_upload_url = flask.url_for('.mobile_file_upload', object_id=object_id, token=token, _external=True)
-            image = qrcode.make(mobile_upload_url, image_factory=qrcode.image.svg.SvgPathFillImage)
-            image_stream = BytesIO()
-            image.save(image_stream)
-            image_stream.seek(0)
-            mobile_upload_qrcode = 'data:image/svg+xml;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
+            mobile_upload_qrcode = generate_qrcode(mobile_upload_url, should_cache=False)
         else:
             mobile_upload_url = None
             mobile_upload_qrcode = None
+
+        object_url = flask.url_for('.object', object_id=object_id, _external=True)
+        object_qrcode = generate_qrcode(object_url, should_cache=True)
 
         return flask.render_template(
             'objects/view/base.html',
@@ -471,6 +467,8 @@ def object(object_id):
             file_form=FileForm(),
             mobile_upload_url=mobile_upload_url,
             mobile_upload_qrcode=mobile_upload_qrcode,
+            object_qrcode=object_qrcode,
+            object_url=object_url,
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
