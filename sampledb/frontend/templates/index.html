@@ -10,8 +10,13 @@
 {% block content %}
 <div class="container">
   <div class="alert alert-warning">
-    <p><strong>Warning:</strong> This is a preview installation of SampleDB at PGI / JCNS. It will be updated frequently and while we try to keep everything running smoothly, we ask that you do not yet rely on SampleDB to be available. If you have further questions or encounter any issues, please <a href="mailto:f.rhiem@fz-juelich.de&subject=SampleDB">let us know</a>. Thank you!</p>
+    <p><strong>Warning:</strong> This installation of iffSamples, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:f.rhiem@fz-juelich.de&subject=SampleDB">let us know</a>. Thank you!</p>
   </div>
+  {% if config['SERVER_NAME'] != 'iffsamples.fz-juelich.de' %}
+    <div class="alert alert-danger">
+      <p><strong>Warning:</strong> This is a preview installation of iffSamples, the sample and measurement metadata database at PGI / JCNS. It used for development, may be offline at any time and the <strong>data will be deleted!</strong></p>
+    </div>
+  {% endif %}
 {% if not current_user.is_authenticated %}
   <div class="jumbotron">
     <h1>Welcome to SampleDB</h1>
