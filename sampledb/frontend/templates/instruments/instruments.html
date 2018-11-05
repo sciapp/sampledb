@@ -3,7 +3,14 @@
 {% block content %}
   <h1>Instruments</h1>
   {% for instrument in instruments %}
-    <h2><a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name }}">{{ instrument.name }}</a></h2>
+    <form action="{{ url_for('.toggle_favorite_instrument') }}" method="post">
+    <input type="hidden" name="instrument_id" value="{{ instrument.id }}">
+    {{ toggle_favorite_instrument_form.csrf_token() }}
+    <h2>
+      <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name }}">{{ instrument.name }}</a>
+      <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
+    </h2>
+    </form>
     <p>{{ instrument.description }}</p>
     {% include "instruments/instrument_responsible_users.html" %}
   {% endfor %}

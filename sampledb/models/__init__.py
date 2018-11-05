@@ -4,6 +4,7 @@
 """
 
 from . import authentication
+from . import favorites
 from . import files
 from . import groups
 from . import instruments
@@ -14,6 +15,7 @@ from . import users
 
 from .authentication import Authentication, AuthenticationType
 from .comments import Comment
+from .favorites import FavoriteAction, FavoriteInstrument
 from .files import File
 from .groups import Group
 from .instruments import Instrument, Action, ActionType

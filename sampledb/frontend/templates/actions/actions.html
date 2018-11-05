@@ -3,11 +3,18 @@
 {% block content %}
   <h1>Actions</h1>
   {% for action in actions %}
-    {% if action.instrument is none %}
-    <h2><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h2>
-    {% else %}
-    <h2><a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash; <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h2>
-    {% endif %}
+    <form action="{{ url_for('.toggle_favorite_action') }}" method="post">
+      <input type="hidden" name="action_id" value="{{ action.id }}">
+      {{ toggle_favorite_action_form.csrf_token() }}
+      <h2>
+        {% if action.instrument is none %}
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
+        {% else %}
+        <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash; <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
+        {% endif %}
+        <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
+      </h2>
+    </form>
     <p>{{ action.description }}</p>
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_responsible_users.html" %}
