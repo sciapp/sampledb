@@ -165,7 +165,7 @@ def objects():
             if obj['schema']['properties'][property_name]['type'] == 'sample':
                 sample_ids.add(obj['data'][property_name]['object_id'])
 
-    objects.sort(key=lambda obj: obj['object_id'])
+    objects.sort(key=lambda obj: obj['object_id'], reverse=True)
     samples = {
         sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids
@@ -293,7 +293,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
-        raw_form_data = dict(flask.request.form)
+        raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
         form_data = {k: v[0] for k, v in raw_form_data.items()}
 
         if 'input_num_batch_objects' in form_data:

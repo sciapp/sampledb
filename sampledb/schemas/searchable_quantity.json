@@ -17,5 +17,6 @@
     }
   },
   "propertyOrder": ["name", "tags", "mass"],
-  "required": ["name"]
+  "required": ["name"],
+  "displayProperties": ["tags", "mass"]
 }

@@ -1,0 +1,21 @@
+{% if schema['type'] == 'text' %}
+  {% if data is not none and data["_type"] == "text" %}
+    {{ data.text }}
+  {% endif %}
+{% elif schema['type'] == 'datetime' %}
+  {% if data is not none and data["_type"] == "datetime" %}
+    {{ data.utc_datetime }}
+  {% endif %}
+{% elif schema['type'] == 'tags' %}
+  {% if data is not none and data["_type"] == "tags" %}
+    {{ data.tags | join(',') }}
+  {% endif %}
+{% elif schema['type'] == 'quantity' %}
+  {% if data is not none and data["_type"] == "quantity" %}
+    {{ "%040.20f" | format(data.magnitude_in_base_units) }}
+  {% endif %}
+{% elif schema['type'] == 'sample' %}
+  {% if data is not none and data["_type"] == "sample" %}
+    {{ data.object_id }}
+  {% endif %}
+{% endif %}
