@@ -203,3 +203,33 @@ th:hover .search-helper {
     opacity: 1;
     transition: opacity 0.5s;
 }
+
+.fav-star-on, .fav-star-off {
+    border: none;
+    background-color: transparent;
+    min-width:0;
+    min-height:0;
+    padding:0;
+    -webkit-appearance: none;
+    font-size: 0.8em;
+}
+.fav-star-off:before {
+    content: "\f006";
+    color: #cccccc;
+    transition: color 0.2s;
+}
+.fav-star-off:hover:before {
+    content: "\f005";
+    color: #444444;
+    transition: color 0.2s;
+}
+.fav-star-on:before {
+    content: "\f005";
+    color: #dddddd;
+    transition: color 0.2s;
+}
+.fav-star-on:hover:before {
+    content: "\f006";
+    color: #444444;
+    transition: color 0.2s;
+}

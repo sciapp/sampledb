@@ -3,5 +3,5 @@
 
 """
 
-from . import invitation, preferences, activity, profile, authentication, groups
+from . import favorites, invitation, preferences, activity, profile, authentication, groups
 

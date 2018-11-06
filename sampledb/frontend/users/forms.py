@@ -25,3 +25,11 @@ class LeaveGroupForm(FlaskForm):
 
 class InviteUserForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
+
+
+class ToggleFavoriteActionForm(FlaskForm):
+    action_id = IntegerField(validators=[InputRequired()])
+
+
+class ToggleFavoriteInstrumentForm(FlaskForm):
+    instrument_id = IntegerField(validators=[InputRequired()])
