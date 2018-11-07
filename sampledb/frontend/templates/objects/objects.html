@@ -99,26 +99,33 @@
   {% endif %}
 
   {% if objects %}
-  <table class="table">
+  <table class="table" id="table-objects">
   <thead>
     <tr>
-      <th scope="col" rowspan="2">ID</th><th scope="col" rowspan="2">Name</th><th scope="col" colspan="2">Created</th><th scope="col" colspan="2">Last modified</th>{% if show_action %}<th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>{% endif %}
+      <th scope="col" rowspan="2" data-sort-selector="'th', 0">ID</th>
+      <th scope="col" rowspan="2" data-sort-selector="'td', 0">Name</th>
+      <th scope="col" colspan="2">Created</th>
+      <th scope="col" colspan="2">Last modified</th>
+      {% if show_action %}<th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>{% endif %}
       {% for property_name in display_properties %}
-        <th scope="col" rowspan="2">{{ display_property_titles[property_name] }}</th>
+        <th scope="col" rowspan="2" data-sort-selector="'td', {{ 5 + loop.index0 }}">{{ display_property_titles[property_name] }}</th>
       {% endfor %}
     </tr>
     <tr>
-      <th scope="col">Date</th><th scope="col">User</th><th scope="col">Date</th><th scope="col">User</th>
+      <th scope="col" data-sort-selector="'td', 1">Date</th>
+      <th scope="col">User</th>
+      <th scope="col" data-sort-selector="'td', 3">Date</th>
+      <th scope="col">User</th>
     </tr>
   </thead>
   <tbody>
   {% for object in objects %}
     <tr>
-      <th scope="row">{{ object.object_id }}</th>
-      <td><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.data['name']['text'] }}</a></td>
-      <td>{{ object.created_at }}</td>
+      <th scope="row" data-value="{{ object.object_id }}">{{ object.object_id }}</th>
+      <td data-value="{{ object.data['name']['text'] }}"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.data['name']['text'] }}</a></td>
+      <td data-value="{{ object.created_at }}">{{ object.created_at }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>
-      <td>{{ object.last_modified_at }}</td>
+      <td data-value="{{ object.last_modified_at }}">{{ object.last_modified_at }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.name }}</a></td>
       {% if show_action %}
       {% if object.action is not none %}
@@ -134,15 +141,15 @@
       {% endif %}
       {% endif %}
       {% for property_name in display_properties %}
-        <td>
         {% if object.display_properties[property_name] is not none %}
           {% set data = object.display_properties[property_name][0] %}
           {% set schema = object.display_properties[property_name][1] %}
+          <td data-value="{% include "objects/view/sort_value_any.html" %}">
           {% include "objects/view/table_any.html" %}
+          </td>
         {% else %}
-          &mdash;
+          <td> &mdash; </td>
         {% endif %}
-        </td>
       {% endfor %}
     </tr>
   {% endfor %}
@@ -157,4 +164,53 @@
     {% endif %}
     </div>
   {% endif %}
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+
+  <script>
+   function sortTable(order, selector, index) {
+     var table = $("#table-objects")[0];
+     var switching = true;
+     while (switching) {
+       switching = false;
+       rows = Array.prototype.slice.call(table.rows, 0).filter(function (row) {
+         return row.getElementsByTagName("th").length === 1;
+       });
+       var i;
+       for (i = 0; i < rows.length - 1; i++) {
+         var shouldSwitch = false;
+         var left = rows[i].getElementsByTagName(selector)[index];
+         var right = rows[i + 1].getElementsByTagName(selector)[index];
+         if (!left || !right) {
+           continue;
+         }
+         if (left.hasAttribute("data-value")) {
+           left = left.getAttribute("data-value").trim();
+         } else {
+           left = "";
+         }
+         if (right.hasAttribute("data-value")) {
+           right = right.getAttribute("data-value").trim();
+         } else {
+           right = "";
+         }
+         if ((order === "ascending" && left > right) || (order === "descending" && left < right)) {
+           break;
+         }
+       }
+       if (i !== rows.length - 1) {
+         rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+         switching = true;
+       }
+     }
+   }
+   $(function() {
+     var table_headers = $("#table-objects th[data-sort-selector]");
+     table_headers.each(function (index, th) {
+       var selectors = th.getAttribute("data-sort-selector");
+       th.innerHTML += ' <span class="icons-sorting"><span onclick="sortTable(\'ascending\', ' + selectors + ')"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></span><span onclick="sortTable(\'descending\', ' + selectors + ')"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></span></span>';
+     });
+   });
+  </script>
 {% endblock %}

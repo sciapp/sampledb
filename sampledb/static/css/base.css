@@ -233,3 +233,36 @@ th:hover .search-helper {
     color: #444444;
     transition: color 0.2s;
 }
+#table-objects .icons-sorting {
+    display: inline-block;
+    position: relative;
+    height: 1.3em;
+    width: 1.1em;
+    margin-bottom: -0.2em;
+}
+#table-objects .icons-sorting > span {
+    position:absolute;
+    left:0;
+    line-height: 0;
+    display: block;
+    height:0.7em;
+    overflow: hidden;
+    font-size: 0.9em;
+    cursor: pointer;
+    color:#cccccc;
+    transition: color 0.2s;
+}
+#table-objects .icons-sorting > span:hover {
+    color:inherit;
+}
+#table-objects .icons-sorting > span > i {
+    line-height: 0.7em;
+    display: block;
+    vertical-align: middle;
+}
+#table-objects .icons-sorting > span:nth-child(1) {
+    top:0;
+}
+#table-objects .icons-sorting > span:nth-child(2) {
+    bottom:0;
+}
