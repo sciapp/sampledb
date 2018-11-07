@@ -509,8 +509,10 @@ def print_object_label(object_id):
 
     object_url = flask.url_for('.object', object_id=object_id, _external=True)
 
-    # TODO: use user-supplied GHS classes
-    ghs_classes = []
+    if 'hazards' in object.data and '_type' in object.data['hazards'] and object.data['hazards']['_type'] == 'hazards':
+        hazards = object.data['hazards']['hazards']
+    else:
+        hazards = []
 
     pdf_data = create_labels(
         object_id=object_id,
@@ -518,11 +520,12 @@ def print_object_label(object_id):
         object_url=object_url,
         creation_user=creation_user,
         creation_date=creation_date,
-        ghs_classes=ghs_classes
+        ghs_classes=hazards
     )
     return flask.send_file(
         io.BytesIO(pdf_data),
-        mimetype='application/pdf'
+        mimetype='application/pdf',
+        cache_timeout=-1
     )
 
 

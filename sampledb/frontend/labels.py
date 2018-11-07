@@ -34,7 +34,7 @@ GHS_IMAGE_URIS = _generate_ghs_image_uris()
 def _draw_centered_wrapped_text(canvas, text, left_offset, width, top_cursor, font_name, font_size, line_height):
     lines = []
     while text:
-        text = text[len(text) - len(text.lstrip()):]
+        text = text.lstrip()
         line = text
         while canvas.stringWidth(line, font_name, font_size) > width:
             if ' ' in line:
@@ -46,8 +46,9 @@ def _draw_centered_wrapped_text(canvas, text, left_offset, width, top_cursor, fo
 
     canvas.setFont(font_name, font_size)
     for line in lines:
-        canvas.drawCentredString(left_offset + width / 2, top_cursor, line)
-        top_cursor -= line_height * font_size
+        if line:
+            canvas.drawCentredString(left_offset + width / 2, top_cursor, line)
+            top_cursor -= line_height * font_size
     return top_cursor
 
 
@@ -101,12 +102,16 @@ def _draw_label(canvas, sample_name, sample_creator, sample_creation_date, sampl
     if len(ghs_classes) > 2:
         ghs_start_position = 2
         top_cursor -= 4.5 * mm
-    for i, ghs_class in enumerate(ghs_classes, start=ghs_start_position):
-        if i % 3 == 0:
-            top_cursor -= 9 * mm
-        canvas.drawImage(GHS_IMAGE_URIS[ghs_class], left_offset + ((right_offset - left_offset)/2 - 19 * mm / 2) + 0.5 * mm + (i % 3 == 1) * 9 * mm + (i % 3 == 2) * 4.5 * mm, top_cursor + 5 - (i % 3 == 2) * 4.5 * mm, 9 * mm , 9 * mm, (255, 255, 255, 255, 255, 255))
-    if (len(ghs_classes) - 1) % 3 == 0:
-        top_cursor -= 4.5 * mm
+    if len(ghs_classes) == 1:
+        top_cursor -= 9 * mm
+        canvas.drawImage(GHS_IMAGE_URIS[ghs_classes[0]], left_offset + ((right_offset - left_offset)/2 - 9 * mm / 2), top_cursor + 5, 9 * mm , 9 * mm, (255, 255, 255, 255, 255, 255))
+    else:
+        for i, ghs_class in enumerate(ghs_classes, start=ghs_start_position):
+            if i % 3 == 0:
+                top_cursor -= 9 * mm
+            canvas.drawImage(GHS_IMAGE_URIS[ghs_class], left_offset + ((right_offset - left_offset)/2 - 19 * mm / 2) + 0.5 * mm + (i % 3 == 1) * 9 * mm + (i % 3 == 2) * 4.5 * mm, top_cursor + 5 - (i % 3 == 2) * 4.5 * mm, 9 * mm , 9 * mm, (255, 255, 255, 255, 255, 255))
+        if (len(ghs_classes) - 1) % 3 == 0:
+            top_cursor -= 4.5 * mm
 
     if ghs_classes_side_by_side:
         left_offset -= 20 * mm

@@ -1018,3 +1018,107 @@ def test_validate_tags_duplicate_tags():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_hazards():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    instance = {
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': [1, 3, 5]
+        }
+    }
+    validate(instance, schema)
+
+
+def test_validate_hazards_empty():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    instance = {
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': []
+        }
+    }
+    validate(instance, schema)
+
+
+def test_validate_hazards_invalid_content():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    instance = {
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': [0]
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    instance = {
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': [10]
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    instance = {
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': ["Explosive"]
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_hazards_duplicate_hazards():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    instance = {
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': [1, 5, 1]
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)

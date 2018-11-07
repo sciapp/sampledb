@@ -42,6 +42,8 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Unio
         return _validate_sample(instance, schema, path)
     elif schema['type'] == 'tags':
         return _validate_tags(instance, schema, path)
+    elif schema['type'] == 'hazards':
+        return _validate_hazards(instance, schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -73,9 +75,53 @@ def _validate_array(instance: list, schema: dict, path: typing.List[str]) -> Non
         raise ValidationMultiError(errors)
 
 
+def _validate_hazards(instance: list, schema: dict, path: typing.List[str]) -> None:
+    """
+    Validate the given instance using the given GHS hazards schema and raise a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    if path != ['hazards']:
+        raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
+    valid_keys = {'_type', 'hazards'}
+    required_keys = valid_keys
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if instance['_type'] != 'hazards':
+        raise ValidationError('expected _type "hazards"', path)
+    if not isinstance(instance['hazards'], list):
+        raise ValidationError('hazards must be list', path)
+    errors = []
+    hazards = []
+    for index, item in enumerate(instance['hazards']):
+        if not isinstance(item, int):
+            errors.append(ValidationError('invalid hazard index type: {}'.format(type(item)), path + ['hazards', str(index)]))
+        elif item in hazards:
+            errors.append(ValidationError('duplicate hazard index: {}'.format(item), path + ['hazards', str(index)]))
+        elif item < 1 or item > 9:
+            errors.append(ValidationError('invalid hazard index: {}'.format(item), path + ['hazards', str(index)]))
+        else:
+            hazards.append(item)
+
+    if len(errors) == 1:
+        raise errors[0]
+    elif len(errors) > 1:
+        raise ValidationMultiError(errors)
+
+
 def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None:
     """
-    Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
+    Validates the given instance using the given tags schema and raises a ValidationError if it is invalid.
 
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
