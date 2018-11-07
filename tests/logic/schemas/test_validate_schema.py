@@ -1096,3 +1096,127 @@ def test_validate_tags_schema_invalid_key():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_hazards_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    validate_schema(schema)
+
+
+def test_misnamed_hazards_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'ghs': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_nested_hazards_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'nested': {
+                'title': 'Nested Object',
+                'type': 'object',
+                'properties': {
+                    'hazards': {
+                        'title': 'GHS hazards',
+                        'type': 'hazards'
+                    }
+                },
+                'required': ['hazards']
+            }
+        },
+        'required': ['hazards']
+    }
+    validate_schema(schema['properties']['nested'])
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_optional_hazards_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_hazards_with_extra_keys_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    validate_schema(schema)
+    schema['properties']['hazards']['default'] = []
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_hazards_with_missing_title_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    validate_schema(schema)
+    schema['properties']['hazards'].pop('title')
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_hazards_with_missing_type_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards'
+            }
+        },
+        'required': ['hazards']
+    }
+    validate_schema(schema)
+    schema['properties']['hazards'].pop('type')
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

@@ -285,3 +285,14 @@ def test_generate_tags_default():
             'example'
         ]
     }
+
+
+def test_generate_hazards():
+    object_schema = {
+        'title': 'GHS Hazards',
+        'type': 'hazards'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'hazards'
+    }

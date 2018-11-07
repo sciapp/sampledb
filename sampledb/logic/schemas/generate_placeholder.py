@@ -39,6 +39,8 @@ def generate_placeholder(schema: dict, path: typing.Union[None, typing.List[str]
         return _generate_sample_placeholder(schema, path)
     elif schema['type'] == 'tags':
         return _generate_tags_placeholder(schema, path)
+    elif schema['type'] == 'hazards':
+        return _generate_hazards_placeholder(schema, path)
     else:
         raise SchemaError('invalid type', path)
 
@@ -79,6 +81,19 @@ def _generate_tags_placeholder(schema: dict, path: typing.List[str]) -> dict:
     return {
         '_type': 'tags',
         'tags': []
+    }
+
+
+def _generate_hazards_placeholder(schema: dict, path: typing.List[str]) -> dict:
+    """
+    Generate a placeholder GHS hazards object based on an object schema.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :return: the generated object
+    """
+    return {
+        '_type': 'hazards'
     }
 
 

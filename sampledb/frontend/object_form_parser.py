@@ -46,6 +46,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_quantity_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'tags':
         return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'hazards':
+        return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
@@ -60,6 +62,41 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
         'text': str(text)
     }
     schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False):
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    if id_prefix + '__hasnohazards' not in keys:
+        raise ValueError('invalid hazards form data')
+    hasnohazards = form_data.get(id_prefix + '__hasnohazards', [''])[0]
+    if hasnohazards == 'true':
+        hasnohazards = True
+    elif hasnohazards == 'false':
+        hasnohazards = False
+    else:
+        raise ValueError('invalid hazards form data')
+    available_hazards = {
+        'ghs01': 1, 'ghs02': 2, 'ghs03': 3, 'ghs04': 4, 'ghs05': 5, 'ghs06': 6, 'ghs07': 7, 'ghs08': 8, 'ghs09': 9
+    }
+    hazards = []
+    for key in keys:
+        if key == id_prefix + '__hasnohazards':
+            continue
+        if key == id_prefix + '__hidden':
+            continue
+        hazard_name = key.rsplit('__', 1)[1]
+        if hazard_name in available_hazards:
+            hazards.append(available_hazards[hazard_name])
+        else:
+            raise ValueError('invalid hazards form data')
+    if hasnohazards != (len(hazards) == 0):
+        raise ValueError('invalid hazards form data')
+    data = {
+        '_type': 'hazards',
+        'hazards': hazards
+    }
     return data
 
 

@@ -41,6 +41,7 @@ pytest-cov==2.5.1
 pytest-splinter==1.8.5
 pytz==2017.2
 qrcode==5.3
+reportlab==3.5.9
 requests==2.18.2
 selenium==3.4.3
 six==1.10.0

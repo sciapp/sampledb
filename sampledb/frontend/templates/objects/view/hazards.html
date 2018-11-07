@@ -1,0 +1,19 @@
+<div class="row" style="padding-right:0.75em">
+  <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title }}</label>
+  <div class="col-md-9">
+    {% if data is not none and "hazards" in data %}
+      {% if data["hazards"] %}
+        <div class="ghs-hazards">
+        {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
+        {% for hazard_index in data["hazards"] %}
+          <img src="{{ url_for('static', filename='img/ghs0{}.png'.format(hazard_index)) }}" alt="GHS01" title="{{ hazard_titles[hazard_index] }}"/>
+        {% endfor %}
+        </div>
+      {% else %}
+        &mdash;
+      {% endif %}
+    {% else %}
+      Unknown
+    {% endif %}
+  </div>
+</div>

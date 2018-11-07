@@ -3,9 +3,9 @@
 
 """
 
-import base64
 from copy import deepcopy
 import datetime
+import io
 import json
 import os
 import flask
@@ -33,6 +33,8 @@ from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionResto
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
+from .labels import create_labels
+
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -483,6 +485,48 @@ def object(object_id):
     else:
         should_upgrade_schema = False
     return show_object_form(object, action=get_action(object.action_id), should_upgrade_schema=should_upgrade_schema)
+
+
+@frontend.route('/objects/<int:object_id>/label')
+@object_permissions_required(Permissions.READ)
+def print_object_label(object_id):
+    object = get_object(object_id=object_id)
+    object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
+    for object_log_entry in object_log_entries:
+        if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH):
+            creation_date = object_log_entry.utc_datetime.strftime('%Y-%m-%d')
+            creation_user = get_user(object_log_entry.user_id).name
+            break
+    else:
+        creation_date = 'Unknown'
+        creation_user = 'Unknown'
+    if 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
+        creation_date = object.data['created']['utc_datetime'].split(' ')[0]
+    if 'name' in object.data and '_type' in object.data['name'] and object.data['name']['_type'] == 'text':
+        object_name = object.data['name']['text']
+    else:
+        object_name = 'Unknown Sample'
+
+    object_url = flask.url_for('.object', object_id=object_id, _external=True)
+
+    if 'hazards' in object.data and '_type' in object.data['hazards'] and object.data['hazards']['_type'] == 'hazards':
+        hazards = object.data['hazards']['hazards']
+    else:
+        hazards = []
+
+    pdf_data = create_labels(
+        object_id=object_id,
+        object_name=object_name,
+        object_url=object_url,
+        creation_user=creation_user,
+        creation_date=creation_date,
+        ghs_classes=hazards
+    )
+    return flask.send_file(
+        io.BytesIO(pdf_data),
+        mimetype='application/pdf',
+        cache_timeout=-1
+    )
 
 
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])

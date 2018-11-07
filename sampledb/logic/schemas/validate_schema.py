@@ -51,8 +51,31 @@ def validate_schema(schema: dict, path: typing.Union[None, typing.List[str]]=Non
         return _validate_sample_schema(schema, path)
     elif schema['type'] == 'tags':
         return _validate_tags_schema(schema, path)
+    elif schema['type'] == 'hazards':
+        return _validate_hazards_schema(schema, path)
     else:
         raise ValidationError('invalid type', path)
+
+
+def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
+    """
+    Validate the given GHS hazards schema and raise a ValidationError if it is invalid.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    valid_keys = {'type', 'title'}
+    required_keys = {'type', 'title'}
+    schema_keys = set(schema.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if path != ['hazards']:
+        raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
 
 
 def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
@@ -156,6 +179,9 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
             if property_name not in schema['properties']:
                 raise ValidationError('unknown required property: {}'.format(property_name), path)
 
+    if 'hazards' in schema['properties'] and schema['properties']['hazards']['type'] == 'hazards' and 'hazards' not in schema.get('required', []):
+        raise ValidationError('GHS hazards may not be optional', path)
+
     if 'propertyOrder' in schema:
         if not isinstance(schema['propertyOrder'], list):
             raise ValidationError('propertyOrder must be list', path)
@@ -186,7 +212,6 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
             schema['batch_name_format'].format(1)
         except (ValueError, KeyError):
             raise ValidationError('invalid batch_name_format', path)
-
 
 
 def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:

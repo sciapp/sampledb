@@ -16,6 +16,8 @@
   {% include "objects/view/array.html" %}
 {% elif schema.type == 'tags' %}
   {% include "objects/view/tags.html" %}
+{% elif schema.type == 'hazards' %}
+  {% include "objects/view/hazards.html" %}
 {% else %}
   {{ name }}{{ schema.type }}{{ schema['type'] }}
 {% endif %}
