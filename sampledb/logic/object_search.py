@@ -699,7 +699,32 @@ def transform_tree_to_query(data, tree: typing.Union[object_search_parser.Litera
         return false(), None
 
 
-def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Tuple[typing.Callable, typing.Any]:
+def should_use_advanced_search(query_string: str) -> typing.Tuple[bool, str]:
+    """
+    Detect whether the advanced search should be used automatically.
+
+    The user can force the use of the advanced search, but for specific search
+    query strings, the advanced search will be more appropriate, e.g. when
+    the user tries to use comparisons or search for tags.
+
+    To prevent an automatic advanced search, users can quote their query
+    strings. This way they will use the simple, text-based search.
+
+    :param query_string: the original query string
+    :return: whether to use the advanced search and a modified query string
+    """
+    if query_string[0] == query_string[-1] == '"':
+        # Remove quotes around the query string
+        return False, query_string[1:-1]
+
+    for operator in ('=', '<', '>', '#', '&', '|'):
+        if operator in query_string:
+            return True, query_string
+
+    return False, query_string
+
+
+def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing.Tuple[typing.Callable, typing.Any, bool]:
     """
     Generates a filter function for use with SQLAlchemy and the JSONB data
     attribute in the object tables.
@@ -708,10 +733,13 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
 
     :param query_string: the query string
     :param use_advanced_search: whether to use simple text search (False) or advanced search (True)
-    :return: filter func
+    :return: filter func, search tree and whether the advanced search was used
     """
     tree = None
+    query_string = query_string.strip()
     if query_string:
+        if not use_advanced_search:
+            use_advanced_search, query_string = should_use_advanced_search(query_string)
         if use_advanced_search:
             # Advanced search using parser and where_filters
             try:
@@ -721,19 +749,19 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                     """ Return no objects and set search_notes"""
                     search_notes.append(('error', e.message, e.start, e.end))
                     return False
-                return filter_func, None
+                return filter_func, None, use_advanced_search
             except Exception:
                 def filter_func(data, search_notes, start=0, end=len(query_string)):
                     """ Return no objects and set search_notes"""
                     search_notes.append(('error', "Failed to parse query string", start, end))
                     return False
-                return filter_func, None
+                return filter_func, None, use_advanced_search
             if isinstance(tree, list) and not tree:
                 def filter_func(data, search_notes, start=0, end=len(query_string)):
                     """ Return no objects and set search_notes"""
                     search_notes.append(('error', 'Empty search', start, end))
                     return False
-                return filter_func, None
+                return filter_func, None, use_advanced_search
             if isinstance(tree, object_search_parser.Literal):
                 if isinstance(tree, object_search_parser.Boolean):
                     if tree.value.value:
@@ -741,13 +769,13 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                             """ Return all objects and set search_notes"""
                             search_notes.append(('warning', 'This search will always return all objects', start, end))
                             return True
-                        return filter_func, tree
+                        return filter_func, tree, use_advanced_search
                     else:
                         def filter_func(data, search_notes, start=0, end=len(query_string)):
                             """ Return no objects and set search_notes"""
                             search_notes.append(('warning', 'This search will never return any objects', start, end))
                             return False
-                        return filter_func, tree
+                        return filter_func, tree, use_advanced_search
                 elif isinstance(tree, object_search_parser.Attribute):
                     pass
                 elif isinstance(tree, object_search_parser.Tag):
@@ -757,7 +785,7 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                         """ Return no objects and set search_notes"""
                         search_notes.append(('error', 'Unable to use literal as search query', start, end))
                         return False
-                    return filter_func, None
+                    return filter_func, None, use_advanced_search
 
             def filter_func(data, search_notes, tree=tree):
                 """ Filter objects based on search query string """
@@ -781,7 +809,7 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
         def filter_func(data, search_notes):
             """ Return all objects"""
             return True
-    return filter_func, tree
+    return filter_func, tree, use_advanced_search
 
 
 def wrap_filter_func(filter_func):
