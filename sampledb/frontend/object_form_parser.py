@@ -69,7 +69,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
 def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
     if id_prefix + '__hasnohazards' not in keys:
-        raise ValueError('invalid hazards form data')
+        raise ValueError('Please select at least one hazard or confirm that the object poses no hazards.')
     hasnohazards = form_data.get(id_prefix + '__hasnohazards', [''])[0]
     if hasnohazards == 'true':
         hasnohazards = True
@@ -92,7 +92,7 @@ def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False
         else:
             raise ValueError('invalid hazards form data')
     if hasnohazards != (len(hazards) == 0):
-        raise ValueError('invalid hazards form data')
+        raise ValueError('Please select at least one hazard or confirm that the object poses no hazards.')
     data = {
         '_type': 'hazards',
         'hazards': hazards

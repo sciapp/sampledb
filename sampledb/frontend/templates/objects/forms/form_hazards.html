@@ -1,4 +1,4 @@
-<div class="form-group{% if id_prefix+'_hasnohazards' in errors %} has-error{% elif id_prefix+'_hasnohazards' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
+<div class="form-group{% if id_prefix+'_hidden' in errors %} has-error{% elif id_prefix+'_hidden' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
   <label class="control-label col-md-3">{{ schema.title }}</label>
   <div class="col-md-9">
     <input type="hidden" name="{{ id_prefix }}_hidden" value="field exists" />
@@ -22,6 +22,7 @@
         </label>
       {% endfor %}
     </div>
+    {% if id_prefix+'_hidden' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_hidden'] }}</span>{% endif %}
     {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
     <script>
       function setHasNoHazards(checkbox) {
