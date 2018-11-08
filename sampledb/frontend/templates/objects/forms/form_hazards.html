@@ -22,6 +22,7 @@
         </label>
       {% endfor %}
     </div>
+    {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
     <script>
       function setHasNoHazards(checkbox) {
         if (checkbox.checked) {
