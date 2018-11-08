@@ -273,10 +273,21 @@ th:hover .search-helper {
 .ghs-hazards-selection > label {
     display: flex;
     flex-direction: column-reverse;
+    justify-content: flex-end;
+    align-items: center;
     cursor: pointer;
+    width:5em;
+    margin: 0.2em;
 }
 .ghs-hazards-selection > label > img {
     max-height:4em;
+    max-width:4em;
+}
+.ghs-hazards-selection > label > span {
+    font-weight: 400;
+    font-size: 0.8em;
+    max-width: 100%;
+    text-align: center;
 }
 
 .ghs-hazards-selection > label > input {
@@ -284,19 +295,15 @@ th:hover .search-helper {
 }
 .ghs-hazards-selection > label > input ~ img {
     opacity: 0.3;
-    -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+    -webkit-filter: grayscale(100%);
     filter: grayscale(100%);
-    margin-right: 0.2em;
-    margin-top: 0.2em;
-}
-.ghs-hazards-selection > label:last-child > input ~ img {
-    margin-right: 0;
 }
 .ghs-hazards-selection > label > input:checked ~ img {
     opacity: 1.0;
-    -webkit-filter: none; /* Safari 6.0 - 9.0 */
+    -webkit-filter: none;
     filter: none;
 }
 .ghs-hazards > img {
     max-height:2em;
+    max-width:2em;
 }
