@@ -1,6 +1,6 @@
-{% if instrumend is not none and instrument.responsible_users %}
-<div class="instrument-responsible-users">
-  <h3>Responsible Users:</h3>
+{% if instrument is not none and instrument.responsible_users %}
+<div class="instrument-scientists">
+  <h3>Instrument Scientists:</h3>
   <ul>
   {% for user in instrument.responsible_users %}
     <li><a href="{{ url_for('frontend.user_profile', user_id=user.id) }}">{{ user.name }} (#{{ user.id }})</a></li>
