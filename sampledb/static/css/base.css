@@ -307,3 +307,18 @@ th:hover .search-helper {
     max-height:2em;
     max-width:2em;
 }
+
+/* Override red error marks to improve contrast for red/green-blind users */
+.has-error .checkbox, .has-error .checkbox-inline, .has-error .control-label, .has-error .help-block, .has-error .radio, .has-error .radio-inline, .has-error.checkbox label, .has-error.checkbox-inline label, .has-error.radio label, .has-error.radio-inline label {
+    color: #f94442 !important;
+}
+.has-error .form-control {
+    border-color: #f94442 !important;
+}
+.has-error .input-group-addon {
+    color: #f94442 !important;
+    border-color: #f94442 !important;
+}
+.error .bootstrap-select .dropdown-toggle, .has-error .bootstrap-select .dropdown-toggle {
+    border-color: #f94442 !important;
+}
