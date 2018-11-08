@@ -290,6 +290,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         action_id = action.id
         previous_object_id = None
     errors = []
+    object_errors = {}
     form_data = {}
     previous_actions = []
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
@@ -398,9 +399,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, previous_object_id=previous_object_id)
+        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, object_errors=object_errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, previous_object_id=previous_object_id)
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, mode=mode)
+        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, object_errors=object_errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, mode=mode)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
