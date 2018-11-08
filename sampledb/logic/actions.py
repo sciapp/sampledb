@@ -6,7 +6,7 @@ Actions are used to represent all kinds of methods or processes that result
 in the creation of a new sample or measurement. What kind of object is
 created when performing an action is defined by the action's ActionType. 
 The action's schema defines what information should or may be recorded in
-SampleDB for a newly created object.
+iffSamples for a newly created object.
 
 Actions can be related to an instrument, which serves both to group actions
 together and to provide instrument responsible users with permissions for

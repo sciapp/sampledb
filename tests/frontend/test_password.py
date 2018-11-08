@@ -80,7 +80,7 @@ def test_recovery_email_send_no_authentication_method_exists(flask_server, user_
     # Check if an recovery mail was sent, No authentication-method exist
     assert len(outbox) == 1
     message = outbox[0].html
-    assert 'There is no way to sign in to your SampleDB account' in message
+    assert 'There is no way to sign in to your iffSamples account' in message
 
 
 def test_new_password_send(flask_server, user):
