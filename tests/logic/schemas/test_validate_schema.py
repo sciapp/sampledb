@@ -1113,6 +1113,22 @@ def test_hazards_in_object():
     validate_schema(schema)
 
 
+def test_hazards_with_note_in_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'hazards': {
+                'title': 'GHS hazards',
+                'type': 'hazards',
+                'note': 'This is a note'
+            }
+        },
+        'required': ['hazards']
+    }
+    validate_schema(schema)
+
+
 def test_misnamed_hazards_in_object():
     schema = {
         'title': 'Object',

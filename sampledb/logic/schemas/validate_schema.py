@@ -65,7 +65,7 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title'}
+    valid_keys = {'type', 'title', 'note'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -76,6 +76,8 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if path != ['hazards']:
         raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
+    if not isinstance(schema.get('note', ''), str):
+        raise ValidationError('note must be a string', path)
 
 
 def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
