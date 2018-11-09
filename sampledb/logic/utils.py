@@ -92,7 +92,7 @@ def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> N
 
     confirm_url = flask.url_for("frontend.group", group_id=group.id, token=token, _external=True)
 
-    subject = "Invitation to SampleDB group"
+    subject = "Invitation to iffSamples group"
     html = flask.render_template('invitation_to_group.html', user=flask_login.current_user, group=group, confirm_url=confirm_url)
     try:
         mail.send(flask_mail.Message(
@@ -120,7 +120,7 @@ def send_confirm_email_to_invite_user_to_project(project_id: int, user_id: int, 
 
     confirm_url = flask.url_for("frontend.project", project_id=project.id, token=token, _external=True)
 
-    subject = "Invitation to SampleDB project"
+    subject = "Invitation to iffSamples project"
     html = flask.render_template('invitation_to_project.html', user=flask_login.current_user, project=project, confirm_url=confirm_url)
     try:
         mail.send(flask_mail.Message(

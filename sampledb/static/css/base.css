@@ -55,31 +55,31 @@ body > footer {
 
 }
 
-.instrument-responsible-users {
+.instrument-scientists {
     margin: 0 0 10px;
 }
-.instrument-responsible-users h3 {
+.instrument-scientists h3 {
     display:inline;
     margin:0;
     padding:0;
     font-size: inherit;
     font-weight: 600;
 }
-.instrument-responsible-users ul {
+.instrument-scientists ul {
     display:inline;
     list-style-type: none;
     padding:0;
 }
-.instrument-responsible-users li {
+.instrument-scientists li {
     display:inline;
 }
-.instrument-responsible-users li:after {
+.instrument-scientists li:after {
     content: ', ';
 }
-.instrument-responsible-users li:nth-last-child(2):after {
+.instrument-scientists li:nth-last-child(2):after {
     content: ' and ';
 }
-.instrument-responsible-users li:last-child:after {
+.instrument-scientists li:last-child:after {
     content: '';
 }
 

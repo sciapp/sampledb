@@ -3,7 +3,7 @@
 {% block content %}
   <h1>{{ instrument.name }}</h1>
   <p>{{ instrument.description }}</p>
-  {% include "instruments/instrument_responsible_users.html" %}
+  {% include "instruments/instrument_scientists.html" %}
   {% for action in instrument.actions %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     <p>{{ action.description }}</p>

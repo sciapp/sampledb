@@ -17,7 +17,7 @@
     </form>
     <p>{{ action.description }}</p>
     {% with instrument = action.instrument %}
-      {% include "instruments/instrument_responsible_users.html" %}
+      {% include "instruments/instrument_scientists.html" %}
     {% endwith %}
     {% if action.type == ActionType.MEASUREMENT %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
