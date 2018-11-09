@@ -67,6 +67,7 @@ def objects():
         project = None
         query_string = ''
         use_advanced_search = False
+        must_use_advanced_search = False
         advanced_search_had_error = False
         search_notes = []
         search_tree = None
@@ -99,9 +100,10 @@ def objects():
         query_string = flask.request.args.get('q', '')
         search_tree = None
         use_advanced_search = flask.request.args.get('advanced', None) is not None
+        must_use_advanced_search = use_advanced_search
         advanced_search_had_error = False
         try:
-            filter_func, search_tree = generate_filter_func(query_string, use_advanced_search)
+            filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
         except Exception as e:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
@@ -114,6 +116,8 @@ def objects():
             else:
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
+        if use_advanced_search and not must_use_advanced_search:
+            search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
         try:
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
@@ -176,7 +180,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, must_use_advanced_search=must_use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
 
 
 @jinja_filter
