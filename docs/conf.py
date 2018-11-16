@@ -32,6 +32,7 @@ pygments_style = None
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxcontrib.httpdomain',
 ]
 
 # Options for HTML output

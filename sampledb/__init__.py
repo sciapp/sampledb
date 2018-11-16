@@ -12,6 +12,7 @@ mail = Mail()
 db = SQLAlchemy()
 
 import sampledb.frontend
+import sampledb.api
 import sampledb.logic
 import sampledb.models
 import sampledb.config
@@ -25,6 +26,7 @@ def create_app():
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
+    sampledb.api.server.api.init_app(app)
 
     app.register_blueprint(sampledb.frontend.frontend)
 

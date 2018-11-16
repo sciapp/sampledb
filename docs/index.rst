@@ -11,3 +11,4 @@ iffSamples is the sample and measurement metadata database at PGI and JCNS. You 
     accounts.rst
     object_permissions.rst
     preferences.rst
+    api.rst
