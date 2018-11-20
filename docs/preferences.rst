@@ -17,7 +17,7 @@ Authentication Methods
 
 Users can have multiple ways of signing in to iffSamples, for example using their LDAP account or using an e-mail address. This section of the user preferences can be used to add, modify or remove such authentication methods, e.g. for users leaving their institute but still requiring access to their sample data.
 
-Default Preferences
+Default Permissions
 -------------------
 
 To automatically set permissions for future objects, user can set **default permissions** in their preferences. These will be applied whenever an object like a sample or measurement is created afterwards.

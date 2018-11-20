@@ -24,12 +24,10 @@ To modify the permissions of an object, any user with **Grant** permissions can 
 Default Permissions
 -------------------
 
-When an object is created, its creator, any associated instrument scientists and the administrators will have **Grant** permissions. They can then allow other users to access the data by granting them permissions. To make these more convenient, each user has a set of **default permissions** set in the :ref:`preferences`, which will be applied to all objects they create in the future.
+When an object is created, its creator, any associated instrument scientists and the administrators will have **Grant** permissions. They can then allow other users to access the data by granting them permissions. To make this more convenient, each user has a set of **default permissions** set in the :ref:`preferences`, which will be applied to all objects they create in the future.
 
 .. figure:: static/img/generated/default_permissions.png
     :scale: 50 %
     :alt: Default Permissions
    
     Default Permissions in the User Preferences
-
-
