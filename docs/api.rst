@@ -264,3 +264,198 @@ Updating an object / Creating a new object version
     :statuscode 404: the object does not exist
 
 
+Instruments
+-----------
+
+
+Reading a list of all instruments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/
+
+    Get a list of all instruments.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+
+        [
+            {
+                "instrument_id": 1,
+                "name": "Example Instrument",
+                "description": "This is an example instrument",
+                "instrument_scientists": [1, 42]
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading an instrument
+^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)
+
+    Get the specific instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "instrument_id": 1,
+            "name": "Example Instrument",
+            "description": "This is an example instrument"
+            "instrument_scientists": [1, 42]
+        }
+
+    :>json number instrument_id: the instrument's ID
+    :>json string name: the instruments's name
+    :>json string description: the instruments's description
+    :>json list instrument_scientists: the instrument scientists' IDs
+    :statuscode 200: no error
+    :statuscode 404: the instrument does not exist
+
+
+
+Actions
+-------
+
+
+Reading a list of all actions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/actions/
+
+    Get a list of all actions.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/actions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+
+        [
+            {
+                "action_id": 1,
+                "instrument_id": null,
+                "type": "sample",
+                "name": "Example Sample Creation",
+                "description": "This is an example action",
+                "schema": {
+                    "title": "Example Sample",
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "title": "Sample Name",
+                            "type": "text"
+                        }
+                    },
+                    "required": ["name"]
+                }
+            },
+            {
+                "action_id": 2,
+                "instrument_id": 1,
+                "type": "measurement",
+                "name": "Example Measurement",
+                "description": "This is an example action",
+                "schema": {
+                    "title": "Example Measurement",
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "title": "Measurement Name",
+                            "type": "text"
+                        }
+                    },
+                    "required": ["name"]
+                }
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading an action
+^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/actions/(int:action_id)
+
+    Get the specific action (`action_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/actions/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "action_id": 1,
+            "instrument_id": null,
+            "type": "sample",
+            "name": "Example Sample Creation",
+            "description": "This is an example action",
+            "schema": {
+                "title": "Example Sample",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Sample Name",
+                        "type": "text"
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+
+    :>json number action_id: the action's ID
+    :>json number instrument_id: the actions's instrument's ID or null
+    :>json string type: the action's type ("sample", "measurement" or "simulation")
+    :>json string name: the actions's name
+    :>json string description: the actions's description
+    :>json object schema: the actions's schema
+    :statuscode 200: no error
+    :statuscode 404: the action does not exist
