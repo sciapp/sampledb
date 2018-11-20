@@ -8,12 +8,14 @@ cffi==1.10.0
 chardet==3.0.4
 cheroot==5.7.0
 CherryPy==11.0.0
-chromedriver-binary==2.29.1
+chromedriver-binary==2.43.0
 click==6.7
 coverage==4.4.1
 Flask==0.12.2
+Flask-HTTPAuth==3.2.4
 Flask-Login==0.4.0
 Flask-Mail==0.9.1
+Flask-RESTful==0.3.6
 Flask-SQLAlchemy==2.2
 Flask-WTF==0.14.2
 glob2==0.5
@@ -23,6 +25,7 @@ Jinja2==2.9.6
 jsonschema==2.6.0
 ldap3==2.5.1
 Mako==1.0.7
+Markdown==3.0.1
 MarkupSafe==1.0
 mypy==0.521
 packaging==16.8
@@ -43,9 +46,11 @@ pytz==2017.2
 qrcode==5.3
 reportlab==3.5.9
 requests==2.18.2
-selenium==3.4.3
+selenium==3.141.0
 six==1.10.0
+sphinxcontrib-httpdomain==1.7.0
 splinter==0.7.6
+Sphinx==1.8.1
 SQLAlchemy==1.1.12
 tempora==1.8
 typed-ast==1.1.0

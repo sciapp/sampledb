@@ -8,7 +8,7 @@ import flask
 import flask_login
 import sqlalchemy
 import sampledb
-from sampledb.models import Objects, User, UserType, ActionType
+from sampledb.models import Objects, User, UserType, ActionType, AuthenticationType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
@@ -26,6 +26,9 @@ def setup_data(app):
     for user in (admin, instrument_responsible_user, basic_user):
         sampledb.db.session.add(user)
     sampledb.db.session.commit()
+
+    api_user = User(name="API User", email="example@fz-juelich.de", type=UserType.OTHER)
+    sampledb.logic.authentication.insert_user_and_authentication_method_to_db(api_user, 'password', 'api', AuthenticationType.OTHER)
 
     group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id).id
 
@@ -97,6 +100,7 @@ def setup_data(app):
     }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
     permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    permissions.set_user_object_permissions(independent_object.object_id, api_user.id, permissions.Permissions.WRITE)
     independent_object = Objects.create_object(data={
         "name": {
             "_type": "text",
@@ -127,6 +131,13 @@ def setup_data(app):
     instrument = create_instrument(name="Powder Diffractometer", description="Huber Imaging Plate Guinier Camera G670 at JCNS-2")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
     with open('server_schemas/powder_diffractometer_measurement.sampledb.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+    instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+    sampledb.db.session.commit()
+
+    instrument = create_instrument(name="GALAXI", description="Gallium Anode Low-Angle X-ray Instrument")
+    add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
+    with open('server_schemas/galaxi_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
     sampledb.db.session.commit()

@@ -1,0 +1,6 @@
+a.reference.image-reference:hover {
+    border-bottom: none;
+}
+div.figure > p.caption {
+    text-align: center;
+}
