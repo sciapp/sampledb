@@ -1,4 +1,4 @@
-.. _object_permissions:
+.. _http_api:
 
 HTTP API
 ========
