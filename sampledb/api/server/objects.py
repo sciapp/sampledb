@@ -85,8 +85,12 @@ class ObjectVersions(Resource):
                 user_id=flask.g.user.id,
                 schema=schema
             )
+        except errors.ValidationError as e:
+            messages = e.message.splitlines()
+            return {
+                "message": "validation failed:\n - {}".format('\n - '.join(messages))
+            }, 400
         except Exception:
-            # TODO: better error message
             return {
                 "message": "failed to update object"
             }, 400
@@ -198,8 +202,12 @@ class Objects(Resource):
                 user_id=flask.g.user.id,
                 schema=schema
             )
+        except errors.ValidationError as e:
+            messages = e.message.splitlines()
+            return {
+                "message": "validation failed:\n - {}".format('\n - '.join(messages))
+            }, 400
         except Exception:
-            # TODO: better error message
             return {
                 "message": "failed to create object"
             }, 400

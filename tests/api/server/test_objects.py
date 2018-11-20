@@ -311,6 +311,23 @@ def test_post_object_version(flask_server, auth, user, action):
     assert new_object.data == object_json['data']
     object = new_object
 
+    object_json = {
+        'data': {
+            'name': {
+                '_type': 'boolean',
+                'value': True
+            },
+            'info': {
+                '_type': 'text',
+                'text': 'Example Info 2'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['message'] == """validation failed:
+ - unexpected keys in schema: {'value'} (at name)"""
+
 
 def test_get_objects(flask_server, auth, user, other_user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)
@@ -515,4 +532,23 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'failed to create object'
+    assert r.json()['message'] == """validation failed:
+ - unexpected keys in schema: {'value'} (at name)"""
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'boolean',
+                'value': True
+            },
+            'test': {
+                '_type': 'text',
+                'value': 'Test'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['message'] == """validation failed:
+ - unexpected keys in schema: {'value'} (at name)
+ - unknown property "test" (at test)"""
