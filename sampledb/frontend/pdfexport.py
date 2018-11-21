@@ -11,6 +11,7 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase.pdfdoc import PDFInfo
 from reportlab.lib.pagesizes import A4 as pagesize
 from reportlab.lib.units import mm
+from PIL import Image
 import qrcode
 import qrcode.image.pil
 
@@ -268,6 +269,43 @@ def _write_files(object, canvas):
                 text = '• {} — {}: {}'.format(file.utc_datetime.strftime('%Y-%m-%d %H:%M'), file.uploader.name, file.title)
             _append_text(canvas, text)
         canvas.showPage()
+        for index, file in enumerate(files):
+            for file_extension in ('.png', '.jpg', '.jpeg'):
+                if file.original_file_name.lower().endswith(file_extension):
+                    try:
+                        image = Image.open(file.open())
+                    except Exception:
+                        continue
+                    title = "File #{}: {}".format(index+1, file.title)
+                    canvas.bookmarkPage('object_{}_files_{}'.format(object.id, index))
+                    canvas.addOutlineEntry(title, 'object_{}_files_{}'.format(object.id, index), level=2)
+                    canvas.set_up_page()
+                    canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
+                    canvas.top_cursor = _draw_left_aligned_wrapped_text(canvas, title, canvas.left_cursor, PAGE_WIDTH - RIGHT_MARGIN - canvas.left_cursor, canvas.top_cursor, "Helvetica-Bold", 12, 1.2)
+                    canvas.top_cursor -= 4 * mm
+                    if file.description:
+                        _append_text(canvas, file.description)
+                    original_image_width, original_image_height = image.size
+                    image_width = original_image_width / 300 * 25.4 * mm
+                    image_height = original_image_height / 300 * 25.4 * mm
+                    max_image_width = PAGE_WIDTH - RIGHT_MARGIN - canvas.left_cursor
+                    max_image_height = canvas.top_cursor - BOTTOM_MARGIN
+                    if max_image_height / original_image_height <= max_image_width / original_image_width:
+                        if max_image_height < image_height:
+                            image_width = max_image_height / original_image_height * original_image_width
+                            image_height = max_image_height
+                    else:
+                        if max_image_width < image_width:
+                            image_height = max_image_width / original_image_width * original_image_height
+                            image_width = max_image_width
+                    image_stream = io.BytesIO()
+                    image.save(image_stream, format='png')
+                    image_stream.seek(0)
+                    image_uri = 'data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
+                    canvas.drawImage(image_uri, canvas.left_cursor, canvas.top_cursor - image_height, image_width, image_height)
+                    canvas.showPage()
+                    break
+
 
 
 def _write_comments(object, canvas):
