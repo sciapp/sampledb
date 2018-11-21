@@ -322,3 +322,17 @@ th:hover .search-helper {
 .error .bootstrap-select .dropdown-toggle, .has-error .bootstrap-select .dropdown-toggle {
     border-color: #f94442 !important;
 }
+.object-button-bar {
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.object-button-bar > div {
+    margin-left: 1em;
+}
+.object-button-bar > div > a,
+.object-button-bar > div > button,
+.object-button-bar > div > form > button {
+    width:10.5em;
+}
