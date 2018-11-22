@@ -260,7 +260,7 @@ def _write_activity_log(object, canvas):
         elif object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT:
             text += ' created this object'
         elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT:
-            text += ' editted this object'
+            text += ' edited this object'
         elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT:
             text += ' posted a comment'
         elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION:
