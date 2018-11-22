@@ -72,6 +72,7 @@ def _get_num_fitting_characters(canvas, line, max_width, font_name, font_size):
 
 
 def _draw_left_aligned_wrapped_text(canvas: Canvas, text, left_offset, max_width, top_cursor, font_name, font_size, line_height, justify=False):
+    canvas.setFont(font_name, font_size)
     lines = []
     while text:
         text = text.lstrip()
@@ -79,7 +80,6 @@ def _draw_left_aligned_wrapped_text(canvas: Canvas, text, left_offset, max_width
         lines.append(line.strip())
         text = text[len(line):]
 
-    canvas.setFont(font_name, font_size)
     for index, line in enumerate(lines):
         if line:
             if justify and len(line) > 1 and index < len(lines) - 1:
@@ -91,6 +91,7 @@ def _draw_left_aligned_wrapped_text(canvas: Canvas, text, left_offset, max_width
             if top_cursor <= BOTTOM_MARGIN:
                 canvas.showPage()
                 canvas.set_up_page()
+                canvas.setFont(font_name, font_size)
                 top_cursor = PAGE_HEIGHT - TOP_MARGIN
     return top_cursor
 
@@ -328,7 +329,6 @@ def _write_files(object, canvas):
                     canvas.drawImage(image_uri, canvas.left_cursor, canvas.top_cursor - image_height, image_width, image_height)
                     canvas.showPage()
                     break
-
 
 
 def _write_comments(object, canvas):
