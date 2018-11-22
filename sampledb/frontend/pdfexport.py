@@ -43,16 +43,39 @@ def _set_up_page(canvas, object_id, qrcode_uri):
     canvas.restoreState()
 
 
+def _get_num_fitting_characters(canvas, line, max_width, font_name, font_size):
+    line_width = canvas.stringWidth(line, font_name, font_size)
+    if line_width <= max_width:
+        return len(line)
+    # number of characters guaranteed to fit
+    lower_boundary = 1
+    # maximum possible number of fitting characters
+    upper_boundary = len(line) - 1
+    approx_num_fitting_characters = len(line)
+    while lower_boundary < upper_boundary:
+        # approximate fitting characters based on average width
+        approx_num_fitting_characters = int(approx_num_fitting_characters / line_width * max_width)
+        # enforce upper and lower boundaries for search
+        approx_num_fitting_characters = max(lower_boundary + 1, approx_num_fitting_characters)
+        approx_num_fitting_characters = min(upper_boundary, approx_num_fitting_characters)
+        line_width = canvas.stringWidth(line[:approx_num_fitting_characters], font_name, font_size)
+        if line_width < max_width:
+            lower_boundary = approx_num_fitting_characters
+        elif line_width > max_width:
+            upper_boundary = approx_num_fitting_characters - 1
+        else:
+            lower_boundary = approx_num_fitting_characters
+            break
+    if ' ' in line[:lower_boundary]:
+        return line[:lower_boundary].rfind(' ')
+    return lower_boundary
+
+
 def _draw_left_aligned_wrapped_text(canvas: Canvas, text, left_offset, max_width, top_cursor, font_name, font_size, line_height, justify=False):
     lines = []
     while text:
         text = text.lstrip()
-        line = text
-        while canvas.stringWidth(line, font_name, font_size) > max_width:
-            if ' ' in line:
-                line = line.rsplit(' ', 1)[0]
-            else:
-                line = line[:-1]
+        line = text[:_get_num_fitting_characters(canvas, text, max_width, font_name, font_size)]
         lines.append(line.strip())
         text = text[len(line):]
 
