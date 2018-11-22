@@ -288,12 +288,14 @@ def _write_files(object, canvas):
         canvas.top_cursor -= 4 * mm
         for file in files:
             if file.is_hidden:
-                text = '• {} — {}: hidden)'.format(file.utc_datetime.strftime('%Y-%m-%d %H:%M'), file.uploader.name)
+                text = '• {} — {}: (hidden)'.format(file.utc_datetime.strftime('%Y-%m-%d %H:%M'), file.uploader.name)
             else:
                 text = '• {} — {}: {}'.format(file.utc_datetime.strftime('%Y-%m-%d %H:%M'), file.uploader.name, file.title)
             _append_text(canvas, text)
         canvas.showPage()
         for index, file in enumerate(files):
+            if file.is_hidden:
+                continue
             for file_extension in ('.png', '.jpg', '.jpeg'):
                 if file.original_file_name.lower().endswith(file_extension):
                     try:
