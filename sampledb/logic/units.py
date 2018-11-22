@@ -21,8 +21,8 @@ def prettify_units(units: typing.Union[str, ureg.Unit]) -> str:
     """
     units = str(units)
     units = {
-        'degC': '˚C',
-        'deg': '˚',
+        'degC': '\xb0C',
+        'deg': '\xb0',
         'percent': '%'
     }.get(units, units)
     return units

@@ -25,4 +25,4 @@ def test_custom_units():
 
 def test_prettify_degrees_celsius():
     celsius = sampledb.logic.units.ureg.Unit("degC")
-    assert sampledb.logic.units.prettify_units(celsius) == '˚C'
+    assert sampledb.logic.units.prettify_units(celsius) == '\xb0C'

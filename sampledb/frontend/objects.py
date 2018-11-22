@@ -34,6 +34,7 @@ from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
 from .labels import create_labels
+from .pdfexport import create_pdfexport
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -545,6 +546,19 @@ def post_object_comments(object_id):
     else:
         flask.flash('Please enter a comment text.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+
+@frontend.route('/objects/<int:object_id>/pdf')
+@object_permissions_required(Permissions.READ)
+def export_to_pdf(object_id):
+    pdf_data = create_pdfexport([object_id])
+
+    return flask.send_file(
+        io.BytesIO(pdf_data),
+        mimetype='application/pdf',
+        cache_timeout=-1
+    )
+
 
 
 @frontend.route('/files/')
