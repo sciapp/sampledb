@@ -1,0 +1,25 @@
+{% set object = get_object(related_objects_tree['object_id']) %}
+{% if in_export_pdf_model %}<input type="checkbox" title="Include #{{ related_objects_tree['object_id'] }} in PDF Export" {% if 'previous_objects' in related_objects_tree %}name="pdf_export_object_{{ related_objects_tree['object_id'] }}" data-object-id="{{ related_objects_tree['object_id'] }}" {% else %}disabled="disabled"{% endif %} class="pdf_export_object pdf_export_object_{{ related_objects_tree['object_id'] }}">{% endif %}
+<a href="{{ url_for('.object', object_id=related_objects_tree['object_id']) }}">{{ object.data['name']['text'] }} &bullet; #{{ related_objects_tree['object_id'] }}</a> {% if 'previous_objects' not in related_objects_tree %}<ul><li><i class="fa fa-fw fa-ellipsis-h" aria-hidden="true"></i></li></ul>{% endif %}
+
+{% if 'measurements' in related_objects_tree and related_objects_tree['measurements'] %}
+  <ul>
+  {% for related_objects_tree in related_objects_tree['measurements'] %}
+    <li><i class="fa fa-fw fa-file-text" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Measured using {{ object.data['name']['text'] }}"></i>{% include "objects/view/related_objects.html" %}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% if 'previous_objects' in related_objects_tree and related_objects_tree['previous_objects'] %}
+  <ul>
+  {% for related_objects_tree in related_objects_tree['previous_objects'] %}
+    <li><i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Used for creating {{ object.data['name']['text'] }}"></i>{% include "objects/view/related_objects.html" %}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% if 'samples' in related_objects_tree and related_objects_tree['samples'] %}
+  <ul>
+  {% for related_objects_tree in related_objects_tree['samples'] %}
+    <li><i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Created using {{ object.data['name']['text'] }}"></i>{% include "objects/view/related_objects.html" %}</li>
+  {% endfor %}
+  </ul>
+{% endif %}

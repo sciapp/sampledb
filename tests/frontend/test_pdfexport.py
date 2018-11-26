@@ -51,3 +51,23 @@ def test_generate_pdfexport(action, flask_server, user_session):
     assert r.status_code == 200
     assert len(r.content) > 0
     assert r.headers["Content-Type"] == 'application/pdf'
+
+
+def test_generate_pdfexport_for_object_ids(action, flask_server, user_session):
+    object = sampledb.logic.objects.create_object(action.id, {}, user_session.user_id)
+    r = user_session.get(flask_server.base_url + 'objects/{0}/pdf?object_ids=[{0}]'.format(object.object_id))
+    assert r.status_code == 200
+    assert len(r.content) > 0
+    assert r.headers["Content-Type"] == 'application/pdf'
+
+
+def test_generate_pdfexport_for_empty_objects(action, flask_server, user_session):
+    object = sampledb.logic.objects.create_object(action.id, {}, user_session.user_id)
+    r = user_session.get(flask_server.base_url + 'objects/{}/pdf?object_ids=[]'.format(object.object_id))
+    assert r.status_code == 400
+
+
+def test_generate_pdfexport_for_invalid_json(action, flask_server, user_session):
+    object = sampledb.logic.objects.create_object(action.id, {}, user_session.user_id)
+    r = user_session.get(flask_server.base_url + 'objects/{}/pdf?object_ids=[7"'.format(object.object_id))
+    assert r.status_code == 400
