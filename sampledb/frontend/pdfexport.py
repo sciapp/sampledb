@@ -268,9 +268,9 @@ def _write_activity_log(object, canvas):
         elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE:
             text += ' uploaded a file'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
-            text += ' used this object in measurement #{}'.format(object_log_entry.data['object_id'])
+            text += ' used this object in measurement #{}'.format(object_log_entry.data['measurement_id'])
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
-            text += ' used this object to create sample #{}'.format(object_log_entry.data['object_id'])
+            text += ' used this object to create sample #{}'.format(object_log_entry.data['sample_id'])
         else:
             text += ' performed an unknown action'
         _append_text(canvas, text)

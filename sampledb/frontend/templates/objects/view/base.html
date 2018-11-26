@@ -55,7 +55,7 @@
       <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal"><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
     </div>
     <div class="form-group">
-      <a href="{{ url_for('.export_to_pdf', object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</a>
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button>
     </div>
   {% endif %}
     {% if restore_form is not none %}
@@ -474,6 +474,38 @@
       </tbody>
     </table>
   {% endif %}
+
+  {% if related_objects_tree %}
+    <h4>Related Objects</h4>
+
+    <div class="related-objects">
+      {% set in_export_pdf_model = False %}
+      <i class="fa fa-fw" aria-hidden="true"></i>{% include "objects/view/related_objects.html" %}
+    </div>
+
+    <div class="modal fade" id="pdfExportModal" tabindex="-1" role="dialog" aria-labelledby="pdfExportModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="pdfExportModalLabel">Export to PDF</h4>
+          </div>
+          <div class="modal-body">
+            <div class="related-objects">
+              {% set in_export_pdf_model = True %}
+              <i class="fa fa-fw" aria-hidden="true"></i>{% include "objects/view/related_objects.html" %}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="button-related-objects-select-all">Select All</button>
+            <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">Deselect All</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <a href="{{ url_for('.export_to_pdf', object_id=object_id) }}" class="btn btn-primary" id="button-related-objects-export-pdf">Export to PDF</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -830,6 +862,40 @@
       $('.file-info-hide').hide();
       $('.file-info-main').show();
     });
+    {% if related_objects_tree %}
+    $('input[name^=pdf_export_object_]').prop("checked", false);
+    $('input.pdf_export_object').prop("checked", false);
+    $('input.pdf_export_object_{{ object_id }}').prop("checked", true);
+    function updatePDFExportLink() {
+      var object_ids_to_export = [];
+      $('input[name^=pdf_export_object_]').each(function() {
+        if ($(this).prop('checked')) {
+          object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
+        }
+      });
+      var export_link = $('#button-related-objects-export-pdf');
+      if (object_ids_to_export.length > 0) {
+        export_link.attr('href', "{{ url_for('.export_to_pdf', object_id=object_id) }}?object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)));
+        export_link.removeClass("disabled");
+      } else {
+        export_link.attr('href', "#");
+        export_link.addClass("disabled");
+      }
+    }
+    $('input[name^=pdf_export_object_]').on('change', function() {
+      $('input.' + this.name + ':not([name=' + this.name + '])').prop("checked",  $(this).prop("checked"));
+      updatePDFExportLink();
+    });
+    $('#button-related-objects-select-all').on('click', function() {
+      $('input.pdf_export_object').prop("checked", true);
+      updatePDFExportLink();
+    });
+    $('#button-related-objects-deselect-all').on('click', function() {
+      $('input.pdf_export_object').prop("checked", false);
+      updatePDFExportLink();
+    });
+    {% endif %}
+    $('[data-toggle="tooltip"]').tooltip();
     });
   </script>
 {% endblock %}

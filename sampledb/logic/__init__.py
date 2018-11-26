@@ -15,6 +15,7 @@ from . import instruments
 from . import ldap
 from . import objects
 from . import object_log
+from . import object_relationships
 from . import object_search
 from . import permissions
 from . import projects

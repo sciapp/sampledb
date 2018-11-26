@@ -413,6 +413,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 @object_permissions_required(Permissions.READ)
 def object(object_id):
     object = get_object(object_id=object_id)
+    related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, flask_login.current_user.id)
 
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
@@ -484,7 +485,9 @@ def object(object_id):
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),
             file_hiding_form=FileHidingForm(),
-            new_schema_available=new_schema_available
+            new_schema_available=new_schema_available,
+            related_objects_tree=related_objects_tree,
+            get_object=get_object
         )
     if flask.request.args.get('mode', '') == 'upgrade':
         should_upgrade_schema = True
@@ -551,14 +554,24 @@ def post_object_comments(object_id):
 @frontend.route('/objects/<int:object_id>/pdf')
 @object_permissions_required(Permissions.READ)
 def export_to_pdf(object_id):
-    pdf_data = create_pdfexport([object_id])
+    object_ids = [object_id]
+    if 'object_ids' in flask.request.args:
+        try:
+            object_ids = json.loads(flask.request.args['object_ids'])
+            object_ids = [int(i) for i in object_ids]
+            if any((Permissions.READ not in get_user_object_permissions(i, flask_login.current_user.id)) for i in object_ids):
+                return flask.abort(400)
+        except Exception:
+            return flask.abort(400)
+        if not object_ids:
+            return flask.abort(400)
+    pdf_data = create_pdfexport(object_ids)
 
     return flask.send_file(
         io.BytesIO(pdf_data),
         mimetype='application/pdf',
         cache_timeout=-1
     )
-
 
 
 @frontend.route('/files/')

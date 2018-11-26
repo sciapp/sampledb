@@ -43,7 +43,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object', object_id=1))
+        return flask.redirect(flask.url_for('frontend.object', object_id=5))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -151,3 +151,86 @@ def setup_data(app):
     create_action(ActionType.SAMPLE_CREATION, "Other Sample", "", schema, None)
     sampledb.db.session.commit()
 
+    sample_action = sampledb.logic.actions.create_action(
+        action_type=ActionType.SAMPLE_CREATION,
+        name="sample_action",
+        description="",
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'sample'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type=ActionType.MEASUREMENT,
+        name="measurement_action",
+        description="",
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'sample'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        }
+    }
+    object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sampledb.logic.permissions.set_object_public(object.id, True)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 2'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': object.id
+        }
+    }
+    sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sampledb.logic.permissions.set_object_public(sample.id, True)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': sample.id
+        }
+    }
+    sampledb.logic.objects.update_object(object.id, data, user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Measurement'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': object.id
+        }
+    }
+    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
+    sampledb.logic.permissions.set_object_public(measurement.id, True)

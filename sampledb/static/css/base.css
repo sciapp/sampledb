@@ -336,3 +336,13 @@ th:hover .search-helper {
 .object-button-bar > div > form > button {
     width:10.5em;
 }
+.related-objects {
+    margin-left:-1.4em;
+}
+.related-objects ul {
+    padding-left: 1.4em;
+    margin-bottom: 0;
+}
+.related-objects li {
+    list-style: none;
+}

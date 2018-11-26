@@ -223,23 +223,20 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
     return list(iter_object_properties([], object.schema, object.data))
 
 
-def _update_object_references(object: Object, user_id: int) -> None:
+def find_object_references(object: Object, find_previous_referenced_object_ids: bool = True) -> typing.List[typing.Tuple[int, typing.Optional[int]]]:
     """
-    Searches for references to other objects and updates these accordingly.
-
-    At this time, only measurements referencing samples will be handled,
-    adding an entry to the sample's object log about being used in a
-    measurement.
+    Searches for references to other objects.
 
     :param object: the updated (or newly created) object
-    :param user_id: the user who caused the object update or creation
+    :param find_previous_referenced_object_ids: whether or not to find
+        previous referenced object ids
     """
-    action_type = actions.get_action(object.action_id).type
+    referenced_object_ids = []
     for path, schema, data in _get_object_properties(object):
         if schema['type'] == 'sample' and data is not None and data['object_id'] is not None:
             referenced_object_id = data['object_id']
             previous_referenced_object_id = None
-            if object.version_id > 0:
+            if find_previous_referenced_object_ids and object.version_id > 0:
                 previous_object_version = get_object(object.object_id, object.version_id-1)
                 previous_data = previous_object_version.data
                 try:
@@ -250,8 +247,25 @@ def _update_object_references(object: Object, user_id: int) -> None:
                 else:
                     if previous_data is not None and previous_data['object_id'] is not None:
                         previous_referenced_object_id = previous_data['object_id']
-            if referenced_object_id != previous_referenced_object_id:
-                if action_type == ActionType.MEASUREMENT:
-                    object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=user_id, measurement_id=object.object_id)
-                elif action_type == ActionType.SAMPLE_CREATION:
-                    object_log.use_object_in_sample(object_id=referenced_object_id, user_id=user_id, sample_id=object.object_id)
+            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id))
+    return referenced_object_ids
+
+
+def _update_object_references(object: Object, user_id: int) -> None:
+    """
+    Searches for references to other objects and updates these accordingly.
+
+    At this time, only measurements or samples referencing samples will be
+    handled, adding an entry to the sample's object log about being used in a
+    measurement.
+
+    :param object: the updated (or newly created) object
+    :param user_id: the user who caused the object update or creation
+    """
+    action_type = actions.get_action(object.action_id).type
+    for referenced_object_id, previous_referenced_object_id in find_object_references(object):
+        if referenced_object_id != previous_referenced_object_id:
+            if action_type == ActionType.MEASUREMENT:
+                object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=user_id, measurement_id=object.object_id)
+            elif action_type == ActionType.SAMPLE_CREATION:
+                object_log.use_object_in_sample(object_id=referenced_object_id, user_id=user_id, sample_id=object.object_id)
