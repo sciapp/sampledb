@@ -212,8 +212,17 @@ def _handle_tags(data, schema, path, canvas):
 
 
 def _handle_text(data, schema, path, canvas):
-    text = '• {}: {}'.format(schema['title'], data.get('text', '-'))
-    _append_text(canvas, text)
+    prefix = '• {}: '.format(schema['title'])
+    text = prefix + data.get('text', '-')
+    previously_used_left_cursor = canvas.left_cursor
+    indent = canvas.stringWidth(prefix, 'Helvetica', 11)
+    for paragraph in text.splitlines(keepends=False):
+        if paragraph.strip():
+            _append_text(canvas, paragraph, justify=True)
+        else:
+            canvas.top_cursor -= 1.2 * 11
+        canvas.left_cursor = previously_used_left_cursor + indent
+    canvas.left_cursor = previously_used_left_cursor
 
 
 def _handle_bool(data, schema, path, canvas):

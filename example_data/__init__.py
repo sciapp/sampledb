@@ -186,6 +186,11 @@ def setup_data(app):
                 'sample': {
                     'title': 'Sample',
                     'type': 'sample'
+                },
+                'comment': {
+                    'title': 'Comment',
+                    'type': 'text',
+                    'multiline': True
                 }
             },
             'required': ['name']
@@ -230,6 +235,10 @@ def setup_data(app):
         'sample': {
             '_type': 'sample',
             'object_id': object.id
+        },
+        'comment': {
+            '_type': 'text',
+            'text': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'
         }
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
