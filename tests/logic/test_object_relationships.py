@@ -210,12 +210,7 @@ def test_object_with_cyclic_sample(sample_action, user):
                 'object_id': sample.id,
                 'path': [object.id, -2, sample.id],
                 'measurements': [],
-                'samples': [
-                    {
-                        'object_id': object.id,
-                        'path': [object.id]
-                    }
-                ],
+                'samples': [],
                 'previous_objects': []
             }
         ]
