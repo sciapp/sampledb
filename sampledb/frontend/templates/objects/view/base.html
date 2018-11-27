@@ -355,7 +355,7 @@
     {% if comments %}
       {% for comment in comments %}
         <div class="well" id="comment-{{ comment.id }}">
-          {{ comment.content }}
+          <pre class="comment">{{ comment.content }}</pre>
           <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.name }}</a>, {{ comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
         </div>
       {% endfor %}

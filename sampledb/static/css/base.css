@@ -346,3 +346,12 @@ th:hover .search-helper {
 .related-objects li {
     list-style: none;
 }
+.comment {
+    font-family: inherit;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    word-break: normal;
+    margin: 0 0 10px;
+    padding: 0;
+    border: 0;
+}
