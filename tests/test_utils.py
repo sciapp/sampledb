@@ -76,7 +76,9 @@ def app_context():
     app = sampledb.create_app()
     with app.app_context():
         # fully empty the database first
-        sampledb.db.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
+        metadata = sampledb.db.MetaData(bind=sampledb.db.engine)
+        metadata.reflect()
+        metadata.drop_all()
         # recreate the tables used by this application
         sampledb.db.metadata.create_all(bind=sampledb.db.engine)
         yield app
