@@ -1,5 +1,6 @@
 stages:
   - test
+  - build
   - deploy
 
 variables:
@@ -48,6 +49,23 @@ documentation:
     paths:
     - build_documentation
 
+build:
+  stage: build
+  image: docker:stable
+  variables:
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:stable-dind
+  script:
+  - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+      export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
+      docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$VERSION;
+      docker push $CI_REGISTRY_IMAGE:$VERSION;
+    fi
+
 pages:
   stage: deploy
   image: ubuntu:18.04
@@ -69,7 +87,7 @@ deploy:
   script:
     - apt-get update
     - apt-get install -y ssh
-    # Set up SSH for access to deployment server
+    # set up SSH for access to deployment server
     - mkdir -p --mode=700 ~/.ssh/
     - echo "$DEPLOYMENT_PRIVATE_KEY" > ~/.ssh/deployment_key
     - chmod 400 ~/.ssh/deployment_key
