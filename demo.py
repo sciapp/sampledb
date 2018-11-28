@@ -27,7 +27,9 @@ try:
     sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
 
     # fully empty the database first
-    sqlalchemy.MetaData(reflect=True, bind=sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)).drop_all()
+    metadata = sqlalchemy.MetaData(bind=sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
+    metadata.reflect()
+    metadata.drop_all()
     app = create_app()
 
     with app.app_context():

@@ -73,7 +73,7 @@ def build_related_objects_tree(
             'path': path,
             'measurements': [
                 build_related_objects_tree(measurement_id, user_id, path + [-1], visited_paths)
-                for measurement_id in measurement_ids
+                for measurement_id in measurement_ids if len(path) == 1 or measurement_id != path[-3]
             ],
             'previous_objects': [
                 build_related_objects_tree(previous_object_id, user_id, path + [-2], visited_paths)
@@ -81,7 +81,7 @@ def build_related_objects_tree(
             ],
             'samples': [
                 build_related_objects_tree(sample_id, user_id, path + [-3], visited_paths)
-                for sample_id in sample_ids
+                for sample_id in sample_ids if len(path) == 1 or sample_id != path[-3]
             ]
         }
 
