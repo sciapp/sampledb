@@ -243,3 +243,19 @@ def setup_data(app):
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
     sampledb.logic.permissions.set_object_public(measurement.id, True)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Measurement 2'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': sample.id
+        },
+        'comment': {
+            '_type': 'text',
+            'text': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'
+        }
+    }
+    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
+    sampledb.logic.permissions.set_object_public(measurement.id, True)
