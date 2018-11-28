@@ -337,14 +337,59 @@ th:hover .search-helper {
     width:10.5em;
 }
 .related-objects {
-    margin-left:-1.4em;
 }
 .related-objects ul {
     padding-left: 1.4em;
     margin-bottom: 0;
+    position: relative;
+}
+.related-objects li:before,
+.related-objects li:after {
+    content:'';
+    position: absolute;
+    z-index:1;
+    pointer-events: none;
+    left:-0.8em;
+    top:-0.73em;
+}
+.related-objects li:before {
+    width:1.9em;
+    bottom:calc(100% - 0.73em);
+    border-bottom: 1px solid #bbbbbb;
+}
+.related-objects li:after {
+    bottom:0.73em;
+    border-left:1px solid #bbbbbb;
+}
+.related-objects li:last-child:after {
+    bottom:calc(100% - 0.73em);
 }
 .related-objects li {
     list-style: none;
+    position: relative;
+    z-index:2;
+}
+.related-objects-tree-toggle {
+    display:none;
+}
+.related-objects-tree-toggle ~ ul {
+    display:none;
+}
+.related-objects-tree-toggle ~ label {
+    margin-top: .2em;
+    position: relative;
+    z-index:3;
+    background-color: white;
+    cursor: pointer;
+}
+.related-objects-tree-toggle ~ label:before {
+    content:"\f0fe";
+}
+.related-objects-tree-toggle:checked ~ label:before {
+    content:"\f146";
+}
+.related-objects-tree-toggle:checked ~ ul {
+    display:block;
 }
 .comment {
     font-family: inherit;
@@ -354,4 +399,24 @@ th:hover .search-helper {
     margin: 0 0 10px;
     padding: 0;
     border: 0;
+}
+.pdf_export_object_wrapper > input {
+    display:none;
+}
+.pdf_export_object_wrapper > input ~ label.fa.fa-fw {
+    text-align: left;
+}
+.pdf_export_object_wrapper > input[disabled] ~ label {
+    color:#bbbbbb;
+    pointer-events: none;
+}
+.pdf_export_object_wrapper > input ~ label:before {
+    content:'\f096';
+    cursor: pointer;
+}
+.pdf_export_object_wrapper > input:checked ~ label:before {
+    content:'\f046';
+}
+.pdf_export_object_wrapper > input[disabled] ~ label:before {
+    cursor: initial;
 }
