@@ -58,6 +58,7 @@ sphinxcontrib-websupport==1.1.0
 SQLAlchemy==1.2.14
 tempora==1.14
 urllib3==1.24.1
+vcversioner==2.16.0.0
 Werkzeug==0.14.1
 WTForms==2.2.1
 zc.lockfile==1.4
