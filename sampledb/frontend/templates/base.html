@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   {% endblock %}
 </head>
-<body>
+<body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
 <nav class="navbar navbar-default navbar-static-top">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -29,17 +29,7 @@
         <li><a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/">Help</a></li>
       </ul>
       {% else %}
-      <ul class="nav navbar-nav">
-        <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
-        <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
-        <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
-        <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
-        <li><a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/">Help</a></li>
-      </ul>
-      <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left">
+      <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left" id="nav-search">
         {% if action_id %}
           <input type="hidden" name="action" value="{{ action_id }}" id="input-search-action-id" />
         {% endif %}
@@ -56,7 +46,7 @@
           {% endif %}
         {% endif %}
         <div class="input-group">
-          <input type="text" id="input-search" class="form-control" style="width:250px" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
+          <input type="text" id="input-search" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -102,6 +92,16 @@
           </span>
         </div>
       </form>
+      <ul class="nav navbar-nav" id="main-nav-links">
+        <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
+        <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
+        <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
+        <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
+        <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
+        <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
+        <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
+        <li><a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/">Help</a></li>
+      </ul>
       {% endif %}
       {% block navbar_userarea %}
       <ul class="nav navbar-nav navbar-right">
