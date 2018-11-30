@@ -420,3 +420,23 @@ th:hover .search-helper {
 .pdf_export_object_wrapper > input[disabled] ~ label:before {
     cursor: initial;
 }
+@media only screen and (min-width: 768px) {
+    #input-search {
+        max-width: 250px;
+    }
+}
+@media only screen and (min-width: 768px) and (max-width: 1400px) {
+    #nav-search {
+        max-width: 300px;
+    }
+    #main-nav-links {
+        position:absolute;
+        top:50px;
+        width:100%;
+        display:flex;
+        justify-content: center;
+    }
+    .user-is-authenticated .navbar-static-top {
+        padding-bottom: 50px;
+    }
+}
