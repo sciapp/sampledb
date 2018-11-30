@@ -6,3 +6,4 @@ _*
 !__main__.py
 ldapaccount.py
 docs/static/img/generated
+version.txt

@@ -70,7 +70,8 @@ pages:
   stage: deploy
   image: ubuntu:18.04
   only:
-    - master@Scientific-IT-Systems/SampleDB
+    - master
+    - tags
   script:
     - mv build_documentation public
   artifacts:
