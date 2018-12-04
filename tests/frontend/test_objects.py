@@ -102,7 +102,7 @@ def test_get_objects_by_project_id(flask_server, user):
     assert document.find('tbody') is None or len(document.find('tbody').find_all('tr')) == 0
     assert document.find('tbody') is None or 'Example1' not in str(document.find('tbody'))
 
-    sampledb.logic.permissions.set_project_object_permissions(objects[0].id, project.id, sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.object_permissions.set_project_object_permissions(objects[0].id, project.id, sampledb.logic.object_permissions.Permissions.READ)
     r = session.get(flask_server.base_url + 'objects/?project={}'.format(project.id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
@@ -257,7 +257,7 @@ def test_get_object_edit_form_read_permissions(flask_server, user):
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
-    sampledb.logic.permissions.set_user_object_permissions(object_id=object.object_id, user_id=new_user_id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object.object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.READ)
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user_id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
     assert r.status_code == 403
@@ -702,11 +702,11 @@ def test_update_object_permissions(flask_server, user):
         action_id=action.id
     )
 
-    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
+    current_permissions = sampledb.logic.object_permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        user.id: sampledb.logic.permissions.Permissions.GRANT
+        user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -730,11 +730,11 @@ def test_update_object_permissions(flask_server, user):
 
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
+    current_permissions = sampledb.logic.object_permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        user.id: sampledb.logic.permissions.Permissions.GRANT
+        user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert sampledb.logic.permissions.object_is_public(object.object_id)
+    assert sampledb.logic.object_permissions.object_is_public(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
         user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
@@ -757,11 +757,11 @@ def test_update_object_permissions(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
+    current_permissions = sampledb.logic.object_permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        user.id: sampledb.logic.permissions.Permissions.GRANT
+        user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
 
     form_data = {
         'edit_user_permissions': 'edit_user_permissions',
@@ -773,11 +773,11 @@ def test_update_object_permissions(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
+    current_permissions = sampledb.logic.object_permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        user.id: sampledb.logic.permissions.Permissions.READ
+        user.id: sampledb.logic.object_permissions.Permissions.READ
     }
-    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
 
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 403
@@ -801,11 +801,11 @@ def test_object_permissions_add_user(flask_server, user):
         action_id=action.id
     )
 
-    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
+    current_permissions = sampledb.logic.object_permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        user.id: sampledb.logic.permissions.Permissions.GRANT
+        user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -834,12 +834,12 @@ def test_object_permissions_add_user(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    current_permissions = sampledb.logic.permissions.get_object_permissions_for_users(object.object_id)
+    current_permissions = sampledb.logic.object_permissions.get_object_permissions_for_users(object.object_id)
     assert current_permissions == {
-        user.id: sampledb.logic.permissions.Permissions.GRANT,
-        user2.id: sampledb.logic.permissions.Permissions.WRITE
+        user.id: sampledb.logic.object_permissions.Permissions.GRANT,
+        user2.id: sampledb.logic.object_permissions.Permissions.WRITE
     }
-    assert not sampledb.logic.permissions.object_is_public(object.object_id)
+    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
         user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
@@ -873,7 +873,7 @@ def test_object_permissions_add_group(flask_server, user):
 
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
 
-    assert sampledb.logic.permissions.get_object_permissions_for_groups(object.object_id) == {}
+    assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object.object_id) == {}
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -895,8 +895,8 @@ def test_object_permissions_add_group(flask_server, user):
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.permissions.get_object_permissions_for_groups(object.object_id) == {
-        group_id: sampledb.logic.permissions.Permissions.WRITE
+    assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object.object_id) == {
+        group_id: sampledb.logic.object_permissions.Permissions.WRITE
     }
 
     with flask_server.app.app_context():

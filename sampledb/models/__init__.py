@@ -9,7 +9,7 @@ from . import files
 from . import groups
 from . import instruments
 from . import objects
-from . import permissions
+from . import object_permissions
 from . import projects
 from . import users
 
@@ -22,7 +22,7 @@ from .groups import Group
 from .instruments import Instrument
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
-from .permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from .object_permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .tags import Tag
 from .users import User, UserType

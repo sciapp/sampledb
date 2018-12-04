@@ -63,7 +63,7 @@ def test_get_user_log_entries(user1, user2, action):
     object = sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user1.id)
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 4
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 0
-    sampledb.logic.permissions.set_object_public(object_id=object.id, is_public=True)
+    sampledb.logic.object_permissions.set_object_public(object_id=object.id, is_public=True)
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 4
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 1
     sampledb.logic.user_log.create_batch(user1.id, [object.id, 21])

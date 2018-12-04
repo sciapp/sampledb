@@ -8,7 +8,7 @@ import flask_login
 
 from . import frontend
 from .. import logic
-from ..logic.permissions import Permissions
+from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
 from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, OtherProjectIdForm
 
@@ -32,7 +32,7 @@ def project(project_id):
             return flask.abort(403)
         other_project_ids = token_data.get('other_project_ids', [])
         try:
-            logic.projects.add_user_to_project(project_id, user_id, logic.permissions.Permissions.READ, other_project_ids=other_project_ids)
+            logic.projects.add_user_to_project(project_id, user_id, logic.object_permissions.Permissions.READ, other_project_ids=other_project_ids)
         except logic.errors.UserAlreadyMemberOfProjectError:
             flask.flash('You are already a member of this project', 'error')
     user_id = flask_login.current_user.id

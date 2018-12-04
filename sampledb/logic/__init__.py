@@ -17,7 +17,7 @@ from . import objects
 from . import object_log
 from . import object_relationships
 from . import object_search
-from . import permissions
+from . import object_permissions
 from . import projects
 from . import schemas
 from . import security_tokens

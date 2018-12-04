@@ -4,7 +4,7 @@
 """
 
 from .. import db
-from .permissions import Permissions
+from .object_permissions import Permissions
 from .groups import Group
 from .users import User
 

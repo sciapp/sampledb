@@ -318,7 +318,7 @@ def test_keep_project_permissions(flask_server, user_session):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_change_last_user_project_permissions(flask_server, user_session):
@@ -339,13 +339,13 @@ def test_change_last_user_project_permissions(flask_server, user_session):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_update_user_project_permissions(flask_server, user_session, user):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
-    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
@@ -362,14 +362,14 @@ def test_update_user_project_permissions(flask_server, user_session, user):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.WRITE
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.object_permissions.Permissions.WRITE
 
 
 def test_swap_grant_project_permissions(flask_server, user_session, user):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
-    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
@@ -390,8 +390,8 @@ def test_swap_grant_project_permissions(flask_server, user_session, user):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.WRITE
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.WRITE
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_update_project_permissions_without_grant(flask_server, user_session, user):
@@ -412,7 +412,7 @@ def test_update_project_permissions_without_grant(flask_server, user_session, us
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 403
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_update_project_permissions_without_project(flask_server, user_session):
@@ -424,7 +424,7 @@ def test_update_group_project_permissions(flask_server, user_session, user):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    sampledb.logic.projects.add_group_to_project(project_id, group_id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_group_to_project(project_id, group_id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
@@ -441,9 +441,9 @@ def test_update_group_project_permissions(flask_server, user_session, user):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
     assert sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id) == {
-        group_id: sampledb.logic.permissions.Permissions.WRITE
+        group_id: sampledb.logic.object_permissions.Permissions.WRITE
     }
 
 
@@ -621,9 +621,9 @@ def test_add_user_to_parent_project_already_a_member(user):
     parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
     project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
     sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
-    sampledb.logic.projects.add_user_to_project(parent_project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_user_to_project(parent_project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
     assert user.id not in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
-    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ, other_project_ids=[parent_project_id])
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ, other_project_ids=[parent_project_id])
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)

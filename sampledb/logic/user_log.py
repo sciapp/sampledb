@@ -7,7 +7,7 @@ import datetime
 import typing
 from .errors import ObjectDoesNotExistError
 from .users import get_user
-from .permissions import get_user_object_permissions, Permissions
+from .object_permissions import get_user_object_permissions, Permissions
 from ..models import UserLogEntry, UserLogEntryType
 from .. import db
 

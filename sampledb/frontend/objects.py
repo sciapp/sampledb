@@ -18,7 +18,7 @@ from .. import db
 from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
-from ..logic.permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects
+from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users
 from ..logic.schemas import validate, generate_placeholder
