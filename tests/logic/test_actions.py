@@ -5,7 +5,7 @@
 
 import pytest
 import sampledb
-from sampledb.logic import actions, errors, instruments, schemas
+from sampledb.logic import actions, errors, instruments, schemas, users
 
 from ..test_utils import app_context
 
@@ -19,6 +19,7 @@ SCHEMA = {
             }
         }
     }
+
 
 def test_create_independent_action():
     assert len(actions.get_actions()) == 0
@@ -85,3 +86,17 @@ def test_get_actions():
     assert actions.get_actions() == [measurement_action, sample_action] or actions.get_actions() == [sample_action, measurement_action]
     assert actions.get_actions(sampledb.models.ActionType.SAMPLE_CREATION) == [sample_action]
     assert actions.get_actions(sampledb.models.ActionType.MEASUREMENT) == [measurement_action]
+
+
+def test_create_user_action():
+    user = users.User(name="Testuser", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    assert len(actions.get_actions()) == 0
+    action = actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=SCHEMA, user_id=user.id)
+    assert action.name == "Example Action"
+    assert action.description == ""
+    assert action.schema == SCHEMA
+    assert action.user_id == user.id
+    assert len(actions.get_actions()) == 1
+    assert action == actions.get_action(action_id=action.id)
