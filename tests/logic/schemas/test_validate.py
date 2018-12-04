@@ -11,18 +11,9 @@ from sampledb.logic.objects import create_object, get_object
 from sampledb.logic.schemas import validate
 from sampledb.logic.errors import ValidationError
 
+from ...test_utils import app_context
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
-@pytest.fixture(autouse=True)
-def app_context():
-    app = sampledb.create_app()
-    with app.app_context():
-        # fully empty the database first
-        sampledb.db.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
-        # recreate the tables used by this application
-        sampledb.db.metadata.create_all(bind=sampledb.db.engine)
-        yield app
 
 
 def test_validate_invalid_type():
