@@ -15,6 +15,7 @@ import sampledb.frontend
 import sampledb.api
 import sampledb.logic
 import sampledb.models
+import sampledb.models.migrations
 import sampledb.config
 
 
@@ -40,5 +41,6 @@ def create_app():
     with app.app_context():
         db.metadata.create_all(bind=db.engine)
         sampledb.models.Objects.bind = db.engine
+        sampledb.models.migrations.run(db)
 
     return app

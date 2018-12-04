@@ -11,18 +11,9 @@ from sampledb.logic.objects import create_object, get_object
 from sampledb.logic.schemas import validate
 from sampledb.logic.errors import ValidationError
 
+from ...test_utils import app_context
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
-@pytest.fixture(autouse=True)
-def app_context():
-    app = sampledb.create_app()
-    with app.app_context():
-        # fully empty the database first
-        sampledb.db.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
-        # recreate the tables used by this application
-        sampledb.db.metadata.create_all(bind=sampledb.db.engine)
-        yield app
 
 
 def test_validate_invalid_type():
@@ -835,7 +826,7 @@ def test_validate_object_invalid_property():
 
 def test_validate_sample():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -857,7 +848,7 @@ def test_validate_sample():
 
 def test_validate_sample_invalid_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -877,7 +868,7 @@ def test_validate_sample_invalid_type():
 
 def test_validate_sample_unexpected_keys():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -913,7 +904,7 @@ def test_validate_sample_missing_keys():
 
 def test_validate_sample_wrong_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
@@ -936,7 +927,7 @@ def test_validate_sample_wrong_type():
 
 def test_validate_sample_wrong_object_id_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'

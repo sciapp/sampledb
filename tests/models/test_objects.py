@@ -44,7 +44,9 @@ def engine():
     engine = db.create_engine(db_url)
 
     # fully empty the database first
-    db.MetaData(reflect=True, bind=engine).drop_all()
+    metadata = db.MetaData(bind=engine)
+    metadata.reflect()
+    metadata.drop_all()
     return engine
 
 

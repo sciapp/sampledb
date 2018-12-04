@@ -13,7 +13,10 @@ from ..test_utils import app_context
 
 @pytest.fixture
 def instrument():
-    return instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    instrument = instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    assert instrument.id is not None
+    db.session.expunge(instrument)
+    return instrument
 
 
 @pytest.fixture
@@ -24,7 +27,9 @@ def users():
     ]
     for user in users:
         db.session.add(user)
-    db.session.commit()
+        db.session.commit()
+        assert user.id is not None
+        db.session.expunge(user)
     return users
 
 

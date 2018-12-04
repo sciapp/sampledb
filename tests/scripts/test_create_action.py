@@ -5,6 +5,7 @@
 
 import os
 import pytest
+from sampledb import db
 from sampledb.logic import instruments, actions
 import sampledb.__main__ as scripts
 from ..test_utils import app_context
@@ -12,7 +13,10 @@ from ..test_utils import app_context
 
 @pytest.fixture
 def instrument():
-    return instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    instrument = instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    assert instrument.id is not None
+    db.session.expunge(instrument)
+    return instrument
 
 
 def test_create_sample_action(instrument, capsys):

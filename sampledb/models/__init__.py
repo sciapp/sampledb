@@ -13,12 +13,13 @@ from . import permissions
 from . import projects
 from . import users
 
+from .actions import Action, ActionType
 from .authentication import Authentication, AuthenticationType
 from .comments import Comment
 from .favorites import FavoriteAction, FavoriteInstrument
 from .files import File
 from .groups import Group
-from .instruments import Instrument, Action, ActionType
+from .instruments import Instrument
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
 from .permissions import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions

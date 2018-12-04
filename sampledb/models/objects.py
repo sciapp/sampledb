@@ -7,7 +7,7 @@ import jsonschema
 
 from .. import db
 from .users import User
-from .instruments import Action
+from .actions import Action
 from .versioned_json_object_tables import VersionedJSONSerializableObjectTables
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'

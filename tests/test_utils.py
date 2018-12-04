@@ -64,7 +64,9 @@ def app():
 
     with sampledb_app.app_context():
         # fully empty the database first
-        sqlalchemy.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
+        metadata = sqlalchemy.MetaData(bind=sampledb.db.engine)
+        metadata.reflect()
+        metadata.drop_all()
         # recreate the tables used by this application
         sampledb.db.metadata.create_all(bind=sampledb.db.engine)
 
