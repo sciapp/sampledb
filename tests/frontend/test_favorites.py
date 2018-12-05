@@ -37,7 +37,12 @@ def actions(flask_server):
         schema={
             'title': 'Example Object',
             'type': 'object',
-            'properties': {}
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            }, 'required': ['name']
         },
         description='',
         instrument_id=None

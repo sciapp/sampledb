@@ -36,7 +36,13 @@ def independent_action():
         schema={
             'title': 'Example Object',
             'type': 'object',
-            'properties': {}
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
         },
         description='',
         instrument_id=None
@@ -69,7 +75,13 @@ def instrument_action(instrument):
         schema={
             'title': 'Example Object',
             'type': 'object',
-            'properties': {}
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
         },
         description='',
         instrument_id=instrument.id
@@ -84,7 +96,14 @@ def instrument_action(instrument):
 @pytest.fixture
 def objects(users, instrument_action, independent_action):
     actions = [instrument_action, independent_action]
-    return [sampledb.logic.objects.create_object(user_id=users[1].id, action_id=action.id, data={}) for action in actions]
+    return [
+        sampledb.logic.objects.create_object(user_id=users[1].id, action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name'
+            }
+        })
+        for action in actions]
 
 
 @pytest.fixture
@@ -437,7 +456,12 @@ def test_default_permissions_for_users(users, independent_action):
     assert object_permissions.get_default_permissions_for_users(creator_id=creator.id) == {
         creator.id: Permissions.GRANT
     }
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.get_object_permissions_for_users(object_id=object.id, include_instrument_responsible_users=False, include_groups=False) == {
         creator.id: Permissions.GRANT
     }
@@ -449,7 +473,12 @@ def test_default_permissions_for_users(users, independent_action):
         user.id: Permissions.READ
     }
 
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.get_object_permissions_for_users(object_id=object.id, include_instrument_responsible_users=False, include_groups=False) == {
         creator.id: Permissions.GRANT,
         user.id: Permissions.READ
@@ -491,7 +520,12 @@ def test_default_permissions_for_groups(users, independent_action):
     group_id = groups.create_group("Example Group", "", creator.id).id
 
     assert object_permissions.get_default_permissions_for_groups(creator_id=creator.id) == {}
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.get_object_permissions_for_groups(object_id=object.id) == {}
 
     object_permissions.set_default_permissions_for_group(creator_id=creator.id, group_id=group_id, permissions=Permissions.READ)
@@ -500,7 +534,12 @@ def test_default_permissions_for_groups(users, independent_action):
         group_id: Permissions.READ
     }
 
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.get_object_permissions_for_groups(object_id=object.id) == {
         group_id: Permissions.READ
     }
@@ -521,7 +560,12 @@ def test_default_permissions_for_projects(users, independent_action):
     project_id = sampledb.logic.projects.create_project("Example Project", "", creator.id).id
 
     assert object_permissions.get_default_permissions_for_projects(creator_id=creator.id) == {}
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.get_object_permissions_for_projects(object_id=object.id) == {}
 
     object_permissions.set_default_permissions_for_project(creator_id=creator.id, project_id=project_id, permissions=Permissions.READ)
@@ -530,7 +574,12 @@ def test_default_permissions_for_projects(users, independent_action):
         project_id: Permissions.READ
     }
 
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.get_object_permissions_for_projects(object_id=object.id) == {
         project_id: Permissions.READ
     }
@@ -550,12 +599,22 @@ def test_default_public_permissions(users, independent_action):
     user, creator = users
 
     assert not object_permissions.default_is_public(creator_id=creator.id)
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert not object_permissions.object_is_public(object_id=object.id)
 
     object_permissions.set_default_public(creator_id=creator.id, is_public=True)
     assert object_permissions.default_is_public(creator_id=creator.id)
-    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={})
+    object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
     assert object_permissions.object_is_public(object_id=object.id)
 
     object_permissions.set_default_public(creator_id=creator.id, is_public=False)

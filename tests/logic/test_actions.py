@@ -13,11 +13,12 @@ SCHEMA = {
         'title': 'Example Action',
         'type': 'object',
         'properties': {
-            'example': {
+            'name': {
                 'title': 'Example Attribute',
                 'type': 'text'
             }
-        }
+        },
+        'required': ['name']
     }
 
 

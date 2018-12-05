@@ -35,6 +35,10 @@ def action():
             'title': 'Example Object',
             'type': 'object',
             'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
                 'tags': {
                     'title': 'Tags',
                     'type': 'tags'
@@ -83,15 +87,25 @@ def action():
                     }
                 }
             },
-            'required': []
+            'required': ['name']
         }
     )
     return action
 
 
 def test_find_by_empty_string(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -109,6 +123,10 @@ def test_find_by_empty_string(user, action) -> None:
 
 def test_find_by_simple_text(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'text_attr': {
             '_type': 'text',
             'text': "This is a test."
@@ -116,6 +134,10 @@ def test_find_by_simple_text(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'text_attr': {
             '_type': 'text',
             'text': "This is an example."
@@ -135,6 +157,10 @@ def test_find_by_simple_text(user, action) -> None:
 
 def test_find_by_tag(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'tags': {
             '_type': 'tags',
             'tags': ['tag1', 'tag2', 'tag3']
@@ -142,6 +168,10 @@ def test_find_by_tag(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'tags': {
             '_type': 'tags',
             'tags': ['tag2', 'tag3']
@@ -160,6 +190,10 @@ def test_find_by_tag(user, action) -> None:
 
 def test_find_by_unknown_tag(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'tags': {
             '_type': 'tags',
             'tags': ['tag1', 'tag2', 'tag3']
@@ -167,6 +201,10 @@ def test_find_by_unknown_tag(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'tags': {
             '_type': 'tags',
             'tags': ['tag2', 'tag3']
@@ -183,6 +221,10 @@ def test_find_by_unknown_tag(user, action) -> None:
 
 def test_find_by_attribute(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -190,6 +232,10 @@ def test_find_by_attribute(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -208,6 +254,10 @@ def test_find_by_attribute(user, action) -> None:
 
 def test_find_by_boolean_attribute_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -215,6 +265,10 @@ def test_find_by_boolean_attribute_equal(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -257,6 +311,10 @@ def test_find_by_boolean_attribute_equal(user, action) -> None:
 
 def test_find_by_boolean_attribute_not_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -264,6 +322,10 @@ def test_find_by_boolean_attribute_not_equal(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -305,7 +367,12 @@ def test_find_by_boolean_attribute_not_equal(user, action) -> None:
 
 
 def test_find_by_equal_values(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True == True', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -357,7 +424,12 @@ def test_find_by_equal_values(user, action) -> None:
 
 
 def test_find_by_unequal_values(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True != True', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -410,6 +482,10 @@ def test_find_by_unequal_values(user, action) -> None:
 
 def test_find_by_boolean_attribute_or(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -425,6 +501,10 @@ def test_find_by_boolean_attribute_or(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -487,6 +567,10 @@ def test_find_by_boolean_attribute_or(user, action) -> None:
 
 def test_find_by_boolean_attribute_and(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -502,6 +586,10 @@ def test_find_by_boolean_attribute_and(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -561,7 +649,12 @@ def test_find_by_boolean_attribute_and(user, action) -> None:
 
 
 def test_find_by_boolean_boolean_and(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True and True', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -589,7 +682,12 @@ def test_find_by_boolean_boolean_and(user, action) -> None:
 
 
 def test_find_by_boolean_boolean_or(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True or True', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -617,7 +715,12 @@ def test_find_by_boolean_boolean_or(user, action) -> None:
 
 
 def test_find_by_boolean_expression_and(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True and (True and True)', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -681,7 +784,12 @@ def test_find_by_boolean_expression_and(user, action) -> None:
 
 
 def test_find_by_boolean_expression_or(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True or (True and True)', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -746,6 +854,10 @@ def test_find_by_boolean_expression_or(user, action) -> None:
 
 def test_find_by_attribute_expression_and(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -753,6 +865,10 @@ def test_find_by_attribute_expression_and(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -787,6 +903,10 @@ def test_find_by_attribute_expression_and(user, action) -> None:
 
 def test_find_by_attribute_expression_or(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -794,6 +914,10 @@ def test_find_by_attribute_expression_or(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -828,6 +952,10 @@ def test_find_by_attribute_expression_or(user, action) -> None:
 
 def test_find_by_datetime_attribute_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -866,6 +994,10 @@ def test_find_by_datetime_attribute_equal(user, action) -> None:
 
 def test_find_by_datetime_on(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -916,6 +1048,10 @@ def test_find_by_datetime_on(user, action) -> None:
 
 def test_find_by_datetime_less_than(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -968,6 +1104,10 @@ def test_find_by_datetime_less_than(user, action) -> None:
 
 def test_find_by_datetime_before(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -1020,6 +1160,10 @@ def test_find_by_datetime_before(user, action) -> None:
 
 def test_find_by_datetime_greater_than(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -1072,6 +1216,10 @@ def test_find_by_datetime_greater_than(user, action) -> None:
 
 def test_find_by_datetime_after(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -1124,6 +1272,10 @@ def test_find_by_datetime_after(user, action) -> None:
 
 def test_find_by_datetime_less_than_or_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -1184,6 +1336,10 @@ def test_find_by_datetime_less_than_or_equal(user, action) -> None:
 
 def test_find_by_datetime_greater_than_or_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'datetime_attr': {
             '_type': 'datetime',
             'utc_datetime': '2018-10-05 12:00:00'
@@ -1244,6 +1400,10 @@ def test_find_by_datetime_greater_than_or_equal(user, action) -> None:
 
 def test_find_by_quantity_attribute_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'quantity_attr': {
             '_type': 'quantity',
             'units': 'cm',
@@ -1286,6 +1446,10 @@ def test_find_by_quantity_attribute_equal(user, action) -> None:
 
 def test_find_by_quantity_attribute_not_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'quantity_attr': {
             '_type': 'quantity',
             'units': 'cm',
@@ -1334,6 +1498,10 @@ def test_find_by_quantity_attribute_not_equal(user, action) -> None:
 
 def test_find_by_quantity_less_than(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'quantity_attr': {
             '_type': 'quantity',
             'units': 'cm',
@@ -1382,6 +1550,10 @@ def test_find_by_quantity_less_than(user, action) -> None:
 
 def test_find_by_quantity_greater_than(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'quantity_attr': {
             '_type': 'quantity',
             'units': 'cm',
@@ -1430,6 +1602,10 @@ def test_find_by_quantity_greater_than(user, action) -> None:
 
 def test_find_by_quantity_less_than_equals(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'quantity_attr': {
             '_type': 'quantity',
             'units': 'cm',
@@ -1496,6 +1672,10 @@ def test_find_by_quantity_less_than_equals(user, action) -> None:
 
 def test_find_by_quantity_greater_than_equals(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'quantity_attr': {
             '_type': 'quantity',
             'units': 'cm',
@@ -1556,6 +1736,10 @@ def test_find_by_quantity_greater_than_equals(user, action) -> None:
 
 def test_find_by_text_contains(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'text_attr': {
             '_type': 'text',
             'text': 'This is an example.'
@@ -1590,6 +1774,10 @@ def test_find_by_text_contains(user, action) -> None:
 
 def test_find_by_text_attribute_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'text_attr': {
             '_type': 'text',
             'text': 'This is an example.'
@@ -1624,6 +1812,10 @@ def test_find_by_text_attribute_equal(user, action) -> None:
 
 def test_find_by_attribute_equal(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -1665,7 +1857,12 @@ def test_find_by_attribute_equal(user, action) -> None:
 
 
 def test_find_by_expression_equal(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('(True and True) == (True and True)', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1687,7 +1884,12 @@ def test_find_by_expression_equal(user, action) -> None:
 
 
 def test_find_by_boolean_not(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('not False', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1704,6 +1906,10 @@ def test_find_by_boolean_not(user, action) -> None:
 
 def test_find_by_attribute_not(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': True
@@ -1711,6 +1917,10 @@ def test_find_by_attribute_not(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'bool_attr': {
             '_type': 'bool',
             'value': False
@@ -1737,6 +1947,10 @@ def test_find_by_attribute_not(user, action) -> None:
 
 def test_find_by_array_item(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'array_attr': [
             {
                 'text_attr': {
@@ -1762,6 +1976,10 @@ def test_find_by_array_item(user, action) -> None:
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'array_attr': [
             {
                 'text_attr': {
@@ -1811,7 +2029,12 @@ def test_find_by_array_item(user, action) -> None:
 
 
 def test_find_by_unknown_binary_operation(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('False and 2018-10-11', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1822,7 +2045,12 @@ def test_find_by_unknown_binary_operation(user, action) -> None:
 
 
 def test_find_by_unknown_unary_operation(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('not 2018-10-11', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1847,7 +2075,12 @@ def test_find_by_unknown_unary_operation(user, action) -> None:
 
 
 def test_find_by_mutliple_array_placeholders(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array_attr.?.bool_attr and array_attr.?.bool_attr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1858,7 +2091,12 @@ def test_find_by_mutliple_array_placeholders(user, action) -> None:
 
 
 def test_find_by_invalid_array_placeholder(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array_attr.?.?.bool_attr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1876,7 +2114,12 @@ def test_find_by_invalid_array_placeholder(user, action) -> None:
 
 
 def test_find_by_invalid_literal(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('åttr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1887,7 +2130,12 @@ def test_find_by_invalid_literal(user, action) -> None:
 
 
 def test_find_by_invalid_attribute_name(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('aåttr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1898,7 +2146,12 @@ def test_find_by_invalid_attribute_name(user, action) -> None:
 
 
 def test_find_by_invalid_units(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('quantity_attr > 1 Banana', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1909,7 +2162,12 @@ def test_find_by_invalid_units(user, action) -> None:
 
 
 def test_find_by_invalid_tag(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('#tåg', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1920,7 +2178,12 @@ def test_find_by_invalid_tag(user, action) -> None:
 
 
 def test_find_by_unfinished_text(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('text_attr == "', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1931,7 +2194,12 @@ def test_find_by_unfinished_text(user, action) -> None:
 
 
 def test_find_by_unbalanced_parentheses(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('(bool_attr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1949,7 +2217,12 @@ def test_find_by_unbalanced_parentheses(user, action) -> None:
 
 
 def test_find_by_invalid_operands(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('and True', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -1981,7 +2254,12 @@ def test_find_by_invalid_operands(user, action) -> None:
 
 
 def test_find_by_different_dimensionalities(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('20mm == 20l', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -2021,7 +2299,12 @@ def test_find_by_different_dimensionalities(user, action) -> None:
 
 
 def test_find_by_boolean_literal(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('True', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -2037,7 +2320,12 @@ def test_find_by_boolean_literal(user, action) -> None:
 
 
 def test_find_by_other_literal(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('2018-10-12', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -2053,7 +2341,12 @@ def test_find_by_other_literal(user, action) -> None:
 
 
 def test_find_by_text_operators(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('not not False', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -2063,7 +2356,12 @@ def test_find_by_text_operators(user, action) -> None:
 
 
 def test_find_by_negative_quantity(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('-2kg < 0kg', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -2073,7 +2371,12 @@ def test_find_by_negative_quantity(user, action) -> None:
 
 
 def test_find_by_parentheses_only(user, action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
 
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('()', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
@@ -2090,6 +2393,10 @@ def test_find_by_parentheses_only(user, action) -> None:
 
 def test_find_by_automatic_advanced_search(user, action) -> None:
     data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
         'text_attr': {
             '_type': 'text',
             'text': 'This is an example.'

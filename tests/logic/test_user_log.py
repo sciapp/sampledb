@@ -45,8 +45,13 @@ def action():
             'title': 'Example Object',
             'type': 'object',
             'properties': {
+                'name': {
+
+                    'title': 'Name',
+                    'type': 'text'
+                }
             },
-            'required': []
+            'required': ['name']
         }
     )
     return action
@@ -60,7 +65,12 @@ def test_get_user_log_entries(user1, user2, action):
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id)) == 3
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 3
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 0
-    object = sampledb.logic.objects.create_object(action_id=action.id, data={}, user_id=user1.id)
+    object = sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user1.id)
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 4
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 0
     sampledb.logic.object_permissions.set_object_public(object_id=object.id, is_public=True)

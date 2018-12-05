@@ -543,7 +543,7 @@ def test_fail_remove_subproject(flask_server, user_session):
 def test_view_subprojects(flask_server, user_session):
     parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
     child_project_id1 = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
-    sampledb.logic.projects.create_project("Example Project 3", "", user_session.user_id).id
+    sampledb.logic.projects.create_project("Example Project 3", "", user_session.user_id)
     sampledb.logic.projects.create_subproject_relationship(parent_project_id, child_project_id1)
     r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
     assert r.status_code == 200
