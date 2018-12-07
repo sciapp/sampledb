@@ -8,7 +8,7 @@ import flask
 from flask_httpauth import HTTPBasicAuth
 
 from sampledb.logic.authentication import login
-from sampledb.logic.permissions import Permissions
+from sampledb.logic.object_permissions import Permissions
 from sampledb.utils import object_permissions_required as object_permissions_required_generic
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'

@@ -7,11 +7,13 @@
       <input type="hidden" name="action_id" value="{{ action.id }}">
       {{ toggle_favorite_action_form.csrf_token() }}
       <h2>
-        {% if action.instrument is none %}
-        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
-        {% else %}
-        <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash; <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
+        {% if action.user is not none %}
+        <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
         {% endif %}
+        {% if action.instrument is not none %}
+        <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash;
+        {% endif %}
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>
@@ -19,15 +21,17 @@
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_scientists.html" %}
     {% endwith %}
+    <p>
     {% if action.type == ActionType.MEASUREMENT %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Measurement</a>
+      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Measurement</a>
     {% elif action.type == ActionType.SIMULATION %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Simulation</a>
+      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Simulation</a>
     {% else %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Create Sample</a>
+      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
     {% endif %}
+    </p>
   {% endfor %}
 {% endblock %}

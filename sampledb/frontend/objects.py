@@ -18,7 +18,8 @@ from .. import db
 from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
-from ..logic.permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects
+from ..logic.action_permissions import get_user_action_permissions
+from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users
 from ..logic.schemas import validate, generate_placeholder
@@ -719,12 +720,14 @@ def new_object():
             action = get_action(action_id)
         except ActionDoesNotExistError:
             return flask.abort(404)
-    if previous_object_id:
-        if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
+        if Permissions.READ not in get_user_action_permissions(action_id, user_id=flask_login.current_user.id):
             return flask.abort(404)
+    if previous_object_id:
         try:
             previous_object = get_object(previous_object_id)
         except ObjectDoesNotExistError:
+            return flask.abort(404)
+        if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
             return flask.abort(404)
 
     # TODO: check instrument permissions

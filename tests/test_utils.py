@@ -2,6 +2,8 @@
 """
 
 """
+import logging
+import os
 import pytest
 import random
 import threading
@@ -49,6 +51,9 @@ def flask_server(app):
 
 @pytest.fixture
 def app():
+    logging.getLogger('flask.app').setLevel(logging.WARNING)
+    os.environ['FLASK_ENV'] = 'development'
+    os.environ['FLASK_TESTING'] = 'True'
     sampledb_app = sampledb.create_app()
 
     @sampledb_app.route('/users/me/loginstatus')

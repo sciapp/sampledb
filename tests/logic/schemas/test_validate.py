@@ -832,13 +832,23 @@ def test_validate_sample():
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
         'object_id': object.id
@@ -854,13 +864,23 @@ def test_validate_sample_invalid_type():
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = object_id
     with pytest.raises(ValidationError):
         validate(instance, schema)
@@ -874,13 +894,23 @@ def test_validate_sample_unexpected_keys():
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
         'object_id': object_id,
@@ -910,13 +940,23 @@ def test_validate_sample_wrong_type():
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'object_reference',
         'object_id': object_id
@@ -933,13 +973,23 @@ def test_validate_sample_wrong_object_id_type():
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
         'object_id': object

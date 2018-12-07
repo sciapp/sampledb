@@ -7,7 +7,7 @@ from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField
 from wtforms.validators import InputRequired, ValidationError
 
-from ..logic.permissions import Permissions
+from ..logic.object_permissions import Permissions
 
 
 class ObjectUserPermissionsForm(FlaskForm):

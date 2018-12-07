@@ -12,7 +12,7 @@ from sampledb.models import Objects, User, UserType, ActionType, AuthenticationT
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
-from sampledb.logic import groups, permissions, projects, comments, files
+from sampledb.logic import groups, object_permissions, projects, comments, files
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -43,7 +43,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object', object_id=5))
+        return flask.redirect(flask.url_for('frontend.new_action'))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -76,7 +76,7 @@ def setup_data(app):
         schema = json.load(schema_file)
     sampledb.logic.actions.update_action(instrument_action.id, "Updated Sample Creation", "", schema)
 
-    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
 
     instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
@@ -103,8 +103,8 @@ def setup_data(app):
         }
     }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
-    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
-    permissions.set_user_object_permissions(independent_object.object_id, api_user.id, permissions.Permissions.WRITE)
+    object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
+    object_permissions.set_user_object_permissions(independent_object.object_id, api_user.id, object_permissions.Permissions.WRITE)
     independent_object = Objects.create_object(data={
         "name": {
             "_type": "text",
@@ -122,7 +122,7 @@ def setup_data(app):
         }
     }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
-    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
     sampledb.db.session.commit()
 
     instrument = create_instrument(name="MPMS SQUID", description="MPMS SQUID Magnetometer JCNS-2")
@@ -203,7 +203,7 @@ def setup_data(app):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(object.id, True)
+    sampledb.logic.object_permissions.set_object_public(object.id, True)
     data = {
         'name': {
             '_type': 'text',
@@ -215,7 +215,7 @@ def setup_data(app):
         }
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(sample.id, True)
+    sampledb.logic.object_permissions.set_object_public(sample.id, True)
     data = {
         'name': {
             '_type': 'text',
@@ -242,7 +242,7 @@ def setup_data(app):
         }
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(measurement.id, True)
+    sampledb.logic.object_permissions.set_object_public(measurement.id, True)
     data = {
         'name': {
             '_type': 'text',
@@ -258,4 +258,4 @@ def setup_data(app):
         }
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(measurement.id, True)
+    sampledb.logic.object_permissions.set_object_public(measurement.id, True)

@@ -6,7 +6,7 @@
 import datetime
 import typing
 from . import objects
-from . import permissions
+from . import object_permissions
 from ..models import ObjectLogEntry, ObjectLogEntryType
 from .. import db
 
@@ -28,7 +28,7 @@ def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[Obj
             using_object_id = using_object_type + '_id'
             object_id = object_log_entry.data[using_object_id]
             object = objects.get_object(object_id=object_id)
-            if user_id is not None and permissions.Permissions.READ not in permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
+            if user_id is not None and object_permissions.Permissions.READ not in object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
                 # Clear the using object ID, the user may only know that the
                 # object was used for some other object, but not for which
                 object_log_entry.data[using_object_id] = None

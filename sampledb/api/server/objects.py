@@ -11,7 +11,7 @@ from flask_restful import Resource
 from sampledb.api.server.authentication import http_basic_auth, object_permissions_required, Permissions
 from sampledb.logic.actions import get_action
 from sampledb.logic.objects import get_object, update_object, create_object
-from sampledb.logic.permissions import get_objects_with_permissions
+from sampledb.logic.object_permissions import get_objects_with_permissions
 from sampledb.logic import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'

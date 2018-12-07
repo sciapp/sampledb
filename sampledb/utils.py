@@ -33,9 +33,9 @@ def object_permissions_required(
                 logic.objects.get_object(object_id)
             except logic.errors.ObjectDoesNotExistError:
                 return flask.abort(404)
-            if not logic.permissions.object_is_public(object_id):
+            if not logic.object_permissions.object_is_public(object_id):
                 user_id = user_id_callable()
-                user_object_permissions = logic.permissions.get_user_object_permissions(object_id=object_id, user_id=user_id)
+                user_object_permissions = logic.object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id)
                 if required_object_permissions not in user_object_permissions:
                     # TODO: handle lack of permissions better
                     return flask.abort(403)

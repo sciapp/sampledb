@@ -7,7 +7,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SelectField, FieldList, FormField, BooleanField
 from wtforms.validators import Length, InputRequired
 
-from ..logic.permissions import Permissions
+from ..logic.object_permissions import Permissions
 
 
 class CreateProjectForm(FlaskForm):

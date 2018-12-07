@@ -384,6 +384,7 @@ try:
             options.add_argument('--no-sandbox')
         with contextlib.contextmanager(tests.test_utils.flask_server)(app) as flask_server:
             with contextlib.closing(Chrome(options=options)) as driver:
+                time.sleep(5)
                 object_permissions(flask_server.base_url, driver)
                 default_permissions(flask_server.base_url, driver)
                 guest_invitation(flask_server.base_url, driver)
