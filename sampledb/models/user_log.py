@@ -24,6 +24,9 @@ class UserLogEntryType(enum.Enum):
     POST_COMMENT = 8
     UPLOAD_FILE = 9
     CREATE_BATCH = 10
+    ASSIGN_LOCATION = 11
+    CREATE_LOCATION = 12
+    UPDATE_LOCATION = 13
 
 
 class UserLogEntry(db.Model):

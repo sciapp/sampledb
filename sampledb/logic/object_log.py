@@ -139,3 +139,14 @@ def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int
             'object_ids': batch_object_ids
         }
     )
+
+
+def assign_location(user_id: int, object_id: int, object_location_assignment_id: int):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.ASSIGN_LOCATION,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'object_location_assignment_id': object_location_assignment_id
+        }
+    )
