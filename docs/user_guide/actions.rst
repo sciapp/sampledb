@@ -185,7 +185,7 @@ Quantities
 Quantities require units (``units``, can be ``1``) and may have a default value (``default``) given in the base units of the quantities' dimensions.
 
 .. code-block:: json
-    :caption: A temperature property with a default of 25˚C (298.15K)
+    :caption: A temperature property with a default of 25°C (298.15K)
 
     {
       "title": "Temperature",
