@@ -281,6 +281,35 @@ def object_permissions(base_url, driver):
     driver.get_screenshot_as_file('docs/static/img/generated/object_permissions.png')
 
 
+def advanced_search_by_property(base_url, driver, object):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'objects/{}'.format(object.id))
+    for row in driver.find_elements_by_class_name('row'):
+        if 'Name' in row.text:
+            break
+    else:
+        assert False
+
+    driver.execute_script("var helpers = document.getElementsByClassName('search-helper'); for(var i = 0; i < helpers.length; i++) {helpers[i].style.opacity = 1;}")
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_by_property.png', (0, row.location['y'], width, min(row.location['y'] + max_height, row.location['y'] + row.rect['height'])))
+
+
+def advanced_search_visualization(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'objects/?q=%22Sb%22+in+substance+and+%28temperature+%3C+110degC+or+temperature+%3E+120degC%29&advanced=on')
+    search_tree = driver.find_element_by_id('search-tree')
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_visualization.png', (0, search_tree.location['y'], width, min(search_tree.location['y'] + max_height, search_tree.location['y'] + search_tree.rect['height'])))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -396,5 +425,7 @@ try:
                 files(flask_server.base_url, driver, object)
                 file_information(flask_server.base_url, driver, object)
                 labels(flask_server.base_url, driver, object)
+                advanced_search_by_property(flask_server.base_url, driver, object)
+                advanced_search_visualization(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

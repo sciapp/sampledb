@@ -7,6 +7,7 @@ Version 0.3
 Currently in development.
 
 - Added custom actions
+- Improved documentation
 
 
 Version 0.2
