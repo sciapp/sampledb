@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.3
+-----------
+
+Currently in development.
+
+- Added custom actions
+
+
 Version 0.2
 -----------
 
