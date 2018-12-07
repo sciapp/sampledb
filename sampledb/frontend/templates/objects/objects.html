@@ -121,7 +121,7 @@
   <tbody>
   {% for object in objects %}
     <tr>
-      <th scope="row" data-value="{{ '%020d' | format(object.object_id) }}">{{ object.object_id }}</th>
+      <th scope="row" data-value="{{ '%020d' | format(object.object_id) }}"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td data-value="{{ object.data['name']['text'] }}"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.data['name']['text'] }}</a></td>
       <td data-value="{{ object.created_at }}">{{ object.created_at }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>
