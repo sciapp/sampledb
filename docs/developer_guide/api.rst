@@ -34,6 +34,7 @@ Reading a list of all objects
     .. sourcecode:: http
 
         HTTP/1.1 200 OK
+        Content-Type: application/json
 
         [
             {
@@ -289,6 +290,7 @@ Reading a list of all instruments
     .. sourcecode:: http
 
         HTTP/1.1 200 OK
+        Content-Type: application/json
 
         [
             {
@@ -365,6 +367,7 @@ Reading a list of all actions
     .. sourcecode:: http
 
         HTTP/1.1 200 OK
+        Content-Type: application/json
 
         [
             {
@@ -485,6 +488,7 @@ Reading a list of all locations
     .. sourcecode:: http
 
         HTTP/1.1 200 OK
+        Content-Type: application/json
 
         [
             {
@@ -541,7 +545,7 @@ Reading a list of an object's locations
 
 .. http:get:: /api/v1/object/(int:object_id)/locations/
 
-    Get a list of all previous object locations assignments for a specific object (`object_id`).
+    Get a list of all object locations assignments for a specific object (`object_id`).
 
     **Example request**:
 
@@ -557,6 +561,7 @@ Reading a list of an object's locations
     .. sourcecode:: http
 
         HTTP/1.1 200 OK
+        Content-Type: application/json
 
         [
             {

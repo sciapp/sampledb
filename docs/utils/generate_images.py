@@ -177,6 +177,27 @@ def activity_log(base_url, driver, object):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, activity_log.location['y'] + activity_log.rect['height'])))
 
 
+def locations(base_url, driver, object):
+    object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
+    fzj = sampledb.logic.locations.create_location("FZJ", "", None, user.id)
+    b048 = sampledb.logic.locations.create_location("Building 04.8", "", fzj.id, user.id)
+    r139b = sampledb.logic.locations.create_location("Room 139b", "", b048.id, user.id)
+    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, user.id, "Shelf C")
+
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'objects/{}'.format(object.id))
+    for heading in driver.find_elements_by_tag_name('h4'):
+        if 'Location' in heading.text:
+            break
+    else:
+        assert False
+    location_form = driver.find_element_by_id('assign-location-form')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height'])))
+
+
 def files(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
     sampledb.logic.files.create_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
@@ -427,5 +448,6 @@ try:
                 labels(flask_server.base_url, driver, object)
                 advanced_search_by_property(flask_server.base_url, driver, object)
                 advanced_search_visualization(flask_server.base_url, driver)
+                locations(flask_server.base_url, driver, object)
 finally:
     shutil.rmtree(temp_dir)
