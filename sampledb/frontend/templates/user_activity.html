@@ -26,6 +26,13 @@
         <span>{{ user.name }} edited object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a> permissions</span>
       {% elif user_log_entry.type == UserLogEntryType.POST_COMMENT %}
         <span>{{ user.name }} posted comment <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id'], _anchor='comment-{}'.format(user_log_entry.data['comment_id'])) }}">#{{ user_log_entry.data['object_id'] }}</a> for object <a href="{{ url_for('frontend.object', object_id=user_log_entry.data['object_id']) }}">#{{ user_log_entry.data['object_id'] }}</a>.</span>
+      {% elif user_log_entry.type == UserLogEntryType.CREATE_LOCATION %}
+        <span>{{ user.name }} created location <a href="{{ url_for('frontend.location', location_id=user_log_entry.data['location_id']) }}">#{{ user_log_entry.data['location_id'] }}</a>.</span>
+      {% elif user_log_entry.type == UserLogEntryType.UPDATE_LOCATION %}
+        <span>{{ user.name }} updated location <a href="{{ url_for('frontend.location', location_id=user_log_entry.data['location_id']) }}">#{{ user_log_entry.data['object_id'] }}</a>.</span>
+      {% elif user_log_entry.type == UserLogEntryType.ASSIGN_LOCATION %}
+        {% set object_location_assignment = get_object_location_assignment(user_log_entry.data['object_location_assignment_id']) %}
+        <span>{{ user.name }} assigned object <a href="{{ url_for('frontend.object', object_id=object_location_assignment.object_id) }}">#{{ object_location_assignment.object_id }}</a> to location <a href="{{ url_for('frontend.location', object_id=object_location_assignment.location_id) }}">#{{ object_location_assignment.location_id }}</a>.</span>
       {% endif %}
       </li>
     {% endif %}

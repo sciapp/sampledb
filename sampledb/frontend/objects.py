@@ -28,9 +28,10 @@ from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
+from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -66,6 +67,9 @@ def objects():
         action = None
         action_type = None
         project_id = None
+        location_id = None
+        location = None
+        object_ids_at_location = None
         project = None
         query_string = ''
         use_advanced_search = False
@@ -74,6 +78,18 @@ def objects():
         search_notes = []
         search_tree = None
     else:
+        try:
+            location_id = int(flask.request.args.get('location', ''))
+            location = get_location(location_id)
+            object_ids_at_location = get_object_ids_at_location(location_id)
+        except ValueError:
+            location_id = None
+            location = None
+            object_ids_at_location = None
+        except LocationDoesNotExistError:
+            location_id = None
+            location = None
+            object_ids_at_location = None
         try:
             action_id = int(flask.request.args.get('action', ''))
         except ValueError:
@@ -127,7 +143,8 @@ def objects():
                 filter_func=filter_func,
                 action_id=action_id,
                 action_type=action_type,
-                project_id=project_id
+                project_id=project_id,
+                object_ids=object_ids_at_location
             )
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
@@ -182,7 +199,7 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, must_use_advanced_search=must_use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
+    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, location_id=location_id, location=location, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, must_use_advanced_search=must_use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
 
 
 @jinja_filter
@@ -455,6 +472,19 @@ def object(object_id):
         object_url = flask.url_for('.object', object_id=object_id, _external=True)
         object_qrcode = generate_qrcode(object_url, should_cache=True)
 
+        location_form = ObjectLocationAssignmentForm()
+        locations_map, locations_tree = get_locations_tree()
+        locations = []
+        unvisited_location_ids_prefixes_and_subtrees = [(location_id, '', locations_tree[location_id]) for location_id in locations_tree]
+        while unvisited_location_ids_prefixes_and_subtrees:
+            location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
+            location = locations_map[location_id]
+            locations.append((str(location_id), '{}{} (#{})'.format(prefix, location.name, location.id)))
+            for location_id in sorted(subtree, key=lambda location_id: locations_map[location_id].name, reverse=True):
+                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, location.name), subtree[location_id]))
+
+        location_form.location.choices = locations
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -488,7 +518,13 @@ def object(object_id):
             file_hiding_form=FileHidingForm(),
             new_schema_available=new_schema_available,
             related_objects_tree=related_objects_tree,
-            get_object=get_object
+            get_object=get_object,
+            get_object_location_assignment=get_object_location_assignment,
+            get_user=get_user,
+            get_location=get_location,
+            object_location_assignments=get_object_location_assignments(object_id),
+            user_may_assign_location=user_may_edit,
+            location_form=location_form
         )
     if flask.request.args.get('mode', '') == 'upgrade':
         should_upgrade_schema = True
@@ -549,6 +585,24 @@ def post_object_comments(object_id):
         flask.flash('Successfully posted a comment.', 'success')
     else:
         flask.flash('Please enter a comment text.', 'error')
+    return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+
+@frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def post_object_location(object_id):
+    location_form = ObjectLocationAssignmentForm()
+    location_form.location.choices = [
+        (str(location.id), '{} (#{})'.format(location.name, location.id))
+        for location in get_locations()
+    ]
+    if location_form.validate_on_submit():
+        location_id = int(location_form.location.data)
+        description = location_form.description.data
+        assign_location_to_object(object_id, location_id, flask_login.current_user.id, description)
+        flask.flash('Successfully assigned a new location to this object.', 'success')
+    else:
+        flask.flash('Please select a location.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
