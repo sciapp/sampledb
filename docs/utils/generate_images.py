@@ -182,7 +182,7 @@ def locations(base_url, driver, object):
     fzj = sampledb.logic.locations.create_location("FZJ", "", None, user.id)
     b048 = sampledb.logic.locations.create_location("Building 04.8", "", fzj.id, user.id)
     r139b = sampledb.logic.locations.create_location("Room 139b", "", b048.id, user.id)
-    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, user.id, "Shelf C")
+    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, None, user.id, "Shelf C")
 
     width = 1280
     max_height = 1000

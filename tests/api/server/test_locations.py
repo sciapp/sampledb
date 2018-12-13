@@ -145,13 +145,14 @@ def test_get_location_assignment(flask_server, auth, user, action):
         parent_location_id=None,
         user_id=user.id
     )
-    sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, "This is an example description")
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, "This is an example description")
 
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/0'.format(object.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'object_id': object.id,
         'location_id': location.id,
+        'responsible_user_id': user.id,
         'user_id': user.id,
         'description': "This is an example description",
         'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
@@ -179,7 +180,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
         parent_location_id=None,
         user_id=user.id
     )
-    sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, "This is an example description")
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, "This is an example description")
 
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/'.format(object.id), auth=auth)
     assert r.status_code == 200
@@ -187,6 +188,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
         {
             'object_id': object.id,
             'location_id': location.id,
+            'responsible_user_id': None,
             'user_id': user.id,
             'description': "This is an example description",
             'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S')

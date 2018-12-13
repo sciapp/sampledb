@@ -83,4 +83,5 @@ class FileHidingForm(FlaskForm):
 
 class ObjectLocationAssignmentForm(FlaskForm):
     location = SelectField(validators=[InputRequired()])
+    responsible_user = SelectField(validators=[InputRequired()])
     description = StringField()

@@ -35,13 +35,13 @@ class Location(collections.namedtuple('Location', ['id', 'name', 'description', 
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime'])):
+class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id'])):
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
 
-    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime):
-        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime)
+    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime, responsible_user_id):
+        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id)
         return self
 
     @classmethod
@@ -50,6 +50,7 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             id=object_location_assignment.id,
             object_id=object_location_assignment.object_id,
             location_id=object_location_assignment.location_id,
+            responsible_user_id=object_location_assignment.responsible_user_id,
             user_id=object_location_assignment.user_id,
             description=object_location_assignment.description,
             utc_datetime=object_location_assignment.utc_datetime
@@ -188,12 +189,13 @@ def _get_location_ancestors(location_id: int) -> typing.List[int]:
     return ancestor_location_ids[1:]
 
 
-def assign_location_to_object(object_id: int, location_id: int, user_id: int, description: str) -> None:
+def assign_location_to_object(object_id: int, location_id: typing.Optional[int], responsible_user_id: typing.Optional[int], user_id: int, description: str) -> None:
     """
     Assign a location to an object.
 
     :param object_id: the ID of an existing object
     :param location_id: the ID of an existing location
+    :param responsible_user_id: the ID of an existing user
     :param user_id: the ID of an existing user
     :param description: a description of where the object was stored
     :raise errors.ObjectDoesNotExistError: when no object with the given
@@ -201,17 +203,22 @@ def assign_location_to_object(object_id: int, location_id: int, user_id: int, de
     :raise errors.LocationDoesNotExistError: when no location with the given
         location ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
-        exists
+        or responsible user ID exists
     """
     # ensure the object exists
     objects.get_object(object_id)
-    # ensure the location exists
-    get_location(location_id)
+    if location_id is not None:
+        # ensure the location exists
+        get_location(location_id)
     # ensure the user exists
     users.get_user(user_id)
+    if responsible_user_id is not None:
+        # ensure the responsible user exists
+        users.get_user(responsible_user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
         object_id=object_id,
         location_id=location_id,
+        responsible_user_id=responsible_user_id,
         user_id=user_id,
         description=description,
         utc_datetime=datetime.datetime.utcnow()

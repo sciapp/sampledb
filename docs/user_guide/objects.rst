@@ -114,7 +114,7 @@ The activity log shows a timeline of the object's life cycle, containing events 
 Location
 --------
 
-To indicate where a sample is stored, a location can be assigned to it. The location log shows where an object has been stored and when it was moved.
+To indicate where a sample is stored, a location and/or a responsible user can be assigned to it. The location log shows where an object has been stored and when it was moved.
 
 .. figure:: ../static/img/generated/locations.png
     :scale: 50 %

@@ -158,7 +158,7 @@ def test_assign_location(user: User, object: Object):
     object_location_assignment = locations.get_current_object_location_assignment(object.id)
     assert object_location_assignment is None
     location = locations.create_location("Location", "This is an example location", None, user.id)
-    locations.assign_location_to_object(object.id, location.id, user.id, "This object is stored at this location")
+    locations.assign_location_to_object(object.id, location.id, None, user.id, "This object is stored at this location")
     object_location_assignment = locations.get_current_object_location_assignment(object.id)
     assert object_location_assignment.object_id == object.id
     assert object_location_assignment.location_id == location.id
@@ -172,7 +172,7 @@ def test_assign_location(user: User, object: Object):
 
 def test_assign_location_which_does_not_exist(user: User, object: Object):
     with pytest.raises(errors.LocationDoesNotExistError):
-        locations.assign_location_to_object(object.id, 42, user.id, "This object is stored at this location")
+        locations.assign_location_to_object(object.id, 42, None, user.id, "This object is stored at this location")
     object_location_assignment = locations.get_current_object_location_assignment(object.id)
     assert object_location_assignment is None
 
@@ -180,7 +180,7 @@ def test_assign_location_which_does_not_exist(user: User, object: Object):
 def test_assign_location_to_object_which_does_not_exist(user: User):
     location = locations.create_location("Location", "This is an example location", None, user.id)
     with pytest.raises(errors.ObjectDoesNotExistError):
-        locations.assign_location_to_object(42, location.id, user.id, "This object is stored at this location")
+        locations.assign_location_to_object(42, location.id, None, user.id, "This object is stored at this location")
 
 
 def test_assign_location_multiple_times(user: User, object: Object):
@@ -188,8 +188,8 @@ def test_assign_location_multiple_times(user: User, object: Object):
     assert object_location_assignments == []
     location1 = locations.create_location("Location", "This is an example location", None, user.id)
     location2 = locations.create_location("Location", "This is an example location", None, user.id)
-    locations.assign_location_to_object(object.id, location1.id, user.id, "This object is stored at this location")
-    locations.assign_location_to_object(object.id, location2.id, user.id, "This object is stored at another location")
+    locations.assign_location_to_object(object.id, location1.id, None, user.id, "This object is stored at this location")
+    locations.assign_location_to_object(object.id, location2.id, None, user.id, "This object is stored at another location")
     assert len(locations.get_object_location_assignments(object.id)) == 2
     object_location_assignment1, object_location_assignment2 = locations.get_object_location_assignments(object.id)
     assert object_location_assignment1.object_id == object.id
@@ -211,12 +211,12 @@ def test_object_ids_for_location(user: User, action: Action):
     location2 = locations.create_location("Location", "This is an example location", None, user.id)
     assert locations.get_object_ids_at_location(location1.id) == set()
     assert locations.get_object_ids_at_location(location2.id) == set()
-    locations.assign_location_to_object(object1.id, location1.id, user.id, "")
+    locations.assign_location_to_object(object1.id, location1.id, None, user.id, "")
     assert locations.get_object_ids_at_location(location1.id) == {object1.id}
     assert locations.get_object_ids_at_location(location2.id) == set()
-    locations.assign_location_to_object(object2.id, location1.id, user.id, "")
+    locations.assign_location_to_object(object2.id, location1.id, None, user.id, "")
     assert locations.get_object_ids_at_location(location1.id) == {object1.id, object2.id}
     assert locations.get_object_ids_at_location(location2.id) == set()
-    locations.assign_location_to_object(object3.id, location2.id, user.id, "")
+    locations.assign_location_to_object(object3.id, location2.id, user.id, user.id, "")
     assert locations.get_object_ids_at_location(location1.id) == {object1.id, object2.id}
     assert locations.get_object_ids_at_location(location2.id) == {object3.id}

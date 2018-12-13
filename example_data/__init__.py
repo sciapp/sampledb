@@ -264,5 +264,5 @@ def setup_data(app):
     building_04_8 = sampledb.logic.locations.create_location("Building 04.8", "Building 04.8 at Forschungszentrum Jülich", juelich.id, instrument_responsible_user.id)
     room_139 = sampledb.logic.locations.create_location("Room 139b", "Building 04.8, Room 139", building_04_8.id, instrument_responsible_user.id)
     room_141 = sampledb.logic.locations.create_location("Room 141", "Building 04.8, Room 141", building_04_8.id, instrument_responsible_user.id)
-    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, instrument_responsible_user.id, "Temporarily stored on table\n\nSome other text")
-    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, instrument_responsible_user.id, "Stored in shelf K")
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, None, instrument_responsible_user.id, "Temporarily stored on table\n\nSome other text")
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, basic_user.id, instrument_responsible_user.id, "Stored in shelf K")
