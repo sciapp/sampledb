@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+  {% if submit_text == "Create" %}
+    <div class="alert alert-info">
+      <p><strong>Note:</strong> Please verify that the location you want to create does not exist already to avoid duplicates.</p>
+    </div>
+  {% endif %}
+  <form method="post">
+  {{ location_form.hidden_tag() }}
+    <div class="col-md-12">
+      <div class="form-group {% if location_form.name.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-name" class="control-label">Name</label>
+         <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ location_form.name.name }}" value="{{ location_form.name.data or '' }}">
+      </div>
+      <div class="form-group {% if location_form.parent_location.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-parent-location" class="control-label">Parent Location</label>
+        <select class="selectpicker form-control" id="input-parent-location" name="{{ location_form.parent_location.name }}">
+          {% for location_id, location_name in location_form.parent_location.choices %}
+          <option value="{{ location_id }}" {% if location_form.parent_location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-description" class="control-label">Description</label>
+        <textarea class="form-control" rows="3" id="input-description" name="{{ location_form.description.name }}" placeholder="Description">{{ location_form.description.data or '' }}</textarea>
+      </div>
+    </div>
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.locations') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

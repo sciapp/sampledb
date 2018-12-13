@@ -151,3 +151,33 @@ def create_batch(user_id: int, batch_object_ids: typing.List[int]):
             'object_ids': batch_object_ids
         }
     )
+
+
+def assign_location(user_id: int, object_location_assignment_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.ASSIGN_LOCATION,
+        user_id=user_id,
+        data={
+            'object_location_assignment_id': object_location_assignment_id
+        }
+    )
+
+
+def create_location(user_id: int, location_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.CREATE_LOCATION,
+        user_id=user_id,
+        data={
+            'location_id': location_id
+        }
+    )
+
+
+def update_location(user_id: int, location_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.UPDATE_LOCATION,
+        user_id=user_id,
+        data={
+            'location_id': location_id
+        }
+    )

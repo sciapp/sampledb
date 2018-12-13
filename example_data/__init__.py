@@ -43,7 +43,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.new_action'))
+        return flask.redirect(flask.url_for('frontend.export_to_pdf', object_id=8))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -257,5 +257,12 @@ def setup_data(app):
             'text': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'
         }
     }
-    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
+    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
     sampledb.logic.object_permissions.set_object_public(measurement.id, True)
+
+    juelich = sampledb.logic.locations.create_location("FZJ", "Forschungszentrum Jülich", None, instrument_responsible_user.id)
+    building_04_8 = sampledb.logic.locations.create_location("Building 04.8", "Building 04.8 at Forschungszentrum Jülich", juelich.id, instrument_responsible_user.id)
+    room_139 = sampledb.logic.locations.create_location("Room 139b", "Building 04.8, Room 139", building_04_8.id, instrument_responsible_user.id)
+    room_141 = sampledb.logic.locations.create_location("Room 141", "Building 04.8, Room 141", building_04_8.id, instrument_responsible_user.id)
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, instrument_responsible_user.id, "Temporarily stored on table\n\nSome other text")
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, instrument_responsible_user.id, "Stored in shelf K")

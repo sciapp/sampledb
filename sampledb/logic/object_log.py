@@ -7,7 +7,7 @@ import datetime
 import typing
 from . import objects
 from . import object_permissions
-from ..models import ObjectLogEntry, ObjectLogEntryType
+from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -18,6 +18,7 @@ def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[Obj
     processed_object_log_entries = []
     for object_log_entry in object_log_entries:
         use_object_entry = False
+        using_object_type = ''
         if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
             use_object_entry = True
             using_object_type = 'measurement'
@@ -28,7 +29,7 @@ def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[Obj
             using_object_id = using_object_type + '_id'
             object_id = object_log_entry.data[using_object_id]
             object = objects.get_object(object_id=object_id)
-            if user_id is not None and object_permissions.Permissions.READ not in object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
+            if user_id is not None and Permissions.READ not in object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
                 # Clear the using object ID, the user may only know that the
                 # object was used for some other object, but not for which
                 object_log_entry.data[using_object_id] = None
@@ -137,5 +138,16 @@ def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int
         user_id=user_id,
         data={
             'object_ids': batch_object_ids
+        }
+    )
+
+
+def assign_location(user_id: int, object_id: int, object_location_assignment_id: int):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.ASSIGN_LOCATION,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'object_location_assignment_id': object_location_assignment_id
         }
     )

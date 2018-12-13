@@ -79,3 +79,8 @@ class FileInformationForm(FlaskForm):
 
 class FileHidingForm(FlaskForm):
     reason = TextAreaField()
+
+
+class ObjectLocationAssignmentForm(FlaskForm):
+    location = SelectField(validators=[InputRequired()])
+    description = StringField()

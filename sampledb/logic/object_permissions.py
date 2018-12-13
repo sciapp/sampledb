@@ -202,7 +202,7 @@ def set_initial_permissions(obj):
     set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
 
-def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_id: int=None, action_type: ActionType=None, project_id: typing.Optional[int]=None) -> typing.List[Object]:
+def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_id: int=None, action_type: ActionType=None, project_id: typing.Optional[int]=None, object_ids: typing.Optional[typing.Sequence[int]]=None) -> typing.List[Object]:
     if action_type is not None and action_id is not None:
         action_filter = db.and_(Action.type == action_type, Action.id == action_id)
     elif action_type is not None:
@@ -219,6 +219,12 @@ def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_
         for obj in objs:
             project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=obj.object_id, project_id=project_id).first()
             if project_object_permissions is not None and permissions in project_object_permissions.permissions:
+                filtered_objs.append(obj)
+        objs = filtered_objs
+    if object_ids is not None:
+        filtered_objs = []
+        for obj in objs:
+            if obj.object_id in object_ids:
                 filtered_objs.append(obj)
         objs = filtered_objs
     return objs

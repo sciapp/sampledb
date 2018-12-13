@@ -455,3 +455,18 @@ th:hover .search-helper {
 #input-schema {
     resize: vertical;
 }
+
+#main-nav-links > li > a {
+    padding: 15px 10px;
+}
+
+.location-description {
+    font-size: 1em;
+    border: 0; background-color: transparent;
+    font-family: sans-serif;
+    padding:0;
+    margin:0;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    word-break: normal;
+}

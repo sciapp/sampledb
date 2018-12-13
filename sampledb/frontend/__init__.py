@@ -14,6 +14,7 @@ from . import actions
 from . import authentication_forms
 from . import index
 from . import instruments
+from . import locations
 from . import objects
 from . import objects_forms
 from . import projects
