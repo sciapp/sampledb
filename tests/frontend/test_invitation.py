@@ -80,7 +80,7 @@ def test_send_invitation(flask_server, user):
     assert len(outbox) == 1
     assert 'd.henkel@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
+    assert 'iffSamples Email Confirmation' in message
 
     # logout and test confirmation url
     session = requests.session()

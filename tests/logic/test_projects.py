@@ -450,8 +450,9 @@ def test_invite_user_to_project(app):
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Join project {}'.format(project.name) in message
-        assert 'You have been invited to be a member of the project {}.'.format(project.name) in message
+        assert 'iffSamples Project Invitation' in message
+        assert project.name in message
+        assert 'you have been invited to be a member of the project' in message
 
 
 def test_remove_user_from_project():

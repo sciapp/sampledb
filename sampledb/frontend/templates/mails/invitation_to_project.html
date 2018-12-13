@@ -1,0 +1,9 @@
+{% extends "mails/base.html" %}
+
+{% block subject %}iffSamples Project Invitation{% endblock %}
+
+{% block content %}
+<p>Hello {{ invited_user_name }},</p>
+<p>you have been invited to be a member of the project "<a href="{{ url_for('frontend.project', project_id=project.id, _external=True) }}" style="color:#337ab7;">{{project.name}}</a>". If you wish to join this project, please click the button below:</p>
+<p style="text-align: center"><a href="{{ confirm_url | safe }}" style="display: inline-block; padding: 6px 12px; margin-bottom: 0; font-size: 14px; font-weight: 400; line-height: 1.42857143; text-align: center; white-space: nowrap; vertical-align: middle; -ms-touch-action: manipulation; touch-action: manipulation; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; background-image: none; border: 1px solid #122b40; border-radius: 4px; text-decoration: none; color: #f8f8f8; background-color: #023d6b;">Join Project</a></p>
+{% endblock %}

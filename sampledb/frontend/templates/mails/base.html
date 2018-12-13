@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>{% block subject %}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; background-color: #ebebeb;">
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border: 1px solid #d8d8d8;border-radius: 6px;">
+  <tr>
+    <td bgcolor="#023d6b" style="color: #777777; padding: 10px; padding-left: 20px; text-align: center; border-top-left-radius: 6px;border-top-right-radius: 6px;">
+      <a style="color: #f8f8f8; font-size: 20px; line-height: 50px; text-decoration: none;" href="https://iffsamples.fz-juelich.de/">iffSamples</a>
+    </td>
+  </tr>
+  <tr>
+    <td bgcolor="#ffffff" style="padding: 40px 20px; color: #444444; ">
+      {% block content %}
+      {% endblock %}
+      <p>If you need help with iffSamples, please see the <a href="https://iffsamples.fz-juelich.de/documentation/" style="color:#337ab7;">user guide</a> or <a href="mailto:f.rhiem@fz-juelich.de" style="color:#337ab7;">contact us</a>.</p>
+    </td>
+  </tr>
+  <tr>
+    <td bgcolor="#ffffff" style="font-size:12px; color: #777777; padding: 10px; text-align: center;border-bottom-left-radius: 6px;border-bottom-right-radius: 6px;">
+      iffSamples is a service by the <a href="https://pgi-jcns.fz-juelich.de" style="color:#337ab7;">PGI / JCNS Scientific IT-Systems</a> team.
+    </td>
+  </tr>
+</table>
+</body>
+</html>

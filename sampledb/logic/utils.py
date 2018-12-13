@@ -28,13 +28,17 @@ def send_confirm_email(email, id, salt):
                                secret_key=flask.current_app.config['SECRET_KEY'])
         confirm_url = flask.url_for("frontend.user_preferences", user_id=id, token=token, _external=True)
 
-    subject = "Please confirm your email"
-    html = flask.render_template('activate.html', confirm_url=confirm_url)
+    subject = "iffSamples Email Confirmation"
+    html = flask.render_template('mails/email_confirmation.html', confirm_url=confirm_url)
+    text = flask.render_template('mails/email_confirmation.txt', confirm_url=confirm_url)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
     try:
         mail.send(flask_mail.Message(
             subject,
             sender=flask.current_app.config['MAIL_SENDER'],
             recipients=[email],
+            body=text,
             html=html
         ))
     except smtplib.SMTPRecipientsRefused:
@@ -56,13 +60,17 @@ def send_recovery_email(email):
             if authentication_method.type != AuthenticationType.LDAP:
                 password_reset_urls[authentication_method] = build_confirm_url(authentication_method)
 
-    subject = "Recovery email"
-    html = flask.render_template('recovery_information.html', email=email, users=users, password_reset_urls=password_reset_urls)
+    subject = "iffSamples Account Recovery"
+    html = flask.render_template('mails/account_recovery.html', email=email, users=users, password_reset_urls=password_reset_urls)
+    text = flask.render_template('mails/account_recovery.txt', email=email, users=users, password_reset_urls=password_reset_urls)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
     try:
         mail.send(flask_mail.Message(
             subject,
             sender=flask.current_app.config['MAIL_SENDER'],
             recipients=[email],
+            body=text,
             html=html
         ))
     except smtplib.SMTPRecipientsRefused:
@@ -92,13 +100,17 @@ def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> N
 
     confirm_url = flask.url_for("frontend.group", group_id=group.id, token=token, _external=True)
 
-    subject = "Invitation to iffSamples group"
-    html = flask.render_template('invitation_to_group.html', user=flask_login.current_user, group=group, confirm_url=confirm_url)
+    subject = "iffSamples Group Invitation"
+    html = flask.render_template('mails/invitation_to_group.html', invited_user_name=user.name, group=group, confirm_url=confirm_url)
+    text = flask.render_template('mails/invitation_to_group.txt', invited_user_name=user.name, group=group, confirm_url=confirm_url)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
     try:
         mail.send(flask_mail.Message(
             subject,
             sender=flask.current_app.config['MAIL_SENDER'],
             recipients=[user.email],
+            body=text,
             html=html
         ))
     except smtplib.SMTPRecipientsRefused:
@@ -120,13 +132,17 @@ def send_confirm_email_to_invite_user_to_project(project_id: int, user_id: int, 
 
     confirm_url = flask.url_for("frontend.project", project_id=project.id, token=token, _external=True)
 
-    subject = "Invitation to iffSamples project"
-    html = flask.render_template('invitation_to_project.html', user=flask_login.current_user, project=project, confirm_url=confirm_url)
+    subject = "iffSamples Project Invitation"
+    html = flask.render_template('mails/invitation_to_project.html', invited_user_name=user.name, project=project, confirm_url=confirm_url)
+    text = flask.render_template('mails/invitation_to_project.txt', invited_user_name=user.name, project=project, confirm_url=confirm_url)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
     try:
         mail.send(flask_mail.Message(
             subject,
             sender=flask.current_app.config['MAIL_SENDER'],
             recipients=[user.email],
+            body=text,
             html=html
         ))
     except smtplib.SMTPRecipientsRefused:

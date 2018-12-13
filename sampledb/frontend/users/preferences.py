@@ -327,7 +327,7 @@ def email_for_resetting_password():
                                              email=email, has_error=has_error)
         return flask.render_template('reset_password_by_email.html',
                                      request_password_reset_form=request_password_reset_form,
-                                     has_error=has_error),
+                                     has_error=has_error)
 
 
 def reset_password():
@@ -352,4 +352,5 @@ def reset_password():
             db.session.add(authentication_method)
             db.session.commit()
             return flask.redirect(flask.url_for('frontend.index'))
-        return flask.render_template('password.html', password_form=password_form, has_error=has_error)
+        return flask.render_template('password.html', password_form=password_form, has_error=has_error,
+                                     user=authentication_method.user, username=username)
