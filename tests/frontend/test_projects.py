@@ -213,13 +213,20 @@ def test_add_user(flask_server, user_session, user):
     assert len(outbox) == 1
     assert 'example2@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Join project Example Project' in message
-    assert 'You have been invited to be a member of the project Example Project.' in message
+    assert 'iffSamples Project Invitation' in message
+    assert 'Example Project' in message
+    assert 'you have been invited to be a member of the project' in message
 
     assert len(sampledb.logic.projects.get_user_projects(new_user.id)) == 0
 
     # Get the confirmation url from the mail and open it without logged in
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    document = BeautifulSoup(message, 'html.parser')
+    for anchor in document.find_all('a'):
+        if 'Join Project' in anchor.text:
+            confirmation_url = anchor['href']
+            break
+    else:
+        assert False
     assert confirmation_url.startswith(flask_server.base_url + 'projects/1')
     r = user_session.get(confirmation_url)
     assert r.status_code == 403
@@ -230,10 +237,6 @@ def test_add_user(flask_server, user_session, user):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
-
-    # Get the confirmation url from the mail and open it without logged in
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'projects/1')
 
     r = session.get(confirmation_url)
     assert r.status_code == 200
@@ -579,8 +582,13 @@ def test_use_project_invitation_email(flask_server, app, user):
 
     app.config['SERVER_NAME'] = server_name
     document = BeautifulSoup(message, 'html.parser')
-    invitation_link = document.find('a')
-    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
+    for anchor in document.find_all('a'):
+        if 'Join Project' in anchor.text:
+            invitation_url = anchor['href']
+            break
+    else:
+        assert False
+    invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
     r = session.get(invitation_url)
     assert r.status_code == 200
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
@@ -606,8 +614,13 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
 
     app.config['SERVER_NAME'] = server_name
     document = BeautifulSoup(message, 'html.parser')
-    invitation_link = document.find('a')
-    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
+    for anchor in document.find_all('a'):
+        if 'Join Project' in anchor.text:
+            invitation_url = anchor['href']
+            break
+    else:
+        assert False
+    invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
     r = session.get(invitation_url)
     assert r.status_code == 200
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)

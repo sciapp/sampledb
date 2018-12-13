@@ -320,8 +320,9 @@ def test_send_confirm_email_to_invite_user_to_group(app):
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Join group {}'.format(group.name) in message
-        assert 'You have been invited to be a member of the group {}.'.format(group.name) in message
+        assert 'iffSamples Group Invitation' in message
+        assert group.name in message
+        assert 'you have been invited to be a member of the group' in message
 
         with sampledb.mail.record_messages() as outbox:
             with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
@@ -387,8 +388,9 @@ def test_invite_user_to_group(app):
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Join group {}'.format(group.name) in message
-        assert 'You have been invited to be a member of the group {}.'.format(group.name) in message
+        assert 'iffSamples Group Invitation' in message
+        assert group.name in message
+        assert 'you have been invited to be a member of the group' in message
 
 
 def test_use_group_invitation_email(flask_server, app, user):
@@ -409,8 +411,13 @@ def test_use_group_invitation_email(flask_server, app, user):
 
     app.config['SERVER_NAME'] = server_name
     document = BeautifulSoup(message, 'html.parser')
-    invitation_link = document.find('a')
-    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
+    for anchor in document.find_all('a'):
+        if 'Join Group' in anchor.text:
+            invitation_url = anchor['href']
+            break
+    else:
+        assert False
+    invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
     r = session.get(invitation_url)
     assert r.status_code == 200
     assert user.id in sampledb.logic.groups.get_group_member_ids(group_id=group.id)

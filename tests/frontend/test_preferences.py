@@ -161,7 +161,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     assert len(outbox) == 1
     assert 'example1@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
+    assert 'iffSamples Email Confirmation' in message
 
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
@@ -444,7 +444,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert len(outbox) == 1
     assert 'd.henkel@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
+    assert 'iffSamples Email Confirmation' in message
 
     # Check if authentication-method add to db
     with flask_server.app.app_context():

@@ -9,6 +9,7 @@ Currently in development.
 - Added custom actions
 - Added locations
 - Improved documentation
+- Improved email design
 
 
 Version 0.2

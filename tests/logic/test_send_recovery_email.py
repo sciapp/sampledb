@@ -86,7 +86,7 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
         assert len(outbox) == 1
         assert user.email in outbox[0].recipients
         message = outbox[0].html
-        assert 'Recovery Request' in message
+        assert 'iffSamples Account Recovery' in message
         assert 'There is no way to sign in to your iffSamples account' in message
 
 
@@ -107,7 +107,7 @@ def test_send_recovery_email_for_ldap_authentication(app):
         assert len(outbox) == 1
         assert user.email in outbox[0].recipients
         message = outbox[0].html
-        assert 'Recovery Request' in message
+        assert 'iffSamples Account Recovery' in message
         assert 'You can use the PGI/JCNS' in message
 
 
@@ -127,7 +127,7 @@ def test_send_recovery_email_for_email_authentication(app, user):
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Recovery Request' in message
+        assert 'iffSamples Account Recovery' in message
         assert 'click here' in message
 
 
@@ -145,7 +145,7 @@ def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, us
         assert len(outbox) == 1
         assert 'example@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Recovery Request' in message
+        assert 'iffSamples Account Recovery' in message
         assert 'click here' in message
         document = BeautifulSoup(message, 'html.parser')
         for user in users:

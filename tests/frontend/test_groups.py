@@ -212,8 +212,9 @@ def test_send_confirm_email_to_invite_user_to_group(flask_server, user_session, 
     assert len(outbox) == 1
     assert 'example2@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Join group Example Group' in message
-    assert 'You have been invited to be a member of the group Example Group.' in message
+    assert 'iffSamples Group Invitation' in message
+    assert 'Example Group' in message
+    assert 'you have been invited to be a member of the group' in message
 
 
 def test_add_user(flask_server, user_session, user):
@@ -244,13 +245,20 @@ def test_add_user(flask_server, user_session, user):
     assert len(outbox) == 1
     assert 'example2@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Join group Example Group' in message
-    assert 'You have been invited to be a member of the group Example Group.' in message
+    assert 'iffSamples Group Invitation' in message
+    assert 'Example Group' in message
+    assert 'you have been invited to be a member of the group' in message
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
 
     # Get the confirmation url from the mail and open it without logged in
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    document = BeautifulSoup(message, 'html.parser')
+    for anchor in document.find_all('a'):
+        if 'Join Group' in anchor.text:
+            confirmation_url = anchor['href']
+            break
+    else:
+        assert False
     assert confirmation_url.startswith(flask_server.base_url + 'groups/1')
     r = user_session.get(confirmation_url)
     assert r.status_code == 403
@@ -261,10 +269,6 @@ def test_add_user(flask_server, user_session, user):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
-
-    # Get the confirmation url from the mail and open it without logged in
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'groups/1')
 
     r = session.get(confirmation_url)
     assert r.status_code == 200
