@@ -6,7 +6,7 @@
 import collections
 import datetime
 import typing
-from . import errors, users
+from . import errors, users, objects
 from ..models import notifications
 from ..models.notifications import NotificationType
 from .. import db
@@ -158,5 +158,31 @@ def create_other_notification(user_id: int, message: str) -> None:
         user_id=user_id,
         data={
             'message': message
+        }
+    )
+
+
+def create_notification_for_being_assigned_as_responsible_user(user_id: int, object_id: int, assigner_id: int) -> None:
+    """
+    Create a notification of type ASSIGNED_AS_RESPONSIBLE_USER.
+
+    :param user_id: the ID of an existing user
+    :param object_id: the ID of an existing object
+    :param assigner_id: the ID of who assigned this user as responsible user
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        or assigner ID exists
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    """
+    # ensure the object exists
+    objects.get_object(object_id)
+    # ensure the assigner exists
+    users.get_user(assigner_id)
+    _store_notification(
+        type=NotificationType.ASSIGNED_AS_RESPONSIBLE_USER,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'assigner_id': assigner_id
         }
     )

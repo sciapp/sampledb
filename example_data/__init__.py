@@ -265,10 +265,5 @@ def setup_data(app):
     room_139 = sampledb.logic.locations.create_location("Room 139b", "Building 04.8, Room 139", building_04_8.id, instrument_responsible_user.id)
     room_141 = sampledb.logic.locations.create_location("Room 141", "Building 04.8, Room 141", building_04_8.id, instrument_responsible_user.id)
     sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, None, instrument_responsible_user.id, "Temporarily stored on table\n\nSome other text")
-    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, basic_user.id, instrument_responsible_user.id, "Stored in shelf K")
-    sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo notification.")
-    sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo notification.")
-    sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo notification.")
-    for notification in sampledb.logic.notifications.get_notifications(instrument_responsible_user.id):
-        sampledb.logic.notifications.mark_notification_as_read(notification.id)
-    sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo notification.")
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, instrument_responsible_user.id, basic_user.id, "Stored in shelf K")
+    sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo.")

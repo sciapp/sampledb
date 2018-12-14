@@ -15,6 +15,7 @@ from .users import User
 @enum.unique
 class NotificationType(enum.Enum):
     OTHER = 0
+    ASSIGNED_AS_RESPONSIBLE_USER = 1
 
 
 class Notification(db.Model):

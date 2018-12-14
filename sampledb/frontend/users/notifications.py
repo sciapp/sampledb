@@ -12,7 +12,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors
+from ...logic import errors, users
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -110,5 +110,6 @@ def notifications(user_id):
         delete_all_notifications_form=delete_all_notifications_form,
         mark_all_notifications_as_read_form=mark_all_notifications_as_read_form,
         delete_notification_form=delete_notification_form,
-        mark_notification_as_read_form=mark_notification_as_read_form
+        mark_notification_as_read_form=mark_notification_as_read_form,
+        get_user=users.get_user
     )
