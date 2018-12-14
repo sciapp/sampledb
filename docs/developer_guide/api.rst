@@ -567,6 +567,7 @@ Reading a list of an object's locations
             {
                 "object_id": 1,
                 "location_id": 3,
+                "responsible_user_id": 6,
                 "user_id": 17,
                 "description": "Shelf C",
                 "utc_datetime": "2018-12-11 17:50:00"
@@ -576,8 +577,8 @@ Reading a list of an object's locations
     :statuscode 200: no error
 
 
-Reading a location
-^^^^^^^^^^^^^^^^^^
+Reading an object's location
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/locations/(int:index)
 
@@ -602,6 +603,7 @@ Reading a location
         {
             "object_id": 1,
             "location_id": 3,
+            "responsible_user_id": 6,
             "user_id": 17,
             "description": "Shelf C",
             "utc_datetime": "2018-12-11 17:50:00"
@@ -609,6 +611,7 @@ Reading a location
 
     :>json number object_id: the object's ID
     :>json number location_id: the location's ID
+    :>json number responsible_user_id: the ID of the user who is responsible for the object
     :>json number user_id: the ID of the user who assigned this location to the object
     :>json string description: the description of the object's position
     :>json number utc_datetime: the datetime when the object was stored

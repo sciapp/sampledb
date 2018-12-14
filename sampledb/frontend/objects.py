@@ -474,7 +474,7 @@ def object(object_id):
 
         location_form = ObjectLocationAssignmentForm()
         locations_map, locations_tree = get_locations_tree()
-        locations = []
+        locations = [('-1', '—')]
         unvisited_location_ids_prefixes_and_subtrees = [(location_id, '', locations_tree[location_id]) for location_id in locations_tree]
         while unvisited_location_ids_prefixes_and_subtrees:
             location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
@@ -484,6 +484,10 @@ def object(object_id):
                 unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, location.name), subtree[location_id]))
 
         location_form.location.choices = locations
+        possible_responsible_users = [('-1', '—')]
+        for user in logic.users.get_users():
+            possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+        location_form.responsible_user.choices = possible_responsible_users
 
         return flask.render_template(
             'objects/view/base.html',
@@ -592,17 +596,29 @@ def post_object_comments(object_id):
 @object_permissions_required(Permissions.WRITE)
 def post_object_location(object_id):
     location_form = ObjectLocationAssignmentForm()
-    location_form.location.choices = [
+    location_form.location.choices = [('-1', '—')] + [
         (str(location.id), '{} (#{})'.format(location.name, location.id))
         for location in get_locations()
     ]
+    possible_responsible_users = [('-1', '—')]
+    for user in logic.users.get_users():
+        possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+    location_form.responsible_user.choices = possible_responsible_users
     if location_form.validate_on_submit():
         location_id = int(location_form.location.data)
+        if location_id < 0:
+            location_id = None
+        responsible_user_id = int(location_form.responsible_user.data)
+        if responsible_user_id < 0:
+            responsible_user_id = None
         description = location_form.description.data
-        assign_location_to_object(object_id, location_id, flask_login.current_user.id, description)
-        flask.flash('Successfully assigned a new location to this object.', 'success')
+        if location_id is not None or responsible_user_id is not None:
+            assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
+            flask.flash('Successfully assigned a new location to this object.', 'success')
+        else:
+            flask.flash('Please select a location or a responsible user.', 'error')
     else:
-        flask.flash('Please select a location.', 'error')
+        flask.flash('Please select a location or a responsible user.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 

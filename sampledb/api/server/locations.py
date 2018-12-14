@@ -25,6 +25,7 @@ def object_location_assignment_to_json(object_location_assignment: locations.Obj
     return {
         'object_id': object_location_assignment.object_id,
         'location_id': object_location_assignment.location_id,
+        'responsible_user_id': object_location_assignment.responsible_user_id,
         'user_id': object_location_assignment.user_id,
         'description': object_location_assignment.description,
         'utc_datetime': object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S')

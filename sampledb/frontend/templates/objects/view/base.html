@@ -355,14 +355,15 @@
     <table class="table">
     <thead>
     <tr>
-      <th>Datetime</th><th>Location</th><th>User</th><th>Description</th>
+      <th>Datetime</th><th>Location</th><th>Responsible User</th><th>Assigning User</th><th>Description</th>
     </tr>
     </thead>
     <tbody>
     {% for object_location_assignment in object_location_assignments | reverse %}
       <tr>
         <td>{{ object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-        <td><a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }} (#{{ object_location_assignment.location_id }})</a></td>
+        <td>{% if object_location_assignment.location_id is not none %}<a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }} (#{{ object_location_assignment.location_id }})</a>{% else %}&mdash;{% endif %}</td>
+        <td>{% if object_location_assignment.responsible_user_id is not none %}<a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>{% else %}&mdash;{% endif %}</td>
         <td><a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">{{ get_user(object_location_assignment.user_id).name }}</a></td>
         <td><pre class="location-description">{{ object_location_assignment.description }}</pre></td>
       </tr>
@@ -377,9 +378,17 @@
       {{ location_form.csrf_token }}
       <div class="form-group {% if location_form.location.name in location_form.errors %}has-error{% endif %}">
         <label for="input-location" class="control-label">Location</label>
-        <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}">
+        <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
           {% for location_id, location_name in location_form.location.choices %}
           <option value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group {% if location_form.responsible_user.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-responsible-user" class="control-label">Responsible User</label>
+        <select class="selectpicker form-control" id="input-responsible-user" name="{{ location_form.responsible_user.name }}" data-live-search="true">
+          {% for user_id, user_name in location_form.responsible_user.choices %}
+          <option value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
@@ -511,9 +520,14 @@
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
             {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
+            {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to location <a href="{{ url_for('.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }}</a> and user <a href="{{ url_for('.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>.</td>
+            {% elif object_location_assignment.location is not none %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to location <a href="{{ url_for('.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }}</a>.</td>
+            {% elif object_location_assignment.responsible_user_id is not none %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to user <a href="{{ url_for('.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>.</td>
+            {% endif %}
             <td class="text-right">
-              <a href="{{ url_for('.location', location_id=object_location_assignment.location_id) }}">View</a>
             </td>
           {% else %}
             <td>Unknown event</td><td></td>

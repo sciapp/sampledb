@@ -283,7 +283,12 @@ def _write_activity_log(object, canvas):
         elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION:
             object_location_assignment_id = object_log_entry.data['object_location_assignment_id']
             object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
-            text += ' assigned this object to location #{}'.format(object_location_assignment.location_id)
+            if object_location_assignment.location_id is not None and object_location_assignment.responsible_user_id is not None:
+                text += ' assigned this object to location #{} and user #{}'.format(object_location_assignment.location_id, object_location_assignment.responsible_user_id)
+            elif object_location_assignment.location_id is not None:
+                text += ' assigned this object to location #{}'.format(object_location_assignment.location_id)
+            elif object_location_assignment.responsible_user_id is not None:
+                text += ' assigned this object to user #{}'.format(object_location_assignment.responsible_user_id)
         else:
             text += ' performed an unknown action'
         _append_text(canvas, text)
@@ -380,10 +385,19 @@ def _write_locations(object, canvas):
         canvas.top_cursor = _draw_left_aligned_wrapped_text(canvas, "Locations", canvas.left_cursor, PAGE_WIDTH - RIGHT_MARGIN - canvas.left_cursor, canvas.top_cursor, "Helvetica-Bold", 14, 1.2)
         canvas.top_cursor -= 4 * mm
         for location_assignment in location_assignments:
-            text = '• {} — {} (#{}) — {}:'.format(location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M'), logic.locations.get_location(location_assignment.location_id).name, location_assignment.location_id, logic.users.get_user(location_assignment.user_id).name)
+            text = '• {} — {}:'.format(location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M'), logic.users.get_user(location_assignment.user_id).name)
             _append_text(canvas, text)
             previous_left_cursor = canvas.left_cursor
             canvas.left_cursor = previous_left_cursor + 5 * mm
+            if location_assignment.location_id is not None:
+                text = 'Location: {} (#{})'.format(logic.locations.get_location(location_assignment.location_id).name, location_assignment.location_id)
+                _append_text(canvas, text)
+            if location_assignment.responsible_user_id is not None:
+                text = 'Responsible User: {} (#{})'.format(logic.users.get_user(location_assignment.responsible_user_id).name, location_assignment.responsible_user_id)
+                _append_text(canvas, text)
+            if location_assignment.description:
+                _append_text(canvas, 'Description:')
+            canvas.left_cursor = previous_left_cursor + 10 * mm
             for paragraph in location_assignment.description.splitlines(keepends=False):
                 if paragraph.strip():
                     _append_text(canvas, paragraph, justify=True)
