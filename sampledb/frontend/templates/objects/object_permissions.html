@@ -262,7 +262,7 @@
         <tbody>
         <tr>
           <td>
-            <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%">
+            <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
             {% for user in users %}
               <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
             {% endfor %}
@@ -299,7 +299,7 @@
         <tbody>
         <tr>
           <td>
-            <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%">
+            <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
             {% for group in groups %}
               <option value="{{ group.id }}">{{ group.name }} (#{{ group.id }})</option>
             {% endfor %}
@@ -336,7 +336,7 @@
         <tbody>
         <tr>
           <td>
-            <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%">
+            <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
             {% for project in projects %}
               <option value="{{ project.id }}">{{ project.name }} (#{{ project.id }})</option>
             {% endfor %}

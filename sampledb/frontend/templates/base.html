@@ -110,12 +110,16 @@
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ current_user.name }} <span class="caret"></span></a>
             <ul class="dropdown-menu">
+              <li><a href="{{ url_for('frontend.user_profile', user_id=current_user.id) }}"><strong>{{ current_user.name }} (#{{ current_user.id }})</strong></a></li>
+              <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
               <li><a href="{{ url_for('frontend.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
-              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite a guest</a></li>
+              <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Projects</a></li>
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Groups</a></li>
               <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">Your Actions</a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite a guest</a></li>
               <li role="separator" class="divider"></li>
               <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">Sign out</button></form></li>
             </ul>

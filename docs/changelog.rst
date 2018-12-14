@@ -10,6 +10,8 @@ Currently in development.
 - Added locations
 - Improved documentation
 - Improved email design
+- Improved user interface
+- Fixed various minor bugs
 
 
 Version 0.2
