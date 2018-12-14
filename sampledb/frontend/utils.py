@@ -11,6 +11,7 @@ import qrcode
 import qrcode.image.svg
 
 from ..logic.units import prettify_units
+from ..logic.notifications import get_num_notifications
 
 
 def jinja_filter(func):
@@ -55,6 +56,11 @@ def is_image(file_name):
     return flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '').startswith('image/')
 
 
+def get_num_unread_notifications(user):
+    return get_num_notifications(user.id, unread_only=True)
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
+_jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications

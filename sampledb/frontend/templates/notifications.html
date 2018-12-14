@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Notifications</h1>
+
+  {% if notifications | length == 0 %}
+    <p>You do not have any notifications.</p>
+  {% else %}
+    <table class="table" id="notifications-table">
+      <thead>
+      <tr>
+        <th>
+          Date
+        </th>
+        <th style="width: 100%">
+          Message
+        </th>
+        <th>
+        {% if num_unread_notifications > 0 %}
+          <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+            {{ mark_all_notifications_as_read_form.hidden_tag() }}
+            <input type="hidden" name="{{ mark_all_notifications_as_read_form.mark_all_notifications_as_read_up_to_id.name }}" value="{{ max_known_notification_id }}" />
+            <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="Mark all as Read"></button>
+          </form>
+        {% endif %}
+        </th>
+        <th>
+          <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+            {{ delete_all_notifications_form.hidden_tag() }}
+            <input type="hidden" name="{{ delete_all_notifications_form.delete_all_notifications_up_to_id.name }}" value="{{ max_known_notification_id }}" />
+            <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="Delete all"></button>
+          </form>
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+        {% for notification in notifications %}
+          <tr {% if not notification.was_read %}class="unread-notification"{% endif %}>
+            <td>{{ notification.utc_datetime.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if notification.type == NotificationType.OTHER %}
+                {{ notification.data['message'] }}
+              {% endif %}
+            </td>
+            <td>
+              {% if not notification.was_read %}
+              <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+                {{ mark_notification_as_read_form.hidden_tag() }}
+                <input type="hidden" name="{{ mark_notification_as_read_form.mark_notification_read.name }}" value="{{ notification.id }}" />
+                <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="Mark as Read"></button>
+              </form>
+              {% endif %}
+            </td>
+            <td>
+              <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+                {{ delete_notification_form.hidden_tag() }}
+                <input type="hidden" name="{{ delete_notification_form.delete_notification.name }}" value="{{ notification.id }}" />
+                <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="Delete"></button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+});
+</script>
+{% endblock %}

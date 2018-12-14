@@ -55,6 +55,24 @@ def get_notifications(user_id: int, unread_only: bool=False) -> typing.List[Noti
     ]
 
 
+def get_num_notifications(user_id: int, unread_only: bool=False) -> int:
+    """
+    Get the number of (unread) notifications for a given user.
+
+    :param user_id: the ID of an existing user
+    :param unread_only: whether only unread notifications should be returned
+    :return: the number of (unread) notifications
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    # ensure the user exists
+    users.get_user(user_id)
+    if unread_only:
+        return notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
+    else:
+        return notifications.Notification.query.filter_by(user_id=user_id).count()
+
+
 def get_notification(notification_id) -> Notification:
     """
     Get a specific notification.

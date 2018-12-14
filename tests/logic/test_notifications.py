@@ -24,8 +24,10 @@ def user():
 
 def test_create_other_notification(user):
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
+    assert sampledb.logic.notifications.get_num_notifications(user.id) == 0
     sampledb.logic.notifications.create_other_notification(user.id, 'This is a test message')
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 1
+    assert sampledb.logic.notifications.get_num_notifications(user.id) == 1
     notification = sampledb.logic.notifications.get_notifications(user.id)[0]
     assert notification.type == sampledb.logic.notifications.NotificationType.OTHER
     assert notification.user_id == user.id
@@ -37,12 +39,15 @@ def test_create_other_notification(user):
 
 def test_mark_notification_read(user):
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
+    assert sampledb.logic.notifications.get_num_notifications(user.id) == 0
     sampledb.logic.notifications.create_other_notification(user.id, 'This is a test message')
     assert len(sampledb.logic.notifications.get_notifications(user.id, True)) == 1
+    assert sampledb.logic.notifications.get_num_notifications(user.id, True) == 1
     notification = sampledb.logic.notifications.get_notifications(user.id)[0]
     assert not notification.was_read
     sampledb.logic.notifications.mark_notification_as_read(notification.id)
     assert len(sampledb.logic.notifications.get_notifications(user.id, True)) == 0
+    assert sampledb.logic.notifications.get_num_notifications(user.id, True) == 0
     notification = sampledb.logic.notifications.get_notification(notification.id)
     assert notification.was_read
 
