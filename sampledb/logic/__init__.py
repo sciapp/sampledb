@@ -14,6 +14,7 @@ from . import groups
 from . import instruments
 from . import ldap
 from . import locations
+from . import notifications
 from . import objects
 from . import object_log
 from . import object_relationships

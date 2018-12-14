@@ -144,3 +144,7 @@ class CyclicLocationError(Exception):
 
 class ObjectLocationAssignmentDoesNotExistError(Exception):
     pass
+
+
+class NotificationDoesNotExistError(Exception):
+    pass
