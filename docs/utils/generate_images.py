@@ -198,6 +198,20 @@ def locations(base_url, driver, object):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height'])))
 
 
+def unread_notification_icon(base_url, driver):
+    sampledb.logic.notifications.create_other_notification(user.id, "This is an example notification.")
+
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url)
+    navbar = driver.find_element_by_class_name('navbar-static-top')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/unread_notification_icon.png', (0, navbar.location['y'], width, min(navbar.location['y'] + max_height, navbar.location['y'] + navbar.rect['height'])))
+    notification = sampledb.logic.notifications.get_notifications(user_id=user.id)[0]
+    sampledb.logic.notifications.delete_notification(notification.id)
+
+
 def files(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
     sampledb.logic.files.create_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
@@ -449,5 +463,6 @@ try:
                 advanced_search_by_property(flask_server.base_url, driver, object)
                 advanced_search_visualization(flask_server.base_url, driver)
                 locations(flask_server.base_url, driver, object)
+                unread_notification_icon(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

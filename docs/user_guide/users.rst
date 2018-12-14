@@ -50,3 +50,14 @@ Activity Log
 ------------
 
 Users can view their or other users' activities in iffSamples, as far as these are related to objects they have permissions for. This can be useful, e.g. for quickly finding objects they've created.
+
+Notifications
+-------------
+
+Users will receive notifications whenever they need to be informed about an activity on iffSamples. Whenever a user has unread notifications, a bell with the number of unread notifications is shown in the navigation bar.
+
+.. figure:: ../static/img/generated/unread_notification_icon.png
+    :scale: 50 %
+    :alt: Unread Notification Icon
+
+    Unread Notification Icon

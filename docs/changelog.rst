@@ -8,6 +8,7 @@ Currently in development.
 
 - Added custom actions
 - Added locations
+- Added notifications
 - Improved documentation
 - Improved email design
 - Improved user interface
