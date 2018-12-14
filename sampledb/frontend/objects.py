@@ -592,6 +592,12 @@ def post_object_comments(object_id):
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
+@frontend.route('/objects/search/')
+@flask_login.login_required
+def search():
+    return flask.render_template('search.html')
+
+
 @frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_location(object_id):

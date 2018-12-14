@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Search</h1>
+  <form action="{{ url_for('frontend.objects') }}" method="get" id="form-search-standalone">
+    <div class="input-group">
+      <input type="text" class="form-control" placeholder="Search..." name="q">
+      <span class="input-group-btn">
+        <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="caret"></span>
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> Advanced Search</label></a></li>
+        </ul>
+      </span>
+    </div>
+    <p class="text-muted">
+      For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.
+    </p>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+  <script>
+  $(function () {
+    var search_form = $('#form-search-standalone');
+    var search_input = search_form.find('input[type=text]');
+    var advanced_search_toggle = search_form.find('input[name=advanced]');
+    function handle_advanced_search_toggle() {
+      if ($(this).prop('checked')) {
+        search_input.attr('placeholder', 'Advanced Search...')
+      } else {
+        search_input.attr('placeholder', 'Search...')
+      }
+    }
+    advanced_search_toggle.on('change', handle_advanced_search_toggle);
+    handle_advanced_search_toggle.bind(advanced_search_toggle)();
+  });
+  </script>
+{% endblock %}

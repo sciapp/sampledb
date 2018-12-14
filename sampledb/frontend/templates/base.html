@@ -92,15 +92,27 @@
           </span>
         </div>
       </form>
-      <ul class="nav navbar-nav" id="main-nav-links">
+      <ul class="nav navbar-nav">
         <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
         <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
-        <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
-        <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
-        <li><a href="{{ url_for('frontend.locations') }}">Locations</a></li>
+        <li class="dropdown">
+          <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">Objects</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
+            <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
+            <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
+            <li role="separator" class="divider nav-search-link"></li>
+            <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">Search</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">More <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
+            <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
+            <li><a href="{{ url_for('frontend.locations') }}">Locations</a></li>
+          </ul>
+        </li>
         <li><a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/">Help</a></li>
       </ul>
       {% endif %}
@@ -125,7 +137,7 @@
             </ul>
           </li>
           {% else %}
-          <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-primary navbar-btn">Sign in</a>
+          <li><a href="{{ url_for('frontend.sign_in') }}">Sign in</a></li>
           {% endif %}
       </ul>
       {% endblock %}
