@@ -420,24 +420,24 @@ th:hover .search-helper {
 .pdf_export_object_wrapper > input[disabled] ~ label:before {
     cursor: initial;
 }
+
+.nav-search-link {
+    display:none;
+}
 @media only screen and (min-width: 768px) {
     #input-search {
         max-width: 250px;
     }
+    .nav > li > a {
+        padding: 15px 10px;
+    }
+    .nav-search-link {
+        display:block;
+    }
 }
-@media only screen and (min-width: 768px) and (max-width: 1400px) {
+@media only screen and (min-width: 768px) and (max-width: 1024px) {
     #nav-search {
-        max-width: 300px;
-    }
-    #main-nav-links {
-        position:absolute;
-        top:50px;
-        width:100%;
-        display:flex;
-        justify-content: center;
-    }
-    .user-is-authenticated .navbar-static-top {
-        padding-bottom: 50px;
+        display:none;
     }
 }
 
@@ -456,10 +456,6 @@ th:hover .search-helper {
     resize: vertical;
 }
 
-#main-nav-links > li > a {
-    padding: 15px 10px;
-}
-
 .location-description {
     font-size: 1em;
     border: 0; background-color: transparent;
@@ -469,4 +465,9 @@ th:hover .search-helper {
     word-wrap: break-word;
     white-space: pre-wrap;
     word-break: normal;
+}
+
+#form-search-standalone > .input-group {
+    margin: 1em 0;
+    max-width: 400px;
 }
