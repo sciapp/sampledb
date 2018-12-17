@@ -1,0 +1,5 @@
+{% extends "mails/notifications/base.txt" %}
+
+{% block message %}
+{{ data['message'] }}
+{% endblock %}

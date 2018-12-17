@@ -23,7 +23,7 @@ from .files import File
 from .groups import Group
 from .instruments import Instrument
 from .locations import Location, ObjectLocationAssignment
-from .notifications import Notification, NotificationType
+from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
 from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions

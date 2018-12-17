@@ -65,3 +65,42 @@ def test_delete_notification(user):
 
     with pytest.raises(sampledb.logic.errors.NotificationDoesNotExistError):
         sampledb.logic.notifications.mark_notification_as_read(notification.id)
+
+
+def test_set_notification_mode(user):
+    assert all(
+        mode == sampledb.models.NotificationMode.WEBAPP
+        for mode in sampledb.logic.notifications.get_notification_modes(user.id).values()
+    )
+    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.WEBAPP
+    sampledb.logic.notifications.set_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id, sampledb.models.NotificationMode.EMAIL)
+    assert all(
+        mode == (sampledb.models.NotificationMode.EMAIL if type == sampledb.models.NotificationType.OTHER else sampledb.models.NotificationMode.WEBAPP)
+        for type, mode in sampledb.logic.notifications.get_notification_modes(user.id).items()
+    )
+    sampledb.logic.notifications.set_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id, sampledb.models.NotificationMode.IGNORE)
+    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.IGNORE
+    sampledb.logic.notifications.set_notification_mode_for_all_types(user.id, sampledb.models.NotificationMode.EMAIL)
+    assert all(
+        mode == sampledb.models.NotificationMode.EMAIL
+        for mode in sampledb.logic.notifications.get_notification_modes(user.id).values()
+    )
+    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.EMAIL
+
+
+def test_send_notification(app, user):
+    sampledb.logic.notifications.set_notification_mode_for_all_types(user.id, sampledb.models.NotificationMode.EMAIL)
+    assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
+
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        with sampledb.mail.record_messages() as outbox:
+            sampledb.logic.notifications.create_other_notification(user.id, 'This is a test message')
+
+    assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
+
+    assert len(outbox) == 1
+    assert 'example1@fz-juelich.de' in outbox[0].recipients
+    message = outbox[0].html
+    assert 'iffSamples Notification' in message
+    assert 'This is a test message' in message

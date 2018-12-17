@@ -6,10 +6,16 @@
 import collections
 import datetime
 import typing
+import smtplib
+
+import flask
+import flask_mail
+
 from . import errors, users, objects
 from ..models import notifications
-from ..models.notifications import NotificationType
+from ..models.notifications import NotificationType, NotificationMode
 from .. import db
+from .. import mail
 
 
 class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_id', 'data', 'was_read', 'utc_datetime'])):
@@ -88,11 +94,28 @@ def get_notification(notification_id) -> Notification:
     return Notification.from_database(notification)
 
 
+def _create_notification(type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
+    """
+    Create a new notification and handle it according to the user's settings.
+
+    Use the convenience functions for creating specific notifications instead.
+
+    :param type: the type of the new notification
+    :param user_id: the ID of an existing user
+    :param data: the data for the new notification
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    notification_mode = get_notification_mode_for_type(type, user_id)
+    if notification_mode == NotificationMode.WEBAPP:
+        _store_notification(type, user_id, data)
+    if notification_mode == NotificationMode.EMAIL:
+        _send_notification(type, user_id, data)
+
+
 def _store_notification(type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     """
     Store a new notification in the database.
-
-    Use the convenience functions for creating specific notifications instead.
 
     :param type: the type of the new notification
     :param user_id: the ID of an existing user
@@ -110,6 +133,43 @@ def _store_notification(type: NotificationType, user_id: int, data: typing.Dict[
     )
     db.session.add(notification)
     db.session.commit()
+
+
+def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
+    """
+    Send a new notification by email.
+
+    :param type: the type of the new notification
+    :param user_id: the ID of an existing user
+    :param data: the data for the new notification
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    user = users.get_user(user_id)
+    subject = "iffSamples Notification"
+
+    if type == NotificationType.OTHER:
+        template_path = 'mails/notifications/other'
+    elif type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER:
+        template_path = 'mails/notifications/assigned_as_responsible_user'
+    else:
+        # unknown notification type
+        return
+
+    html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user)
+    text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
+    try:
+        mail.send(flask_mail.Message(
+            subject,
+            sender=flask.current_app.config['MAIL_SENDER'],
+            recipients=[user.email],
+            body=text,
+            html=html
+        ))
+    except smtplib.SMTPRecipientsRefused:
+        pass
 
 
 def mark_notification_as_read(notification_id: int) -> None:
@@ -144,6 +204,83 @@ def delete_notification(notification_id: int) -> None:
     db.session.commit()
 
 
+def set_notification_mode_for_type(type: NotificationType, user_id: int, mode: NotificationMode) -> None:
+    """
+    Set the notification mode for a user for a specific notification type.
+
+    :param type: the notification type to set the mode for
+    :param user_id: the ID of an existing user
+    :param mode: the notification mode to set for the type and user
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    # ensure the user exists
+    users.get_user(user_id)
+    notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
+    if notification_mode_for_type is None:
+        notification_mode_for_type = notifications.NotificationModeForType(type=type, user_id=user_id, mode=mode)
+    else:
+        notification_mode_for_type.mode = mode
+    db.session.add(notification_mode_for_type)
+    db.session.commit()
+
+
+def set_notification_mode_for_all_types(user_id: int, mode: NotificationMode) -> None:
+    """
+    Set the notification mode for a user for all notification types.
+
+    :param user_id: the ID of an existing user
+    :param mode: the notification mode to set for the type and user
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    # ensure the user exists
+    users.get_user(user_id)
+    notification_mode_for_types = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
+    for notification_mode_for_type in notification_mode_for_types:
+        db.session.delete(notification_mode_for_type)
+    notification_mode_for_all_types = notifications.NotificationModeForType(type=None, user_id=user_id, mode=mode)
+    db.session.add(notification_mode_for_all_types)
+    db.session.commit()
+
+
+def get_notification_mode_for_type(type: NotificationType, user_id: int) -> NotificationMode:
+    """
+    Get the notification mode for a user for a specific notification type.
+
+    :param type: the notification type to get the mode for
+    :param user_id: the ID of an existing user
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    # ensure the user exists
+    users.get_user(user_id)
+    notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
+    if notification_mode_for_type is not None:
+        return notification_mode_for_type.mode
+    notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
+    if notification_mode_for_all_types is not None:
+        return notification_mode_for_all_types.mode
+    return NotificationMode.WEBAPP
+
+
+def get_notification_modes(user_id: int) -> typing.Dict[typing.Optional[NotificationType], NotificationMode]:
+    """
+    Get the notification modes for a user.
+
+    :param user_id: the ID of an existing user
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    # ensure the user exists
+    users.get_user(user_id)
+    notification_modes = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
+    return {
+        notification_mode_for_type.type: notification_mode_for_type.mode
+        for notification_mode_for_type in notification_modes
+    }
+
+
 def create_other_notification(user_id: int, message: str) -> None:
     """
     Create a notification of type OTHER.
@@ -153,7 +290,7 @@ def create_other_notification(user_id: int, message: str) -> None:
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    _store_notification(
+    _create_notification(
         type=NotificationType.OTHER,
         user_id=user_id,
         data={
@@ -178,7 +315,7 @@ def create_notification_for_being_assigned_as_responsible_user(user_id: int, obj
     objects.get_object(object_id)
     # ensure the assigner exists
     users.get_user(assigner_id)
-    _store_notification(
+    _create_notification(
         type=NotificationType.ASSIGNED_AS_RESPONSIBLE_USER,
         user_id=user_id,
         data={

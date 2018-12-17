@@ -18,6 +18,13 @@ class NotificationType(enum.Enum):
     ASSIGNED_AS_RESPONSIBLE_USER = 1
 
 
+@enum.unique
+class NotificationMode(enum.Enum):
+    IGNORE = 0
+    WEBAPP = 1
+    EMAIL = 2
+
+
 class Notification(db.Model):
     __tablename__ = 'notifications'
 
@@ -39,3 +46,23 @@ class Notification(db.Model):
 
     def __repr__(self):
         return '<{0}(id={1.id}, type={1.type}, data={1.data})>'.format(type(self).__name__, self)
+
+
+class NotificationModeForType(db.Model):
+    __tablename__ = 'notification_mode_for_types'
+
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.Enum(NotificationType), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    mode = db.Column(db.Enum(NotificationMode), nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('type', 'user_id', name='_notification_mode_for_types_uc'),
+    )
+
+    def __init__(self, type: typing.Optional[NotificationType], user_id: int, mode: NotificationMode):
+        self.type = type
+        self.user_id = user_id
+        self.mode = mode
+
+    def __repr__(self):
+        return '<{0}(type={1.type}, user_id={1.user_id}, mode={1.mode})>'.format(type(self).__name__, self)
