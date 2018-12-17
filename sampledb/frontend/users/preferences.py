@@ -13,6 +13,7 @@ from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
+from .forms import NotificationModeForm
 
 from ...logic import user_log
 from ...logic.authentication import add_login, remove_authentication_method, change_password_in_authentication_method
@@ -23,6 +24,7 @@ from ...logic.object_permissions import Permissions, get_default_permissions_for
 from ...logic.projects import get_user_projects, get_project
 from ...logic.groups import get_user_groups, get_group
 from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
+from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_all_types, set_notification_mode_for_type
 
 from ...models import Authentication, AuthenticationType, User
 
@@ -66,6 +68,8 @@ def change_preferences(user, user_id):
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
     add_project_permissions_form = ObjectProjectPermissionsForm()
+
+    notification_mode_form = NotificationModeForm()
 
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
@@ -112,7 +116,11 @@ def change_preferences(user, user_id):
                                              default_permissions_form=default_permissions_form,
                                              add_user_permissions_form=add_user_permissions_form,
                                              add_group_permissions_form=add_group_permissions_form,
+                                             notification_mode_form=notification_mode_form,
                                              Permissions=Permissions,
+                                             NotificationMode=NotificationMode,
+                                             NotificationType=NotificationType,
+                                             notification_modes=get_notification_modes(flask_login.current_user.id),
                                              get_user=get_user,
                                              users=users,
                                              groups=groups,
@@ -150,7 +158,11 @@ def change_preferences(user, user_id):
                                              default_permissions_form=default_permissions_form,
                                              add_user_permissions_form=add_user_permissions_form,
                                              add_group_permissions_form=add_group_permissions_form,
+                                             notification_mode_form=notification_mode_form,
                                              Permissions=Permissions,
+                                             NotificationMode=NotificationMode,
+                                             NotificationType=NotificationType,
+                                             notification_modes=get_notification_modes(flask_login.current_user.id),
                                              get_user=get_user,
                                              users=users,
                                              groups=groups,
@@ -185,7 +197,11 @@ def change_preferences(user, user_id):
                                              default_permissions_form=default_permissions_form,
                                              add_user_permissions_form=add_user_permissions_form,
                                              add_group_permissions_form=add_group_permissions_form,
+                                             notification_mode_form=notification_mode_form,
                                              Permissions=Permissions,
+                                             NotificationMode=NotificationMode,
+                                             NotificationType=NotificationType,
+                                             notification_modes=get_notification_modes(flask_login.current_user.id),
                                              get_user=get_user,
                                              users=users,
                                              groups=groups,
@@ -253,12 +269,26 @@ def change_preferences(user, user_id):
         set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
         flask.flash("Successfully updated default permissions.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+    if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
+        for notification_type in [NotificationType.ASSIGNED_AS_RESPONSIBLE_USER, NotificationType.OTHER]:
+            if 'notification_mode_for_type_' + notification_type.name.lower() in flask.request.form:
+                notification_mode_text = flask.request.form.get('notification_mode_for_type_' + notification_type.name.lower())
+                for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL]:
+                    if notification_mode_text == notification_mode.name.lower():
+                        set_notification_mode_for_type(notification_type, flask_login.current_user.id, notification_mode)
+                        break
+        flask.flash("Successfully updated your notification settings.", 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                  authentication_password_form=authentication_password_form,
                                  default_permissions_form=default_permissions_form,
                                  add_user_permissions_form=add_user_permissions_form,
                                  add_group_permissions_form=add_group_permissions_form,
                                  add_project_permissions_form=add_project_permissions_form,
+                                 notification_mode_form=notification_mode_form,
+                                 NotificationMode=NotificationMode,
+                                 NotificationType=NotificationType,
+                                 notification_modes=get_notification_modes(flask_login.current_user.id),
                                  Permissions=Permissions,
                                  users=users,
                                  get_user=get_user,

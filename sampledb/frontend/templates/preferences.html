@@ -3,7 +3,8 @@
 
 
 {% block content %}
-<h2 class="text-center">Preferences</h2>
+<h1>Preferences</h1>
+<h2>Account Information</h2>
 <form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=user.id) }}">
     {{ change_user_form.csrf_token() }}
     <div class="form-group {% if change_user_form.name.errors %} has-error{% endif %}">
@@ -22,10 +23,9 @@
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">Save</button>
     </div>
 </form>
-<br><br>
 
 
-<h2 class="text-center">Authentications Methods</h2>
+<h2>Authentications Methods</h2>
     <div>
        <table class="table">
          <thead>
@@ -79,6 +79,46 @@
        </table>
     </div>
 
+  <h2>Notification Settings</h2>
+  <p><strong>Note:</strong> iffSamples will notify you about various events. By default, these notifications will be sent using the iffSamples notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
+
+  <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
+    {{ notification_mode_form.csrf_token }}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 40%">Notification Type</th>
+          <th scope="col" class="text-center">Ignore</th>
+          <th scope="col" class="text-center">Web</th>
+          <th scope="col" class="text-center">Email</th>
+      </thead>
+      <tbody>
+        {% set notification_types = {
+              NotificationType.ASSIGNED_AS_RESPONSIBLE_USER: ("Becoming responsible for an object", True),
+              NotificationType.OTHER: ("Miscellaneous", False)
+            }
+        %}
+        {% for notification_type in notification_types %}
+          {% set notification_description = notification_types[notification_type][0] %}
+          {% set notification_can_be_ignored = notification_types[notification_type][1] %}
+          <tr>
+            <td style="vertical-align: middle">{{ notification_description }}</td>
+            {% for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL] %}
+            <td class="text-center" style="vertical-align: middle">
+              {% if notification_mode != NotificationMode.IGNORE or notification_can_be_ignored %}
+                <label for="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" class="sr-only">{{ notification_mode.name.lower() }}</label>
+                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="container">
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_notification_settings" value="edit_notification_settings">Save</button>
+    </div>
+  </form>
 
   <h2>Default Permissions</h2>
   <p><strong>Note:</strong> These permissions will be used for samples, measurements and simulations that you create in the future. To change the permissions for an already existing object, please use the <strong>Edit preferences</strong> button on the object's site.</p>
@@ -417,6 +457,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+
 {% endblock %}
 
 {% block stylesheets %}
