@@ -1,0 +1,9 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+{% if 'html' in data and data['html'] %}
+{{ data['html'] | safe }}
+{% else %}
+<p>{{ data['message'] }}</p>
+{% endif %}
+{% endblock %}

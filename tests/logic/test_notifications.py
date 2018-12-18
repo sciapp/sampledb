@@ -104,3 +104,17 @@ def test_send_notification(app, user):
     message = outbox[0].html
     assert 'iffSamples Notification' in message
     assert 'This is a test message' in message
+
+
+def test_create_announcement_notification(user):
+    assert sampledb.logic.notifications.get_num_notifications(user.id) == 0
+    sampledb.logic.notifications.create_announcement_notification_for_all_users('This is a test message', 'This is an html test message')
+    assert sampledb.logic.notifications.get_num_notifications(user.id) == 1
+    notification = sampledb.logic.notifications.get_notifications(user.id)[0]
+    assert notification.type == sampledb.logic.notifications.NotificationType.ANNOUNCEMENT
+    assert notification.user_id == user.id
+    assert not notification.was_read
+    assert notification.data == {
+        'message': 'This is a test message',
+        'html': 'This is an html test message'
+    }

@@ -148,17 +148,7 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
     user = users.get_user(user_id)
     subject = "iffSamples Notification"
 
-    if type == NotificationType.OTHER:
-        template_path = 'mails/notifications/other'
-    elif type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER:
-        template_path = 'mails/notifications/assigned_as_responsible_user'
-    elif type == NotificationType.INVITED_TO_GROUP:
-        template_path = 'mails/notifications/invited_to_group'
-    elif type == NotificationType.INVITED_TO_PROJECT:
-        template_path = 'mails/notifications/invited_to_project'
-    else:
-        # unknown notification type
-        return
+    template_path = 'mails/notifications/' + type.name.lower()
 
     html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group, get_project=projects.get_project)
     text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group, get_project=projects.get_project)
@@ -399,3 +389,34 @@ def create_notification_for_being_invited_to_a_project(
             'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
         }
     )
+
+
+def create_announcement_notification(user_id: int, message: str, html: typing.Optional[str]=None) -> None:
+    """
+    Create a notification of type ANNOUNCEMENT.
+
+    :param user_id: the ID of an existing user
+    :param message: the message for the notification
+    :param html: a HTML-formatted version of the message (optional)
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    _create_notification(
+        type=NotificationType.ANNOUNCEMENT,
+        user_id=user_id,
+        data={
+            'message': message,
+            'html': html
+        }
+    )
+
+
+def create_announcement_notification_for_all_users(message: str, html: typing.Optional[str]=None) -> None:
+    """
+    Create a notification of type ANNOUNCEMENT for all existing users.
+
+    :param message: the message for the notification
+    :param html: a HTML-formatted version of the message (optional)
+    """
+    for user in users.get_users():
+        create_announcement_notification(user.id, message, html)

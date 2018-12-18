@@ -70,6 +70,12 @@
                 {% else %}
                   <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a project, but it has been deleted already.
                 {% endif %}
+              {% elif notification.type == NotificationType.ANNOUNCEMENT %}
+                {% if 'html' in notification.data and notification.data['html']  %}
+                  {{ notification.data['html'] | safe }}
+                {% else %}
+                  <p>{{ notification.data['message'] }}</p>
+                {% endif %}
               {% else %}
                 Unknown notification type.
               {% endif %}
