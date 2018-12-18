@@ -14,7 +14,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users, groups
+from ...logic import errors, users, groups, projects
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -116,6 +116,8 @@ def notifications(user_id):
         get_user=users.get_user,
         get_group=_safe_get_group,
         is_group_member=_is_group_member,
+        get_project=_safe_get_project,
+        is_project_member=_is_project_member,
         datetime=datetime
     )
 
@@ -132,3 +134,18 @@ def _is_group_member(user_id: int, group_id: int) -> bool:
     if not user_groups:
         return False
     return any(group_id == group.id for group in user_groups)
+
+
+def _safe_get_project(project_id: int) -> typing.Optional[projects.Project]:
+    try:
+        return projects.get_project(project_id)
+    except errors.ProjectDoesNotExistError:
+        return None
+
+
+def _is_project_member(user_id: int, project_id: int) -> bool:
+    user_projects = projects.get_user_projects(user_id)
+    if not user_projects:
+        return False
+    return any(project_id == project.id for project in user_projects)
+

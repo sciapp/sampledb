@@ -11,7 +11,7 @@ import smtplib
 import flask
 import flask_mail
 
-from . import errors, users, objects, groups
+from . import errors, users, objects, groups, projects
 from ..models import notifications
 from ..models.notifications import NotificationType, NotificationMode
 from .. import db
@@ -154,12 +154,14 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         template_path = 'mails/notifications/assigned_as_responsible_user'
     elif type == NotificationType.INVITED_TO_GROUP:
         template_path = 'mails/notifications/invited_to_group'
+    elif type == NotificationType.INVITED_TO_PROJECT:
+        template_path = 'mails/notifications/invited_to_project'
     else:
         # unknown notification type
         return
 
-    html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group)
-    text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group)
+    html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group, get_project=projects.get_project)
+    text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group, get_project=projects.get_project)
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
     try:
@@ -356,6 +358,42 @@ def create_notification_for_being_invited_to_a_group(
         user_id=user_id,
         data={
             'group_id': group_id,
+            'inviter_id': inviter_id,
+            'confirmation_url': confirmation_url,
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    )
+
+
+def create_notification_for_being_invited_to_a_project(
+        user_id: int,
+        project_id: int,
+        inviter_id: int,
+        confirmation_url: str,
+        expiration_utc_datetime: typing.Optional[datetime.datetime]
+) -> None:
+    """
+    Create a notification of type INVITED_TO_PROJECT.
+
+    :param user_id: the ID of an existing user
+    :param project_id: the ID of an existing project
+    :param inviter_id: the ID of who invited this user to the project
+    :param confirmation_url: the confirmation URL
+    :param expiration_utc_datetime: the datetime when the confirmation URL expires (optional)
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        or assigner ID exists
+    :raise errors.ProjectDoesNotExistError: when no project with the given project
+        ID exists
+    """
+    # ensure the project exists
+    projects.get_project(project_id)
+    # ensure the inviter exists
+    users.get_user(inviter_id)
+    _create_notification(
+        type=NotificationType.INVITED_TO_PROJECT,
+        user_id=user_id,
+        data={
+            'project_id': project_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
             'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')

@@ -56,6 +56,20 @@
                 {% else %}
                   <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a group, but it has been deleted already.
                 {% endif %}
+              {% elif notification.type == NotificationType.INVITED_TO_PROJECT %}
+                {% set project = get_project(notification.data['project_id']) %}
+                {% if project is not none %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to the project "<a href="{{ url_for('.project', project_id=notification.data['project_id']) }}">{{ get_project(notification.data['project_id']).name }}</a>":
+                  {% if is_project_member(current_user.id, notification.data['project_id']) %}
+                    You are already a member of this project.
+                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
+                    <a href="{{ notification.data['confirmation_url'] | safe }}">Join Project</a>
+                  {% else %}
+                    The invitation has expired at {{ notification.data['expiration_utc_datetime'] }}.
+                  {% endif %}
+                {% else %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a project, but it has been deleted already.
+                {% endif %}
               {% else %}
                 Unknown notification type.
               {% endif %}

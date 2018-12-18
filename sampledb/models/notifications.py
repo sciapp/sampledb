@@ -17,6 +17,7 @@ class NotificationType(enum.Enum):
     OTHER = 0
     ASSIGNED_AS_RESPONSIBLE_USER = 1
     INVITED_TO_GROUP = 2
+    INVITED_TO_PROJECT = 3
 
 
 @enum.unique

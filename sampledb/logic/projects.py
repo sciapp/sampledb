@@ -20,13 +20,18 @@ module should be called from within a Flask application context.
 
 from sqlalchemy.exc import IntegrityError
 import collections
+import datetime
 import typing
+import flask
+
 from .. import db
 from ..models import projects, User, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .users import get_user
+from .security_tokens import generate_token, MAX_AGE
 from . import groups
 from . import utils
 from . import errors
+from . import notifications
 
 
 # project names are limited to this (semi-arbitrary) length
@@ -264,14 +269,21 @@ def get_user_projects(user_id: int, include_groups: bool=False) -> typing.List[P
     return [get_project(project_id) for project_id in project_ids]
 
 
-def invite_user_to_project(project_id: int, user_id: int, add_to_parent_project_ids: typing.Sequence[int]=()) -> None:
+def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_to_parent_project_ids: typing.Sequence[int]=()) -> None:
     """
     Sends an invitation mail for a project to a user.
 
     :param project_id: the ID of an existing project
     :param user_id:  the ID of an existing users
+    :param inviter_id: the ID of who invited this user to the project
     :param add_to_parent_project_ids: list of IDs of parent projects to which
         the user should also be added
+    :raise errors.ProjectDoesNotExistError: when no project with the given
+        project ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        or inviter ID exists
+    :raise errors.UserAlreadyMemberOfProjectError: when the user with the given
+        user ID already is a member of this project
     """
     project = projects.Project.query.get(project_id)
     if project is None:
@@ -279,7 +291,19 @@ def invite_user_to_project(project_id: int, user_id: int, add_to_parent_project_
     get_user(user_id)
     if Permissions.READ in get_user_project_permissions(project_id, user_id):
         raise errors.UserAlreadyMemberOfProjectError()
-    utils.send_confirm_email_to_invite_user_to_project(project_id, user_id, other_project_ids=add_to_parent_project_ids)
+
+    token = generate_token(
+        {
+            'user_id': user_id,
+            'project_id': project_id,
+            'other_project_ids': add_to_parent_project_ids
+        },
+        salt='invite_to_project',
+        secret_key=flask.current_app.config['SECRET_KEY']
+    )
+    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=MAX_AGE)
+    confirmation_url = flask.url_for("frontend.project", project_id=project_id, token=token, _external=True)
+    notifications.create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
 
 def add_user_to_project(project_id: int, user_id: int, permissions: Permissions, other_project_ids: typing.Sequence[int]=()) -> None:
