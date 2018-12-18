@@ -270,7 +270,7 @@ def change_preferences(user, user_id):
         flask.flash("Successfully updated default permissions.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
-        for notification_type in [NotificationType.ASSIGNED_AS_RESPONSIBLE_USER, NotificationType.OTHER]:
+        for notification_type in NotificationType:
             if 'notification_mode_for_type_' + notification_type.name.lower() in flask.request.form:
                 notification_mode_text = flask.request.form.get('notification_mode_for_type_' + notification_type.name.lower())
                 for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL]:

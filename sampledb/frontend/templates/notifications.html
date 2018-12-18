@@ -42,6 +42,20 @@
                 <a href="{{ url_for('.user_profile', user_id=notification.data['assigner_id']) }}">{{ get_user(notification.data['assigner_id']).name }}</a> assigned you as responsible user for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>.
               {% elif notification.type == NotificationType.OTHER %}
                 {{ notification.data['message'] }}
+              {% elif notification.type == NotificationType.INVITED_TO_GROUP %}
+                {% set group = get_group(notification.data['group_id']) %}
+                {% if group is not none %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to the group "<a href="{{ url_for('.group', group_id=notification.data['group_id']) }}">{{ get_group(notification.data['group_id']).name }}</a>":
+                  {% if is_group_member(current_user.id, notification.data['group_id']) %}
+                    You are already a member of this group.
+                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
+                    <a href="{{ notification.data['confirmation_url'] | safe }}">Join Group</a>
+                  {% else %}
+                    The invitation has expired at {{ notification.data['expiration_utc_datetime'] }}.
+                  {% endif %}
+                {% else %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a group, but it has been deleted already.
+                {% endif %}
               {% else %}
                 Unknown notification type.
               {% endif %}

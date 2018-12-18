@@ -69,7 +69,18 @@ def group(group_id):
             except logic.errors.UserDoesNotExistError:
                 pass
             return flask.abort(403)
-        logic.groups.add_user_to_group(group_id, user_id)
+
+        for notification in logic.notifications.get_notifications(user_id, unread_only=True):
+            if notification.type == logic.notifications.NotificationType.INVITED_TO_GROUP:
+                if notification.data['group_id'] == group_id:
+                    logic.notifications.mark_notification_as_read(notification.id)
+
+        try:
+            logic.groups.add_user_to_group(group_id, user_id)
+        except logic.errors.UserAlreadyMemberOfGroupError:
+            flask.flash('You are already a member of this group.', 'error')
+        except logic.errors.GroupDoesNotExistError:
+            pass
     try:
         group_member_ids = logic.groups.get_group_member_ids(group_id)
     except logic.errors.GroupDoesNotExistError:
@@ -106,7 +117,7 @@ def group(group_id):
         elif 'add_user' in flask.request.form:
             if invite_user_form.validate_on_submit():
                 try:
-                    logic.groups.invite_user_to_group(group_id, invite_user_form.user_id.data)
+                    logic.groups.invite_user_to_group(group_id, invite_user_form.user_id.data, flask_login.current_user.id)
                 except logic.errors.GroupDoesNotExistError:
                     flask.flash('This group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))

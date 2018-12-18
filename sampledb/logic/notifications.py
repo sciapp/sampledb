@@ -11,7 +11,7 @@ import smtplib
 import flask
 import flask_mail
 
-from . import errors, users, objects
+from . import errors, users, objects, groups
 from ..models import notifications
 from ..models.notifications import NotificationType, NotificationMode
 from .. import db
@@ -152,12 +152,14 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         template_path = 'mails/notifications/other'
     elif type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER:
         template_path = 'mails/notifications/assigned_as_responsible_user'
+    elif type == NotificationType.INVITED_TO_GROUP:
+        template_path = 'mails/notifications/invited_to_group'
     else:
         # unknown notification type
         return
 
-    html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user)
-    text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user)
+    html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group)
+    text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group)
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
     try:
@@ -321,5 +323,41 @@ def create_notification_for_being_assigned_as_responsible_user(user_id: int, obj
         data={
             'object_id': object_id,
             'assigner_id': assigner_id
+        }
+    )
+
+
+def create_notification_for_being_invited_to_a_group(
+        user_id: int,
+        group_id: int,
+        inviter_id: int,
+        confirmation_url: str,
+        expiration_utc_datetime: typing.Optional[datetime.datetime]
+) -> None:
+    """
+    Create a notification of type INVITED_TO_GROUP.
+
+    :param user_id: the ID of an existing user
+    :param group_id: the ID of an existing group
+    :param inviter_id: the ID of who invited this user to the group
+    :param confirmation_url: the confirmation URL
+    :param expiration_utc_datetime: the datetime when the confirmation URL expires (optional)
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        or assigner ID exists
+    :raise errors.GroupDoesNotExistError: when no group with the given group
+        ID exists
+    """
+    # ensure the group exists
+    groups.get_group(group_id)
+    # ensure the inviter exists
+    users.get_user(inviter_id)
+    _create_notification(
+        type=NotificationType.INVITED_TO_GROUP,
+        user_id=user_id,
+        data={
+            'group_id': group_id,
+            'inviter_id': inviter_id,
+            'confirmation_url': confirmation_url,
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
         }
     )

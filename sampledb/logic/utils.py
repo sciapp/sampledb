@@ -86,37 +86,6 @@ def build_confirm_url(authentication_method, salt='password'):
     return flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True)
 
 
-def send_confirm_email_to_invite_user_to_group(group_id: int, user_id: int) -> None:
-    user = get_user(user_id)
-    group = groups.get_group(group_id)
-    if user is None:
-        return
-    token_data = {
-        'user_id': user.id,
-        'group_id': group_id
-    }
-    token = generate_token(token_data, salt='invite_to_group',
-                           secret_key=flask.current_app.config['SECRET_KEY'])
-
-    confirm_url = flask.url_for("frontend.group", group_id=group.id, token=token, _external=True)
-
-    subject = "iffSamples Group Invitation"
-    html = flask.render_template('mails/invitation_to_group.html', invited_user_name=user.name, group=group, confirm_url=confirm_url)
-    text = flask.render_template('mails/invitation_to_group.txt', invited_user_name=user.name, group=group, confirm_url=confirm_url)
-    while '\n\n\n' in text:
-        text = text.replace('\n\n\n', '\n\n')
-    try:
-        mail.send(flask_mail.Message(
-            subject,
-            sender=flask.current_app.config['MAIL_SENDER'],
-            recipients=[user.email],
-            body=text,
-            html=html
-        ))
-    except smtplib.SMTPRecipientsRefused:
-        pass
-
-
 def send_confirm_email_to_invite_user_to_project(project_id: int, user_id: int, other_project_ids: typing.Sequence[int]=()) -> None:
     user = get_user(user_id)
     project = projects.get_project(project_id)

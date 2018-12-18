@@ -1,8 +1,0 @@
-{% extends "mails/base.txt" %}
-
-{% block content %}
-Hello {{ invited_user_name }},
-
-you have been invited to be a member of the group "{{group.name}}". If you wish to join this group, please visit the following URL in your browser:
-{{ confirm_url | safe }}
-{% endblock %}

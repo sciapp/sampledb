@@ -6,8 +6,9 @@
 <p>Hello {{ user.name }},</p>
 
 {% block message %}{% endblock %}
+{% endblock %}
 
-<hr />
-
-<p>To disable notifications or to receive them on iffSamples, please adjust your <a href="{{ url_for('frontend.user_preferences', user_id=user.id, _external=True) }}">notification settings</a>.</p>
+{% block notes %}
+<p>To disable notifications or to receive them on iffSamples, please adjust your <a href="{{ url_for('frontend.user_preferences', user_id=user.id, _external=True) }}" style="color:#337ab7;">notification settings</a>.</p>
+{{ super() }}
 {% endblock %}

@@ -95,6 +95,7 @@
       <tbody>
         {% set notification_types = {
               NotificationType.ASSIGNED_AS_RESPONSIBLE_USER: ("Becoming responsible for an object", True),
+              NotificationType.INVITED_TO_GROUP: ("Being invited to a group", False),
               NotificationType.OTHER: ("Miscellaneous", False)
             }
         %}

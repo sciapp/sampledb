@@ -3,6 +3,8 @@
 
 """
 
+import datetime
+import typing
 
 import flask
 import flask_login
@@ -12,7 +14,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users
+from ...logic import errors, users, groups
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -111,5 +113,22 @@ def notifications(user_id):
         mark_all_notifications_as_read_form=mark_all_notifications_as_read_form,
         delete_notification_form=delete_notification_form,
         mark_notification_as_read_form=mark_notification_as_read_form,
-        get_user=users.get_user
+        get_user=users.get_user,
+        get_group=_safe_get_group,
+        is_group_member=_is_group_member,
+        datetime=datetime
     )
+
+
+def _safe_get_group(group_id: int) -> typing.Optional[groups.Group]:
+    try:
+        return groups.get_group(group_id)
+    except errors.GroupDoesNotExistError:
+        return None
+
+
+def _is_group_member(user_id: int, group_id: int) -> bool:
+    user_groups = groups.get_user_groups(user_id)
+    if not user_groups:
+        return False
+    return any(group_id == group.id for group in user_groups)
