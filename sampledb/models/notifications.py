@@ -19,6 +19,7 @@ class NotificationType(enum.Enum):
     INVITED_TO_GROUP = 2
     INVITED_TO_PROJECT = 3
     ANNOUNCEMENT = 4
+    RECEIVED_OBJECT_PERMISSIONS_REQUEST = 5
 
 
 @enum.unique

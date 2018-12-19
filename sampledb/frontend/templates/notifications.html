@@ -76,6 +76,13 @@
                 {% else %}
                   <p>{{ notification.data['message'] }}</p>
                 {% endif %}
+              {% elif notification.type == NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST %}
+                {% set current_permissions = get_user_object_permissions(user_id=notification.data['requester_id'], object_id=notification.data['object_id']) %}
+                {% if Permissions.READ in current_permissions %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>, but has been granted {{ current_permissions.name.lower() }} permissions already.
+                {% else %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>: <a href="{{ url_for('.object_permissions', object_id=notification.data['object_id'], add_user_id=notification.data['requester_id'], _anchor='add_user') }}">View object permissions</a>
+                {% endif %}
               {% else %}
                 Unknown notification type.
               {% endif %}

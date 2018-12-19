@@ -420,3 +420,29 @@ def create_announcement_notification_for_all_users(message: str, html: typing.Op
     """
     for user in users.get_users():
         create_announcement_notification(user.id, message, html)
+
+
+def create_notification_for_having_received_an_objects_permissions_request(user_id: int, object_id: int, requester_id: int) -> None:
+    """
+    Create a notification of type ANNOUNCEMENT.
+
+    :param user_id: the ID of an existing user
+    :param message: the message for the notification
+    :param html: a HTML-formatted version of the message (optional)
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        or requester ID exists
+    :raise errors.ProjectDoesNotExistError: when no project with the given project
+        ID exists
+    """
+    # ensure the object exists
+    objects.get_object(object_id)
+    # ensure the requester exists
+    users.get_user(requester_id)
+    _create_notification(
+        type=NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'requester_id': requester_id
+        }
+    )

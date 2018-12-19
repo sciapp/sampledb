@@ -14,7 +14,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users, groups, projects
+from ...logic import errors, users, groups, projects, object_permissions
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -118,6 +118,8 @@ def notifications(user_id):
         is_group_member=_is_group_member,
         get_project=_safe_get_project,
         is_project_member=_is_project_member,
+        get_user_object_permissions=object_permissions.get_user_object_permissions,
+        Permissions=object_permissions.Permissions,
         datetime=datetime
     )
 

@@ -884,6 +884,11 @@ def object_permissions(object_id):
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
+    suggested_user_id = flask.request.args.get('add_user_id', '')
+    try:
+        suggested_user_id = int(suggested_user_id)
+    except ValueError:
+        suggested_user_id = None
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
         user_permission_form_data = []
         for user_id, permissions in user_permissions.items():
@@ -918,7 +923,28 @@ def object_permissions(object_id):
         users = []
         groups = []
         projects = []
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, user_permissions=user_permissions, group_permissions=group_permissions, project_permissions=project_permissions, public_permissions=public_permissions, get_user=get_user, Permissions=Permissions, form=edit_user_permissions_form, users=users, groups=groups, projects=projects, add_user_permissions_form=add_user_permissions_form, add_group_permissions_form=add_group_permissions_form, get_group=get_group, add_project_permissions_form=add_project_permissions_form, get_project=get_project)
+    return flask.render_template(
+        'objects/object_permissions.html',
+        instrument=instrument,
+        action=action,
+        object=object,
+        user_permissions=user_permissions,
+        group_permissions=group_permissions,
+        project_permissions=project_permissions,
+        public_permissions=public_permissions,
+        get_user=get_user,
+        Permissions=Permissions,
+        form=edit_user_permissions_form,
+        users=users,
+        groups=groups,
+        projects=projects,
+        add_user_permissions_form=add_user_permissions_form,
+        add_group_permissions_form=add_group_permissions_form,
+        get_group=get_group,
+        add_project_permissions_form=add_project_permissions_form,
+        get_project=get_project,
+        suggested_user_id=suggested_user_id
+    )
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])

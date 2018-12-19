@@ -246,7 +246,7 @@
     </div>
     </form>
     {% if users %}
-      <h3>Add User</h3>
+      <h3 id="add_user">Add User</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_user_permissions_form.csrf_token }}
       <table class="table table-striped">
@@ -264,7 +264,7 @@
           <td>
             <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
             {% for user in users %}
-              <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+              <option value="{{ user.id }}" {% if suggested_user_id == user.id %}selected="selected"{% endif %}>{{ user.name }} (#{{ user.id }})</option>
             {% endfor %}
             </select>
           </td>
