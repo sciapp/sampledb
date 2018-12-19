@@ -32,5 +32,6 @@
   {% endfor %}
   </select>
   {% if id_prefix+'_text' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_text'] }}</span>{% endif %}
+  {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
   </div>
 </div>
