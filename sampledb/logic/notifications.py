@@ -424,15 +424,15 @@ def create_announcement_notification_for_all_users(message: str, html: typing.Op
 
 def create_notification_for_having_received_an_objects_permissions_request(user_id: int, object_id: int, requester_id: int) -> None:
     """
-    Create a notification of type ANNOUNCEMENT.
+    Create a notification of type RECEIVED_OBJECT_PERMISSIONS_REQUEST.
 
     :param user_id: the ID of an existing user
-    :param message: the message for the notification
-    :param html: a HTML-formatted version of the message (optional)
+    :param object_id: the ID of an existing object
+    :param requester_id: the ID of who requested permissions for this object
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         or requester ID exists
-    :raise errors.ProjectDoesNotExistError: when no project with the given project
-        ID exists
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
     """
     # ensure the object exists
     objects.get_object(object_id)

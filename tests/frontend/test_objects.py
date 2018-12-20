@@ -225,6 +225,55 @@ def test_get_object_no_permissions(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user_id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}'.format(object.object_id))
     assert r.status_code == 403
+    assert '/objects/{}/permissions/request'.format(object.object_id) in r.content.decode('utf-8')
+
+
+def test_request_object_permissions(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+
+    session = requests.session()
+    with flask_server.app.app_context():
+        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(new_user)
+        sampledb.db.session.commit()
+        new_user_id = new_user.id
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user_id)).status_code == 200
+    r = session.post(flask_server.base_url + 'objects/{}/permissions/request'.format(object.object_id))
+    assert r.status_code == 200
+    notifications = sampledb.logic.notifications.get_notifications(user.id, unread_only=True)
+    for notification in notifications:
+        if notification.type == sampledb.logic.notifications.NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST:
+            assert notification.data['requester_id'] == new_user_id
+            assert notification.data['object_id'] == object.id
+            break
+    else:
+        assert False
+
+
+def test_request_object_permissions_with_enough_permissions(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.post(flask_server.base_url + 'objects/{}/permissions/request'.format(object.object_id), allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(object.object_id)
+    notifications = sampledb.logic.notifications.get_notifications(user.id, unread_only=True)
+    for notification in notifications:
+        assert notification.type != sampledb.logic.notifications.NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST
+
 
 
 def test_get_object_edit_form(flask_server, user):

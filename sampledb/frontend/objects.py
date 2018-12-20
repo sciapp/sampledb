@@ -19,7 +19,7 @@ from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
 from ..logic.action_permissions import get_user_action_permissions
-from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects
+from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users
 from ..logic.schemas import validate, generate_placeholder
@@ -40,6 +40,10 @@ from .pdfexport import create_pdfexport
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+def on_unauthorized(object_id):
+    return flask.render_template('objects/unauthorized.html', object_id=object_id), 403
 
 
 @frontend.route('/objects/')
@@ -428,7 +432,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object(object_id):
     object = get_object(object_id=object_id)
     related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, flask_login.current_user.id)
@@ -538,7 +542,7 @@ def object(object_id):
 
 
 @frontend.route('/objects/<int:object_id>/label')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def print_object_label(object_id):
     object = get_object(object_id=object_id)
     object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
@@ -598,6 +602,18 @@ def search():
     return flask.render_template('search.html')
 
 
+@frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])
+@flask_login.login_required
+def object_permissions_request(object_id):
+    current_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    if Permissions.READ in current_permissions:
+        flask.flash('You already have permissions to access this object.', 'error')
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
+    request_object_permissions(flask_login.current_user.id, object_id)
+    flask.flash('Your request for permissions has been sent.', 'success')
+    return flask.redirect(flask.url_for('.objects'))
+
+
 @frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_location(object_id):
@@ -629,7 +645,7 @@ def post_object_location(object_id):
 
 
 @frontend.route('/objects/<int:object_id>/pdf')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def export_to_pdf(object_id):
     object_ids = [object_id]
     if 'object_ids' in flask.request.args:
@@ -667,7 +683,7 @@ def existing_files_from_source():
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_file(object_id, file_id):
     file = logic.files.get_file_for_object(object_id, file_id)
     if file is None:
@@ -811,7 +827,7 @@ def new_object():
 
 
 @frontend.route('/objects/<int:object_id>/versions/')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_versions(object_id):
     object = get_object(object_id=object_id)
     if object is None:
@@ -822,7 +838,7 @@ def object_versions(object_id):
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_version(object_id, version_id):
     object = get_object(object_id=object_id, version_id=version_id)
     form = None
@@ -875,7 +891,7 @@ def restore_object_version(object_id, version_id):
 
 
 @frontend.route('/objects/<int:object_id>/permissions')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_permissions(object_id):
     object = get_object(object_id)
     action = get_action(object.action_id)
