@@ -13,6 +13,7 @@ import typing
 
 from .. import db
 from . import user_log, object_log, objects, users, errors
+from .notifications import create_notification_for_being_assigned_as_responsible_user
 from ..models import locations
 
 
@@ -215,6 +216,8 @@ def assign_location_to_object(object_id: int, location_id: typing.Optional[int],
     if responsible_user_id is not None:
         # ensure the responsible user exists
         users.get_user(responsible_user_id)
+        if user_id != responsible_user_id:
+            create_notification_for_being_assigned_as_responsible_user(responsible_user_id, object_id, user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
         object_id=object_id,
         location_id=location_id,

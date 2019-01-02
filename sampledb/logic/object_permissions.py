@@ -22,6 +22,7 @@ from . import errors
 from . import actions
 from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
+from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
@@ -309,3 +310,16 @@ def set_default_public(creator_id: int, is_public: bool=True) -> None:
         public_permissions.is_public = is_public
     db.session.add(public_permissions)
     db.session.commit()
+
+
+def request_object_permissions(requester_id: int, object_id: int) -> None:
+    permissions_by_user = get_object_permissions_for_users(object_id)
+    if Permissions.READ in permissions_by_user.get(requester_id, Permissions.NONE):
+        return
+    granting_user_ids = [
+        user_id
+        for user_id, permissions in permissions_by_user.items()
+        if Permissions.GRANT in permissions
+    ]
+    for user_id in granting_user_ids:
+        create_notification_for_having_received_an_objects_permissions_request(user_id, object_id, requester_id)

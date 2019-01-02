@@ -424,6 +424,15 @@ th:hover .search-helper {
 .nav-search-link {
     display:none;
 }
+
+.navbar-header .badge-new-notifications {
+    float: right;
+    margin-top: 18px;
+}
+.nav > .nav-item-new-notifications {
+    display: none;
+}
+
 @media only screen and (min-width: 768px) {
     #input-search {
         max-width: 250px;
@@ -434,6 +443,13 @@ th:hover .search-helper {
     .nav-search-link {
         display:block;
     }
+    .navbar-header .badge-new-notifications {
+        display: none;
+    }
+    .nav > .nav-item-new-notifications {
+        display: block;
+    }
+
 }
 @media only screen and (min-width: 768px) and (max-width: 1024px) {
     #nav-search {
@@ -470,4 +486,28 @@ th:hover .search-helper {
 #form-search-standalone > .input-group {
     margin: 1em 0;
     max-width: 400px;
+}
+
+.badge-new-notifications {
+    background-color: #ff0000;
+    margin-right: 10px;
+}
+
+#notifications-table tbody tr {
+    color:#aaaaaa;
+}
+
+#notifications-table tbody tr.unread-notification {
+    font-weight: 700;
+    color:#333333;
+}
+
+#notifications-table button {
+    border: 0;
+    background-color: transparent;
+    color: #aaaaaa;
+}
+
+#notifications-table button:hover, #notifications-table button:focus, #notifications-table button:active {
+    color:#333333;
 }

@@ -1,0 +1,12 @@
+{% extends "mails/base.txt" %}
+
+{% block content %}
+Hello {{ user.name }},
+
+{% block message %}{% endblock %}
+
+---
+
+To disable notifications or to receive them on iffSamples, please adjust your notification settings:
+{{ url_for('frontend.user_preferences', user_id=user.id, _external=True) }}
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "mails/notifications/base.txt" %}
+
+{% block message %}
+{{ get_user(data['inviter_id']).name }} (#{{ data['inviter_id'] }}) has invited you to be a member of the project "{{ get_project(data['project_id']).name}}". If you wish to join this project, please visit the following URL in your browser:
+{{ data['confirmation_url'] }}
+
+This invitation will expire at {{ data['expiration_utc_datetime'] }}.
+{% endblock %}

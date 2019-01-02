@@ -11,6 +11,12 @@
   {% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
+
+{% if current_user.is_authenticated %}
+  {% set num_unread_notifications = (current_user | get_num_unread_notifications) %}
+{% else %}
+  {% set num_unread_notifications = 0 %}
+{% endif %}
 <nav class="navbar navbar-default navbar-static-top">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -21,6 +27,7 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="{{ url_for('frontend.index') }}">iffSamples</a>
+      {% if num_unread_notifications > 0 %}<a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a>{% endif %}
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -125,6 +132,7 @@
               <li><a href="{{ url_for('frontend.user_profile', user_id=current_user.id) }}"><strong>{{ current_user.name }} (#{{ current_user.id }})</strong></a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
+              <li><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}">Notifications {% if num_unread_notifications > 0 %}<span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span>{% endif %}</a></li>
               <li><a href="{{ url_for('frontend.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Projects</a></li>
@@ -136,6 +144,7 @@
               <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">Sign out</button></form></li>
             </ul>
           </li>
+          {% if num_unread_notifications > 0 %}<li class="nav-item-new-notifications"><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a></li>{% endif %}
           {% else %}
           <li><a href="{{ url_for('frontend.sign_in') }}">Sign in</a></li>
           {% endif %}

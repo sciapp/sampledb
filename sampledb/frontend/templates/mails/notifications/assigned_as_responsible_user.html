@@ -1,0 +1,5 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+<p><a href="{{ url_for('.user_profile', user_id=data['assigner_id'], _external=True) }}" style="color:#337ab7;">{{ get_user(data['assigner_id']).name }}</a> assigned you as responsible user for <a href="{{ url_for('.object', object_id=data['object_id'], _external=True) }}" style="color:#337ab7;">object #{{ data['object_id'] }}.</a>
+{% endblock %}

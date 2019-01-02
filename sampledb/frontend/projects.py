@@ -31,10 +31,16 @@ def project(project_id):
                     pass
             return flask.abort(403)
         other_project_ids = token_data.get('other_project_ids', [])
+        for notification in logic.notifications.get_notifications(user_id, unread_only=True):
+            if notification.type == logic.notifications.NotificationType.INVITED_TO_PROJECT:
+                if notification.data['project_id'] == project_id:
+                    logic.notifications.mark_notification_as_read(notification.id)
         try:
             logic.projects.add_user_to_project(project_id, user_id, logic.object_permissions.Permissions.READ, other_project_ids=other_project_ids)
         except logic.errors.UserAlreadyMemberOfProjectError:
             flask.flash('You are already a member of this project', 'error')
+        except logic.errors.ProjectDoesNotExistError:
+            pass
     user_id = flask_login.current_user.id
     try:
         project = logic.projects.get_project(project_id)
@@ -156,7 +162,7 @@ def project(project_id):
                             other_project_ids.append(int(other_project_id_form.project_id.data))
                     except (KeyError, ValueError):
                         pass
-                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, other_project_ids)
+                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, flask_login.current_user.id, other_project_ids)
             except logic.errors.ProjectDoesNotExistError:
                 flask.flash('This project does not exist.', 'error')
                 return flask.redirect(flask.url_for('.projects'))

@@ -1,0 +1,7 @@
+{% extends "mails/notifications/base.txt" %}
+
+
+{% block message %}
+{{ get_user(data['requester_id']).name }} (#{{ data['requester_id'] }}) has requested read permissions for object #{{ data['object_id'] }}. Click the following link to access the object permissions:
+{{ url_for('.object_permissions', object_id=data['object_id'], add_user_id=data['requester_id'], _anchor='add_user', _external=True) }}
+{% endblock %}
