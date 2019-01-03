@@ -39,6 +39,23 @@ def get_user_log_entries(user_id: int, as_user_id: typing.Optional[int]=None) ->
     return visible_user_log_entries
 
 
+def get_user_related_object_ids(user_id: int) -> typing.Set[int]:
+    """
+    Return a set of IDs of all objects related to a given user.
+
+    :param user_id: the ID of an existing user
+    :return: a set of object IDs related to the user
+    """
+    user_log_entries = UserLogEntry.query.filter_by(user_id=user_id).all()
+    user_related_object_ids = set()
+    for user_log_entry in user_log_entries:
+        if 'object_id' in user_log_entry.data:
+            user_related_object_ids.add(user_log_entry.data['object_id'])
+        elif 'object_ids' in user_log_entry.data:
+            user_related_object_ids.update(set(user_log_entry.data['object_ids']))
+    return user_related_object_ids
+
+
 def _store_new_log_entry(type: UserLogEntryType, user_id: int, data: dict):
     user_log_entry = UserLogEntry(
         type=type,

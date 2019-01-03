@@ -79,3 +79,18 @@ def test_get_user_log_entries(user1, user2, action):
     sampledb.logic.user_log.create_batch(user1.id, [object.id, 21])
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 5
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 2
+
+
+def test_get_user_related_object_ids(user1, user2):
+    assert not sampledb.logic.user_log.get_user_related_object_ids(user1.id)
+    assert not sampledb.logic.user_log.get_user_related_object_ids(user2.id)
+    sampledb.logic.user_log.create_object(user1.id, 1)
+    sampledb.logic.user_log.create_object(user1.id, 2)
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {1, 2}
+    assert not sampledb.logic.user_log.get_user_related_object_ids(user2.id)
+    sampledb.logic.user_log.edit_object(user1.id, 2, 1)
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {1, 2}
+    assert not sampledb.logic.user_log.get_user_related_object_ids(user2.id)
+    sampledb.logic.user_log.create_batch(user2.id, [3, 4])
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {1, 2}
+    assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == {3, 4}
