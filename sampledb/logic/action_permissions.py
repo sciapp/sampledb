@@ -157,10 +157,13 @@ def get_user_action_permissions(action_id, user_id, include_instrument_responsib
         exists
     """
     # ensure that the action can be found
-    action =actions.get_action(action_id)
+    action = actions.get_action(action_id)
     # ensure that the user can be found
-    users.get_user(user_id)
+    user = users.get_user(user_id)
 
+    # administrators always have GRANT permissions
+    if user.is_admin:
+        return Permissions.GRANT
     # action owners always have GRANT permissions
     if action.user_id == user_id:
         return Permissions.GRANT
