@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+<h1>Users</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Name</th>
+      <th scope="col">Profile</th>
+      <th scope="col">Activity</th>
+      <th scope="col">Objects</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <th scope="row">{{ user.id}}</th>
+      <td>{{ user.name}}</td>
+      <td><a href="{{ url_for('.user_profile', user_id=user.id) }}">View</a></td>
+      <td><a href="{{ url_for('.user_activity', user_id=user.id) }}">View</a></td>
+      <td><a href="{{ url_for('.objects', user=user.id) }}">View</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
