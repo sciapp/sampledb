@@ -57,6 +57,7 @@ def objects():
             object_ids = [int(object_id) for object_id in object_ids]
         except ValueError:
             object_ids = []
+
         readable_object_ids = []
         for object_id in object_ids:
             if Permissions.READ in get_user_object_permissions(object_id, user_id=flask_login.current_user.id):
@@ -73,6 +74,8 @@ def objects():
         project_id = None
         location_id = None
         location = None
+        user = None
+        user_id = None
         object_ids_at_location = None
         project = None
         query_string = ''
@@ -82,6 +85,18 @@ def objects():
         search_notes = []
         search_tree = None
     else:
+        try:
+            user_id = int(flask.request.args.get('user', ''))
+            user = get_user(user_id)
+            object_ids_for_user = user_log.get_user_related_object_ids(user_id)
+        except ValueError:
+            user_id = None
+            user = None
+            object_ids_for_user = None
+        except UserDoesNotExistError:
+            user_id = None
+            user = None
+            object_ids_for_user = None
         try:
             location_id = int(flask.request.args.get('location', ''))
             location = get_location(location_id)
@@ -141,6 +156,15 @@ def objects():
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
         try:
+            object_ids = None
+            if object_ids_at_location is not None:
+                if object_ids is None:
+                    object_ids = set()
+                object_ids = object_ids.union(object_ids_at_location)
+            if object_ids_for_user is not None:
+                if object_ids is None:
+                    object_ids = set()
+                object_ids = object_ids.union(object_ids_for_user)
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.READ,
@@ -148,7 +172,7 @@ def objects():
                 action_id=action_id,
                 action_type=action_type,
                 project_id=project_id,
-                object_ids=object_ids_at_location
+                object_ids=object_ids
             )
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
@@ -203,7 +227,30 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, location_id=location_id, location=location, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, must_use_advanced_search=must_use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
+    return flask.render_template(
+        'objects/objects.html',
+        objects=objects,
+        display_properties=display_properties,
+        display_property_titles=display_property_titles,
+        search_query=query_string,
+        action=action,
+        action_id=action_id,
+        action_type=action_type,
+        ActionType=ActionType,
+        project=project,
+        project_id=project_id,
+        location_id=location_id,
+        location=location,
+        user_id=user_id,
+        user=user,
+        samples=samples,
+        show_action=show_action,
+        use_advanced_search=use_advanced_search,
+        must_use_advanced_search=must_use_advanced_search,
+        advanced_search_had_error=advanced_search_had_error,
+        search_notes=search_notes,
+        search_tree=search_tree
+    )
 
 
 @jinja_filter

@@ -86,6 +86,8 @@
     {% set object_suffix = " for <a href=\"{}\">Action #{}: {}</a>".format(url_for('.action', action_id=action_id), action_id, action.name | e) | safe %}
   {% elif location_id %}
     {% set object_suffix = " for <a href=\"{}\">Location #{}: {}</a>".format(url_for('.location', location_id=location_id), location_id, location.name | e) | safe %}
+  {% elif user_id %}
+    {% set object_suffix = " for <a href=\"{}\">User #{}: {}</a>".format(url_for('.user_profile', user_id=user_id), user_id, user.name | e) | safe %}
   {% else %}
     {% set object_suffix = "" %}
   {% endif %}
