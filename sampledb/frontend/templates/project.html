@@ -6,7 +6,6 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
   <h3>Project #{{ project.id }}: {{ project.name }}</h3>
   <p>{{ project.description }}</p>
   {% if parent_project_ids %}
@@ -264,7 +263,6 @@
     </div>
   </div>
   {% endif %}
-</div>
 {% endblock %}
 
 {% block scripts %}

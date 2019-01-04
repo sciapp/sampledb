@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
 <h1>User Activity for {{ user.name }}</h1>
 <ol class="user-activity-log">
   {% for user_log_entry in user_log_entries %}
@@ -44,5 +43,4 @@
     {% endif %}
   {% endfor %}
 </ol>
-</div>
 {% endblock %}
