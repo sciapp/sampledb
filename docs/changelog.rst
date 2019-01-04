@@ -9,6 +9,7 @@ Currently in development.
 - Added custom actions
 - Added locations
 - Added notifications
+- Added search by user name
 - Improved documentation
 - Improved email design
 - Improved user interface

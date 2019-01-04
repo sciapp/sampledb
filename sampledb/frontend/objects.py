@@ -21,7 +21,7 @@ from ..logic.actions import ActionType, get_action
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
-from ..logic.users import get_user, get_users
+from ..logic.users import get_user, get_users, get_users_by_name
 from ..logic.schemas import validate, generate_placeholder
 from ..logic.object_search import generate_filter_func, wrap_filter_func
 from ..logic.groups import get_group, get_user_groups
@@ -88,15 +88,12 @@ def objects():
         try:
             user_id = int(flask.request.args.get('user', ''))
             user = get_user(user_id)
-            object_ids_for_user = user_log.get_user_related_object_ids(user_id)
         except ValueError:
             user_id = None
             user = None
-            object_ids_for_user = None
         except UserDoesNotExistError:
             user_id = None
             user = None
-            object_ids_for_user = None
         try:
             location_id = int(flask.request.args.get('location', ''))
             location = get_location(location_id)
@@ -139,6 +136,15 @@ def objects():
         use_advanced_search = flask.request.args.get('advanced', None) is not None
         must_use_advanced_search = use_advanced_search
         advanced_search_had_error = False
+        additional_search_notes = []
+        if not use_advanced_search and query_string and user_id is None:
+            users = get_users_by_name(query_string)
+            if len(users) == 1:
+                user = users[0]
+                user_id = user.id
+                query_string = ''
+            elif len(users) > 1:
+                additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
         try:
             filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
         except Exception as e:
@@ -153,6 +159,11 @@ def objects():
             else:
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
+        search_notes.extend(additional_search_notes)
+        if user_id is None:
+            object_ids_for_user = None
+        else:
+            object_ids_for_user = user_log.get_user_related_object_ids(user_id)
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
         try:
