@@ -23,3 +23,13 @@ def get_users() -> typing.List[User]:
     :return: the list of users
     """
     return User.query.all()
+
+
+def get_users_by_name(name: str) -> typing.List[User]:
+    """
+    Return all users with a given name.
+
+    :param name: the user name to search for
+    :return: the list of users with this name
+    """
+    return User.query.filter_by(name=name).all()
