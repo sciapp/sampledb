@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>User Profile</h1>
+<dl class="dl-horizontal">
+  <dt>User ID</dt>
+  <dd>#{{ user.id }}</dd>
+  <dt>Name</dt>
+  <dd>{{ user.name }}</dd>
+  <dt>Activity</dt>
+  <dd><a href="{{ url_for('.user_activity', user_id=user.id) }}">View</a></dd>
+  <dt>Objects</dt>
+  <dd><a href="{{ url_for('.objects', user=user.id) }}">View</a></dd>
+</dl>
+{% endblock %}
