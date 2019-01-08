@@ -379,7 +379,30 @@
     </div>
     </form>
   {% endif %}
-
+  <h2>Other Settings</h2>
+  <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
+    {{ other_settings_form.csrf_token }}
+    <div class="form-group">
+    <label class="col-md-4 control-label" for="input-use-schema-editor-yes">
+      Use Schema Editor
+    </label>
+    <div class="radio col-md-4">
+      <label>
+        <input type="radio" name="input-use-schema-editor" id="input-use-schema-editor-yes" value="yes" {% if user_settings["USE_SCHEMA_EDITOR"] %}checked="checked"{% endif %}>
+        Yes &mdash; Use graphical editor for editing action schemas (recommended)
+      </label>
+    </div>
+    <div class="radio col-md-4">
+      <label>
+        <input type="radio" name="input-use-schema-editor" id="input-use-schema-editor-no" value="no" {% if not user_settings["USE_SCHEMA_EDITOR"] %}checked="checked"{% endif %}>
+        No &mdash; Edit schemas as JSON using a text editor (advanced)
+      </label>
+    </div>
+      </div>
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_other_settings" value="edit_other_settings">Save</button>
+    </div>
+  </form>
 
 
 

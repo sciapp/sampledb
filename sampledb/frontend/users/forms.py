@@ -38,3 +38,8 @@ class ToggleFavoriteInstrumentForm(FlaskForm):
 
 class NotificationModeForm(FlaskForm):
     pass
+
+
+class OtherSettingsForm(FlaskForm):
+    pass
+
