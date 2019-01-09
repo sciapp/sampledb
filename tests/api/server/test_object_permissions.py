@@ -151,7 +151,7 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "string body required"
+        "message": "JSON string body required"
     }
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, 42), json="read", auth=auth)
@@ -229,7 +229,7 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "string body required"
+        "message": "JSON string body required"
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, 42), json="read", auth=auth)
@@ -297,7 +297,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "string body required"
+        "message": "JSON string body required"
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, 42), json="read", auth=auth)
@@ -413,6 +413,6 @@ def test_set_object_public(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), json="True", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "boolean body required"
+        "message": "JSON boolean body required"
     }
     assert sampledb.logic.object_permissions.object_is_public(object_id) is False

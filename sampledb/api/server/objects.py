@@ -41,7 +41,7 @@ class ObjectVersions(Resource):
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, dict):
             return {
-                "message": "JSON body required"
+                "message": "JSON object body required"
             }, 400
         for key in request_json:
             if key not in {'object_id', 'version_id', 'action_id', 'schema', 'data'}:
@@ -152,7 +152,7 @@ class Objects(Resource):
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, dict):
             return {
-                "message": "JSON body required"
+                "message": "JSON object body required"
             }, 400
         for key in request_json:
             if key not in {'object_id', 'version_id', 'action_id', 'schema', 'data'}:

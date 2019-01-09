@@ -44,7 +44,7 @@ class UserObjectPermissions(Resource):
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):
             return {
-                "message": "string body required"
+                "message": "JSON string body required"
             }, 400
         try:
             permissions = Permissions.from_name(request_json)
@@ -102,7 +102,7 @@ class GroupObjectPermissions(Resource):
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):
             return {
-                "message": "string body required"
+                "message": "JSON string body required"
             }, 400
         try:
             permissions = Permissions.from_name(request_json)
@@ -154,7 +154,7 @@ class ProjectObjectPermissions(Resource):
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):
             return {
-                "message": "string body required"
+                "message": "JSON string body required"
             }, 400
         try:
             permissions = Permissions.from_name(request_json)
@@ -191,7 +191,7 @@ class PublicObjectPermissions(Resource):
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, bool):
             return {
-                "message": "boolean body required"
+                "message": "JSON boolean body required"
             }, 400
         is_public = bool(request_json)
         object_permissions.set_object_public(object_id, is_public)
