@@ -10,7 +10,7 @@ Currently in development.
 - Added locations
 - Added notifications
 - Added search by user name
-- Added object permissions to HTTP API
+- Added users and object permissions to HTTP API
 - Improved documentation
 - Improved email design
 - Improved user interface
