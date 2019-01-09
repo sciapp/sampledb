@@ -208,7 +208,30 @@ def project(project_id):
                 logic.projects.create_subproject_relationship(project_id, child_project_id, child_can_add_users_to_parent=add_subproject_form.child_can_add_users_to_parent.data)
                 flask.flash('The subproject was successfully added to this project.', 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    return flask.render_template('project.html', get_user=logic.users.get_user, get_group=logic.groups.get_group, get_project=logic.projects.get_project, project=project, project_member_user_ids_and_permissions=project_member_user_ids_and_permissions, project_member_group_ids_and_permissions=project_member_group_ids_and_permissions, leave_project_form=leave_project_form, edit_project_form=edit_project_form, show_edit_form=show_edit_form, invite_user_form=invite_user_form, invitable_user_list=invitable_user_list, invite_group_form=invite_group_form, invitable_group_list=invitable_group_list, show_objects_link=show_objects_link, child_project_ids=child_project_ids, child_project_ids_can_add_to_parent=child_project_ids_can_add_to_parent, parent_project_ids=parent_project_ids, add_subproject_form=add_subproject_form, addable_projects=addable_projects, remove_subproject_form=remove_subproject_form)
+    return flask.render_template(
+        'project.html',
+        get_user=logic.users.get_user,
+        get_group=logic.groups.get_group,
+        get_project=logic.projects.get_project,
+        project=project,
+        project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
+        project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
+        leave_project_form=leave_project_form,
+        edit_project_form=edit_project_form,
+        show_edit_form=show_edit_form,
+        invite_user_form=invite_user_form,
+        invitable_user_list=invitable_user_list,
+        invite_group_form=invite_group_form,
+        invitable_group_list=invitable_group_list,
+        show_objects_link=show_objects_link,
+        child_project_ids=child_project_ids,
+        child_project_ids_can_add_to_parent=child_project_ids_can_add_to_parent,
+        parent_project_ids=parent_project_ids,
+        add_subproject_form=add_subproject_form,
+        addable_projects=addable_projects,
+        remove_subproject_form=remove_subproject_form,
+        user_may_edit_permissions=Permissions.GRANT in user_permissions
+    )
 
 
 @frontend.route('/projects/', methods=['GET', 'POST'])

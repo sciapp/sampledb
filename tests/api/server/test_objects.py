@@ -126,7 +126,7 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json=[]
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'JSON body required'
+    assert r.json()['message'] == 'JSON object body required'
 
     object_json = {'unknown': 1}
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
@@ -387,7 +387,7 @@ def test_create_object(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v1/objects/', json=[], auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'JSON body required'
+    assert r.json()['message'] == 'JSON object body required'
 
     object_json = {
         'action_id': action.id,

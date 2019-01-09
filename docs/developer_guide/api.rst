@@ -265,6 +265,366 @@ Updating an object / Creating a new object version
     :statuscode 404: the object does not exist
 
 
+Object Permissions
+------------------
+
+
+Reading whether an object is public
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/public
+
+    Get whether or not an object is public.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/public HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        true
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting whether an object is public
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/public
+
+    Get whether or not an object is public.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/public HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        false
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        false
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Reading all users' permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/users/
+
+    Get a mapping of user IDs to their permissions.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "1": "read",
+            "2": "grant"
+        }
+
+    :queryparam include_instrument_responsible_users: If given, permissions from being an instrument responsible user will be included (optional)
+    :queryparam include_groups: If given, permissions from group memberships will be included (optional)
+    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Reading a user's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/users/(int:user_id)
+
+    Get the permissions of a user for an object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/users/2 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "grant"
+
+    :queryparam include_instrument_responsible_users: If given, permissions from being an instrument responsible user will be included (optional)
+    :queryparam include_groups: If given, permissions from group memberships will be included (optional)
+    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object or user does not exist
+
+
+Setting a user's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/users/(int:user_id)
+
+    Set the permissions of a user for an object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/users/2 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "write"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "write"
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object or user does not exist
+
+
+Reading all groups' permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/groups/
+
+    Get a mapping of group IDs to their permissions.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/groups/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "4": "write"
+        }
+
+    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Reading a group's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/groups/(int:group_id)
+
+    Get the permissions of a group for an object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/groups/4 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "write"
+
+    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object or group does not exist
+
+
+Setting a group's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/groups/(int:group_id)
+
+    Set the permissions of a group for an object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/groups/2 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "read"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object or group does not exist
+
+
+Reading all projects' permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/projects/
+
+    Get a mapping of project IDs to their permissions.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/projects/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "7": "read"
+        }
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Reading a project's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/projects/(int:project_id)
+
+    Get the permissions of a project for an object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/projects/7 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object or project does not exist
+
+
+Setting a project's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/projects/(int:project_id)
+
+    Set the permissions of a project for an object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/projects/2 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "read"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object or project does not exist
+
+
 Instruments
 -----------
 
