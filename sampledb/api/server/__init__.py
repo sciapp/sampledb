@@ -9,7 +9,7 @@ from .actions import Action, Actions
 from .instruments import Instrument, Instruments
 from .locations import Location, Locations, ObjectLocationAssignment, ObjectLocationAssignments
 from .object_permissions import UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions
-
+from .users import User, Users
 
 api = Api()
 api.add_resource(Objects, '/api/v1/objects/', endpoint='api.objects')
@@ -31,3 +31,5 @@ api.add_resource(GroupObjectPermissions, '/api/v1/objects/<int:object_id>/permis
 api.add_resource(ProjectsObjectPermissions, '/api/v1/objects/<int:object_id>/permissions/projects/', endpoint='api.projects_object_permissions')
 api.add_resource(ProjectObjectPermissions, '/api/v1/objects/<int:object_id>/permissions/projects/<int:project_id>', endpoint='api.project_object_permissions')
 api.add_resource(PublicObjectPermissions, '/api/v1/objects/<int:object_id>/permissions/public', endpoint='api.public_object_permissions')
+api.add_resource(Users, '/api/v1/users/', endpoint='api.users')
+api.add_resource(User, '/api/v1/users/<int:user_id>', endpoint='api.user')

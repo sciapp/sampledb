@@ -823,6 +823,77 @@ Reading an action
     :statuscode 404: the action does not exist
 
 
+Users
+-----
+
+
+Reading a list of all users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/users/
+
+    Get a list of all users.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "user_id": 1,
+                "name": "Example User"
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading a user
+^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/users/(int:user_id)
+
+    Get the specific user (`user_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "name": "Example User"
+        }
+
+    :>json number user_id: the user's ID
+    :>json string name: the user's name
+    :statuscode 200: no error
+    :statuscode 404: the user does not exist
+
+
 Locations
 ---------
 
