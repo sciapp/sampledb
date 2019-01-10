@@ -917,6 +917,25 @@ def test_validate_object_schema_default_missing_required_property():
 def test_validate_sample_schema():
     schema = {
         'title': 'Example',
+        'type': 'sample',
+        'note': 'Example Note'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_sample_schema_with_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'sample',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_sample_schema_without_note():
+    schema = {
+        'title': 'Example',
         'type': 'sample'
     }
     validate_schema(wrap_into_basic_schema(schema))
