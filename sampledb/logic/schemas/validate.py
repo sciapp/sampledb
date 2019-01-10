@@ -7,8 +7,9 @@ import re
 import datetime
 import typing
 
-from ...logic import actions, objects
+from ...logic import actions, objects, datatypes
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError
+from .utils import units_are_valid
 
 
 def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Union[None, typing.List[str]]=None) -> None:
@@ -307,10 +308,24 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
         raise ValidationError('expected _type "quantity"', path)
     if not isinstance(instance['units'], str):
         raise ValidationError('units must be str', path)
-    if not isinstance(instance['dimensionality'], str):
-        raise ValidationError('dimensionality must be str', path)
+    if not units_are_valid(instance['units']):
+        raise ValidationError('Invalid/Unknown units', path)
     if not isinstance(instance['magnitude_in_base_units'], float) and not isinstance(instance['magnitude_in_base_units'], int):
         raise ValidationError('magnitude_in_base_units must be float or int', path)
+    try:
+        quantity = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'])
+    except Exception:
+        raise ValidationError('Unable to create quantity', path)
+    if not isinstance(instance['dimensionality'], str):
+        raise ValidationError('dimensionality must be str', path)
+    try:
+        schema_quantity = datatypes.Quantity(1.0, units=schema['units'])
+    except Exception:
+        raise ValidationError('Unable to create schema quantity', path)
+    if quantity.dimensionality != schema_quantity.dimensionality:
+        raise ValidationError('Invalid units, expected units for dimensionality "{}"'.format(str(schema_quantity.dimensionality)), path)
+    if str(quantity.dimensionality) != instance['dimensionality']:
+        raise ValidationError('Invalid dimensionality, expected "{}"'.format(str(schema_quantity.dimensionality)), path)
 
 
 def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> None:

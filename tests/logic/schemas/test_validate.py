@@ -324,7 +324,8 @@ def test_validate_bool_invalid_type():
 def test_validate_quantity():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -338,7 +339,8 @@ def test_validate_quantity():
 def test_validate_quantity_invalid():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = []
     with pytest.raises(ValidationError):
@@ -348,7 +350,8 @@ def test_validate_quantity_invalid():
 def test_validate_quantity_missing_key():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -362,7 +365,8 @@ def test_validate_quantity_missing_key():
 def test_validate_quantity_invalid_key():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -378,7 +382,8 @@ def test_validate_quantity_invalid_key():
 def test_validate_quantity_invalid_quantity_dimensionality_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -393,7 +398,8 @@ def test_validate_quantity_invalid_quantity_dimensionality_type():
 def test_validate_quantity_invalid_quantity_units_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -408,7 +414,8 @@ def test_validate_quantity_invalid_quantity_units_type():
 def test_validate_quantity_invalid_quantity_magnitude_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -423,7 +430,8 @@ def test_validate_quantity_invalid_quantity_magnitude_type():
 def test_validate_quantity_invalid_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'Quantity',
