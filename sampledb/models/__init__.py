@@ -12,6 +12,7 @@ from . import locations
 from . import objects
 from . import object_permissions
 from . import projects
+from . import settings
 from . import users
 
 from .actions import Action, ActionType
@@ -29,6 +30,7 @@ from .object_log import ObjectLogEntry, ObjectLogEntryType
 from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
+from .settings import Settings
 from .tags import Tag
 from .users import User, UserType
 from .user_log import UserLogEntry, UserLogEntryType
