@@ -23,6 +23,7 @@ from . import object_permissions
 from . import projects
 from . import schemas
 from . import security_tokens
+from . import settings
 from . import tags
 from . import units
 from . import users
