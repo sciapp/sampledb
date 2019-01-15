@@ -148,3 +148,15 @@ class ObjectLocationAssignmentDoesNotExistError(Exception):
 
 class NotificationDoesNotExistError(Exception):
     pass
+
+
+class OnlyOneAuthenticationMethod(Exception):
+    pass
+
+
+class AuthenticationMethodWrong(Exception):
+    pass
+
+
+class AuthenticationMethodAlreadyExists(Exception):
+    pass

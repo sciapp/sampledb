@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.logic.authentication import add_authentication_to_db
+from sampledb.logic.authentication import add_email_authentication
 from sampledb.logic import object_permissions, groups, projects
 
 
@@ -24,15 +24,7 @@ def user(flask_server):
         user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        # force attribute refresh
-        password = 'abc.123'
-        confirmed = True
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': 'example@fz-juelich.de',
-            'bcrypt_hash': pw_hash
-        }
-        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -372,7 +364,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'The password must be of minimum 3 characters' in r.content.decode('utf-8')
+    assert 'The password must be at least 3 characters long' in r.content.decode('utf-8')
 
     #  add identically authentication_method
     r = session.post(url, {
@@ -383,7 +375,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Ldap-Account already exists' in r.content.decode('utf-8')
+    assert 'An authentication method with this login already exists' in r.content.decode('utf-8')
 
     #  add ldap-account , second ldap account not possible
     r = session.post(url, {
@@ -394,7 +386,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Ldap-Account already exists' in r.content.decode('utf-8')
+    assert 'An LDAP-based authentication method already exists for this user' in r.content.decode('utf-8')
 
     #  add authentication-email without email
     r = session.post(url, {
@@ -405,7 +397,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Login must be an email if the authentication_method is email' in r.content.decode('utf-8')
+    assert 'Login must be a valid email address' in r.content.decode('utf-8')
 
 
 def test_user_add_email_authentication_method(flask_server, user):
@@ -555,7 +547,7 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     assert r.status_code == 200
     # Check if an confirmation mail was not sent
     assert len(outbox) == 0
-    assert 'This Email-authentication-method already exists' in r.content.decode('utf-8')
+    assert 'An authentication method with this login already exists' in r.content.decode('utf-8')
 
 
 def test_user_remove_authentication_method(flask_server):

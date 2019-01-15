@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 from sampledb.logic.security_tokens import generate_token
-from sampledb.logic.authentication import add_authentication_to_db, validate_user_db
 
 
 from tests.test_utils import flask_server, app
@@ -23,14 +22,7 @@ def user(flask_server):
         user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        confirmed = True
-        password = 'abc.123'
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': 'example@fz-juelich.de',
-            'bcrypt_hash': pw_hash
-        }
-        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -104,14 +96,14 @@ def test_send_invitation(flask_server, user):
         'csrf_token': csrf_token
     })
     assert r.status_code == 200
-    assert 'registration successful' in r.content.decode('utf-8')
+    assert 'Your registration was successful.' in r.content.decode('utf-8')
     # check , if user is added to db
     with flask_server.app.app_context():
         assert len(sampledb.models.User.query.all()) == 2
 
     # test login
     with flask_server.app.app_context():
-        assert validate_user_db('d.henkel@fz-juelich.de', 'test')
+        assert sampledb.logic.authentication.login('d.henkel@fz-juelich.de', 'test')
 
 
 def test_registration_without_token_not_available(flask_server):
@@ -237,11 +229,5 @@ def test_send_registration_with_email_already_exists_in_authentication_method(fl
         'csrf_token': csrf_token
     })
     assert r.status_code == 200
-    # check, if registrated user has only one authentication_method
-    with flask_server.app.app_context():
-        assert len(sampledb.models.Authentication.query.all()) == 1
-
-    #check, if new password works
-    with flask_server.app.app_context():
-        assert validate_user_db('example@fz-juelich.de', 'test')
+    assert 'There already is an account with this email address' in r.content.decode('utf-8')
 

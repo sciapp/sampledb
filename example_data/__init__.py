@@ -27,8 +27,8 @@ def setup_data(app):
         sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
-    api_user = User(name="API User", email="example@fz-juelich.de", type=UserType.OTHER)
-    sampledb.logic.authentication.insert_user_and_authentication_method_to_db(api_user, 'password', 'api', AuthenticationType.OTHER)
+    api_user = sampledb.logic.users.create_user(name="API User", email="example@fz-juelich.de", type=UserType.OTHER)
+    sampledb.logic.authentication.add_other_authentication(api_user.id, 'api', 'password')
 
     group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id).id
 

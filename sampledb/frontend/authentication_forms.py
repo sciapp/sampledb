@@ -21,7 +21,7 @@ class NewUserForm(FlaskForm):
 
 
 class ChangeUserForm(FlaskForm):
-    name = StringField('Full Name', validators=[DataRequired()])
+    name = StringField('Full Name', validators=[DataRequired(), Length(min=1)])
     email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
                                              Email("Please enter your contact email.")])
     submit = SubmitField('Change Settings')

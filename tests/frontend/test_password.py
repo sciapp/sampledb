@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
-from sampledb.logic.authentication import add_authentication_to_db, validate_user_db
 
 
 from tests.test_utils import flask_server, app
@@ -20,17 +19,8 @@ from tests.test_utils import flask_server, app
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        sampledb.db.session.add(user)
-        sampledb.db.session.commit()
-        confirmed = True
-        password = 'abc.123'
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': 'example@fz-juelich.de',
-            'bcrypt_hash': pw_hash
-        }
-        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123')
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -125,5 +115,5 @@ def test_new_password_send(flask_server, user):
     })
     assert r.status_code == 200
     with flask_server.app.app_context():
-        assert validate_user_db('example@fz-juelich.de', 'test')
+        assert sampledb.logic.authentication.login('example@fz-juelich.de', 'test')
 

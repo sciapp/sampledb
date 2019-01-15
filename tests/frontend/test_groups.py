@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.logic.authentication import add_authentication_to_db
+from sampledb.logic.authentication import add_email_authentication
 
 from tests.test_utils import flask_server, app, app_context
 
@@ -33,15 +33,7 @@ def user(flask_server):
     user = sampledb.models.User(name="Basic User2", email="example2@fz-juelich.de", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    # force attribute refresh
-    password = 'abc.123'
-    confirmed = True
-    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    log = {
-        'login': 'example@fz-juelich.de',
-        'bcrypt_hash': pw_hash
-    }
-    add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+    add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
     # force attribute refresh
     assert user.id is not None
     # Check if authentication-method add to db
