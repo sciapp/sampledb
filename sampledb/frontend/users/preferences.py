@@ -58,6 +58,7 @@ def user_preferences(user_id):
 
 def change_preferences(user, user_id):
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
+    authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
     confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed==True).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
@@ -105,7 +106,7 @@ def change_preferences(user, user_id):
             change_user_form.email.data = user.email
 
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
-        if authentication_password_form.validate_on_submit():
+        if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
             authentication_method_id = authentication_password_form.id.data
             try:
                 change_password_in_authentication_method(authentication_method_id, authentication_password_form.password.data)
