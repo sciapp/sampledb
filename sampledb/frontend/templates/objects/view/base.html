@@ -32,30 +32,30 @@
   {% if not is_archived %}
     {% if user_may_edit %}
     <div class="form-group">
-      <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary"><i class="fa fa-pencil" aria-hidden="true"></i> Edit Object</a>
+      <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new version of the information for this object."><i class="fa fa-pencil" aria-hidden="true"></i> Edit Object</a>
     </div>
     {% endif %}
     {% if user_may_edit and new_schema_available %}
     <div class="form-group">
-      <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary"><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> Update Schema</a>
+      <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Update the schema for the information for this object."><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> Update Schema</a>
     </div>
     {% endif %}
     {% if user_may_grant %}
     <div class="form-group">
-      <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-lock" aria-hidden="true"></i> Edit Permissions</a>
+      <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Modify who can read the information for this object, write it or grant permissions to other users."><i class="fa fa-lock" aria-hidden="true"></i> Edit Permissions</a>
     </div>
     {% endif %}
     <div class="form-group">
-      <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
+      <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new object based on the information for this object."><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
     </div>
     <div class="form-group">
-      <a href="{{ url_for('.print_object_label', object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-tag" aria-hidden="true"></i> Show Labels</a>
+      <a href="{{ url_for('.print_object_label', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Show a PDF containing labels for this object."><i class="fa fa-tag" aria-hidden="true"></i> Show Labels</a>
     </div>
     <div class="form-group">
-      <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal"><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
+      <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal" data-toggle="tooltip" data-placement="top" title="Show a QR code for a link to this object."><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
     </div>
     <div class="form-group">
-      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button>
+      <div data-toggle="tooltip" data-placement="top" title="Show a PDF containting the information for this object."><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button></div>
     </div>
   {% endif %}
     {% if restore_form is not none %}

@@ -28,7 +28,16 @@
     <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
   {% endif %}
   {% if may_edit %}
-    <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default">Edit Action</a>
+    <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action.">Edit Action</a>
   {% endif %}
-  <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default">Use as Template</a>
+  <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Create a new custom action based on the settings for this action.">Use as Template</a>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>
 {% endblock %}
