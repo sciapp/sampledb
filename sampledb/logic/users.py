@@ -5,8 +5,9 @@
 
 import typing
 
+from .. import db
 from . import errors
-from .. models import User
+from .. models import User, UserType
 
 
 def get_user(user_id: int) -> User:
@@ -33,3 +34,10 @@ def get_users_by_name(name: str) -> typing.List[User]:
     :return: the list of users with this name
     """
     return User.query.filter_by(name=name).all()
+
+
+def create_user(name: str, email: str, type: UserType) -> User:
+    user = User(name=name, email=email, type=type)
+    db.session.add(user)
+    db.session.commit()
+    return user

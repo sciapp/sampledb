@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
 from sampledb.logic.ldap import LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
-from sampledb.logic.authentication import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, AuthenticationMethodAlreadyExists
+from sampledb.logic.errors import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, AuthenticationMethodAlreadyExists
 from sampledb.logic.authentication import remove_authentication_method, change_password_in_authentication_method
 import sampledb
 import sampledb.models
@@ -93,37 +93,37 @@ def test_login_user(flask_server, users):
 
 def test_add_login_ldap(flask_server, users):
     with pytest.raises(LdapAccountOrPasswordWrong) as excinfo:
-        sampledb.logic.authentication.add_login(1, 'henkel', 'abc', AuthenticationType.LDAP)
+        sampledb.logic.authentication.add_authentication_method(1, 'henkel', 'abc', AuthenticationType.LDAP)
     # wrong password
     assert 'Ldap login or password wrong' in str(excinfo.value)
 
     username = flask_server.app.config['TESTING_LDAP_LOGIN']
     password = flask_server.app.config['TESTING_LDAP_PW']
-    user = sampledb.logic.authentication.add_login(1, username, password, AuthenticationType.LDAP)
+    user = sampledb.logic.authentication.add_authentication_method(1, username, password, AuthenticationType.LDAP)
     assert user is True
 
     with pytest.raises(LdapAccountAlreadyExist) as excinfo:
-        user = sampledb.logic.authentication.add_login(1, 'henkel', 'xxx', AuthenticationType.LDAP)
+        user = sampledb.logic.authentication.add_authentication_method(1, 'henkel', 'xxx', AuthenticationType.LDAP)
     # no second ldap authentication possible
     assert 'Ldap-Account already exists'
 
 
 def test_add_login(flask_server, users):
     with pytest.raises(AuthenticationMethodWrong) as excinfo:
-        user = sampledb.logic.authentication.add_login(3, "web.de", 'abc123', AuthenticationType.EMAIL)
+        user = sampledb.logic.authentication.add_authentication_method(3, "web.de", 'abc123', AuthenticationType.EMAIL)
     # no email
-    assert 'Login must be an email if the authentication_method is email'
+    assert 'Login must be a valid email address'
 
     # add authentication-method without password not allowed
-    result = sampledb.logic.authentication.add_login(3, "www@web.de", '', AuthenticationType.EMAIL)
+    result = sampledb.logic.authentication.add_authentication_method(3, "www@web.de", '', AuthenticationType.EMAIL)
     assert result is False
 
     # add authentication-method without login not allowed
-    result = sampledb.logic.authentication.add_login(3, None, 'xxx', AuthenticationType.EMAIL)
+    result = sampledb.logic.authentication.add_authentication_method(3, None, 'xxx', AuthenticationType.EMAIL)
     assert result is False
 
     # add authentication-method without login not allowed
-    result = sampledb.logic.authentication.add_login(3, 'www@web.de', 'xxx', None)
+    result = sampledb.logic.authentication.add_authentication_method(3, 'www@web.de', 'xxx', None)
     assert result is False
 
 
@@ -131,20 +131,20 @@ def test_add_login_email(app, users):
     # add authentication-method email
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
-        result = sampledb.logic.authentication.add_login(3, 'www@web.de', 'xxx', AuthenticationType.EMAIL)
+        result = sampledb.logic.authentication.add_authentication_method(3, 'www@web.de', 'xxx', AuthenticationType.EMAIL)
         assert result is True
 
 
 def test_add_login_other_not_allowed(flask_server, users):
     # add other authentication-method not allowed
-    result = sampledb.logic.authentication.add_login(3, "experiment", 'abc123', AuthenticationType.OTHER)
+    result = sampledb.logic.authentication.add_authentication_method(3, "experiment", 'abc123', AuthenticationType.OTHER)
     assert result is False
 
 
 def test_add_login_email_method_already_exists(flask_server, users):
     with pytest.raises(AuthenticationMethodAlreadyExists) as excinfo:
-        user = sampledb.logic.authentication.add_login(1, 'example1@fz-juelich.de', 'abc', AuthenticationType.EMAIL)
-    assert 'This Email-authentication-method already exists' in str(excinfo.value)
+        user = sampledb.logic.authentication.add_authentication_method(1, 'example1@fz-juelich.de', 'abc', AuthenticationType.EMAIL)
+    assert 'An authentication method with this login already exists' in str(excinfo.value)
 
 
 def test_remove_authentication_method(flask_server, users):
@@ -153,39 +153,29 @@ def test_remove_authentication_method(flask_server, users):
     password = flask_server.app.config['TESTING_LDAP_PW']
 
     with pytest.raises(OnlyOneAuthenticationMethod) as excinfo:
-        remove_authentication_method(user.id, 1)
+        remove_authentication_method(1)
 
     assert 'one authentication-method must at least exist, delete not possible' in str(excinfo.value)
 
-    sampledb.logic.authentication.add_login(user.id, username, password, AuthenticationType.LDAP)
+    sampledb.logic.authentication.add_authentication_method(user.id, username, password, AuthenticationType.LDAP)
 
     assert len(user.authentication_methods) == 2
     authentication_id = user.authentication_methods[0].id
-    result = remove_authentication_method(user.id, authentication_id)
+    result = remove_authentication_method(authentication_id)
 
     assert len(user.authentication_methods) == 1
 
 
 def test_change_password_in_authentication_method(flask_server, users):
-
-    user_id = users[0].id
-    result = change_password_in_authentication_method(user_id, 10, 'abc')
+    result = change_password_in_authentication_method(10, 'abc')
     # authentication_method_id not exist
     assert result is False
 
-    result = change_password_in_authentication_method(user_id, None, 'abc')
-    # authentication_method_id is None
-    assert result is False
-
-    result = change_password_in_authentication_method(None, 1, 'abc')
-    # user_id is None
-    assert result is False
-
-    result = change_password_in_authentication_method(user_id, 10, '')
+    result = change_password_in_authentication_method(10, '')
     # password empty
     assert result is False
 
-    result = change_password_in_authentication_method(user_id, 1, 'xxxx')
+    result = change_password_in_authentication_method(1, 'xxxx')
     # password will be changed
     assert result is True
 
@@ -193,15 +183,15 @@ def test_change_password_in_authentication_method(flask_server, users):
     password = flask_server.app.config['TESTING_LDAP_PW']
     user = sampledb.logic.authentication.login(username, password)
     assert user is not None
-    user_id = user.id
+
     authentication_id = user.authentication_methods[0].id
-    result = change_password_in_authentication_method(user_id, authentication_id, 'abc')
+    result = change_password_in_authentication_method(authentication_id, 'abc')
     # authentication_method is LDAP, password not changed
     assert result is False
 
     user_id = users[2].id
     user = users[2]
     authentication_id = user.authentication_methods[0].id
-    result = change_password_in_authentication_method(user_id, authentication_id, 'abc')
+    result = change_password_in_authentication_method(authentication_id, 'abc')
     # change password if authentication_method is OTHER
     assert result is True

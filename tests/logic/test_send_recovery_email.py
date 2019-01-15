@@ -9,7 +9,7 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 from sampledb.logic.security_tokens import generate_token
-from sampledb.logic.authentication import add_authentication_to_db
+from sampledb.logic.authentication import add_email_authentication
 
 
 from ..test_utils import flask_server, app
@@ -32,14 +32,7 @@ def user(app):
         user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        confirmed = True
-        password = 'abc.123'
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': 'example@fz-juelich.de',
-            'bcrypt_hash': pw_hash
-        }
-        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -53,14 +46,7 @@ def user2(app):
         user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        confirmed = True
-        password = 'abc.123'
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': 'example@fz-juelich.de',
-            'bcrypt_hash': pw_hash
-        }
-        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        add_email_authentication(user.id, 'example2@fz-juelich.de', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db

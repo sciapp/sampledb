@@ -4,49 +4,96 @@ import typing
 
 from .. import logic, db
 from ..logic.ldap import validate_user, get_user_info, LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
-from ..models import Authentication, AuthenticationType
+from ..models import Authentication, AuthenticationType, User
+from . import errors
 
 
-class OnlyOneAuthenticationMethod(Exception):
-    pass
+def _hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
-class AuthenticationMethodWrong(Exception):
-    pass
+def _validate_password_hash(password: str, password_hash: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
 
 
-class AuthenticationMethodAlreadyExists(Exception):
-    pass
+def _validate_password_authentication(authentication_method: Authentication, password: str) -> bool:
+    password_hash = authentication_method.login['bcrypt_hash']
+    return _validate_password_hash(password, password_hash)
 
 
-def validate_user_db(login, password):
-    authentication_methods = Authentication.query.filter(Authentication.login['login'].astext == login.lower()).all()
-    for authentication_method in authentication_methods:
-        if authentication_method.confirmed:
-            if bcrypt.checkpw(password.encode('utf-8'), authentication_method.login['bcrypt_hash'].encode('utf-8')):
-                user = authentication_method.user
-                return True
-    return False
-
-
-def insert_user_and_authentication_method_to_db(user, password, login, user_type):
-    db.session.add(user)
-    db.session.commit()
-    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    login_data = {
-        'login': login.lower(),
-        'bcrypt_hash': pw_hash
-    }
-    add_authentication_to_db(login_data, user_type, True, user.id)
-
-
-def add_authentication_to_db(log, user_type, confirmed, user_id):
-    auth = Authentication(log, user_type, confirmed, user_id)
-    db.session.add(auth)
+def _add_password_authentication(user_id: int, login: str, password: str, authentication_type: AuthenticationType, confirmed: bool = True) -> None:
+    if Authentication.query.filter(Authentication.login['login'].astext == login.lower()).first():
+        raise errors.AuthenticationMethodAlreadyExists('An authentication method with this login already exists')
+    authentication = Authentication(
+        login={'login': login.lower(), 'bcrypt_hash': _hash_password(password)},
+        authentication_type=authentication_type,
+        confirmed=confirmed,
+        user_id=user_id
+    )
+    db.session.add(authentication)
     db.session.commit()
 
 
-def login(login, password):
+def add_other_authentication(user_id: int, name: str, password: str, confirmed: bool = True) -> None:
+    """
+    Add an authentication method of type OTHER for a given user.
+
+    :param user_id: the ID of an existing user
+    :param name: the name to use during authentication
+    :param password: the password
+    :param confirmed: whether the authentication method has been confirmed already
+    """
+    _add_password_authentication(user_id, name, password, AuthenticationType.OTHER, confirmed)
+
+
+def add_email_authentication(user_id: int, email: str, password: str, confirmed: bool = True) -> None:
+    """
+    Add an authentication method of type EMAIL for a given user.
+
+    :param user_id: the ID of an existing user
+    :param email: the email to use during authentication
+    :param password: the password
+    :param confirmed: whether the authentication method has been confirmed already
+    """
+    if '@' not in email[1:-1]:
+        raise errors.AuthenticationMethodWrong('Login must be a valid email address')
+    _add_password_authentication(user_id, email, password, AuthenticationType.EMAIL, confirmed)
+    if not confirmed:
+        logic.utils.send_confirm_email(email, user_id, 'add_login')
+
+
+def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirmed: bool = True) -> None:
+    """
+    Add an authentication method of type LDAP for a given user.
+
+    :param user_id: the ID of an existing user
+    :param ldap_uid: the LDAP uid to use during authentication
+    :param confirmed: whether the authentication method has been confirmed already
+    """
+    if Authentication.query.filter(Authentication.login['login'].astext == ldap_uid.lower()).first():
+        raise errors.AuthenticationMethodAlreadyExists('An authentication method with this login already exists')
+    if Authentication.query.filter(Authentication.type == AuthenticationType.LDAP, Authentication.user_id == user_id).first():
+        raise LdapAccountAlreadyExist('An LDAP-based authentication method already exists for this user')
+    if not validate_user(ldap_uid.lower(), password):
+        raise LdapAccountOrPasswordWrong('Ldap login or password wrong')
+    authentication = Authentication(
+        login={'login': ldap_uid.lower()},
+        authentication_type=AuthenticationType.LDAP,
+        confirmed=confirmed,
+        user_id=user_id
+    )
+    db.session.add(authentication)
+    db.session.commit()
+
+
+def login(login: str, password: str) -> typing.Optional[User]:
+    """
+    Authenticate a user and create an LDAP based user if necessary.
+
+    :param login: the name, email or LDAP uid to use during authentication
+    :param password: the password
+    :return: the user or None
+    """
     # convert to lower case to enforce case insensitivity
     login = login.lower()
     # filter email + password or username + password or username (ldap)
@@ -62,16 +109,16 @@ def login(login, password):
     ).all()
 
     for authentication_method in authentication_methods:
-        # authentificaton method in db is ldap
+        if not authentication_method.confirmed:
+            continue
         if authentication_method.type == AuthenticationType.LDAP:
-            result = validate_user(login, password)
-        else:
-            result = validate_user_db(login, password)
-        if result:
-            user = authentication_method.user
-            return user
+            if validate_user(login, password):
+                return authentication_method.user
+        elif authentication_method.type in {AuthenticationType.EMAIL, AuthenticationType.OTHER}:
+            if _validate_password_authentication(authentication_method, password):
+                return authentication_method.user
 
-    # no authentificaton method in db
+    # no matching authentication method in db
     if not authentication_methods and '@' not in login:
         # try to authenticate against ldap, if login is no email
         if not validate_user(login, password):
@@ -82,87 +129,89 @@ def login(login, password):
             return None
         db.session.add(user)
         db.session.commit()
-        add_authentication_to_db({'login': login}, user_type=AuthenticationType.LDAP, confirmed=True, user_id=user.id)
+        add_ldap_authentication(user.id, login, password)
         return user
     return None
 
 
-def add_login(userid, login, password, authentication_method):
-    if password is None or password =='':
+def add_authentication_method(user_id: int, login: str, password: str, authentication_type: AuthenticationType) -> bool:
+    """
+    Add an authentication method for a user.
+
+    :param user_id: the ID of an existing user
+    :param login: the name, email or LDAP uid to use
+    :param password: the password
+    :param authentication_type: the type of authentication
+    :return: whether or not the authentication method was added
+    :raise errors.AuthenticationMethodAlreadyExists: if the authentication method exists already
+    :raise errors.AuthenticationMethodWrong: if the authentication method was used in a wrong way
+    :raise errors.LdapAccountAlreadyExist: if a user with this LDAP account already exists
+    :raise errors.LdapAccountOrPasswordWrong: if the LDAP account and password could not be validated
+    """
+    if password is None or password == '':
         return False
     if login is None or login == '':
         return False
     # convert to lower case to enforce case insensitivity
     login = login.lower()
-    logins = Authentication.query.filter(Authentication.login['login'].astext == login,
-                                         Authentication.user_id == userid).first()
-    ldaplogin = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP,
-                                            Authentication.user_id == userid).first()
-    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    log = {
-        'login': login,
-        'bcrypt_hash': pw_hash
-    }
-    if authentication_method == AuthenticationType.EMAIL:
-        # check if login looks like an email
-        if '@' not in login:
-            raise AuthenticationMethodWrong('Login must be an email if the authentication_method is email')
-        else:
-            if Authentication.query.filter(Authentication.login['login'].astext == login).first():
-                raise AuthenticationMethodAlreadyExists('This Email-authentication-method already exists')
-            # send confirm link
-            logic.utils.send_confirm_email(login, userid, 'add_login')
-            confirmed = False
-    elif authentication_method == AuthenticationType.OTHER:
-        confirmed = True
-        return False
-    elif authentication_method == AuthenticationType.LDAP:
-        if logins is not None:
-            # authentication-method already exists
-            raise LdapAccountAlreadyExist('Ldap-Account already exists')
-        if ldaplogin is not None:
-            raise LdapAccountAlreadyExist('Ldap-Account already exists')
-        if not validate_user(login, password):
-            raise LdapAccountOrPasswordWrong('Ldap login or password wrong')
-        confirmed = True
-    else:
-        return False
-    add_authentication_to_db(log, authentication_method, confirmed, userid)
-    return True
+
+    if authentication_type == AuthenticationType.LDAP:
+        add_ldap_authentication(user_id, login, password)
+        return True
+    if authentication_type == AuthenticationType.EMAIL:
+        add_email_authentication(user_id, login, password, False)
+        return True
+    return False
 
 
-def remove_authentication_method(user_id, authentication_method_id):
-    authentication_methods_count = Authentication.query.filter(Authentication.user_id == user_id).count()
+def remove_authentication_method(authentication_method_id: int) -> bool:
+    """
+    Remove an authentication method.
+
+    :param authentication_method_id: the ID of an existing authentication method
+    :return:
+    """
+    authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
+    if authentication_method is None:
+        return False
+    authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id).count()
     if authentication_methods_count <= 1:
-        raise OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
-    authentication_methods = Authentication.query.filter(Authentication.id == authentication_method_id).first()
-    if authentication_methods is None:
-        return False
-    db.session.delete(authentication_methods)
+        raise errors.OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
+    db.session.delete(authentication_method)
     db.session.commit()
     return True
 
 
-def change_password_in_authentication_method(user_id, authentication_method_id, password):
-    if user_id is None or user_id <= 0:
+def change_password_in_authentication_method(authentication_method_id: int, password: str) -> bool:
+    """
+    Change the password for a password-based authentication method.
+
+    :param authentication_method_id: the ID of an authentication method
+    :param password: the new password
+    :return: whether the password was changed
+    """
+    if password is None or password == '':
         return False
     if authentication_method_id is None or authentication_method_id <= 0:
         return False
-    authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id, Authentication.user_id==user_id).first()
+    authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
     if authentication_method is None:
         return False
-    if password is None or password == '':
+    if authentication_method.type not in {AuthenticationType.EMAIL, AuthenticationType.OTHER}:
         return False
-    if authentication_method.type.name == 'LDAP':
-        return False
-    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    authentication_method.login = {'login': authentication_method.login['login'], 'bcrypt_hash': pw_hash}
+    authentication_method.login = {'login': authentication_method.login['login'], 'bcrypt_hash': _hash_password(password)}
     db.session.add(authentication_method)
     db.session.commit()
     return True
 
 
 def get_user_ldap_uid(user_id: int) -> typing.Optional[str]:
+    """
+    Get the LDAP uid for a user.
+
+    :param user_id: the ID of an existing user
+    :return: the user's LDAP uid or None
+    """
     authentication_method = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP, Authentication.user_id==user_id).first()
     if not authentication_method:
         return None

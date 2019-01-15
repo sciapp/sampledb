@@ -5,7 +5,6 @@
 
 import flask
 import flask_login
-import bcrypt
 
 from ... import db
 
@@ -16,7 +15,7 @@ from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, Ob
 from .forms import NotificationModeForm
 
 from ...logic import user_log
-from ...logic.authentication import add_login, remove_authentication_method, change_password_in_authentication_method
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
@@ -99,16 +98,18 @@ def change_preferences(user, user_id):
     projects = get_user_projects(flask_login.current_user.id)
     projects = [project for project in projects if project.id not in project_permissions]
 
-    if change_user_form.name.data is None or change_user_form.name.data == "":
-        change_user_form.name.data = user.name
-    if change_user_form.email.data is None or change_user_form.email.data == "":
-        change_user_form.email.data = user.email
+    if 'change' not in flask.request.form:
+        if change_user_form.name.data is None or change_user_form.name.data == "":
+            change_user_form.name.data = user.name
+        if change_user_form.email.data is None or change_user_form.email.data == "":
+            change_user_form.email.data = user.email
 
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
         if authentication_password_form.validate_on_submit():
             authentication_method_id = authentication_password_form.id.data
             try:
-                change_password_in_authentication_method(user_id, authentication_method_id, authentication_password_form.password.data)
+                change_password_in_authentication_method(authentication_method_id, authentication_password_form.password.data)
+                flask.flash("Successfully updated your password.", 'success')
             except Exception as e:
                 flask.flash("Failed to change password.", 'error')
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
@@ -134,23 +135,29 @@ def change_preferences(user, user_id):
                                              authentications=authentication_methods, error=str(e))
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
+        else:
+            flask.flash("Failed to change the password.", 'error')
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
+            print("!!!", repr(change_user_form.name.data))
             if change_user_form.name.data != user.name:
                 u = user
                 u.name = str(change_user_form.name.data)
                 db.session.add(u)
                 db.session.commit()
                 user_log.edit_user_preferences(user_id=user_id)
+                flask.flash("Successfully updated your user name.", 'success')
             if change_user_form.email.data != user.email:
                 # send confirm link
                 send_confirm_email(change_user_form.email.data, user.id, 'edit_profile')
-            return flask.redirect(flask.url_for('frontend.index'))
+                flask.flash("Please see your email to confirm this change.", 'success')
+            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
         authentication_method_id = authentication_method_form.id.data
         if authentication_method_form.validate_on_submit():
             try:
-                remove_authentication_method(user_id, authentication_method_id)
+                remove_authentication_method(authentication_method_id)
+                flask.flash("Successfully removed the authentication method.", 'success')
             except Exception as e:
                 flask.flash("Failed to remove the authentication method.", 'error')
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
@@ -190,8 +197,10 @@ def change_preferences(user, user_id):
             authentication_method = all_authentication_methods[authentication_form.authentication_method.data]
             # check, if additional authentication is correct
             try:
-                add_login(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
+                add_authentication_method(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
+                flask.flash("Successfully added the authentication method.", 'success')
             except Exception as e:
+                flask.flash("Failed to add an authentication method.", 'error')
                 return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                              authentication_password_form=authentication_password_form,
                                              default_permissions_form=default_permissions_form,
@@ -214,6 +223,8 @@ def change_preferences(user, user_id):
                                              confirmed_authentication_methods=confirmed_authentication_methods,
                                              authentications=authentication_methods, error_add=str(e))
             authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
+        else:
+            flask.flash("Failed to add an authentication method.", 'error')
     if 'edit_user_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
         set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
         for user_permissions_data in default_permissions_form.user_permissions.data:
@@ -279,6 +290,7 @@ def change_preferences(user, user_id):
                         break
         flask.flash("Successfully updated your notification settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed==True).count()
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                  authentication_password_form=authentication_password_form,
                                  default_permissions_form=default_permissions_form,
@@ -377,10 +389,10 @@ def reset_password():
                                      user=authentication_method.user, username=username)
     else:
         if password_form.validate_on_submit():
-            pw_hash = bcrypt.hashpw(password_form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            authentication_method.login = {'login': username, 'bcrypt_hash': pw_hash}
-            db.session.add(authentication_method)
-            db.session.commit()
+            if change_password_in_authentication_method(authentication_method.id, password_form.password.data):
+                flask.flash("Your password has been reset.", 'success')
+            else:
+                flask.flash("Resetting your password failed. Please try again or contact an administrator.", 'error')
             return flask.redirect(flask.url_for('frontend.index'))
         return flask.render_template('password.html', password_form=password_form, has_error=has_error,
                                      user=authentication_method.user, username=username)
