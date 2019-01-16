@@ -4,7 +4,7 @@ Changelog
 Version 0.3
 -----------
 
-Currently in development.
+Released on Januar 16th, 2019.
 
 - Added custom actions
 - Added locations
