@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pygments.css') }}">
+{% endblock %}
+
+
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="alert alert-warning">
+    <p><strong>Warning:</strong> Custom Actions are an advanced feature that most users of iffSamples will not need. See the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">User Guide</a> for more information.</p>
+  </div>
+  <form method="post">
+  {{ action_form.hidden_tag() }}
+    <div class="col-md-12">
+      <div class="form-group {% if action_form.name.name in action_form.errors %}has-error{% endif %}">
+        <label for="input-name" class="control-label">Name</label>
+         <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ action_form.name.name }}" value="{{ action_form.name.data or '' }}">
+      </div>
+      <div class="checkbox {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
+        <label for="input-public" style="font-weight:700">
+          <input type="checkbox" id="input-public" name="{{ action_form.is_public.name }}" {% if action_form.is_public.data %}checked="checked"{% endif %} {% if not may_change_public %}disabled="disabled"{% endif %}> Public
+        </label>
+      </div>
+      <div class="form-group {% if action_form.type.name in action_form.errors %}has-error{% endif %}">
+        <label for="input-type" class="control-label">Type</label>
+        <select class="selectpicker form-control" id="input-type" name="{{ action_form.type.name }}" {% if not may_change_type %}disabled="disabled"{% endif %}>
+          <option value="sample" {% if action_form.type.data == 'sample' %}selected="selected"{% endif %}>Sample Creation</option>
+          <option value="measurement" {% if action_form.type.data == 'measurement' %}selected="selected"{% endif %}>Measurement</option>
+          <option value="simulation" {% if action_form.type.data == 'simulation' %}selected="selected"{% endif %}>Simulation</option>
+        </select>
+      </div>
+      <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}">
+        <label for="input-instrument" class="control-label">Instrument</label>
+        <select class="selectpicker form-control" id="input-instrument" name="{{ action_form.instrument.name }}" {% if not may_change_instrument %}disabled="disabled"{% endif %}>
+          {% for instrument_id, instrument_name in action_form.instrument.choices %}
+          <option value="{{ instrument_id }}" {% if action_form.instrument.data == instrument_id %}selected="selected"{% endif %}>{% if instrument_id == '-1' %}&mdash;{% else %}{{ instrument_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
+        <label for="input-description" class="control-label">Description</label>
+        <textarea class="form-control" rows="3" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
+      </div>
+      <div class="form-group {% if error_message or action_form.schema.name in action_form.errors %}has-error{% endif %}">
+        <label for="input-schema" class="control-label">Schema</label>
+        <textarea class="form-control" rows="{% if schema_json %}{{ schema_json.splitlines() | length }}{% else %}5{% endif %}" id="input-schema" name="{{ action_form.schema.name }}" placeholder="Schema">{{ action_form.schema.data or ''}}</textarea>
+      </div>
+      {% if pygments_output %}
+        {{ pygments_output | safe }}
+        {% if error_message is not none %}
+        <div class="schema-error-message"><strong>Error:</strong> {{ error_message }}</div>
+        {% endif %}
+      {% endif %}
+    </div>
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.actions') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

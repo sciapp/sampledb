@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Locations</h1>
+  <p class="text-muted">Locations allow users to track where an object can be found. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#location">Read more.</a></p>
+  <p>
+    <a href="{{ url_for('.new_location') }}" class="btn btn-default" style="margin-bottom: 10px;">Create Location</a>
+  </p>
+  {% if locations_tree %}
+    <ul>
+    {% set location_ids_sorted_by_name = sort_location_ids_by_name(locations_tree.keys(), locations_map) %}
+    {% for location_id in location_ids_sorted_by_name %}
+      {% include "locations/locations_tree.html" %}
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

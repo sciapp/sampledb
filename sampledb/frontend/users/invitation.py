@@ -5,12 +5,12 @@
 
 import flask
 import flask_login
-import bcrypt
 
 from ... import db
 
 from .. import frontend
-from ...logic.authentication import insert_user_and_authentication_method_to_db
+from ...logic.users import create_user
+from ...logic.authentication import add_email_authentication, change_password_in_authentication_method
 from ...logic.utils import send_confirm_email
 from ...logic.security_tokens import verify_token
 
@@ -73,23 +73,17 @@ def registration():
             has_error = True
             return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
         if registration_form.validate_on_submit():
-            name = str(registration_form.name.data)
-            user = User(name, email, UserType.PERSON)
+            name = registration_form.name.data
+            password = registration_form.password.data
             # check, if email in authentication-method already exists
-            authentication_method = Authentication.query.filter(Authentication.login['login'].astext == registration_form.email.data).first()
+            authentication_method = Authentication.query.filter(Authentication.login['login'].astext == email).first()
             # no user with this name and contact email in db => add to db
             if authentication_method is None:
-                u = User(str(user.name).title(), user.email, user.type)
-                insert_user_and_authentication_method_to_db(u, registration_form.password.data, email,
-                                                            AuthenticationType.EMAIL)
-                flask.flash('registration successfully')
+                user = create_user(name=name, email=email, type=UserType.PERSON)
+                add_email_authentication(user.id, email, password)
+                flask.flash('Your registration was successful.', 'success')
                 return flask.redirect(flask.url_for('frontend.index'))
-            else:
-                # found email-authentication, change password
-                pw_hash = bcrypt.hashpw(registration_form.password.data.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                authentication_method.login = {'login': email, 'bcrypt_hash': pw_hash}
-                db.session.add(authentication_method)
-                db.session.commit()
-                return flask.redirect(flask.url_for('frontend.index'))
+            flask.flash('There already is an account with this email address. Please use this account or contact an administrator.', 'error')
+            return flask.redirect(flask.url_for('frontend.sign_in'))
         else:
             return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)

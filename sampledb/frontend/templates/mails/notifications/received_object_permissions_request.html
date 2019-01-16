@@ -1,0 +1,6 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+  <p><a href="{{ url_for('.user_profile', user_id=data['requester_id'], _external=True) }}" style="color:#337ab7;">{{ get_user(data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=data['object_id'], _external=True) }}" style="color:#337ab7;">object #{{ data['object_id'] }}</a>.</p>
+  <p style="text-align: center"><a href="{{ url_for('.object_permissions', object_id=data['object_id'], add_user_id=data['requester_id'], _anchor='add_user', _external=True) }}" style="display: inline-block; padding: 6px 12px; margin-bottom: 0; font-size: 14px; font-weight: 400; line-height: 1.42857143; text-align: center; white-space: nowrap; vertical-align: middle; -ms-touch-action: manipulation; touch-action: manipulation; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; background-image: none; border: 1px solid #122b40; border-radius: 4px; text-decoration: none; color: #f8f8f8; background-color: #023d6b;">View object permissions</a></p>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "mails/base.txt" %}
+
+{% block content %}
+Hello{% if users | length == 1 %} {{ users[0].name }}{% endif %},
+
+we have received an account recovery request for {{email}}. If you did not initiate this account recovery request, you can simply ignore this email.
+
+{% if users | length == 1 %}
+{% with user = users[0] %}
+{% if user.authentication_methods | length == 0 %}
+There is no way to sign in to your iffSamples account {{ user.name }} at this time. Please contact an administrator (d.henkel@fz-juelich.de) to regain access to your account.
+{% elif user.authentication_methods | length == 1 %}
+{% with authentication_method = user.authentication_methods[0] %}
+{% if authentication_method.type.name.lower() == 'ldap' %}
+You can use the PGI/JCNS account {{authentication_method.login['login']}} to sign in to your iffSamples account {{ user.name }}. To set a new password for your PGI/JCNS account, please contact an administrator (d.henkel@fz-juelich.de).
+{% elif authentication_method.type.name.lower() == 'email' %}
+You can use the email address {{authentication_method.login['login']}} to sign in to your iffSamples account {{ user.name }}. To set a new password, please visit the following URL in your browser:
+{{ password_reset_urls[authentication_method] }}
+{% else %}
+You can use the username {{authentication_method.login['login']}} to sign in to your iffSamples account {{ user.name }}. To set a new password, please visit the following URL in your browser:
+{{ password_reset_urls[authentication_method] }}
+{% endif %}
+{% endwith %}
+{% else %}
+Your iffSamples account {{ user.name }} has the following authentication methods:
+{% for authentication_method in user.authentication_methods %}
+{% if authentication_method.type.name.lower() == 'ldap' %}
+- You can use the PGI/JCNS account {{authentication_method.login['login']}} to sign in to your iffSamples account. To set a new password for your PGI/JCNS account, please contact an administrator (d.henkel@fz-juelich.de).
+{% elif authentication_method.type.name.lower() == 'email' %}
+- You can use the email address {{authentication_method.login['login']}} to sign in to your iffSamples account. To set a new password, please visit the following URL in your browser:
+  {{ password_reset_urls[authentication_method] }}
+{% else %}
+- You can use the username {{authentication_method.login['login']}} to sign in to your iffSamples account. To set a new password, please visit the following URL in your browser:
+  {{ password_reset_urls[authentication_method] }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endwith %}
+{% else %}
+You have the following iffSamples accounts:
+{% for user in users %}
+- {{ user.name }}:
+{% for authentication_method in user.authentication_methods %}
+{% if authentication_method.type.name.lower() == 'ldap' %}
+  - You can use the PGI/JCNS account {{authentication_method.login['login']}} to sign in to this iffSamples account. To set a new password for your PGI/JCNS account, please contact an administrator (d.henkel@fz-juelich.de).
+{% elif authentication_method.type.name.lower() == 'email' %}
+  - You can use the email address {{authentication_method.login['login']}} to sign in to this iffSamples account. To set a new password, please visit the following URL in your browser:
+    {{ password_reset_urls[authentication_method] }}
+{% else %}
+  - You can use the username {{authentication_method.login['login']}} to sign in to this iffSamples account. To set a new password, please visit the following URL in your browser:
+    {{ password_reset_urls[authentication_method] }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endblock %}

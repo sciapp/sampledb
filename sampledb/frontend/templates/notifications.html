@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Notifications</h1>
+
+  {% if notifications | length == 0 %}
+    <p>You do not have any notifications.</p>
+  {% else %}
+    <table class="table" id="notifications-table">
+      <thead>
+      <tr>
+        <th>
+          Date
+        </th>
+        <th style="width: 100%">
+          Message
+        </th>
+        <th>
+        {% if num_unread_notifications > 0 %}
+          <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+            {{ mark_all_notifications_as_read_form.hidden_tag() }}
+            <input type="hidden" name="{{ mark_all_notifications_as_read_form.mark_all_notifications_as_read_up_to_id.name }}" value="{{ max_known_notification_id }}" />
+            <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="Mark all as Read"></button>
+          </form>
+        {% endif %}
+        </th>
+        <th>
+          <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+            {{ delete_all_notifications_form.hidden_tag() }}
+            <input type="hidden" name="{{ delete_all_notifications_form.delete_all_notifications_up_to_id.name }}" value="{{ max_known_notification_id }}" />
+            <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="Delete all"></button>
+          </form>
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+        {% for notification in notifications %}
+          <tr {% if not notification.was_read %}class="unread-notification"{% endif %}>
+            <td>{{ notification.utc_datetime.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if notification.type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER %}
+                <a href="{{ url_for('.user_profile', user_id=notification.data['assigner_id']) }}">{{ get_user(notification.data['assigner_id']).name }}</a> assigned you as responsible user for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>.
+              {% elif notification.type == NotificationType.OTHER %}
+                {{ notification.data['message'] }}
+              {% elif notification.type == NotificationType.INVITED_TO_GROUP %}
+                {% set group = get_group(notification.data['group_id']) %}
+                {% if group is not none %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to the group "<a href="{{ url_for('.group', group_id=notification.data['group_id']) }}">{{ get_group(notification.data['group_id']).name }}</a>":
+                  {% if is_group_member(current_user.id, notification.data['group_id']) %}
+                    You are already a member of this group.
+                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
+                    <a href="{{ notification.data['confirmation_url'] | safe }}">Join Group</a>
+                  {% else %}
+                    The invitation has expired at {{ notification.data['expiration_utc_datetime'] }}.
+                  {% endif %}
+                {% else %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a group, but it has been deleted already.
+                {% endif %}
+              {% elif notification.type == NotificationType.INVITED_TO_PROJECT %}
+                {% set project = get_project(notification.data['project_id']) %}
+                {% if project is not none %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to the project "<a href="{{ url_for('.project', project_id=notification.data['project_id']) }}">{{ get_project(notification.data['project_id']).name }}</a>":
+                  {% if is_project_member(current_user.id, notification.data['project_id']) %}
+                    You are already a member of this project.
+                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
+                    <a href="{{ notification.data['confirmation_url'] | safe }}">Join Project</a>
+                  {% else %}
+                    The invitation has expired at {{ notification.data['expiration_utc_datetime'] }}.
+                  {% endif %}
+                {% else %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a project, but it has been deleted already.
+                {% endif %}
+              {% elif notification.type == NotificationType.ANNOUNCEMENT %}
+                {% if 'html' in notification.data and notification.data['html']  %}
+                  {{ notification.data['html'] | safe }}
+                {% else %}
+                  <p>{{ notification.data['message'] }}</p>
+                {% endif %}
+              {% elif notification.type == NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST %}
+                {% set current_permissions = get_user_object_permissions(user_id=notification.data['requester_id'], object_id=notification.data['object_id']) %}
+                {% if Permissions.READ in current_permissions %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>, but has been granted {{ current_permissions.name.lower() }} permissions already.
+                {% else %}
+                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>: <a href="{{ url_for('.object_permissions', object_id=notification.data['object_id'], add_user_id=notification.data['requester_id'], _anchor='add_user') }}">View object permissions</a>
+                {% endif %}
+              {% else %}
+                Unknown notification type.
+              {% endif %}
+            </td>
+            <td>
+              {% if not notification.was_read %}
+              <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+                {{ mark_notification_as_read_form.hidden_tag() }}
+                <input type="hidden" name="{{ mark_notification_as_read_form.mark_notification_read.name }}" value="{{ notification.id }}" />
+                <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="Mark as Read"></button>
+              </form>
+              {% endif %}
+            </td>
+            <td>
+              <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
+                {{ delete_notification_form.hidden_tag() }}
+                <input type="hidden" name="{{ delete_notification_form.delete_notification.name }}" value="{{ notification.id }}" />
+                <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="Delete"></button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+});
+</script>
+{% endblock %}

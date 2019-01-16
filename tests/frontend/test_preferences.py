@@ -11,8 +11,8 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.logic.authentication import add_authentication_to_db
-from sampledb.logic import permissions, groups, projects
+from sampledb.logic.authentication import add_email_authentication
+from sampledb.logic import object_permissions, groups, projects
 
 
 from tests.test_utils import flask_server, app
@@ -24,15 +24,7 @@ def user(flask_server):
         user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        # force attribute refresh
-        password = 'abc.123'
-        confirmed = True
-        pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        log = {
-            'login': 'example@fz-juelich.de',
-            'bcrypt_hash': pw_hash
-        }
-        add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+        add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -161,7 +153,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     assert len(outbox) == 1
     assert 'example1@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
+    assert 'iffSamples Email Confirmation' in message
 
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
@@ -372,7 +364,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'The password must be of minimum 3 characters' in r.content.decode('utf-8')
+    assert 'The password must be at least 3 characters long' in r.content.decode('utf-8')
 
     #  add identically authentication_method
     r = session.post(url, {
@@ -383,7 +375,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Ldap-Account already exists' in r.content.decode('utf-8')
+    assert 'An authentication method with this login already exists' in r.content.decode('utf-8')
 
     #  add ldap-account , second ldap account not possible
     r = session.post(url, {
@@ -394,7 +386,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Ldap-Account already exists' in r.content.decode('utf-8')
+    assert 'An LDAP-based authentication method already exists for this user' in r.content.decode('utf-8')
 
     #  add authentication-email without email
     r = session.post(url, {
@@ -405,7 +397,7 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'Login must be an email if the authentication_method is email' in r.content.decode('utf-8')
+    assert 'Login must be a valid email address' in r.content.decode('utf-8')
 
 
 def test_user_add_email_authentication_method(flask_server, user):
@@ -444,7 +436,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert len(outbox) == 1
     assert 'd.henkel@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'Welcome to iffsample!' in message
+    assert 'iffSamples Email Confirmation' in message
 
     # Check if authentication-method add to db
     with flask_server.app.app_context():
@@ -555,7 +547,7 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     assert r.status_code == 200
     # Check if an confirmation mail was not sent
     assert len(outbox) == 0
-    assert 'This Email-authentication-method already exists' in r.content.decode('utf-8')
+    assert 'An authentication method with this login already exists' in r.content.decode('utf-8')
 
 
 def test_user_remove_authentication_method(flask_server):
@@ -647,7 +639,7 @@ def test_user_remove_authentication_method(flask_server):
 
 def test_edit_default_public_permissions(flask_server, user):
     with flask_server.app.app_context():
-        assert not permissions.default_is_public(user.id)
+        assert not object_permissions.default_is_public(user.id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -671,7 +663,7 @@ def test_edit_default_public_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.default_is_public(user.id)
+        assert object_permissions.default_is_public(user.id)
 
 
 def test_edit_default_user_permissions(flask_server, user):
@@ -680,8 +672,8 @@ def test_edit_default_user_permissions(flask_server, user):
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
-        permissions.set_default_permissions_for_user(creator_id=user.id, user_id=new_user_id, permissions=permissions.Permissions.WRITE)
-        assert permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == permissions.Permissions.WRITE
+        object_permissions.set_default_permissions_for_user(creator_id=user.id, user_id=new_user_id, permissions=object_permissions.Permissions.WRITE)
+        assert object_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.WRITE
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -710,14 +702,14 @@ def test_edit_default_user_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == permissions.Permissions.READ
+        assert object_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.READ
 
 
 def test_edit_default_group_permissions(flask_server, user):
     with flask_server.app.app_context():
         group_id = groups.create_group("Example Group", "", user.id).id
-        permissions.set_default_permissions_for_group(creator_id=user.id, group_id=group_id, permissions=permissions.Permissions.WRITE)
-        assert permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == permissions.Permissions.WRITE
+        object_permissions.set_default_permissions_for_group(creator_id=user.id, group_id=group_id, permissions=object_permissions.Permissions.WRITE)
+        assert object_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.WRITE
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -746,14 +738,14 @@ def test_edit_default_group_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == permissions.Permissions.READ
+        assert object_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.READ
 
 
 def test_edit_default_project_permissions(flask_server, user):
     with flask_server.app.app_context():
         project_id = projects.create_project("Example Project", "", user.id).id
-        permissions.set_default_permissions_for_project(creator_id=user.id, project_id=project_id, permissions=permissions.Permissions.WRITE)
-        assert permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == permissions.Permissions.WRITE
+        object_permissions.set_default_permissions_for_project(creator_id=user.id, project_id=project_id, permissions=object_permissions.Permissions.WRITE)
+        assert object_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.WRITE
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -782,7 +774,7 @@ def test_edit_default_project_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == permissions.Permissions.READ
+        assert object_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.READ
 
 
 def test_add_default_user_permissions(flask_server, user):
@@ -811,7 +803,7 @@ def test_add_default_user_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == permissions.Permissions.READ
+        assert object_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.READ
 
 
 def test_add_default_group_permissions(flask_server, user):
@@ -837,7 +829,7 @@ def test_add_default_group_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == permissions.Permissions.READ
+        assert object_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.READ
 
 
 def test_add_default_project_permissions(flask_server, user):
@@ -863,7 +855,7 @@ def test_add_default_project_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == permissions.Permissions.READ
+        assert object_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.READ
 
 
 def test_user_preferences_change_password(flask_server, user):

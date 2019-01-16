@@ -2,6 +2,8 @@
 """
 
 """
+import logging
+import os
 import pytest
 import random
 import threading
@@ -49,6 +51,9 @@ def flask_server(app):
 
 @pytest.fixture
 def app():
+    logging.getLogger('flask.app').setLevel(logging.WARNING)
+    os.environ['FLASK_ENV'] = 'development'
+    os.environ['FLASK_TESTING'] = 'True'
     sampledb_app = sampledb.create_app()
 
     @sampledb_app.route('/users/me/loginstatus')
@@ -64,7 +69,9 @@ def app():
 
     with sampledb_app.app_context():
         # fully empty the database first
-        sqlalchemy.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
+        metadata = sqlalchemy.MetaData(bind=sampledb.db.engine)
+        metadata.reflect()
+        metadata.drop_all()
         # recreate the tables used by this application
         sampledb.db.metadata.create_all(bind=sampledb.db.engine)
 

@@ -11,6 +11,12 @@
   {% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
+
+{% if current_user.is_authenticated %}
+  {% set num_unread_notifications = (current_user | get_num_unread_notifications) %}
+{% else %}
+  {% set num_unread_notifications = 0 %}
+{% endif %}
 <nav class="navbar navbar-default navbar-static-top">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -21,6 +27,7 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="{{ url_for('frontend.index') }}">iffSamples</a>
+      {% if num_unread_notifications > 0 %}<a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a>{% endif %}
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -92,14 +99,28 @@
           </span>
         </div>
       </form>
-      <ul class="nav navbar-nav" id="main-nav-links">
+      <ul class="nav navbar-nav">
         <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
         <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
-        <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
-        <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
-        <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
+        <li class="dropdown">
+          <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">Objects</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
+            <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
+            <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
+            <li role="separator" class="divider nav-search-link"></li>
+            <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">Search</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">More <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="{{ url_for('frontend.users') }}">Users</a></li>
+            <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
+            <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
+            <li><a href="{{ url_for('frontend.locations') }}">Locations</a></li>
+          </ul>
+        </li>
         <li><a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/">Help</a></li>
       </ul>
       {% endif %}
@@ -109,17 +130,24 @@
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ current_user.name }} <span class="caret"></span></a>
             <ul class="dropdown-menu">
+              <li><a href="{{ url_for('frontend.user_profile', user_id=current_user.id) }}"><strong>{{ current_user.name }} (#{{ current_user.id }})</strong></a></li>
+              <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
+              <li><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}">Notifications {% if num_unread_notifications > 0 %}<span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span>{% endif %}</a></li>
               <li><a href="{{ url_for('frontend.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
-              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite a guest</a></li>
+              <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Projects</a></li>
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Groups</a></li>
+              <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">Your Actions</a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite a guest</a></li>
               <li role="separator" class="divider"></li>
               <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">Sign out</button></form></li>
             </ul>
           </li>
+          {% if num_unread_notifications > 0 %}<li class="nav-item-new-notifications"><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a></li>{% endif %}
           {% else %}
-          <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-primary navbar-btn">Sign in</a>
+          <li><a href="{{ url_for('frontend.sign_in') }}">Sign in</a></li>
           {% endif %}
       </ul>
       {% endblock %}

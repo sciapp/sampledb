@@ -32,30 +32,30 @@
   {% if not is_archived %}
     {% if user_may_edit %}
     <div class="form-group">
-      <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary"><i class="fa fa-pencil" aria-hidden="true"></i> Edit Object</a>
+      <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new version of the information for this object."><i class="fa fa-pencil" aria-hidden="true"></i> Edit Object</a>
     </div>
     {% endif %}
     {% if user_may_edit and new_schema_available %}
     <div class="form-group">
-      <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary"><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> Update Schema</a>
+      <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Update the schema for the information for this object."><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> Update Schema</a>
     </div>
     {% endif %}
     {% if user_may_grant %}
     <div class="form-group">
-      <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-lock" aria-hidden="true"></i> Edit Permissions</a>
+      <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Modify who can read the information for this object, write it or grant permissions to other users."><i class="fa fa-lock" aria-hidden="true"></i> Edit Permissions</a>
     </div>
     {% endif %}
     <div class="form-group">
-      <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
+      <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new object based on the information for this object."><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
     </div>
     <div class="form-group">
-      <a href="{{ url_for('.print_object_label', object_id=object_id) }}" class="btn btn-primary"><i class="fa fa-tag" aria-hidden="true"></i> Show Labels</a>
+      <a href="{{ url_for('.print_object_label', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Show a PDF containing labels for this object."><i class="fa fa-tag" aria-hidden="true"></i> Show Labels</a>
     </div>
     <div class="form-group">
-      <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal"><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
+      <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal" data-toggle="tooltip" data-placement="top" title="Show a QR code for a link to this object."><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
     </div>
     <div class="form-group">
-      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button>
+      <div data-toggle="tooltip" data-placement="top" title="Show a PDF containting the information for this object."><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button></div>
     </div>
   {% endif %}
     {% if restore_form is not none %}
@@ -350,6 +350,58 @@
     </div>
   {% endif %}
 
+  <h4 id="locations">Location</h4>
+  {% if object_location_assignments %}
+    <table class="table">
+    <thead>
+    <tr>
+      <th>Datetime</th><th>Location</th><th>Responsible User</th><th>Assigning User</th><th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for object_location_assignment in object_location_assignments | reverse %}
+      <tr>
+        <td>{{ object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{% if object_location_assignment.location_id is not none %}<a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }} (#{{ object_location_assignment.location_id }})</a>{% else %}&mdash;{% endif %}</td>
+        <td>{% if object_location_assignment.responsible_user_id is not none %}<a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td><a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">{{ get_user(object_location_assignment.user_id).name }}</a></td>
+        <td><pre class="location-description">{{ object_location_assignment.description }}</pre></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+  {% else %}
+    This object has not been assigned to a location yet.
+  {% endif %}
+  {% if user_may_assign_location %}
+    <form class="form" method="post" action="{{ url_for('frontend.post_object_location', object_id=object_id) }}" id="assign-location-form">
+      {{ location_form.csrf_token }}
+      <div class="form-group {% if location_form.location.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-location" class="control-label">Location</label>
+        <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
+          {% for location_id, location_name in location_form.location.choices %}
+          <option value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group {% if location_form.responsible_user.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-responsible-user" class="control-label">Responsible User</label>
+        <select class="selectpicker form-control" id="input-responsible-user" name="{{ location_form.responsible_user.name }}" data-live-search="true">
+          {% for user_id, user_name in location_form.responsible_user.choices %}
+          <option value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-location" class="control-label">Description</label>
+        <textarea class="form-control" rows="3" placeholder="Description" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ location_form.description.name }}">{% if location_form.description.data %}{{ location_form.description.data }}{% endif %}</textarea>
+      </div>
+      <div class="text-right">
+        <button type="submit" class="btn btn-primary" style="width:11em; margin-bottom: 20px;"><i class="fa fa-map-marker fa-fw"></i> Assign Location</button>
+      </div>
+    </form>
+  {% endif %}
+
   {% if not is_archived %}
     <h4>Comments</h4>
     {% if comments %}
@@ -369,7 +421,7 @@
           <textarea class="form-control" rows="3" placeholder="Comment" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ comment_form.content.name }}">{% if comment_form.content.data %}{{ comment_form.content.data }}{% endif %}</textarea>
         </div>
         <div class="text-right">
-          <button type="submit" class="btn btn-primary" style="width:10em; margin-bottom: 20px;">Submit</button>
+          <button type="submit" class="btn btn-primary" style="width:11em; margin-bottom: 20px;"><i class="fa fa-comment fa-fw"></i> Post Comment</button>
         </div>
       </form>
     {% endif %}
@@ -465,6 +517,17 @@
               {% if 'file_id' in object_log_entry.data %}
                 <a href="#file-{{ object_log_entry.data['file_id'] }}">View</a>
               {% endif %}
+            </td>
+          {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
+            {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
+            {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to location <a href="{{ url_for('.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }}</a> and user <a href="{{ url_for('.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>.</td>
+            {% elif object_location_assignment.location is not none %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to location <a href="{{ url_for('.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }}</a>.</td>
+            {% elif object_location_assignment.responsible_user_id is not none %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to user <a href="{{ url_for('.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>.</td>
+            {% endif %}
+            <td class="text-right">
             </td>
           {% else %}
             <td>Unknown event</td><td></td>

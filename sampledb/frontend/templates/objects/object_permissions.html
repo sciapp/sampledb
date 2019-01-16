@@ -156,7 +156,7 @@
           {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
             <td class="text-center" style="vertical-align: middle">
               <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-              <input type="radio" name="permissions_public" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if user_permissions[none] == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
+              <input type="radio" name="permissions_public" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
             </td>
           {% endfor %}
           <td></td>
@@ -164,7 +164,7 @@
         </tr>
         {% if project_permissions.items() | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Groups</th>
+          <th scope="col" style="width: 40%">Projects</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -180,8 +180,8 @@
               </td>
               {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
                 <td class="text-center" style="vertical-align: middle">
-                  <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-                  <input type="radio" name="permissions_user_{{ user_id }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} disabled />
+                  <label for="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_project_{{ project_id }}" id="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} disabled />
                 </td>
               {% endfor %}
             </tr>
@@ -205,8 +205,8 @@
               </td>
               {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
                 <td class="text-center" style="vertical-align: middle">
-                  <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-                  <input type="radio" name="permissions_user_{{ user_id }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} disabled />
+                  <label for="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_group_{{ group_id }}" id="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} disabled />
                 </td>
               {% endfor %}
             </tr>
@@ -246,7 +246,7 @@
     </div>
     </form>
     {% if users %}
-      <h3>Add User</h3>
+      <h3 id="add_user">Add User</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_user_permissions_form.csrf_token }}
       <table class="table table-striped">
@@ -262,9 +262,9 @@
         <tbody>
         <tr>
           <td>
-            <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%">
+            <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
             {% for user in users %}
-              <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+              <option value="{{ user.id }}" {% if suggested_user_id == user.id %}selected="selected"{% endif %}>{{ user.name }} (#{{ user.id }})</option>
             {% endfor %}
             </select>
           </td>
@@ -299,7 +299,7 @@
         <tbody>
         <tr>
           <td>
-            <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%">
+            <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
             {% for group in groups %}
               <option value="{{ group.id }}">{{ group.name }} (#{{ group.id }})</option>
             {% endfor %}
@@ -336,7 +336,7 @@
         <tbody>
         <tr>
           <td>
-            <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%">
+            <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
             {% for project in projects %}
               <option value="{{ project.id }}">{{ project.name }} (#{{ project.id }})</option>
             {% endfor %}

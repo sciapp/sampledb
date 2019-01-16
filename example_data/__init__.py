@@ -12,7 +12,7 @@ from sampledb.models import Objects, User, UserType, ActionType, AuthenticationT
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
-from sampledb.logic import groups, permissions, projects, comments, files
+from sampledb.logic import groups, object_permissions, projects, comments, files
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -27,8 +27,8 @@ def setup_data(app):
         sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
-    api_user = User(name="API User", email="example@fz-juelich.de", type=UserType.OTHER)
-    sampledb.logic.authentication.insert_user_and_authentication_method_to_db(api_user, 'password', 'api', AuthenticationType.OTHER)
+    api_user = sampledb.logic.users.create_user(name="API User", email="example@fz-juelich.de", type=UserType.OTHER)
+    sampledb.logic.authentication.add_other_authentication(api_user.id, 'api', 'password')
 
     group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id).id
 
@@ -43,7 +43,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.object', object_id=5))
+        return flask.redirect(flask.url_for('frontend.current_user_notifications'))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -76,7 +76,7 @@ def setup_data(app):
         schema = json.load(schema_file)
     sampledb.logic.actions.update_action(instrument_action.id, "Updated Sample Creation", "", schema)
 
-    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
 
     instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
@@ -103,8 +103,8 @@ def setup_data(app):
         }
     }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
-    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
-    permissions.set_user_object_permissions(independent_object.object_id, api_user.id, permissions.Permissions.WRITE)
+    object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
+    object_permissions.set_user_object_permissions(independent_object.object_id, api_user.id, object_permissions.Permissions.WRITE)
     independent_object = Objects.create_object(data={
         "name": {
             "_type": "text",
@@ -122,7 +122,7 @@ def setup_data(app):
         }
     }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
-    permissions.set_group_object_permissions(independent_object.object_id, group_id, permissions.Permissions.READ)
+    object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
     sampledb.db.session.commit()
 
     instrument = create_instrument(name="MPMS SQUID", description="MPMS SQUID Magnetometer JCNS-2")
@@ -203,7 +203,7 @@ def setup_data(app):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(object.id, True)
+    sampledb.logic.object_permissions.set_object_public(object.id, True)
     data = {
         'name': {
             '_type': 'text',
@@ -215,7 +215,7 @@ def setup_data(app):
         }
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(sample.id, True)
+    sampledb.logic.object_permissions.set_object_public(sample.id, True)
     data = {
         'name': {
             '_type': 'text',
@@ -242,7 +242,7 @@ def setup_data(app):
         }
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(measurement.id, True)
+    sampledb.logic.object_permissions.set_object_public(measurement.id, True)
     data = {
         'name': {
             '_type': 'text',
@@ -257,5 +257,15 @@ def setup_data(app):
             'text': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'
         }
     }
-    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
-    sampledb.logic.permissions.set_object_public(measurement.id, True)
+    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
+    sampledb.logic.object_permissions.set_object_public(measurement.id, True)
+
+    juelich = sampledb.logic.locations.create_location("FZJ", "Forschungszentrum Jülich", None, instrument_responsible_user.id)
+    building_04_8 = sampledb.logic.locations.create_location("Building 04.8", "Building 04.8 at Forschungszentrum Jülich", juelich.id, instrument_responsible_user.id)
+    room_139 = sampledb.logic.locations.create_location("Room 139b", "Building 04.8, Room 139", building_04_8.id, instrument_responsible_user.id)
+    room_141 = sampledb.logic.locations.create_location("Room 141", "Building 04.8, Room 141", building_04_8.id, instrument_responsible_user.id)
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, None, instrument_responsible_user.id, "Temporarily stored on table\n\nSome other text")
+    sampledb.logic.locations.assign_location_to_object(measurement.id, room_141.id, instrument_responsible_user.id, basic_user.id, "Stored in shelf K")
+    sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo.")
+    sampledb.logic.object_permissions.set_user_object_permissions(independent_object.id, instrument_responsible_user.id, sampledb.models.Permissions.GRANT)
+    sampledb.logic.notifications.create_notification_for_having_received_an_objects_permissions_request(instrument_responsible_user.id, independent_object.id, admin.id)

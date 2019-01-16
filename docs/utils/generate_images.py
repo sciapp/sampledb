@@ -177,6 +177,41 @@ def activity_log(base_url, driver, object):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, activity_log.location['y'] + activity_log.rect['height'])))
 
 
+def locations(base_url, driver, object):
+    object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
+    fzj = sampledb.logic.locations.create_location("FZJ", "", None, user.id)
+    b048 = sampledb.logic.locations.create_location("Building 04.8", "", fzj.id, user.id)
+    r139b = sampledb.logic.locations.create_location("Room 139b", "", b048.id, user.id)
+    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, None, user.id, "Shelf C")
+
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'objects/{}'.format(object.id))
+    for heading in driver.find_elements_by_tag_name('h4'):
+        if 'Location' in heading.text:
+            break
+    else:
+        assert False
+    location_form = driver.find_element_by_id('assign-location-form')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height'])))
+
+
+def unread_notification_icon(base_url, driver):
+    sampledb.logic.notifications.create_other_notification(user.id, "This is an example notification.")
+
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url)
+    navbar = driver.find_element_by_class_name('navbar-static-top')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/unread_notification_icon.png', (0, navbar.location['y'], width, min(navbar.location['y'] + max_height, navbar.location['y'] + navbar.rect['height'])))
+    notification = sampledb.logic.notifications.get_notifications(user_id=user.id)[0]
+    sampledb.logic.notifications.delete_notification(notification.id)
+
+
 def files(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
     sampledb.logic.files.create_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
@@ -279,6 +314,35 @@ def object_permissions(base_url, driver):
     footer = driver.find_elements_by_tag_name('footer')[-1]
     resize_for_screenshot(driver, width, footer.location['y'] - heading.location['y'])
     driver.get_screenshot_as_file('docs/static/img/generated/object_permissions.png')
+
+
+def advanced_search_by_property(base_url, driver, object):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'objects/{}'.format(object.id))
+    for row in driver.find_elements_by_class_name('row'):
+        if 'Name' in row.text:
+            break
+    else:
+        assert False
+
+    driver.execute_script("var helpers = document.getElementsByClassName('search-helper'); for(var i = 0; i < helpers.length; i++) {helpers[i].style.opacity = 1;}")
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_by_property.png', (0, row.location['y'], width, min(row.location['y'] + max_height, row.location['y'] + row.rect['height'])))
+
+
+def advanced_search_visualization(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'objects/?q=%22Sb%22+in+substance+and+%28temperature+%3C+110degC+or+temperature+%3E+120degC%29&advanced=on')
+    search_tree = driver.find_element_by_id('search-tree')
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_visualization.png', (0, search_tree.location['y'], width, min(search_tree.location['y'] + max_height, search_tree.location['y'] + search_tree.rect['height'])))
 
 
 def save_cropped_screenshot_as_file(driver, file_name, box):
@@ -384,6 +448,7 @@ try:
             options.add_argument('--no-sandbox')
         with contextlib.contextmanager(tests.test_utils.flask_server)(app) as flask_server:
             with contextlib.closing(Chrome(options=options)) as driver:
+                time.sleep(5)
                 object_permissions(flask_server.base_url, driver)
                 default_permissions(flask_server.base_url, driver)
                 guest_invitation(flask_server.base_url, driver)
@@ -395,5 +460,9 @@ try:
                 files(flask_server.base_url, driver, object)
                 file_information(flask_server.base_url, driver, object)
                 labels(flask_server.base_url, driver, object)
+                advanced_search_by_property(flask_server.base_url, driver, object)
+                advanced_search_visualization(flask_server.base_url, driver)
+                locations(flask_server.base_url, driver, object)
+                unread_notification_icon(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

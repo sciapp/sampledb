@@ -7,6 +7,7 @@ import json
 import os
 import pytest
 import tempfile
+from sampledb import db
 from sampledb.logic import instruments, actions
 import sampledb.__main__ as scripts
 from ..test_utils import app_context
@@ -14,7 +15,10 @@ from ..test_utils import app_context
 
 @pytest.fixture
 def instrument():
-    return instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    instrument = instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    assert instrument.id is not None
+    db.session.expunge(instrument)
+    return instrument
 
 
 @pytest.fixture
@@ -26,13 +30,16 @@ def schema_file_name():
 def action(instrument, schema_file_name):
     with open(schema_file_name) as schema_file:
         schema = json.load(schema_file)
-    return actions.create_action(
+    action = actions.create_action(
         action_type=actions.ActionType.SAMPLE_CREATION,
         name='Example Action',
         description='Example Action Description',
         schema=schema,
         instrument_id=instrument.id
     )
+    assert action.id is not None
+    db.session.expunge(action)
+    return action
 
 
 def test_export_action_schema(action, capsys):

@@ -11,16 +11,68 @@ from sampledb.logic.errors import ValidationError
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+def wrap_into_basic_schema(schema, name='other'):
+    return {
+        'title': "Basic Schema",
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': "Name",
+                'type': 'text'
+            },
+            name: schema
+        },
+        'required': ['name']
+    }
+
+
 def test_validate_schema_invalid():
     schema = []
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_schema_missing_type():
     schema = {
         'title': 'Example'
     }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_without_name():
+    schema = {
+        'title': "Basic Schema",
+        'type': 'object',
+        'properties': {
+            'example': {
+                'title': "Name",
+                'type': 'text'
+            }
+        },
+        'required': ['example']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_with_name_not_required():
+    schema = {
+        'title': "Basic Schema",
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': "Name",
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    validate_schema(schema)
+    schema['required'].clear()
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    del schema['required']
     with pytest.raises(ValidationError):
         validate_schema(schema)
 
@@ -30,7 +82,7 @@ def test_validate_schema_missing_title():
         'type': 'bool'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_schema_invalid_type():
@@ -39,13 +91,13 @@ def test_validate_schema_invalid_type():
         'type': 'invalid'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
     schema = {
         'title': 'Example',
         'type': b'bool'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_schema_invalid_title():
@@ -54,7 +106,7 @@ def test_validate_schema_invalid_title():
         'type': 'bool'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_bool_schema():
@@ -62,7 +114,7 @@ def test_validate_bool_schema():
         'title': 'Example',
         'type': 'bool'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_bool_schema_default():
@@ -71,7 +123,7 @@ def test_validate_bool_schema_default():
         'type': 'bool',
         'default': True
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_bool_schema_invalid_default():
@@ -81,7 +133,7 @@ def test_validate_bool_schema_invalid_default():
         'default': 'true'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_bool_schema_note():
@@ -90,7 +142,7 @@ def test_validate_bool_schema_note():
         'type': 'bool',
         'note': 'Example Note'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_bool_schema_invalid_note():
@@ -100,7 +152,7 @@ def test_validate_bool_schema_invalid_note():
         'note': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_bool_schema_invalid_key():
@@ -110,7 +162,7 @@ def test_validate_bool_schema_invalid_key():
         'value': 'true'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_schema():
@@ -118,7 +170,7 @@ def test_validate_text_schema():
         'title': 'Example',
         'type': 'text'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_schema_note():
@@ -127,7 +179,7 @@ def test_validate_text_schema_note():
         'type': 'text',
         'note': 'Example Note'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_schema_invalid_note():
@@ -137,7 +189,7 @@ def test_validate_text_schema_invalid_note():
         'note': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_min_length():
@@ -146,7 +198,7 @@ def test_validate_text_with_min_length():
         'type': 'text',
         'minLength': 1
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_max_length():
@@ -155,7 +207,7 @@ def test_validate_text_with_max_length():
         'type': 'text',
         'maxLength': 10
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_choices():
@@ -164,7 +216,7 @@ def test_validate_text_with_choices():
         'type': 'text',
         'choices': ['A', 'B', 'C']
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_invalid_choice():
@@ -174,7 +226,7 @@ def test_validate_text_with_invalid_choice():
         'choices': ['1', '2', 3]
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_invalid_choices():
@@ -184,7 +236,7 @@ def test_validate_text_with_invalid_choices():
         'choices': '123'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_empty_choices():
@@ -194,7 +246,7 @@ def test_validate_text_with_empty_choices():
         'choices': []
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_pattern():
@@ -203,7 +255,7 @@ def test_validate_text_with_pattern():
         'type': 'text',
         'pattern': '^[1-9][0-9]*/[A-Za-z]+$'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_invalid_pattern():
@@ -213,7 +265,7 @@ def test_validate_text_with_invalid_pattern():
         'pattern': '['
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_invalid_pattern_type():
@@ -223,7 +275,7 @@ def test_validate_text_with_invalid_pattern_type():
         'pattern': b'^[1-9][0-9]*/[A-Za-z]+$'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_invalid_min_length():
@@ -233,7 +285,7 @@ def test_validate_text_with_invalid_min_length():
         'minLength': "1"
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_negative_min_length():
@@ -243,7 +295,7 @@ def test_validate_text_with_negative_min_length():
         'minLength': -1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_invalid_max_length():
@@ -253,7 +305,7 @@ def test_validate_text_with_invalid_max_length():
         'maxLength': "10"
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_negative_max_length():
@@ -263,7 +315,7 @@ def test_validate_text_with_negative_max_length():
         'maxLength': -1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_with_min_and_max_length():
@@ -273,7 +325,7 @@ def test_validate_text_with_min_and_max_length():
         'minLength': 1,
         'maxLength': 10
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_invalid_min_and_max_length():
@@ -284,7 +336,7 @@ def test_validate_text_invalid_min_and_max_length():
         'maxLength': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_schema_default():
@@ -293,7 +345,7 @@ def test_validate_text_schema_default():
         'type': 'text',
         'default': 'test'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_schema_invalid_default():
@@ -303,7 +355,7 @@ def test_validate_text_schema_invalid_default():
         'default': b'test'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_schema_invalid_key():
@@ -313,7 +365,7 @@ def test_validate_text_schema_invalid_key():
         'text': 'test'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_invalid_multiline_type():
@@ -323,7 +375,7 @@ def test_validate_text_invalid_multiline_type():
         'multiline': 'true'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_text_valid_multiline_type():
@@ -332,7 +384,7 @@ def test_validate_text_valid_multiline_type():
         'type': 'text',
         'multiline': True
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema():
@@ -340,7 +392,7 @@ def test_validate_datetime_schema():
         'title': 'Example',
         'type': 'datetime'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_default():
@@ -349,7 +401,7 @@ def test_validate_datetime_schema_default():
         'type': 'datetime',
         'default': '2017-03-31 10:20:30'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_invalid_default_type():
@@ -359,7 +411,7 @@ def test_validate_datetime_schema_invalid_default_type():
         'default': datetime.datetime.now()
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_note():
@@ -368,7 +420,7 @@ def test_validate_datetime_schema_note():
         'type': 'datetime',
         'note': 'Example Note'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_invalid_note_type():
@@ -378,7 +430,7 @@ def test_validate_datetime_schema_invalid_note_type():
         'note': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_invalid_default():
@@ -388,7 +440,7 @@ def test_validate_datetime_schema_invalid_default():
         'default': '2017-03-31 10:20'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_invalid_key():
@@ -398,7 +450,7 @@ def test_validate_datetime_schema_invalid_key():
         'utc_datetime': '2017-03-31 10:20:30'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema():
@@ -407,7 +459,7 @@ def test_validate_quantity_schema():
         'type': 'quantity',
         'units': 'm'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_default():
@@ -417,7 +469,7 @@ def test_validate_quantity_schema_default():
         'units': 'm',
         'default': 1.5
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_invalid_default():
@@ -428,7 +480,7 @@ def test_validate_quantity_schema_invalid_default():
         'default': '1.5'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_note():
@@ -438,7 +490,7 @@ def test_validate_quantity_schema_note():
         'units': 'm',
         'note': 'Example Note'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_invalid_note():
@@ -449,7 +501,7 @@ def test_validate_quantity_schema_invalid_note():
         'note': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_invalid_units():
@@ -459,7 +511,7 @@ def test_validate_quantity_schema_invalid_units():
         'units': 'invalid'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_invalid_units_type():
@@ -469,7 +521,7 @@ def test_validate_quantity_schema_invalid_units_type():
         'units': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_invalid_key():
@@ -480,7 +532,7 @@ def test_validate_quantity_schema_invalid_key():
         'magnitude_in_base_units': '1.5'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_quantity_schema_missing_key():
@@ -489,7 +541,7 @@ def test_validate_quantity_schema_missing_key():
         'type': 'quantity'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema():
@@ -501,7 +553,7 @@ def test_validate_array_schema():
             'type': 'text'
         }
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_default():
@@ -514,7 +566,7 @@ def test_validate_array_schema_default():
         },
         'default': []
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_default():
@@ -528,7 +580,7 @@ def test_validate_array_schema_invalid_default():
         'default': [1]
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_key():
@@ -542,7 +594,7 @@ def test_validate_array_schema_invalid_key():
         'min_items': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_missing_key():
@@ -551,7 +603,7 @@ def test_validate_array_schema_missing_key():
         'type': 'array'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_min_items():
@@ -565,7 +617,7 @@ def test_validate_array_schema_invalid_min_items():
         'minItems': -1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_min_items_type():
@@ -579,7 +631,7 @@ def test_validate_array_schema_invalid_min_items_type():
         'minItems': 1.0
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_max_items():
@@ -593,7 +645,7 @@ def test_validate_array_schema_invalid_max_items():
         'maxItems': -1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_max_items_type():
@@ -607,7 +659,7 @@ def test_validate_array_schema_invalid_max_items_type():
         'maxItems': 1.0
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_invalid_min_max_items():
@@ -622,7 +674,7 @@ def test_validate_array_schema_invalid_min_max_items():
         'maxItems': 2
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_with_style():
@@ -635,7 +687,7 @@ def test_validate_array_schema_with_style():
         },
         'style': 'table'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_with_invalid_style():
@@ -649,7 +701,7 @@ def test_validate_array_schema_with_invalid_style():
         'style': 'grid'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema():
@@ -663,7 +715,7 @@ def test_validate_object_schema():
             }
         }
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_default():
@@ -678,7 +730,7 @@ def test_validate_object_schema_default():
         },
         'default': {}
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_invalid_default():
@@ -696,7 +748,7 @@ def test_validate_object_schema_invalid_default():
         }
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_with_property_order():
@@ -715,7 +767,7 @@ def test_validate_object_schema_with_property_order():
         },
         'propertyOrder': ['example1', 'example2']
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_with_invalid_property_order():
@@ -735,7 +787,7 @@ def test_validate_object_schema_with_invalid_property_order():
         'propertyOrder': {0: 'example1', 1: 'example2'}
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_with_invalid_required():
@@ -751,7 +803,7 @@ def test_validate_object_schema_with_invalid_required():
         'required': 'example'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_with_property_order_invalid_property():
@@ -771,7 +823,7 @@ def test_validate_object_schema_with_property_order_invalid_property():
         'propertyOrder': ['example1', 'example']
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_invalid_key():
@@ -787,7 +839,7 @@ def test_validate_object_schema_invalid_key():
         'additionalProperties': False
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_missing_key():
@@ -796,7 +848,7 @@ def test_validate_object_schema_missing_key():
         'type': 'object'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_invalid_properties_type():
@@ -811,7 +863,7 @@ def test_validate_object_schema_invalid_properties_type():
         ]
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_required():
@@ -826,7 +878,7 @@ def test_validate_object_schema_required():
         },
         'required': ['example']
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_required_unknown_property():
@@ -842,7 +894,7 @@ def test_validate_object_schema_required_unknown_property():
         'required': ['unknown']
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_default_missing_required_property():
@@ -859,15 +911,34 @@ def test_validate_object_schema_default_missing_required_property():
         'default': {}
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_sample_schema():
     schema = {
         'title': 'Example',
+        'type': 'sample',
+        'note': 'Example Note'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_sample_schema_with_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'sample',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_sample_schema_without_note():
+    schema = {
+        'title': 'Example',
         'type': 'sample'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_sample_schema_with_missing_title():
@@ -875,7 +946,7 @@ def test_validate_sample_schema_with_missing_title():
         'type': 'sample'
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_sample_schema_with_unknown_property():
@@ -885,7 +956,7 @@ def test_validate_sample_schema_with_unknown_property():
         'action_id': 0
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_schema_with_display_properties():
@@ -893,12 +964,13 @@ def test_validate_object_schema_with_display_properties():
         'title': 'Example',
         'type': 'object',
         'properties': {
-            'example': {
+            'name': {
                 'title': 'Example Property',
                 'type': 'text'
             }
         },
-        'displayProperties': ['example']
+        'required': ['name'],
+        'displayProperties': ['name']
     }
     validate_schema(schema)
 
@@ -907,7 +979,12 @@ def test_validate_object_schema_with_unknown_display_property():
     schema = {
         'title': 'Example',
         'type': 'object',
-        'properties': {},
+        'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
         'displayProperties': ['example']
     }
     with pytest.raises(ValidationError):
@@ -919,6 +996,10 @@ def test_validate_nested_schema_with_display_properties():
         'title': 'Example',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            },
             'example': {
                 'title': 'Example Property',
                 'type': 'object',
@@ -937,12 +1018,12 @@ def test_validate_object_schema_with_invalid_display_properties():
         'title': 'Example',
         'type': 'object',
         'properties': {
-            'example': {
+            'name': {
                 'title': 'Example Property',
                 'type': 'text'
             }
         },
-        'displayProperties': 'example'
+        'displayProperties': 'name'
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -955,6 +1036,10 @@ def test_validate_object_schema_with_double_underscore_in_name():
         'title': 'Example',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            },
             'property__1': {
                 'title': 'Invalid Property Name',
                 'type': 'text'
@@ -971,11 +1056,12 @@ def test_validate_object_schema_with_batch():
         'type': 'object',
         'batch': True,
         'properties': {
-            'property': {
-                'title': 'Property',
+            'name': {
+                'title': 'Name',
                 'type': 'text'
             }
-        }
+        },
+        'required': ['name']
     }
     validate_schema(schema)
 
@@ -986,11 +1072,12 @@ def test_validate_object_schema_with_invalid_batch_value():
         'type': 'object',
         'batch': "true",
         'properties': {
-            'property': {
-                'title': 'Property',
+            'name': {
+                'title': 'Name',
                 'type': 'text'
             }
-        }
+        },
+        'required': ['name']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1001,12 +1088,17 @@ def test_validate_object_schema_with_batch_not_in_toplevel():
         'title': 'Example',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'property': {
                 'title': 'Property',
                 'type': 'text',
                 'batch': True
             }
-        }
+        },
+        'required': ['name']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1019,11 +1111,12 @@ def test_validate_object_schema_with_batch_name_format():
         'batch': True,
         'batch_name_format': "{:02d}",
         'properties': {
-            'property': {
-                'title': 'Property',
+            'name': {
+                'title': 'Name',
                 'type': 'text'
             }
-        }
+        },
+        'required': ['name']
     }
     validate_schema(schema)
 
@@ -1034,11 +1127,12 @@ def test_validate_object_schema_with_batch_name_format_but_without_batch():
         'type': 'object',
         'batch_name_format': "{:02d}",
         'properties': {
-            'property': {
-                'title': 'Property',
+            'name': {
+                'title': 'Name',
                 'type': 'text'
             }
-        }
+        },
+        'required': ['name']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1051,11 +1145,12 @@ def test_validate_object_schema_with_invalid_batch_name_format():
         'batch': True,
         'batch_name_format': "{x}",
         'properties': {
-            'property': {
-                'title': 'Property',
+            'name': {
+                'title': 'Name',
                 'type': 'text'
             }
-        }
+        },
+        'required': ['name']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1066,7 +1161,7 @@ def test_validate_tags_schema():
         'title': 'Example',
         'type': 'tags'
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema, 'tags'))
 
 
 def test_validate_tags_schema_default():
@@ -1075,7 +1170,7 @@ def test_validate_tags_schema_default():
         'type': 'tags',
         'default': ['example']
     }
-    validate_schema(schema)
+    validate_schema(wrap_into_basic_schema(schema, 'tags'))
 
 
 def test_validate_tags_schema_invalid_default():
@@ -1085,7 +1180,7 @@ def test_validate_tags_schema_invalid_default():
         'default': [1]
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema, 'tags'))
 
 
 def test_validate_tags_schema_invalid_key():
@@ -1095,7 +1190,7 @@ def test_validate_tags_schema_invalid_key():
         'minItems': 1
     }
     with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(wrap_into_basic_schema(schema, 'tags'))
 
 
 def test_hazards_in_object():
@@ -1103,12 +1198,16 @@ def test_hazards_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'hazards': {
                 'title': 'GHS hazards',
                 'type': 'hazards'
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     validate_schema(schema)
 
@@ -1118,13 +1217,17 @@ def test_hazards_with_note_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'hazards': {
                 'title': 'GHS hazards',
                 'type': 'hazards',
                 'note': 'This is a note'
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     validate_schema(schema)
 
@@ -1134,12 +1237,16 @@ def test_misnamed_hazards_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'ghs': {
                 'title': 'GHS hazards',
                 'type': 'hazards'
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1150,19 +1257,27 @@ def test_nested_hazards_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'nested': {
                 'title': 'Nested Object',
                 'type': 'object',
                 'properties': {
+                    'name': {
+                        'title': 'Name',
+                        'type': 'text'
+                    },
                     'hazards': {
                         'title': 'GHS hazards',
                         'type': 'hazards'
                     }
                 },
-                'required': ['hazards']
+                'required': ['name', 'hazards']
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     validate_schema(schema['properties']['nested'])
     with pytest.raises(ValidationError):
@@ -1174,11 +1289,16 @@ def test_optional_hazards_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'hazards': {
                 'title': 'GHS hazards',
                 'type': 'hazards'
             }
-        }
+        },
+        'required': ['name']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1189,12 +1309,16 @@ def test_hazards_with_extra_keys_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'hazards': {
                 'title': 'GHS hazards',
                 'type': 'hazards'
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     validate_schema(schema)
     schema['properties']['hazards']['default'] = []
@@ -1207,12 +1331,16 @@ def test_hazards_with_missing_title_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'hazards': {
                 'title': 'GHS hazards',
                 'type': 'hazards'
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     validate_schema(schema)
     schema['properties']['hazards'].pop('title')
@@ -1225,12 +1353,16 @@ def test_hazards_with_missing_type_in_object():
         'title': 'Object',
         'type': 'object',
         'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
             'hazards': {
                 'title': 'GHS hazards',
                 'type': 'hazards'
             }
         },
-        'required': ['hazards']
+        'required': ['name', 'hazards']
     }
     validate_schema(schema)
     schema['properties']['hazards'].pop('type')

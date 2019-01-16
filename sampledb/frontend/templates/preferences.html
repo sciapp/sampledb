@@ -3,29 +3,35 @@
 
 
 {% block content %}
-<h2 class="text-center">Preferences</h2>
+<h1>Preferences</h1>
+<h2>Account Information</h2>
 <form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=user.id) }}">
     {{ change_user_form.csrf_token() }}
     <div class="form-group {% if change_user_form.name.errors %} has-error{% endif %}">
-        <label for="input-username" class="col-sm-4 control-label">Username</label>
+        <label for="input-username" class="col-sm-4 control-label">Name</label>
         <div class="col-sm-8">
             <input class="form-control" type="text" id="input-username" name="{{change_user_form.name.name}}" value="{{ change_user_form.name.data }}">
+            {% if change_user_form.name.errors %}
+              <span class="help-block">Please enter your name.</span>
+            {% endif %}
         </div>
     </div>
     <div class="form-group{% if change_user_form.email.errors %} has-error{% endif %}">
         <label for="input-email" class="col-sm-4 control-label">Email</label>
         <div class="col-sm-8">
              <input class="form-control" type="text" id="input-email" name="{{change_user_form.email.name}}" value="{{ change_user_form.email.data }}">
+            {% if change_user_form.email.errors %}
+              <span class="help-block">Please enter your email address.</span>
+            {% endif %}
         </div>
     </div>
     <div class="form-group">
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">Save</button>
     </div>
 </form>
-<br><br>
 
 
-<h2 class="text-center">Authentications Methods</h2>
+<h2>Authentication Methods</h2>
     <div>
        <table class="table">
          <thead>
@@ -54,7 +60,7 @@
                           {% else %}
                                {% if authentication.confirmed  %}
                                  {% if authentication.type.name.lower() != 'ldap' %}
-                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                  {% endif %}
                                  <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
                                {% else %}
@@ -62,6 +68,9 @@
                                {% endif %}
                           {% endif %}
                        {% else %}
+                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' %}
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                         {% endif %}
                          <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
                        {% endif %}
                    </form>
@@ -79,6 +88,50 @@
        </table>
     </div>
 
+  <h2>Notification Settings</h2>
+  <p><strong>Note:</strong> iffSamples will notify you about various events. By default, these notifications will be sent using the iffSamples notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
+
+  <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
+    {{ notification_mode_form.csrf_token }}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 40%">Notification Type</th>
+          <th scope="col" class="text-center">Ignore</th>
+          <th scope="col" class="text-center">Web</th>
+          <th scope="col" class="text-center">Email</th>
+      </thead>
+      <tbody>
+        {% set notification_types = {
+              NotificationType.ANNOUNCEMENT: ("Announcements", False),
+              NotificationType.ASSIGNED_AS_RESPONSIBLE_USER: ("Becoming responsible for an object", True),
+              NotificationType.INVITED_TO_GROUP: ("Being invited to a group", False),
+              NotificationType.INVITED_TO_PROJECT: ("Being invited to a project", False),
+              NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST: ("Receiving object permission requests", False),
+              NotificationType.OTHER: ("Other", False)
+            }
+        %}
+        {% for notification_type in notification_types %}
+          {% set notification_description = notification_types[notification_type][0] %}
+          {% set notification_can_be_ignored = notification_types[notification_type][1] %}
+          <tr>
+            <td style="vertical-align: middle">{{ notification_description }}</td>
+            {% for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL] %}
+            <td class="text-center" style="vertical-align: middle">
+              {% if notification_mode != NotificationMode.IGNORE or notification_can_be_ignored %}
+                <label for="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" class="sr-only">{{ notification_mode.name.lower() }}</label>
+                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="container">
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_notification_settings" value="edit_notification_settings">Save</button>
+    </div>
+  </form>
 
   <h2>Default Permissions</h2>
   <p><strong>Note:</strong> These permissions will be used for samples, measurements and simulations that you create in the future. To change the permissions for an already existing object, please use the <strong>Edit preferences</strong> button on the object's site.</p>
@@ -234,7 +287,7 @@
       <tbody>
       <tr>
         <td>
-          <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%">
+          <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
           {% for user in users %}
             <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
           {% endfor %}
@@ -250,7 +303,7 @@
       </tbody>
     </table>
     <div class="container">
-      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_user_permissions" value="add_user_permissions">Add</button>
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add_user_permissions" value="add_user_permissions">Add</button>
     </div>
     </form>
   {% endif %}
@@ -270,7 +323,7 @@
       <tbody>
       <tr>
         <td>
-          <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%">
+          <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
           {% for group in groups %}
             <option value="{{ group.id }}">{{ group.name }} (#{{ group.id }})</option>
           {% endfor %}
@@ -286,7 +339,7 @@
       </tbody>
     </table>
     <div class="container">
-      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">Add</button>
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">Add</button>
     </div>
     </form>
   {% endif %}
@@ -306,7 +359,7 @@
       <tbody>
       <tr>
         <td>
-          <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%">
+          <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
           {% for project in projects %}
             <option value="{{ project.id }}">{{ project.name }} (#{{ project.id }})</option>
           {% endfor %}
@@ -322,7 +375,7 @@
       </tbody>
     </table>
     <div class="container">
-      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">Add</button>
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">Add</button>
     </div>
     </form>
   {% endif %}
@@ -358,7 +411,7 @@
                 <div class="col-sm-8">
                      <input class="form-control" type="password" id="input-password" name="password"  placeholder="Password">
                     {% if authentication_form.password.errors %}
-                     <span class='help-block'>The password must be of minimum 3 characters.</span>
+                     <span class='help-block'>The password must be at least 3 characters long.</span>
                     {% endif %}
                 </div>
             </div>
@@ -388,7 +441,7 @@
       <form class="form-horizontal" id="form-change-password" method="post" name="form-change-password" action="{{ url_for('.user_preferences', user_id=user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="pwModalLabel">Change Password of authentication-method-id {{authentication.id}} </h4>
+        <h4 class="modal-title" id="pwModalLabel">Change Password</h4>
       </div>
       <div class="modal-body">
             {{ authentication_password_form.csrf_token() }}
@@ -398,7 +451,7 @@
                 <div class="col-sm-8">
                      <input class="form-control" type="password" id="input-pw" name="password"  placeholder="Password">
                     {% if authentication_password_form.password.errors %}
-                     <span class='help-block'>The password must be of minimum 3 characters.</span>
+                     <span class='help-block'>The password must be at least 3 characters long.</span>
                     {% endif %}
                 </div>
             </div>

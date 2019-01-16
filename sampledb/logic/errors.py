@@ -132,3 +132,31 @@ class ValidationMultiError(ValidationError):
         message = '\n'.join(error.message for error in errors)
         super(ValidationMultiError, self).__init__(message, [])
         self.paths = [error.path for error in errors]
+
+
+class LocationDoesNotExistError(Exception):
+    pass
+
+
+class CyclicLocationError(Exception):
+    pass
+
+
+class ObjectLocationAssignmentDoesNotExistError(Exception):
+    pass
+
+
+class NotificationDoesNotExistError(Exception):
+    pass
+
+
+class OnlyOneAuthenticationMethod(Exception):
+    pass
+
+
+class AuthenticationMethodWrong(Exception):
+    pass
+
+
+class AuthenticationMethodAlreadyExists(Exception):
+    pass

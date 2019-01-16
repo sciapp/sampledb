@@ -84,7 +84,7 @@ deploy:
   image: ubuntu:18.04
   environment: staging
   only:
-    - master@Scientific-IT-Systems/SampleDB
+    - develop@Scientific-IT-Systems/SampleDB
   script:
     - apt-get update
     - apt-get install -y ssh

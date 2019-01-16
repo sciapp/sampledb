@@ -29,7 +29,7 @@ def test_send_confirm_email(app):
         assert len(outbox) == 1
         assert sampledb.logic.ldap.get_user_info(username).email in outbox[0].recipients
         message = outbox[0].html
-        assert 'Welcome to iffsample!' in message
+        assert 'iffSamples Email Confirmation' in message
 
         # email invitation new user
         with sampledb.mail.record_messages() as outbox:
@@ -38,7 +38,7 @@ def test_send_confirm_email(app):
         assert len(outbox) == 1
         assert 'test@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Welcome to iffsample!' in message
+        assert 'iffSamples Email Confirmation' in message
 
         # confirm new contact_email
         with sampledb.mail.record_messages() as outbox:
@@ -47,6 +47,6 @@ def test_send_confirm_email(app):
         assert len(outbox) == 1
         assert 'testmail@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
-        assert 'Welcome to iffsample!' in message
+        assert 'iffSamples Email Confirmation' in message
 
 

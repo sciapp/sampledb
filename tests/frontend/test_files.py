@@ -17,8 +17,6 @@ import sampledb.logic
 
 from tests.test_utils import flask_server, app, app_context
 
-SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(sampledb.__file__), 'schemas'))
-
 
 @pytest.fixture
 def user(flask_server):
@@ -34,7 +32,16 @@ def user(flask_server):
 def test_get_file_list(flask_server, user, tmpdir):
     sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
 
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
@@ -64,7 +71,16 @@ def test_get_file_list(flask_server, user, tmpdir):
 def test_get_file(flask_server, user, tmpdir):
     sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
 
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
@@ -84,7 +100,16 @@ def test_get_file(flask_server, user, tmpdir):
 def test_upload_files(flask_server, user, tmpdir):
     sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
 
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
@@ -143,7 +168,16 @@ def test_copy_files(flask_server, user, tmpdir):
     with open(os.path.join(directory_function(user.id), 'examples', 'example2.txt'), 'w') as file:
         file.write('Second Example Content')
 
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
@@ -194,7 +228,16 @@ def test_copy_missing_file(flask_server, user, tmpdir):
     os.mkdir(directory_function(user.id))
     os.mkdir(os.path.join(directory_function(user.id), 'examples'))
 
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
@@ -316,7 +359,16 @@ def test_file_tree_for_unknown_file_source(flask_server, user: sampledb.models.U
 def test_update_file_information(flask_server, user, tmpdir):
     sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
 
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},

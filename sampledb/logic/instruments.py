@@ -14,6 +14,7 @@ import typing
 
 from .. import db
 from ..models import Instrument
+from ..models.instruments import instrument_user_association_table
 from . import users, errors
 
 
@@ -125,3 +126,21 @@ def remove_instrument_responsible_user(instrument_id: int, user_id: int) -> None
     instrument.responsible_users.remove(user)
     db.session.add(instrument)
     db.session.commit()
+
+
+def get_user_instruments(user_id: int) -> typing.List[int]:
+    """
+    Get a list of instruments a user with a given user ID is responsible for.
+
+    :param user_id: the ID of an existing user
+    :return: a list of instrument IDs
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    # ensure that the user exists
+    users.get_user(user_id)
+    instrument_ids = [
+        instrument_user_association[0]
+        for instrument_user_association in db.session.query(instrument_user_association_table.c.instrument_id).filter(instrument_user_association_table.c.user_id == user_id).order_by(instrument_user_association_table.c.instrument_id).all()
+    ]
+    return instrument_ids

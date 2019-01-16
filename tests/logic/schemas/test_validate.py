@@ -11,18 +11,9 @@ from sampledb.logic.objects import create_object, get_object
 from sampledb.logic.schemas import validate
 from sampledb.logic.errors import ValidationError
 
+from ...test_utils import app_context
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
-@pytest.fixture(autouse=True)
-def app_context():
-    app = sampledb.create_app()
-    with app.app_context():
-        # fully empty the database first
-        sampledb.db.MetaData(reflect=True, bind=sampledb.db.engine).drop_all()
-        # recreate the tables used by this application
-        sampledb.db.metadata.create_all(bind=sampledb.db.engine)
-        yield app
 
 
 def test_validate_invalid_type():
@@ -333,7 +324,8 @@ def test_validate_bool_invalid_type():
 def test_validate_quantity():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -347,7 +339,8 @@ def test_validate_quantity():
 def test_validate_quantity_invalid():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = []
     with pytest.raises(ValidationError):
@@ -357,7 +350,8 @@ def test_validate_quantity_invalid():
 def test_validate_quantity_missing_key():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -371,7 +365,8 @@ def test_validate_quantity_missing_key():
 def test_validate_quantity_invalid_key():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -387,7 +382,8 @@ def test_validate_quantity_invalid_key():
 def test_validate_quantity_invalid_quantity_dimensionality_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -402,7 +398,8 @@ def test_validate_quantity_invalid_quantity_dimensionality_type():
 def test_validate_quantity_invalid_quantity_units_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -417,7 +414,8 @@ def test_validate_quantity_invalid_quantity_units_type():
 def test_validate_quantity_invalid_quantity_magnitude_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'quantity',
@@ -432,7 +430,8 @@ def test_validate_quantity_invalid_quantity_magnitude_type():
 def test_validate_quantity_invalid_type():
     schema = {
         'title': 'Example',
-        'type': 'quantity'
+        'type': 'quantity',
+        'units': 'm'
     }
     instance = {
         '_type': 'Quantity',
@@ -835,19 +834,29 @@ def test_validate_object_invalid_property():
 
 def test_validate_sample():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
         'object_id': object.id
@@ -857,19 +866,29 @@ def test_validate_sample():
 
 def test_validate_sample_invalid_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = object_id
     with pytest.raises(ValidationError):
         validate(instance, schema)
@@ -877,19 +896,29 @@ def test_validate_sample_invalid_type():
 
 def test_validate_sample_unexpected_keys():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
         'object_id': object_id,
@@ -913,19 +942,29 @@ def test_validate_sample_missing_keys():
 
 def test_validate_sample_wrong_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object_id = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'object_reference',
         'object_id': object_id
@@ -936,19 +975,29 @@ def test_validate_sample_wrong_type():
 
 def test_validate_sample_wrong_object_id_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.instruments import Action, ActionType
+    from sampledb.models.actions import Action, ActionType
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={'title': 'Example', 'type': 'text'})
+    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
 
-    object = create_object(data={'_type': 'text', 'text': 'example'}, user_id=user.id, action_id=action.id)
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
     instance = {
         '_type': 'sample',
         'object_id': object

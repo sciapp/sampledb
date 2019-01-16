@@ -13,7 +13,6 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.logic.authentication import add_authentication_to_db
 
 from tests.test_utils import flask_server, app, app_context
 
@@ -37,7 +36,12 @@ def actions(flask_server):
         schema={
             'title': 'Example Object',
             'type': 'object',
-            'properties': {}
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            }, 'required': ['name']
         },
         description='',
         instrument_id=None

@@ -18,18 +18,20 @@ from .. import db
 from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
-from ..logic.permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects
+from ..logic.action_permissions import get_user_action_permissions
+from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
-from ..logic.users import get_user, get_users
+from ..logic.users import get_user, get_users, get_users_by_name
 from ..logic.schemas import validate, generate_placeholder
 from ..logic.object_search import generate_filter_func, wrap_filter_func
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
+from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -38,6 +40,10 @@ from .pdfexport import create_pdfexport
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+def on_unauthorized(object_id):
+    return flask.render_template('objects/unauthorized.html', object_id=object_id), 403
 
 
 @frontend.route('/objects/')
@@ -51,6 +57,7 @@ def objects():
             object_ids = [int(object_id) for object_id in object_ids]
         except ValueError:
             object_ids = []
+
         readable_object_ids = []
         for object_id in object_ids:
             if Permissions.READ in get_user_object_permissions(object_id, user_id=flask_login.current_user.id):
@@ -65,6 +72,11 @@ def objects():
         action = None
         action_type = None
         project_id = None
+        location_id = None
+        location = None
+        user = None
+        user_id = None
+        object_ids_at_location = None
         project = None
         query_string = ''
         use_advanced_search = False
@@ -73,6 +85,27 @@ def objects():
         search_notes = []
         search_tree = None
     else:
+        try:
+            user_id = int(flask.request.args.get('user', ''))
+            user = get_user(user_id)
+        except ValueError:
+            user_id = None
+            user = None
+        except UserDoesNotExistError:
+            user_id = None
+            user = None
+        try:
+            location_id = int(flask.request.args.get('location', ''))
+            location = get_location(location_id)
+            object_ids_at_location = get_object_ids_at_location(location_id)
+        except ValueError:
+            location_id = None
+            location = None
+            object_ids_at_location = None
+        except LocationDoesNotExistError:
+            location_id = None
+            location = None
+            object_ids_at_location = None
         try:
             action_id = int(flask.request.args.get('action', ''))
         except ValueError:
@@ -103,6 +136,15 @@ def objects():
         use_advanced_search = flask.request.args.get('advanced', None) is not None
         must_use_advanced_search = use_advanced_search
         advanced_search_had_error = False
+        additional_search_notes = []
+        if not use_advanced_search and query_string and user_id is None:
+            users = get_users_by_name(query_string)
+            if len(users) == 1:
+                user = users[0]
+                user_id = user.id
+                query_string = ''
+            elif len(users) > 1:
+                additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
         try:
             filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
         except Exception as e:
@@ -117,16 +159,31 @@ def objects():
             else:
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
+        search_notes.extend(additional_search_notes)
+        if user_id is None:
+            object_ids_for_user = None
+        else:
+            object_ids_for_user = user_log.get_user_related_object_ids(user_id)
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
         try:
+            object_ids = None
+            if object_ids_at_location is not None:
+                if object_ids is None:
+                    object_ids = set()
+                object_ids = object_ids.union(object_ids_at_location)
+            if object_ids_for_user is not None:
+                if object_ids is None:
+                    object_ids = set()
+                object_ids = object_ids.union(object_ids_for_user)
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.READ,
                 filter_func=filter_func,
                 action_id=action_id,
                 action_type=action_type,
-                project_id=project_id
+                project_id=project_id,
+                object_ids=object_ids
             )
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
@@ -181,7 +238,30 @@ def objects():
         show_action = True
     else:
         show_action = False
-    return flask.render_template('objects/objects.html', objects=objects, display_properties=display_properties, display_property_titles=display_property_titles, search_query=query_string, action=action, action_id=action_id, action_type=action_type, ActionType=ActionType, project=project, project_id=project_id, samples=samples, show_action=show_action, use_advanced_search=use_advanced_search, must_use_advanced_search=must_use_advanced_search, advanced_search_had_error=advanced_search_had_error, search_notes=search_notes, search_tree=search_tree)
+    return flask.render_template(
+        'objects/objects.html',
+        objects=objects,
+        display_properties=display_properties,
+        display_property_titles=display_property_titles,
+        search_query=query_string,
+        action=action,
+        action_id=action_id,
+        action_type=action_type,
+        ActionType=ActionType,
+        project=project,
+        project_id=project_id,
+        location_id=location_id,
+        location=location,
+        user_id=user_id,
+        user=user,
+        samples=samples,
+        show_action=show_action,
+        use_advanced_search=use_advanced_search,
+        must_use_advanced_search=must_use_advanced_search,
+        advanced_search_had_error=advanced_search_had_error,
+        search_notes=search_notes,
+        search_tree=search_tree
+    )
 
 
 @jinja_filter
@@ -410,7 +490,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object(object_id):
     object = get_object(object_id=object_id)
     related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, flask_login.current_user.id)
@@ -454,6 +534,23 @@ def object(object_id):
         object_url = flask.url_for('.object', object_id=object_id, _external=True)
         object_qrcode = generate_qrcode(object_url, should_cache=True)
 
+        location_form = ObjectLocationAssignmentForm()
+        locations_map, locations_tree = get_locations_tree()
+        locations = [('-1', '—')]
+        unvisited_location_ids_prefixes_and_subtrees = [(location_id, '', locations_tree[location_id]) for location_id in locations_tree]
+        while unvisited_location_ids_prefixes_and_subtrees:
+            location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
+            location = locations_map[location_id]
+            locations.append((str(location_id), '{}{} (#{})'.format(prefix, location.name, location.id)))
+            for location_id in sorted(subtree, key=lambda location_id: locations_map[location_id].name, reverse=True):
+                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, location.name), subtree[location_id]))
+
+        location_form.location.choices = locations
+        possible_responsible_users = [('-1', '—')]
+        for user in logic.users.get_users():
+            possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+        location_form.responsible_user.choices = possible_responsible_users
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -487,7 +584,13 @@ def object(object_id):
             file_hiding_form=FileHidingForm(),
             new_schema_available=new_schema_available,
             related_objects_tree=related_objects_tree,
-            get_object=get_object
+            get_object=get_object,
+            get_object_location_assignment=get_object_location_assignment,
+            get_user=get_user,
+            get_location=get_location,
+            object_location_assignments=get_object_location_assignments(object_id),
+            user_may_assign_location=user_may_edit,
+            location_form=location_form
         )
     if flask.request.args.get('mode', '') == 'upgrade':
         should_upgrade_schema = True
@@ -497,7 +600,7 @@ def object(object_id):
 
 
 @frontend.route('/objects/<int:object_id>/label')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def print_object_label(object_id):
     object = get_object(object_id=object_id)
     object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
@@ -551,8 +654,56 @@ def post_object_comments(object_id):
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
+@frontend.route('/objects/search/')
+@flask_login.login_required
+def search():
+    return flask.render_template('search.html')
+
+
+@frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])
+@flask_login.login_required
+def object_permissions_request(object_id):
+    current_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    if Permissions.READ in current_permissions:
+        flask.flash('You already have permissions to access this object.', 'error')
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
+    request_object_permissions(flask_login.current_user.id, object_id)
+    flask.flash('Your request for permissions has been sent.', 'success')
+    return flask.redirect(flask.url_for('.objects'))
+
+
+@frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def post_object_location(object_id):
+    location_form = ObjectLocationAssignmentForm()
+    location_form.location.choices = [('-1', '—')] + [
+        (str(location.id), '{} (#{})'.format(location.name, location.id))
+        for location in get_locations()
+    ]
+    possible_responsible_users = [('-1', '—')]
+    for user in logic.users.get_users():
+        possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+    location_form.responsible_user.choices = possible_responsible_users
+    if location_form.validate_on_submit():
+        location_id = int(location_form.location.data)
+        if location_id < 0:
+            location_id = None
+        responsible_user_id = int(location_form.responsible_user.data)
+        if responsible_user_id < 0:
+            responsible_user_id = None
+        description = location_form.description.data
+        if location_id is not None or responsible_user_id is not None:
+            assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
+            flask.flash('Successfully assigned a new location to this object.', 'success')
+        else:
+            flask.flash('Please select a location or a responsible user.', 'error')
+    else:
+        flask.flash('Please select a location or a responsible user.', 'error')
+    return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+
 @frontend.route('/objects/<int:object_id>/pdf')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def export_to_pdf(object_id):
     object_ids = [object_id]
     if 'object_ids' in flask.request.args:
@@ -590,7 +741,7 @@ def existing_files_from_source():
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_file(object_id, file_id):
     file = logic.files.get_file_for_object(object_id, file_id)
     if file is None:
@@ -719,12 +870,14 @@ def new_object():
             action = get_action(action_id)
         except ActionDoesNotExistError:
             return flask.abort(404)
-    if previous_object_id:
-        if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
+        if Permissions.READ not in get_user_action_permissions(action_id, user_id=flask_login.current_user.id):
             return flask.abort(404)
+    if previous_object_id:
         try:
             previous_object = get_object(previous_object_id)
         except ObjectDoesNotExistError:
+            return flask.abort(404)
+        if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
             return flask.abort(404)
 
     # TODO: check instrument permissions
@@ -732,7 +885,7 @@ def new_object():
 
 
 @frontend.route('/objects/<int:object_id>/versions/')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_versions(object_id):
     object = get_object(object_id=object_id)
     if object is None:
@@ -743,7 +896,7 @@ def object_versions(object_id):
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_version(object_id, version_id):
     object = get_object(object_id=object_id, version_id=version_id)
     form = None
@@ -796,7 +949,7 @@ def restore_object_version(object_id, version_id):
 
 
 @frontend.route('/objects/<int:object_id>/permissions')
-@object_permissions_required(Permissions.READ)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_permissions(object_id):
     object = get_object(object_id)
     action = get_action(object.action_id)
@@ -805,6 +958,11 @@ def object_permissions(object_id):
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
+    suggested_user_id = flask.request.args.get('add_user_id', '')
+    try:
+        suggested_user_id = int(suggested_user_id)
+    except ValueError:
+        suggested_user_id = None
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
         user_permission_form_data = []
         for user_id, permissions in user_permissions.items():
@@ -839,7 +997,28 @@ def object_permissions(object_id):
         users = []
         groups = []
         projects = []
-    return flask.render_template('objects/object_permissions.html', instrument=instrument, action=action, object=object, user_permissions=user_permissions, group_permissions=group_permissions, project_permissions=project_permissions, public_permissions=public_permissions, get_user=get_user, Permissions=Permissions, form=edit_user_permissions_form, users=users, groups=groups, projects=projects, add_user_permissions_form=add_user_permissions_form, add_group_permissions_form=add_group_permissions_form, get_group=get_group, add_project_permissions_form=add_project_permissions_form, get_project=get_project)
+    return flask.render_template(
+        'objects/object_permissions.html',
+        instrument=instrument,
+        action=action,
+        object=object,
+        user_permissions=user_permissions,
+        group_permissions=group_permissions,
+        project_permissions=project_permissions,
+        public_permissions=public_permissions,
+        get_user=get_user,
+        Permissions=Permissions,
+        form=edit_user_permissions_form,
+        users=users,
+        groups=groups,
+        projects=projects,
+        add_user_permissions_form=add_user_permissions_form,
+        add_group_permissions_form=add_group_permissions_form,
+        get_group=get_group,
+        add_project_permissions_form=add_project_permissions_form,
+        get_project=get_project,
+        suggested_user_id=suggested_user_id
+    )
 
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])

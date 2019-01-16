@@ -7,6 +7,7 @@ import flask
 import flask_login
 
 from .. import frontend
+from ...logic import users, errors
 
 
 @frontend.route('/users/me')
@@ -18,5 +19,11 @@ def current_user_profile():
 @frontend.route('/users/<int:user_id>')
 @flask_login.login_required
 def user_profile(user_id):
-    # TODO: this is a placeholder for now. user profiles will be implemented in the future.
-    return flask.redirect(flask.url_for('.user_activity', user_id=user_id))
+    try:
+        user = users.get_user(user_id)
+    except errors.UserDoesNotExistError:
+        return flask.abort(404)
+    return flask.render_template(
+            'profile.html',
+            user=user
+        )

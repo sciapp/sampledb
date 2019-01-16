@@ -19,11 +19,14 @@ module should be called from within a Flask application context.
 
 from sqlalchemy.exc import IntegrityError
 import collections
+import datetime
 import typing
+import flask
 from .. import db
 from ..models import groups, User
 from .users import get_user
-from .utils import send_confirm_email_to_invite_user_to_group
+from .security_tokens import generate_token, MAX_AGE
+from .notifications import create_notification_for_being_invited_to_a_group
 from . import errors
 
 
@@ -175,7 +178,7 @@ def get_user_groups(user_id: int) -> typing.List[Group]:
     Returns a list of the group IDs of all groups the user with the given
     user ID is a member of.
 
-    :param group_id: the ID of an existing group
+    :param group_id: the ID of an existing user
     :return: the member ID list
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
@@ -184,17 +187,40 @@ def get_user_groups(user_id: int) -> typing.List[Group]:
     return [Group.from_database(group) for group in user.groups]
 
 
-def invite_user_to_group(group_id: int, user_id: int) -> None:
+def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
+    """
+    Invite a user to a group.
+
+    :param group_id: the ID of an existing group
+    :param user_id: the ID of an existing user
+    :param inviter_id: the ID of who invited this user to the group
+    :raise errors.GroupDoesNotExistError: when no group with the given group
+        ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        or inviter ID exists
+    :raise errors.UserAlreadyMemberOfGroupError: when the user with the given
+        user ID already is a member of this group
+    """
+    # ensure the inviter exists
+    get_user(inviter_id)
     group = groups.Group.query.get(group_id)
     if group is None:
         raise errors.GroupDoesNotExistError()
     user = get_user(user_id)
-    if user is None:
-        raise errors.UserDoesNotExistError()
     if user in group.members:
         raise errors.UserAlreadyMemberOfGroupError()
-    send_confirm_email_to_invite_user_to_group(group_id, user_id)
-    return True
+
+    token = generate_token(
+        {
+            'user_id': user.id,
+            'group_id': group_id
+        },
+        salt='invite_to_group',
+        secret_key=flask.current_app.config['SECRET_KEY']
+    )
+    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=MAX_AGE)
+    confirmation_url = flask.url_for("frontend.group", group_id=group_id, token=token, _external=True)
+    create_notification_for_being_invited_to_a_group(user_id, group_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
 
 def add_user_to_group(group_id: int, user_id: int) -> None:

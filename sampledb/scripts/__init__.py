@@ -11,6 +11,9 @@ from . import create_action
 from . import update_action
 from . import list_actions
 from . import export_action_schema
+from . import create_other_user
+from . import send_announcement
+from . import set_administrator
 from . import sudo_file_source_get_existing_files
 from . import sudo_file_source_copy_file
 from . import run
@@ -25,6 +28,9 @@ script_functions = {
     'update_action': update_action.main,
     'list_actions': list_actions.main,
     'export_action_schema': export_action_schema.main,
+    'create_other_user': create_other_user.main,
+    'send_announcement': send_announcement.main,
+    'set_administrator': set_administrator.main,
     'sudo_file_source_copy_file': sudo_file_source_copy_file.main,
     'sudo_file_source_get_existing_files': sudo_file_source_get_existing_files.main,
     'run': run.main

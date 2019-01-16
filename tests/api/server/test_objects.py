@@ -18,13 +18,8 @@ from tests.test_utils import flask_server, app, app_context
 @pytest.fixture
 def auth_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        sampledb.logic.authentication.insert_user_and_authentication_method_to_db(
-            user,
-            login='username',
-            password='password',
-            user_type=sampledb.logic.authentication.AuthenticationType.OTHER
-        )
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
         assert user.id is not None
     return ('username', 'password'), user
 
@@ -126,7 +121,7 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json=[]
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'JSON body required'
+    assert r.json()['message'] == 'JSON object body required'
 
     object_json = {'unknown': 1}
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
@@ -342,10 +337,10 @@ def test_get_objects(flask_server, auth, user, other_user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert r.json() == []
-    sampledb.logic.permissions.set_user_object_permissions(
+    sampledb.logic.object_permissions.set_user_object_permissions(
         object_id=object.object_id,
         user_id=user.id,
-        permissions=sampledb.logic.permissions.Permissions.READ
+        permissions=sampledb.logic.object_permissions.Permissions.READ
     )
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False)
     assert r.status_code == 200
@@ -387,7 +382,7 @@ def test_create_object(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v1/objects/', json=[], auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'JSON body required'
+    assert r.json()['message'] == 'JSON object body required'
 
     object_json = {
         'action_id': action.id,

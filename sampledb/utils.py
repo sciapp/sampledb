@@ -21,24 +21,24 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any=flask_login,
-        user_id_callable: typing.Callable[[], int]=lambda: flask_login.current_user.id
+        user_id_callable: typing.Callable[[], int]=lambda: flask_login.current_user.id,
+        on_unauthorized: typing.Callable[[int], None]=lambda object_id: flask.abort(403)
 ):
-    def decorator(func, user_id_callable=user_id_callable):
+    def decorator(func, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized):
         @auth_extension.login_required
         @functools.wraps(func)
-        def wrapper(*args, user_id_callable=user_id_callable, **kwargs):
+        def wrapper(*args, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized, **kwargs):
             assert 'object_id' in kwargs
             object_id = kwargs['object_id']
             try:
                 logic.objects.get_object(object_id)
             except logic.errors.ObjectDoesNotExistError:
                 return flask.abort(404)
-            if not logic.permissions.object_is_public(object_id):
+            if not (logic.object_permissions.object_is_public(object_id) and required_object_permissions in Permissions.READ):
                 user_id = user_id_callable()
-                user_object_permissions = logic.permissions.get_user_object_permissions(object_id=object_id, user_id=user_id)
+                user_object_permissions = logic.object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id)
                 if required_object_permissions not in user_object_permissions:
-                    # TODO: handle lack of permissions better
-                    return flask.abort(403)
+                    return on_unauthorized(object_id)
             return func(*args, **kwargs)
         return wrapper
     return decorator

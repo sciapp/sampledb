@@ -1,6 +1,22 @@
 Changelog
 =========
 
+Version 0.3
+-----------
+
+Released on Januar 16th, 2019.
+
+- Added custom actions
+- Added locations
+- Added notifications
+- Added search by user name
+- Added users and object permissions to HTTP API
+- Improved documentation
+- Improved email design
+- Improved user interface
+- Fixed various minor bugs
+
+
 Version 0.2
 -----------
 

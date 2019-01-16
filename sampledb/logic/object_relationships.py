@@ -7,7 +7,7 @@ import typing
 
 from .objects import get_object, find_object_references
 from .object_log import get_object_log_entries, ObjectLogEntryType
-from .permissions import get_user_object_permissions, Permissions
+from .object_permissions import get_user_object_permissions, Permissions
 
 
 def get_related_object_ids(

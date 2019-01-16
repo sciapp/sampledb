@@ -1,10 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-  {% if action.instrument is none %}
-  <h1><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h1>
-  {% else %}
-  <h1><a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash; <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h1>
+  <h1>
+    {% if action.user is not none %}
+    <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
+    {% endif %}
+    {% if action.instrument is not none %}
+    <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash;
+    {% endif %}
+    <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
+  </h1>
+  {% if action.user_id is not none %}
+  <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} This custom action is {% if not is_public %}not {% endif %}public.</p>
   {% endif %}
   <p>{{ action.description }}</p>
   {% with instrument = action.instrument %}
@@ -12,12 +19,25 @@
   {% endwith %}
   {% if action.type == ActionType.MEASUREMENT %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Measurement</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Measurement</a>
   {% elif action.type == ActionType.SIMULATION %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Perform Simulation</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Simulation</a>
   {% else %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-success">Create Sample</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
   {% endif %}
+  {% if may_edit %}
+    <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action.">Edit Action</a>
+  {% endif %}
+  <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Create a new custom action based on the settings for this action.">Use as Template</a>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>
 {% endblock %}

@@ -24,13 +24,8 @@ def test_authentication_ldap(flask_server):
 
 def test_authentication_email(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        sampledb.logic.authentication.insert_user_and_authentication_method_to_db(
-            user,
-            login='example@fz-juelich.de',
-            password='password',
-            user_type=sampledb.logic.authentication.AuthenticationType.EMAIL
-        )
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'password')
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
     assert r.status_code == 401
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('example@fz-juelich.de', 'password'))
@@ -39,13 +34,8 @@ def test_authentication_email(flask_server):
 
 def test_authentication_other(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        sampledb.logic.authentication.insert_user_and_authentication_method_to_db(
-            user,
-            login='username',
-            password='password',
-            user_type=sampledb.logic.authentication.AuthenticationType.OTHER
-        )
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
     assert r.status_code == 401
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('username', 'password'))

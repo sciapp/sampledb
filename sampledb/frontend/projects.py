@@ -8,7 +8,7 @@ import flask_login
 
 from . import frontend
 from .. import logic
-from ..logic.permissions import Permissions
+from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
 from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, OtherProjectIdForm
 
@@ -31,10 +31,16 @@ def project(project_id):
                     pass
             return flask.abort(403)
         other_project_ids = token_data.get('other_project_ids', [])
+        for notification in logic.notifications.get_notifications(user_id, unread_only=True):
+            if notification.type == logic.notifications.NotificationType.INVITED_TO_PROJECT:
+                if notification.data['project_id'] == project_id:
+                    logic.notifications.mark_notification_as_read(notification.id)
         try:
-            logic.projects.add_user_to_project(project_id, user_id, logic.permissions.Permissions.READ, other_project_ids=other_project_ids)
+            logic.projects.add_user_to_project(project_id, user_id, logic.object_permissions.Permissions.READ, other_project_ids=other_project_ids)
         except logic.errors.UserAlreadyMemberOfProjectError:
             flask.flash('You are already a member of this project', 'error')
+        except logic.errors.ProjectDoesNotExistError:
+            pass
     user_id = flask_login.current_user.id
     try:
         project = logic.projects.get_project(project_id)
@@ -156,7 +162,7 @@ def project(project_id):
                             other_project_ids.append(int(other_project_id_form.project_id.data))
                     except (KeyError, ValueError):
                         pass
-                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, other_project_ids)
+                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, flask_login.current_user.id, other_project_ids)
             except logic.errors.ProjectDoesNotExistError:
                 flask.flash('This project does not exist.', 'error')
                 return flask.redirect(flask.url_for('.projects'))
@@ -202,7 +208,30 @@ def project(project_id):
                 logic.projects.create_subproject_relationship(project_id, child_project_id, child_can_add_users_to_parent=add_subproject_form.child_can_add_users_to_parent.data)
                 flask.flash('The subproject was successfully added to this project.', 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    return flask.render_template('project.html', get_user=logic.users.get_user, get_group=logic.groups.get_group, get_project=logic.projects.get_project, project=project, project_member_user_ids_and_permissions=project_member_user_ids_and_permissions, project_member_group_ids_and_permissions=project_member_group_ids_and_permissions, leave_project_form=leave_project_form, edit_project_form=edit_project_form, show_edit_form=show_edit_form, invite_user_form=invite_user_form, invitable_user_list=invitable_user_list, invite_group_form=invite_group_form, invitable_group_list=invitable_group_list, show_objects_link=show_objects_link, child_project_ids=child_project_ids, child_project_ids_can_add_to_parent=child_project_ids_can_add_to_parent, parent_project_ids=parent_project_ids, add_subproject_form=add_subproject_form, addable_projects=addable_projects, remove_subproject_form=remove_subproject_form)
+    return flask.render_template(
+        'project.html',
+        get_user=logic.users.get_user,
+        get_group=logic.groups.get_group,
+        get_project=logic.projects.get_project,
+        project=project,
+        project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
+        project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
+        leave_project_form=leave_project_form,
+        edit_project_form=edit_project_form,
+        show_edit_form=show_edit_form,
+        invite_user_form=invite_user_form,
+        invitable_user_list=invitable_user_list,
+        invite_group_form=invite_group_form,
+        invitable_group_list=invitable_group_list,
+        show_objects_link=show_objects_link,
+        child_project_ids=child_project_ids,
+        child_project_ids_can_add_to_parent=child_project_ids_can_add_to_parent,
+        parent_project_ids=parent_project_ids,
+        add_subproject_form=add_subproject_form,
+        addable_projects=addable_projects,
+        remove_subproject_form=remove_subproject_form,
+        user_may_edit_permissions=Permissions.GRANT in user_permissions
+    )
 
 
 @frontend.route('/projects/', methods=['GET', 'POST'])

@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.logic.authentication import add_authentication_to_db
+from sampledb.logic.authentication import add_email_authentication
 
 from tests.test_utils import flask_server, app, app_context
 
@@ -33,15 +33,7 @@ def user(flask_server):
     user = sampledb.models.User(name="Basic User2", email="example2@fz-juelich.de", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    # force attribute refresh
-    password = 'abc.123'
-    confirmed = True
-    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    log = {
-        'login': 'example@fz-juelich.de',
-        'bcrypt_hash': pw_hash
-    }
-    add_authentication_to_db(log, sampledb.models.AuthenticationType.EMAIL, confirmed, user.id)
+    add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
     # force attribute refresh
     assert user.id is not None
     # Check if authentication-method add to db
@@ -201,27 +193,29 @@ def test_add_user(flask_server, user_session, user):
     csrf_token = invite_user_form.find('input', {'name': 'csrf_token'})['value']
 
     #  send invitation
-    with sampledb.mail.record_messages() as outbox:
-        r = user_session.post(url, {
-            'add_user': 'add_user',
-            'csrf_token': csrf_token,
-            'user_id': str(new_user.id)
-        })
+    r = user_session.post(url, {
+        'add_user': 'add_user',
+        'csrf_token': csrf_token,
+        'user_id': str(new_user.id)
+    })
     assert r.status_code == 200
 
-    # Check if an invitation mail was sent
-    assert len(outbox) == 1
-    assert 'example2@fz-juelich.de' in outbox[0].recipients
-    message = outbox[0].html
-    assert 'Join project Example Project' in message
-    assert 'You have been invited to be a member of the project Example Project.' in message
+    # Check if an invitation notification was sent
+    notifications = sampledb.logic.notifications.get_notifications(new_user.id)
+    assert len(notifications) > 0
+    for notification in notifications:
+        if notification.type == sampledb.logic.notifications.NotificationType.INVITED_TO_PROJECT:
+            assert notification.data['project_id'] == project_id
+            assert notification.data['inviter_id'] == user_session.user_id
+            invitation_url = notification.data['confirmation_url']
+            break
+        else:
+            assert False
 
     assert len(sampledb.logic.projects.get_user_projects(new_user.id)) == 0
 
-    # Get the confirmation url from the mail and open it without logged in
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'projects/1')
-    r = user_session.get(confirmation_url)
+    assert invitation_url.startswith(flask_server.base_url + 'projects/1')
+    r = user_session.get(invitation_url)
     assert r.status_code == 403
     assert 'Please sign in as user &#34;{}&#34; to accept this invitation'.format(user.name) in r.content.decode('utf-8')
 
@@ -231,11 +225,7 @@ def test_add_user(flask_server, user_session, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
-    # Get the confirmation url from the mail and open it without logged in
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'projects/1')
-
-    r = session.get(confirmation_url)
+    r = session.get(invitation_url)
     assert r.status_code == 200
 
     assert len(sampledb.logic.projects.get_user_projects(new_user.id)) == 1
@@ -318,7 +308,7 @@ def test_keep_project_permissions(flask_server, user_session):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_change_last_user_project_permissions(flask_server, user_session):
@@ -339,13 +329,13 @@ def test_change_last_user_project_permissions(flask_server, user_session):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_update_user_project_permissions(flask_server, user_session, user):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
-    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
@@ -362,14 +352,14 @@ def test_update_user_project_permissions(flask_server, user_session, user):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.WRITE
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.object_permissions.Permissions.WRITE
 
 
 def test_swap_grant_project_permissions(flask_server, user_session, user):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
-    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
@@ -390,8 +380,8 @@ def test_swap_grant_project_permissions(flask_server, user_session, user):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.WRITE
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.WRITE
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_update_project_permissions_without_grant(flask_server, user_session, user):
@@ -412,7 +402,7 @@ def test_update_project_permissions_without_grant(flask_server, user_session, us
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 403
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user.id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
 
 
 def test_update_project_permissions_without_project(flask_server, user_session):
@@ -424,7 +414,7 @@ def test_update_group_project_permissions(flask_server, user_session, user):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    sampledb.logic.projects.add_group_to_project(project_id, group_id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_group_to_project(project_id, group_id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
@@ -441,9 +431,9 @@ def test_update_group_project_permissions(flask_server, user_session, user):
 
     r = user_session.post(flask_server.base_url + 'projects/{}/permissions'.format(project_id), data=form_data)
     assert r.status_code == 200
-    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.permissions.Permissions.GRANT
+    assert sampledb.logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_session.user_id, include_groups=False) == sampledb.logic.object_permissions.Permissions.GRANT
     assert sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id) == {
-        group_id: sampledb.logic.permissions.Permissions.WRITE
+        group_id: sampledb.logic.object_permissions.Permissions.WRITE
     }
 
 
@@ -543,7 +533,7 @@ def test_fail_remove_subproject(flask_server, user_session):
 def test_view_subprojects(flask_server, user_session):
     parent_project_id = sampledb.logic.projects.create_project("Example Project 1", "", user_session.user_id).id
     child_project_id1 = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
-    sampledb.logic.projects.create_project("Example Project 3", "", user_session.user_id).id
+    sampledb.logic.projects.create_project("Example Project 3", "", user_session.user_id)
     sampledb.logic.projects.create_subproject_relationship(parent_project_id, child_project_id1)
     r = user_session.get(flask_server.base_url + 'projects/{}'.format(parent_project_id))
     assert r.status_code == 200
@@ -561,34 +551,7 @@ def test_view_subprojects(flask_server, user_session):
     assert subprojects_items[0].find('a')['href'].endswith('projects/{}'.format(child_project_id1))
 
 
-def test_use_project_invitation_email(flask_server, app, user):
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    server_name = app.config['SERVER_NAME']
-    app.config['SERVER_NAME'] = 'localhost'
-    with app.app_context():
-        inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
-        sampledb.db.session.add(inviting_user)
-        sampledb.db.session.commit()
-        project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
-        project = sampledb.models.projects.Project.query.get(project_id)
-
-        with sampledb.mail.record_messages() as outbox:
-            sampledb.logic.utils.send_confirm_email_to_invite_user_to_project(project.id, user.id)
-        message = outbox[0].html
-
-    app.config['SERVER_NAME'] = server_name
-    document = BeautifulSoup(message, 'html.parser')
-    invitation_link = document.find('a')
-    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
-    r = session.get(invitation_url)
-    assert r.status_code == 200
-    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
-
-
-def test_use_project_and_parent_project_invitation_email(flask_server, app, user):
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+def test_use_project_and_parent_project_invitation_email(flask_server, app, user, user_session):
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
@@ -600,18 +563,27 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
         sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
         project = sampledb.models.projects.Project.query.get(project_id)
 
-        with sampledb.mail.record_messages() as outbox:
-            sampledb.logic.utils.send_confirm_email_to_invite_user_to_project(project.id, user.id, other_project_ids=[parent_project_id])
-        message = outbox[0].html
+        sampledb.logic.projects.invite_user_to_project(project.id, user_session.user_id, inviting_user.id, [parent_project_id])
+
+        # Check if an invitation notification was sent
+        notifications = sampledb.logic.notifications.get_notifications(user_session.user_id)
+        assert len(notifications) > 0
+        for notification in notifications:
+            if notification.type == sampledb.logic.notifications.NotificationType.INVITED_TO_PROJECT:
+                assert notification.data['project_id'] == project_id
+                assert notification.data['inviter_id'] == inviting_user.id
+                invitation_url = notification.data['confirmation_url']
+                break
+            else:
+                assert False
 
     app.config['SERVER_NAME'] = server_name
-    document = BeautifulSoup(message, 'html.parser')
-    invitation_link = document.find('a')
-    invitation_url = invitation_link["href"].replace('http://localhost/', flask_server.base_url)
-    r = session.get(invitation_url)
+    invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
+    r = user_session.get(invitation_url)
+    print(invitation_url)
     assert r.status_code == 200
-    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
-    assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
+    assert user_session.user_id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
+    assert user_session.user_id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
 
 
 def test_add_user_to_parent_project_already_a_member(user):
@@ -621,9 +593,9 @@ def test_add_user_to_parent_project_already_a_member(user):
     parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
     project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
     sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
-    sampledb.logic.projects.add_user_to_project(parent_project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ)
+    sampledb.logic.projects.add_user_to_project(parent_project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
     assert user.id not in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
-    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.permissions.Permissions.READ, other_project_ids=[parent_project_id])
+    sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ, other_project_ids=[parent_project_id])
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)

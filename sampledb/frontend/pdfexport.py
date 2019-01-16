@@ -280,6 +280,15 @@ def _write_activity_log(object, canvas):
             text += ' used this object in measurement #{}'.format(object_log_entry.data['measurement_id'])
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
             text += ' used this object to create sample #{}'.format(object_log_entry.data['sample_id'])
+        elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION:
+            object_location_assignment_id = object_log_entry.data['object_location_assignment_id']
+            object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
+            if object_location_assignment.location_id is not None and object_location_assignment.responsible_user_id is not None:
+                text += ' assigned this object to location #{} and user #{}'.format(object_location_assignment.location_id, object_location_assignment.responsible_user_id)
+            elif object_location_assignment.location_id is not None:
+                text += ' assigned this object to location #{}'.format(object_location_assignment.location_id)
+            elif object_location_assignment.responsible_user_id is not None:
+                text += ' assigned this object to user #{}'.format(object_location_assignment.responsible_user_id)
         else:
             text += ' performed an unknown action'
         _append_text(canvas, text)
@@ -366,6 +375,39 @@ def _write_comments(object, canvas):
         canvas.showPage()
 
 
+def _write_locations(object, canvas):
+    location_assignments = logic.locations.get_object_location_assignments(object.id)
+    if location_assignments:
+        canvas.bookmarkPage('object_{}_locations'.format(object.id))
+        canvas.addOutlineEntry("Locations", 'object_{}_locations'.format(object.id), level=1)
+        canvas.set_up_page()
+        canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
+        canvas.top_cursor = _draw_left_aligned_wrapped_text(canvas, "Locations", canvas.left_cursor, PAGE_WIDTH - RIGHT_MARGIN - canvas.left_cursor, canvas.top_cursor, "Helvetica-Bold", 14, 1.2)
+        canvas.top_cursor -= 4 * mm
+        for location_assignment in location_assignments:
+            text = '• {} — {}:'.format(location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M'), logic.users.get_user(location_assignment.user_id).name)
+            _append_text(canvas, text)
+            previous_left_cursor = canvas.left_cursor
+            canvas.left_cursor = previous_left_cursor + 5 * mm
+            if location_assignment.location_id is not None:
+                text = 'Location: {} (#{})'.format(logic.locations.get_location(location_assignment.location_id).name, location_assignment.location_id)
+                _append_text(canvas, text)
+            if location_assignment.responsible_user_id is not None:
+                text = 'Responsible User: {} (#{})'.format(logic.users.get_user(location_assignment.responsible_user_id).name, location_assignment.responsible_user_id)
+                _append_text(canvas, text)
+            if location_assignment.description:
+                _append_text(canvas, 'Description:')
+            canvas.left_cursor = previous_left_cursor + 10 * mm
+            for paragraph in location_assignment.description.splitlines(keepends=False):
+                if paragraph.strip():
+                    _append_text(canvas, paragraph, justify=True)
+                else:
+                    canvas.top_cursor -= 1.2 * 11
+            canvas.left_cursor = previous_left_cursor
+            canvas.top_cursor -= 4 * mm
+        canvas.showPage()
+
+
 def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
     """
     Create a PDF containing the exported information of one or more objects.
@@ -395,6 +437,7 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
         _write_metadata(object, canvas)
         _write_activity_log(object, canvas)
+        _write_locations(object, canvas)
         _write_files(object, canvas)
         _write_comments(object, canvas)
     canvas.save()
