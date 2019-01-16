@@ -33,4 +33,4 @@ ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5
 ENTRYPOINT ["env/bin/python", "-m", "sampledb"]
 CMD ["run"]
 
-HEALTHCHECK --interval=1m --timeout=3s --start-period=1m CMD curl -f http://localhost:8000/status/ || exit 1
+HEALTHCHECK --interval=1m --timeout=3s --start-period=1m CMD curl -f -H "Host: $SAMPLEDB_SERVER_NAME" "http://localhost:8000$SAMPLEDB_SERVER_PATH/status/" || exit 1
