@@ -17,6 +17,9 @@ Objects can be made public, which grants READ permissions to any logged-in user 
 """
 
 import typing
+
+import sqlalchemy
+
 from .. import db
 from . import errors
 from . import actions
@@ -26,6 +29,7 @@ from .notifications import create_notification_for_having_received_an_objects_pe
 from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
+
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -213,8 +217,36 @@ def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_
     else:
         action_filter = None
 
-    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter)
-    objs = [obj for obj in objs if permissions in get_user_object_permissions(user_id=user_id, object_id=obj.object_id)]
+    stmt = db.text("""
+    SELECT
+    o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime
+    FROM (
+        SELECT
+        object_id
+        FROM user_object_permissions_by_all
+        WHERE user_id = :user_id OR user_id IS NULL
+        GROUP BY (object_id)
+        HAVING MAX(permissions_int) >= :min_permissions_int
+    ) AS p
+    JOIN objects_current AS o ON o.object_id = p.object_id
+    """)
+    stmt = stmt.columns(
+        objects.Objects._current_table.c.object_id,
+        objects.Objects._current_table.c.version_id,
+        objects.Objects._current_table.c.action_id,
+        objects.Objects._current_table.c.data,
+        objects.Objects._current_table.c.schema,
+        objects.Objects._current_table.c.user_id,
+        objects.Objects._current_table.c.utc_datetime
+    )
+    table = sqlalchemy.sql.Alias(stmt)
+
+    parameters = {
+        'min_permissions_int': permissions.value,
+        'user_id': user_id
+    }
+
+    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters)
     if project_id is not None:
         filtered_objs = []
         for obj in objs:

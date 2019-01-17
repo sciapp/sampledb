@@ -10,6 +10,7 @@ import pytest
 import sqlalchemy as db
 
 import sampledb
+import sampledb.utils
 from sampledb.logic import datatypes, where_filters
 from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables
 
@@ -31,10 +32,7 @@ def engine():
         json_deserializer=lambda obj: json.loads(obj, object_hook=datatypes.JSONEncoder.object_hook)
     )
 
-    # fully empty the database first
-    metadata = db.MetaData(bind=engine)
-    metadata.reflect()
-    metadata.drop_all()
+    sampledb.utils.empty_database(engine)
     return engine
 
 

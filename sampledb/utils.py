@@ -11,9 +11,10 @@ import typing
 
 import flask
 import flask_login
+import sqlalchemy
 
-from . import logic
-from .models import Permissions
+from . import logic, db
+from .models import Permissions, migrations
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -77,3 +78,17 @@ def generate_secret_key(num_bits):
     binary_key = os.urandom(num_bytes)
     base64_key = base64.b64encode(binary_key).decode('ascii')
     return base64_key
+
+
+def empty_database(engine, recreate=False):
+    metadata = sqlalchemy.MetaData(bind=engine)
+    # delete views, as SQLAlchemy cannot reflect them
+    engine.execute("DROP VIEW IF EXISTS user_object_permissions_by_all")
+    # delete tables, etc
+    metadata.reflect()
+    metadata.drop_all()
+    if recreate:
+        # recreate the tables
+        db.metadata.create_all(bind=engine)
+        # run migrations
+        migrations.run(db)
