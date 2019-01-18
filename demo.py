@@ -10,6 +10,7 @@ import os
 import sqlalchemy
 from sampledb import create_app
 import sampledb.config
+import sampledb.utils
 from example_data import setup_data
 
 sampledb.config.TEMPLATES_AUTO_RELOAD = True
@@ -27,9 +28,7 @@ try:
     sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
 
     # fully empty the database first
-    metadata = sqlalchemy.MetaData(bind=sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
-    metadata.reflect()
-    metadata.drop_all()
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
     app = create_app()
 
     with app.app_context():

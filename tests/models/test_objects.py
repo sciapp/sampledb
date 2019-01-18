@@ -14,6 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 import sampledb
+import sampledb.utils
 from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -39,14 +40,9 @@ class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObje
 
 @pytest.fixture
 def engine():
-    sampledb_app = sampledb.create_app()
-    db_url = sampledb_app.config['SQLALCHEMY_DATABASE_URI']
+    db_url = sampledb.config.SQLALCHEMY_DATABASE_URI
     engine = db.create_engine(db_url)
-
-    # fully empty the database first
-    metadata = db.MetaData(bind=engine)
-    metadata.reflect()
-    metadata.drop_all()
+    sampledb.utils.empty_database(engine)
     return engine
 
 

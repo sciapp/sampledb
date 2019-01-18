@@ -249,40 +249,51 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
-    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None):
+    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None):
         """
         Queries and returns all objects matching a given filter.
 
         :param filter_func: a lambda that may return an SQLAlchemy filter when given a table
         :param action_filter: a SQLAlchemy comparator, used to query only objects created by specific actions
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :param table: a custom SQLAlchemy table-like object to use as base for the query (optional)
+        :param parameters: query parameters for the custom select statement (optional)
         :return: a list of objects as object_type
         """
         if connection is None:
             connection = self.bind.connect()
 
+        if parameters is None:
+            parameters = {}
+
+        if table is None:
+            table = self._current_table
+
         select_statement = db.select([
-            self._current_table.c.object_id,
-            self._current_table.c.version_id,
-            self._current_table.c.action_id,
-            self._current_table.c.data,
-            self._current_table.c.schema,
-            self._current_table.c.user_id,
-            self._current_table.c.utc_datetime
+            table.c.object_id,
+            table.c.version_id,
+            table.c.action_id,
+            table.c.data,
+            table.c.schema,
+            table.c.user_id,
+            table.c.utc_datetime
         ])
+
         if action_table is not None and action_filter is not None:
             assert self._action_id_column is not None
             assert action_table is not None
             assert action_filter is not None
             select_statement = select_statement.select_from(
-                self._current_table.join(
+                table.join(
                     action_table,
-                    db.and_(self._current_table.c.action_id == self._action_id_column, action_filter)
+                    db.and_(table.c.action_id == self._action_id_column, action_filter)
                 )
             )
+
         objects = connection.execute(
             select_statement
-            .where(filter_func(self._current_table.c.data))
+            .where(filter_func(table.c.data)),
+            **parameters
         ).fetchall()
         return [self.object_type(*obj) for obj in objects]
 

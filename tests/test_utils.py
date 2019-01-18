@@ -14,6 +14,7 @@ import flask
 import flask_login
 
 import sampledb
+import sampledb.utils
 
 
 def test_success():
@@ -54,6 +55,7 @@ def app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
     os.environ['FLASK_ENV'] = 'development'
     os.environ['FLASK_TESTING'] = 'True'
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
     sampledb_app = sampledb.create_app()
 
     @sampledb_app.route('/users/me/loginstatus')
@@ -67,25 +69,12 @@ def app():
         flask_login.login_user(user)
         return ''
 
-    with sampledb_app.app_context():
-        # fully empty the database first
-        metadata = sqlalchemy.MetaData(bind=sampledb.db.engine)
-        metadata.reflect()
-        metadata.drop_all()
-        # recreate the tables used by this application
-        sampledb.db.metadata.create_all(bind=sampledb.db.engine)
-
     return sampledb_app
 
 
 @pytest.fixture(autouse=True)
 def app_context():
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
     app = sampledb.create_app()
     with app.app_context():
-        # fully empty the database first
-        metadata = sampledb.db.MetaData(bind=sampledb.db.engine)
-        metadata.reflect()
-        metadata.drop_all()
-        # recreate the tables used by this application
-        sampledb.db.metadata.create_all(bind=sampledb.db.engine)
         yield app
