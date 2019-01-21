@@ -203,7 +203,7 @@ def show_action_form(action: typing.Optional[Action]=None, previous_action: typi
     if action is not None:
         if action.instrument_id:
             action_form.instrument.choices = [
-                (action.instrument_id, get_instrument(action.instrument_id).name)
+                (str(action.instrument_id), get_instrument(action.instrument_id).name)
             ]
             action_form.instrument.data = str(action.instrument_id)
         else:
