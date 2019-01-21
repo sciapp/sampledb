@@ -725,21 +725,6 @@ def export_to_pdf(object_id):
     )
 
 
-@frontend.route('/files/')
-@flask_login.login_required
-def existing_files_from_source():
-    if 'file_source' not in flask.request.args:
-        return flask.abort(400)
-    file_source = flask.request.args['file_source']
-    relative_path = flask.request.args.get('relative_path', '')
-    while relative_path.startswith('/'):
-        relative_path = relative_path[1:]
-    try:
-        return json.dumps(logic.files.get_existing_files_for_source(file_source, flask_login.current_user.id, relative_path, max_depth=2))
-    except (logic.errors.InvalidFileSourceError, FileNotFoundError) as e:
-        return flask.abort(404)
-
-
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_file(object_id, file_id):
@@ -832,20 +817,6 @@ def post_object_files(object_id):
             for file_storage in files:
                 file_name = werkzeug.utils.secure_filename(file_storage.filename)
                 logic.files.create_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
-            flask.flash('Successfully uploaded files.', 'success')
-        elif file_source in logic.files.FILE_SOURCES.keys():
-            file_names = file_form.file_names.data
-            try:
-                file_names = json.loads(file_names)
-            except json.JSONDecodeError:
-                flask.flash('Failed to upload files.', 'error')
-                return flask.redirect(flask.url_for('.object', object_id=object_id))
-            for file_name in file_names:
-                try:
-                    logic.files.copy_file(object_id, flask_login.current_user.id, file_source, file_name)
-                except (FileNotFoundError, logic.errors.InvalidFileSourceError):
-                    flask.flash('Failed to upload files.', 'error')
-                    return flask.redirect(flask.url_for('.object', object_id=object_id))
             flask.flash('Successfully uploaded files.', 'success')
         else:
             flask.flash('Failed to upload files.', 'error')

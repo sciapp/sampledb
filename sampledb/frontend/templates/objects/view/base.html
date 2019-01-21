@@ -272,19 +272,6 @@
                         <label class="btn btn-link btn-file" style="color:#333333;"><i class="fa fa-hdd-o fa-fw"></i> Local files<input id="input-file-upload" type="file" name="{{ file_form.local_files.name }}" multiple style="display: none;"></label>
                       </li>
                       <li role="separator" class="divider"></li>
-                      {% if file_source_instrument_exists %}
-                      <li>
-                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-instrument-files-modal"><i class="fa fa-book fa-fw"></i> Instrument files</button>
-                      </li>
-                      {% endif %}
-                      {% if file_source_jupyterhub_exists %}
-                      <li>
-                        <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-jupyterhub-files-modal"><img src="{{ url_for('static', filename='img/jupyter-80.png') }}" style="height:14px; margin-left:2px; margin-right:2px;"> JupyterHub files</button>
-                      </li>
-                      {% endif %}
-                      {% if file_source_instrument_exists or file_source_jupyterhub_exists %}
-                      <li role="separator" class="divider"></li>
-                      {% endif %}
                       <li>
                         <button type="button" class="btn btn-link" style="color:#333333;" id="button-show-mobile-file-upload-modal"><i class="fa fa-mobile-phone fa-fw"></i> Smartphone</button>
                       </li>
@@ -294,25 +281,6 @@
                 </span>
               </div>
             </form>
-      </div>
-    </div>
-
-    <div class="modal fade" id="fileAddModal" tabindex="-1" role="dialog" aria-labelledby="fileAddModalLabel">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="fileAddModalLabel">Select files …</h4>
-          </div>
-          <div class="modal-body">
-            <div id="existing_files_tree"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-success pull-left hidden" onclick="window.open('https://iffjupyter.fz-juelich.de')" id="button-open-jupyterhub">Open JupyterHub</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="fileAddModalSelect">Select</button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -698,158 +666,12 @@
             $('#file_table_filter_other').attr('checked', 'checked');
           }
         };
-        function buildViewableFileTree(raw_file_tree) {
-          var file_names = Object.keys(raw_file_tree);
-          file_names.filter(function(file_name) {
-            return raw_file_tree.hasOwnProperty(file_name);
-          });
-          file_names.sort(function(file_name_1, file_name_2) {
-            if (raw_file_tree[file_name_1] === 'File' && raw_file_tree[file_name_2] !== 'File') {
-                return 1;
-            }
-            if (raw_file_tree[file_name_1] !== 'File' && raw_file_tree[file_name_2] === 'File') {
-                return -1;
-            }
-            return file_name_1.toLocaleLowerCase().localeCompare(file_name_2.toLocaleLowerCase());
-          });
-          var file_tree = [];
-          for (var i in file_names) {
-            var file_name = file_names[i];
-            if (raw_file_tree[file_name] === 'File') {
-              file_tree.push({
-                text: file_name
-              });
-            } else if (raw_file_tree[file_name] === 'Directory') {
-              file_tree.push({
-                text: file_name,
-                selectable: false,
-                nodes: [
-                  {
-                    text: "",
-                    icon: "fa fa-spinner fa-spin"
-                  }
-                ]
-              });
-            } else {
-              file_tree.push({
-                text: file_name,
-                selectable: false,
-                nodes: buildViewableFileTree(raw_file_tree[file_name])
-              });
-            }
-          }
-          return file_tree;
-        }
-        function setUpTreeView(file_source) {
-          var file_source_url_template = '{{ url_for('frontend.existing_files_from_source', file_source='FILE_SOURCE') }}';
-          function setUpTreeViewFromRawFileTree(raw_file_tree) {
-            $('#existing_files_tree').treeview({
-              data: [
-                {
-                  id: 'root',
-                  text: '/',
-                  selectable: false,
-                  nodes: buildViewableFileTree(raw_file_tree)
-                }
-              ],
-              levels: 2,
-              multiSelect: true,
-              showBorder: false,
-              expandIcon: "fa fa-folder",
-              collapseIcon: "fa fa-folder-open",
-              emptyIcon: "fa fa-file-o",
-              onNodeExpanded: function(event, node) {
-                if (node.nodes.length === 1 && node.nodes[0].text === '' && node.nodes[0].icon === 'fa fa-spinner fa-spin') {
-                  var treeview = $('#existing_files_tree');
-                  var relative_path = buildPathFromTreeviewNode(treeview, node);
-                  $.getJSON(file_source_url_template.replace('FILE_SOURCE', file_source) + "&relative_path=" + encodeURI(relative_path), function(raw_file_subtree) {
-
-
-                    var previously_expanded_node_paths = [];
-                    $.each(treeview.treeview('getExpanded', 'root'), function(_, previously_expanded_node) {
-                      previously_expanded_node_paths.push(buildPathArrayFromTreeviewNode($('#existing_files_tree'), previously_expanded_node));
-                    });
-                    var previously_selected_node_paths = [];
-                    $.each(treeview.treeview('getSelected', 'root'), function(_, previously_selected_node) {
-                      previously_selected_node_paths.push(buildPathArrayFromTreeviewNode($('#existing_files_tree'), previously_selected_node));
-                    });
-
-                    var relative_path_array = buildPathArrayFromTreeviewNode(treeview, node);
-                    var subtree_parent = raw_file_tree;
-                    for (var i = 0; i < relative_path_array.length-1; i++) {
-                      subtree_parent = subtree_parent[relative_path_array[i]];
-                    }
-                    subtree_parent[relative_path_array[relative_path_array.length-1]] = raw_file_subtree;
-                    setUpTreeViewFromRawFileTree(raw_file_tree);
-
-                    $.each(previously_expanded_node_paths, function(_, previously_expanded_node_path) {
-                      treeview.treeview('expandNode', getTreeviewNodeFromPathArray(treeview, previously_expanded_node_path));
-                    });
-                    $.each(previously_selected_node_paths, function(_, previously_selected_node_path) {
-                      treeview.treeview('selectNode', getTreeviewNodeFromPathArray(treeview, previously_selected_node_path));
-                    });
-                  });
-                }
-              }
-            });
-            if (file_source === 'jupyterhub') {
-              $('#button-open-jupyterhub').removeClass('hidden');
-            } else {
-              $('#button-open-jupyterhub').addClass('hidden');
-            }
-            $('#input-file-source-hidden').val(file_source);
-            $('#fileAddModal').modal('show');
-          }
-          $.getJSON(file_source_url_template.replace('FILE_SOURCE', file_source), setUpTreeViewFromRawFileTree);
-        }
         $('#button-show-mobile-file-upload-modal').click(function() {
             $('#mobileFileLinkModal').modal('show');
-        });
-        $('#button-show-instrument-files-modal').click(function() {
-          setUpTreeView('instrument');
-        });
-        $('#button-show-jupyterhub-files-modal').click(function() {
-          setUpTreeView('jupyterhub');
         });
         $('#button-show-object-qrcode-modal').click(function() {
             $('#mobileObjectLinkModal').modal('show');
         });
-
-        function getTreeviewNodeFromPathArray(treeview, path_array) {
-          var current_node = treeview.treeview('getExpanded', 'root')[0];
-          for (var j = 0; j < path_array.length; j++) {
-            var expected_text = path_array[j];
-            var found = false;
-            for (var i = 0; i < current_node.nodes.length; i++) {
-              if (current_node.nodes[i].text === expected_text) {
-                current_node = current_node.nodes[i];
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              return null;
-            }
-          }
-          return current_node;
-        }
-        function buildPathArrayFromTreeviewNode(treeview, node) {
-          var path = [];
-          var current_node = node;
-          while (typeof current_node.parentId !== 'undefined') {
-            path.push(current_node.text);
-            current_node = treeview.treeview('getNode', current_node.parentId);
-          }
-          return path.reverse();
-        }
-        function buildPathFromTreeviewNode(treeview, node) {
-          var path_array = buildPathArrayFromTreeviewNode(treeview, node);
-          var path = '';
-          for (var i = 0; i < path_array.length; i++) {
-            path += '/' + path_array[i];
-          }
-          return path;
-        }
         $('#input-file-upload').on('change', function() {
           var files = $(this).get(0).files;
           if (files.length === 0) {
@@ -864,26 +686,7 @@
           $('#input-file-names-hidden').val("");
           $('#input-file-source-hidden').val("local");
         });
-        $('#fileAddModalSelect').on('click', function() {
-          $('#fileAddModal').modal('hide');
-          var tree = $('#existing_files_tree');
-          var selected_nodes = tree.treeview('getSelected', 'root');
-          var paths = [];
-          $.each(selected_nodes, function(_, selected_node) {
-            var path = buildPathFromTreeviewNode(tree, selected_node);
-            paths.push(path);
-          });
-          if (selected_nodes.length === 0) {
-            $('#input-file-text').val("");
-          } else if (selected_nodes.length === 1) {
-            $('#input-file-text').val(buildPathFromTreeviewNode(tree, selected_nodes[0]));
-          } else {
-            $('#input-file-text').val(selected_nodes.length + " files selected");
-          }
-          $('#input-file-names-hidden').val(JSON.stringify(paths));
-          $('#input-file-upload').replaceWith('<input id="input-file-upload" type="file" multiple style="display: none;">');
-          $('#button-upload-files').removeClass('disabled');
-        });
+
       {% endif %}
 
     $('.button-file-info').on('click', function() {

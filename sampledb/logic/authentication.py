@@ -206,16 +206,3 @@ def change_password_in_authentication_method(authentication_method_id: int, pass
     db.session.add(authentication_method)
     db.session.commit()
     return True
-
-
-def get_user_ldap_uid(user_id: int) -> typing.Optional[str]:
-    """
-    Get the LDAP uid for a user.
-
-    :param user_id: the ID of an existing user
-    :return: the user's LDAP uid or None
-    """
-    authentication_method = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP, Authentication.user_id==user_id).first()
-    if not authentication_method:
-        return None
-    return authentication_method.login['login']
