@@ -104,6 +104,26 @@ def _get_object_responsible_user_ids(object_id):
 def get_user_object_permissions(object_id, user_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True):
     assert user_id is not None
 
+    if include_instrument_responsible_users and include_groups and include_projects:
+        stmt = db.text("""
+        SELECT
+        MAX(permissions_int)
+        FROM user_object_permissions_by_all
+        WHERE (user_id = :user_id OR user_id IS NULL) AND object_id = :object_id
+        """)
+        permissions_int = db.engine.execute(stmt, {
+            'user_id': user_id,
+            'object_id': object_id
+        }).fetchone()[0]
+        if permissions_int is None or permissions_int <= 0:
+            return Permissions.NONE
+        elif permissions_int == 1:
+            return Permissions.READ
+        elif permissions_int == 2:
+            return Permissions.WRITE
+        elif permissions_int >= 3:
+            return Permissions.GRANT
+
     if include_instrument_responsible_users:
         # instrument responsible users always have GRANT permissions for an object
         if user_id in _get_object_responsible_user_ids(object_id):
