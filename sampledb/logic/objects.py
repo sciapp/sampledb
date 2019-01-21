@@ -182,7 +182,7 @@ def get_object_versions(object_id: int) -> typing.List[Object]:
     return object_versions
 
 
-def get_objects(filter_func=lambda data: True, action_filter=None) -> typing.List[Object]:
+def get_objects(filter_func=lambda data: True, action_filter=None, **kwargs) -> typing.List[Object]:
     """
     Returns all objects, optionally after filtering the objects by their data
     or by their actions' information.
@@ -197,7 +197,7 @@ def get_objects(filter_func=lambda data: True, action_filter=None) -> typing.Lis
         action_table = None
     else:
         action_table = Action.__table__
-    return Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter)
+    return Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter, **kwargs)
 
 
 def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.List[str], dict, dict]]:
