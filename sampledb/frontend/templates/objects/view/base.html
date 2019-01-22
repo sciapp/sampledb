@@ -93,12 +93,12 @@
       {% for file in files %}
         {% if not file.is_hidden %}
         <tr id="file-{{ file.id }}">
-          <td style="white-space: nowrap;width: 1%;">{% if file.original_file_name | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
+          <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
           <td>{{ file.title }}</td>
           <td>
             <span class="pull-right" style="display:flex;">
               <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}"><i class="fa fa-info"></i></button>
-              {% if file.original_file_name | has_preview %}
+              {% if file | has_preview %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-search"></i></a>
               {% else %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i class="fa fa-search"></i></a>

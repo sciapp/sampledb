@@ -733,12 +733,15 @@ def object_file(object_id, file_id):
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if 'preview' in flask.request.args:
-        file_extension = os.path.splitext(file.original_file_name)[1]
-        mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
-        if mime_type is not None:
-            return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
-    return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+    if file.storage == 'local':
+        if 'preview' in flask.request.args:
+            file_extension = os.path.splitext(file.original_file_name)[1]
+            mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
+            if mime_type is not None:
+                return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
+        return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+    # TODO: better error handling
+    return flask.abort(404)
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
@@ -802,7 +805,7 @@ def post_mobile_file_upload(object_id: int, token: str):
     files = flask.request.files.getlist('file_input')
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
-        logic.files.create_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
+        logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
     return flask.render_template('mobile_upload_success.html', num_files=len(files))
 
 
@@ -816,7 +819,7 @@ def post_object_files(object_id):
             files = flask.request.files.getlist(file_form.local_files.name)
             for file_storage in files:
                 file_name = werkzeug.utils.secure_filename(file_storage.filename)
-                logic.files.create_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
+                logic.files.create_local_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
             flask.flash('Successfully uploaded files.', 'success')
         else:
             flask.flash('Failed to upload files.', 'error')

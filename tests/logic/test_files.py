@@ -55,7 +55,7 @@ def test_files(user: User, object: Object, tmpdir):
 
     start_datetime = datetime.datetime.utcnow()
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(b"1"))
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(b"1"))
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
     file = files.get_files_for_object(object_id=object.object_id)[0]
     assert file.id == 0
@@ -67,7 +67,7 @@ def test_files(user: User, object: Object, tmpdir):
     assert file.utc_datetime <= datetime.datetime.utcnow()
     assert file.real_file_name == tmpdir.join(str(object.action_id)).join(str(object.id)).join("0000_test.png")
     assert file.open().read() == b"1"
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="example.txt", save_content=lambda stream: None)
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="example.txt", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 2
     file2, file1 = files.get_files_for_object(object_id=object.object_id)
     assert file1.original_file_name == "example.txt"
@@ -82,18 +82,18 @@ def test_invalid_file_name(user: User, object: Object, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="t"*146 +".png", save_content=lambda stream: None)
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="t" * 146 + ".png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
     with pytest.raises(errors.FileNameTooLongError):
-        files.create_file(object_id=object.object_id, user_id=user.id, file_name="t"*147 +".png", save_content=lambda stream: None)
+        files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="t" * 147 + ".png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
 
 
 def test_same_file_name(user: User, object: Object, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     file1, file2 = files.get_files_for_object(object_id=object.object_id)
     assert file1.original_file_name == file2.original_file_name
     assert file1.real_file_name != file2.real_file_name
@@ -106,7 +106,7 @@ def test_file_exists(user: User, object: Object, tmpdir):
     tmpdir.join(str(object.action_id)).join(str(object.id)).join("0000_test.png").write("", ensure=True)
 
     with pytest.raises(FileExistsError):
-        files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
+        files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
 
 
@@ -115,10 +115,10 @@ def test_too_many_files(user: User, object: Object, tmpdir):
     files.MAX_NUM_FILES = 1
 
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
     with pytest.raises(errors.TooManyFilesForObjectError):
-        files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
+        files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
 
 
@@ -126,7 +126,7 @@ def test_get_file(user: User, object: Object, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
     assert files.get_file_for_object(object_id=object.object_id, file_id=0) is None
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
     assert files.get_file_for_object(object_id=object.object_id, file_id=0) is not None
 
@@ -135,7 +135,7 @@ def test_file_information(user: User, object: Object, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
-    files.create_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(b"1"))
+    files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(b"1"))
 
     file = files.get_file_for_object(object.object_id, 0)
 
@@ -171,3 +171,18 @@ def test_file_information(user: User, object: Object, tmpdir):
     assert len(file.log_entries) == 3
 
 
+def test_invalid_file_storage(user: User, object: Object, tmpdir):
+    files.FILE_STORAGE_PATH = tmpdir
+
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 0
+    db_file = files._create_db_file(object_id=object.object_id, user_id=user.id, data={"storage": "web", "url": "http://localhost/"})
+    file = files.File.from_database(db_file)
+
+    with pytest.raises(errors.InvalidFileStorageError):
+        file.original_file_name
+
+    with pytest.raises(errors.InvalidFileStorageError):
+        file.real_file_name
+
+    with pytest.raises(errors.InvalidFileStorageError):
+        file.open()

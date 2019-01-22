@@ -56,7 +56,7 @@ def test_get_file_list(flask_server, user, tmpdir):
     file_table = document.find('table', {'id': 'file_table'})
     assert file_table is None
 
-    sampledb.logic.files.create_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
     assert r.status_code == 200
@@ -90,7 +90,7 @@ def test_get_file(flask_server, user, tmpdir):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
 
-    sampledb.logic.files.create_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}/files/0'.format(object.id))
     assert r.status_code == 200
@@ -176,7 +176,7 @@ def test_update_file_information(flask_server, user, tmpdir):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
 
-    sampledb.logic.files.create_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
     assert r.status_code == 200

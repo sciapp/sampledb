@@ -27,19 +27,19 @@ from .. import db
 from . import user_log, object_log, objects, users
 from ..models import files
 from ..models.file_log import FileLogEntry, FileLogEntryType
-from .errors import FileNameTooLongError, TooManyFilesForObjectError, FileDoesNotExistError
+from .errors import FileNameTooLongError, TooManyFilesForObjectError, FileDoesNotExistError, InvalidFileStorageError
 
 FILE_STORAGE_PATH: str = None
 MAX_NUM_FILES: int = 10000
 
 
-class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'original_file_name', 'utc_datetime'])):
+class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data'])):
     """
     This class provides an immutable wrapper around models.files.File.
     """
 
-    def __new__(cls, id: int, object_id: int, user_id: int, original_file_name: str, utc_datetime: datetime.datetime=None):
-        self = super(File, cls).__new__(cls, id, object_id, user_id, original_file_name, utc_datetime)
+    def __new__(cls, id: int, object_id: int, user_id: int, utc_datetime: typing.Optional[datetime.datetime]=None, data: typing.Optional[typing.Dict[str, typing.Any]] = None):
+        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data)
         self._is_hidden = None
         self._hide_reason = None
         self._title = None
@@ -48,17 +48,43 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'origin
 
     @classmethod
     def from_database(cls, file: files.File) -> 'File':
-        return File(id=file.id, object_id=file.object_id, user_id=file.user_id, original_file_name=file.original_file_name, utc_datetime=file.utc_datetime)
+        if file.data is not None:
+            data = file.data
+        else:
+            data = {
+                'storage': 'local',
+                'original_file_name': file.original_file_name
+            }
+        return File(
+            id=file.id,
+            object_id=file.object_id,
+            user_id=file.user_id,
+            utc_datetime=file.utc_datetime,
+            data=data)
+
+    @property
+    def storage(self) -> str:
+        return self.data.get('storage', 'local')
+
+    @property
+    def original_file_name(self):
+        if self.storage == 'local':
+            return self.data['original_file_name']
+        else:
+            raise InvalidFileStorageError()
 
     @property
     def real_file_name(self) -> str:
-        # ensure that 4 digits are enough for every valid file ID
-        assert MAX_NUM_FILES <= 10000
-        # TODO: make the base path configurable
-        object = objects.get_object(self.object_id)
-        action_id = object.action_id
-        prefixed_file_name = '{file_id:04d}_{file_name}'.format(file_id=self.id, file_name=self.original_file_name)
-        return os.path.join(FILE_STORAGE_PATH, str(action_id), str(self.object_id), prefixed_file_name)
+        if self.storage == 'local':
+            # ensure that 4 digits are enough for every valid file ID
+            assert MAX_NUM_FILES <= 10000
+            # TODO: make the base path configurable
+            object = objects.get_object(self.object_id)
+            action_id = object.action_id
+            prefixed_file_name = '{file_id:04d}_{file_name}'.format(file_id=self.id, file_name=self.original_file_name)
+            return os.path.join(FILE_STORAGE_PATH, str(action_id), str(self.object_id), prefixed_file_name)
+        else:
+            raise InvalidFileStorageError()
 
     @property
     def uploader(self) -> users.User:
@@ -129,20 +155,24 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'origin
         return None
 
     def open(self, read_only: bool=True) -> typing.BinaryIO:
-        file_name = self.real_file_name
-        if read_only:
-            mode = 'rb'
+        if self.storage == 'local':
+            file_name = self.real_file_name
+            if read_only:
+                mode = 'rb'
+            else:
+                # before creating the file, the parent directories need exist
+                os.makedirs(os.path.dirname(file_name), exist_ok=True)
+                mode = 'xb'
+            return open(file_name, mode)
         else:
-            # before creating the file, the parent directories need exist
-            os.makedirs(os.path.dirname(file_name), exist_ok=True)
-            mode = 'xb'
-        return open(file_name, mode)
+            raise InvalidFileStorageError()
 
 
-def create_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> None:
+def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> None:
     """
-    Creates a new file and adds it to the object and user logs. The function
-    will call save_content with the opened file (in binary mode).
+    Create a new local file and add it to the object and user logs.
+
+    The function will call save_content with the opened file (in binary mode).
 
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user
@@ -158,14 +188,62 @@ def create_file(object_id: int, user_id: int, file_name: str, save_content: typi
     :raise errors.TooManyFilesForObjectError: when there are already 10000
         files for the object with the given id
     """
+    # ensure that the file name is valid
+    if len(file_name.encode('utf8')) > 150:
+        raise FileNameTooLongError()
+
+    db_file = _create_db_file(
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'storage': 'local',
+            'original_file_name': file_name
+        }
+    )
+    file = File.from_database(db_file)
+    try:
+        with file.open(read_only=False) as storage_file:
+            save_content(storage_file)
+    except Exception:
+        db.session.delete(db_file)
+        db.session.commit()
+        raise
+    _create_file_logs(file)
+
+
+def _create_file_logs(file: File) -> None:
+    """
+    Create object and user logs for a new file.
+
+    :param file: the file to create log entries for
+    """
+    file_id = file.id
+    object_id = file.object_id
+    user_id = file.user_id
+    object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+    user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+
+
+def _create_db_file(object_id: int, user_id: int, data: typing.Dict[str, typing.Any]) -> files.File:
+    """
+    Creates a new file and adds it to the object and user logs. The function
+    will call save_content with the opened file (in binary mode).
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user
+    :param data: the file storage data
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.TooManyFilesForObjectError: when there are already 10000
+        files for the object with the given id
+    """
     # ensure that the object exists
     object = objects.get_object(object_id)
     # ensure that the user exists
     users.get_user(user_id)
-    # ensure that the file name is valid
-    if len(file_name.encode('utf8')) > 150:
-        raise FileNameTooLongError()
-    # ensure that the file can be stored
+    # calculate the next file id
     previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
     if previous_file_id is None:
         file_id = 0
@@ -177,20 +255,11 @@ def create_file(object_id: int, user_id: int, file_name: str, save_content: typi
         file_id=file_id,
         object_id=object_id,
         user_id=user_id,
-        original_file_name=file_name
+        data=data
     )
     db.session.add(db_file)
     db.session.commit()
-    file = File.from_database(db_file)
-    try:
-        with file.open(read_only=False) as storage_file:
-            save_content(storage_file)
-    except:
-        db.session.delete(db_file)
-        db.session.commit()
-        raise
-    object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
-    user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+    return db_file
 
 
 def update_file_information(object_id: int, file_id: int, user_id: int, title: str, description: str) -> None:

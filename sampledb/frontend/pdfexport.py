@@ -314,6 +314,8 @@ def _write_files(object, canvas):
         for index, file in enumerate(files):
             if file.is_hidden:
                 continue
+            if file.storage != 'local':
+                continue
             for file_extension in ('.png', '.jpg', '.jpeg'):
                 if file.original_file_name.lower().endswith(file_extension):
                     try:
