@@ -31,7 +31,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -571,6 +571,8 @@ def object(object_id):
             file_source_instrument_exists=False,
             file_source_jupyterhub_exists=False,
             file_form=FileForm(),
+            external_link_form=ExternalLinkForm(),
+            external_link_invalid='invalid_link' in flask.request.args,
             mobile_upload_url=mobile_upload_url,
             mobile_upload_qrcode=mobile_upload_qrcode,
             object_qrcode=object_qrcode,
@@ -812,6 +814,7 @@ def post_mobile_file_upload(object_id: int, token: str):
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id):
+    external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():
         file_source = file_form.file_source.data
@@ -823,6 +826,13 @@ def post_object_files(object_id):
             flask.flash('Successfully uploaded files.', 'success')
         else:
             flask.flash('Failed to upload files.', 'error')
+    elif external_link_form.validate_on_submit():
+        url = external_link_form.url.data
+        logic.files.create_url_file(object_id, flask_login.current_user.id, url)
+        flask.flash('Successfully posted link.', 'success')
+    elif external_link_form.errors:
+        flask.flash('Failed to post link.', 'error')
+        return flask.redirect(flask.url_for('.object', object_id=object_id, invalid_link=True, _anchor='anchor-post-link'))
     else:
         flask.flash('Failed to upload files.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))

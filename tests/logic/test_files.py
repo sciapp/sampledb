@@ -186,3 +186,15 @@ def test_invalid_file_storage(user: User, object: Object, tmpdir):
 
     with pytest.raises(errors.InvalidFileStorageError):
         file.open()
+
+
+def test_create_url_file(user: User, object: Object, tmpdir):
+    files.FILE_STORAGE_PATH = tmpdir
+
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 0
+    files.create_url_file(object.id, user.id, "http://localhost")
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 1
+    file = files.get_files_for_object(object_id=object.object_id)[0]
+    assert file.storage == 'url'
+    assert file.title == 'http://localhost'
+    assert file.data['url'] == 'http://localhost'

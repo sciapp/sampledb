@@ -275,7 +275,7 @@ def _write_activity_log(object, canvas):
         elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION:
             text += ' restored a previous version of this object'
         elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE:
-            text += ' uploaded a file'
+            text += ' posted a file'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
             text += ' used this object in measurement #{}'.format(object_log_entry.data['measurement_id'])
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:

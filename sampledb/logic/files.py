@@ -99,7 +99,12 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
                 type=FileLogEntryType.EDIT_TITLE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                return self.original_file_name
+                if self.storage == 'local':
+                    return self.original_file_name
+                elif self.storage == 'url':
+                    return self.data['url']
+                else:
+                    raise InvalidFileStorageError()
             self._title = log_entry.data['title']
         return self._title
 
@@ -208,6 +213,32 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         db.session.delete(db_file)
         db.session.commit()
         raise
+    _create_file_logs(file)
+
+
+def create_url_file(object_id: int, user_id: int, url: str) -> None:
+    """
+    Create a file as a link to a URL and add it to the object and user logs.
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user
+    :param url: the file URL
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.TooManyFilesForObjectError: when there are already 10000
+        files for the object with the given id
+    """
+    db_file = _create_db_file(
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'storage': 'url',
+            'url': url
+        }
+    )
+    file = File.from_database(db_file)
     _create_file_logs(file)
 
 

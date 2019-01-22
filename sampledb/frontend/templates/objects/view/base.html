@@ -103,7 +103,11 @@
               {% else %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i class="fa fa-search"></i></a>
               {% endif %}
+              {% if file.storage == 'local' %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-download"></i></a>
+              {% elif file.storage == 'url' %}
+              <a href="{{ file.data['url'] }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-external-link"></i></a>
+              {% endif %}
             </span>
           </td>
         </tr>
@@ -167,6 +171,7 @@
               <div class="col-sm-3 text-right"><label>Title:</label></div>
               <div class="col-sm-9"><span class="file-info-view-mode">{% if file.title %}{{ file.title }}{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><input type="text" name="{{ file_information_form.title.name }}" class="input-file-info-title" style="width:100%" value="{% if file.title %}{{ file.title }}{% endif %}"></span></div>
             </div>
+            {% if file.storage == 'local' %}
             <div class="row">
               <div class="col-sm-3 text-right"><label>Name:</label></div>
               <div class="col-sm-9">{{ file.original_file_name }}</div>
@@ -175,6 +180,21 @@
               <div class="col-sm-3 text-right"><label>Uploaded by:</label></div>
               <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
             </div>
+            {% elif file.storage == 'url' %}
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>URL:</label></div>
+              <div class="col-sm-9">{{ file.data.url }}</div>
+            </div>
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>Linked by:</label></div>
+              <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+            </div>
+            {% else %}
+            <div class="row">
+              <div class="col-sm-3 text-right"><label>Posted by:</label></div>
+              <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+            </div>
+            {% endif %}
             <div class="row">
               <div class="col-sm-3 text-right"><label>Description:</label></div>
               <div class="col-sm-9"><span class="file-info-view-mode">{% if file.description %}<pre style="font-family: inherit">{{ file.description }}</pre>{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><textarea name="{{ file_information_form.description.name }}"class="input-file-info-description" style="width:100%;resize: vertical;">{% if file.description %}{{ file.description }}{% endif %}</textarea></span></div>
@@ -253,6 +273,7 @@
     {% endfor %}
 
     {% if user_may_edit %}
+    <h5>Upload File</h5>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-12">
             <form class="form" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}" enctype="multipart/form-data">
@@ -263,7 +284,7 @@
                   <input type="hidden" value="" id="input-file-names-hidden" name="{{ file_form.file_names.name }}" />
                   <input type="hidden" value="" id="input-file-source-hidden" name="{{ file_form.file_source.name }}" />
                   {{ file_form.csrf_token }}
-                  <div class="btn-group">
+                  <div class="btn-group" style="z-index: 3">
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width:10em;">
                     <i class="fa fa-folder-open"></i> Browse... <span class="caret"></span>
                     </button>
@@ -297,6 +318,23 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <h5 id="anchor-post-link">Post Link</h5>
+    <div class="form-group" style="padding-right:0.75em">
+      <form class="form {% if external_link_invalid %}has-error{% endif %}" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}">
+        {{ external_link_form.csrf_token }}
+        <div class="input-group">
+          <span class="input-group-addon"><i class="fa fa-link"></i></span>
+          <input name="url" type="text" class="form-control" required="required" />
+          <span class="input-group-btn">
+            <button type="submit" class="btn btn-primary" style="width:10em;"><i class="fa fa-link fa-fw"></i> Submit</button>
+          </span>
+        </div>
+        {% if external_link_invalid %}
+          <div class="help-block">Please enter a valid URL.</div>
+        {% endif %}
+      </form>
     </div>
     {% endif %}
   {% endif %}
@@ -480,7 +518,7 @@
               {% endif %}
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE %}
-            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> uploaded <a href="#file-{{ object_log_entry.data['file_id'] }}">{% for file in files %}{% if file.id == object_log_entry.data['file_id'] %}{{ file.original_file_name }}{% endif %}{% endfor %}</a>.</td>
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> {% for file in files %}{% if file.id == object_log_entry.data['file_id'] %}{% if file.storage == 'local' %}uploaded <a href="#file-{{ object_log_entry.data['file_id'] }}">{{ file.original_file_name }}</a>{% elif file.storage == 'url' %}linked <a href="{{ file.data.url }}">{{ file.data.url }}</a>{% else %}posted <a href="#file-{{ object_log_entry.data['file_id'] }}">file #{{ file.id }}</a>{% endif %}{% endif %}{% endfor %}.</td>
             <td class="text-right">
               {% if 'file_id' in object_log_entry.data %}
                 <a href="#file-{{ object_log_entry.data['file_id'] }}">View</a>
