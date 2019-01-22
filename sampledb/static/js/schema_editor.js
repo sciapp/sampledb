@@ -18,6 +18,7 @@ $(function() {
   }
   window.schema_editor_path_mapping = {};
   window.schema_editor_errors = {};
+  window.schema_editor_missing_type_support = false;
 
   input_schema.text(JSON.stringify(schema, null, 4));
 
@@ -32,6 +33,16 @@ $(function() {
     var node = schema_editor_templates.find('.schema-editor-root-object')[0].cloneNode(true);
     node = $(node);
     node.find('[data-toggle="tooltip"]:not(.disabled)').tooltip();
+
+    if ('batch' in schema) {
+      window.schema_editor_missing_type_support = true;
+    }
+    if ('batch_name_format' in schema) {
+      window.schema_editor_missing_type_support = true;
+    }
+    if ('displayProperties' in schema) {
+      window.schema_editor_missing_type_support = true;
+    }
 
     var title_label = node.find('.schema-editor-root-object-title-label');
     var title_input = node.find('.schema-editor-root-object-title-input');
@@ -291,7 +302,12 @@ $(function() {
       type = "quantity";
     } else if (schema['type'] === 'datetime') {
       type = "datetime";
+    } else if (schema['type'] === 'tags') {
+      return null;
+    } else if (schema['type'] === 'hazards') {
+      return null;
     } else {
+      window.schema_editor_missing_type_support = true;
       return null;
     }
 
@@ -1188,4 +1204,7 @@ $(function() {
   schema_editor[0].appendChild(root_object_node[0]);
   input_schema.text(JSON.stringify(schema, null, 4));
   globallyValidateSchema();
+  if (window.schema_editor_missing_type_support) {
+    $('#schemaEditorWarningModal').modal('show');
+  }
 });

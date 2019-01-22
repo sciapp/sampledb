@@ -244,6 +244,24 @@
     </div>
 
   </div>
+  <div class="modal fade" id="schemaEditorWarningModal" tabindex="-1" role="dialog" aria-labelledby="schemaEditorWarningModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="schemaEditorWarningModalLabel">Schema Editor Warning</h4>
+        </div>
+        <div class="modal-body">
+          <p>The schema for this action contains advanced features which the graphical schema editor does not support. If you continue, these might be removed from the schema.</p>
+          <p>If you wish to edit the schema with the more text-based editor, you can enable it in your <a href="{{ url_for('.user_me_preferences') }}">preferences</a>.</p>
+        </div>
+        <div class="modal-footer">
+          <a class="btn btn-primary" href="{{ url_for('.user_me_preferences') }}">Edit Preferences</a>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Use Schema Editor</button>
+        </div>
+      </div>
+    </div>
+  </div>
   {% endif %}
 
 {% endblock %}
