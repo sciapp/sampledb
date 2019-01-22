@@ -242,7 +242,9 @@
               <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">Edit</button>
               <button type="button" class="btn btn-default file-info-view-mode button-file-info-hide">Hide</button>
               {% endif %}
+              {% if file.storage == 'local' %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-default file-info-view-mode">Download</a>
+              {% endif %}
               <button type="button" class="btn btn-default file-info-view-mode" data-dismiss="modal">Close</button>
             </div>
           </form>
