@@ -31,13 +31,11 @@ def run(db):
         if original_file_name:
             files_to_update.append((id, object_id, original_file_name))
     for id, object_id, original_file_name in files_to_update:
-        print(id, object_id)
         db.session.execute(sqlalchemy.text("""
         UPDATE files
         SET data=jsonb_set('{"storage": "local"}'::jsonb, '{original_file_name}', to_json(:original_file_name ::text)::jsonb, true), original_file_name=''
         WHERE id=:id AND object_id=:object_id
         """), params={'id': id, 'object_id': object_id, 'original_file_name': original_file_name})
-
 
     db.session.execute("""
         ALTER TABLE files

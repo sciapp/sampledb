@@ -198,3 +198,19 @@ def test_create_url_file(user: User, object: Object, tmpdir):
     assert file.storage == 'url'
     assert file.title == 'http://localhost'
     assert file.data['url'] == 'http://localhost'
+
+
+def test_hide_file(user: User, object: Object, tmpdir):
+    files.FILE_STORAGE_PATH = tmpdir
+
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 0
+    files.create_url_file(object.id, user.id, "http://localhost")
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 1
+    file = files.get_files_for_object(object_id=object.object_id)[0]
+    assert not file.is_hidden
+    assert file.hide_reason is None
+    files.hide_file(file.object_id, file.id, user.id, "Reason")
+    # Reload file as hiding state is cached
+    file = files.get_files_for_object(object_id=object.object_id)[0]
+    assert file.is_hidden
+    assert file.hide_reason == "Reason"
