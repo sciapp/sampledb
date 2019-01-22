@@ -36,7 +36,6 @@ def create_app():
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
-    sampledb.logic.files.FILE_SOURCES = app.config['FILE_SOURCES']
 
     with app.app_context():
         db.metadata.create_all(bind=db.engine)

@@ -275,7 +275,7 @@ def _write_activity_log(object, canvas):
         elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION:
             text += ' restored a previous version of this object'
         elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE:
-            text += ' uploaded a file'
+            text += ' posted a file'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
             text += ' used this object in measurement #{}'.format(object_log_entry.data['measurement_id'])
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
@@ -313,6 +313,8 @@ def _write_files(object, canvas):
         canvas.showPage()
         for index, file in enumerate(files):
             if file.is_hidden:
+                continue
+            if file.storage != 'local':
                 continue
             for file_extension in ('.png', '.jpg', '.jpeg'):
                 if file.original_file_name.lower().endswith(file_extension):

@@ -31,7 +31,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -571,6 +571,8 @@ def object(object_id):
             file_source_instrument_exists=False,
             file_source_jupyterhub_exists=False,
             file_form=FileForm(),
+            external_link_form=ExternalLinkForm(),
+            external_link_invalid='invalid_link' in flask.request.args,
             mobile_upload_url=mobile_upload_url,
             mobile_upload_qrcode=mobile_upload_qrcode,
             object_qrcode=object_qrcode,
@@ -725,21 +727,6 @@ def export_to_pdf(object_id):
     )
 
 
-@frontend.route('/files/')
-@flask_login.login_required
-def existing_files_from_source():
-    if 'file_source' not in flask.request.args:
-        return flask.abort(400)
-    file_source = flask.request.args['file_source']
-    relative_path = flask.request.args.get('relative_path', '')
-    while relative_path.startswith('/'):
-        relative_path = relative_path[1:]
-    try:
-        return json.dumps(logic.files.get_existing_files_for_source(file_source, flask_login.current_user.id, relative_path, max_depth=2))
-    except (logic.errors.InvalidFileSourceError, FileNotFoundError) as e:
-        return flask.abort(404)
-
-
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_file(object_id, file_id):
@@ -748,12 +735,15 @@ def object_file(object_id, file_id):
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if 'preview' in flask.request.args:
-        file_extension = os.path.splitext(file.original_file_name)[1]
-        mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
-        if mime_type is not None:
-            return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
-    return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+    if file.storage == 'local':
+        if 'preview' in flask.request.args:
+            file_extension = os.path.splitext(file.original_file_name)[1]
+            mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
+            if mime_type is not None:
+                return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
+        return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+    # TODO: better error handling
+    return flask.abort(404)
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
@@ -817,13 +807,14 @@ def post_mobile_file_upload(object_id: int, token: str):
     files = flask.request.files.getlist('file_input')
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
-        logic.files.create_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
+        logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
     return flask.render_template('mobile_upload_success.html', num_files=len(files))
 
 
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id):
+    external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():
         file_source = file_form.file_source.data
@@ -831,24 +822,17 @@ def post_object_files(object_id):
             files = flask.request.files.getlist(file_form.local_files.name)
             for file_storage in files:
                 file_name = werkzeug.utils.secure_filename(file_storage.filename)
-                logic.files.create_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
-            flask.flash('Successfully uploaded files.', 'success')
-        elif file_source in logic.files.FILE_SOURCES.keys():
-            file_names = file_form.file_names.data
-            try:
-                file_names = json.loads(file_names)
-            except json.JSONDecodeError:
-                flask.flash('Failed to upload files.', 'error')
-                return flask.redirect(flask.url_for('.object', object_id=object_id))
-            for file_name in file_names:
-                try:
-                    logic.files.copy_file(object_id, flask_login.current_user.id, file_source, file_name)
-                except (FileNotFoundError, logic.errors.InvalidFileSourceError):
-                    flask.flash('Failed to upload files.', 'error')
-                    return flask.redirect(flask.url_for('.object', object_id=object_id))
+                logic.files.create_local_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
             flask.flash('Successfully uploaded files.', 'success')
         else:
             flask.flash('Failed to upload files.', 'error')
+    elif external_link_form.validate_on_submit():
+        url = external_link_form.url.data
+        logic.files.create_url_file(object_id, flask_login.current_user.id, url)
+        flask.flash('Successfully posted link.', 'success')
+    elif external_link_form.errors:
+        flask.flash('Failed to post link.', 'error')
+        return flask.redirect(flask.url_for('.object', object_id=object_id, invalid_link=True, _anchor='anchor-post-link'))
     else:
         flask.flash('Failed to upload files.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))

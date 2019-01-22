@@ -24,7 +24,7 @@ class TooManyFilesForObjectError(Exception):
     pass
 
 
-class InvalidFileSourceError(Exception):
+class InvalidFileStorageError(Exception):
     pass
 
 
@@ -160,3 +160,4 @@ class AuthenticationMethodWrong(Exception):
 
 class AuthenticationMethodAlreadyExists(Exception):
     pass
+

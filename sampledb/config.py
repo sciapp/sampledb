@@ -9,7 +9,6 @@ This configuration is the pure base, representing defaults. These values may be 
 """
 
 from .utils import generate_secret_key, load_environment_configuration
-from .logic.files import SudoFileSource, LocalFileSource
 
 
 def use_environment_configuration(env_prefix):
@@ -38,10 +37,7 @@ MAIL_SERVER='mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
 
 FILE_STORAGE_PATH = '/tmp/sampledb/'
-FILE_SOURCES = {
-    # 'jupyterhub': SudoFileSource(lambda user_id: None),
-    # 'instrument': LocalFileSource(lambda user_id: '/')
-}
+
 MIME_TYPES = {
     '.txt': 'text/plain',
     '.png': 'image/png',

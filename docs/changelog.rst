@@ -1,10 +1,18 @@
 Changelog
 =========
 
+Version 0.4
+-----------
+
+Currently in development.
+
+- Added posting of external links for objects
+
+
 Version 0.3
 -----------
 
-Released on Januar 16th, 2019.
+Released on January 16th, 2019.
 
 - Added custom actions
 - Added locations
