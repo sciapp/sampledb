@@ -260,6 +260,8 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
         for i, choice in enumerate(schema['choices']):
             if not isinstance(choice, str):
                 raise ValidationError('choice must be str', path + [str(i)])
+            if choice.isspace():
+                raise ValidationError('choice must contain more than whitespace', path + [str(i)])
     if 'pattern' in schema and not isinstance(schema['pattern'], str):
         raise ValidationError('pattern must be str', path)
     if 'pattern' in schema:

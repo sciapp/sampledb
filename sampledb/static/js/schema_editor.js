@@ -179,7 +179,7 @@ $(function() {
     for (var name in schema['properties']) {
       if (!properties_in_order.includes(name)) {
         properties_in_order.push(name);
-        schema['propertyOrder'].push(name)
+        schema['propertyOrder'].push(name);
       }
     }
     for (var i in properties_in_order) {
@@ -210,11 +210,11 @@ $(function() {
       schema['propertyOrder'].push(name);
       if (schema['propertyOrder'].includes('tags')) {
         schema['propertyOrder'].splice(schema['propertyOrder'].indexOf('tags'), 1);
-        schema['propertyOrder'].push('tags')
+        schema['propertyOrder'].push('tags');
       }
       if (schema['propertyOrder'].includes('hazards')) {
         schema['propertyOrder'].splice(schema['propertyOrder'].indexOf('hazards'), 1);
-        schema['propertyOrder'].push('hazards')
+        schema['propertyOrder'].push('hazards');
       }
       var path = [name];
       var is_required = ('required' in schema && schema['required'].includes(name));
@@ -247,7 +247,7 @@ $(function() {
       help_block.html("Objects must have a name as a <i>Text (Simple)</i> property.");
       help_parent.addClass("has-error");
       has_error = true;
-    } else if (!('type' in schema['properties']['name']) || schema['properties']['name']['type'] !== "text") {
+    } else if (!('type' in schema['properties']['name']) || schema['properties']['name']['type'] !== "text" || ('multiline' in schema['properties']['name'] && schema['properties']['name']['multiline']) || 'choices' in schema['properties']['name']) {
       help_block.html("Object name must be a <i>Text (Simple)</i> property.");
       help_parent.addClass("has-error");
       has_error = true;
@@ -469,12 +469,12 @@ $(function() {
         name_help.text("Name must not be 'hazards' or 'tags'.");
         name_group.addClass("has-error");
         has_error = true;
-      } else if (!RegExp('^[A-Za-z][A-Za-z0-9_]*$').test(name)) {
+      } else if (!RegExp('^[A-Za-z].*$').test(name)) {
         name = real_path[real_path.length - 1];
         name_help.text("Name must begin with a character.");
         name_group.addClass("has-error");
         has_error = true;
-      } else if (!RegExp('^[A-Za-z0-9_]*[A-Za-z0-9]$').test(name)) {
+      } else if (!RegExp('^.*[A-Za-z0-9]$').test(name)) {
         name = real_path[real_path.length - 1];
         name_help.text("Name must end with a character or a number.");
         name_group.addClass("has-error");
@@ -488,7 +488,22 @@ $(function() {
         name_group.addClass("has-error");
         has_error = true;
       }
-      var title = $('#schema-editor-object__' + path.join('__') + '-title-input').val();
+      var title_input = $('#schema-editor-object__' + path.join('__') + '-title-input');
+      var title_group = title_input.parent();
+      var title_help = title_group.find('.help-block');
+      var title = title_input.val();
+      if (title === "") {
+        title_help.text("Title must not be empty.");
+        title_group.addClass("has-error");
+        has_error = true;
+      } else if (RegExp('^\\s*$').test(title)) {
+        title_help.text("Title must not be whitespace only.");
+        title_group.addClass("has-error");
+        has_error = true;
+      } else {
+        title_help.text("");
+        title_group.removeClass("has-error");
+      }
       var required = $('#schema-editor-object__' + path.join('__') + '-required-input').prop('checked');
       var has_note = $('#schema-editor-object__' + path.join('__') + '-note-checkbox').prop('checked');
       var note = $('#schema-editor-object__' + path.join('__') + '-note-input').val();
@@ -600,6 +615,10 @@ $(function() {
             has_error = true;
           }
         }
+      } else {
+        delete property_schema["minLength"];
+        minlength_help.text("");
+        minlength_group.removeClass("has-error");
       }
 
       var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-text-maxlength-checkbox').prop('checked');
@@ -625,6 +644,10 @@ $(function() {
             has_error = true;
           }
         }
+      } else {
+        delete property_schema["maxLength"];
+        maxlength_help.text("");
+        maxlength_group.removeClass("has-error");
       }
       if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
         minlength_help.text("Please enter a number less than or equal to the maximum length.");
@@ -650,7 +673,7 @@ $(function() {
       updateGenericProperty(path, real_path);
       var schema = JSON.parse(input_schema.text());
       var property_schema = schema['properties'][real_path[real_path.length-1]];
-      property_schema["type"] = "choice";
+      property_schema["type"] = "text";
 
       var has_default = $('#schema-editor-object__' + path.join('__') + '-choice-default-checkbox').prop('checked');
       var default_value = $('#schema-editor-object__' + path.join('__') + '-choice-default-input').val();
@@ -659,10 +682,29 @@ $(function() {
         property_schema['default'] = default_value;
       }
 
-      var choices = $('#schema-editor-object__' + path.join('__') + '-choice-choices-input').val();
+      var choices_input = $('#schema-editor-object__' + path.join('__') + '-choice-choices-input');
+      var choices_group = choices_input.parent();
+      var choices_help = choices_group.find('.help-block');
+      var choices = choices_input.val();
       choices = choices.match(/[^\r\n]+/g);
       if (choices === null) {
         choices = [];
+      }
+      var non_empty_choices = [];
+      for (var i = 0; i < choices.length; i++) {
+        var choice = choices[i].trim();
+        if (choice.length) {
+          non_empty_choices.push(choice);
+        }
+      }
+      choices = non_empty_choices;
+      if (choices.length === 0) {
+        choices_help.text("Choices must not be empty.");
+        choices_group.addClass("has-error");
+        has_error = true;
+      } else {
+        choices_help.text("");
+        choices_group.removeClass("has-error");
       }
       property_schema['choices'] = choices;
 
@@ -676,7 +718,8 @@ $(function() {
       updateGenericProperty(path, real_path);
       var schema = JSON.parse(input_schema.text());
       var property_schema = schema['properties'][real_path[real_path.length-1]];
-      property_schema["type"] = "multiline";
+      property_schema["type"] = "text";
+      property_schema["multiline"] = true;
 
       var has_default = $('#schema-editor-object__' + path.join('__') + '-multiline-default-checkbox').prop('checked');
       var default_value = $('#schema-editor-object__' + path.join('__') + '-multiline-default-input').val();
@@ -708,6 +751,10 @@ $(function() {
             has_error = true;
           }
         }
+      } else {
+        delete property_schema["minLength"];
+        minlength_help.text("");
+        minlength_group.removeClass("has-error");
       }
 
       var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-multiline-maxlength-checkbox').prop('checked');
@@ -733,6 +780,10 @@ $(function() {
             has_error = true;
           }
         }
+      } else {
+        delete property_schema["maxLength"];
+        maxlength_help.text("");
+        maxlength_group.removeClass("has-error");
       }
       if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
         minlength_help.text("Please enter a number less than or equal to the maximum length.");
@@ -848,7 +899,7 @@ $(function() {
           default_group.addClass("has-error");
           has_error = true;
         } else {
-          default_value = Number.parseInt(default_value);
+          default_value = Number.parseFloat(default_value);
           property_schema['default'] = default_value;
           default_help.text("");
           default_group.removeClass("has-error");
@@ -890,7 +941,7 @@ $(function() {
       note_input.prop('disabled', true);
     }
     note_checkbox.on('change', function() {
-      var choices_input = $(this).parent().parent().find('.schema-editor-generic-property-note-input');
+      var note_input = $(this).parent().parent().find('.schema-editor-generic-property-note-input');
       if ($(this).prop('checked')) {
         note_input.prop('disabled', false);
       } else {
@@ -1130,7 +1181,7 @@ $(function() {
     default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-bool-default-input');
     default_label.attr('for', default_input.attr('id'));
     default_input.bootstrapToggle();
-    if (type === 'multiline' && 'default' in schema) {
+    if (type === 'bool' && 'default' in schema) {
       default_input.prop('checked', schema['default']);
       default_checkbox.prop('checked', true);
       default_input.prop('disabled', false);
