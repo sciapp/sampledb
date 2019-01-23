@@ -106,9 +106,12 @@ def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
     if keys != [id_prefix + '__tags']:
         raise ValueError('invalid tags form data')
     text = form_data.get(id_prefix + '__tags', [''])[0]
-    tags = [tag.strip().lower() for tag in text.split(',') if tag.strip()]
+    tags = [tag.lower() for tag in text.split(',')]
     unique_tags = []
     for tag in tags:
+        tag = ''.join(c for c in tag if not c.isspace())
+        if not tag:
+            continue
         if tag not in unique_tags:
             unique_tags.append(tag)
     tags = unique_tags
