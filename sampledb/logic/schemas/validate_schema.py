@@ -181,9 +181,11 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if 'required' in schema:
         if not isinstance(schema['required'], list):
             raise ValidationError('required must be list', path)
-        for property_name in schema['required']:
+        for i, property_name in enumerate(schema['required']):
             if property_name not in schema['properties']:
                 raise ValidationError('unknown required property: {}'.format(property_name), path)
+            if property_name in schema['required'][:i]:
+                raise ValidationError('duplicate required property: {}'.format(property_name), path)
 
     if 'hazards' in schema['properties'] and schema['properties']['hazards']['type'] == 'hazards' and 'hazards' not in schema.get('required', []):
         raise ValidationError('GHS hazards may not be optional', path)
@@ -197,9 +199,11 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if 'propertyOrder' in schema:
         if not isinstance(schema['propertyOrder'], list):
             raise ValidationError('propertyOrder must be list', path)
-        for property_name in schema['propertyOrder']:
+        for i, property_name in enumerate(schema['propertyOrder']):
             if property_name not in schema['properties']:
                 raise ValidationError('unknown propertyOrder property: {}'.format(property_name), path)
+            if property_name in schema['propertyOrder'][:i]:
+                raise ValidationError('duplicate propertyOrder property: {}'.format(property_name), path)
 
     if 'default' in schema:
         validate(schema['default'], schema)
@@ -207,9 +211,11 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if 'displayProperties' in schema:
         if not isinstance(schema['displayProperties'], list):
             raise ValidationError('displayProperties must be list', path)
-        for property_name in schema['displayProperties']:
+        for i, property_name in enumerate(schema['displayProperties']):
             if property_name not in schema['properties']:
                 raise ValidationError('unknown display property: {}'.format(property_name), path)
+            if property_name in schema['displayProperties'][:i]:
+                raise ValidationError('duplicate displayProperties property: {}'.format(property_name), path)
 
     if 'batch' in schema:
         if not isinstance(schema['batch'], bool):
