@@ -12,6 +12,7 @@ import sampledb.models
 
 from ..test_utils import flask_server, app, app_context
 
+
 @pytest.fixture
 def user():
     user = sampledb.models.User(
@@ -38,7 +39,7 @@ def action():
                     'type': 'text'
                 },
                 'tags': {
-                    'title': 'Tags',
+                    'title': 'tags',
                     'type': 'tags'
                 }
             },
@@ -56,7 +57,7 @@ def test_create_object_with_tags(user, action) -> None:
         },
         'tags': {
             '_type': 'tags',
-            'tags': ['Tag1', 'Tag2', 'Tag3']
+            'tags': ['tag1', 'tag2', 'tag3']
         }
     }
     assert not sampledb.logic.tags.get_tags()
@@ -64,7 +65,7 @@ def test_create_object_with_tags(user, action) -> None:
     tags = sampledb.logic.tags.get_tags()
     assert len(tags) == 3
     assert all(tag.uses == 1 for tag in tags)
-    assert {tag.name for tag in tags} == {'Tag1', 'Tag2', 'Tag3'}
+    assert {tag.name for tag in tags} == {'tag1', 'tag2', 'tag3'}
 
 
 def test_edit_object_with_tags(user, action) -> None:
@@ -75,16 +76,16 @@ def test_edit_object_with_tags(user, action) -> None:
         },
         'tags': {
             '_type': 'tags',
-            'tags': ['Tag1', 'Tag2', 'Tag3']
+            'tags': ['tag1', 'tag2', 'tag3']
         }
     }
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
-    data['tags']['tags'] = ['Tag2', 'Tag4']
+    data['tags']['tags'] = ['tag2', 'tag4']
     sampledb.logic.objects.update_object(object_id=object.object_id, data=data, user_id=user.id)
     tags = sampledb.logic.tags.get_tags()
     assert len(tags) == 2
     assert all(tag.uses == 1 for tag in tags)
-    assert {tag.name for tag in tags} == {'Tag2', 'Tag4'}
+    assert {tag.name for tag in tags} == {'tag2', 'tag4'}
 
 
 def test_create_multiple_objects_with_tags(user, action) -> None:
@@ -95,11 +96,11 @@ def test_create_multiple_objects_with_tags(user, action) -> None:
         },
         'tags': {
             '_type': 'tags',
-            'tags': ['Tag1', 'Tag2', 'Tag3']
+            'tags': ['tag1', 'tag2', 'tag3']
         }
     }
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
-    data['tags']['tags'] = ['Tag2', 'Tag4']
+    data['tags']['tags'] = ['tag2', 'tag4']
     sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     tags = sampledb.logic.tags.get_tags()
-    assert {tag.name: tag.uses for tag in tags} == {'Tag1': 1, 'Tag2': 2, 'Tag3': 1, 'Tag4': 1}
+    assert {tag.name: tag.uses for tag in tags} == {'tag1': 1, 'tag2': 2, 'tag3': 1, 'tag4': 1}
