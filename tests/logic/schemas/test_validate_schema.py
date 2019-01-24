@@ -826,6 +826,26 @@ def test_validate_object_schema_with_property_order_invalid_property():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_object_schema_with_property_order_duplicate_property():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'example1': {
+                'title': 'Example',
+                'type': 'text'
+            },
+            'example2': {
+                'title': 'Example',
+                'type': 'text'
+            }
+        },
+        'propertyOrder': ['example1', 'example1']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_object_schema_invalid_key():
     schema = {
         'title': 'Example',
@@ -975,6 +995,23 @@ def test_validate_object_schema_with_display_properties():
     validate_schema(schema)
 
 
+def test_validate_object_schema_with_invalid_display_properties():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'displayProperties': 'name'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_object_schema_with_unknown_display_property():
     schema = {
         'title': 'Example',
@@ -985,7 +1022,57 @@ def test_validate_object_schema_with_unknown_display_property():
                 'type': 'text'
             }
         },
+        'required': ['name'],
         'displayProperties': ['example']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_duplicate_display_property():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'displayProperties': ['name', 'name']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_unknown_required_properties():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
+        'required': ['name', 'example']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_object_schema_with_duplicate_required_property():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Example Property',
+                'type': 'text'
+            }
+        },
+        'required': ['name', 'name']
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
@@ -1008,22 +1095,6 @@ def test_validate_nested_schema_with_display_properties():
             }
         },
         'displayProperties': ['example']
-    }
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-
-def test_validate_object_schema_with_invalid_display_properties():
-    schema = {
-        'title': 'Example',
-        'type': 'object',
-        'properties': {
-            'name': {
-                'title': 'Example Property',
-                'type': 'text'
-            }
-        },
-        'displayProperties': 'name'
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
