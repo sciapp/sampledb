@@ -22,7 +22,7 @@ from .users import get_user
 
 
 DEFAULT_SETTINGS = {
-
+    "USE_SCHEMA_EDITOR": True
 }
 
 

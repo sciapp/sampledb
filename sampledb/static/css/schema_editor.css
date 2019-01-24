@@ -1,0 +1,96 @@
+
+.schema-editor-form-group {
+    width: 190px;
+    padding:7px;
+}
+.schema-editor-form-group-wide {
+    width: 380px;
+    padding:7px;
+}
+.schema-editor-checkbox {
+    margin-right:5px;
+}
+
+.schema-editor-property-settings {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: left;
+}
+
+.schema-editor .well {
+    position: relative;
+    padding: 7px;
+    margin: 7px;
+    background-color: #fafafa;
+}
+.schema-editor > .well {
+    margin: 0;
+}
+.schema-editor-form-group textarea,
+.schema-editor-form-group-wide textarea {
+    resize: vertical;
+    min-height: 34px;
+}
+.schema-editor .checkbox {
+    margin: 0;
+}
+.schema-editor-property-controls {
+    position: absolute;
+    top:0;
+    left: -29px;
+    width: 24px;
+    text-align: center;
+    color:#999999;
+}
+.schema-editor-property-controls i {
+    line-height: 1.5em;
+}
+.schema-editor-new-property-controls i:hover,
+.schema-editor-property-controls i:hover {
+    color:#333333;
+    cursor: pointer;
+}
+.schema-editor-new-property-controls i.disabled,
+.schema-editor-property-controls i.disabled,
+.schema-editor-new-property-controls i.disabled:hover,
+.schema-editor-property-controls i.disabled:hover {
+    color:#cccccc;
+    cursor: not-allowed;
+}
+.schema-editor-new-property-controls {
+    margin-left: -1px;
+    color:#999999;
+}
+.schema-editor-property-label {
+    font-weight: 700;
+    margin-left: 7px;
+}
+.schema-editor .well {
+    background-color: rgba(240, 240, 240, 0.4);
+}
+.schema-editor .text-muted a {
+    color: #56778f;
+}
+.schema-editor .text-muted a:active,
+.schema-editor .text-muted a:hover {
+    color:#23527c;
+}
+.well.schema-editor-property {
+    margin-left: 27px;
+}
+#schema-editor-templates {
+    display: none;
+}
+
+.schema-editor-quantity-property-settings,
+.schema-editor-bool-property-settings,
+.schema-editor-text-property-settings,
+.schema-editor-multiline-property-settings,
+.schema-editor-choice-property-settings {
+    display: none;
+}
+.schema-error-message {
+    border-radius: 4px;
+    margin: 15px 0;
+}

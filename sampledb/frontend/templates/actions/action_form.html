@@ -3,7 +3,11 @@
 {% block stylesheets %}
   {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pygments.css') }}">
+{% if use_schema_editor %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/schema_editor.css') }}">
+{% endif %}
 {% endblock %}
 
 
@@ -11,6 +15,10 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  {% if use_schema_editor %}
+  <script src="{{ url_for('static', filename='js/schema_editor.js') }}"></script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -47,10 +55,20 @@
       </div>
       <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
         <label for="input-description" class="control-label">Description</label>
-        <textarea class="form-control" rows="3" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
+        <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
       </div>
-      <div class="form-group {% if error_message or action_form.schema.name in action_form.errors %}has-error{% endif %}">
+      <div class="form-group {% if action_form.schema.name in action_form.errors %}has-error{% endif %}">
         <label for="input-schema" class="control-label">Schema</label>
+        {% if use_schema_editor %}
+          <script>
+          {% if error_message is not none %}
+            window.schema_editor_error_message = {{ error_message | tojson }};
+          {% else %}
+            window.schema_editor_error_message = null;
+          {% endif %}
+          </script>
+          <div class="schema-editor" id="schema-editor"></div>
+        {% endif %}
         <textarea class="form-control" rows="{% if schema_json %}{{ schema_json.splitlines() | length }}{% else %}5{% endif %}" id="input-schema" name="{{ action_form.schema.name }}" placeholder="Schema">{{ action_form.schema.data or ''}}</textarea>
       </div>
       {% if pygments_output %}
@@ -69,4 +87,183 @@
       </div>
     </div>
   </form>
+
+
+  {% if use_schema_editor %}
+  <div id="schema-editor-templates">
+    <div class="well schema-editor-root-object">
+      <div class="schema-editor-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="control-label">Title</label>
+          <input type="text" class="form-control schema-editor-root-object-title-input" placeholder="Name" value="">
+          <div class="help-block"></div>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="control-label">Tags</label>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" data-onstyle="default" data-width="176" data-on="Enabled" data-off="Disabled" class="schema-editor-root-object-tags-input">
+              <span class="sr-only">Tags</span>
+            </label>
+          </div>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-root-object-hazards-label">Hazards</label>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" data-onstyle="default" data-width="176" data-on="Enabled" data-off="Disabled" class="schema-editor-root-object-hazards-input">
+              <span class="sr-only">Hazards</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div><span class="help-block schema-editor-global-help"></span></div>
+      <div><span class="schema-editor-property-label">Properties</span></div>
+      <div class="schema-editor-root-object-properties"></div>
+      <div class="schema-editor-new-property-controls">
+        <i class="fa fa-fw fa-plus fa-lg schema-editor-create-property-button" aria-hidden="true" data-toggle="tooltip" data-placement="right" data-html="true" title="Add&nbsp;property"></i>
+      </div>
+    </div>
+
+    <div class="well schema-editor-property schema-editor-generic-property">
+      <div class="schema-editor-property-controls">
+        <i class="fa fa-fw fa-times fa-lg schema-editor-delete-property-button" aria-hidden="true" data-toggle="tooltip" data-placement="right" data-html="true" title="Remove&nbsp;property"></i>
+        <i class="fa fa-fw fa-arrow-up fa-lg schema-editor-move-property-up-button" aria-hidden="true" data-toggle="tooltip" data-placement="right" data-html="true" title="Move&nbsp;property&nbsp;up"></i>
+        <i class="fa fa-fw fa-arrow-down fa-lg schema-editor-move-property-down-button" aria-hidden="true" data-toggle="tooltip" data-placement="right" data-html="true" title="Move&nbsp;property&nbsp;down"></i>
+      </div>
+      <div class="schema-editor-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-generic-property-name-label">Name</label>
+          <input type="text" class="form-control schema-editor-generic-property-name-input" placeholder="Name" value="">
+          <div class="help-block"></div>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-generic-property-title-label">Title</label>
+          <input type="text" class="form-control schema-editor-generic-property-title-input" placeholder="Title" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-generic-property-type-label">Type</label>
+          <select class="form-control schema-editor-generic-property-type-input">
+            <option value="text">Text (Simple)</option>
+            <option value="multiline">Text (Multiline)</option>
+            <option value="choice">Text (Choice)</option>
+            <option value="quantity">Quantity</option>
+            <option value="bool">Boolean</option>
+            <option value="datetime">Datetime</option>
+            <option value="sample">Sample</option>
+          </select>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-generic-property-required-label">Required</label>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" data-onstyle="default" data-width="176" data-on="Yes" data-off="No" class="schema-editor-generic-property-required-input">
+              <span class="sr-only">Required</span>
+            </label>
+          </div>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-generic-property-note-checkbox"></label><label class="control-label schema-editor-generic-property-default-label">Note</label>
+          <input type="text" class="form-control schema-editor-generic-property-note-input" placeholder="Note" value="">
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-text-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-default-checkbox"></label><label class="control-label schema-editor-text-property-default-label">Default</label>
+          <input type="text" class="form-control schema-editor-text-property-default-input" placeholder="Default" value="">
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-pattern-checkbox"></label><label class="control-label schema-editor-text-property-pattern-label">Pattern</label>
+          <input type="text" class="form-control schema-editor-text-property-pattern-input" placeholder="Pattern" value="">
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-minlength-checkbox"></label><label class="control-label schema-editor-text-property-minlength-label">Minimum Length</label>
+          <input type="text" class="form-control schema-editor-text-property-minlength-input" placeholder="Minimum Length" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-maxlength-checkbox"></label><label class="control-label schema-editor-text-property-maxlength-label">Maximum Length</label>
+          <input type="text" class="form-control schema-editor-text-property-maxlength-input" placeholder="Maximum Length" value="">
+          <span class="help-block"></span>
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-choice-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-choice-property-choices-label">Choices</label>
+          <textarea rows="3" class="form-control schema-editor-choice-property-choices-input" placeholder="Choices"></textarea>
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-choice-property-default-checkbox"></label><label class="control-label schema-editor-choice-property-default-label">Default</label>
+          <input type="text" class="form-control schema-editor-choice-property-default-input" placeholder="Default" value="">
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-multiline-property-settings">
+        <div class="schema-editor-form-group-wide">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-default-checkbox"></label><label class="control-label schema-editor-multiline-property-default-label">Default</label>
+          <textarea rows="1" class="form-control schema-editor-multiline-property-default-input" placeholder="Default"></textarea>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-minlength-checkbox"></label><label class="control-label schema-editor-multiline-property-minlength-label">Minimum Length</label>
+          <input type="text" class="form-control schema-editor-multiline-property-minlength-input" placeholder="Minimum Length" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-maxlength-checkbox"></label><label class="control-label schema-editor-multiline-property-maxlength-label">Maximum Length</label>
+          <input type="text" class="form-control schema-editor-multiline-property-maxlength-input" placeholder="Maximum Length" value="">
+          <span class="help-block"></span>
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-bool-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-bool-property-default-checkbox"></label><label class="control-label schema-editor-bool-property-default-label">Default</label>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" data-onstyle="default" data-width="176" data-on="Yes" data-off="No" class="schema-editor-bool-property-default-input">
+              <span class="sr-only">Default</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-quantity-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="control-label schema-editor-quantity-property-units-label">Units</label>
+          <input type="text" class="form-control schema-editor-quantity-property-units-input" id="input-schema-name-text-default" placeholder="Units" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-quantity-property-default-checkbox"></label><label class="control-label schema-editor-quantity-property-default-label">Default</label>
+          <input type="text" class="form-control schema-editor-quantity-property-default-input" placeholder="Default" value="">
+          <span class="help-block"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="modal fade" id="schemaEditorWarningModal" tabindex="-1" role="dialog" aria-labelledby="schemaEditorWarningModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="schemaEditorWarningModalLabel">Schema Editor Warning</h4>
+        </div>
+        <div class="modal-body">
+          <p>The schema for this action contains advanced features which the graphical schema editor does not support. If you continue, these might be removed from the schema.</p>
+          <p>If you wish to edit the schema with the more text-based editor, you can enable it in your <a href="{{ url_for('.user_me_preferences') }}">preferences</a>.</p>
+        </div>
+        <div class="modal-footer">
+          <a class="btn btn-primary" href="{{ url_for('.user_me_preferences') }}">Edit Preferences</a>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Use Schema Editor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 {% endblock %}

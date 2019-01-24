@@ -345,6 +345,18 @@ def advanced_search_visualization(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_visualization.png', (0, search_tree.location['y'], width, min(search_tree.location['y'] + max_height, search_tree.location['y'] + search_tree.rect['height'])))
 
 
+def schema_editor(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'actions/new/')
+    form = driver.find_element_by_id('schema-editor')
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'], width, min(form.location['y'] + max_height, form.location['y'] + form.rect['height'])))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -463,6 +475,7 @@ try:
                 advanced_search_by_property(flask_server.base_url, driver, object)
                 advanced_search_visualization(flask_server.base_url, driver)
                 locations(flask_server.base_url, driver, object)
+                schema_editor(flask_server.base_url, driver)
                 unread_notification_icon(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

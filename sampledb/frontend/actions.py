@@ -22,6 +22,7 @@ from ..logic.favorites import get_user_favorite_action_ids
 from ..logic.instruments import get_instrument, get_user_instruments
 from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
+from ..logic.settings import get_user_settings
 from .users.forms import ToggleFavoriteActionForm
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -193,7 +194,17 @@ def show_action_form(action: typing.Optional[Action]=None, previous_action: typi
         schema_json = json.dumps(previous_action.schema, indent=2)
         submit_text = "Create"
     else:
-        schema_json = ''
+        schema_json = json.dumps({
+            'title': '',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }, indent=2)
         submit_text = "Create"
     may_change_public = action is None or action.user_id is not None
     schema = None
@@ -330,6 +341,7 @@ def show_action_form(action: typing.Optional[Action]=None, previous_action: typi
             if may_change_public and is_public is not None:
                 set_action_public(action.id, is_public)
         return flask.redirect(flask.url_for('.action', action_id=action.id))
+    use_schema_editor = get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]
     return flask.render_template(
         'actions/action_form.html',
         action_form=action_form,
@@ -337,6 +349,7 @@ def show_action_form(action: typing.Optional[Action]=None, previous_action: typi
         error_message=error_message,
         schema_json=schema_json,
         submit_text=submit_text,
+        use_schema_editor=use_schema_editor,
         may_change_type=action is None,
         may_change_instrument=action is None,
         may_change_public=may_change_public
