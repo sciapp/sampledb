@@ -35,6 +35,7 @@ LDAP_GROUP_DN = "ou=Groups,dc=iff,dc=kfa-juelich,dc=de"
 
 MAIL_SERVER='mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
+CONTACT_EMAIL = 'f.rhiem@fz-juelich.de'
 
 FILE_STORAGE_PATH = '/tmp/sampledb/'
 

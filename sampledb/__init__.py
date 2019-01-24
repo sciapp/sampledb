@@ -32,7 +32,10 @@ def create_app():
     app.register_blueprint(sampledb.frontend.frontend)
 
     login_manager.login_view = 'frontend.sign_in'
-    app.jinja_env.globals.update(signout_form=sampledb.frontend.users_forms.SignoutForm)
+    app.jinja_env.globals.update(
+        signout_form=sampledb.frontend.users_forms.SignoutForm,
+        contact_email=app.config['CONTACT_EMAIL']
+    )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
