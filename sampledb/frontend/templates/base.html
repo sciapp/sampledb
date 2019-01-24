@@ -26,7 +26,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="{{ url_for('frontend.index') }}">iffSamples</a>
+      <a class="navbar-brand" href="{{ url_for('frontend.index') }}">{{ service_name }}</a>
       {% if num_unread_notifications > 0 %}<a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a>{% endif %}
     </div>
 
@@ -181,7 +181,7 @@
 </div>
 <footer>
   <div class="container">
-    <p class="text-center text-muted">iffSamples is a service by the <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> team.</p>
+    <p class="text-center text-muted">{{ service_name }} is a service by the <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> team.</p>
   </div>
 </footer>
  {% block scripts %}

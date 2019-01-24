@@ -146,7 +146,8 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         exists
     """
     user = users.get_user(user_id)
-    subject = "iffSamples Notification"
+    service_name = flask.current_app.config['SERVICE_NAME']
+    subject = service_name + " Notification"
 
     template_path = 'mails/notifications/' + type.name.lower()
 
