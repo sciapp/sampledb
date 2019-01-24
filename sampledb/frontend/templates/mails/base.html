@@ -9,7 +9,7 @@
 <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border: 1px solid #d8d8d8;border-radius: 6px;">
   <tr>
     <td bgcolor="#023d6b" style="color: #777777; padding: 10px; padding-left: 20px; text-align: center; border-top-left-radius: 6px;border-top-right-radius: 6px;">
-      <a style="color: #f8f8f8; font-size: 20px; line-height: 50px; text-decoration: none;" href="https://iffsamples.fz-juelich.de/">iffSamples</a>
+      <a style="color: #f8f8f8; font-size: 20px; line-height: 50px; text-decoration: none;" href="{{ url_for('frontend.index') }}">{{ service_name }}</a>
     </td>
   </tr>
   <tr>
@@ -20,14 +20,14 @@
       <hr style="border:0; border-top:1px solid #444444; position: relative; display: block; margin-top: 24px; margin-bottom: 24px;"/>
       <div style="font-size:12px; color:#444444;">
       {% block notes %}
-        <p>If you need help with iffSamples, please see the <a href="https://iffsamples.fz-juelich.de/documentation/" style="color:#337ab7;">user guide</a> or <a href="mailto:{{ contact_email }}" style="color:#337ab7;">contact us</a>.</p>
+        <p>If you need help with {{ service_name }}, please see the <a href="https://iffsamples.fz-juelich.de/documentation/" style="color:#337ab7;">user guide</a> or <a href="mailto:{{ contact_email }}" style="color:#337ab7;">contact us</a>.</p>
       {% endblock %}
       </div>
     </td>
   </tr>
   <tr>
     <td bgcolor="#ffffff" style="font-size:12px; color: #777777; padding: 10px; text-align: center;border-bottom-left-radius: 6px;border-bottom-right-radius: 6px;">
-      iffSamples is a service by the <a href="https://pgi-jcns.fz-juelich.de" style="color:#337ab7;">PGI / JCNS Scientific IT-Systems</a> team.
+      {{ service_name }} is a service by the <a href="https://pgi-jcns.fz-juelich.de" style="color:#337ab7;">PGI / JCNS Scientific IT-Systems</a> team.
     </td>
   </tr>
 </table>

@@ -7,6 +7,6 @@ Hello {{ user.name }},
 
 ---
 
-To disable notifications or to receive them on iffSamples, please adjust your notification settings:
+To disable notifications or to receive them on {{ service_name }}, please adjust your notification settings:
 {{ url_for('frontend.user_preferences', user_id=user.id, _external=True) }}
 {% endblock %}

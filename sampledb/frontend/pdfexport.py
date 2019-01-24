@@ -428,11 +428,12 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         image_stream.seek(0)
         qrcode_uri = 'data:image/svg+xml;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
 
-        canvas.setTitle('iffSamples Export')
-        canvas.setAuthor('iffSamples')
-        canvas.setCreator('iffSamples')
+        service_name = flask.current_app.config['SERVICE_NAME']
+        canvas.setTitle(service_name + ' Export')
+        canvas.setAuthor(service_name)
+        canvas.setCreator(service_name)
         # set PDF producer (not exposed by reportlab Canvas API)
-        PDFInfo.producer = 'iffSamples'
+        PDFInfo.producer = service_name
         canvas.showOutline()
         canvas.set_up_page = lambda: _set_up_page(canvas, object_id, qrcode_uri)
         canvas.left_cursor = LEFT_MARGIN

@@ -32,10 +32,14 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 LDAP_HOST = "ldaps://iffldap.iff.kfa-juelich.de"
 LDAP_USER_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
 LDAP_GROUP_DN = "ou=Groups,dc=iff,dc=kfa-juelich,dc=de"
+LDAP_NAME = 'PGI / JCNS'
 
 MAIL_SERVER='mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
 CONTACT_EMAIL = 'f.rhiem@fz-juelich.de'
+
+SERVICE_NAME = 'iffSamples'
+SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
 
 FILE_STORAGE_PATH = '/tmp/sampledb/'
 

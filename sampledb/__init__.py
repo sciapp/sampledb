@@ -34,6 +34,9 @@ def create_app():
     login_manager.login_view = 'frontend.sign_in'
     app.jinja_env.globals.update(
         signout_form=sampledb.frontend.users_forms.SignoutForm,
+        service_name=app.config['SERVICE_NAME'],
+        service_description=app.config['SERVICE_DESCRIPTION'],
+        ldap_name=app.config['LDAP_NAME'],
         contact_email=app.config['CONTACT_EMAIL']
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)

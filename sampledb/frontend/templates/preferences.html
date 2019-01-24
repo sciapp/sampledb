@@ -89,7 +89,7 @@
     </div>
 
   <h2>Notification Settings</h2>
-  <p><strong>Note:</strong> iffSamples will notify you about various events. By default, these notifications will be sent using the iffSamples notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
+  <p><strong>Note:</strong> {{ service_name }} will notify you about various events. By default, these notifications will be sent using the {{ service_name }} notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
 
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
     {{ notification_mode_form.csrf_token }}
