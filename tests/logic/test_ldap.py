@@ -3,9 +3,7 @@ import pytest
 import sampledb
 import sampledb.models
 
-from sampledb.models import User, UserType,  Authentication, AuthenticationType
-from sampledb.logic.ldap import NoEmailInLdapAccount
-
+from sampledb.logic.errors import NoEmailInLDAPAccountError
 
 from ..test_utils import app_context, flask_server, app
 
@@ -25,7 +23,7 @@ def test_user_info(app):
     # no ldap-account
     assert user is None
 
-    with pytest.raises(NoEmailInLdapAccount) as excinfo:
+    with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
         sampledb.logic.ldap.get_user_info('aarbe')
     # no email exist
     assert 'Email in LDAP-account missing, please contact your administrator' in str(excinfo.value)
@@ -49,7 +47,7 @@ def test_validate_user(app):
     # wrong uid
     assert not sampledb.logic.ldap.validate_user('doro', password)
 
-    with pytest.raises(NoEmailInLdapAccount) as excinfo:
+    with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
         sampledb.logic.ldap.get_user_info('aarbe')
     # no email exist
     assert 'Email in LDAP-account missing, please contact your administrator' in str(excinfo.value)

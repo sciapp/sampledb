@@ -161,3 +161,14 @@ class AuthenticationMethodWrong(Exception):
 class AuthenticationMethodAlreadyExists(Exception):
     pass
 
+
+class NoEmailInLDAPAccountError(Exception):
+    pass
+
+
+class LDAPAccountAlreadyExistError(Exception):
+    pass
+
+
+class LDAPAccountOrPasswordWrongError(Exception):
+    pass
