@@ -544,7 +544,7 @@ def transform_literal_to_query(data, literal: object_search_parser.Literal, sear
                 jsonb_selector += attribute
             array_items = select(columns=[db.text('value FROM jsonb_array_elements_text(data -> {})'.format(jsonb_selector))])
             db_obj = db.literal_column('value').cast(postgresql.JSONB)
-            for attribute in attributes[array_placeholder_index+1:]:
+            for attribute in attributes[array_placeholder_index + 1:]:
                 db_obj = db_obj[attribute]
             return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: db.Query(db.literal(True)).select_entity_from(array_items).filter(filter).exists()
         return Attribute(literal.input_text, literal.start_position, data[attributes]), None
@@ -574,7 +574,8 @@ def transform_unary_operation_to_query(data, operator, operand, search_notes: ty
     end = end_token.start_position + len(end_token.input_text)
     operand, outer_filter = transform_tree_to_query(data, operand, search_notes)
     if not outer_filter:
-        outer_filter = lambda filter: filter
+        def outer_filter(filter):
+            return filter
 
     str_operator = operator.operator
     operator_aliases = {
@@ -624,7 +625,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
     elif right_outer_filter:
         outer_filter = right_outer_filter
     else:
-        outer_filter = lambda filter: filter
+        def outer_filter(filter):
+            return filter
 
     str_operator = operator.operator
     operator_aliases = {
@@ -804,7 +806,7 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                 """ Filter objects based on search query string """
                 # The query string is converted to json to escape quotes, backslashes, etc
                 query_string = json.dumps(query_string)[1:-1]
-                return data.cast(String).like('%: "%'+query_string+'%"%')
+                return data.cast(String).like('%: "%' + query_string + '%"%')
     else:
         def filter_func(data, search_notes):
             """ Return all objects"""
@@ -820,5 +822,8 @@ def wrap_filter_func(filter_func):
     :return: the wrapped filter function and the search notes list
     """
     search_notes = []
-    wrapped_filter_func = lambda *args, search_notes=search_notes, filter_func_impl=filter_func, **kwargs: filter_func_impl(*args, search_notes=search_notes, **kwargs)
+
+    def wrapped_filter_func(*args, search_notes=search_notes, filter_func_impl=filter_func, **kwargs):
+        return filter_func_impl(*args, search_notes=search_notes, **kwargs)
+
     return wrapped_filter_func, search_notes

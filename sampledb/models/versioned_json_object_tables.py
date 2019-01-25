@@ -39,11 +39,11 @@ class VersionedJSONSerializableObjectTables(object):
                 'user_id',
                 'utc_datetime'
             ]
-        )):
+    )):
+
         @property
         def id(self) -> int:
             return self.object_id
-
 
     def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None, data_validator=None, schema_validator=None):
         """
@@ -63,7 +63,7 @@ class VersionedJSONSerializableObjectTables(object):
             metadata = db.MetaData()
         self.metadata = metadata
         self._current_table = db.Table(
-            table_name_prefix+'_current',
+            table_name_prefix + '_current',
             self.metadata,
             db.Column('object_id', db.Integer, nullable=False, primary_key=True, autoincrement=True),
             db.Column('version_id', db.Integer, nullable=False, default=0),
@@ -74,7 +74,7 @@ class VersionedJSONSerializableObjectTables(object):
             db.Column('utc_datetime', db.DateTime, nullable=False)
         )
         self._previous_table = db.Table(
-            table_name_prefix+'_previous',
+            table_name_prefix + '_previous',
             self.metadata,
             db.Column('object_id', db.Integer, nullable=False),
             db.Column('version_id', db.Integer, nullable=False),

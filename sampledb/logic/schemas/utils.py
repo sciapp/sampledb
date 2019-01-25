@@ -23,7 +23,7 @@ def get_dimensionality_for_units(units: str) -> str:
     """
     Returns the units' dimensionality in the dimensionality syntax of the pint package.
 
-    :param units: a valid 
+    :param units: a valid
     :return: dimensionality as string
     :raise errors.UndefinedUnitError: if the units are undefined
     """

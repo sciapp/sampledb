@@ -4,7 +4,7 @@ Logic module for management of actions
 
 Actions are used to represent all kinds of methods or processes that result
 in the creation of a new sample or measurement. What kind of object is
-created when performing an action is defined by the action's ActionType. 
+created when performing an action is defined by the action's ActionType.
 The action's schema defines what information should or may be recorded in
 iffSamples for a newly created object.
 
@@ -31,17 +31,17 @@ def create_action(
         name: str,
         description: str,
         schema: dict,
-        instrument_id: typing.Optional[int]=None,
-        user_id: typing.Optional[int]=None
+        instrument_id: typing.Optional[int] = None,
+        user_id: typing.Optional[int] = None
 ) -> Action:
     """
     Creates a new action with the given type, name, description and schema. If
     instrument_id is not None, the action will belong to the instrument with
     this ID.
-    
+
     :param action_type: the type of the action
     :param name: the name of the action
-    :param description: a (possibly empty) description for the action 
+    :param description: a (possibly empty) description for the action
     :param schema: the schema for objects created using this action
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
@@ -73,10 +73,10 @@ def create_action(
     return action
 
 
-def get_actions(action_type: ActionType=None) -> typing.List[Action]:
+def get_actions(action_type: typing.Optional[ActionType] = None) -> typing.List[Action]:
     """
     Returns all actions, optionally only actions of a given type.
-    
+
     :param action_type: None or the type of actions' that should be returned
     :return: the list of actions
     """
@@ -88,7 +88,7 @@ def get_actions(action_type: ActionType=None) -> typing.List[Action]:
 def get_action(action_id: int) -> Action:
     """
     Returns the action with the given action ID.
-    
+
     :param action_id: the ID of an existing action
     :return: the action
     :raise errors.ActionDoesNotExistError: when no action with the given
@@ -103,7 +103,7 @@ def get_action(action_id: int) -> Action:
 def update_action(action_id: int, name: str, description: str, schema: dict) -> None:
     """
     Updates the action with the given action ID, setting its name, description and schema.
-    
+
     :param action_id: the ID of an existing action
     :param name: the new name of the action
     :param description: the new (possibly empty) description of the action

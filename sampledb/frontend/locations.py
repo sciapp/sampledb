@@ -110,7 +110,7 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             locations_subtree = locations_subtree[descendent_id]
             for descendent_id in locations_subtree:
                 unhandled_descendent_ids_and_subtrees.append((descendent_id, locations_subtree))
-        
+
     location_form = LocationForm()
     location_form.parent_location.choices = [('-1', '-')] + [
         (str(location_id), locations_map[location_id].name)
@@ -128,13 +128,13 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
     form_is_valid = False
     if location_form.validate_on_submit():
         form_is_valid = True
-        
+
     if location is not None:
         if location_form.name.data is None:
             location_form.name.data = location.name
         if location_form.description.data is None:
             location_form.description.data = location.description
-    
+
     if form_is_valid:
         name = location_form.name.data
         description = location_form.description.data

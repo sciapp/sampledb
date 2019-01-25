@@ -14,7 +14,7 @@ from .. import db
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_user_log_entries(user_id: int, as_user_id: typing.Optional[int]=None) -> typing.List[UserLogEntry]:
+def get_user_log_entries(user_id: int, as_user_id: typing.Optional[int] = None) -> typing.List[UserLogEntry]:
     user_log_entries = UserLogEntry.query.filter_by(user_id=user_id).order_by(db.desc(UserLogEntry.utc_datetime)).all()
     if as_user_id is None or as_user_id == user_id or get_user(as_user_id).is_admin:
         return user_log_entries

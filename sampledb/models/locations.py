@@ -20,7 +20,7 @@ class Location(db.Model):
     description = db.Column(db.Text, nullable=False)
     parent_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
-    def __init__(self, name: str, description: str, parent_location_id: typing.Optional[int]=None):
+    def __init__(self, name: str, description: str, parent_location_id: typing.Optional[int] = None):
         self.name = name
         self.description = description
         self.parent_location_id = parent_location_id
@@ -41,7 +41,7 @@ class ObjectLocationAssignment(db.Model):
     utc_datetime = db.Column(db.DateTime, nullable=False)
     location = db.relationship('Location')
 
-    def __init__(self, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: typing.Optional[datetime.datetime]=None, responsible_user_id: typing.Optional[int]=None):
+    def __init__(self, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: typing.Optional[datetime.datetime] = None, responsible_user_id: typing.Optional[int] = None):
         self.object_id = object_id
         self.location_id = location_id
         self.user_id = user_id

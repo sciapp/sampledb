@@ -38,7 +38,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
     This class provides an immutable wrapper around models.files.File.
     """
 
-    def __new__(cls, id: int, object_id: int, user_id: int, utc_datetime: typing.Optional[datetime.datetime]=None, data: typing.Optional[typing.Dict[str, typing.Any]] = None):
+    def __new__(cls, id: int, object_id: int, user_id: int, utc_datetime: typing.Optional[datetime.datetime] = None, data: typing.Optional[typing.Dict[str, typing.Any]] = None):
         self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data)
         self._is_hidden = None
         self._hide_reason = None
@@ -159,7 +159,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             return self._hide_reason
         return None
 
-    def open(self, read_only: bool=True) -> typing.BinaryIO:
+    def open(self, read_only: bool = True) -> typing.BinaryIO:
         if self.storage == 'local':
             file_name = self.real_file_name
             if read_only:

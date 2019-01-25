@@ -33,7 +33,7 @@ def action_is_public(action_id: int) -> bool:
     return PublicActions.query.filter_by(action_id=action_id).first() is not None
 
 
-def set_action_public(action_id: int, is_public: bool=True) -> None:
+def set_action_public(action_id: int, is_public: bool = True) -> None:
     """
     Set that in action is public or not.
 
@@ -141,7 +141,7 @@ def get_action_permissions_for_projects(action_id: int) -> typing.Dict[int, Perm
     return action_permissions
 
 
-def get_user_action_permissions(action_id, user_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True) -> Permissions:
+def get_user_action_permissions(action_id, user_id, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True) -> Permissions:
     """
     Get permissions for a specific action for a specific user.
 
@@ -292,7 +292,7 @@ def set_project_action_permissions(action_id: int, project_id: int, permissions:
     db.session.commit()
 
 
-def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type: ActionType=None) -> typing.List[Action]:
+def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type: typing.Optional[ActionType] = None) -> typing.List[Action]:
     """
     Get all actions which a user has the given permissions for.
 

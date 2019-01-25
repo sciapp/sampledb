@@ -118,7 +118,7 @@ def split_by_texts(tokens: typing.List[typing.Union[Token]]) -> typing.List[typi
                     current_token_text += c
                     tokens.append(Text(current_token_text, current_token_start_position, datatypes.Text(current_token_text[1:-1])))
                     current_token_text = ''
-                    current_token_start_position = i+1
+                    current_token_start_position = i + 1
                 else:
                     current_token_text += c
         if is_in_text:
@@ -214,7 +214,7 @@ def apply_parentheses(tokens: typing.List[typing.Union[Token, Text, Operator]]) 
             unopened_parentheses_stack.pop()
             continue
     if unopened_parentheses_stack:
-        raise ParseError("Unmatched opening parenthesis", unopened_parentheses_stack[0], unopened_parentheses_stack[0]+1)
+        raise ParseError("Unmatched opening parenthesis", unopened_parentheses_stack[0], unopened_parentheses_stack[0] + 1)
     return tokens
 
 
@@ -242,9 +242,9 @@ def apply_binary_operator(tokens: typing.List[typing.Union[Token, Text, Operator
             if not any(isinstance(left_operand, t) for t in (Token, list, Literal)):
                 raise ParseError("Invalid left operand", left_operand.start_position, token.start_position + len(token.input_text))
             tokens.pop()
-            if not previous_tokens[i+1:]:
+            if not previous_tokens[i + 1:]:
                 raise ParseError("Binary operator without right operand", token.start_position, token.start_position + len(token.input_text))
-            right_operand = previous_tokens[i+1]
+            right_operand = previous_tokens[i + 1]
             if not any(isinstance(right_operand, t) for t in (Token, list, Literal)):
                 raise ParseError("Invalid right operand", token.start_position, right_operand.start_position + len(right_operand.input_text))
             skip_next_token = True
@@ -359,7 +359,7 @@ def parse_tag(text: str) -> typing.Optional[str]:
     return None
 
 
-def parse_attribute(text:str, start: int, end: int) -> typing.Optional[typing.List[str]]:
+def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.List[str]]:
     if text.strip()[:1] not in 'abcdefghijklmnopqrstuvwxyz':
         return None
     attributes = text.lower().strip().split('.')
@@ -386,7 +386,7 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator, lis
         if tag is not None:
             accepted_characters = 'abcdefghijklmnopqrstuvwxyz0123456789_-'
             if not tag or not all(c in accepted_characters for c in tag):
-                raise ParseError("Invalid tag".format(token.input_text.strip()), start+1, end)
+                raise ParseError("Invalid tag".format(token.input_text.strip()), start + 1, end)
             tokens.append(Tag(token.input_text, token.start_position, tag))
             continue
         boolean = parse_bool(token.input_text)

@@ -40,7 +40,7 @@ def update_object_tag_usage(object: objects.Object) -> None:
     previous_tags = ()
     new_tags = get_object_tags(object)
     if object.version_id > 0:
-        previous_object = objects.Objects.get_object_version(object.object_id, object.version_id-1)
+        previous_object = objects.Objects.get_object_version(object.object_id, object.version_id - 1)
         previous_tags = get_object_tags(previous_object)
     removed_tags = set(previous_tags) - set(new_tags)
     added_tags = set(new_tags) - set(previous_tags)

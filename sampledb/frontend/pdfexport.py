@@ -322,7 +322,7 @@ def _write_files(object, canvas):
                         image = Image.open(file.open())
                     except Exception:
                         continue
-                    title = "File #{}: {}".format(index+1, file.title)
+                    title = "File #{}: {}".format(index + 1, file.title)
                     canvas.bookmarkPage('object_{}_files_{}'.format(object.id, index))
                     canvas.addOutlineEntry(title, 'object_{}_files_{}'.format(object.id, index), level=2)
                     canvas.set_up_page()

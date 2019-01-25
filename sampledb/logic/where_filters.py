@@ -166,7 +166,7 @@ def text_equals(db_obj, text):
 def text_contains(db_obj, text):
     return db.and_(
         db_obj['_type'].astext == 'text',
-        db_obj['text'].astext.like('%'+text+'%')
+        db_obj['text'].astext.like('%' + text + '%')
     )
 
 

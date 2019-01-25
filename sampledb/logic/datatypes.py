@@ -107,7 +107,7 @@ class DateTime(object):
         'type': 'object',
         'properties': {
             '_type': {
-                'enum': [ 'datetime' ]
+                'enum': ['datetime']
             },
             'utc_datetime': {
                 'type': 'string',
@@ -145,7 +145,7 @@ class Quantity(object):
         'type': 'object',
         'properties': {
             '_type': {
-                'enum': [ 'quantity' ]
+                'enum': ['quantity']
             },
             'dimensionality': {
                 'type': 'string',

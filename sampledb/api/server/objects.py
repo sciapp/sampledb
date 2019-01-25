@@ -97,7 +97,7 @@ class ObjectVersions(Resource):
         object_version_url = flask.url_for(
             'api.object_version',
             object_id=object.object_id,
-            version_id=object.version_id+1
+            version_id=object.version_id + 1
         )
         return flask.redirect(object_version_url, code=201)
 
@@ -118,7 +118,8 @@ class Objects(Resource):
     @http_basic_auth.login_required
     def get(self):
         # TODO: implement filters
-        filter_func = lambda data: True
+        def filter_func(data):
+            return True
         action_id = None
         action_type = None
         project_id = None

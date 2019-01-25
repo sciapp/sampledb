@@ -301,12 +301,12 @@ def apply_action_to_form_data(action, form_data):
             if not name.startswith(parent_id_prefix):
                 new_form_data[name] = form_data[name]
             else:
-                item_index, id_suffix = name[len(parent_id_prefix)+2:].split('__', 1)
+                item_index, id_suffix = name[len(parent_id_prefix) + 2:].split('__', 1)
                 item_index = int(item_index)
                 if item_index < deleted_item_index:
                     new_form_data[name] = form_data[name]
                 if item_index > deleted_item_index:
-                    new_name = parent_id_prefix + '__' + str(item_index-1) + '__' + id_suffix
+                    new_name = parent_id_prefix + '__' + str(item_index - 1) + '__' + id_suffix
                     new_form_data[new_name] = form_data[name]
     return new_form_data
 
@@ -443,7 +443,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     if schema.get('batch', False) and num_objects_in_batch is not None:
                         if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
                             data_sequence = []
-                            for i in range(1, num_objects_in_batch+1):
+                            for i in range(1, num_objects_in_batch + 1):
                                 if name_suffix_format:
                                     name_suffix = name_suffix_format.format(i)
                                 else:
@@ -791,7 +791,7 @@ def hide_file(object_id, file_id):
 def mobile_file_upload(object_id: int, token: str):
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
-        user_id, object_id = serializer.loads(token, max_age=15*60)
+        user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
     return flask.render_template('mobile_upload.html', user_id=logic.users.get_user(user_id), object=logic.objects.get_object(object_id))
@@ -801,7 +801,7 @@ def mobile_file_upload(object_id: int, token: str):
 def post_mobile_file_upload(object_id: int, token: str):
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
-        user_id, object_id = serializer.loads(token, max_age=15*60)
+        user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
     files = flask.request.files.getlist('file_input')

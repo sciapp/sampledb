@@ -13,7 +13,7 @@ from .. import db
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_object_log_entries(object_id: int, user_id: int=None) -> typing.List[ObjectLogEntry]:
+def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
     object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
     processed_object_log_entries = []
     for object_log_entry in object_log_entries:
@@ -52,7 +52,7 @@ def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int,
     db.session.commit()
 
 
-def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int]=None):
+def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int] = None):
     data = {}
     if previous_object_id:
         data['previous_object_id'] = previous_object_id

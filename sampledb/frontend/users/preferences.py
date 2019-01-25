@@ -5,6 +5,7 @@
 
 import flask
 import flask_login
+import sqlalchemy.sql.expression
 
 from ... import db
 
@@ -60,7 +61,7 @@ def user_preferences(user_id):
 def change_preferences(user, user_id):
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed==True).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     authentication_method_form = AuthenticationMethodForm()
@@ -301,7 +302,7 @@ def change_preferences(user, user_id):
                         break
         flask.flash("Successfully updated your notification settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed==True).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         set_user_settings(flask_login.current_user.id, {

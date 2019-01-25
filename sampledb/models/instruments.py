@@ -7,7 +7,9 @@ from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
-instrument_user_association_table = db.Table('association', db.metadata,
+instrument_user_association_table = db.Table(
+    'association',
+    db.metadata,
     db.Column('instrument_id', db.Integer, db.ForeignKey('instruments.id')),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
 )

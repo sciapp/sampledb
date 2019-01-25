@@ -34,7 +34,7 @@ LDAP_USER_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
 LDAP_GROUP_DN = "ou=Groups,dc=iff,dc=kfa-juelich,dc=de"
 LDAP_NAME = 'PGI / JCNS'
 
-MAIL_SERVER='mail.fz-juelich.de'
+MAIL_SERVER = 'mail.fz-juelich.de'
 MAIL_SENDER = 'iffsamples@fz-juelich.de'
 CONTACT_EMAIL = 'f.rhiem@fz-juelich.de'
 
