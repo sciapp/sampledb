@@ -32,5 +32,6 @@ def main(argv):
         return help_and_exit(2)
     script_functions[script](arguments)
 
+
 if __name__ == '__main__':
     main(sys.argv)

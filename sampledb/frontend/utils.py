@@ -19,6 +19,7 @@ def jinja_filter(func):
     _jinja_filters[func.__name__] = func
     return func
 
+
 _jinja_filters = {}
 jinja_filter.filters = _jinja_filters
 
@@ -26,7 +27,7 @@ jinja_filter.filters = _jinja_filters
 qrcode_cache = {}
 
 
-def generate_qrcode(url: str, should_cache: bool=True) -> str:
+def generate_qrcode(url: str, should_cache: bool = True) -> str:
     """
     Generate a QR code (as data URI) to a given URL.
 

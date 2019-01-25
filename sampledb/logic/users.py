@@ -20,7 +20,7 @@ def get_user(user_id: int) -> User:
 def get_users() -> typing.List[User]:
     """
     Returns all users.
-    
+
     :return: the list of users
     """
     return User.query.all()

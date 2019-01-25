@@ -16,6 +16,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObject):
     pass
 
+
 Objects = VersionedJSONSerializableObjectTables(
     'objects',
     object_type=Object,

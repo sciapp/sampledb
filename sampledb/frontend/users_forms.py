@@ -54,4 +54,3 @@ class AuthenticationPasswordForm(FlaskForm):
         Length(min=3)
     ])
     submit = SubmitField('Change Password')
-

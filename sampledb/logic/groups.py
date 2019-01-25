@@ -81,7 +81,7 @@ def create_group(name: str, description: str, initial_user_id: int) -> Group:
     return group
 
 
-def update_group(group_id: int, name: str, description: str='') -> None:
+def update_group(group_id: int, name: str, description: str = '') -> None:
     """
     Updates the group's name and description.
 

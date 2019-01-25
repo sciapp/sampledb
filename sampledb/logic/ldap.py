@@ -5,19 +5,9 @@ LDAP authentication for the cluster information database.
 
 import ldap3
 import flask
+
+from . import errors
 from ..models import User, UserType
-
-
-class NoEmailInLdapAccount(Exception):
-    pass
-
-
-class LdapAccountAlreadyExist(Exception):
-    pass
-
-
-class LdapAccountOrPasswordWrong(Exception):
-    pass
 
 
 def search_user(user_ldap_uid):
@@ -71,7 +61,7 @@ def validate_user(user_ldap_uid, password):
     if user is None:
         return False
     if not user.mail:
-        raise NoEmailInLdapAccount('Email in LDAP-account missing, please contact your administrator')
+        raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
     ldap_host = flask.current_app.config['LDAP_HOST']
     # if one user found in ldap
     # try to bind with credentials
@@ -86,7 +76,7 @@ def get_user_info(user_ldap_uid):
     if user is None:
         return None
     if not user.mail:
-        raise NoEmailInLdapAccount('Email in LDAP-account missing, please contact your administrator')
+        raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
     email = user.mail[0]
     if not user.cn:
         name = user_ldap_uid

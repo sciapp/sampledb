@@ -4,6 +4,7 @@
 """
 
 import datetime
+import typing
 
 from .. import db
 from .objects import Objects
@@ -19,7 +20,7 @@ class Comment(db.Model):
     utc_datetime = db.Column(db.DateTime, nullable=False)
     author = db.relationship('User')
 
-    def __init__(self, object_id: int, user_id: int, content: str, utc_datetime: datetime.datetime=None):
+    def __init__(self, object_id: int, user_id: int, content: str, utc_datetime: typing.Optional[datetime.datetime] = None):
         self.object_id = object_id
         self.user_id = user_id
         self.content = content

@@ -42,4 +42,3 @@ class NotificationModeForm(FlaskForm):
 
 class OtherSettingsForm(FlaskForm):
     pass
-

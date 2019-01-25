@@ -72,11 +72,11 @@ def _draw_label(canvas, sample_name, sample_creator, sample_creation_date, sampl
     if ghs_classes_side_by_side and ghs_classes:
         width += 20 * mm
     if centered:
-        left_offset = left_offset/2 + right_offset/2 - width / 2
+        left_offset = left_offset / 2 + right_offset / 2 - width / 2
     right_offset = left_offset + width
 
     top_cursor_before_qrcode = top_cursor - font_size / 2 * 1.2
-    canvas.drawImage(qrcode_uri, left_offset + (not ghs_classes_side_by_side) * (width/2 - qrcode_width / 2), top_cursor - qrcode_width * 0.9, qrcode_width, qrcode_width)
+    canvas.drawImage(qrcode_uri, left_offset + (not ghs_classes_side_by_side) * (width / 2 - qrcode_width / 2), top_cursor - qrcode_width * 0.9, qrcode_width, qrcode_width)
     canvas.line(full_left_offset, top_cursor + font_size / 2 * 1.2, full_right_offset, top_cursor + font_size / 2 * 1.2)
     top_cursor -= font_size / 2 * 1.2
     top_cursor -= qrcode_width
@@ -104,18 +104,18 @@ def _draw_label(canvas, sample_name, sample_creator, sample_creation_date, sampl
         top_cursor -= 4.5 * mm
     if len(ghs_classes) == 1:
         top_cursor -= 9 * mm
-        canvas.drawImage(GHS_IMAGE_URIS[ghs_classes[0]], left_offset + ((right_offset - left_offset)/2 - 9 * mm / 2), top_cursor + 5, 9 * mm , 9 * mm, (255, 255, 255, 255, 255, 255))
+        canvas.drawImage(GHS_IMAGE_URIS[ghs_classes[0]], left_offset + ((right_offset - left_offset) / 2 - 9 * mm / 2), top_cursor + 5, 9 * mm, 9 * mm, (255, 255, 255, 255, 255, 255))
     else:
         for i, ghs_class in enumerate(ghs_classes, start=ghs_start_position):
             if i % 3 == 0:
                 top_cursor -= 9 * mm
-            canvas.drawImage(GHS_IMAGE_URIS[ghs_class], left_offset + ((right_offset - left_offset)/2 - 19 * mm / 2) + 0.5 * mm + (i % 3 == 1) * 9 * mm + (i % 3 == 2) * 4.5 * mm, top_cursor + 5 - (i % 3 == 2) * 4.5 * mm, 9 * mm , 9 * mm, (255, 255, 255, 255, 255, 255))
+            canvas.drawImage(GHS_IMAGE_URIS[ghs_class], left_offset + ((right_offset - left_offset) / 2 - 19 * mm / 2) + 0.5 * mm + (i % 3 == 1) * 9 * mm + (i % 3 == 2) * 4.5 * mm, top_cursor + 5 - (i % 3 == 2) * 4.5 * mm, 9 * mm, 9 * mm, (255, 255, 255, 255, 255, 255))
         if (len(ghs_classes) - 1) % 3 == 0:
             top_cursor -= 4.5 * mm
 
     if ghs_classes_side_by_side:
         left_offset -= 20 * mm
-        top_cursor = min(top_cursor_after_qrcode + font_size/2 * 1.2, top_cursor)
+        top_cursor = min(top_cursor_after_qrcode + font_size / 2 * 1.2, top_cursor)
 
     if ghs_classes and ghs_classes_side_by_side:
         canvas.line(left_offset + width / 2, top_cursor_before_qrcode + font_size * 1.2, left_offset + width / 2, top_cursor)
@@ -149,14 +149,14 @@ def _draw_long_label(canvas: Canvas, sample_name, sample_creator, sample_creatio
     min_height = 9 * mm
     if include_qrcode:
         min_height = max(min_height, qrcode_size - 2 * mm)
-    padding = max(1 * mm, (min_height - num_lines * font_size)/2)
+    padding = max(1 * mm, (min_height - num_lines * font_size) / 2)
     height = max(min_height, 2 * padding + num_lines * font_size)
     left_cursor = left_offset + 1 * mm
     canvas.setFont(font_name + '-Bold', font_size)
-    canvas.drawString(left_cursor, bottom_offset + padding + (num_lines-1) * font_size * 1.2, upper_line_text1)
+    canvas.drawString(left_cursor, bottom_offset + padding + (num_lines - 1) * font_size * 1.2, upper_line_text1)
     canvas.setFont(font_name, font_size)
-    canvas.drawString(left_cursor + canvas.stringWidth(upper_line_text1, font_name + '-Bold', font_size), bottom_offset + padding + (num_lines-1) * font_size * 1.2, upper_line_text2)
-    canvas.drawString(left_cursor, bottom_offset + padding + (num_lines-2) * font_size * 1.2, middle_line_text)
+    canvas.drawString(left_cursor + canvas.stringWidth(upper_line_text1, font_name + '-Bold', font_size), bottom_offset + padding + (num_lines - 1) * font_size * 1.2, upper_line_text2)
+    canvas.drawString(left_cursor, bottom_offset + padding + (num_lines - 2) * font_size * 1.2, middle_line_text)
     if num_lines == 3:
         canvas.drawString(left_cursor, bottom_offset + padding, lower_line_text)
     text_width = max(
@@ -166,12 +166,12 @@ def _draw_long_label(canvas: Canvas, sample_name, sample_creator, sample_creatio
     )
     left_cursor += 1 * mm + text_width
     for ghs_class in ghs_classes:
-        canvas.drawImage(GHS_IMAGE_URIS[ghs_class], left_cursor, bottom_offset + height/2 - 4.5 * mm, 9 * mm , 9 * mm, (255, 255, 255, 255, 255, 255))
+        canvas.drawImage(GHS_IMAGE_URIS[ghs_class], left_cursor, bottom_offset + height / 2 - 4.5 * mm, 9 * mm, 9 * mm, (255, 255, 255, 255, 255, 255))
         left_cursor += 9 * mm
     if height != 9 * mm:
         left_cursor += 1 * mm
     if include_qrcode:
-        canvas.drawImage(qrcode_uri, left_cursor - 1 * mm, bottom_offset + height/2 - qrcode_size/2, qrcode_size, qrcode_size)
+        canvas.drawImage(qrcode_uri, left_cursor - 1 * mm, bottom_offset + height / 2 - qrcode_size / 2, qrcode_size, qrcode_size)
         left_cursor += qrcode_size - 2 * mm
     canvas.rect(left_offset, bottom_offset, left_cursor - left_offset, height, 1)
     return bottom_offset
@@ -202,7 +202,7 @@ def create_labels(object_id, object_name, object_url, creation_user, creation_da
             _draw_long_label(canvas, object_name, creation_user, creation_date, object_id, ghs_classes, qrcode_uri, 10 * mm, top_cursor - 27 * mm, include_qrcode=True),
             _draw_label(canvas, object_name, creation_user, creation_date, object_id, ghs_classes, qrcode_uri, 10 * mm, top_cursor - 32 * mm - 140 * mm, 18 * mm, 140 * mm, 18 * mm),
             _draw_label(canvas, object_name, creation_user, creation_date, object_id, ghs_classes, qrcode_uri, 33 * mm, top_cursor - 32 * mm - 140 * mm, 20 * mm, 140 * mm, 20 * mm),
-            _draw_label(canvas, object_name, creation_user, creation_date, object_id, ghs_classes, qrcode_uri, 58 * mm, top_cursor - 32 * mm - 140 * mm, 40 * mm, 140 * mm, 20 * mm,ghs_classes_side_by_side=True),
+            _draw_label(canvas, object_name, creation_user, creation_date, object_id, ghs_classes, qrcode_uri, 58 * mm, top_cursor - 32 * mm - 140 * mm, 40 * mm, 140 * mm, 20 * mm, ghs_classes_side_by_side=True),
             _draw_label(canvas, object_name, creation_user, creation_date, object_id, ghs_classes, qrcode_uri, 103 * mm, top_cursor - 32 * mm - 140 * mm, 75 * mm, 140 * mm, 20 * mm, ghs_classes_side_by_side=True, centered=False)
         )
         if max_label_height is None:

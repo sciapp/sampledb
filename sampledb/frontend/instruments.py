@@ -45,4 +45,3 @@ def instrument(instrument_id):
         return flask.abort(404)
     # TODO: check instrument permissions
     return flask.render_template('instruments/instrument.html', instrument=instrument, ActionType=ActionType)
-

@@ -12,7 +12,7 @@ from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiEr
 from .utils import units_are_valid
 
 
-def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Union[None, typing.List[str]]=None) -> None:
+def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Optional[typing.List[str]] = None) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
 

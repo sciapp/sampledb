@@ -15,7 +15,7 @@ from .validate import validate
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def validate_schema(schema: dict, path: typing.Union[None, typing.List[str]]=None) -> None:
+def validate_schema(schema: dict, path: typing.Optional[typing.List[str]] = None) -> None:
     """
     Validates the given schema and raises a ValidationError if it is invalid.
 

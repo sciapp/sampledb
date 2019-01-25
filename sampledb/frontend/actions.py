@@ -166,27 +166,27 @@ def _get_lines_for_path(schema: dict, path: typing.List[str]) -> typing.Optional
     for i, line in enumerate(schema_json_lines):
         if line.endswith('"INTERNAL_MARKER_START": null,'):
             skip_lines.append(i)
-            skip_lines.append(i+1)
+            skip_lines.append(i + 1)
             in_error = True
         if in_error:
             error_lines.append(i)
         if line.endswith('"INTERNAL_MARKER_END": null'):
-            skip_lines.append(i-1)
+            skip_lines.append(i - 1)
             skip_lines.append(i)
             in_error = False
 
     new_error_lines = set()
     for i in reversed(error_lines):
         if i in skip_lines:
-            new_error_lines = {i-1 for i in new_error_lines}
+            new_error_lines = {i - 1 for i in new_error_lines}
         else:
-            new_error_lines.add(i+1)
+            new_error_lines.add(i + 1)
             new_error_lines.add(i)
-            new_error_lines.add(i-1)
+            new_error_lines.add(i - 1)
     return new_error_lines
 
 
-def show_action_form(action: typing.Optional[Action]=None, previous_action: typing.Optional[Action]=None):
+def show_action_form(action: typing.Optional[Action] = None, previous_action: typing.Optional[Action] = None):
     if action is not None:
         schema_json = json.dumps(action.schema, indent=2)
         submit_text = "Save"
@@ -307,7 +307,7 @@ def show_action_form(action: typing.Optional[Action]=None, previous_action: typi
                         else:
                             error_lines.update(new_error_lines)
                     else:
-                        error_lines = {i+1 for i in error_lines}
+                        error_lines = {i + 1 for i in error_lines}
             except Exception as e:
                 error_lines = all_lines
                 error_message = "Unknown errror: {}".format(str(e))

@@ -338,4 +338,3 @@ def update_project_permissions(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.redirect(flask.url_for('.projects'))
     return flask.redirect(flask.url_for('.project_permissions', project_id=project_id))
-
