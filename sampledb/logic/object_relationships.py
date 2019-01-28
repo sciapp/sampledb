@@ -17,6 +17,24 @@ def get_related_object_ids(
         include_samples: bool,
         user_id: typing.Optional[int] = None
 ) -> typing.Tuple[typing.List[int], typing.List[int], typing.List[int]]:
+    """
+    Get IDs of objects related to a given object.
+
+    An object is considered to be related, if it is:
+    - a previous object of the given object (include_previous_objects)
+    - a measurement created using the given object (include_measurements)
+    - a sample created using the given object (include_samples)
+
+    If user_id is not None, only objects which the given user has READ
+    permissions for will be included in the result.
+
+    :param object_id: the ID of an existing object
+    :param include_previous_objects: whether to include previous objects
+    :param include_measurements: whether to include measurements
+    :param include_samples: whether to include samples
+    :param user_id: the ID of an existing user (optional)
+    :return: lists of previous object IDs, measurement IDs and sample IDs
+    """
     previous_object_ids = []
     measurement_ids = []
     sample_ids = []
@@ -24,7 +42,7 @@ def get_related_object_ids(
         object = get_object(object_id)
         referenced_object_ids = find_object_references(object)
         for referenced_object_id, previously_referenced_object_id in referenced_object_ids:
-            if Permissions.READ in get_user_object_permissions(referenced_object_id, user_id):
+            if user_id is None or Permissions.READ in get_user_object_permissions(referenced_object_id, user_id):
                 previous_object_ids.append(referenced_object_id)
     object_log_entries = get_object_log_entries(object_id, user_id)
     for object_log_entry in object_log_entries:
@@ -48,6 +66,23 @@ def build_related_objects_tree(
         path: typing.Optional[typing.List[int]] = None,
         visited_paths: typing.Dict[int, typing.List[int]] = None
 ) -> typing.Any:
+    """
+    Get the tree of related objects for a given object.
+
+    Each node in the tree contains:
+    - the ID of an object
+    - one possible path from the given object to this object
+
+    All nodes for an object contain the same path to it, and the node at this
+    path also contains lists of nodes for previous objects, measurements and
+    samples.
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user (optional)
+    :param path: the path leading to this object (internal)
+    :param visited_paths: all previously visited paths (internal)
+    :return: the related objects tree as a nested dictionary of lists
+    """
     if path is None:
         path = [object_id]
     else:
