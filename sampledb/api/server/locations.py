@@ -3,11 +3,10 @@
 RESTful API for iffSamples
 """
 
-import flask
 from flask_restful import Resource
 
 from .authentication import http_basic_auth
-from ...logic import errors, locations, objects
+from ...logic import errors, locations
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

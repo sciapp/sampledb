@@ -6,15 +6,13 @@
 import flask
 import flask_login
 
-from ... import db
-
 from .. import frontend
 from ...logic.users import create_user
-from ...logic.authentication import add_email_authentication, change_password_in_authentication_method
+from ...logic.authentication import add_email_authentication
 from ...logic.utils import send_confirm_email
 from ...logic.security_tokens import verify_token
 
-from ...models import Authentication, AuthenticationType, User, UserType
+from ...models import Authentication, UserType
 
 from ..users_forms import InvitationForm, RegistrationForm
 

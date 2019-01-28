@@ -14,7 +14,6 @@ import itsdangerous
 import werkzeug.utils
 
 from . import frontend
-from .. import db
 from .. import logic
 from ..logic import user_log, object_log, comments
 from ..logic.actions import ActionType, get_action
@@ -147,7 +146,7 @@ def objects():
                 additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
         try:
             filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
-        except Exception as e:
+        except Exception:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
                 advanced_search_had_error = True

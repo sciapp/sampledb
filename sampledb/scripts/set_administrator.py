@@ -5,10 +5,9 @@ Script for setting whether a user is an administrator or not.
 Usage: python -m sampledb set_administrator <user_id> <yes_or_no>
 """
 
-import os
 import sys
 from .. import create_app, db
-from ..logic.users import get_user, UserType
+from ..logic.users import get_user
 from ..logic.errors import UserDoesNotExistError
 
 

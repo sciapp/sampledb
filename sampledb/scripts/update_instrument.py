@@ -24,7 +24,7 @@ def main(arguments):
     app = create_app()
     with app.app_context():
         try:
-            instrument = get_instrument(instrument_id)
+            get_instrument(instrument_id)
         except InstrumentDoesNotExistError:
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)

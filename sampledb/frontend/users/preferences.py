@@ -24,10 +24,10 @@ from ...logic.object_permissions import Permissions, get_default_permissions_for
 from ...logic.projects import get_user_projects, get_project
 from ...logic.groups import get_user_groups, get_group
 from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
-from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_all_types, set_notification_mode_for_type
+from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 
-from ...models import Authentication, AuthenticationType, User
+from ...models import Authentication, AuthenticationType
 
 
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])

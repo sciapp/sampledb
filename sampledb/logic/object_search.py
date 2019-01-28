@@ -2,11 +2,8 @@
 import functools
 import json
 import typing
-import datetime
-from sqlalchemy import String, Float, and_, or_
-from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.elements import BinaryExpression
-from sqlalchemy.sql.expression import select, exists, true, false, not_
+from sqlalchemy import String, and_, or_
+from sqlalchemy.sql.expression import select, true, false, not_
 from . import where_filters
 from . import datatypes
 from . import object_search_parser
