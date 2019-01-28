@@ -15,7 +15,7 @@ import werkzeug.utils
 
 from . import frontend
 from .. import logic
-from ..logic import user_log, object_log, comments
+from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import ActionType, get_action
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
@@ -130,6 +130,9 @@ def objects():
             project = get_project(project_id)
         else:
             project = None
+
+        sorting_function = object_sorting.descending(object_sorting.object_id())
+
         query_string = flask.request.args.get('q', '')
         search_tree = None
         use_advanced_search = flask.request.args.get('advanced', None) is not None
@@ -179,6 +182,7 @@ def objects():
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.READ,
                 filter_func=filter_func,
+                sorting_func=sorting_function,
                 action_id=action_id,
                 action_type=action_type,
                 project_id=project_id,
@@ -228,7 +232,6 @@ def objects():
             if obj['schema']['properties'][property_name]['type'] == 'sample':
                 sample_ids.add(obj['data'][property_name]['object_id'])
 
-    objects.sort(key=lambda obj: obj['object_id'], reverse=True)
     samples = {
         sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids

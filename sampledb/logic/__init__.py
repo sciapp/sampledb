@@ -20,6 +20,7 @@ from . import object_log
 from . import object_relationships
 from . import object_search
 from . import object_permissions
+from . import object_sorting
 from . import projects
 from . import schemas
 from . import security_tokens
@@ -54,6 +55,7 @@ __all__ = [
     'object_relationships',
     'object_search',
     'object_permissions',
+    'object_sorting',
     'projects',
     'security_tokens',
     'settings',

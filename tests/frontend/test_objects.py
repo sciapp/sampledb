@@ -591,8 +591,8 @@ def test_new_object_batch(flask_server, user):
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 2
     objects = sampledb.logic.objects.get_objects()
-    assert objects[0].data['name']['text'] == "OMBE-100-001"
-    assert objects[1].data['name']['text'] == "OMBE-100-002"
+    assert objects[1].data['name']['text'] == "OMBE-100-001"
+    assert objects[0].data['name']['text'] == "OMBE-100-002"
 
 
 def test_new_object_batch_invalid_number(flask_server, user):
@@ -1143,7 +1143,7 @@ def test_copy_object(flask_server, user):
     r = session.post(flask_server.base_url + 'objects/new', params={'action_id': object.action_id, 'previous_object_id': object.id}, data=form_data)
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 2
-    new_object = sampledb.logic.objects.get_objects()[1]
+    new_object = sampledb.logic.objects.get_objects()[0]
     assert object.data["name2"]["text"] == name
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)

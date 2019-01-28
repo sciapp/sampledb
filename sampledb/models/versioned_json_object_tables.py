@@ -249,7 +249,7 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
-    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None):
+    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None, sorting_func=None):
         """
         Queries and returns all objects matching a given filter.
 
@@ -290,9 +290,14 @@ class VersionedJSONSerializableObjectTables(object):
                 )
             )
 
+        if sorting_func is None:
+            def sorting_func(columns):
+                return db.sql.desc(columns.object_id)
+
         objects = connection.execute(
             select_statement
-            .where(filter_func(table.c.data)),
+            .where(filter_func(table.c.data))
+            .order_by(sorting_func(table.c)),
             **parameters
         ).fetchall()
         return [self.object_type(*obj) for obj in objects]
