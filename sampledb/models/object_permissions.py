@@ -3,7 +3,6 @@
 
 """
 
-import enum
 from .. import db
 from .groups import Group
 from .users import User

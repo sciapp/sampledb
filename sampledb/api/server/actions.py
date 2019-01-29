@@ -7,7 +7,7 @@ import flask
 from flask_restful import Resource
 
 from .authentication import http_basic_auth
-from ...logic.actions import get_action, get_actions, ActionType
+from ...logic.actions import get_action, ActionType
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
 from ...logic import errors
 

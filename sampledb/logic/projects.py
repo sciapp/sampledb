@@ -25,11 +25,10 @@ import typing
 import flask
 
 from .. import db
-from ..models import projects, User, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
+from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .users import get_user
 from .security_tokens import generate_token, MAX_AGE
 from . import groups
-from . import utils
 from . import errors
 from . import notifications
 
@@ -477,7 +476,7 @@ def update_user_project_permissions(project_id: int, user_id: int, permissions: 
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    user = get_user(user_id)
+    get_user(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -522,7 +521,7 @@ def update_group_project_permissions(project_id: int, group_id: int, permissions
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    group = groups.get_group(group_id)
+    groups.get_group(group_id)
     existing_permissions = projects.GroupProjectPermissions.query.filter_by(
         project_id=project_id,
         group_id=group_id

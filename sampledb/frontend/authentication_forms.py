@@ -5,7 +5,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
-from wtforms.validators import DataRequired, EqualTo, Length, Email
+from wtforms.validators import DataRequired, Length, Email
 
 
 class NewUserForm(FlaskForm):

@@ -35,5 +35,35 @@ from ..models.objects import Objects
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
+
+__all__ = [
+    'actions',
+    'authentication',
+    'comments',
+    'datatypes',
+    'errors',
+    'favorites',
+    'files',
+    'groups',
+    'instruments',
+    'ldap',
+    'locations',
+    'notifications',
+    'objects',
+    'object_log',
+    'object_relationships',
+    'object_search',
+    'object_permissions',
+    'projects',
+    'security_tokens',
+    'settings',
+    'tags',
+    'units',
+    'users',
+    'user_log',
+    'utils',
+    'where_filters',
+]
+
 Objects._data_validator = schemas.validate
 Objects._schema_validator = schemas.validate_schema

@@ -4,3 +4,7 @@ iffSamples API package
 """
 
 from . import server
+
+__all__ = [
+    'server'
+]

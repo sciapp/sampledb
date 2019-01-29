@@ -27,16 +27,17 @@ test:
     reports:
       junit: pytest.xml
 
-codestyle:
+analyze:
   stage: test
   image: ubuntu:18.04
   script:
     - apt-get update
     # set up Python 3.6
     - apt-get install -y git python3-pip
-    # install pycodestyle
-    - python3 -m pip install pycodestyle
+    # install static analysis packages
+    - python3 -m pip install pycodestyle pyflakes
     - python3 -m pycodestyle --ignore=E402,E501,W504 sampledb
+    - python3 -m pyflakes sampledb
 
 documentation:
   stage: test

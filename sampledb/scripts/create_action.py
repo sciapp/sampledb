@@ -40,7 +40,7 @@ def main(arguments):
     with app.app_context():
         if instrument_id is not None:
             try:
-                instrument = get_instrument(instrument_id)
+                get_instrument(instrument_id)
             except InstrumentDoesNotExistError:
                 print('Error: no instrument with this id exists', file=sys.stderr)
                 exit(1)
