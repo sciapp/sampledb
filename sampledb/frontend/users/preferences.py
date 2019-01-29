@@ -147,7 +147,6 @@ def change_preferences(user, user_id):
             flask.flash("Failed to change the password.", 'error')
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
-            print("!!!", repr(change_user_form.name.data))
             if change_user_form.name.data != user.name:
                 u = user
                 u.name = str(change_user_form.name.data)

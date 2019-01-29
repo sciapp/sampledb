@@ -57,18 +57,23 @@ def test_limit_objects(user: User, action: Action) -> None:
             }
         }, user_id=user.id)
 
-    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.object_id()))
+    num_objects_found = []
+
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.object_id()), num_objects_found=num_objects_found)
     assert len(objects) == 10
+    assert num_objects_found[0] == 10
     for i, object in enumerate(objects):
         assert object.data['name']['text'] == str(i)
 
-    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.object_id()), limit=4)
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.object_id()), limit=4, num_objects_found=num_objects_found)
     assert len(objects) == 4
+    assert num_objects_found[0] == 10
     for i, object in enumerate(objects):
         assert object.data['name']['text'] == str(i)
 
-    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.object_id()), limit=20)
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.object_id()), limit=20, num_objects_found=num_objects_found)
     assert len(objects) == 10
+    assert num_objects_found[0] == 10
     for i, object in enumerate(objects):
         assert object.data['name']['text'] == str(i)
 

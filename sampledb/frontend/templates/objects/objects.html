@@ -106,17 +106,17 @@
   <table class="table" id="table-objects">
   <thead>
     <tr>
-      <th scope="col" rowspan="2" data-sort-selector="'th', 0">ID <span class="icons-sorting"><a href="{{ build_sorted_url('_object_id', 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url('_object_id', 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
-      <th scope="col" rowspan="2" data-sort-selector="'td', 0">Name <span class="icons-sorting"><a href="{{ build_sorted_url('name', 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url('name', 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
+      <th scope="col" rowspan="2" data-sort-selector="'th', 0">ID <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_object_id', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_object_id', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
+      <th scope="col" rowspan="2" data-sort-selector="'td', 0">Name <span class="icons-sorting"><a href="{{ build_modified_url(sortby='name', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='name', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
       <th scope="col" colspan="2">Created</th>
       <th scope="col" colspan="2">Last modified</th>
       {% if show_action %}<th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>{% endif %}
       {% for property_name in display_properties %}
-        <th scope="col" rowspan="2" data-sort-selector="'td', {{ 5 + loop.index0 }}">{{ display_property_titles[property_name] }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_sorted_url(property_name, 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url(property_name, 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span>{% endif %}</th>
+        <th scope="col" rowspan="2" data-sort-selector="'td', {{ 5 + loop.index0 }}">{{ display_property_titles[property_name] }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span>{% endif %}</th>
       {% endfor %}
     </tr>
     <tr>
-      <th scope="col" data-sort-selector="'td', 1">Date <span class="icons-sorting"><a href="{{ build_sorted_url('_creation_date', 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url('_creation_date', 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
+      <th scope="col" data-sort-selector="'td', 1">Date <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_creation_date', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_creation_date', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
       <th scope="col">User</th>
       <th scope="col" data-sort-selector="'td', 3">Date</th>
       <th scope="col">User</th>
@@ -159,6 +159,34 @@
   {% endfor %}
   </tbody>
   </table>
+    <div>
+    Pages:
+    <ol class="object-pagination">
+    {% if limit and num_objects_found %}
+      {% for i in range((num_objects_found+limit-1)//limit) %}
+        {% if i * limit == offset %}
+          <li>{{ i + 1 }}</li>
+        {% else %}
+          <li><a href="{{ build_modified_url(limit=limit, offset=i*limit) }}">{{ i + 1 }}</a></li>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <li>1</li>
+    {% endif %}
+    </ol>
+    </div>
+    <div>
+    Objects per page:
+    <ol class="object-pagination">
+    {% for i in (10, 25, 50, 100, 'all') %}
+      {% if i == limit or (limit is none and i == 'all') %}
+        <li>{{ i }}</li>
+      {% else %}
+        <li><a href="{{ build_modified_url(limit=i, offset=0) }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    </ol>
+    </div>
   {% elif not search_notes %}
     <div class="alert alert-warning" role="alert">
     {% if use_advanced_search and advanced_search_had_error %}

@@ -512,3 +512,18 @@ th:hover .search-helper {
 #notifications-table button:hover, #notifications-table button:focus, #notifications-table button:active {
     color:#333333;
 }
+
+.object-pagination {
+    list-style: none;
+    padding: 0;
+    display: inline;
+}
+.object-pagination > li {
+    display: inline;
+}
+.object-pagination > li::after {
+    content: ',';
+}
+.object-pagination > li:last-child::after {
+    content: '';
+}

@@ -22,6 +22,7 @@ from ..logic.object_permissions import Permissions, get_user_object_permissions,
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users, get_users_by_name
 from ..logic.schemas import validate, generate_placeholder
+from ..logic.settings import get_user_settings, set_user_settings
 from ..logic.object_search import generate_filter_func, wrap_filter_func
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
@@ -83,6 +84,9 @@ def objects():
         advanced_search_had_error = False
         search_notes = []
         search_tree = None
+        limit = None
+        offset = None
+        num_objects_found = len(objects)
     else:
         try:
             user_id = int(flask.request.args.get('user', ''))
@@ -131,15 +135,36 @@ def objects():
         else:
             project = None
 
-        try:
-            limit = int(flask.request.args.get('limit', ''))
-        except ValueError:
+        if flask.request.args.get('limit', '') == 'all':
             limit = None
+        else:
+            try:
+                limit = int(flask.request.args.get('limit', ''))
+            except ValueError:
+                limit = None
+            else:
+                if limit <= 0:
+                    limit = None
+                if limit >= 1000:
+                    limit = 1000
+
+            # default objects per page
+            if limit is None:
+                limit = get_user_settings(flask_login.current_user.id)['OBJECTS_PER_PAGE']
+            else:
+                set_user_settings(flask_login.current_user.id, {'OBJECTS_PER_PAGE': limit})
 
         try:
             offset = int(flask.request.args.get('offset', ''))
         except ValueError:
             offset = None
+        else:
+            if offset < 0:
+                offset = None
+            if offset > 100000000:
+                offset = 100000000
+        if limit is not None and offset is None:
+            offset = 0
 
         sorting_order = flask.request.args.get('order', None)
         if sorting_order == 'asc':
@@ -211,6 +236,7 @@ def objects():
                 if object_ids is None:
                     object_ids = set()
                 object_ids = object_ids.union(object_ids_for_user)
+            num_objects_found_list = []
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.READ,
@@ -221,11 +247,14 @@ def objects():
                 action_id=action_id,
                 action_type=action_type,
                 project_id=project_id,
-                object_ids=object_ids
+                object_ids=object_ids,
+                num_objects_found=num_objects_found_list
             )
+            num_objects_found = num_objects_found_list[0]
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
+            num_objects_found = 0
         if any(note[0] == 'error' for note in search_notes):
             objects = []
             advanced_search_had_error = True
@@ -276,12 +305,11 @@ def objects():
     else:
         show_action = False
 
-    def build_sorted_url(property_name, order):
+    def build_modified_url(**kwargs):
         return flask.url_for(
             '.objects',
-            sortby=property_name,
-            order=order,
-            **{k: v for k, v in flask.request.args.items() if k not in ('sortby', 'order')}
+            **{k: v for k, v in flask.request.args.items() if k not in kwargs},
+            **kwargs
         )
     return flask.render_template(
         'objects/objects.html',
@@ -300,7 +328,10 @@ def objects():
         user_id=user_id,
         user=user,
         samples=samples,
-        build_sorted_url=build_sorted_url,
+        build_modified_url=build_modified_url,
+        limit=limit,
+        offset=offset,
+        num_objects_found=num_objects_found,
         show_action=show_action,
         use_advanced_search=use_advanced_search,
         must_use_advanced_search=must_use_advanced_search,

@@ -249,7 +249,7 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
-    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None, sorting_func=None, limit=None, offset=None):
+    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None, sorting_func=None, limit=None, offset=None, num_objects_found=None):
         """
         Queries and returns all objects matching a given filter.
 
@@ -276,7 +276,8 @@ class VersionedJSONSerializableObjectTables(object):
             table.c.data,
             table.c.schema,
             table.c.user_id,
-            table.c.utc_datetime
+            table.c.utc_datetime,
+            db.sql.expression.text('COUNT(*) OVER()')
         ])
 
         if action_table is not None and action_filter is not None:
@@ -307,7 +308,13 @@ class VersionedJSONSerializableObjectTables(object):
             select_statement,
             **parameters
         ).fetchall()
-        return [self.object_type(*obj) for obj in objects]
+        if num_objects_found is not None:
+            num_objects_found.clear()
+            if objects:
+                num_objects_found.append(objects[0][-1])
+            else:
+                num_objects_found.append(0)
+        return [self.object_type(*obj[:-1]) for obj in objects]
 
     def get_object_versions(self, object_id, connection=None):
         """

@@ -72,7 +72,7 @@ def test_get_objects_sort_by_object_id(flask_server: typing.Any, user: User, act
     for i, row in enumerate(rows):
         assert row.find('th').text == str(10-i)
 
-    r = session.get(flask_server.base_url + 'objects?sortby=object_id&order=desc')
+    r = session.get(flask_server.base_url + 'objects?sortby=_object_id&order=desc')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     rows = document.find(id='table-objects').find('tbody').find_all('tr')
@@ -80,7 +80,7 @@ def test_get_objects_sort_by_object_id(flask_server: typing.Any, user: User, act
     for i, row in enumerate(rows):
         assert row.find('th').text == str(10-i)
 
-    r = session.get(flask_server.base_url + 'objects?sortby=object_id&order=asc')
+    r = session.get(flask_server.base_url + 'objects?sortby=_object_id&order=asc')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     rows = document.find(id='table-objects').find('tbody').find_all('tr')
