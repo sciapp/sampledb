@@ -240,7 +240,7 @@ th:hover .search-helper {
     width: 1.1em;
     margin-bottom: -0.2em;
 }
-#table-objects .icons-sorting > span {
+#table-objects .icons-sorting > a {
     position:absolute;
     left:0;
     line-height: 0;
@@ -252,18 +252,18 @@ th:hover .search-helper {
     color:#cccccc;
     transition: color 0.2s;
 }
-#table-objects .icons-sorting > span:hover {
+#table-objects .icons-sorting > a:hover {
     color:inherit;
 }
-#table-objects .icons-sorting > span > i {
+#table-objects .icons-sorting > a > i {
     line-height: 0.7em;
     display: block;
     vertical-align: middle;
 }
-#table-objects .icons-sorting > span:nth-child(1) {
+#table-objects .icons-sorting > a:nth-child(1) {
     top:0;
 }
-#table-objects .icons-sorting > span:nth-child(2) {
+#table-objects .icons-sorting > a:nth-child(2) {
     bottom:0;
 }
 .ghs-hazards-selection {

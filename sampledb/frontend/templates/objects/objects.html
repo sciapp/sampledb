@@ -106,17 +106,17 @@
   <table class="table" id="table-objects">
   <thead>
     <tr>
-      <th scope="col" rowspan="2" data-sort-selector="'th', 0">ID</th>
-      <th scope="col" rowspan="2" data-sort-selector="'td', 0">Name</th>
+      <th scope="col" rowspan="2" data-sort-selector="'th', 0">ID <span class="icons-sorting"><a href="{{ build_sorted_url('_object_id', 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url('_object_id', 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
+      <th scope="col" rowspan="2" data-sort-selector="'td', 0">Name <span class="icons-sorting"><a href="{{ build_sorted_url('name', 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url('name', 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
       <th scope="col" colspan="2">Created</th>
       <th scope="col" colspan="2">Last modified</th>
       {% if show_action %}<th scope="col" rowspan="2">Instrument</th><th scope="col" rowspan="2">Action</th>{% endif %}
       {% for property_name in display_properties %}
-        <th scope="col" rowspan="2" data-sort-selector="'td', {{ 5 + loop.index0 }}">{{ display_property_titles[property_name] }}</th>
+        <th scope="col" rowspan="2" data-sort-selector="'td', {{ 5 + loop.index0 }}">{{ display_property_titles[property_name] }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_sorted_url(property_name, 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url(property_name, 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span>{% endif %}</th>
       {% endfor %}
     </tr>
     <tr>
-      <th scope="col" data-sort-selector="'td', 1">Date</th>
+      <th scope="col" data-sort-selector="'td', 1">Date <span class="icons-sorting"><a href="{{ build_sorted_url('_creation_date', 'asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></a><a href="{{ build_sorted_url('_creation_date', 'desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></a></span></th>
       <th scope="col">User</th>
       <th scope="col" data-sort-selector="'td', 3">Date</th>
       <th scope="col">User</th>
@@ -168,53 +168,4 @@
     {% endif %}
     </div>
   {% endif %}
-{% endblock %}
-{% block scripts %}
-{{ super() }}
-
-  <script>
-   function sortTable(order, selector, index) {
-     var table = $("#table-objects")[0];
-     var switching = true;
-     while (switching) {
-       switching = false;
-       rows = Array.prototype.slice.call(table.rows, 0).filter(function (row) {
-         return row.getElementsByTagName("th").length === 1;
-       });
-       var i;
-       for (i = 0; i < rows.length - 1; i++) {
-         var shouldSwitch = false;
-         var left = rows[i].getElementsByTagName(selector)[index];
-         var right = rows[i + 1].getElementsByTagName(selector)[index];
-         if (!left || !right) {
-           continue;
-         }
-         if (left.hasAttribute("data-value")) {
-           left = left.getAttribute("data-value").trim();
-         } else {
-           left = "";
-         }
-         if (right.hasAttribute("data-value")) {
-           right = right.getAttribute("data-value").trim();
-         } else {
-           right = "";
-         }
-         if ((order === "ascending" && left > right) || (order === "descending" && left < right)) {
-           break;
-         }
-       }
-       if (i !== rows.length - 1) {
-         rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-         switching = true;
-       }
-     }
-   }
-   $(function() {
-     var table_headers = $("#table-objects th[data-sort-selector]");
-     table_headers.each(function (index, th) {
-       var selectors = th.getAttribute("data-sort-selector");
-       th.innerHTML += ' <span class="icons-sorting"><span onclick="sortTable(\'ascending\', ' + selectors + ')"><i class="glyphicon glyphicon glyphicon-triangle-top" aria-hidden="true"></i></span><span onclick="sortTable(\'descending\', ' + selectors + ')"><i class="glyphicon glyphicon glyphicon-triangle-bottom" aria-hidden="true"></i></span></span>';
-     });
-   });
-  </script>
 {% endblock %}

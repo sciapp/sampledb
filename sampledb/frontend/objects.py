@@ -141,7 +141,30 @@ def objects():
         except ValueError:
             offset = None
 
-        sorting_function = object_sorting.descending(object_sorting.object_id())
+        sorting_order = flask.request.args.get('order', None)
+        if sorting_order == 'asc':
+            sorting_order = object_sorting.ascending
+        elif sorting_order == 'desc':
+            sorting_order = object_sorting.descending
+        else:
+            sorting_order = None
+
+        sorting_property = flask.request.args.get('sortby', None)
+
+        if sorting_order is None:
+            if sorting_property is None:
+                sorting_order = object_sorting.descending
+            else:
+                sorting_order = object_sorting.ascending
+
+        if sorting_property is None or sorting_property == '_object_id':
+            sorting_property = object_sorting.object_id()
+        elif sorting_property == '_creation_date':
+            sorting_property = object_sorting.creation_date()
+        else:
+            sorting_property = object_sorting.property_value(sorting_property)
+
+        sorting_function = sorting_order(sorting_property)
 
         query_string = flask.request.args.get('q', '')
         search_tree = None
@@ -252,6 +275,14 @@ def objects():
         show_action = True
     else:
         show_action = False
+
+    def build_sorted_url(property_name, order):
+        return flask.url_for(
+            '.objects',
+            sortby=property_name,
+            order=order,
+            **{k: v for k, v in flask.request.args.items() if k not in ('sortby', 'order')}
+        )
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -269,6 +300,7 @@ def objects():
         user_id=user_id,
         user=user,
         samples=samples,
+        build_sorted_url=build_sorted_url,
         show_action=show_action,
         use_advanced_search=use_advanced_search,
         must_use_advanced_search=must_use_advanced_search,

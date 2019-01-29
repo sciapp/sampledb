@@ -108,6 +108,27 @@ def test_order_by_object_id(user: User, action: Action) -> None:
     assert objects[0].id >= objects[1].id
 
 
+def test_order_by_creation_date(user: User, action: Action) -> None:
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
+    sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user.id)
+
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.creation_date()))
+    assert objects[0].utc_datetime <= objects[1].utc_datetime
+
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.descending(object_sorting.creation_date()))
+    assert objects[0].utc_datetime >= objects[1].utc_datetime
+
+
 def test_order_by_text_property(user: User, action: Action) -> None:
     sampledb.logic.objects.create_object(action_id=action.id, data={
         'name': {
