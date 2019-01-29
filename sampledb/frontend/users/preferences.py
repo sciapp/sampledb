@@ -304,9 +304,20 @@ def change_preferences(user, user_id):
     confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
-        set_user_settings(flask_login.current_user.id, {
+        modified_settings = {
             'USE_SCHEMA_EDITOR': use_schema_editor
-        })
+        }
+
+        objects_per_page = flask.request.form.get('input-objects-per-page', '')
+        if objects_per_page == 'all':
+            modified_settings['OBJECTS_PER_PAGE'] = None
+        else:
+            try:
+                modified_settings['OBJECTS_PER_PAGE'] = int(objects_per_page)
+            except ValueError:
+                pass
+
+        set_user_settings(flask_login.current_user.id, modified_settings)
         flask.flash("Successfully updated your settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
