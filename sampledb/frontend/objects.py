@@ -131,6 +131,16 @@ def objects():
         else:
             project = None
 
+        try:
+            limit = int(flask.request.args.get('limit', ''))
+        except ValueError:
+            limit = None
+
+        try:
+            offset = int(flask.request.args.get('offset', ''))
+        except ValueError:
+            offset = None
+
         sorting_function = object_sorting.descending(object_sorting.object_id())
 
         query_string = flask.request.args.get('q', '')
@@ -183,6 +193,8 @@ def objects():
                 permissions=Permissions.READ,
                 filter_func=filter_func,
                 sorting_func=sorting_function,
+                limit=limit,
+                offset=offset,
                 action_id=action_id,
                 action_type=action_type,
                 project_id=project_id,

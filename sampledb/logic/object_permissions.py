@@ -232,6 +232,8 @@ def get_objects_with_permissions(
         permissions: Permissions,
         filter_func: typing.Callable = lambda data: True,
         sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        limit: typing.Optional[int] = None,
+        offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
         action_type: typing.Optional[ActionType] = None,
         project_id: typing.Optional[int] = None,
@@ -275,7 +277,7 @@ def get_objects_with_permissions(
         'user_id': user_id
     }
 
-    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func)
+    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, limit=limit, offset=offset)
     if project_id is not None:
         filtered_objs = []
         for obj in objs:
