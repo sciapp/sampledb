@@ -593,7 +593,7 @@ def create_subproject_relationship(parent_project_id: int, child_project_id: int
         depth
     """
     if not filter_child_project_candidates(parent_project_id, [child_project_id]):
-            raise errors.InvalidSubprojectRelationshipError()
+        raise errors.InvalidSubprojectRelationshipError()
     subproject_relationship = SubprojectRelationship(parent_project_id=parent_project_id, child_project_id=child_project_id, child_can_add_users_to_parent=child_can_add_users_to_parent)
     db.session.add(subproject_relationship)
     db.session.commit()
