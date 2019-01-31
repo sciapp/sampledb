@@ -36,6 +36,7 @@ def create_app():
         signout_form=sampledb.frontend.users_forms.SignoutForm,
         service_name=app.config['SERVICE_NAME'],
         service_description=app.config['SERVICE_DESCRIPTION'],
+        service_imprint=app.config['SERVICE_IMPRINT'],
         ldap_name=app.config['LDAP_NAME'],
         contact_email=app.config['CONTACT_EMAIL']
     )

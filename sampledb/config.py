@@ -40,6 +40,7 @@ CONTACT_EMAIL = 'f.rhiem@fz-juelich.de'
 
 SERVICE_NAME = 'iffSamples'
 SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
+SERVICE_IMPRINT = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
 
 FILE_STORAGE_PATH = '/tmp/sampledb/'
 
