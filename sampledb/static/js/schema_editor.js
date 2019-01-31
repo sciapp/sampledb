@@ -244,7 +244,7 @@ $(function() {
       help_parent.addClass("has-error");
       has_error = true;
     } else if (!('name' in schema['properties'])) {
-      help_block.html("Objects must have a name as a <i>Text (Simple)</i> property.");
+      help_block.html("Objects must have a property 'name' as a <i>Text (Simple)</i> property.");
       help_parent.addClass("has-error");
       has_error = true;
     } else if (!('type' in schema['properties']['name']) || schema['properties']['name']['type'] !== "text" || ('multiline' in schema['properties']['name'] && schema['properties']['name']['multiline']) || 'choices' in schema['properties']['name']) {
