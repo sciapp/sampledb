@@ -87,6 +87,8 @@ def objects():
         limit = None
         offset = None
         num_objects_found = len(objects)
+        sorting_property_name = None
+        sorting_order_name = None
     else:
         try:
             user_id = int(flask.request.args.get('user', ''))
@@ -166,28 +168,32 @@ def objects():
         if limit is not None and offset is None:
             offset = 0
 
-        sorting_order = flask.request.args.get('order', None)
-        if sorting_order == 'asc':
+        sorting_order_name = flask.request.args.get('order', None)
+        if sorting_order_name == 'asc':
             sorting_order = object_sorting.ascending
-        elif sorting_order == 'desc':
+        elif sorting_order_name == 'desc':
             sorting_order = object_sorting.descending
         else:
             sorting_order = None
 
-        sorting_property = flask.request.args.get('sortby', None)
+        sorting_property_name = flask.request.args.get('sortby', None)
 
         if sorting_order is None:
-            if sorting_property is None:
+            if sorting_property_name is None:
+                sorting_order_name = 'desc'
                 sorting_order = object_sorting.descending
             else:
+                sorting_order_name = 'asc'
                 sorting_order = object_sorting.ascending
 
-        if sorting_property is None or sorting_property == '_object_id':
+        if sorting_property_name is None:
+            sorting_property_name = '_object_id'
+        if sorting_property_name == '_object_id':
             sorting_property = object_sorting.object_id()
-        elif sorting_property == '_creation_date':
+        elif sorting_property_name == '_creation_date':
             sorting_property = object_sorting.creation_date()
         else:
-            sorting_property = object_sorting.property_value(sorting_property)
+            sorting_property = object_sorting.property_value(sorting_property_name)
 
         sorting_function = sorting_order(sorting_property)
 
@@ -329,6 +335,8 @@ def objects():
         user=user,
         samples=samples,
         build_modified_url=build_modified_url,
+        sorting_property=sorting_property_name,
+        sorting_order=sorting_order_name,
         limit=limit,
         offset=offset,
         num_objects_found=num_objects_found,

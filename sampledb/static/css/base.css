@@ -252,8 +252,9 @@ th:hover .search-helper {
     color:#cccccc;
     transition: color 0.2s;
 }
+.current_sorting_property,
 #table-objects .icons-sorting > a:hover {
-    color:inherit;
+    color:#555555;
 }
 #table-objects .icons-sorting > a > i {
     line-height: 0.7em;
