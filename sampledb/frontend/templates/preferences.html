@@ -400,6 +400,18 @@
     </div>
       </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-objects-per-page">
+        Objects per Page
+      </label>
+      <span class="col-md-8">
+        <select class="selectpicker form-control" id="input-objects-per-page" name="input-objects-per-page">
+          {% for limit in (10, 25, 50, 100, 'all') %}
+          <option value="{{ limit }}" {% if limit == user_settings['OBJECTS_PER_PAGE'] or (limit == 'all' and user_settings['OBJECTS_PER_PAGE'] is none) %}selected="selected"{% endif %}>{{ limit }}</option>
+          {% endfor %}
+        </select>
+      </span>
+    </div>
+    <div class="form-group">
       <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_other_settings" value="edit_other_settings">Save</button>
     </div>
   </form>

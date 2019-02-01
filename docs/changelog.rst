@@ -6,6 +6,7 @@ Version 0.4
 
 Currently in development.
 
+- Added object pagination
 - Added posting of external links for objects
 - Added schema editor
 
