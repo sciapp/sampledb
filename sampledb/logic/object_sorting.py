@@ -53,7 +53,7 @@ def creation_date() -> typing.Callable[[typing.Any], typing.Any]:
     return sorting_func
 
 
-def property_value(property_name) -> typing.Callable[[typing.Any], typing.Any]:
+def property_value(property_name: str) -> typing.Callable[[typing.Any], typing.Any]:
     """
     Create a sorting function to sort by an arbitrary property.
 

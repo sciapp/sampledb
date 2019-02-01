@@ -147,7 +147,7 @@ def objects():
             else:
                 if limit <= 0:
                     limit = None
-                if limit >= 1000:
+                elif limit >= 1000:
                     limit = 1000
 
             # default objects per page
@@ -163,7 +163,7 @@ def objects():
         else:
             if offset < 0:
                 offset = None
-            if offset > 100000000:
+            elif offset > 100000000:
                 offset = 100000000
         if limit is not None and offset is None:
             offset = 0
