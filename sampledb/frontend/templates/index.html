@@ -9,7 +9,7 @@
 
 {% block content %}
   <div class="alert alert-warning">
-    <p><strong>Warning:</strong> This installation of {{ service_name }}, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:{{ contact_email }}&subject={{ service_name }}">let us know</a>. Thank you!</p>
+    <p><strong>Warning:</strong> This installation of {{ service_name }}, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:{{ contact_email }}?subject={{ service_name }}">let us know</a>. Thank you!</p>
   </div>
   {% if service_name == 'iffSamples' and config['SERVER_NAME'] != 'iffsamples.fz-juelich.de' %}
     <div class="alert alert-danger">
