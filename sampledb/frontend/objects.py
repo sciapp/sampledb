@@ -429,9 +429,19 @@ def apply_action_to_data(action, data, schema):
                         del row[-1]
 
 
-def show_object_form(object, action, previous_object=None, should_upgrade_schema=False):
+def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None):
     if object is None and previous_object is None:
         data = generate_placeholder(action.schema)
+        if placeholder_data:
+            for path, value in placeholder_data.items():
+                try:
+                    sub_data = data
+                    for step in path[:-1]:
+                        sub_data = sub_data[step]
+                    sub_data[path[-1]] = value
+                except Exception:
+                    # Ignore invalid placeholder data
+                    pass
     elif object is None and previous_object is not None:
         data = previous_object.data
     else:
@@ -636,6 +646,20 @@ def object(object_id):
             possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
         location_form.responsible_user.choices = possible_responsible_users
 
+        measurement_actions = logic.actions.get_actions(logic.actions.ActionType.MEASUREMENT)
+        favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+        favorite_measurement_actions = [
+            action
+            for action in measurement_actions
+            if action.id in favorite_action_ids
+        ]
+        # Sort by: instrument name (independent actions first), action name
+        favorite_measurement_actions.sort(key=lambda action: (
+            action.user.name.lower() if action.user else '',
+            action.instrument.name.lower() if action.instrument else '',
+            action.name.lower()
+        ))
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -666,6 +690,7 @@ def object(object_id):
             version_id=object.version_id,
             user_may_grant=user_may_grant,
             samples=samples,
+            favorite_measurement_actions=favorite_measurement_actions,
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),
             file_hiding_form=FileHidingForm(),
@@ -932,6 +957,8 @@ def new_object():
         # TODO: handle error
         return flask.abort(404)
 
+    sample_id = flask.request.args.get('sample_id', None)
+
     previous_object = None
     action = None
     if action_id:
@@ -949,8 +976,29 @@ def new_object():
         if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
             return flask.abort(404)
 
+    placeholder_data = {}
+
+    if sample_id is not None:
+        try:
+            sample_id = int(sample_id)
+        except ValueError:
+            sample_id = None
+        else:
+            if sample_id <= 0:
+                sample_id = None
+    if sample_id is not None:
+        try:
+            logic.objects.get_object(sample_id)
+        except logic.errors.ObjectDoesNotExistError:
+            sample_id = None
+    if sample_id is not None:
+        if action.schema.get('properties', {}).get('sample', {}).get('type', '') == 'sample':
+            placeholder_data = {
+                ('sample', ): {'_type': 'sample', 'object_id': sample_id}
+            }
+
     # TODO: check instrument permissions
-    return show_object_form(None, action, previous_object)
+    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data)
 
 
 @frontend.route('/objects/<int:object_id>/versions/')

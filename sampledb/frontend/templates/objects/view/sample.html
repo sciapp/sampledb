@@ -9,7 +9,11 @@
     {% endif %}
   {% endfor %}
   {% if not found %}
-    &mdash;
+    {% if data.object_id %}
+      #{{ data.object_id }}
+    {% else %}
+      &mdash;
+    {% endif %}
   {% endif %}
   {% endwith %}
 {#    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>#}

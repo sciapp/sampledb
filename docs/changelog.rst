@@ -9,6 +9,8 @@ Currently in development.
 - Added object pagination
 - Added posting of external links for objects
 - Added schema editor
+- Added 'Use in Measurement' button to samples
+- Fixed various minor bugs
 
 
 Version 0.3
