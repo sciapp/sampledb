@@ -26,7 +26,11 @@ def toggle_favorite_action():
             flask.flash('The action has been removed from your favorites.', 'success')
     else:
         flask.flash('An error occurred while editing your favorite actions. Please try again.', 'error')
-    return flask.redirect(flask.url_for('.actions'))
+    return flask.redirect(flask.url_for(
+        '.actions',
+        sample_id=flask.request.args.get('sample_id', None),
+        t=flask.request.args.get('t', None)
+    ))
 
 
 @frontend.route('/users/me/favorite_instruments/', methods=['POST'])
