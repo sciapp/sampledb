@@ -97,16 +97,17 @@
           <td>{{ file.title }}</td>
           <td>
             <span class="pull-right" style="display:flex;">
-              <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}"><i class="fa fa-info"></i></button>
+              <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="View information"><i class="fa fa-info"></i></button>
+              {% if file.storage == 'local' %}
               {% if file | has_preview %}
-              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-search"></i></a>
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="View preview"><i class="fa fa-search"></i></a>
               {% else %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i class="fa fa-search"></i></a>
               {% endif %}
-              {% if file.storage == 'local' %}
-              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-download"></i></a>
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="Download file"><i class="fa fa-download"></i></a>
               {% elif file.storage == 'url' %}
-              <a href="{{ file.data['url'] }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;"><i class="fa fa-external-link"></i></a>
+              <span data-placement="top" data-trigger="manual" title="Copied successfully"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="Copy address to clipboard"><i class="fa fa-clipboard"></i></span></span>
+              <a href="{{ file.data['url'] }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="Open external link"><i class="fa fa-external-link"></i></a>
               {% endif %}
             </span>
           </td>
@@ -803,6 +804,36 @@
     });
     {% endif %}
     $('[data-toggle="tooltip"]').tooltip();
+    });
+
+    function copyToClipboard(text) {
+      var element = document.createElement('textarea');
+      element.value = text;
+      element.setAttribute('readonly', '');
+      element.style.position = 'absolute';
+      element.style.left = '-9999px';
+      document.body.appendChild(element);
+      var selected = false;
+      if (document.getSelection().rangeCount > 0) {
+        selected = document.getSelection().getRangeAt(0);
+      }
+      element.select();
+      document.execCommand('copy');
+      document.body.removeChild(element);
+      if (selected) {
+        document.getSelection().removeAllRanges();
+        document.getSelection().addRange(selected);
+      }
+    }
+    $('span.copy-external-link').on('click', function() {
+      var button = $(this);
+      copyToClipboard(button.attr('data-url'));
+      var wrapper = button.parent();
+      button.tooltip('hide');
+      wrapper.tooltip('show');
+      setTimeout(function() {
+        wrapper.tooltip('hide');
+      }.bind(wrapper), 500);
     });
   </script>
 {% endblock %}
