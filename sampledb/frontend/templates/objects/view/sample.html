@@ -4,18 +4,17 @@
   {% with found = [] %}
   {% for obj in samples %}
     {% if not found and data is not none and "object_id" in data and data.object_id == obj.object_id %}
-      <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] }}</a>
+      <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</a>
     {% if found.append(true) %}{% endif %}
     {% endif %}
   {% endfor %}
   {% if not found %}
     {% if data.object_id %}
-      #{{ data.object_id }}
+      <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
     {% else %}
       &mdash;
     {% endif %}
   {% endif %}
   {% endwith %}
-{#    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>#}
   </div>
 </div>
