@@ -25,6 +25,7 @@ Developer Guide
 .. toctree::
     :maxdepth: 2
 
+    developer_guide/configuration.rst
     developer_guide/api.rst
 
 .. toctree::
