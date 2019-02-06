@@ -9,31 +9,26 @@ from ..test_utils import app_context, flask_server, app
 
 
 def test_search_ldap(app):
-    user = sampledb.logic.ldap.search_user('henkel1')
-    # no ldap-account
+    user = sampledb.logic.ldap._get_user_dn_and_attributes('henkel1', ['uid'])
     assert user is None
 
-    user = sampledb.logic.ldap.search_user('henkel')
-    # ldap-account
-    assert user['uid'] is not 'henkel'
+    user = sampledb.logic.ldap._get_user_dn_and_attributes('henkel', ['uid'])
+    assert user is not None
+    user_dn, uid = user
+    assert uid == 'henkel'
 
 
 def test_user_info(app):
-    user = sampledb.logic.ldap.get_user_info('henkel1')
-    # no ldap-account
+    user = sampledb.logic.ldap.create_user_from_ldap('henkel1')
     assert user is None
 
     with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
-        sampledb.logic.ldap.get_user_info('aarbe')
+        sampledb.logic.ldap.create_user_from_ldap('aarbe')
     # no email exist
-    assert 'Email in LDAP-account missing, please contact your administrator' in str(excinfo.value)
+    assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
 
-    user = sampledb.logic.ldap.search_user('henkel')
-    # no ldap-account
-    assert user['uid'] is not 'henkel'
-    assert user['sn'] is not 'Henkel'
-    assert user['mail'] is not 'd.henkel@fz-juelich.de'
-    assert user['givenName'] is not 'Dorothea'
+    user = sampledb.logic.ldap.create_user_from_ldap('henkel')
+    assert user is not None
 
 
 def test_validate_user(app):
@@ -48,8 +43,8 @@ def test_validate_user(app):
     assert not sampledb.logic.ldap.validate_user('doro', password)
 
     with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
-        sampledb.logic.ldap.get_user_info('aarbe')
+        sampledb.logic.ldap.create_user_from_ldap('aarbe')
     # no email exist
-    assert 'Email in LDAP-account missing, please contact your administrator' in str(excinfo.value)
+    assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
 
 

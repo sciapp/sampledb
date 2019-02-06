@@ -1,91 +1,101 @@
 # coding: utf-8
 """
-LDAP authentication for the cluster information database.
+Implementation of LDAP authentication.
 """
 
 import ldap3
 import flask
 
+import typing
+
 from . import errors
-from ..models import User, UserType
+from . import users
 
 
-def search_user(user_ldap_uid):
-    ldap_host = flask.current_app.config['LDAP_HOST']
+def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[str] = ()) -> typing.Optional[typing.Sequence[typing.Any]]:
+    ldap_host = flask.current_app.config['LDAP_SERVER']
+    user_base_dn = flask.current_app.config['LDAP_USER_BASE_DN']
+    uid_attribute = flask.current_app.config['LDAP_UID_ATTRIBUTE']
     user_dn = flask.current_app.config['LDAP_USER_DN']
+    password = flask.current_app.config['LDAP_PASSWORD']
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
     try:
-        connection = ldap3.Connection(server, auto_bind=True)
+        connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
     except ldap3.LDAPBindError:
         return None
     object_def = ldap3.ObjectDef('inetOrgPerson', connection)
-    reader = ldap3.Reader(connection, object_def, user_dn, '(uid={})'.format(user_ldap_uid))
-    reader.search()
+    reader = ldap3.Reader(connection, object_def, user_base_dn, '({}={})'.format(uid_attribute, user_ldap_uid))
+    reader.search(attributes)
 
-    # search if user_dn exactly one user, not more
+    # search if uid matches exactly one user, not more
     if len(reader) != 1:
         return None
-    return reader[0]
+    user_attributes = [reader[0].entry_dn]
+    for attribute in attributes:
+        value = getattr(reader[0], attribute, None)
+        if value:
+            user_attributes.append(value[0])
+        else:
+            user_attributes.append(None)
+    return user_attributes
 
 
-def get_posix_info(user_ldap_uid):
-    ldap_host = flask.current_app.config['LDAP_HOST']
-    user_dn = flask.current_app.config['LDAP_USER_DN']
-    group_dn = flask.current_app.config['LDAP_GROUP_DN']
+def validate_user(user_ldap_uid: str, password: str) -> bool:
+    """
+    Return whether or not a user with this LDAP uid and password exists.
 
-    server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
-    try:
-        connection = ldap3.Connection(server, auto_bind=True)
-    except ldap3.LDAPBindError:
-        return None
-    object_def = ldap3.ObjectDef('posixAccount', connection)
-    reader = ldap3.Reader(connection, object_def, user_dn, '(uid={})'.format(user_ldap_uid))
-    reader.search()
-    # filter must match exactly one group
-    if len(reader) != 1:
-        return None
-    user = reader[0]
+    This will return False if the uid is not unique, even if the password
+    matches one of the users, so avoid conflicts.
 
-    object_def = ldap3.ObjectDef('posixGroup', connection)
-    reader = ldap3.Reader(connection, object_def, group_dn, '(gidNumber={})'.format(user.gidNumber))
-    reader.search()
-    # filter must match exactly one group
-    if len(reader) != 1:
-        return None
-    group = reader[0]
-    return user, group
-
-
-def validate_user(user_ldap_uid, password):
-    user = search_user(user_ldap_uid)
+    :param user_ldap_uid: the LDAP uid of a user
+    :param password: the user's LDAP password
+    :return: whether the user exists or not
+    :raise errors.NoEmailInLDAPAccountError: when a user with the UID exists,
+        but the LDAP_MAIL_ATTRIBUTE is not set for them
+    """
+    mail_attribute = flask.current_app.config['LDAP_MAIL_ATTRIBUTE']
+    user = _get_user_dn_and_attributes(user_ldap_uid, [mail_attribute])
     if user is None:
         return False
-    if not user.mail:
+    user_dn, mail = user
+    if mail is None:
         raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
-    ldap_host = flask.current_app.config['LDAP_HOST']
+    ldap_host = flask.current_app.config['LDAP_SERVER']
     # if one user found in ldap
     # try to bind with credentials
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
-    user_dn = 'uid={},{}'.format(user_ldap_uid, flask.current_app.config['LDAP_USER_DN'])
     connection = ldap3.Connection(server, user=user_dn, password=password, raise_exceptions=False)
     return bool(connection.bind())
 
 
-def get_user_info(user_ldap_uid):
-    user = search_user(user_ldap_uid)
+def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
+    """
+    Create a new user from LDAP information.
+
+    The user's name is read from the LDAP_NAME_ATTRIBUTE, if the attribute
+    is set, or the LDAP uid is used otherwise. Their email is read from the
+    LDAP_MAIL_ATTRIBUTE.
+
+    :param user_ldap_uid: the LDAP uid of a user
+    :return: the newly created user or None, if information is missing.
+    :raise errors.NoEmailInLDAPAccountError: when the LDAP_MAIL_ATTRIBUTE is
+        not set for the user
+    """
+    name_attribute = flask.current_app.config['LDAP_NAME_ATTRIBUTE']
+    mail_attribute = flask.current_app.config['LDAP_MAIL_ATTRIBUTE']
+    user = _get_user_dn_and_attributes(
+        user_ldap_uid,
+        attributes=(name_attribute, mail_attribute)
+    )
     if user is None:
         return None
-    if not user.mail:
-        raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
-    email = user.mail[0]
-    if not user.cn:
+    _, name, email = user
+    if not email:
+        raise errors.NoEmailInLDAPAccountError('There is no email set for your LDAP account. Please contact your administrator.')
+    if not name:
         name = user_ldap_uid
-    else:
-        name = user.cn[0]
-
-    user = User(
+    return users.create_user(
         name=name,
         email=email,
-        type=UserType.PERSON
+        type=users.UserType.PERSON
     )
-    return user

@@ -3,7 +3,7 @@ import typing
 
 
 from .. import logic, db
-from .ldap import validate_user, get_user_info
+from .ldap import validate_user, create_user_from_ldap
 from ..models import Authentication, AuthenticationType, User
 from . import errors
 
@@ -127,11 +127,9 @@ def login(login: str, password: str) -> typing.Optional[User]:
         if not validate_user(login, password):
             return None
 
-        user = get_user_info(login)
+        user = create_user_from_ldap(login)
         if user is None:
             return None
-        db.session.add(user)
-        db.session.commit()
         add_ldap_authentication(user.id, login, password)
         return user
     return None

@@ -39,9 +39,14 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # LDAP settings
 LDAP_NAME = 'PGI / JCNS'
-LDAP_HOST = "ldaps://iffldap.iff.kfa-juelich.de"
-LDAP_USER_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
-LDAP_GROUP_DN = "ou=Groups,dc=iff,dc=kfa-juelich,dc=de"
+LDAP_SERVER = "ldaps://iffldap.iff.kfa-juelich.de"
+LDAP_USER_BASE_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
+LDAP_UID_ATTRIBUTE = "uid"
+LDAP_NAME_ATTRIBUTE = "cn"
+LDAP_MAIL_ATTRIBUTE = "mail"
+# LDAP credentials, may both be None if anonymous access is enabled
+LDAP_USER_DN = None
+LDAP_PASSWORD = None
 
 # email settings
 MAIL_SERVER = 'mail.fz-juelich.de'
