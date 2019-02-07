@@ -45,11 +45,11 @@ def validate_user(user_ldap_uid: str, password: str) -> bool:
     Return whether or not a user with this LDAP uid and password exists.
 
     This will return False if the uid is not unique, even if the password
-    matches one of the users, so avoid conflicts.
+    matches one of the users, to avoid conflicts.
 
     :param user_ldap_uid: the LDAP uid of a user
     :param password: the user's LDAP password
-    :return: whether the user exists or not
+    :return: whether the user credentials are correct or not
     :raise errors.NoEmailInLDAPAccountError: when a user with the UID exists,
         but the LDAP_MAIL_ATTRIBUTE is not set for them
     """
@@ -61,8 +61,7 @@ def validate_user(user_ldap_uid: str, password: str) -> bool:
     if mail is None:
         raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
     ldap_host = flask.current_app.config['LDAP_SERVER']
-    # if one user found in ldap
-    # try to bind with credentials
+    # try to bind with user credentials if a matching user exists
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
     connection = ldap3.Connection(server, user=user_dn, password=password, raise_exceptions=False)
     return bool(connection.bind())
