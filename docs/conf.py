@@ -3,6 +3,7 @@
 import os
 import sys
 import vcversioner
+import datetime
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, base_dir)
@@ -10,7 +11,7 @@ sys.path.insert(0, base_dir)
 # Project information
 
 project = 'iffSamples'
-copyright = '2018, PGI / JCNS Scientific IT-Systems'
+copyright = '{}, PGI / JCNS Scientific IT-Systems'.format(datetime.date.today().year)
 author = 'Florian Rhiem'
 
 # The full version, including alpha/beta/rc tags

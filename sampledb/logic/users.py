@@ -37,6 +37,18 @@ def get_users_by_name(name: str) -> typing.List[User]:
 
 
 def create_user(name: str, email: str, type: UserType) -> User:
+    """
+    Create a new user.
+
+    This function cannot create a user as an administrator. To set whether or
+    not a user is an administrator, use the set_administrator script or modify
+    the User object returned by this function.
+
+    :param name: the user's name
+    :param email: the user's email address
+    :param type: the user's type
+    :return: the newly created user
+    """
     user = User(name=name, email=email, type=type)
     db.session.add(user)
     db.session.commit()
