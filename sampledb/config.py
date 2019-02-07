@@ -41,9 +41,10 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 LDAP_NAME = 'PGI / JCNS'
 LDAP_SERVER = "ldaps://iffldap.iff.kfa-juelich.de"
 LDAP_USER_BASE_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
-LDAP_UID_ATTRIBUTE = "uid"
+LDAP_UID_FILTER = "(uid={})"
 LDAP_NAME_ATTRIBUTE = "cn"
 LDAP_MAIL_ATTRIBUTE = "mail"
+LDAP_OBJECT_DEF = 'inetOrgPerson'
 # LDAP credentials, may both be None if anonymous access is enabled
 LDAP_USER_DN = None
 LDAP_PASSWORD = None

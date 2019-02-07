@@ -15,7 +15,8 @@ from . import users
 def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[str] = ()) -> typing.Optional[typing.Sequence[typing.Any]]:
     ldap_host = flask.current_app.config['LDAP_SERVER']
     user_base_dn = flask.current_app.config['LDAP_USER_BASE_DN']
-    uid_attribute = flask.current_app.config['LDAP_UID_ATTRIBUTE']
+    uid_filter = flask.current_app.config['LDAP_UID_FILTER']
+    object_def = flask.current_app.config['LDAP_OBJECT_DEF']
     user_dn = flask.current_app.config['LDAP_USER_DN']
     password = flask.current_app.config['LDAP_PASSWORD']
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
@@ -23,10 +24,9 @@ def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[
         connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
     except ldap3.LDAPBindError:
         return None
-    object_def = ldap3.ObjectDef('inetOrgPerson', connection)
-    reader = ldap3.Reader(connection, object_def, user_base_dn, '({}={})'.format(uid_attribute, user_ldap_uid))
+    object_def = ldap3.ObjectDef(object_def, connection)
+    reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(user_ldap_uid))
     reader.search(attributes)
-
     # search if uid matches exactly one user, not more
     if len(reader) != 1:
         return None
