@@ -61,3 +61,8 @@ Users will receive notifications whenever they need to be informed about an acti
     :alt: Unread Notification Icon
 
     Unread Notification Icon
+
+Bot Users
+---------
+
+Tasks like object creation can be automated by using the :ref:`HTTP API <http_api>`. When this is done in connection to an instrument or a facility instead of an individual user, it may be better to create a dedicated user account solely for this purpose.
