@@ -8,7 +8,7 @@ Instruments in iffSamples map real instruments in Jülich or at other facilities
 You can view a list of instruments at https://iffsamples.fz-juelich.de/instruments/. To make navigating the growing list of instruments easier, users can select **favorites** by clicking the star next to an instrument's name.
 
 .. note::
-    At this time, instruments can only be created by the iffSamples administrators. If you would like your instrument or action to be included, please `let us know <f.rhiem@fz-juelich.de>`_.
+    At this time, instruments can only be created by the iffSamples administrators. If you would like your instrument or action to be included, please `let us know`_.
 
 Instrument Scientists
 ---------------------

@@ -17,7 +17,7 @@ Users can create custom actions to represent their own processes or instruments 
 To create a custom action, users can either use an existing action as a template or write a :ref:`Schema <metadata>` from scratch.
 
 .. note::
-    Custom Actions are an advanced feature that most users of iffSamples will not need. If you would like your instrument or action to be included without writing your own schema, please `let us know <f.rhiem@fz-juelich.de>`_.
+    Custom Actions are an advanced feature that most users of iffSamples will not need. If you would like your instrument or action to be included without writing your own schema, please `let us know`_.
 
     If you would like to try working with custom actions, please `use the development and testing deployment of iffSamples <https://docker.iff.kfa-juelich.de/dev-sampledb/>`_.
 

@@ -1,10 +1,10 @@
 iffSamples
 ==========
 
-iffSamples is the sample and measurement metadata database at PGI and JCNS. You can access iffSamples under `iffsamples.fz-juelich.de <https://iffsamples.fz-juelich.de/>`_.
+iffSamples is the sample and measurement metadata database at PGI and JCNS. You can access iffSamples under `iffsamples.fz-juelich.de <https://iffsamples.fz-juelich.de>`_.
 
 .. note::
-    Both iffSamples and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know <mailto:f.rhiem@fz-juelich.de>`_.
+    Both iffSamples and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know`_.
 
 User Guide
 ----------

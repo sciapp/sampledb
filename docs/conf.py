@@ -13,6 +13,7 @@ sys.path.insert(0, base_dir)
 project = 'iffSamples'
 copyright = '{}, PGI / JCNS Scientific IT-Systems'.format(datetime.date.today().year)
 author = 'Florian Rhiem'
+contact_email = 'f.rhiem@fz-juelich.de'
 
 # The full version, including alpha/beta/rc tags
 release = vcversioner.find_version(root=base_dir).version
@@ -59,7 +60,7 @@ html_theme_options = {
     'extra_nav_links': {
         'iffSamples': 'https://iffsamples.fz-juelich.de',
         'PGI/JCNS-TA': 'https://pgi-jcns.fz-juelich.de',
-        'Contact': 'mailto:f.rhiem@fz-juelich.de',
+        'Contact': 'mailto:{}'.format(contact_email),
         'Imprint': 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html',
     }
 }
@@ -91,3 +92,14 @@ epub_exclude_files = ['search.html']
 
 def setup(app):
     app.add_stylesheet('css/custom.css')
+
+
+rst_prolog = """
+.. |service_url| replace:: {service_url}
+
+.. _let us know: mailto:{contact_email}
+
+""".format(
+    service_url='https://iffsamples.fz-juelich.de/',
+    contact_email=contact_email
+)

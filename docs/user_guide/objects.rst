@@ -169,7 +169,7 @@ Labels
 iffSamples can be used to create labels for newly created samples. These labels will contain the object's ID, name, creator and creation date, along with :ref:`hazards` if those were specified as part of the object's metadata.
 
 .. note::
-    If you require a label format that isn't covered by the ones generated at this time, please `let us know <f.rhiem@fz-juelich.de>`_.
+    If you require a label format that isn't covered by the ones generated at this time, please `let us know`_.
 
 .. figure:: ../static/img/generated/labels.png
     :scale: 50 %
