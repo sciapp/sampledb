@@ -10,10 +10,15 @@ sys.path.insert(0, base_dir)
 
 # Project information
 
-project = 'iffSamples'
+service_name = 'iffSamples'
+service_description = 'iffSamples is the sample and measurement metadata database at PGI and JCNS.'
+service_url = 'https://iffsamples.fz-juelich.de'
+service_imprint = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
+contact_email = 'f.rhiem@fz-juelich.de'
+
+project = service_name
 copyright = '{}, PGI / JCNS Scientific IT-Systems'.format(datetime.date.today().year)
 author = 'Florian Rhiem'
-contact_email = 'f.rhiem@fz-juelich.de'
 
 # The full version, including alpha/beta/rc tags
 release = vcversioner.find_version(root=base_dir).version
@@ -58,31 +63,31 @@ html_theme_options = {
     'body_text_align': 'justify',
     'show_powered_by': False,
     'extra_nav_links': {
-        'iffSamples': 'https://iffsamples.fz-juelich.de',
+        service_name: service_url,
         'PGI/JCNS-TA': 'https://pgi-jcns.fz-juelich.de',
         'Contact': 'mailto:{}'.format(contact_email),
-        'Imprint': 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html',
+        'Imprint': service_imprint,
     }
 }
 
 # Options for other output methods
 
-htmlhelp_basename = 'iffSamplesdoc'
+htmlhelp_basename = '{}doc'.format(service_name)
 
 latex_elements = {}
 latex_documents = [
-    (master_doc, 'iffSamples.tex', 'iffSamples Documentation',
-     'Florian Rhiem', 'manual'),
+    (master_doc, '{}.tex'.format(service_name), '{} Documentation'.format(service_name),
+     author, 'manual'),
 ]
 
 man_pages = [
-    (master_doc, 'iffsamples', 'iffSamples Documentation',
+    (master_doc, service_name.lower(), '{} Documentation'.format(service_name),
      [author], 1)
 ]
 
 texinfo_documents = [
-    (master_doc, 'iffSamples', 'iffSamples Documentation',
-     author, 'iffSamples', 'Sample and measurement medadata database',
+    (master_doc, service_name, '{} Documentation'.format(service_name),
+     author, service_name, 'Sample and measurement metadata database',
      'Miscellaneous'),
 ]
 
@@ -96,10 +101,17 @@ def setup(app):
 
 rst_prolog = """
 .. |service_url| replace:: {service_url}
+.. |service_description| replace:: {service_description}
+.. |service_name| replace:: {service_name}
+.. |service_invitation_url| replace:: {service_url}/users/invitation
+.. |service_actions_url| replace:: {service_url}/actions
+.. |service_instruments_url| replace:: {service_url}/instruments
 
 .. _let us know: mailto:{contact_email}
 
 """.format(
-    service_url='https://iffsamples.fz-juelich.de/',
+    service_name=service_name,
+    service_description=service_description,
+    service_url=service_url,
     contact_email=contact_email
 )
