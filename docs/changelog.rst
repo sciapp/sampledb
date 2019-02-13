@@ -4,7 +4,7 @@ Changelog
 Version 0.4
 -----------
 
-Currently in development.
+Released on February 13th, 2019.
 
 - Added object pagination
 - Added posting of external links for objects
