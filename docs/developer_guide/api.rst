@@ -6,7 +6,7 @@ HTTP API
 Authentication
 --------------
 
-The iffSamples HTTP API uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using the normal user credentials. Please make sure to use HTTPS when accessing the API.
+The |service_name| HTTP API uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using the normal user credentials. Please make sure to use HTTPS when accessing the API.
 
 Objects
 -------

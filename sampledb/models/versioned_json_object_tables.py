@@ -280,23 +280,32 @@ class VersionedJSONSerializableObjectTables(object):
             db.sql.expression.text('COUNT(*) OVER()')
         ])
 
+        selectable = table
+
+        if sorting_func is not None and getattr(sorting_func, 'require_original_columns', False):
+            selectable = selectable.outerjoin(
+                self._previous_table,
+                db.and_(table.c.object_id == self._previous_table.c.object_id, self._previous_table.c.version_id == 0),
+                full=False
+            )
+
         if action_table is not None and action_filter is not None:
             assert self._action_id_column is not None
             assert action_table is not None
             assert action_filter is not None
-            select_statement = select_statement.select_from(
-                table.join(
-                    action_table,
-                    db.and_(table.c.action_id == self._action_id_column, action_filter)
-                )
+            selectable = selectable.join(
+                action_table,
+                db.and_(table.c.action_id == self._action_id_column, action_filter)
             )
 
+        select_statement = select_statement.select_from(selectable)
+
         if sorting_func is None:
-            def sorting_func(columns):
-                return db.sql.desc(columns.object_id)
+            def sorting_func(current_columns, original_columns):
+                return db.sql.desc(current_columns.object_id)
 
         select_statement = select_statement.where(filter_func(table.c.data))
-        select_statement = select_statement.order_by(sorting_func(table.c))
+        select_statement = select_statement.order_by(sorting_func(table.c, self._previous_table.c))
 
         if limit is not None:
             select_statement = select_statement.limit(limit)

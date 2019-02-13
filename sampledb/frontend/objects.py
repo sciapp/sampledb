@@ -192,6 +192,8 @@ def objects():
             sorting_property = object_sorting.object_id()
         elif sorting_property_name == '_creation_date':
             sorting_property = object_sorting.creation_date()
+        elif sorting_property_name == '_last_modification_date':
+            sorting_property = object_sorting.last_modification_date()
         else:
             sorting_property = object_sorting.property_value(sorting_property_name)
 

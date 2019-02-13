@@ -37,6 +37,7 @@ def create_app():
         service_name=app.config['SERVICE_NAME'],
         service_description=app.config['SERVICE_DESCRIPTION'],
         service_imprint=app.config['SERVICE_IMPRINT'],
+        service_privacy_policy=app.config['SERVICE_PRIVACY_POLICY'],
         ldap_name=app.config['LDAP_NAME'],
         contact_email=app.config['CONTACT_EMAIL']
     )

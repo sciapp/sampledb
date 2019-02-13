@@ -17,7 +17,7 @@
     {% for user in users %}
     <tr>
       <th scope="row">{{ user.id}}</th>
-      <td>{{ user.name}}</td>
+      <td>{{ user.name}}{% if user.type.name.lower() == 'other' %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Bot users are meant for the automation of object creation and other tasks.">bot</span>{% endif %}</td>
       <td><a href="{{ url_for('.user_profile', user_id=user.id) }}">View</a></td>
       <td><a href="{{ url_for('.user_activity', user_id=user.id) }}">View</a></td>
       <td><a href="{{ url_for('.objects', user=user.id) }}">View</a></td>
@@ -25,4 +25,13 @@
     {% endfor %}
   </tbody>
 </table>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
 {% endblock %}
