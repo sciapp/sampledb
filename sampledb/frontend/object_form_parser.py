@@ -17,12 +17,12 @@ def form_data_parser(func):
             return func(form_data, schema, id_prefix, errors, required=required)
         except ValueError as e:
             for name in form_data:
-                if name.startswith(id_prefix) and '__' not in name[len(id_prefix)+1:]:
+                if name.startswith(id_prefix) and '__' not in name[len(id_prefix) + 1:]:
                     errors[name] = str(e)
             return None
         except ValidationError as e:
             for name in form_data:
-                if name.startswith(id_prefix) and '__' not in name[len(id_prefix)+1:]:
+                if name.startswith(id_prefix) and '__' not in name[len(id_prefix) + 1:]:
                     errors[name] = e.message
             return None
     return wrapper
@@ -53,7 +53,7 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
 
 @form_data_parser
 def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__text']:
         raise ValueError('invalid text form data')
     text = form_data.get(id_prefix + '__text', [''])[0]
@@ -67,7 +67,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
 
 @form_data_parser
 def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if id_prefix + '__hasnohazards' not in keys:
         raise ValueError('Please select at least one hazard or confirm that the object poses no hazards.')
     hasnohazards = form_data.get(id_prefix + '__hasnohazards', [''])[0]
@@ -102,13 +102,16 @@ def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False
 
 @form_data_parser
 def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__tags']:
         raise ValueError('invalid tags form data')
     text = form_data.get(id_prefix + '__tags', [''])[0]
-    tags = [tag.strip().lower() for tag in text.split(',') if tag.strip()]
+    tags = [tag.lower() for tag in text.split(',')]
     unique_tags = []
     for tag in tags:
+        tag = ''.join(c for c in tag if not c.isspace())
+        if not tag:
+            continue
         if tag not in unique_tags:
             unique_tags.append(tag)
     tags = unique_tags
@@ -122,7 +125,7 @@ def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
 
 @form_data_parser
 def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid sample form data')
     object_id = form_data.get(id_prefix + '__oid', [''])[0]
@@ -145,7 +148,7 @@ def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False)
 
 @form_data_parser
 def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if set(keys) != {id_prefix + '__magnitude', id_prefix + '__units'} and keys != [id_prefix + '__magnitude']:
         raise ValueError('invalid quantity form data')
@@ -182,7 +185,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
 
 @form_data_parser
 def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if keys != [id_prefix + '__datetime']:
         raise ValueError('invalid datetime form data')
@@ -197,7 +200,7 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=Fals
 
 @form_data_parser
 def parse_boolean_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if set(keys) == {id_prefix + '__hidden', id_prefix + '__value'}:
         value = True
@@ -213,7 +216,7 @@ def parse_boolean_form_data(form_data, schema, id_prefix, errors, required=False
 
 @form_data_parser
 def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix+'__')]
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     item_schema = schema['items']
     item_indices = set()
     for key in keys:
@@ -230,12 +233,12 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
         item_indices.add(item_index)
     items = []
     if item_indices:
-        num_items = max([i for i in item_indices])+1
+        num_items = max([i for i in item_indices]) + 1
         for i in range(num_items):
             if i not in item_indices:
                 items.append(None)
             else:
-                item_id_prefix = id_prefix+'__{}'.format(i)
+                item_id_prefix = id_prefix + '__{}'.format(i)
                 items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors))
     schemas.validate(items, schema)
     return items
@@ -245,7 +248,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
 def parse_object_form_data(form_data, schema, id_prefix, errors, required=False):
     assert schema['type'] == 'object'
     data = {}
-    if any(key.startswith(id_prefix+'__') for key in form_data.keys()):
+    if any(key.startswith(id_prefix + '__') for key in form_data.keys()):
         for property_name, property_schema in schema['properties'].items():
             property_id_prefix = id_prefix + '__' + property_name
             property_required = (property_name in schema.get('required', []))
@@ -261,4 +264,3 @@ def parse_form_data(form_data, schema):
     errors = {}
     data = parse_object_form_data(form_data, schema, id_prefix, errors)
     return data, errors
-

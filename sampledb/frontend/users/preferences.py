@@ -5,6 +5,7 @@
 
 import flask
 import flask_login
+import sqlalchemy.sql.expression
 
 from ... import db
 
@@ -12,7 +13,7 @@ from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
-from .forms import NotificationModeForm
+from .forms import NotificationModeForm, OtherSettingsForm
 
 from ...logic import user_log
 from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method
@@ -23,9 +24,10 @@ from ...logic.object_permissions import Permissions, get_default_permissions_for
 from ...logic.projects import get_user_projects, get_project
 from ...logic.groups import get_user_groups, get_group
 from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
-from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_all_types, set_notification_mode_for_type
+from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
+from ...logic.settings import get_user_settings, set_user_settings
 
-from ...models import Authentication, AuthenticationType, User
+from ...models import Authentication, AuthenticationType
 
 
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])
@@ -59,7 +61,7 @@ def user_preferences(user_id):
 def change_preferences(user, user_id):
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed==True).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     authentication_method_form = AuthenticationMethodForm()
@@ -70,6 +72,9 @@ def change_preferences(user, user_id):
     add_project_permissions_form = ObjectProjectPermissionsForm()
 
     notification_mode_form = NotificationModeForm()
+
+    other_settings_form = OtherSettingsForm()
+    user_settings = get_user_settings(flask_login.current_user.id)
 
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
@@ -123,6 +128,8 @@ def change_preferences(user, user_id):
                                              NotificationMode=NotificationMode,
                                              NotificationType=NotificationType,
                                              notification_modes=get_notification_modes(flask_login.current_user.id),
+                                             user_settings=user_settings,
+                                             other_settings_form=other_settings_form,
                                              get_user=get_user,
                                              users=users,
                                              groups=groups,
@@ -140,7 +147,6 @@ def change_preferences(user, user_id):
             flask.flash("Failed to change the password.", 'error')
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
-            print("!!!", repr(change_user_form.name.data))
             if change_user_form.name.data != user.name:
                 u = user
                 u.name = str(change_user_form.name.data)
@@ -171,6 +177,8 @@ def change_preferences(user, user_id):
                                              NotificationMode=NotificationMode,
                                              NotificationType=NotificationType,
                                              notification_modes=get_notification_modes(flask_login.current_user.id),
+                                             user_settings=user_settings,
+                                             other_settings_form=other_settings_form,
                                              get_user=get_user,
                                              users=users,
                                              groups=groups,
@@ -212,6 +220,8 @@ def change_preferences(user, user_id):
                                              NotificationMode=NotificationMode,
                                              NotificationType=NotificationType,
                                              notification_modes=get_notification_modes(flask_login.current_user.id),
+                                             user_settings=user_settings,
+                                             other_settings_form=other_settings_form,
                                              get_user=get_user,
                                              users=users,
                                              groups=groups,
@@ -291,7 +301,25 @@ def change_preferences(user, user_id):
                         break
         flask.flash("Successfully updated your notification settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed==True).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
+    if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
+        use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
+        modified_settings = {
+            'USE_SCHEMA_EDITOR': use_schema_editor
+        }
+
+        objects_per_page = flask.request.form.get('input-objects-per-page', '')
+        if objects_per_page == 'all':
+            modified_settings['OBJECTS_PER_PAGE'] = None
+        else:
+            try:
+                modified_settings['OBJECTS_PER_PAGE'] = int(objects_per_page)
+            except ValueError:
+                pass
+
+        set_user_settings(flask_login.current_user.id, modified_settings)
+        flask.flash("Successfully updated your settings.", 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
                                  authentication_password_form=authentication_password_form,
                                  default_permissions_form=default_permissions_form,
@@ -302,6 +330,8 @@ def change_preferences(user, user_id):
                                  NotificationMode=NotificationMode,
                                  NotificationType=NotificationType,
                                  notification_modes=get_notification_modes(flask_login.current_user.id),
+                                 user_settings=user_settings,
+                                 other_settings_form=other_settings_form,
                                  Permissions=Permissions,
                                  users=users,
                                  get_user=get_user,

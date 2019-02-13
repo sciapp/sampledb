@@ -14,15 +14,15 @@ import itsdangerous
 import werkzeug.utils
 
 from . import frontend
-from .. import db
 from .. import logic
-from ..logic import user_log, object_log, comments
+from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import ActionType, get_action
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users, get_users_by_name
 from ..logic.schemas import validate, generate_placeholder
+from ..logic.settings import get_user_settings, set_user_settings
 from ..logic.object_search import generate_filter_func, wrap_filter_func
 from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
@@ -31,7 +31,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -84,6 +84,11 @@ def objects():
         advanced_search_had_error = False
         search_notes = []
         search_tree = None
+        limit = None
+        offset = None
+        num_objects_found = len(objects)
+        sorting_property_name = None
+        sorting_order_name = None
     else:
         try:
             user_id = int(flask.request.args.get('user', ''))
@@ -131,6 +136,69 @@ def objects():
             project = get_project(project_id)
         else:
             project = None
+
+        if flask.request.args.get('limit', '') == 'all':
+            limit = None
+        else:
+            try:
+                limit = int(flask.request.args.get('limit', ''))
+            except ValueError:
+                limit = None
+            else:
+                if limit <= 0:
+                    limit = None
+                elif limit >= 1000:
+                    limit = 1000
+
+            # default objects per page
+            if limit is None:
+                limit = get_user_settings(flask_login.current_user.id)['OBJECTS_PER_PAGE']
+            else:
+                set_user_settings(flask_login.current_user.id, {'OBJECTS_PER_PAGE': limit})
+
+        try:
+            offset = int(flask.request.args.get('offset', ''))
+        except ValueError:
+            offset = None
+        else:
+            if offset < 0:
+                offset = None
+            elif offset > 100000000:
+                offset = 100000000
+        if limit is not None and offset is None:
+            offset = 0
+
+        sorting_order_name = flask.request.args.get('order', None)
+        if sorting_order_name == 'asc':
+            sorting_order = object_sorting.ascending
+        elif sorting_order_name == 'desc':
+            sorting_order = object_sorting.descending
+        else:
+            sorting_order = None
+
+        sorting_property_name = flask.request.args.get('sortby', None)
+
+        if sorting_order is None:
+            if sorting_property_name is None:
+                sorting_order_name = 'desc'
+                sorting_order = object_sorting.descending
+            else:
+                sorting_order_name = 'asc'
+                sorting_order = object_sorting.ascending
+
+        if sorting_property_name is None:
+            sorting_property_name = '_object_id'
+        if sorting_property_name == '_object_id':
+            sorting_property = object_sorting.object_id()
+        elif sorting_property_name == '_creation_date':
+            sorting_property = object_sorting.creation_date()
+        elif sorting_property_name == '_last_modification_date':
+            sorting_property = object_sorting.last_modification_date()
+        else:
+            sorting_property = object_sorting.property_value(sorting_property_name)
+
+        sorting_function = sorting_order(sorting_property)
+
         query_string = flask.request.args.get('q', '')
         search_tree = None
         use_advanced_search = flask.request.args.get('advanced', None) is not None
@@ -147,7 +215,7 @@ def objects():
                 additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
         try:
             filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
-        except Exception as e:
+        except Exception:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
                 advanced_search_had_error = True
@@ -176,18 +244,25 @@ def objects():
                 if object_ids is None:
                     object_ids = set()
                 object_ids = object_ids.union(object_ids_for_user)
+            num_objects_found_list = []
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.READ,
                 filter_func=filter_func,
+                sorting_func=sorting_function,
+                limit=limit,
+                offset=offset,
                 action_id=action_id,
                 action_type=action_type,
                 project_id=project_id,
-                object_ids=object_ids
+                object_ids=object_ids,
+                num_objects_found=num_objects_found_list
             )
+            num_objects_found = num_objects_found_list[0]
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
+            num_objects_found = 0
         if any(note[0] == 'error' for note in search_notes):
             objects = []
             advanced_search_had_error = True
@@ -229,7 +304,6 @@ def objects():
             if obj['schema']['properties'][property_name]['type'] == 'sample':
                 sample_ids.add(obj['data'][property_name]['object_id'])
 
-    objects.sort(key=lambda obj: obj['object_id'], reverse=True)
     samples = {
         sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids
@@ -238,6 +312,13 @@ def objects():
         show_action = True
     else:
         show_action = False
+
+    def build_modified_url(**kwargs):
+        return flask.url_for(
+            '.objects',
+            **{k: v for k, v in flask.request.args.items() if k not in kwargs},
+            **kwargs
+        )
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -255,6 +336,12 @@ def objects():
         user_id=user_id,
         user=user,
         samples=samples,
+        build_modified_url=build_modified_url,
+        sorting_property=sorting_property_name,
+        sorting_order=sorting_order_name,
+        limit=limit,
+        offset=offset,
+        num_objects_found=num_objects_found,
         show_action=show_action,
         use_advanced_search=use_advanced_search,
         must_use_advanced_search=must_use_advanced_search,
@@ -301,12 +388,12 @@ def apply_action_to_form_data(action, form_data):
             if not name.startswith(parent_id_prefix):
                 new_form_data[name] = form_data[name]
             else:
-                item_index, id_suffix = name[len(parent_id_prefix)+2:].split('__', 1)
+                item_index, id_suffix = name[len(parent_id_prefix) + 2:].split('__', 1)
                 item_index = int(item_index)
                 if item_index < deleted_item_index:
                     new_form_data[name] = form_data[name]
                 if item_index > deleted_item_index:
-                    new_name = parent_id_prefix + '__' + str(item_index-1) + '__' + id_suffix
+                    new_name = parent_id_prefix + '__' + str(item_index - 1) + '__' + id_suffix
                     new_form_data[new_name] = form_data[name]
     return new_form_data
 
@@ -344,9 +431,19 @@ def apply_action_to_data(action, data, schema):
                         del row[-1]
 
 
-def show_object_form(object, action, previous_object=None, should_upgrade_schema=False):
+def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None):
     if object is None and previous_object is None:
         data = generate_placeholder(action.schema)
+        if placeholder_data:
+            for path, value in placeholder_data.items():
+                try:
+                    sub_data = data
+                    for step in path[:-1]:
+                        sub_data = sub_data[step]
+                    sub_data[path[-1]] = value
+                except Exception:
+                    # Ignore invalid placeholder data
+                    pass
     elif object is None and previous_object is not None:
         data = previous_object.data
     else:
@@ -443,7 +540,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     if schema.get('batch', False) and num_objects_in_batch is not None:
                         if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
                             data_sequence = []
-                            for i in range(1, num_objects_in_batch+1):
+                            for i in range(1, num_objects_in_batch + 1):
                                 if name_suffix_format:
                                     name_suffix = name_suffix_format.format(i)
                                 else:
@@ -551,6 +648,20 @@ def object(object_id):
             possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
         location_form.responsible_user.choices = possible_responsible_users
 
+        measurement_actions = logic.actions.get_actions(logic.actions.ActionType.MEASUREMENT)
+        favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+        favorite_measurement_actions = [
+            action
+            for action in measurement_actions
+            if action.id in favorite_action_ids
+        ]
+        # Sort by: instrument name (independent actions first), action name
+        favorite_measurement_actions.sort(key=lambda action: (
+            action.user.name.lower() if action.user else '',
+            action.instrument.name.lower() if action.instrument else '',
+            action.name.lower()
+        ))
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -571,6 +682,8 @@ def object(object_id):
             file_source_instrument_exists=False,
             file_source_jupyterhub_exists=False,
             file_form=FileForm(),
+            external_link_form=ExternalLinkForm(),
+            external_link_invalid='invalid_link' in flask.request.args,
             mobile_upload_url=mobile_upload_url,
             mobile_upload_qrcode=mobile_upload_qrcode,
             object_qrcode=object_qrcode,
@@ -579,6 +692,7 @@ def object(object_id):
             version_id=object.version_id,
             user_may_grant=user_may_grant,
             samples=samples,
+            favorite_measurement_actions=favorite_measurement_actions,
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),
             file_hiding_form=FileHidingForm(),
@@ -725,21 +839,6 @@ def export_to_pdf(object_id):
     )
 
 
-@frontend.route('/files/')
-@flask_login.login_required
-def existing_files_from_source():
-    if 'file_source' not in flask.request.args:
-        return flask.abort(400)
-    file_source = flask.request.args['file_source']
-    relative_path = flask.request.args.get('relative_path', '')
-    while relative_path.startswith('/'):
-        relative_path = relative_path[1:]
-    try:
-        return json.dumps(logic.files.get_existing_files_for_source(file_source, flask_login.current_user.id, relative_path, max_depth=2))
-    except (logic.errors.InvalidFileSourceError, FileNotFoundError) as e:
-        return flask.abort(404)
-
-
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_file(object_id, file_id):
@@ -748,12 +847,15 @@ def object_file(object_id, file_id):
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if 'preview' in flask.request.args:
-        file_extension = os.path.splitext(file.original_file_name)[1]
-        mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
-        if mime_type is not None:
-            return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
-    return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+    if file.storage == 'local':
+        if 'preview' in flask.request.args:
+            file_extension = os.path.splitext(file.original_file_name)[1]
+            mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
+            if mime_type is not None:
+                return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
+        return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+    # TODO: better error handling
+    return flask.abort(404)
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
@@ -801,7 +903,7 @@ def hide_file(object_id, file_id):
 def mobile_file_upload(object_id: int, token: str):
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
-        user_id, object_id = serializer.loads(token, max_age=15*60)
+        user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
     return flask.render_template('mobile_upload.html', user_id=logic.users.get_user(user_id), object=logic.objects.get_object(object_id))
@@ -811,19 +913,20 @@ def mobile_file_upload(object_id: int, token: str):
 def post_mobile_file_upload(object_id: int, token: str):
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
-        user_id, object_id = serializer.loads(token, max_age=15*60)
+        user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
     files = flask.request.files.getlist('file_input')
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
-        logic.files.create_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
+        logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
     return flask.render_template('mobile_upload_success.html', num_files=len(files))
 
 
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id):
+    external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():
         file_source = file_form.file_source.data
@@ -831,24 +934,17 @@ def post_object_files(object_id):
             files = flask.request.files.getlist(file_form.local_files.name)
             for file_storage in files:
                 file_name = werkzeug.utils.secure_filename(file_storage.filename)
-                logic.files.create_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
-            flask.flash('Successfully uploaded files.', 'success')
-        elif file_source in logic.files.FILE_SOURCES.keys():
-            file_names = file_form.file_names.data
-            try:
-                file_names = json.loads(file_names)
-            except json.JSONDecodeError:
-                flask.flash('Failed to upload files.', 'error')
-                return flask.redirect(flask.url_for('.object', object_id=object_id))
-            for file_name in file_names:
-                try:
-                    logic.files.copy_file(object_id, flask_login.current_user.id, file_source, file_name)
-                except (FileNotFoundError, logic.errors.InvalidFileSourceError):
-                    flask.flash('Failed to upload files.', 'error')
-                    return flask.redirect(flask.url_for('.object', object_id=object_id))
+                logic.files.create_local_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
             flask.flash('Successfully uploaded files.', 'success')
         else:
             flask.flash('Failed to upload files.', 'error')
+    elif external_link_form.validate_on_submit():
+        url = external_link_form.url.data
+        logic.files.create_url_file(object_id, flask_login.current_user.id, url)
+        flask.flash('Successfully posted link.', 'success')
+    elif external_link_form.errors:
+        flask.flash('Failed to post link.', 'error')
+        return flask.redirect(flask.url_for('.object', object_id=object_id, invalid_link=True, _anchor='anchor-post-link'))
     else:
         flask.flash('Failed to upload files.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
@@ -862,6 +958,8 @@ def new_object():
     if not action_id and not previous_object_id:
         # TODO: handle error
         return flask.abort(404)
+
+    sample_id = flask.request.args.get('sample_id', None)
 
     previous_object = None
     action = None
@@ -880,8 +978,29 @@ def new_object():
         if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
             return flask.abort(404)
 
+    placeholder_data = {}
+
+    if sample_id is not None:
+        try:
+            sample_id = int(sample_id)
+        except ValueError:
+            sample_id = None
+        else:
+            if sample_id <= 0:
+                sample_id = None
+    if sample_id is not None:
+        try:
+            logic.objects.get_object(sample_id)
+        except logic.errors.ObjectDoesNotExistError:
+            sample_id = None
+    if sample_id is not None:
+        if action.schema.get('properties', {}).get('sample', {}).get('type', '') == 'sample':
+            placeholder_data = {
+                ('sample', ): {'_type': 'sample', 'object_id': sample_id}
+            }
+
     # TODO: check instrument permissions
-    return show_object_form(None, action, previous_object)
+    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data)
 
 
 @frontend.route('/objects/<int:object_id>/versions/')

@@ -9,7 +9,7 @@ from ..errors import UndefinedUnitError, SchemaError
 from .utils import get_dimensionality_for_units
 
 
-def generate_placeholder(schema: dict, path: typing.Union[None, typing.List[str]]=None) -> typing.Union[dict, list, None]:
+def generate_placeholder(schema: dict, path: typing.Optional[typing.List[str]] = None) -> typing.Union[dict, list, None]:
     """
     Generates a placeholder object based on an object schema.
 

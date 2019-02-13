@@ -19,6 +19,7 @@ def jinja_filter(func):
     _jinja_filters[func.__name__] = func
     return func
 
+
 _jinja_filters = {}
 jinja_filter.filters = _jinja_filters
 
@@ -26,7 +27,7 @@ jinja_filter.filters = _jinja_filters
 qrcode_cache = {}
 
 
-def generate_qrcode(url: str, should_cache: bool=True) -> str:
+def generate_qrcode(url: str, should_cache: bool = True) -> str:
     """
     Generate a QR code (as data URI) to a given URL.
 
@@ -46,12 +47,18 @@ def generate_qrcode(url: str, should_cache: bool=True) -> str:
     return qrcode_url
 
 
-def has_preview(file_name):
+def has_preview(file):
+    if file.storage != 'local':
+        return False
+    file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
     return file_extension in flask.current_app.config.get('MIME_TYPES', {})
 
 
-def is_image(file_name):
+def is_image(file):
+    if file.storage != 'local':
+        return False
+    file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
     return flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '').startswith('image/')
 

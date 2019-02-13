@@ -18,7 +18,7 @@ from . import object_log, user_log, object_permissions, errors, users, actions, 
 import sqlalchemy.exc
 
 
-def create_object(action_id: int, data: dict, user_id: int, previous_object_id: typing.Optional[int]=None, schema: typing.Optional[dict]=None) -> Object:
+def create_object(action_id: int, data: dict, user_id: int, previous_object_id: typing.Optional[int] = None, schema: typing.Optional[typing.Dict[str, typing.Any]] = None) -> Object:
     """
     Creates an object using the given action and its schema. This function
     also handles logging, object references and default object permissions.
@@ -78,7 +78,7 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
     finally:
         if objects:
             # objects created before the integrity error must still be accessible
-            batch_object_ids=[object.id for object in objects]
+            batch_object_ids = [object.id for object in objects]
             user_log.create_batch(user_id=user_id, batch_object_ids=batch_object_ids)
             for object in objects:
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
@@ -88,7 +88,7 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
     return objects
 
 
-def update_object(object_id: int, data: dict, user_id: int, schema: dict=None) -> None:
+def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optional[typing.Dict[str, typing.Any]] = None) -> None:
     """
     Updates the object to a new version. This function also handles logging
     and object references.
@@ -140,7 +140,7 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     tags.update_object_tag_usage(object)
 
 
-def get_object(object_id: int, version_id: int=None) -> Object:
+def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Object:
     """
     Returns either the current or a specific version of the object.
 
@@ -237,7 +237,7 @@ def find_object_references(object: Object, find_previous_referenced_object_ids: 
             referenced_object_id = data['object_id']
             previous_referenced_object_id = None
             if find_previous_referenced_object_ids and object.version_id > 0:
-                previous_object_version = get_object(object.object_id, object.version_id-1)
+                previous_object_version = get_object(object.object_id, object.version_id - 1)
                 previous_data = previous_object_version.data
                 try:
                     for path_element in path:

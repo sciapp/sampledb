@@ -9,26 +9,26 @@
 
 {% block content %}
   <div class="alert alert-warning">
-    <p><strong>Warning:</strong> This installation of iffSamples, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:f.rhiem@fz-juelich.de&subject=iffSamples">let us know</a>. Thank you!</p>
+    <p><strong>Warning:</strong> This installation of {{ service_name }}, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:{{ contact_email }}?subject={{ service_name }}">let us know</a>. Thank you!</p>
   </div>
-  {% if config['SERVER_NAME'] != 'iffsamples.fz-juelich.de' %}
+  {% if service_name == 'iffSamples' and config['SERVER_NAME'] != 'iffsamples.fz-juelich.de' %}
     <div class="alert alert-danger">
-      <p><strong>Warning:</strong> This is a preview installation of iffSamples, the sample and measurement metadata database at PGI / JCNS. It is used for development, may be offline at any time and the <strong>data will be deleted!</strong></p>
+      <p><strong>Warning:</strong> This is a preview installation of {{ service_name }}, the sample and measurement metadata database at PGI / JCNS. It is used for development, may be offline at any time and the <strong>data will be deleted!</strong></p>
     </div>
   {% endif %}
 {% if not current_user.is_authenticated %}
   <div class="jumbotron">
-    <h1>Welcome to iffSamples</h1>
-    <p>iffSamples is the sample and measurement metadata database at PGI and JCNS.</p>
+    <h1>Welcome to {{ service_name }}</h1>
+    <p>{{ service_description }}</p>
     <div class="container">
     <div class="row">
     <div class="col-md-6">
       <h2>Employees</h2>
-      <p>You can use your normal account name and password to sign in at iffSamples.</p>
+      <p>You can use your normal account name and password to sign in at {{ service_name }}.</p>
     </div>
     <div class="col-md-6">
       <h2>Guests</h2>
-      <p>Please ask the person responsible for the instrument you will be using for an iffSamples Invitation.</p>
+      <p>Please ask the person responsible for the instrument you will be using for an {{ service_name }} Invitation.</p>
     </div>
     </div>
     <div class="col-md-4 col-md-offset-4">
@@ -38,8 +38,8 @@
   </div>
 {% else %}
   <div class="jumbotron">
-    <h1>Welcome to iffSamples</h1>
-    <p>iffSamples is the sample and measurement metadata database at PGI and JCNS.</p>
+    <h1>Welcome to {{ service_name }}</h1>
+    <p>{{ service_description }}</p>
     <div class="container">
       <div class="row">
         <div class="col-md-offset-2 col-md-4">

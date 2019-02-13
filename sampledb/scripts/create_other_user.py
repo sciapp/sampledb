@@ -20,7 +20,7 @@ def main(arguments):
     if '@' not in email[1:-1]:
         print("Error: email must be a valid email address", file=sys.stderr)
         exit(1)
-    password = ''.join([('00'+hex(c)[2:])[-2:] for c in os.urandom(16)])
+    password = ''.join([('00' + hex(c)[2:])[-2:] for c in os.urandom(16)])
     print("Note: the user will receive the password '{}'".format(password))
     app = create_app()
     with app.app_context():

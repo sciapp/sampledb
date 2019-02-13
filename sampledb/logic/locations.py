@@ -22,7 +22,7 @@ class Location(collections.namedtuple('Location', ['id', 'name', 'description', 
     This class provides an immutable wrapper around models.locations.Location.
     """
 
-    def __new__(cls, id: int, name: str, description: str, parent_location_id: typing.Optional[int]=None):
+    def __new__(cls, id: int, name: str, description: str, parent_location_id: typing.Optional[int] = None):
         self = super(Location, cls).__new__(cls, id, name, description, parent_location_id)
         return self
 
@@ -41,7 +41,7 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
 
-    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime, responsible_user_id):
+    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime, responsible_user_id: int):
         self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id)
         return self
 

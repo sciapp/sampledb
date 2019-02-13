@@ -25,17 +25,17 @@ import typing
 import flask
 
 from .. import db
-from ..models import projects, User, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
+from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .users import get_user
 from .security_tokens import generate_token, MAX_AGE
 from . import groups
-from . import utils
 from . import errors
 from . import notifications
 
 
 # project names are limited to this (semi-arbitrary) length
 MAX_PROJECT_NAME_LENGTH = 100
+
 
 class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
     """
@@ -86,7 +86,7 @@ def create_project(name: str, description: str, initial_user_id: int) -> Project
     return Project.from_database(project)
 
 
-def update_project(project_id: int, name: str, description: str='') -> None:
+def update_project(project_id: int, name: str, description: str = '') -> None:
     """
     Updates the project's name and description.
 
@@ -163,7 +163,7 @@ def get_projects() -> typing.List[Project]:
     return [Project.from_database(project) for project in projects.Project.query.all()]
 
 
-def get_project_member_user_ids_and_permissions(project_id: int, include_groups: bool=False) -> typing.Dict[int, Permissions]:
+def get_project_member_user_ids_and_permissions(project_id: int, include_groups: bool = False) -> typing.Dict[int, Permissions]:
     """
     Returns a dict of the user IDs of all members of the project with the
     given project ID, mapping them to their respective permissions.
@@ -179,7 +179,7 @@ def get_project_member_user_ids_and_permissions(project_id: int, include_groups:
     if project is None:
         raise errors.ProjectDoesNotExistError()
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id).all()
-    member_user_ids_and_permissions =  {
+    member_user_ids_and_permissions = {
         single_user_permissions.user_id: single_user_permissions.permissions
         for single_user_permissions in user_permissions
     }
@@ -193,7 +193,7 @@ def get_project_member_user_ids_and_permissions(project_id: int, include_groups:
     return member_user_ids_and_permissions
 
 
-def get_user_project_permissions(project_id: int, user_id: int, include_groups: bool=False) -> Permissions:
+def get_user_project_permissions(project_id: int, user_id: int, include_groups: bool = False) -> Permissions:
     """
     Returns a the permissions of a single user for a project, optionally
     including the users group memberships.
@@ -243,7 +243,7 @@ def get_project_member_group_ids_and_permissions(project_id: int) -> typing.Dict
     }
 
 
-def get_user_projects(user_id: int, include_groups: bool=False) -> typing.List[Project]:
+def get_user_projects(user_id: int, include_groups: bool = False) -> typing.List[Project]:
     """
     Returns a list of the project IDs of all projects the user with the given
     user ID is a member of.
@@ -269,7 +269,7 @@ def get_user_projects(user_id: int, include_groups: bool=False) -> typing.List[P
     return [get_project(project_id) for project_id in project_ids]
 
 
-def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_to_parent_project_ids: typing.Sequence[int]=()) -> None:
+def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_to_parent_project_ids: typing.Sequence[int] = ()) -> None:
     """
     Sends an invitation mail for a project to a user.
 
@@ -306,7 +306,7 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
     notifications.create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
 
-def add_user_to_project(project_id: int, user_id: int, permissions: Permissions, other_project_ids: typing.Sequence[int]=()) -> None:
+def add_user_to_project(project_id: int, user_id: int, permissions: Permissions, other_project_ids: typing.Sequence[int] = ()) -> None:
     """
     Adds the user with the given user ID to the project with the given project ID.
 
@@ -354,6 +354,7 @@ def add_group_to_project(project_id: int, group_id: int, permissions: Permission
 
     :param project_id: the ID of an existing project
     :param group_id: the ID of an existing group
+    :param permissions: the permissions for the group
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     :raise errors.GroupDoesNotExistError: when no group with the given
@@ -475,7 +476,7 @@ def update_user_project_permissions(project_id: int, user_id: int, permissions: 
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    user = get_user(user_id)
+    get_user(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -520,7 +521,7 @@ def update_group_project_permissions(project_id: int, group_id: int, permissions
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    group = groups.get_group(group_id)
+    groups.get_group(group_id)
     existing_permissions = projects.GroupProjectPermissions.query.filter_by(
         project_id=project_id,
         group_id=group_id
@@ -579,7 +580,7 @@ def filter_child_project_candidates(parent_project_id: int, child_project_ids: t
     return child_project_ids
 
 
-def create_subproject_relationship(parent_project_id: int, child_project_id: int, child_can_add_users_to_parent: bool=False) -> None:
+def create_subproject_relationship(parent_project_id: int, child_project_id: int, child_can_add_users_to_parent: bool = False) -> None:
     """
     Creates a subproject relationship between two existing projects.
 
@@ -592,7 +593,7 @@ def create_subproject_relationship(parent_project_id: int, child_project_id: int
         depth
     """
     if not filter_child_project_candidates(parent_project_id, [child_project_id]):
-            raise errors.InvalidSubprojectRelationshipError()
+        raise errors.InvalidSubprojectRelationshipError()
     subproject_relationship = SubprojectRelationship(parent_project_id=parent_project_id, child_project_id=child_project_id, child_can_add_users_to_parent=child_can_add_users_to_parent)
     db.session.add(subproject_relationship)
     db.session.commit()
@@ -617,7 +618,7 @@ def delete_subproject_relationship(parent_project_id: int, child_project_id: int
     db.session.commit()
 
 
-def get_parent_project_ids(project_id: int, only_if_child_can_add_users_to_parent: bool=False) -> typing.List[int]:
+def get_parent_project_ids(project_id: int, only_if_child_can_add_users_to_parent: bool = False) -> typing.List[int]:
     """
     Return the list of parent project IDs for an existing project.
 
@@ -653,7 +654,7 @@ def get_child_project_ids(project_id: int) -> typing.List[int]:
     return child_project_ids
 
 
-def get_ancestor_project_ids(project_id: int, only_if_child_can_add_users_to_ancestor: bool=False) -> typing.Set[int]:
+def get_ancestor_project_ids(project_id: int, only_if_child_can_add_users_to_ancestor: bool = False) -> typing.Set[int]:
     """
     Return the list of (transitive) ancestor project IDs for an existing
     project.

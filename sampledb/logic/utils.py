@@ -23,7 +23,8 @@ def send_confirm_email(email, id, salt):
                                secret_key=flask.current_app.config['SECRET_KEY'])
         confirm_url = flask.url_for("frontend.user_preferences", user_id=id, token=token, _external=True)
 
-    subject = "iffSamples Email Confirmation"
+    service_name = flask.current_app.config['SERVICE_NAME']
+    subject = service_name + " Email Confirmation"
     html = flask.render_template('mails/email_confirmation.html', confirm_url=confirm_url)
     text = flask.render_template('mails/email_confirmation.txt', confirm_url=confirm_url)
     while '\n\n\n' in text:
@@ -55,7 +56,8 @@ def send_recovery_email(email):
             if authentication_method.type != AuthenticationType.LDAP:
                 password_reset_urls[authentication_method] = build_confirm_url(authentication_method)
 
-    subject = "iffSamples Account Recovery"
+    service_name = flask.current_app.config['SERVICE_NAME']
+    subject = service_name + " Account Recovery"
     html = flask.render_template('mails/account_recovery.html', email=email, users=users, password_reset_urls=password_reset_urls)
     text = flask.render_template('mails/account_recovery.txt', email=email, users=users, password_reset_urls=password_reset_urls)
     while '\n\n\n' in text:

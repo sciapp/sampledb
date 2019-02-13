@@ -3,23 +3,23 @@
 Actions
 =======
 
-Processes like **creating a sample**, **performing a measurement** or **running a simulation** are represented as actions in iffSamples and whenever such an action is performed a new :ref:`Object <objects>` should be created in iffSamples.
+Processes like **creating a sample**, **performing a measurement** or **running a simulation** are represented as actions in |service_name| and whenever such an action is performed a new :ref:`Object <objects>` should be created in |service_name|.
 
 Either generic or associated with an :ref:`Instrument <instruments>`, each action contains a name, a description and a :ref:`Schema <metadata>`.
 
-You can view a list of actions at https://iffsamples.fz-juelich.de/actions/. Similar to instruments, users can select **favorites** by clicking the star next to an action's name.
+You can view a list of actions at |service_actions_url|. Similar to instruments, users can select **favorites** by clicking the star next to an action's name.
 
 Custom Actions
 --------------
 
-Users can create custom actions to represent their own processes or instruments that are not yet part of iffSamples. These actions can either be private, only usable by the users who created them, or public, usable by anyone.
+Users can create custom actions to represent their own processes or instruments that are not yet part of |service_name|. These actions can either be private, only usable by the users who created them, or public, usable by anyone.
 
 To create a custom action, users can either use an existing action as a template or write a :ref:`Schema <metadata>` from scratch.
 
 .. note::
-    Custom Actions are an advanced feature that most users of iffSamples will not need. If you would like your instrument or action to be included without writing your own schema, please `let us know <f.rhiem@fz-juelich.de>`_.
+    Custom Actions are an advanced feature that most users of |service_name| will not need. If you would like your instrument or action to be included without writing your own schema, please `let us know`_.
 
-    If you would like to try working with custom actions, please `use the development and testing deployment of iffSamples <https://docker.iff.kfa-juelich.de/dev-sampledb/>`_.
+    If you would like to try working with custom actions, please `use the development and testing deployment of |service_name| <https://docker.iff.kfa-juelich.de/dev-sampledb/>`_.
 
 .. _metadata:
 
@@ -27,6 +27,14 @@ Metadata and Schemas
 --------------------
 
 A schema specifies what metadata should be recorded when performing an action. The metadata should contain all the information required to reproduce what a user did.
+
+To edit simple schemas, users can use the graphical schema editor. To access more advanced features like arrays, users can instead edit the schema directly in a text-based editor by setting the *Use Schema Editor* setting to *No* in their preferences.
+
+.. figure:: ../static/img/generated/schema_editor.png
+    :scale: 50 %
+    :alt: Editing an action using the schema editor
+
+    Editing an action using the schema editor
 
 Schemas are defined using `JSON <https://www.json.org/>`_. Each schema must at least include a text property called ``name``.
 
@@ -197,7 +205,7 @@ Quantities require units (``units``, can be ``1``) and may have a default value 
 Datetimes
 ^^^^^^^^^
 
-Datetime may have a default value (``default``). Datetimes in iffSamples are written using notation ``YYYY-MM-DD hh:mm:ss`` and stored using UTC.
+Datetime may have a default value (``default``). Datetimes in |service_name| are written using notation ``YYYY-MM-DD hh:mm:ss`` and stored using UTC.
 
 .. code-block:: json
     :caption: A datetime property with a default

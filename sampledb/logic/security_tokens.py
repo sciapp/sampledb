@@ -1,6 +1,6 @@
 import itsdangerous
 
-MAX_AGE = 60*60*24*2
+MAX_AGE = 60 * 60 * 24 * 2
 
 
 def generate_token(data, salt, secret_key):

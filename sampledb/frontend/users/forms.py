@@ -5,9 +5,8 @@
 
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectField, FieldList, FormField
+from wtforms import StringField, IntegerField
 from wtforms.validators import InputRequired, Length
-from ...logic.notifications import NotificationMode
 
 
 class EditGroupForm(FlaskForm):
@@ -37,4 +36,8 @@ class ToggleFavoriteInstrumentForm(FlaskForm):
 
 
 class NotificationModeForm(FlaskForm):
+    pass
+
+
+class OtherSettingsForm(FlaskForm):
     pass

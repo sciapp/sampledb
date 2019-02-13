@@ -18,4 +18,3 @@ class FavoriteInstrument(db.Model):
 
     instrument_id = db.Column(db.Integer, db.ForeignKey("instruments.id"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
-

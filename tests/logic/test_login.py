@@ -3,8 +3,8 @@ import bcrypt
 from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
-from sampledb.logic.ldap import LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
-from sampledb.logic.errors import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, AuthenticationMethodAlreadyExists
+from sampledb.logic.errors import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, \
+    AuthenticationMethodAlreadyExists, LDAPAccountAlreadyExistError, LDAPAccountOrPasswordWrongError
 from sampledb.logic.authentication import remove_authentication_method, change_password_in_authentication_method
 import sampledb
 import sampledb.models
@@ -92,7 +92,7 @@ def test_login_user(flask_server, users):
 
 
 def test_add_login_ldap(flask_server, users):
-    with pytest.raises(LdapAccountOrPasswordWrong) as excinfo:
+    with pytest.raises(LDAPAccountOrPasswordWrongError) as excinfo:
         sampledb.logic.authentication.add_authentication_method(1, 'henkel', 'abc', AuthenticationType.LDAP)
     # wrong password
     assert 'Ldap login or password wrong' in str(excinfo.value)
@@ -102,7 +102,7 @@ def test_add_login_ldap(flask_server, users):
     user = sampledb.logic.authentication.add_authentication_method(1, username, password, AuthenticationType.LDAP)
     assert user is True
 
-    with pytest.raises(LdapAccountAlreadyExist) as excinfo:
+    with pytest.raises(LDAPAccountAlreadyExistError) as excinfo:
         user = sampledb.logic.authentication.add_authentication_method(1, 'henkel', 'xxx', AuthenticationType.LDAP)
     # no second ldap authentication possible
     assert 'Ldap-Account already exists'

@@ -275,7 +275,7 @@ def _write_activity_log(object, canvas):
         elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION:
             text += ' restored a previous version of this object'
         elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE:
-            text += ' uploaded a file'
+            text += ' posted a file'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
             text += ' used this object in measurement #{}'.format(object_log_entry.data['measurement_id'])
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
@@ -314,13 +314,15 @@ def _write_files(object, canvas):
         for index, file in enumerate(files):
             if file.is_hidden:
                 continue
+            if file.storage != 'local':
+                continue
             for file_extension in ('.png', '.jpg', '.jpeg'):
                 if file.original_file_name.lower().endswith(file_extension):
                     try:
                         image = Image.open(file.open())
                     except Exception:
                         continue
-                    title = "File #{}: {}".format(index+1, file.title)
+                    title = "File #{}: {}".format(index + 1, file.title)
                     canvas.bookmarkPage('object_{}_files_{}'.format(object.id, index))
                     canvas.addOutlineEntry(title, 'object_{}_files_{}'.format(object.id, index), level=2)
                     canvas.set_up_page()
@@ -426,11 +428,12 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         image_stream.seek(0)
         qrcode_uri = 'data:image/svg+xml;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
 
-        canvas.setTitle('iffSamples Export')
-        canvas.setAuthor('iffSamples')
-        canvas.setCreator('iffSamples')
+        service_name = flask.current_app.config['SERVICE_NAME']
+        canvas.setTitle(service_name + ' Export')
+        canvas.setAuthor(service_name)
+        canvas.setCreator(service_name)
         # set PDF producer (not exposed by reportlab Canvas API)
-        PDFInfo.producer = 'iffSamples'
+        PDFInfo.producer = service_name
         canvas.showOutline()
         canvas.set_up_page = lambda: _set_up_page(canvas, object_id, qrcode_uri)
         canvas.left_cursor = LEFT_MARGIN

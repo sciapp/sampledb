@@ -12,7 +12,7 @@ from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiEr
 from .utils import units_are_valid
 
 
-def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Union[None, typing.List[str]]=None) -> None:
+def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Optional[typing.List[str]] = None) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
 
@@ -151,6 +151,10 @@ def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None
             errors.append(ValidationError('invalid tag type: {}'.format(type(item)), path + ['tags', str(index)]))
         elif item in tags:
             errors.append(ValidationError('duplicate tag: {}'.format(item), path + ['tags', str(index)]))
+        elif item.lower() != item:
+            errors.append(ValidationError('tag not lowercase: {}'.format(item), path + ['tags', str(index)]))
+        elif any(c.isspace() for c in item):
+            errors.append(ValidationError('tag contains whitespace: {}'.format(item), path + ['tags', str(index)]))
         else:
             tags.append(item)
 

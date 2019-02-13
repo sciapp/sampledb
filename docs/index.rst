@@ -1,10 +1,10 @@
-iffSamples
-==========
+|service_name|
+==============
 
-iffSamples is the sample and measurement metadata database at PGI and JCNS. You can access iffSamples under `iffsamples.fz-juelich.de <https://iffsamples.fz-juelich.de/>`_.
+|service_description| You can access |service_name| at |service_url|.
 
 .. note::
-    Both iffSamples and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know <mailto:f.rhiem@fz-juelich.de>`_.
+    Both |service_name| and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know`_.
 
 User Guide
 ----------
@@ -25,6 +25,7 @@ Developer Guide
 .. toctree::
     :maxdepth: 2
 
+    developer_guide/configuration.rst
     developer_guide/api.rst
 
 .. toctree::

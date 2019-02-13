@@ -5,7 +5,7 @@
   <div class="jumbotron">
     <h2>Account recovery email sent to {{email}}</h2>
     <p>If you have an account with this email address, you will receive an email in the next 30 minutes. Please follow the instructions to regain access to your account.<p>
-    <p>If this email does not arrive within 30 minutes, please check your junk mail folder and <a href="mailto:f.rhiem@fz-juelich.de?subject=Account Recovery for {{ email }}">contact an administator</a>.</p>
+    <p>If this email does not arrive within 30 minutes, please check your junk mail folder and <a href="mailto:{{ contact_email }}?subject=Account Recovery for {{ email }}">contact an administator</a>.</p>
   </div>
 {% endif %}
 {% endblock %}

@@ -32,11 +32,18 @@ def create_app():
     app.register_blueprint(sampledb.frontend.frontend)
 
     login_manager.login_view = 'frontend.sign_in'
-    app.jinja_env.globals.update(signout_form=sampledb.frontend.users_forms.SignoutForm)
+    app.jinja_env.globals.update(
+        signout_form=sampledb.frontend.users_forms.SignoutForm,
+        service_name=app.config['SERVICE_NAME'],
+        service_description=app.config['SERVICE_DESCRIPTION'],
+        service_imprint=app.config['SERVICE_IMPRINT'],
+        service_privacy_policy=app.config['SERVICE_PRIVACY_POLICY'],
+        ldap_name=app.config['LDAP_NAME'],
+        contact_email=app.config['CONTACT_EMAIL']
+    )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
-    sampledb.logic.files.FILE_SOURCES = app.config['FILE_SOURCES']
 
     with app.app_context():
         db.metadata.create_all(bind=db.engine)

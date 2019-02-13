@@ -55,6 +55,7 @@ def user2(app):
 
 
 def test_send_recovery_email_no_authentification_method(app, user_without_authentication):
+    app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         # Send recovery email
         user = user_without_authentication
@@ -77,6 +78,7 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
 
 
 def test_send_recovery_email_for_ldap_authentication(app):
+    app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         # Send recovery email
         username = app.config['TESTING_LDAP_LOGIN']
@@ -94,7 +96,7 @@ def test_send_recovery_email_for_ldap_authentication(app):
         assert user.email in outbox[0].recipients
         message = outbox[0].html
         assert 'iffSamples Account Recovery' in message
-        assert 'You can use the PGI/JCNS' in message
+        assert 'You can use the {}'.format(app.config['LDAP_NAME']) in message
 
 
 def test_send_recovery_email_for_email_authentication(app, user):

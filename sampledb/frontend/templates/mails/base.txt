@@ -1,8 +1,8 @@
-iffSamples
+{{ service_name }}
 
 {% block content %}{% endblock %}
 
-If you need help with iffSamples, please see the user guide at https://iffsamples.fz-juelich.de/documentation/ or contact us at f.rhiem@fz-juelich.de.
+If you need help with {{ service_name }}, please see the user guide at https://iffsamples.fz-juelich.de/documentation/ or contact us at {{ contact_email }}.
 
-iffSamples is a service by the PGI / JCNS Scientific IT-Systems team: (https://pgi-jcns.fz-juelich.de)
+{{ service_name }} is a service by the PGI / JCNS Scientific IT-Systems team: (https://pgi-jcns.fz-juelich.de)
 

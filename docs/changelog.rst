@@ -1,10 +1,22 @@
 Changelog
 =========
 
+Version 0.4
+-----------
+
+Released on February 13th, 2019.
+
+- Added object pagination
+- Added posting of external links for objects
+- Added schema editor
+- Added 'Use in Measurement' button to samples
+- Fixed various minor bugs
+
+
 Version 0.3
 -----------
 
-Released on Januar 16th, 2019.
+Released on January 16th, 2019.
 
 - Added custom actions
 - Added locations

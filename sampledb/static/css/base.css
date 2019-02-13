@@ -240,7 +240,7 @@ th:hover .search-helper {
     width: 1.1em;
     margin-bottom: -0.2em;
 }
-#table-objects .icons-sorting > span {
+#table-objects .icons-sorting > a {
     position:absolute;
     left:0;
     line-height: 0;
@@ -252,18 +252,19 @@ th:hover .search-helper {
     color:#cccccc;
     transition: color 0.2s;
 }
-#table-objects .icons-sorting > span:hover {
-    color:inherit;
+.current_sorting_property,
+#table-objects .icons-sorting > a:hover {
+    color:#555555;
 }
-#table-objects .icons-sorting > span > i {
+#table-objects .icons-sorting > a > i {
     line-height: 0.7em;
     display: block;
     vertical-align: middle;
 }
-#table-objects .icons-sorting > span:nth-child(1) {
+#table-objects .icons-sorting > a:nth-child(1) {
     top:0;
 }
-#table-objects .icons-sorting > span:nth-child(2) {
+#table-objects .icons-sorting > a:nth-child(2) {
     bottom:0;
 }
 .ghs-hazards-selection {
@@ -335,7 +336,7 @@ th:hover .search-helper {
 .object-button-bar > div > div > button,
 .object-button-bar > div > button,
 .object-button-bar > div > form > button {
-    width:10.5em;
+    width:14em;
 }
 .related-objects {
 }
@@ -511,4 +512,19 @@ th:hover .search-helper {
 
 #notifications-table button:hover, #notifications-table button:focus, #notifications-table button:active {
     color:#333333;
+}
+
+.object-pagination {
+    list-style: none;
+    padding: 0;
+    display: inline;
+}
+.object-pagination > li {
+    display: inline;
+}
+.object-pagination > li::after {
+    content: ',';
+}
+.object-pagination > li:last-child::after {
+    content: '';
 }

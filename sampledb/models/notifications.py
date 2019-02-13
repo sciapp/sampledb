@@ -39,7 +39,7 @@ class Notification(db.Model):
     was_read = db.Column(db.Boolean, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any], utc_datetime: typing.Optional[datetime.datetime]=None):
+    def __init__(self, type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any], utc_datetime: typing.Optional[datetime.datetime] = None):
         self.type = type
         self.user_id = user_id
         self.data = data

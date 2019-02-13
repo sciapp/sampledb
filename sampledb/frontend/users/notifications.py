@@ -99,7 +99,7 @@ def notifications(user_id):
             flask.flash('The notification has been marked as read.', 'success')
         return flask.redirect(flask.url_for('.notifications', user_id=user_id))
 
-    notifications=get_notifications(user_id)
+    notifications = get_notifications(user_id)
     if notifications:
         max_known_notification_id = max(notification.id for notification in notifications)
     else:
@@ -150,4 +150,3 @@ def _is_project_member(user_id: int, project_id: int) -> bool:
     if not user_projects:
         return False
     return any(project_id == project.id for project in user_projects)
-

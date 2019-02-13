@@ -1,6 +1,6 @@
 {% extends "mails/base.html" %}
 
-{% block subject %}iffSamples Notification{% endblock %}
+{% block subject %}{{ service_name }} Notification{% endblock %}
 
 {% block content %}
 <p>Hello {{ user.name }},</p>
@@ -9,6 +9,6 @@
 {% endblock %}
 
 {% block notes %}
-<p>To disable notifications or to receive them on iffSamples, please adjust your <a href="{{ url_for('frontend.user_preferences', user_id=user.id, _external=True) }}" style="color:#337ab7;">notification settings</a>.</p>
+<p>To disable notifications or to receive them on {{ service_name }}, please adjust your <a href="{{ url_for('frontend.user_preferences', user_id=user.id, _external=True) }}" style="color:#337ab7;">notification settings</a>.</p>
 {{ super() }}
 {% endblock %}

@@ -160,7 +160,7 @@ def comments(base_url, driver, object):
 
 def activity_log(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_local_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
     sampledb.logic.comments.create_comment(object.id, user.id, "This is an example comment.")
 
     width = 1280
@@ -214,10 +214,10 @@ def unread_notification_icon(base_url, driver):
 
 def files(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
-    sampledb.logic.files.create_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_local_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_local_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
     with open('docs/utils/photo.jpg', 'rb') as image_file:
-        sampledb.logic.files.create_file(object.id, user.id, "photo.jpg", lambda stream: stream.write(image_file.read()))
+        sampledb.logic.files.create_local_file(object.id, user.id, "photo.jpg", lambda stream: stream.write(image_file.read()))
 
     width = 1280
     max_height = 1000
@@ -239,7 +239,7 @@ def files(base_url, driver, object):
 
 def file_information(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_local_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
     sampledb.logic.files.update_file_information(object.id, 0, user.id, 'Scanned Notes', 'This is an example file.')
 
     width = 1280
@@ -343,6 +343,18 @@ def advanced_search_visualization(base_url, driver):
     search_tree = driver.find_element_by_id('search-tree')
 
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_visualization.png', (0, search_tree.location['y'], width, min(search_tree.location['y'] + max_height, search_tree.location['y'] + search_tree.rect['height'])))
+
+
+def schema_editor(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'actions/new/')
+    form = driver.find_element_by_id('schema-editor')
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'], width, min(form.location['y'] + max_height, form.location['y'] + form.rect['height'])))
 
 
 def save_cropped_screenshot_as_file(driver, file_name, box):
@@ -463,6 +475,7 @@ try:
                 advanced_search_by_property(flask_server.base_url, driver, object)
                 advanced_search_visualization(flask_server.base_url, driver)
                 locations(flask_server.base_url, driver, object)
+                schema_editor(flask_server.base_url, driver)
                 unread_notification_icon(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

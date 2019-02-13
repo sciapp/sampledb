@@ -5,7 +5,9 @@
 
 from .. import db
 
-association_table = db.Table('user_group_memberships', db.metadata,
+association_table = db.Table(
+    'user_group_memberships',
+    db.metadata,
     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
     db.Column('group_id', db.Integer, db.ForeignKey('groups.id'))
 )

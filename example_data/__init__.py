@@ -43,7 +43,7 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.current_user_notifications'))
+        return flask.redirect(flask.url_for('frontend.new_action', previous_action_id=4))
 
     sampledb.login_manager.login_view = 'autologin'
 
@@ -68,9 +68,11 @@ def setup_data(app):
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
     comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
     comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
-    files.create_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
-    files.create_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: stream.write(open('sampledb/static/img/ghs01.png', 'rb').read()))
+    files.create_local_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
+    files.create_local_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: stream.write(open('sampledb/static/img/ghs01.png', 'rb').read()))
     files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
+    files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')
+
 
     with open('server_schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)

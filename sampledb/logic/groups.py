@@ -15,15 +15,13 @@ As the group models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
 
-# TODO: group ownership
-
 from sqlalchemy.exc import IntegrityError
 import collections
 import datetime
 import typing
 import flask
 from .. import db
-from ..models import groups, User
+from ..models import groups
 from .users import get_user
 from .security_tokens import generate_token, MAX_AGE
 from .notifications import create_notification_for_being_invited_to_a_group
@@ -81,7 +79,7 @@ def create_group(name: str, description: str, initial_user_id: int) -> Group:
     return group
 
 
-def update_group(group_id: int, name: str, description: str='') -> None:
+def update_group(group_id: int, name: str, description: str = '') -> None:
     """
     Updates the group's name and description.
 

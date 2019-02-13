@@ -23,7 +23,7 @@ class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_i
     This class provides an immutable wrapper around models.notifications.Notification.
     """
 
-    def __new__(cls, id: int, type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any], was_read: bool, utc_datetime: typing.Optional[datetime.datetime]=None):
+    def __new__(cls, id: int, type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any], was_read: bool, utc_datetime: typing.Optional[datetime.datetime] = None):
         self = super(Notification, cls).__new__(cls, id, type, user_id, data, was_read, utc_datetime)
         return self
 
@@ -39,7 +39,7 @@ class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_i
         )
 
 
-def get_notifications(user_id: int, unread_only: bool=False) -> typing.List[Notification]:
+def get_notifications(user_id: int, unread_only: bool = False) -> typing.List[Notification]:
     """
     Get all (unread) notifications for a given user.
 
@@ -61,7 +61,7 @@ def get_notifications(user_id: int, unread_only: bool=False) -> typing.List[Noti
     ]
 
 
-def get_num_notifications(user_id: int, unread_only: bool=False) -> int:
+def get_num_notifications(user_id: int, unread_only: bool = False) -> int:
     """
     Get the number of (unread) notifications for a given user.
 
@@ -146,7 +146,8 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         exists
     """
     user = users.get_user(user_id)
-    subject = "iffSamples Notification"
+    service_name = flask.current_app.config['SERVICE_NAME']
+    subject = service_name + " Notification"
 
     template_path = 'mails/notifications/' + type.name.lower()
 
@@ -391,7 +392,7 @@ def create_notification_for_being_invited_to_a_project(
     )
 
 
-def create_announcement_notification(user_id: int, message: str, html: typing.Optional[str]=None) -> None:
+def create_announcement_notification(user_id: int, message: str, html: typing.Optional[str] = None) -> None:
     """
     Create a notification of type ANNOUNCEMENT.
 
@@ -411,7 +412,7 @@ def create_announcement_notification(user_id: int, message: str, html: typing.Op
     )
 
 
-def create_announcement_notification_for_all_users(message: str, html: typing.Optional[str]=None) -> None:
+def create_announcement_notification_for_all_users(message: str, html: typing.Optional[str] = None) -> None:
     """
     Create a notification of type ANNOUNCEMENT for all existing users.
 

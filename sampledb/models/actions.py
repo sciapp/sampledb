@@ -4,6 +4,7 @@
 """
 
 import enum
+import typing
 
 from .. import db
 
@@ -27,7 +28,7 @@ class Action(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     user = db.relationship("User", backref="actions")
 
-    def __init__(self, action_type: ActionType, name: str, schema: dict, description: str='', instrument_id: int=None, user_id: int=None):
+    def __init__(self, action_type: ActionType, name: str, schema: dict, description: str = '', instrument_id: typing.Optional[int] = None, user_id: typing.Optional[int] = None):
         self.type = action_type
         self.name = name
         self.description = description

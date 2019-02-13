@@ -3,8 +3,6 @@
 
 """
 
-import jsonschema
-
 from .. import db
 from .users import User
 from .actions import Action
@@ -15,6 +13,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObject):
     pass
+
 
 Objects = VersionedJSONSerializableObjectTables(
     'objects',

@@ -34,11 +34,11 @@ from . import projects
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def object_is_public(object_id):
+def object_is_public(object_id: int):
     return PublicObjects.query.filter_by(object_id=object_id).first() is not None
 
 
-def set_object_public(object_id, is_public=True):
+def set_object_public(object_id: int, is_public: bool = True):
     if not is_public:
         PublicObjects.query.filter_by(object_id=object_id).delete()
     elif not object_is_public(object_id):
@@ -46,7 +46,7 @@ def set_object_public(object_id, is_public=True):
     db.session.commit()
 
 
-def get_object_permissions_for_users(object_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True):
+def get_object_permissions_for_users(object_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True):
     object_permissions = {}
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=object_id).all():
         object_permissions[user_object_permissions.user_id] = user_object_permissions.permissions
@@ -67,7 +67,7 @@ def get_object_permissions_for_users(object_id, include_instrument_responsible_u
     return object_permissions
 
 
-def get_object_permissions_for_groups(object_id: int, include_projects=False) -> typing.Dict[int, Permissions]:
+def get_object_permissions_for_groups(object_id: int, include_projects: bool = False) -> typing.Dict[int, Permissions]:
     object_permissions = {}
     for group_object_permissions in GroupObjectPermissions.query.filter_by(object_id=object_id).all():
         if group_object_permissions.permissions != Permissions.NONE:
@@ -101,8 +101,28 @@ def _get_object_responsible_user_ids(object_id):
     return [user.id for user in instrument.responsible_users]
 
 
-def get_user_object_permissions(object_id, user_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True):
+def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True):
     assert user_id is not None
+
+    if include_instrument_responsible_users and include_groups and include_projects:
+        stmt = db.text("""
+        SELECT
+        MAX(permissions_int)
+        FROM user_object_permissions_by_all
+        WHERE (user_id = :user_id OR user_id IS NULL) AND object_id = :object_id
+        """)
+        permissions_int = db.engine.execute(stmt, {
+            'user_id': user_id,
+            'object_id': object_id
+        }).fetchone()[0]
+        if permissions_int is None or permissions_int <= 0:
+            return Permissions.NONE
+        elif permissions_int == 1:
+            return Permissions.READ
+        elif permissions_int == 2:
+            return Permissions.WRITE
+        elif permissions_int >= 3:
+            return Permissions.GRANT
 
     if include_instrument_responsible_users:
         # instrument responsible users always have GRANT permissions for an object
@@ -139,7 +159,7 @@ def get_user_object_permissions(object_id, user_id, include_instrument_responsib
     return Permissions.NONE
 
 
-def set_user_object_permissions(object_id, user_id, permissions: Permissions):
+def set_user_object_permissions(object_id: int, user_id: int, permissions: Permissions):
     assert user_id is not None
     if permissions == Permissions.NONE:
         UserObjectPermissions.query.filter_by(object_id=object_id, user_id=user_id).delete()
@@ -207,7 +227,19 @@ def set_initial_permissions(obj):
     set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
 
-def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_func: typing.Callable=lambda data: True, action_id: int=None, action_type: ActionType=None, project_id: typing.Optional[int]=None, object_ids: typing.Optional[typing.Sequence[int]]=None) -> typing.List[Object]:
+def get_objects_with_permissions(
+        user_id: int,
+        permissions: Permissions,
+        filter_func: typing.Callable = lambda data: True,
+        sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        limit: typing.Optional[int] = None,
+        offset: typing.Optional[int] = None,
+        action_id: typing.Optional[int] = None,
+        action_type: typing.Optional[ActionType] = None,
+        project_id: typing.Optional[int] = None,
+        object_ids: typing.Optional[typing.Sequence[int]] = None,
+        **kwargs
+) -> typing.List[Object]:
     if action_type is not None and action_id is not None:
         action_filter = db.and_(Action.type == action_type, Action.id == action_id)
     elif action_type is not None:
@@ -246,7 +278,7 @@ def get_objects_with_permissions(user_id: int, permissions: Permissions, filter_
         'user_id': user_id
     }
 
-    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters)
+    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, limit=limit, offset=offset, **kwargs)
     if project_id is not None:
         filtered_objs = []
         for obj in objs:
@@ -334,7 +366,7 @@ def default_is_public(creator_id: int) -> bool:
     return public_permissions.is_public
 
 
-def set_default_public(creator_id: int, is_public: bool=True) -> None:
+def set_default_public(creator_id: int, is_public: bool = True) -> None:
     public_permissions = DefaultPublicPermissions.query.filter_by(creator_id=creator_id).first()
     if public_permissions is None:
         public_permissions = DefaultPublicPermissions(creator_id=creator_id, is_public=is_public)

@@ -21,9 +21,9 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 def object_permissions_required(
         required_object_permissions: Permissions,
-        auth_extension: typing.Any=flask_login,
-        user_id_callable: typing.Callable[[], int]=lambda: flask_login.current_user.id,
-        on_unauthorized: typing.Callable[[int], None]=lambda object_id: flask.abort(403)
+        auth_extension: typing.Any = flask_login,
+        user_id_callable: typing.Callable[[], int] = lambda: flask_login.current_user.id,
+        on_unauthorized: typing.Callable[[int], None] = lambda object_id: flask.abort(403)
 ):
     def decorator(func, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized):
         @auth_extension.login_required
@@ -51,7 +51,7 @@ def load_environment_configuration(env_prefix):
     If the prefixed environment variable B64_JSON_ENV exists, its content
     will be treated as an Base64 encoded JSON object and it's attributes
     starting with the prefix will be added to the environment.
-    
+
     :return: a dict containing the configuration values
     """
     b64_json_env = os.environ.get(env_prefix + 'B64_JSON_ENV', None)
@@ -70,7 +70,7 @@ def load_environment_configuration(env_prefix):
 def generate_secret_key(num_bits):
     """
     Generates a secure, random key for the application.
-    
+
     :param num_bits: number of bits of random data in the secret key
     :return: the base64 encoded secret key
     """

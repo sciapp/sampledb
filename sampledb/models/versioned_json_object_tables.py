@@ -39,11 +39,11 @@ class VersionedJSONSerializableObjectTables(object):
                 'user_id',
                 'utc_datetime'
             ]
-        )):
+    )):
+
         @property
         def id(self) -> int:
             return self.object_id
-
 
     def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None, data_validator=None, schema_validator=None):
         """
@@ -63,7 +63,7 @@ class VersionedJSONSerializableObjectTables(object):
             metadata = db.MetaData()
         self.metadata = metadata
         self._current_table = db.Table(
-            table_name_prefix+'_current',
+            table_name_prefix + '_current',
             self.metadata,
             db.Column('object_id', db.Integer, nullable=False, primary_key=True, autoincrement=True),
             db.Column('version_id', db.Integer, nullable=False, default=0),
@@ -74,7 +74,7 @@ class VersionedJSONSerializableObjectTables(object):
             db.Column('utc_datetime', db.DateTime, nullable=False)
         )
         self._previous_table = db.Table(
-            table_name_prefix+'_previous',
+            table_name_prefix + '_previous',
             self.metadata,
             db.Column('object_id', db.Integer, nullable=False),
             db.Column('version_id', db.Integer, nullable=False),
@@ -249,7 +249,7 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
-    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None):
+    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None, sorting_func=None, limit=None, offset=None, num_objects_found=None):
         """
         Queries and returns all objects matching a given filter.
 
@@ -276,26 +276,54 @@ class VersionedJSONSerializableObjectTables(object):
             table.c.data,
             table.c.schema,
             table.c.user_id,
-            table.c.utc_datetime
+            table.c.utc_datetime,
+            db.sql.expression.text('COUNT(*) OVER()')
         ])
+
+        selectable = table
+
+        if sorting_func is not None and getattr(sorting_func, 'require_original_columns', False):
+            selectable = selectable.outerjoin(
+                self._previous_table,
+                db.and_(table.c.object_id == self._previous_table.c.object_id, self._previous_table.c.version_id == 0),
+                full=False
+            )
 
         if action_table is not None and action_filter is not None:
             assert self._action_id_column is not None
             assert action_table is not None
             assert action_filter is not None
-            select_statement = select_statement.select_from(
-                table.join(
-                    action_table,
-                    db.and_(table.c.action_id == self._action_id_column, action_filter)
-                )
+            selectable = selectable.join(
+                action_table,
+                db.and_(table.c.action_id == self._action_id_column, action_filter)
             )
 
+        select_statement = select_statement.select_from(selectable)
+
+        if sorting_func is None:
+            def sorting_func(current_columns, original_columns):
+                return db.sql.desc(current_columns.object_id)
+
+        select_statement = select_statement.where(filter_func(table.c.data))
+        select_statement = select_statement.order_by(sorting_func(table.c, self._previous_table.c))
+
+        if limit is not None:
+            select_statement = select_statement.limit(limit)
+
+        if offset is not None:
+            select_statement = select_statement.offset(offset)
+
         objects = connection.execute(
-            select_statement
-            .where(filter_func(table.c.data)),
+            select_statement,
             **parameters
         ).fetchall()
-        return [self.object_type(*obj) for obj in objects]
+        if num_objects_found is not None:
+            num_objects_found.clear()
+            if objects:
+                num_objects_found.append(objects[0][-1])
+            else:
+                num_objects_found.append(0)
+        return [self.object_type(*obj[:-1]) for obj in objects]
 
     def get_object_versions(self, object_id, connection=None):
         """

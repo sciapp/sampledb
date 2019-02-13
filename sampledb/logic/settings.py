@@ -22,7 +22,8 @@ from .users import get_user
 
 
 DEFAULT_SETTINGS = {
-
+    "OBJECTS_PER_PAGE": 25,
+    "USE_SCHEMA_EDITOR": True
 }
 
 
@@ -82,6 +83,9 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
         return False
     default_value = DEFAULT_SETTINGS[key]
     if default_value is not None:
+        if value is None:
+            # settings that accept None must be listed here
+            return key in {'OBJECTS_PER_PAGE'}
         return isinstance(value, type(default_value))
     # custom data type verification can be included here
     return False

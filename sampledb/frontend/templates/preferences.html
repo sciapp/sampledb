@@ -89,7 +89,7 @@
     </div>
 
   <h2>Notification Settings</h2>
-  <p><strong>Note:</strong> iffSamples will notify you about various events. By default, these notifications will be sent using the iffSamples notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
+  <p><strong>Note:</strong> {{ service_name }} will notify you about various events. By default, these notifications will be sent using the {{ service_name }} notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
 
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
     {{ notification_mode_form.csrf_token }}
@@ -379,7 +379,42 @@
     </div>
     </form>
   {% endif %}
-
+  <h2>Other Settings</h2>
+  <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
+    {{ other_settings_form.csrf_token }}
+    <div class="form-group">
+    <label class="col-md-4 control-label" for="input-use-schema-editor-yes">
+      Use Schema Editor
+    </label>
+    <div class="radio col-md-4">
+      <label>
+        <input type="radio" name="input-use-schema-editor" id="input-use-schema-editor-yes" value="yes" {% if user_settings["USE_SCHEMA_EDITOR"] %}checked="checked"{% endif %}>
+        Yes &mdash; Use graphical editor for editing action schemas (recommended)
+      </label>
+    </div>
+    <div class="radio col-md-4">
+      <label>
+        <input type="radio" name="input-use-schema-editor" id="input-use-schema-editor-no" value="no" {% if not user_settings["USE_SCHEMA_EDITOR"] %}checked="checked"{% endif %}>
+        No &mdash; Edit schemas as JSON using a text editor (advanced)
+      </label>
+    </div>
+      </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-objects-per-page">
+        Objects per Page
+      </label>
+      <span class="col-md-8">
+        <select class="selectpicker form-control" id="input-objects-per-page" name="input-objects-per-page">
+          {% for limit in (10, 25, 50, 100, 'all') %}
+          <option value="{{ limit }}" {% if limit == user_settings['OBJECTS_PER_PAGE'] or (limit == 'all' and user_settings['OBJECTS_PER_PAGE'] is none) %}selected="selected"{% endif %}>{{ limit }}</option>
+          {% endfor %}
+        </select>
+      </span>
+    </div>
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_other_settings" value="edit_other_settings">Save</button>
+    </div>
+  </form>
 
 
 

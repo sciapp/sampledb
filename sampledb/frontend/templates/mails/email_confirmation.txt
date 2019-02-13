@@ -3,6 +3,6 @@
 {% block content %}
 Hello,
 
-this email address was assigned to an iffSamples account. To confirm your email address, please visit the following URL in your browser:
+this email address was assigned to an {{ service_name }} account. To confirm your email address, please visit the following URL in your browser:
 {{ confirm_url | safe }}
 {% endblock %}

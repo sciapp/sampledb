@@ -10,7 +10,7 @@ from . import frontend
 from .. import logic
 from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, OtherProjectIdForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
@@ -338,4 +338,3 @@ def update_project_permissions(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.redirect(flask.url_for('.projects'))
     return flask.redirect(flask.url_for('.project_permissions', project_id=project_id))
-

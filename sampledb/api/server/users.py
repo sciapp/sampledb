@@ -34,4 +34,3 @@ class Users(Resource):
     @http_basic_auth.login_required
     def get(self):
         return [user_to_json(user) for user in users.get_users()]
-

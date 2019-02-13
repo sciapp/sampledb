@@ -5,7 +5,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField
-from wtforms.validators import InputRequired, ValidationError
+from wtforms.validators import InputRequired, ValidationError, url
 
 from ..logic.object_permissions import Permissions
 
@@ -68,8 +68,12 @@ class FileForm(FlaskForm):
     local_files = FileField()
 
     def validate_file_source(form, field):
-        if field.data not in ['local', 'instrument', 'jupyterhub']:
+        if field.data not in ['local']:
             raise ValidationError('Invalid file source')
+
+
+class ExternalLinkForm(FlaskForm):
+    url = StringField(validators=[url()])
 
 
 class FileInformationForm(FlaskForm):

@@ -19,11 +19,6 @@ sampledb.config.SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{0}:@localhost:
 
 temp_dir = tempfile.mkdtemp()
 try:
-    os.mkdir(os.path.join(temp_dir, 'instrument_files'))
-    sampledb.config.FILE_SOURCES = {
-        # 'instrument': lambda user_id: os.path.join(temp_dir, 'instrument_files')
-        'instrument': sampledb.logic.files.LocalFileSource(lambda user_id: '/Users/rhiem/Documents/Documents')
-    }
     os.mkdir(os.path.join(temp_dir, 'uploaded_files'))
     sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
 

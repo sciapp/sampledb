@@ -3,7 +3,7 @@ import typing
 
 
 from .. import logic, db
-from ..logic.ldap import validate_user, get_user_info, LdapAccountAlreadyExist, LdapAccountOrPasswordWrong
+from .ldap import validate_user, create_user_from_ldap
 from ..models import Authentication, AuthenticationType, User
 from . import errors
 
@@ -76,9 +76,9 @@ def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirme
     if Authentication.query.filter(Authentication.login['login'].astext == ldap_uid).first():
         raise errors.AuthenticationMethodAlreadyExists('An authentication method with this login already exists')
     if Authentication.query.filter(Authentication.type == AuthenticationType.LDAP, Authentication.user_id == user_id).first():
-        raise LdapAccountAlreadyExist('An LDAP-based authentication method already exists for this user')
+        raise errors.LDAPAccountAlreadyExistError('An LDAP-based authentication method already exists for this user')
     if not validate_user(ldap_uid, password):
-        raise LdapAccountOrPasswordWrong('Ldap login or password wrong')
+        raise errors.LDAPAccountOrPasswordWrongError('Ldap login or password wrong')
     authentication = Authentication(
         login={'login': ldap_uid},
         authentication_type=AuthenticationType.LDAP,
@@ -127,11 +127,9 @@ def login(login: str, password: str) -> typing.Optional[User]:
         if not validate_user(login, password):
             return None
 
-        user = get_user_info(login)
+        user = create_user_from_ldap(login)
         if user is None:
             return None
-        db.session.add(user)
-        db.session.commit()
         add_ldap_authentication(user.id, login, password)
         return user
     return None
@@ -206,16 +204,3 @@ def change_password_in_authentication_method(authentication_method_id: int, pass
     db.session.add(authentication_method)
     db.session.commit()
     return True
-
-
-def get_user_ldap_uid(user_id: int) -> typing.Optional[str]:
-    """
-    Get the LDAP uid for a user.
-
-    :param user_id: the ID of an existing user
-    :return: the user's LDAP uid or None
-    """
-    authentication_method = Authentication.query.filter(Authentication.type == AuthenticationType.LDAP, Authentication.user_id==user_id).first()
-    if not authentication_method:
-        return None
-    return authentication_method.login['login']

@@ -5,13 +5,12 @@
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
-from wtforms.validators import DataRequired, EqualTo, Length, Email
+from wtforms.validators import DataRequired, Length, Email
 
 
 class NewUserForm(FlaskForm):
     name = StringField('Full Name', validators=[DataRequired()])
-    email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
-                                            Email("Please enter your contact email.")])
+    email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."), Email("Please enter your contact email.")])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
     authentication_method = RadioField('Authentication Method', choices=[('E', 'Email'), ('O', 'Other')], default='O')
     login = StringField('Login', validators=[DataRequired()])
@@ -22,8 +21,7 @@ class NewUserForm(FlaskForm):
 
 class ChangeUserForm(FlaskForm):
     name = StringField('Full Name', validators=[DataRequired(), Length(min=1)])
-    email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."),
-                                             Email("Please enter your contact email.")])
+    email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."), Email("Please enter your contact email.")])
     submit = SubmitField('Change Settings')
 
     def __init_(self, name=None, email=None):

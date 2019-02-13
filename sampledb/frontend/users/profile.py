@@ -24,6 +24,6 @@ def user_profile(user_id):
     except errors.UserDoesNotExistError:
         return flask.abort(404)
     return flask.render_template(
-            'profile.html',
-            user=user
-        )
+        'profile.html',
+        user=user
+    )
