@@ -1,3 +1,14 @@
+<!--
+{{ instrument }}
+
+{% if instrument is not none %}
+{{ instrument.responsible_users }}
+{% if instrument is not none and instrument.responsible_users %}
+!
+{% endif %}
+{% endif %}
+-->
+
 {% if instrument is not none and instrument.responsible_users %}
 <div class="instrument-scientists">
   <h3>Instrument Scientists:</h3>
