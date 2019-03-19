@@ -289,6 +289,8 @@ def _write_activity_log(object, canvas):
                 text += ' assigned this object to location #{}'.format(object_location_assignment.location_id)
             elif object_location_assignment.responsible_user_id is not None:
                 text += ' assigned this object to user #{}'.format(object_location_assignment.responsible_user_id)
+        elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION:
+            text += ' linked publication {} to this object.'.format(object_log_entry.data['doi'])
         else:
             text += ' performed an unknown action'
         _append_text(canvas, text)
@@ -410,6 +412,21 @@ def _write_locations(object, canvas):
         canvas.showPage()
 
 
+def _write_publications(object, canvas):
+    publications = logic.publications.get_publications_for_object(object.id)
+    if publications:
+        canvas.bookmarkPage('object_{}_publications'.format(object.id))
+        canvas.addOutlineEntry("Publications", 'object_{}_publications'.format(object.id), level=1)
+        canvas.set_up_page()
+        canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
+        canvas.top_cursor = _draw_left_aligned_wrapped_text(canvas, "Publications", canvas.left_cursor, PAGE_WIDTH - RIGHT_MARGIN - canvas.left_cursor, canvas.top_cursor, "Helvetica-Bold", 14, 1.2)
+        canvas.top_cursor -= 4 * mm
+        for publication in publications:
+            text = '• {}: {}'.format(publication.doi, publication.title)
+            _append_text(canvas, text)
+        canvas.showPage()
+
+
 def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
     """
     Create a PDF containing the exported information of one or more objects.
@@ -441,6 +458,7 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         _write_metadata(object, canvas)
         _write_activity_log(object, canvas)
         _write_locations(object, canvas)
+        _write_publications(object, canvas)
         _write_files(object, canvas)
         _write_comments(object, canvas)
     canvas.save()

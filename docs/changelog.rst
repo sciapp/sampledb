@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 0.5
+-----------
+
+Currently in development.
+
+- Added publications
+- Removed activity log
+- Improved user interface
+
+
 Version 0.4
 -----------
 

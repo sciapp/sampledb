@@ -24,6 +24,7 @@ class ObjectLogEntryType(enum.Enum):
     USE_OBJECT_IN_SAMPLE_CREATION = 7
     CREATE_BATCH = 8
     ASSIGN_LOCATION = 9
+    LINK_PUBLICATION = 10
 
 
 class ObjectLogEntry(db.Model):

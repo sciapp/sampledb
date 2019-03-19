@@ -198,3 +198,15 @@ def update_location(user_id: int, location_id: int):
             'location_id': location_id
         }
     )
+
+
+def link_publication(user_id: int, object_id: int, doi: str, title: typing.Optional[str] = None):
+    _store_new_log_entry(
+        type=UserLogEntryType.LINK_PUBLICATION,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'doi': doi,
+            'title': title
+        }
+    )
