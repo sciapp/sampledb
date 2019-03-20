@@ -28,6 +28,7 @@ from .notifications import Notification, NotificationType, NotificationMode, Not
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
 from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .settings import Settings
@@ -72,6 +73,7 @@ __all__ = [
     'Object',
     'ObjectLogEntry',
     'ObjectLogEntryType',
+    'ObjectPublication',
     'UserObjectPermissions',
     'GroupObjectPermissions',
     'ProjectObjectPermissions',
