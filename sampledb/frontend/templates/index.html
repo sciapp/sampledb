@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Home — {{ service_name }}{% endblock %}
+
 {# hide user area in navbar #}
 {% block navbar_userarea %}
   {% if current_user.is_authenticated %}

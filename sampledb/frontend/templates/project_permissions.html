@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Project #{{ project.id }}: {{ project.name }} — {{ service_name }}{% endblock %}
+
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Object #{{ object_id }}: {{ data['name']['text'] }} — {{ service_name }}{% endblock %}
+
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />

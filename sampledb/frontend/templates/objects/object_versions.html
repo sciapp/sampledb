@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Object #{{ object.id }} — {{ service_name }}{% endblock %}
+
 {% block content %}
   <h1>{{ object.data['name']['text'] }}</h1>
   <h2>Versions</h2>

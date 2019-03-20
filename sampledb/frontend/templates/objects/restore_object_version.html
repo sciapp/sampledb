@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Object #{{ object_id }} — {{ service_name }}{% endblock %}
+
 {% block content %}
   <h1 class="text-center">Are you sure you want to restore this object version?</h1>
   <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
