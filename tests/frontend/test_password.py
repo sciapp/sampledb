@@ -103,7 +103,7 @@ def test_new_password_send(flask_server, user):
     r = session.get(url)
 
     assert r.status_code == 200
-    assert 'Recovery account for Basic User' in r.content.decode('utf-8')
+    assert 'Account Recovery for Basic User' in r.content.decode('utf-8')
     assert 'New Password' in r.content.decode('utf-8')
 
     document = BeautifulSoup(r.content, 'html.parser')

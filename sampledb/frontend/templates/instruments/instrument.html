@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Instrument #{{ instrument.id }}: {{ instrument.name }} — {{ service_name }}{% endblock %}
+
 {% block content %}
   <h1>{{ instrument.name }}</h1>
   <p>{{ instrument.description }}</p>

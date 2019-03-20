@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Action #{{ action.id }}: {{ action.name }} — {{ service_name }}{% endblock %}
+
 {% block content %}
   <h1>
     {% if action.user is not none %}
