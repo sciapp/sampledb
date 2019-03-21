@@ -163,6 +163,7 @@
   {% endfor %}
   </tbody>
   </table>
+  {% if pagination_enabled %}
     <div>
     Pages:
     <ol class="object-pagination">
@@ -191,6 +192,7 @@
     {% endfor %}
     </ol>
     </div>
+  {% endif %}
   {% elif not search_notes %}
     <div class="alert alert-warning" role="alert">
     {% if use_advanced_search and advanced_search_had_error %}
