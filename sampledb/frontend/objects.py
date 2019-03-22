@@ -87,10 +87,12 @@ def objects():
         search_tree = None
         limit = None
         offset = None
+        pagination_enabled = True
         num_objects_found = len(objects)
         sorting_property_name = None
         sorting_order_name = None
     else:
+        pagination_enabled = True
         try:
             user_id = int(flask.request.args.get('user', ''))
             user = get_user(user_id)
@@ -264,6 +266,10 @@ def objects():
                 if object_ids is None:
                     object_ids = set()
                 object_ids = object_ids.union(object_ids_for_doi)
+            if object_ids:
+                pagination_enabled = False
+                limit = None
+                offset = None
             num_objects_found_list = []
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
@@ -362,6 +368,7 @@ def objects():
         sorting_order=sorting_order_name,
         limit=limit,
         offset=offset,
+        pagination_enabled=pagination_enabled,
         num_objects_found=num_objects_found,
         show_action=show_action,
         use_advanced_search=use_advanced_search,
