@@ -1048,3 +1048,159 @@ Reading an object's location
     :>json number utc_datetime: the datetime when the object was stored
     :statuscode 200: no error
     :statuscode 404: the object or the object location assignment does not exist
+
+
+Files
+-----
+
+
+Reading a list of an object's files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/object/(int:object_id)/files/
+
+    Get a list of all files for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/files/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "object_id": 1,
+                "file_id": 0,
+                "storage": "url",
+                "url": "https://iffsamples.fz-juelich.de"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Reading information for a file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/files/(int:file_id)
+
+    Get a specific file (`file_id`) for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/files/0 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "object_id": 1,
+            "file_id": 0,
+            "storage": "url",
+            "url": "https://iffsamples.fz-juelich.de"
+        }
+
+    :>json number object_id: the object's ID
+    :>json number file_id: the file's ID
+    :>json string storage: how the file is stored (local or url)
+    :>json string url: the URL of the file (for url storage)
+    :>json string original_file_name: the original name of the file (for local storage)
+    :>json string base64_content: the base64 encoded content of the file (for local storage)
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object or the file does not exist
+
+
+Uploading a file
+^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/(int:object_id)/files/
+
+    Create a new file with local storage for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/objects/1/files/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "storage": "local",
+            "original_file_name": "test.txt",
+            "base64_content": "dGVzdA=="
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/files/0
+
+    :<json string storage: how the file is stored (local)
+    :<json string original_file_name: the original name of the file
+    :<json string base64_content: the base64 encoded content of the file
+    :statuscode 201: the file has been created successfully
+    :statuscode 403: the user does not have WRITE permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Posting a link
+^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/(int:object_id)/files/
+
+    Create a new file with url storage for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/objects/1/files/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "storage": "url",
+            "url": "https://iffsamples.fz-juelich.de"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/files/0
+
+    :<json string storage: how the file is stored (url)
+    :<json string url: the URL of the file
+    :statuscode 201: the file has been created successfully
+    :statuscode 403: the user does not have WRITE permissions for this object
+    :statuscode 404: the object does not exist
