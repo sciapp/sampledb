@@ -8,6 +8,7 @@ Currently in development.
 
 - Added publications
 - Removed activity log
+- Added files to HTTP API
 - Improved user interface
 
 
