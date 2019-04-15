@@ -23,7 +23,7 @@ def test_user_info(app):
     assert user is None
 
     with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
-        sampledb.logic.ldap.create_user_from_ldap('aarbe')
+        sampledb.logic.ldap.create_user_from_ldap('gast')
     # no email exist
     assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
 
@@ -43,7 +43,7 @@ def test_validate_user(app):
     assert not sampledb.logic.ldap.validate_user('doro', password)
 
     with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
-        sampledb.logic.ldap.create_user_from_ldap('aarbe')
+        sampledb.logic.ldap.create_user_from_ldap('gast')
     # no email exist
     assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
 

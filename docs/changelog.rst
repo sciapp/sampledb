@@ -4,7 +4,7 @@ Changelog
 Version 0.5
 -----------
 
-Currently in development.
+Released on April 15th, 2019.
 
 - Added publications
 - Removed activity log
