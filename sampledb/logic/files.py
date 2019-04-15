@@ -173,7 +173,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             raise InvalidFileStorageError()
 
 
-def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> None:
+def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> File:
     """
     Create a new local file and add it to the object and user logs.
 
@@ -184,6 +184,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
+    :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -214,15 +215,17 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         db.session.commit()
         raise
     _create_file_logs(file)
+    return file
 
 
-def create_url_file(object_id: int, user_id: int, url: str) -> None:
+def create_url_file(object_id: int, user_id: int, url: str) -> File:
     """
     Create a file as a link to a URL and add it to the object and user logs.
 
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user
     :param url: the file URL
+    :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -240,6 +243,7 @@ def create_url_file(object_id: int, user_id: int, url: str) -> None:
     )
     file = File.from_database(db_file)
     _create_file_logs(file)
+    return file
 
 
 def _create_file_logs(file: File) -> None:

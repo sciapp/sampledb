@@ -1,5 +1,7 @@
 {% extends "objects/forms/form_base.html" %}
 
+{% block title %}New Object — {{ service_name }}{% endblock %}
+
 {% block content %}
   <form class="form-horizontal" method="post" action="{% if previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
     {{ form.csrf_token() }}

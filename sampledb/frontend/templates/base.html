@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sample and Measurement Database</title>
+  <title>{% block title %}{{ service_name }}{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% block stylesheets %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
@@ -134,7 +134,6 @@
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
               <li><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}">Notifications {% if num_unread_notifications > 0 %}<span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span>{% endif %}</a></li>
-              <li><a href="{{ url_for('frontend.user_activity', user_id=current_user.id) }}">Activity Log</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Projects</a></li>
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Groups</a></li>

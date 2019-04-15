@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Objects — {{ service_name }}{% endblock %}
+
 {% block content %}
   {% if search_notes is defined %}
   {% for category, note, start, end in search_notes %}
@@ -88,6 +90,8 @@
     {% set object_suffix = " for <a href=\"{}\">Location #{}: {}</a>".format(url_for('.location', location_id=location_id), location_id, location.name | e) | safe %}
   {% elif user_id %}
     {% set object_suffix = " for <a href=\"{}\">User #{}: {}</a>".format(url_for('.user_profile', user_id=user_id), user_id, user.name | e) | safe %}
+  {% elif doi %}
+    {% set object_suffix = " for Publication <a href=\"https://doi.org/{}\">doi:{}</a>".format(doi, doi) | safe %}
   {% else %}
     {% set object_suffix = "" %}
   {% endif %}
@@ -159,6 +163,7 @@
   {% endfor %}
   </tbody>
   </table>
+  {% if pagination_enabled %}
     <div>
     Pages:
     <ol class="object-pagination">
@@ -187,6 +192,7 @@
     {% endfor %}
     </ol>
     </div>
+  {% endif %}
   {% elif not search_notes %}
     <div class="alert alert-warning" role="alert">
     {% if use_advanced_search and advanced_search_had_error %}

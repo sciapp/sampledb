@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Location #{{ location.id }}: {{ location.name }} — {{ service_name }}{% endblock %}
+
 {% block content %}
   <h1>
     {% for ancestor_id, ancestor_name in ancestors %}

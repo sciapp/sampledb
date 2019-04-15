@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
+{% block title %}Invite a Guest — {{ service_name }}{% endblock %}
+
 {% block content %}
-  <h1 class="text-center">Invite a guest</h1>
+  <h1 class="text-center">Invite a Guest</h1>
   <div class="container" style="max-width:600px">
   <p class="text-center">To invite a guest to {{ service_name }}, please submit their email address using the form below. They will then receive an email which can be used to complete the registration process.</p>
   <form class="form-horizontal" method="post" id="form-invitation">

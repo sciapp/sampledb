@@ -1,5 +1,7 @@
 {% extends "objects/forms/form_base.html" %}
 
+{% block title %}Object #{{ object_id }} — {{ service_name }}{% endblock %}
+
 {% block content %}
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}

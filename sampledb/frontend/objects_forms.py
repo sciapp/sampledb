@@ -8,6 +8,8 @@ from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaFie
 from wtforms.validators import InputRequired, ValidationError, url
 
 from ..logic.object_permissions import Permissions
+from ..logic.publications import simplify_doi
+from ..logic.errors import InvalidDOIError
 
 
 class ObjectUserPermissionsForm(FlaskForm):
@@ -89,3 +91,14 @@ class ObjectLocationAssignmentForm(FlaskForm):
     location = SelectField(validators=[InputRequired()])
     responsible_user = SelectField(validators=[InputRequired()])
     description = StringField()
+
+
+class ObjectPublicationForm(FlaskForm):
+    doi = StringField()
+    title = StringField()
+
+    def validate_doi(form, field):
+        try:
+            field.data = simplify_doi(field.data)
+        except InvalidDOIError:
+            raise ValidationError('Please enter a valid DOI')

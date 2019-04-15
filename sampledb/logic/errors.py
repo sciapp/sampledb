@@ -172,3 +172,11 @@ class LDAPAccountAlreadyExistError(Exception):
 
 class LDAPAccountOrPasswordWrongError(Exception):
     pass
+
+
+class PublicationDoesNotExistError(Exception):
+    pass
+
+
+class InvalidDOIError(Exception):
+    pass

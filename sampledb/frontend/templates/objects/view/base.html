@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Object #{{ object_id }}: {{ data['name']['text'] }} — {{ service_name }}{% endblock %}
+
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
@@ -440,6 +442,46 @@
     </form>
   {% endif %}
 
+  <h4 id="publications">Publications</h4>
+  {% if object_publications %}
+    <table class="table">
+    <thead>
+    <tr>
+      <th scope="col" style="white-space: nowrap;width: 1%;">DOI</th>
+      <th scope="col">Title</th>
+      <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for object_publication in object_publications %}
+      <tr>
+        <td><a href="http://doi.org/{{ object_publication.doi | urlencode }}">{{ object_publication.doi }}</a></td>
+        <td>{% if object_publication.title is none %}&mdash;{% else %}{{ object_publication.title }}{% endif %}</td>
+        <td><a href="{{ url_for('.objects', doi=object_publication.doi) }}">View&nbsp;Objects</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+  {% else %}
+    <p>This object has not been linked to a publication yet.</p>
+  {% endif %}
+  {% if user_may_link_publication %}
+    <form class="form" method="post" action="{{ url_for('frontend.post_object_publication', object_id=object_id) }}" id="assign-publication-form">
+      {{ publication_form.csrf_token }}
+      <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-location" class="control-label">DOI</label>
+        <input type="text" class="form-control" placeholder="DOI" style="margin-bottom: 10px;" name="{{ publication_form.doi.name }}" value="{% if publication_form.doi.data %}{{ publication_form.doi.data }}{% endif %}"/>
+      </div>
+      <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}">
+        <label for="input-location" class="control-label">Title</label>
+        <input type="text" class="form-control" placeholder="Title" style="margin-bottom: 10px;" name="{{ publication_form.title.name }}" value="{% if publication_form.title.data %}{{ publication_form.title.data }}{% endif %}"/>
+      </div>
+      <div class="text-right">
+        <button type="submit" class="btn btn-primary" style="width:11em; margin-bottom: 20px;"><i class="fa fa-book fa-fw"></i> Link Publication</button>
+      </div>
+    </form>
+  {% endif %}
+
   {% if not is_archived %}
     <h4>Comments</h4>
     {% if comments %}
@@ -566,6 +608,11 @@
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> assigned this object to user <a href="{{ url_for('.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>.</td>
             {% endif %}
             <td class="text-right">
+            </td>
+          {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> linked publication <a href="https://doi.org/{{ object_log_entry.data['doi'] | urlencode }}">{{ object_log_entry.data['doi'] }}</a> to this object.</td>
+            <td class="text-right">
+              <a href="#publications">View</a>
             </td>
           {% else %}
             <td>Unknown event</td><td></td>

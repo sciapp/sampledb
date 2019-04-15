@@ -21,7 +21,7 @@ class Instrument(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False, unique=True)
     description = db.Column(db.String, nullable=False, default='')
-    responsible_users = db.relationship("User", secondary=instrument_user_association_table)
+    responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name")
 
     def __init__(self, name, description=''):
         self.name = name

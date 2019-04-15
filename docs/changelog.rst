@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 0.5
+-----------
+
+Released on April 15th, 2019.
+
+- Added publications
+- Removed activity log
+- Added files to HTTP API
+- Improved user interface
+
+
 Version 0.4
 -----------
 

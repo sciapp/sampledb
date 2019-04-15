@@ -1,4 +1,6 @@
-{% if schema['type'] == 'text' %}
+{% if schema['type'] == 'text' and 'choices' in schema %}
+  {% include "objects/forms/form_table_select.html" %}
+{% elif schema['type'] == 'text' %}
   {% include "objects/forms/form_table_text.html" %}
 {% elif schema['type'] == 'datetime' %}
   {% include "objects/forms/form_table_datetime.html" %}

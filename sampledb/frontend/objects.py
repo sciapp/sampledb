@@ -31,7 +31,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -76,6 +76,7 @@ def objects():
         location = None
         user = None
         user_id = None
+        doi = None
         object_ids_at_location = None
         project = None
         query_string = ''
@@ -86,10 +87,12 @@ def objects():
         search_tree = None
         limit = None
         offset = None
+        pagination_enabled = True
         num_objects_found = len(objects)
         sorting_property_name = None
         sorting_order_name = None
     else:
+        pagination_enabled = True
         try:
             user_id = int(flask.request.args.get('user', ''))
             user = get_user(user_id)
@@ -99,6 +102,10 @@ def objects():
         except UserDoesNotExistError:
             user_id = None
             user = None
+        try:
+            doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
+        except logic.errors.InvalidDOIError:
+            doi = None
         try:
             location_id = int(flask.request.args.get('location', ''))
             location = get_location(location_id)
@@ -205,14 +212,21 @@ def objects():
         must_use_advanced_search = use_advanced_search
         advanced_search_had_error = False
         additional_search_notes = []
-        if not use_advanced_search and query_string and user_id is None:
-            users = get_users_by_name(query_string)
-            if len(users) == 1:
-                user = users[0]
-                user_id = user.id
-                query_string = ''
-            elif len(users) > 1:
-                additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
+        if not use_advanced_search and query_string:
+            if user_id is None:
+                users = get_users_by_name(query_string)
+                if len(users) == 1:
+                    user = users[0]
+                    user_id = user.id
+                    query_string = ''
+                elif len(users) > 1:
+                    additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
+            if doi is None and query_string.startswith('doi:'):
+                try:
+                    doi = logic.publications.simplify_doi(query_string)
+                    query_string = ''
+                except logic.errors.InvalidDOIError:
+                    pass
         try:
             filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
         except Exception:
@@ -232,6 +246,10 @@ def objects():
             object_ids_for_user = None
         else:
             object_ids_for_user = user_log.get_user_related_object_ids(user_id)
+        if doi is None:
+            object_ids_for_doi = None
+        else:
+            object_ids_for_doi = logic.publications.get_object_ids_linked_to_doi(doi)
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
         try:
@@ -244,6 +262,14 @@ def objects():
                 if object_ids is None:
                     object_ids = set()
                 object_ids = object_ids.union(object_ids_for_user)
+            if object_ids_for_doi is not None:
+                if object_ids is None:
+                    object_ids = set()
+                object_ids = object_ids.union(object_ids_for_doi)
+            if object_ids:
+                pagination_enabled = False
+                limit = None
+                offset = None
             num_objects_found_list = []
             objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
@@ -335,12 +361,14 @@ def objects():
         location=location,
         user_id=user_id,
         user=user,
+        doi=doi,
         samples=samples,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
         limit=limit,
         offset=offset,
+        pagination_enabled=pagination_enabled,
         num_objects_found=num_objects_found,
         show_action=show_action,
         use_advanced_search=use_advanced_search,
@@ -662,6 +690,11 @@ def object(object_id):
             action.name.lower()
         ))
 
+        publication_form = ObjectPublicationForm()
+
+        object_publications = logic.publications.get_publications_for_object(object_id=object.id)
+        user_may_link_publication = Permissions.WRITE in user_permissions
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -698,6 +731,9 @@ def object(object_id):
             file_hiding_form=FileHidingForm(),
             new_schema_available=new_schema_available,
             related_objects_tree=related_objects_tree,
+            object_publications=object_publications,
+            user_may_link_publication=user_may_link_publication,
+            publication_form=publication_form,
             get_object=get_object,
             get_object_location_assignment=get_object_location_assignment,
             get_user=get_user,
@@ -813,6 +849,33 @@ def post_object_location(object_id):
             flask.flash('Please select a location or a responsible user.', 'error')
     else:
         flask.flash('Please select a location or a responsible user.', 'error')
+    return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+
+@frontend.route('/objects/<int:object_id>/publications/', methods=['POST'])
+@object_permissions_required(Permissions.WRITE)
+def post_object_publication(object_id):
+    publication_form = ObjectPublicationForm()
+    if publication_form.validate_on_submit():
+        doi = publication_form.doi.data
+        title = publication_form.title.data
+        if not title:
+            title = None
+        existing_publication = ([
+            publication
+            for publication in logic.publications.get_publications_for_object(object_id)
+            if publication.doi == doi
+        ] or [None])[0]
+        if existing_publication is not None and existing_publication.title == title:
+            flask.flash('This object has already been linked to this publication.', 'info')
+        else:
+            logic.publications.link_publication_to_object(user_id=flask_login.current_user.id, object_id=object_id, doi=doi, title=title)
+            if existing_publication is None:
+                flask.flash('Successfully linked this object to a publication.', 'success')
+            else:
+                flask.flash('Successfully updated the title of this publication.', 'success')
+    else:
+        flask.flash('Please enter a valid DOI for the publication you want to link this object to.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
