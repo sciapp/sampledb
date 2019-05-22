@@ -255,3 +255,33 @@ Sample references do not allow additional properties.
       "title": "Previous Sample",
       "type": "sample"
     }
+
+Notebook Templates
+``````````````````
+
+Schemas may contain a list of references to notebook templates as a property of the root object called ``notebookTemplates``. Each reference in this list must contain a title, a URL and an object describing the parameters of the template.
+
+.. code-block:: json
+    :caption: A list of notebook template references
+
+    [
+      {
+        "title": "Demo Notebook 1",
+        "url": "demo.ipynb",
+        "params": {}
+      },
+      {
+        "title": "Demo Notebook 2",
+        "url": "iffSamples/sample-#{sample_id}.ipynb",
+        "params": {
+          "sample_id": "object_id",
+          "name": ["name", "text"],
+        }
+      }
+    ]
+
+.. note::
+
+    The notebook template functionality is based on an additional webservice. Only users with access to a JupyterHub instance with this webservice and persistent storage there will be able to use it.
+
+    If no JupyterHub URL is :ref:`configured <configuration>`, this list will be ignored.

@@ -48,3 +48,5 @@ When running a SampleDB installation, you can set the the following environment 
      - The DN of an LDAP user to use when searching for other users (optional)
    * - SAMPLEDB_LDAP_PASSWORD
      - The password for the user identified by SAMPLEDB_LDAP_USER_DN (optional)
+   * - SAMPLEDB_JUPYTERHUB_URL
+     - The base URL of a JupyterHub server with support for notebook templates (optional)

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.6
+-----------
+
+Currently in development.
+
+- Added JupyterHub notebook templates
+
+
 Version 0.5
 -----------
 

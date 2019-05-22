@@ -88,6 +88,20 @@
     <div class="form-group">
       <div data-toggle="tooltip" data-placement="top" title="Show a PDF containting the information for this object."><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button></div>
     </div>
+    {% if notebook_templates and jupyterhub_url %}
+      <div class="form-group">
+        <div class="btn-group" data-toggle="tooltip" data-placement="top" title="Create a Jupyter Notebook in iffJupyter to analyze this object.">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="notebookDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-book" aria-hidden="true"></i> Create Notebook <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="notebookDropdownMenuButton">
+            {% for notebook_template in notebook_templates %}
+              <li><a class="dropdown-item" href="{{ jupyterhub_url }}/templates/t/{{ notebook_template.url }}?params={{ notebook_template.params | tojson | urlencode }}">{{ notebook_template.title }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
   {% endif %}
     {% if restore_form is not none %}
     <div class="form-group">
