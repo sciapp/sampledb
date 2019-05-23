@@ -92,7 +92,7 @@
       <div class="form-group">
         <div class="btn-group" data-toggle="tooltip" data-placement="top" title="Create a Jupyter Notebook in iffJupyter to analyze this object.">
           <button class="btn btn-primary dropdown-toggle" type="button" id="notebookDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="fa fa-book" aria-hidden="true"></i> Create Notebook <span class="caret"></span>
+            <img src="{{ url_for("static", filename="img/jupyter-40.png") }}" style="height:1.3em; margin-top:-0.2em; margin-right: -0.2em;" alt=""/> Create Notebook <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" aria-labelledby="notebookDropdownMenuButton">
             {% for notebook_template in notebook_templates %}
