@@ -33,6 +33,7 @@ def create_app():
 
     login_manager.login_view = 'frontend.sign_in'
     app.jinja_env.globals.update(
+        jupyterhub_url=app.config['JUPYTERHUB_URL'],
         signout_form=sampledb.frontend.users_forms.SignoutForm,
         service_name=app.config['SERVICE_NAME'],
         service_description=app.config['SERVICE_DESCRIPTION'],

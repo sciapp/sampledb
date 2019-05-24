@@ -77,6 +77,8 @@ MIME_TYPES = {
     '.pdf': 'application/pdf'
 }
 
+# JupyterHub settings
+JUPYTERHUB_URL = 'https://iffjupyter.fz-juelich.de'
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

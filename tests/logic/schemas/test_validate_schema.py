@@ -1439,3 +1439,251 @@ def test_hazards_with_missing_type_in_object():
     schema['properties']['hazards'].pop('type')
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_notebook_templates():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            {
+                'url': 'notebook.ipynb',
+                'title': 'notebook',
+                'params': {}
+            }
+        ]
+    }
+    validate_schema(schema)
+
+
+def test_notebook_templates_with_params():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            {
+                'url': 'notebook.ipynb',
+                'title': 'notebook',
+                'params': {
+                    'object_id': 'object_id',
+                    'name': ['name', 0],
+                }
+            }
+        ]
+    }
+    validate_schema(schema)
+
+
+def test_notebook_templates_with_invalid_params():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            {
+                'url': 'notebook.ipynb',
+                'title': 'notebook',
+                'params': []
+            }
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['params'] = {
+        'object_id': 'object_ids',
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['params'] = {
+        0: 'object_id',
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['params'] = {
+        'name': ('name', 'text'),
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['params'] = {
+        'name': 0,
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['params'] = {
+        'name': ['name', b'text'],
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_notebook_templates_with_invalid_title():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            {
+                'url': 'notebook.py',
+                'title': 0,
+                'params': {}
+            }
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_notebook_templates_with_invalid_url():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            {
+                'url': None,
+                'title': 'notebook',
+                'params': {}
+            }
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['url'] = 'notebook.py'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0]['url'] = '../notebook.ipynb'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_notebook_templates_with_missing_keys():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            None
+        ]
+    }
+    schema['notebookTemplates'][0] = {
+        'title': 'notebook',
+        'params': {}
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0] = {
+        'url': 'notebook.ipynb',
+        'params': {}
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['notebookTemplates'][0] = {
+        'url': 'notebook.ipynb',
+        'title': 'test'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_notebook_templates_with_invalid_key():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            {
+                'url': 'notebook.ipynb',
+                'title': 'test',
+                'params': {},
+                'other': 'value'
+            }
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_notebook_templates_with_invalid_type():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': {
+            'test': {
+                'url': 'notebook.ipynb',
+                'title': 'test',
+                'params': {}
+            }
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name'],
+        'notebookTemplates': [
+            [
+                'notebook.ipynb', 'test', {}
+            ]
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

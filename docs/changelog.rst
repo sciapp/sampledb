@@ -1,10 +1,18 @@
 Changelog
 =========
 
-Version 0.5
+Version 0.6
 -----------
 
 Currently in development.
+
+- Added JupyterHub notebook templates
+
+
+Version 0.5
+-----------
+
+Released on April 15th, 2019.
 
 - Added publications
 - Removed activity log
