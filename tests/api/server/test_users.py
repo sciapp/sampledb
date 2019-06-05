@@ -67,6 +67,15 @@ def test_get_user(flask_server, auth, user):
     }
 
 
+def test_get_current_user(flask_server, auth, user):
+    r = requests.get(flask_server.base_url + 'api/v1/users/me', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == {
+        'user_id': user.id,
+        'name': "Basic User"
+    }
+
+
 def test_get_users(flask_server, auth, user):
     r = requests.get(flask_server.base_url + 'api/v1/users/', auth=auth)
     assert r.status_code == 200
