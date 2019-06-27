@@ -22,5 +22,15 @@ except ImportError:
     assert hasattr(sampledb.config, 'TESTING_LDAP_LOGIN')
     assert hasattr(sampledb.config, 'TESTING_LDAP_PW')
 
+sampledb.config.LDAP_NAME = 'PGI / JCNS'
+sampledb.config.LDAP_SERVER = 'ldaps://ldap.iff.kfa-juelich.de'
+sampledb.config.LDAP_USER_BASE_DN = 'cn=users,cn=accounts,dc=iff,dc=kfa-juelich,dc=de'
+sampledb.config.LDAP_UID_FILTER='(uid={})'
+sampledb.config.LDAP_NAME_ATTRIBUTE = 'cn'
+sampledb.config.LDAP_MAIL_ATTRIBUTE = 'mail'
+sampledb.config.LDAP_OBJECT_DEF = 'inetOrgPerson'
+sampledb.config.LDAP_USER_DN = 'uid=' + sampledb.config.TESTING_LDAP_LOGIN + ',' + sampledb.config.LDAP_USER_BASE_DN
+sampledb.config.LDAP_PASSWORD = sampledb.config.TESTING_LDAP_PW
+
 # restore possibly overridden configuration data from environment variables
 sampledb.config.use_environment_configuration(env_prefix='SAMPLEDB_')
