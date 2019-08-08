@@ -32,7 +32,8 @@ def main(arguments):
         'environment': 'production',
         'server.socket_host': '0.0.0.0',
         'server.socket_port': port,
-        'server.thread_pool': 4
+        'server.thread_pool': 4,
+        'log.screen': True
     })
     cherrypy.engine.start()
     cherrypy.engine.block()
