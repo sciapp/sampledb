@@ -9,6 +9,8 @@ import flask
 
 import typing
 
+from ..models import Authentication, AuthenticationType
+from .. import db
 from . import errors
 from . import users
 
@@ -89,13 +91,20 @@ def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
     )
     if user is None:
         return None
-    _, name, email = user
+    user_id, name, email = user
     if not email:
         raise errors.NoEmailInLDAPAccountError('There is no email set for your LDAP account. Please contact your administrator.')
     if not name:
         name = user_ldap_uid
-    return users.create_user(
-        name=name,
-        email=email,
-        type=users.UserType.PERSON
-    )
+    login = user_ldap_uid.lower().strip()
+    authentication_methods = Authentication.query.filter(
+        db.and_(Authentication.login['login'].astext == login,
+                Authentication.type == AuthenticationType.LDAP)
+    ).all()
+    if not authentication_methods:
+        return users.create_user(
+            name=name,
+            email=email,
+            type=users.UserType.PERSON
+        )
+    return users.get_user(authentication_methods[0].user_id)
