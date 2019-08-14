@@ -25,22 +25,22 @@ def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
     try:
         connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
-    except ldap3.core.exceptions.LDAPBindError:
+        object_def = ldap3.ObjectDef(object_def, connection)
+        reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(user_ldap_uid))
+        reader.search(attributes)
+        # search if uid matches exactly one user, not more
+        if len(reader) != 1:
+            return None
+        user_attributes = [reader[0].entry_dn]
+        for attribute in attributes:
+            value = getattr(reader[0], attribute, None)
+            if value:
+                user_attributes.append(value[0])
+            else:
+                user_attributes.append(None)
+        return user_attributes
+    except ldap3.core.exceptions.LDAPException:
         return None
-    object_def = ldap3.ObjectDef(object_def, connection)
-    reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(user_ldap_uid))
-    reader.search(attributes)
-    # search if uid matches exactly one user, not more
-    if len(reader) != 1:
-        return None
-    user_attributes = [reader[0].entry_dn]
-    for attribute in attributes:
-        value = getattr(reader[0], attribute, None)
-        if value:
-            user_attributes.append(value[0])
-        else:
-            user_attributes.append(None)
-    return user_attributes
 
 
 def validate_user(user_ldap_uid: str, password: str) -> bool:
@@ -65,9 +65,12 @@ def validate_user(user_ldap_uid: str, password: str) -> bool:
         raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
     ldap_host = flask.current_app.config['LDAP_SERVER']
     # try to bind with user credentials if a matching user exists
-    server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
-    connection = ldap3.Connection(server, user=user_dn, password=password, raise_exceptions=False)
-    return bool(connection.bind())
+    try:
+        server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
+        connection = ldap3.Connection(server, user=user_dn, password=password, raise_exceptions=False)
+        return bool(connection.bind())
+    except ldap3.core.exceptions.LDAPException:
+        return False
 
 
 def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
