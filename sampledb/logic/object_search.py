@@ -803,7 +803,7 @@ def generate_filter_func(query_string: str, use_advanced_search: bool) -> typing
                 """ Filter objects based on search query string """
                 # The query string is converted to json to escape quotes, backslashes, etc
                 query_string = json.dumps(query_string)[1:-1]
-                return data.cast(String).like('%: "%' + query_string + '%"%')
+                return data.cast(String).ilike('%: "%' + query_string + '%"%')
     else:
         def filter_func(data, search_notes):
             """ Return all objects"""
