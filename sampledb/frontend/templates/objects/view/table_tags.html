@@ -1,5 +1,5 @@
 {% if data is not none and data["_type"] == "tags" %}
 {% for tag in data.tags %}
-<a href="{{ url_for('.objects', q=tag) }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>
+<a href="{{ url_for('.objects', q='#'+tag, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>
 {% endfor %}
 {% endif %}
