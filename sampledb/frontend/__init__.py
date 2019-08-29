@@ -19,6 +19,7 @@ from . import objects
 from . import objects_forms
 from . import projects
 from . import status
+from . import tags
 from . import users
 from . import users_forms
 from . import errors
@@ -35,6 +36,7 @@ __all__ = [
     'objects_forms',
     'projects',
     'status',
+    'tags',
     'users',
     'users_forms',
     'errors',
