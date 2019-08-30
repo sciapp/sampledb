@@ -1056,6 +1056,24 @@ def test_validate_tags_invalid_content():
         validate(instance, schema)
 
 
+def test_validate_tags_invalid_tag():
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    instance = {
+        '_type': 'tags',
+        'tags': ['tag', 'other', 'üöäß']
+    }
+    validate(instance, schema)
+    instance['tags'][-1] = 'tag?'
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+    instance['tags'][-1] = 'tag '
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_tags_duplicate_tags():
     schema = {
         'title': 'Example',

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Tags — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>Tags</h1>
+  <p class="text-muted">Tags or Keywords serve as a means to organize objects using short, lower case words. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#tags">Read more.</a></p>
+  {% if tags %}
+    <ul>
+    {% for tag in tags %}
+      <li  style="margin-bottom:0.25em;"><a href="{{ url_for('.objects', q='#'+tag.name, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag.name }} (&times;{{ tag.uses }})</span></a></li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

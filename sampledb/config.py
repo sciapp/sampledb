@@ -80,5 +80,9 @@ MIME_TYPES = {
 # JupyterHub settings
 JUPYTERHUB_URL = 'https://iffjupyter.fz-juelich.de'
 
+# CSRF token time limit
+# users may take a long time to fill out a form during an experiment
+WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

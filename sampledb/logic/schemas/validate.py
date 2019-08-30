@@ -153,8 +153,8 @@ def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None
             errors.append(ValidationError('duplicate tag: {}'.format(item), path + ['tags', str(index)]))
         elif item.lower() != item:
             errors.append(ValidationError('tag not lowercase: {}'.format(item), path + ['tags', str(index)]))
-        elif any(c.isspace() for c in item):
-            errors.append(ValidationError('tag contains whitespace: {}'.format(item), path + ['tags', str(index)]))
+        elif any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in item):
+            errors.append(ValidationError('tag contains invalid character: {}'.format(item), path + ['tags', str(index)]))
         else:
             tags.append(item)
 

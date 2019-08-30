@@ -384,7 +384,7 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator, lis
             continue
         tag = parse_tag(token.input_text)
         if tag is not None:
-            accepted_characters = 'abcdefghijklmnopqrstuvwxyz0123456789_-'
+            accepted_characters = 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß'
             if not tag or not all(c in accepted_characters for c in tag):
                 raise ParseError("Invalid tag".format(token.input_text.strip()), start + 1, end)
             tokens.append(Tag(token.input_text, token.start_position, tag))
