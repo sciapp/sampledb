@@ -29,7 +29,7 @@ In general, users will need to enter the information required to reproduce what 
 Tags
 ````
 
-Tags or Keywords serve as a means to organize objects using short, lower case words. When entering tags, previously used tags will be suggested to the users to encourage a common tag vocabulary without restricting users.
+Tags or Keywords serve as a means to organize objects using short, lower case words. A tag may consist of characters *a* to *z* (including *ä*, *ö*, *ü* and *ß*), digits *0* to *9*, *-* and *_*. When entering tags, previously used tags will be suggested to the users to encourage a common tag vocabulary without restricting users.
 
 
 .. figure:: ../static/img/generated/tags.png

@@ -38,13 +38,13 @@ SECRET_KEY = generate_secret_key(num_bits=256)
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # LDAP settings
-LDAP_NAME = 'PGI / JCNS'
-LDAP_SERVER = "ldaps://iffldap.iff.kfa-juelich.de"
-LDAP_USER_BASE_DN = "ou=People,dc=iff,dc=kfa-juelich,dc=de"
-LDAP_UID_FILTER = "(uid={})"
-LDAP_NAME_ATTRIBUTE = "cn"
-LDAP_MAIL_ATTRIBUTE = "mail"
-LDAP_OBJECT_DEF = 'inetOrgPerson'
+LDAP_NAME = None
+LDAP_SERVER = None
+LDAP_USER_BASE_DN = None
+LDAP_UID_FILTER = None
+LDAP_NAME_ATTRIBUTE = None
+LDAP_MAIL_ATTRIBUTE = None
+LDAP_OBJECT_DEF = None
 # LDAP credentials, may both be None if anonymous access is enabled
 LDAP_USER_DN = None
 LDAP_PASSWORD = None
@@ -77,6 +77,12 @@ MIME_TYPES = {
     '.pdf': 'application/pdf'
 }
 
+# JupyterHub settings
+JUPYTERHUB_URL = 'https://iffjupyter.fz-juelich.de'
+
+# CSRF token time limit
+# users may take a long time to fill out a form during an experiment
+WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

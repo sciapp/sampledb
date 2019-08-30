@@ -894,6 +894,39 @@ Reading a user
     :statuscode 404: the user does not exist
 
 
+Reading the current user
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/users/me
+
+    Get the current user.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/me HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "name": "Example User"
+        }
+
+    :>json number user_id: the user's ID
+    :>json string name: the user's name
+    :statuscode 200: no error
+
+
 Locations
 ---------
 

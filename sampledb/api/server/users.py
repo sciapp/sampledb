@@ -3,6 +3,7 @@
 RESTful API for iffSamples
 """
 
+import flask
 from flask_restful import Resource
 
 from .authentication import http_basic_auth
@@ -28,6 +29,12 @@ class User(Resource):
                 "message": "user {} does not exist".format(user_id)
             }, 404
         return user_to_json(user)
+
+
+class CurrentUser(Resource):
+    @http_basic_auth.login_required
+    def get(self):
+        return user_to_json(flask.g.user)
 
 
 class Users(Resource):

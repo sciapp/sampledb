@@ -695,6 +695,24 @@ def object(object_id):
         object_publications = logic.publications.get_publications_for_object(object_id=object.id)
         user_may_link_publication = Permissions.WRITE in user_permissions
 
+        notebook_templates = object.schema.get('notebookTemplates', [])
+        for notebook_template in notebook_templates:
+            for parameter, parameter_value in notebook_template['params'].items():
+                if parameter_value == 'object_id':
+                    notebook_template['params'][parameter] = object_id
+                elif isinstance(parameter_value, list):
+                    parameter_data = object.data
+                    for step in parameter_value:
+                        if isinstance(step, str) and isinstance(parameter_data, dict) and step in parameter_data:
+                            parameter_data = parameter_data[step]
+                        elif isinstance(step, int) and isinstance(parameter_data, list) and 0 <= step < len(parameter_data):
+                            parameter_data = parameter_data[step]
+                        else:
+                            parameter_data = None
+                    notebook_template['params'][parameter] = parameter_data
+                else:
+                    notebook_template['params'][parameter] = None
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -719,6 +737,7 @@ def object(object_id):
             external_link_invalid='invalid_link' in flask.request.args,
             mobile_upload_url=mobile_upload_url,
             mobile_upload_qrcode=mobile_upload_qrcode,
+            notebook_templates=notebook_templates,
             object_qrcode=object_qrcode,
             object_url=object_url,
             restore_form=None,

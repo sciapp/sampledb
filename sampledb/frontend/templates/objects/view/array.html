@@ -127,6 +127,7 @@
     {% endfor %}
   </tr>
   </thead>
+  {% if data is not none %}
   {% for item in data %}
     {% set entry_index = loop.index0 %}
     <tr>
@@ -141,6 +142,7 @@
     {% endfor %}
     </tr>
   {% endfor %}
+  {% endif %}
   <tfoot>
   <tr>
     {% for i in range(max_used_fields) %}

@@ -45,10 +45,11 @@
       }
     });
     tagsinput.on('beforeItemAdd', function(event) {
-      if (event.item.toLowerCase() !== event.item || RegExp('^.*\\s.*$').test(event.item)) {
+      var sanitized_tag = event.item.toLowerCase().replace(/\s/g,'').replace(/[^a-z0-9_\-äüöß]/g,'');
+      if (event.item !== sanitized_tag) {
         if (!event.options || !event.options.fromHandler) {
           event.cancel = true;
-          $(this).tagsinput('add', event.item.toLowerCase().replace(/\s/g,''), {fromHandler: true});
+          $(this).tagsinput('add', sanitized_tag, {fromHandler: true});
         }
       }
     });

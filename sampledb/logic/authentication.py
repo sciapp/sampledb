@@ -130,7 +130,11 @@ def login(login: str, password: str) -> typing.Optional[User]:
         user = create_user_from_ldap(login)
         if user is None:
             return None
-        add_ldap_authentication(user.id, login, password)
+        try:
+            add_ldap_authentication(user.id, login, password)
+        except errors.AuthenticationMethodAlreadyExists:
+            # user might have been created in the background already due to concurrent, duplicate requests
+            pass
         return user
     return None
 

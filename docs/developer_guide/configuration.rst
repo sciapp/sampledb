@@ -42,9 +42,13 @@ When running a SampleDB installation, you can set the the following environment 
      - The name of the attribute containing a user's name in LDAP
    * - SAMPLEDB_LDAP_MAIL_ATTRIBUTE
      - The name of the attribute containing a user's email address in LDAP
-   * - SAMPLEDB_OBJECT_REF
-     - The object ref to use for looking up user attributes, e.g. inetOrgPerson
+   * - SAMPLEDB_LDAP_OBJECT_DEF
+     - The object def to use for looking up user attributes, e.g. inetOrgPerson
    * - SAMPLEDB_LDAP_USER_DN
      - The DN of an LDAP user to use when searching for other users (optional)
    * - SAMPLEDB_LDAP_PASSWORD
      - The password for the user identified by SAMPLEDB_LDAP_USER_DN (optional)
+   * - SAMPLEDB_JUPYTERHUB_URL
+     - The base URL of a JupyterHub server with support for notebook templates (optional)
+   * - SAMPLEDB_WTF_CSRF_TIME_LIMIT
+     - The time limit for WTForms CSRF tokens in seconds. See: https://flask-wtf.readthedocs.io/en/stable/config.html
