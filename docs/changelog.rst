@@ -7,6 +7,8 @@ Version 0.6
 Currently in development.
 
 - Added JupyterHub notebook templates
+- Added list of tags
+- Fixed various minor bugs
 
 
 Version 0.5
