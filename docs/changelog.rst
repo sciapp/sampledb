@@ -4,7 +4,7 @@ Changelog
 Version 0.6
 -----------
 
-Currently in development.
+Released on August 30th, 2019.
 
 - Added JupyterHub notebook templates
 - Added list of tags
