@@ -228,3 +228,24 @@ def test_add_user(flask_server, user_session, user):
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 1
     assert sampledb.logic.groups.get_user_groups(new_user.id)[0].id == group_id
+
+
+def test_delete_group(flask_server, user_session):
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
+
+    r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    delete_group_form = document.find('form', id='deleteGroupForm')
+    csrf_token = delete_group_form.find('input', {'name': 'csrf_token'})['value']
+    r = user_session.post(flask_server.base_url + 'groups/{}'.format(group_id), data={
+        'delete': 'delete',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 200
+    # Force reloading of objects
+    sampledb.db.session.rollback()
+
+    with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
+        sampledb.logic.groups.get_group(group_id)

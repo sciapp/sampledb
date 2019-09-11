@@ -23,6 +23,10 @@ class LeaveGroupForm(FlaskForm):
     pass
 
 
+class DeleteGroupForm(FlaskForm):
+    pass
+
+
 class InviteUserForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
 

@@ -8,7 +8,7 @@ import flask_login
 
 from .. import frontend
 from ... import logic
-from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm
+from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm, DeleteGroupForm
 from ...logic.security_tokens import verify_token
 
 
@@ -94,6 +94,7 @@ def group(group_id):
         leave_group_form = LeaveGroupForm()
         invite_user_form = InviteUserForm()
         edit_group_form = EditGroupForm()
+        delete_group_form = DeleteGroupForm()
         if edit_group_form.name.data is None:
             edit_group_form.name.data = group.name
         if edit_group_form.description.data is None:
@@ -143,11 +144,22 @@ def group(group_id):
                 else:
                     flask.flash('You have successfully left the group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
+        elif 'delete' in flask.request.form:
+            if delete_group_form.validate_on_submit():
+                try:
+                    logic.groups.delete_group(group_id)
+                except logic.errors.GroupDoesNotExistError:
+                    flask.flash('This group has already been deleted.', 'success')
+                    return flask.redirect(flask.url_for('.groups'))
+                else:
+                    flask.flash('You have successfully deleted the group.', 'success')
+                    return flask.redirect(flask.url_for('.groups'))
     else:
         if flask.request.method.lower() == 'post':
             return flask.abort(403)
         leave_group_form = None
         edit_group_form = None
         invite_user_form = None
+        delete_group_form = None
 
-    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, get_users=logic.users.get_users, get_user=logic.users.get_user, leave_group_form=leave_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)
+    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, get_users=logic.users.get_users, get_user=logic.users.get_user, leave_group_form=leave_group_form, delete_group_form=delete_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)

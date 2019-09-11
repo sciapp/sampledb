@@ -30,6 +30,12 @@
     <button type="submit" class="btn btn-danger" name="leave" value="leave">Leave Group</button>
   </form>
   {% endif %}
+  {% if delete_group_form %}
+  <form method="post" style="display: inline" action="{{ url_for('.group', group_id=group.id) }}" id="deleteGroupForm">
+    {{ leave_group_form.csrf_token() }}
+    <button type="submit" class="btn btn-danger" name="delete" value="delete">Delete Group</button>
+  </form>
+  {% endif %}
 
   {% if edit_group_form %}
   <div class="modal fade" id="editGroupModal" tabindex="-1" role="dialog" aria-labelledby="editGroupModalLabel">
