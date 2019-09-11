@@ -28,6 +28,14 @@ class DeleteProjectForm(FlaskForm):
     pass
 
 
+class RemoveProjectMemberForm(FlaskForm):
+    pass
+
+
+class RemoveProjectGroupForm(FlaskForm):
+    pass
+
+
 class OtherProjectIdForm(FlaskForm):
     project_id = IntegerField(
         validators=[InputRequired()]

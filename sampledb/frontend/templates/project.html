@@ -44,12 +44,25 @@
   <ul>
     {% for user_id in project_member_user_ids_and_permissions %}
       {% with user = get_user(user_id) %}
-        <li><i class="fa fa-user" aria-hidden="true"></i> <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a></li>
+        <li><i class="fa fa-user" aria-hidden="true"></i> <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>
+        {% if remove_project_member_form and user_id != current_user.id %}
+        <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectMember{{ user_id }}Form">
+          {{ remove_project_member_form.csrf_token() }}
+          <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">Remove</button>
+        </form>
+        {% endif %}
+        </li>
       {% endwith %}
     {% endfor %}
     {% for group_id in project_member_group_ids_and_permissions %}
       {% with group = get_group(group_id) %}
-        <li><i class="fa fa-users" aria-hidden="true"></i> <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name }}</a></li>
+        <li><i class="fa fa-users" aria-hidden="true"></i> <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name }}</a>
+        {% if remove_project_group_form %}
+        <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectGroup{{ group_id }}Form">
+          {{ remove_project_group_form.csrf_token() }}
+          <button type="submit" class="btn btn-danger btn-xs" name="remove_group" value="{{ group_id }}">Remove</button>
+        </form>
+        {% endif %}</li>
       {% endwith %}
     {% endfor %}
   </ul>

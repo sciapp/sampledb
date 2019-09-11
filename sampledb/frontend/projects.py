@@ -10,7 +10,7 @@ from . import frontend
 from .. import logic
 from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
@@ -102,6 +102,8 @@ def project(project_id):
     add_subproject_form = None
     remove_subproject_form = None
     delete_project_form = None
+    remove_project_member_form = None
+    remove_project_group_form = None
     addable_projects = []
     addable_project_ids = []
     if Permissions.GRANT in user_permissions:
@@ -117,6 +119,8 @@ def project(project_id):
         if child_project_ids:
             remove_subproject_form = RemoveSubprojectForm()
         delete_project_form = DeleteProjectForm()
+        remove_project_member_form = RemoveProjectMemberForm()
+        remove_project_group_form = RemoveProjectGroupForm()
 
     if 'leave' in flask.request.form and Permissions.READ in user_permissions:
         if leave_project_form.validate_on_submit():
@@ -146,6 +150,58 @@ def project(project_id):
             else:
                 flask.flash('You have successfully deleted the project.', 'success')
                 return flask.redirect(flask.url_for('.projects'))
+    if 'remove_member' in flask.request.form and Permissions.GRANT in user_permissions:
+        if remove_project_member_form.validate_on_submit():
+            member_id_str = flask.request.form['remove_member']
+            try:
+                member_id = int(member_id_str)
+            except ValueError:
+                flask.flash('The member ID was invalid. Please contact an administrator.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            if member_id == flask_login.current_user.id:
+                flask.flash('You cannot remove yourself from a project. Please press "Leave Project" instead.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            try:
+                logic.projects.remove_user_from_project(project_id=project_id, user_id=member_id)
+            except logic.errors.ProjectDoesNotExistError:
+                flask.flash('This project does not exist.', 'error')
+                return flask.redirect(flask.url_for('.projects'))
+            except logic.errors.UserDoesNotExistError:
+                return flask.abort(500)
+            except logic.errors.UserNotMemberOfProjectError:
+                flask.flash('This user is not a member of this project.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            except logic.errors.NoMemberWithGrantPermissionsForProjectError:
+                flask.flash('You cannot remove this users from this project, because they are the only user with GRANT permissions.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            else:
+                flask.flash('You have successfully removed this user from the project.', 'success')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+    if 'remove_group' in flask.request.form and Permissions.GRANT in user_permissions:
+        if remove_project_group_form.validate_on_submit():
+            group_id_str = flask.request.form['remove_group']
+            try:
+                group_id = int(group_id_str)
+            except ValueError:
+                flask.flash('The group ID was invalid. Please contact an administrator.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            try:
+                logic.projects.remove_group_from_project(project_id=project_id, group_id=group_id)
+            except logic.errors.ProjectDoesNotExistError:
+                flask.flash('This project does not exist.', 'error')
+                return flask.redirect(flask.url_for('.projects'))
+            except logic.errors.GroupDoesNotExistError:
+                flask.flash('This group does not exist.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            except logic.errors.GroupNotMemberOfProjectError:
+                flask.flash('This group is not a member of this project.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            except logic.errors.NoMemberWithGrantPermissionsForProjectError:
+                flask.flash('You cannot remove this group from this project, because they are the only group with GRANT permissions.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            else:
+                flask.flash('You have successfully removed this group from the project.', 'success')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'edit' in flask.request.form and Permissions.WRITE in user_permissions:
         show_edit_form = True
         if edit_project_form.validate_on_submit():
@@ -230,6 +286,8 @@ def project(project_id):
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
         leave_project_form=leave_project_form,
         delete_project_form=delete_project_form,
+        remove_project_member_form=remove_project_member_form,
+        remove_project_group_form=remove_project_group_form,
         edit_project_form=edit_project_form,
         show_edit_form=show_edit_form,
         invite_user_form=invite_user_form,
