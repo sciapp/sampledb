@@ -27,6 +27,10 @@ class DeleteGroupForm(FlaskForm):
     pass
 
 
+class RemoveGroupMemberForm(FlaskForm):
+    pass
+
+
 class InviteUserForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
 

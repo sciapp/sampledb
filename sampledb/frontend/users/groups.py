@@ -8,7 +8,7 @@ import flask_login
 
 from .. import frontend
 from ... import logic
-from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm, DeleteGroupForm
+from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm, DeleteGroupForm, RemoveGroupMemberForm
 from ...logic.security_tokens import verify_token
 
 
@@ -95,6 +95,7 @@ def group(group_id):
         invite_user_form = InviteUserForm()
         edit_group_form = EditGroupForm()
         delete_group_form = DeleteGroupForm()
+        remove_group_member_form = RemoveGroupMemberForm()
         if edit_group_form.name.data is None:
             edit_group_form.name.data = group.name
         if edit_group_form.description.data is None:
@@ -154,6 +155,28 @@ def group(group_id):
                 else:
                     flask.flash('You have successfully deleted the group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
+        elif 'remove_member' in flask.request.form:
+            if remove_group_member_form.validate_on_submit():
+                member_id_str = flask.request.form['remove_member']
+                try:
+                    member_id = int(member_id_str)
+                except ValueError:
+                    flask.flash('The member ID was invalid. Please contact an administrator.', 'error')
+                    return flask.redirect(flask.url_for('.group', group_id=group_id))
+                try:
+                    logic.groups.remove_user_from_group(group_id, member_id)
+                except logic.errors.GroupDoesNotExistError:
+                    flask.flash('This group does not exist.', 'error')
+                    return flask.redirect(flask.url_for('.groups'))
+                except logic.errors.UserDoesNotExistError:
+                    flask.flash('This user does not exist.', 'error')
+                    return flask.redirect(flask.url_for('.group', group_id=group_id))
+                except logic.errors.UserNotMemberOfGroupError:
+                    flask.flash('This user is not a member of this group.', 'success')
+                    return flask.redirect(flask.url_for('.group', group_id=group_id))
+                else:
+                    flask.flash('This user has been removed from this group.', 'success')
+                    return flask.redirect(flask.url_for('.group', group_id=group_id))
     else:
         if flask.request.method.lower() == 'post':
             return flask.abort(403)
@@ -161,5 +184,18 @@ def group(group_id):
         edit_group_form = None
         invite_user_form = None
         delete_group_form = None
+        remove_group_member_form = None
 
-    return flask.render_template('group.html', group=group, group_member_ids=group_member_ids, get_users=logic.users.get_users, get_user=logic.users.get_user, leave_group_form=leave_group_form, delete_group_form=delete_group_form, edit_group_form=edit_group_form, invite_user_form=invite_user_form, show_edit_form=show_edit_form)
+    return flask.render_template(
+        'group.html',
+        group=group,
+        group_member_ids=group_member_ids,
+        get_users=logic.users.get_users,
+        get_user=logic.users.get_user,
+        leave_group_form=leave_group_form,
+        delete_group_form=delete_group_form,
+        remove_group_member_form=remove_group_member_form,
+        edit_group_form=edit_group_form,
+        invite_user_form=invite_user_form,
+        show_edit_form=show_edit_form
+    )
