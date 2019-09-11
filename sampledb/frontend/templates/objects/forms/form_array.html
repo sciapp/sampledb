@@ -94,8 +94,9 @@
   </table>
   {% elif schema['items']['type'] == 'array' %}
   <table class="table">
-  {% set max_used_fields = [0] %}
+  {% set max_used_fields = 0 %}
   {% if data is not none %}
+    {% set max_used_fields = [0] %}
     {% for item in data %}
       {% if (item | length) > max_used_fields[-1] %}
         {% set tmp = max_used_fields.append(item | length) %}
