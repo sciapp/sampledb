@@ -396,6 +396,11 @@ def get_sub_data_and_schema(data, schema, id_prefix):
                 sub_schema = sub_schema['properties'][key]
             else:
                 raise ValueError('invalid type')
+            if isinstance(key, int):
+                while key >= len(sub_data):
+                    sub_data.append(generate_placeholder(sub_schema))
+            elif key not in sub_data:
+                sub_data[key] = generate_placeholder(sub_schema)
             sub_data = sub_data[key]
         if sub_schema['type'] != 'array':
             raise ValueError('invalid type')
