@@ -24,6 +24,10 @@ class LeaveProjectForm(FlaskForm):
     pass
 
 
+class DeleteProjectForm(FlaskForm):
+    pass
+
+
 class OtherProjectIdForm(FlaskForm):
     project_id = IntegerField(
         validators=[InputRequired()]

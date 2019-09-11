@@ -599,3 +599,23 @@ def test_add_user_to_parent_project_already_a_member(user):
     sampledb.logic.projects.add_user_to_project(project_id, user.id, permissions=sampledb.logic.object_permissions.Permissions.READ, other_project_ids=[parent_project_id])
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
     assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)
+
+
+def test_delete_project(flask_server, user_session):
+    project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
+
+    r = user_session.get(flask_server.base_url + 'projects/{}'.format(project_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    delete_project_form = document.find('form', id='deleteProjectForm')
+    csrf_token = delete_project_form.find('input', {'name': 'csrf_token'})['value']
+    r = user_session.post(flask_server.base_url + 'projects/{}'.format(project_id), data={
+        'delete': 'delete',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 200
+    # Force reloading of objects
+    sampledb.db.session.rollback()
+
+    assert len(sampledb.logic.projects.get_projects()) == 0

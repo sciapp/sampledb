@@ -10,7 +10,7 @@ from . import frontend
 from .. import logic
 from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
@@ -101,6 +101,7 @@ def project(project_id):
     parent_project_ids = logic.projects.get_parent_project_ids(project_id)
     add_subproject_form = None
     remove_subproject_form = None
+    delete_project_form = None
     addable_projects = []
     addable_project_ids = []
     if Permissions.GRANT in user_permissions:
@@ -115,6 +116,7 @@ def project(project_id):
             add_subproject_form = AddSubprojectForm()
         if child_project_ids:
             remove_subproject_form = RemoveSubprojectForm()
+        delete_project_form = DeleteProjectForm()
 
     if 'leave' in flask.request.form and Permissions.READ in user_permissions:
         if leave_project_form.validate_on_submit():
@@ -133,6 +135,16 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
             else:
                 flask.flash('You have successfully left the project.', 'success')
+                return flask.redirect(flask.url_for('.projects'))
+    if 'delete' in flask.request.form and Permissions.GRANT in user_permissions:
+        if delete_project_form.validate_on_submit():
+            try:
+                logic.projects.delete_project(project_id=project_id)
+            except logic.errors.ProjectDoesNotExistError:
+                flask.flash('This project has already been deleted.', 'success')
+                return flask.redirect(flask.url_for('.projects'))
+            else:
+                flask.flash('You have successfully deleted the project.', 'success')
                 return flask.redirect(flask.url_for('.projects'))
     if 'edit' in flask.request.form and Permissions.WRITE in user_permissions:
         show_edit_form = True
@@ -217,6 +229,7 @@ def project(project_id):
         project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
         leave_project_form=leave_project_form,
+        delete_project_form=delete_project_form,
         edit_project_form=edit_project_form,
         show_edit_form=show_edit_form,
         invite_user_form=invite_user_form,
