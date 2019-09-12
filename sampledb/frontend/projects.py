@@ -66,6 +66,13 @@ def project(project_id):
     show_edit_form = False
     project_member_user_ids_and_permissions = logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id, include_groups=False)
     project_member_group_ids_and_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id)
+
+    project_member_user_ids = list(project_member_user_ids_and_permissions.keys())
+    project_member_user_ids.sort(key=lambda user_id: logic.users.get_user(user_id).name.lower())
+
+    project_member_group_ids = list(project_member_group_ids_and_permissions.keys())
+    project_member_group_ids.sort(key=lambda group_id: logic.groups.get_group(group_id).name.lower())
+
     if Permissions.GRANT in user_permissions:
         invitable_user_list = []
         for user in logic.users.get_users():
@@ -282,6 +289,8 @@ def project(project_id):
         get_group=logic.groups.get_group,
         get_project=logic.projects.get_project,
         project=project,
+        project_member_user_ids=project_member_user_ids,
+        project_member_group_ids=project_member_group_ids,
         project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
         leave_project_form=leave_project_form,

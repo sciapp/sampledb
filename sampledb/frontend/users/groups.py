@@ -86,6 +86,7 @@ def group(group_id):
     except logic.errors.GroupDoesNotExistError:
         flask.flash('This group does not exist.', 'error')
         return flask.abort(404)
+    group_member_ids.sort(key=lambda user_id: logic.users.get_user(user_id).name.lower())
     user_is_member = flask_login.current_user.id in group_member_ids
     group = logic.groups.get_group(group_id)
     show_edit_form = False
