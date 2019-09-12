@@ -14,7 +14,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users, groups, projects, object_permissions
+from ...logic import errors, users, groups, projects, object_permissions, locations
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -72,7 +72,7 @@ def notifications(user_id):
                     mark_notification_as_read(notification.id)
                 except errors.NotificationDoesNotExistError:
                     continue
-        flask.flash('The notifications have been marked as unread.', 'success')
+        flask.flash('The notifications have been marked as read.', 'success')
         return flask.redirect(flask.url_for('.notifications', user_id=user_id))
 
     if delete_notification_form.validate_on_submit():
@@ -120,6 +120,7 @@ def notifications(user_id):
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
         Permissions=object_permissions.Permissions,
+        object_location_assignment_is_confirmed=lambda object_location_assignment_id: locations.get_object_location_assignment(object_location_assignment_id).confirmed,
         datetime=datetime
     )
 

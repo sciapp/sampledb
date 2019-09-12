@@ -12,6 +12,7 @@ import flask
 import flask_mail
 
 from . import errors, users, objects, groups, projects
+from .. import logic
 from ..models import notifications
 from ..models.notifications import NotificationType, NotificationMode
 from .. import db
@@ -39,26 +40,50 @@ class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_i
         )
 
 
-def get_notifications(user_id: int, unread_only: bool = False) -> typing.List[Notification]:
+def get_notifications(user_id: int, unread_only: bool = False, _additional_filters: typing.Sequence[typing.Any] = ()) -> typing.List[Notification]:
     """
     Get all (unread) notifications for a given user.
 
     :param user_id: the ID of an existing user
     :param unread_only: whether only unread notifications should be returned
+    :param _additional_filters: additional filters for the notification query
     :return: a list of (unread) notifications
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
     # ensure the user exists
     users.get_user(user_id)
+    query = notifications.Notification.query.filter_by(user_id=user_id)
     if unread_only:
-        db_notifications = notifications.Notification.query.filter_by(user_id=user_id, was_read=False).order_by(notifications.Notification.utc_datetime.desc()).all()
-    else:
-        db_notifications = notifications.Notification.query.filter_by(user_id=user_id).order_by(notifications.Notification.utc_datetime.desc()).all()
+        query = query.filter_by(was_read=False)
+    for additional_filter in _additional_filters:
+        query = additional_filter(query)
+    query = query.order_by(notifications.Notification.utc_datetime.desc())
+    db_notifications = query.all()
     return [
         Notification.from_database(notification)
         for notification in db_notifications
     ]
+
+
+def get_notifications_by_type(user_id: int, notification_type: NotificationType, unread_only: bool = False) -> typing.List[Notification]:
+    """
+    Get all (unread) notifications of a given type for a given user.
+
+    :param user_id: the ID of an existing user
+    :param notification_type: the type of notification to return
+    :param unread_only: whether only unread notifications should be returned
+    :return: a list of (unread) notifications
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    """
+    return get_notifications(
+        user_id=user_id,
+        unread_only=unread_only,
+        _additional_filters=[
+            lambda query, notification_type=notification_type: query.filter_by(type=notification_type)
+        ]
+    )
 
 
 def get_num_notifications(user_id: int, unread_only: bool = False) -> int:
@@ -184,6 +209,27 @@ def mark_notification_as_read(notification_id: int) -> None:
         db.session.commit()
 
 
+def mark_notification_for_being_assigned_as_responsible_user_as_read(user_id: int, object_location_assignment_id: int) -> None:
+    """
+    Mark notifications for an object location assignment as having been read.
+
+    :param user_id: the ID of an existing user
+    :param object_location_assignment_id: the object location assignment ID
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.NotificationDoesNotExist: when no notification with the
+        given notification ID exists
+    """
+    unread_notifications = get_notifications_by_type(
+        user_id=user_id,
+        notification_type=NotificationType.ASSIGNED_AS_RESPONSIBLE_USER,
+        unread_only=True
+    )
+    for notification in unread_notifications:
+        if notification.data.get('object_location_assignment_id', None) == object_location_assignment_id:
+            mark_notification_as_read(notification.id)
+
+
 def delete_notification(notification_id: int) -> None:
     """
     Delete a notification.
@@ -294,28 +340,33 @@ def create_other_notification(user_id: int, message: str) -> None:
     )
 
 
-def create_notification_for_being_assigned_as_responsible_user(user_id: int, object_id: int, assigner_id: int) -> None:
+def create_notification_for_being_assigned_as_responsible_user(object_location_assignment_id: int) -> None:
     """
     Create a notification of type ASSIGNED_AS_RESPONSIBLE_USER.
 
-    :param user_id: the ID of an existing user
-    :param object_id: the ID of an existing object
-    :param assigner_id: the ID of who assigned this user as responsible user
-    :raise errors.UserDoesNotExistError: when no user with the given user ID
-        or assigner ID exists
-    :raise errors.ObjectDoesNotExistError: when no object with the given
-        object ID exists
+    :param object_location_assignment_id: the ID of an existing object location
+        assignment
+    :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
+        location assignment with the given object location assignment ID exists
     """
-    # ensure the object exists
-    objects.get_object(object_id)
-    # ensure the assigner exists
-    users.get_user(assigner_id)
+    object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
+    confirmation_url = flask.url_for(
+        'frontend.accept_responsibility_for_object',
+        t=logic.security_tokens.generate_token(
+            object_location_assignment_id,
+            salt='confirm_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
     _create_notification(
         type=NotificationType.ASSIGNED_AS_RESPONSIBLE_USER,
-        user_id=user_id,
+        user_id=object_location_assignment.responsible_user_id,
         data={
-            'object_id': object_id,
-            'assigner_id': assigner_id
+            'object_id': object_location_assignment.object_id,
+            'assigner_id': object_location_assignment.user_id,
+            'object_location_assignment_id': object_location_assignment_id,
+            'confirmation_url': confirmation_url
         }
     )
 

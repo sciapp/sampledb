@@ -713,6 +713,18 @@ def object(object_id):
                 else:
                     notebook_template['params'][parameter] = None
 
+        def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
+            confirmation_url = flask.url_for(
+                'frontend.accept_responsibility_for_object',
+                t=logic.security_tokens.generate_token(
+                    object_location_assignment_id,
+                    salt='confirm_responsibility',
+                    secret_key=flask.current_app.config['SECRET_KEY']
+                ),
+                _external=True
+            )
+            return confirmation_url
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -758,6 +770,7 @@ def object(object_id):
             get_user=get_user,
             get_location=get_location,
             object_location_assignments=get_object_location_assignments(object_id),
+            build_object_location_assignment_confirmation_url=build_object_location_assignment_confirmation_url,
             user_may_assign_location=user_may_edit,
             location_form=location_form
         )
