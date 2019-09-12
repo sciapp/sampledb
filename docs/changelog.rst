@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.7
+-----------
+
+Current in development.
+
+- Allow deleting groups and projects
+- Allow group and project member removal
+
+
 Version 0.6
 -----------
 

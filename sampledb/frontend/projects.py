@@ -174,7 +174,8 @@ def project(project_id):
                 flask.flash('This project does not exist.', 'error')
                 return flask.redirect(flask.url_for('.projects'))
             except logic.errors.UserDoesNotExistError:
-                return flask.abort(500)
+                flask.flash('This user does not exist.', 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
             except logic.errors.UserNotMemberOfProjectError:
                 flask.flash('This user is not a member of this project.', 'error')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
