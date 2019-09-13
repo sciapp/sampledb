@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 0.7
+-----------
+
+Released on September 13th, 2019.
+
+- Allow deleting groups and projects
+- Allow group and project member removal
+- Allow users to accept responsibility assignments
+- Fixed various minor bugs
+
+
 Version 0.6
 -----------
 

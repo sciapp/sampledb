@@ -528,3 +528,11 @@ th:hover .search-helper {
 .object-pagination > li:last-child::after {
     content: '';
 }
+
+.label-responsibility-assigment {
+    min-width:20px;
+    min-height:20px;
+    display: inline-block;
+    padding: 6px 0 0 0;
+    cursor: default;
+}

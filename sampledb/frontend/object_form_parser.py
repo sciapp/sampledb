@@ -8,6 +8,7 @@ import pint
 from ..logic import schemas
 from ..logic.units import ureg
 from ..logic.errors import ValidationError
+from ..logic.schemas.generate_placeholder import generate_placeholder
 
 
 def form_data_parser(func):
@@ -56,8 +57,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__text']:
         raise ValueError('invalid text form data')
-    text = form_data.get(id_prefix + '__text', [''])[0]
-    if not text and not required:
+    text = form_data.get(id_prefix + '__text', [None])[0]
+    if text is None and not required:
         return None
     data = {
         '_type': 'text',
@@ -242,6 +243,23 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
             else:
                 item_id_prefix = id_prefix + '__{}'.format(i)
                 items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors))
+        if None in items:
+            # use a placeholder if form_data had no (valid) information on an
+            # item, otherwise items would not be a valid array and the form
+            # could not be submitted at all
+            # if there is no valid placeholder, skip the missing items
+            placeholder = generate_placeholder(item_schema)
+            if placeholder is None:
+                items = [
+                    item
+                    for item in items
+                    if item is not None
+                ]
+            else:
+                items = [
+                    placeholder if item is None else item
+                    for item in items
+                ]
     schemas.validate(items, schema)
     return items
 

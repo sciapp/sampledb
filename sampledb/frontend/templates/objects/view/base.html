@@ -417,7 +417,20 @@
       <tr>
         <td>{{ object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
         <td>{% if object_location_assignment.location_id is not none %}<a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name }} (#{{ object_location_assignment.location_id }})</a>{% else %}&mdash;{% endif %}</td>
-        <td>{% if object_location_assignment.responsible_user_id is not none %}<a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>
+          {% if object_location_assignment.responsible_user_id is not none %}
+          <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>
+            {% if object_location_assignment.confirmed %}
+              <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="The user has confirmed this responsibility assignment.">&check;</span>
+            {% elif object_location_assignment.responsible_user_id == current_user.id %}
+              <a class="btn btn-xs btn-primary" href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">Confirm</a>
+            {% else %}
+              <span class="label label-warning label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="The user has not confirmed this responsibility assignment yet.">?</span>
+            {% endif %}
+          {% else %}
+            &mdash;
+          {% endif %}
+        </td>
         <td><a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">{{ get_user(object_location_assignment.user_id).name }}</a></td>
         <td><pre class="location-description">{{ object_location_assignment.description }}</pre></td>
       </tr>

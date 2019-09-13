@@ -3,5 +3,8 @@
 
 {% block message %}
 {{ get_user(data['assigner_id']).name }} (#{{ data['assigner_id'] }}) assigned you as responsible user for object #{{ data['object_id'] }}:
-{{ url_for('.object', object_id=data['object_id'], _external=True) }}
+{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}
+
+To confirm this responsibility assignment, please visit the following URL in your browser:
+{{ data['confirmation_url'] }}
 {% endblock %}

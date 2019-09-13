@@ -41,7 +41,7 @@
             <td>{{ notification.utc_datetime.strftime('%Y-%m-%d') }}</td>
             <td>
               {% if notification.type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER %}
-                <a href="{{ url_for('.user_profile', user_id=notification.data['assigner_id']) }}">{{ get_user(notification.data['assigner_id']).name }}</a> assigned you as responsible user for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>.
+                <a href="{{ url_for('.user_profile', user_id=notification.data['assigner_id']) }}">{{ get_user(notification.data['assigner_id']).name }}</a> assigned you as responsible user for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>. {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed(notification.data['object_location_assignment_id']) %}<a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">Confirm</a>{% endif %}
               {% elif notification.type == NotificationType.OTHER %}
                 {{ notification.data['message'] }}
               {% elif notification.type == NotificationType.INVITED_TO_GROUP %}
