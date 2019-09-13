@@ -25,6 +25,11 @@ def run(db):
         ADD confirmed BOOLEAN
     """)
     db.session.execute("""
+        UPDATE object_location_assignments
+        SET confirmed = FALSE
+        WHERE confirmed IS NULL
+    """)
+    db.session.execute("""
         ALTER TABLE object_location_assignments
         ALTER COLUMN confirmed SET NOT NULL
     """)
