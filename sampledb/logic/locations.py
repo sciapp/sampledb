@@ -36,13 +36,13 @@ class Location(collections.namedtuple('Location', ['id', 'name', 'description', 
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id'])):
+class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id', 'confirmed'])):
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
 
-    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime, responsible_user_id: int):
-        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id)
+    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime, responsible_user_id: int, confirmed: bool):
+        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed)
         return self
 
     @classmethod
@@ -54,7 +54,8 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             responsible_user_id=object_location_assignment.responsible_user_id,
             user_id=object_location_assignment.user_id,
             description=object_location_assignment.description,
-            utc_datetime=object_location_assignment.utc_datetime
+            utc_datetime=object_location_assignment.utc_datetime,
+            confirmed=object_location_assignment.confirmed
         )
 
 
@@ -213,21 +214,21 @@ def assign_location_to_object(object_id: int, location_id: typing.Optional[int],
         get_location(location_id)
     # ensure the user exists
     users.get_user(user_id)
-    if responsible_user_id is not None:
-        # ensure the responsible user exists
-        users.get_user(responsible_user_id)
-        if user_id != responsible_user_id:
-            create_notification_for_being_assigned_as_responsible_user(responsible_user_id, object_id, user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
         object_id=object_id,
         location_id=location_id,
         responsible_user_id=responsible_user_id,
         user_id=user_id,
         description=description,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.utcnow(),
+        confirmed=(user_id == responsible_user_id)
     )
     db.session.add(object_location_assignment)
     db.session.commit()
+    if responsible_user_id is not None:
+        users.get_user(responsible_user_id)
+        if user_id != responsible_user_id:
+            create_notification_for_being_assigned_as_responsible_user(object_location_assignment.id)
     object_log.assign_location(user_id, object_id, object_location_assignment.id)
     user_log.assign_location(user_id, object_location_assignment.id)
 
@@ -301,3 +302,18 @@ def get_object_ids_at_location(location_id: int) -> typing.Set[int]:
         if get_current_object_location_assignment(object_id).location_id == location_id:
             object_ids.add(object_id)
     return object_ids
+
+
+def confirm_object_responsibility(object_location_assignment_id: int) -> None:
+    """
+    Confirm an object location assignment.
+
+    :param object_location_assignment_id: the ID of an existing object location
+        assignment
+    :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
+        location assignment with the given object location assignment ID exists
+    """
+    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
+    object_location_assignment.confirmed = True
+    db.session.add(object_location_assignment)
+    db.session.commit()

@@ -35,6 +35,9 @@ def scroll_to(driver, x, y):
     var head = document.getElementsByTagName('head')[0];
     head.appendChild(style);
     """)
+    return driver.execute_script("""
+    return window.pageYOffset;
+    """)
 
 
 def resize_for_screenshot(driver, width, height):
@@ -154,8 +157,9 @@ def comments(base_url, driver, object):
             break
     else:
         assert False
+    y_offset = scroll_to(driver, 0, heading.location['y'])
     comment_form = driver.find_element_by_id('new-comment-form')
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/comments.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, comment_form.location['y'] + comment_form.rect['height'])))
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/comments.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, comment_form.location['y'] + comment_form.rect['height']) - y_offset))
 
 
 def activity_log(base_url, driver, object):
@@ -173,8 +177,9 @@ def activity_log(base_url, driver, object):
             break
     else:
         assert False
+    y_offset = scroll_to(driver, 0, heading.location['y'])
     activity_log = driver.find_element_by_id('activity_log')
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, activity_log.location['y'] + activity_log.rect['height'])))
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, activity_log.location['y'] + activity_log.rect['height']) - y_offset))
 
 
 def locations(base_url, driver, object):
@@ -194,8 +199,9 @@ def locations(base_url, driver, object):
             break
     else:
         assert False
+    y_offset = scroll_to(driver, 0, heading.location['y'])
     location_form = driver.find_element_by_id('assign-location-form')
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height'])))
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height']) - y_offset))
 
 
 def unread_notification_icon(base_url, driver):
@@ -234,7 +240,8 @@ def files(base_url, driver, object):
             break
     else:
         assert False
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/files.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, form_group.location['y'] + form_group.rect['height'])))
+    y_offset = scroll_to(driver, 0, heading.location['y'])
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/files.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, form_group.location['y'] + form_group.rect['height']) - y_offset))
 
 
 def file_information(base_url, driver, object):

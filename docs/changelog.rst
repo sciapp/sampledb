@@ -8,6 +8,8 @@ Current in development.
 
 - Allow deleting groups and projects
 - Allow group and project member removal
+- Allow users to accept responsibility assignments
+- Fixed various minor bugs
 
 
 Version 0.6

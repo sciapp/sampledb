@@ -12,7 +12,9 @@ import typing
 
 from . import frontend
 from ..logic import errors
-from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location
+from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility
+from ..logic.security_tokens import verify_token
+from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read
 
 
 class LocationForm(FlaskForm):
@@ -75,6 +77,37 @@ def new_location():
         except errors.LocationDoesNotExistError:
             flask.flash('The requested parent location does not exist.', 'error')
     return _show_location_form(None, parent_location)
+
+
+@frontend.route('/locations/confirm_responsibility')
+@flask_login.login_required
+def accept_responsibility_for_object():
+    token = flask.request.args.get('t', None)
+    if token is None:
+        flask.flash('The confirmation token is missing.', 'error')
+        return flask.redirect(flask.url_for('.index'))
+    object_location_assignment_id = verify_token(token, salt='confirm_responsibility', secret_key=flask.current_app.config['SECRET_KEY'], expiration=None)
+    if object_location_assignment_id is None:
+        flask.flash('The confirmation token is invalid.', 'error')
+        return flask.redirect(flask.url_for('.index'))
+    try:
+        object_location_assignment = get_object_location_assignment(object_location_assignment_id)
+    except errors.ObjectLocationAssignmentDoesNotExistError:
+        flask.flash('This responsibility assignment does not exist.', 'error')
+        return flask.redirect(flask.url_for('.index'))
+    if object_location_assignment.responsible_user_id != flask_login.current_user.id:
+        flask.flash('This responsibility assignment belongs to another user.', 'error')
+        return flask.redirect(flask.url_for('.index'))
+    if object_location_assignment.confirmed:
+        flask.flash('This responsibility assignment has already been confirmed.', 'success')
+    else:
+        confirm_object_responsibility(object_location_assignment_id)
+        flask.flash('You have successfully confirmed this responsibility assignment.', 'success')
+        mark_notification_for_being_assigned_as_responsible_user_as_read(
+            user_id=flask_login.current_user.id,
+            object_location_assignment_id=object_location_assignment_id
+        )
+    return flask.redirect(flask.url_for('.object', object_id=object_location_assignment.object_id))
 
 
 def _sort_location_ids_by_name(location_ids: typing.Iterable[int], location_map: typing.Dict[int, Location]) -> typing.List[int]:

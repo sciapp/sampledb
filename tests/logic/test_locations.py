@@ -10,14 +10,16 @@ import sampledb
 from sampledb.models import User, UserType, UserLogEntryType, Action, ActionType, Object, ObjectLogEntryType
 from sampledb.logic import locations, objects, actions, user_log, errors, object_log
 
-from ..test_utils import app_context
+from ..test_utils import app_context, app
 
 
 @pytest.fixture
-def user():
-    user = User(name='User', email="example@fz-juelich.de", type=UserType.PERSON)
-    sampledb.db.session.add(user)
-    sampledb.db.session.commit()
+def user(app):
+    with app.app_context():
+        user = User(name='User', email="example@fz-juelich.de", type=UserType.PERSON)
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        assert user.id is not None
     return user
 
 
@@ -220,3 +222,17 @@ def test_object_ids_for_location(user: User, action: Action):
     locations.assign_location_to_object(object3.id, location2.id, user.id, user.id, "")
     assert locations.get_object_ids_at_location(location1.id) == {object1.id, object2.id}
     assert locations.get_object_ids_at_location(location2.id) == {object3.id}
+
+
+def test_object_responsibility_confirmation(user: User, object: Object, app):
+    other_user = User(name='Other User', email="example@fz-juelich.de", type=UserType.PERSON)
+    sampledb.db.session.add(other_user)
+    sampledb.db.session.commit()
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        locations.assign_location_to_object(object.id, None, user.id, other_user.id, "")
+    object_location_assignment = locations.get_current_object_location_assignment(object.id)
+    assert not object_location_assignment.confirmed
+    locations.confirm_object_responsibility(object_location_assignment.id)
+    object_location_assignment = locations.get_current_object_location_assignment(object.id)
+    assert object_location_assignment.confirmed

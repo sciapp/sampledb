@@ -51,6 +51,8 @@ Activity Log
 
 Users can view their or other users' activities in |service_name|, as far as these are related to objects they have permissions for. This can be useful, e.g. for quickly finding objects they've created.
 
+.. _notifications:
+
 Notifications
 -------------
 
