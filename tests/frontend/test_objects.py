@@ -1161,3 +1161,117 @@ def test_copy_object(flask_server, user):
         assert object_log_entries[0].data == {
             'previous_object_id': object.id
         }
+
+
+def test_edit_empty_nested_array(flask_server, user):
+    schema = {
+        "type": "object",
+        "title": "Nested Array Test",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Sample Name",
+                "default": "",
+                "maxLength": 100,
+                "minLength": 1
+            },
+            "nested_array": {
+                "type": "array",
+                "title": "Nested Array",
+                "style": "table",
+                "minItems": 0,
+                "items": {
+                    "type": "array",
+                    "title": "Entry",
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "items": {
+                        "type": "text",
+                        "title": "",
+                        "minLength": 0,
+                        "multiline": True
+                    }
+                }
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "nested_array"],
+        "displayProperties": []
+    }
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    object = sampledb.logic.objects.create_object(
+        data={"name": {"text": "Test", "_type": "text"}},
+        user_id=user.id,
+        action_id=action.id
+    )
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'})
+    assert r.status_code == 200
+
+
+def test_edit_nested_array(flask_server, user):
+    schema = {
+        "type": "object",
+        "title": "Nested Array Test",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Sample Name",
+                "default": "",
+                "maxLength": 100,
+                "minLength": 1
+            },
+            "nested_array": {
+                "type": "array",
+                "title": "Nested Array",
+                "style": "table",
+                "minItems": 0,
+                "items": {
+                    "type": "array",
+                    "title": "Entry",
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "items": {
+                        "type": "text",
+                        "title": "",
+                        "minLength": 0,
+                        "multiline": True
+                    }
+                }
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "nested_array"],
+        "displayProperties": []
+    }
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    object = sampledb.logic.objects.create_object(
+        data={"name": {"text": "Test", "_type": "text"}},
+        user_id=user.id,
+        action_id=action.id
+    )
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'})
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    previous_actions = document.find('input', {'name': 'previous_actions'})['value']
+    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_object__nested_array__?__add': 'action_object__nested_array__?__add'}
+    r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data)
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    previous_actions = document.find('input', {'name': 'previous_actions'})['value']
+    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_object__nested_array__?__add': 'action_object__nested_array__?__add'}
+    r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data)
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    previous_actions = document.find('input', {'name': 'previous_actions'})['value']
+    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_submit': 'action_submit'}
+    r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data, allow_redirects=False)
+    assert r.status_code == 302
