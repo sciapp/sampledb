@@ -4,7 +4,7 @@ Changelog
 Version 0.7
 -----------
 
-Current in development.
+Released on September 13th, 2019.
 
 - Allow deleting groups and projects
 - Allow group and project member removal
