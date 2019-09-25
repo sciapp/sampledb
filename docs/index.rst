@@ -18,6 +18,7 @@ User Guide
     user_guide/instruments.rst
     user_guide/actions.rst
     user_guide/objects.rst
+    user_guide/citations.rst
 
 Developer Guide
 ---------------
