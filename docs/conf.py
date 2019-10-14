@@ -11,7 +11,7 @@ sys.path.insert(0, base_dir)
 # Project information
 
 service_name = 'iffSamples'
-service_description = 'iffSamples is the sample and measurement metadata database at PGI and JCNS.'
+service_description = 'SampleDB is a web-based sample and measurement metadata database developed at PGI and JCNS. Scientists can use SampleDB to store and retrieve information on samples, measurements and simulations, analyze them using Jupyter notebooks, track sample locations and responsibilities and view sample lifecycles. As a tool for reproducible and sustainable science, it facilitates long-term storage of research data with clear benefits to scientists, interfaces with dedicated JupyterHub instances and can be integrated in instrument systems to automate data entry. A schema system allows users to store and search even complex types of metadata, and the powerful permission system ensures that information stays secure while simplifying collaboration with external users.'
 service_url = 'https://iffsamples.fz-juelich.de'
 service_imprint = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
 contact_email = 'f.rhiem@fz-juelich.de'
