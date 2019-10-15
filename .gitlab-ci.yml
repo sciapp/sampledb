@@ -14,7 +14,7 @@ test:
   stage: test
   image: ubuntu:18.04
   services:
-    - postgres:latest
+    - postgres:11
   script:
     - apt-get update
     # set up Python 3.6
