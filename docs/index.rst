@@ -1,7 +1,9 @@
 |service_name|
 ==============
 
-|service_description| You can access |service_name| at |service_url|.
+|service_description|
+
+You can access |service_name| at |service_url|.
 
 .. note::
     Both |service_name| and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know`_.
