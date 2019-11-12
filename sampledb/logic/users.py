@@ -11,6 +11,8 @@ from .. models import User, UserType
 
 
 def get_user(user_id: int) -> User:
+    if user_id is None:
+        raise TypeError("user_id must be int")
     user = User.query.get(user_id)
     if user is None:
         raise errors.UserDoesNotExistError()

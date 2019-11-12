@@ -24,8 +24,7 @@ def test_success():
     assert True
 
 
-@pytest.fixture
-def flask_server(app):
+def create_flask_server(app):
     if not getattr(app, 'has_shutdown_route', False):
         @app.route('/shutdown', methods=['POST'])
         def shutdown():
@@ -51,7 +50,11 @@ def flask_server(app):
 
 
 @pytest.fixture
-def app():
+def flask_server(app):
+    yield from create_flask_server(app)
+
+
+def create_app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
     os.environ['FLASK_ENV'] = 'development'
     os.environ['FLASK_TESTING'] = 'True'
@@ -70,6 +73,11 @@ def app():
         return ''
 
     return sampledb_app
+
+
+@pytest.fixture
+def app():
+    return create_app()
 
 
 @pytest.fixture(autouse=True)

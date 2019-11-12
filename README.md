@@ -1,5 +1,4 @@
 # SampleDB
-[![build status](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/badges/master/build.svg)](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/commits/master) [![coverage report](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/badges/master/coverage.svg)](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/commits/master)
 
 SampleDB is a web-based sample and measurement metadata database developed at PGI and JCNS.
 
