@@ -7,6 +7,8 @@ Version 0.8
 Currently in development.
 
 - Added search to group and project dialogs
+- Fixed various minor bugs
+
 
 Version 0.7
 -----------
