@@ -4,7 +4,7 @@ Changelog
 Version 0.8
 -----------
 
-Currently in development.
+Released on November 12th, 2019.
 
 - Added search to group and project dialogs
 - Fixed various minor bugs
