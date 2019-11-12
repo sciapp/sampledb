@@ -66,10 +66,11 @@ html_theme_options = {
     'body_text_align': 'justify',
     'show_powered_by': False,
     'extra_nav_links': {
-        service_name: service_url,
-        'PGI/JCNS-TA': 'https://pgi-jcns.fz-juelich.de',
+        'Source Code': 'https://github.com/sciapp/sampledb',
+        'Issues': 'https://github.com/sciapp/sampledb/issues',
         'Contact': 'mailto:{}'.format(contact_email),
         'Imprint': service_imprint,
+        'PGI/JCNS-TA': 'https://pgi-jcns.fz-juelich.de',
     }
 }
 
