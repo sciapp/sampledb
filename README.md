@@ -1,5 +1,4 @@
 # SampleDB
-[![build status](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/badges/master/build.svg)](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/commits/master) [![coverage report](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/badges/master/coverage.svg)](https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/commits/master)
 
 SampleDB is a web-based sample and measurement metadata database developed at PGI and JCNS.
 
@@ -15,7 +14,7 @@ To use locally simply install the dependencies via
 pip install -r requirements.txt
 ```
 
-and then run
+set the [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html), and then run
 
 ```
 python -m sampledb run

@@ -271,7 +271,7 @@ def get_objects_with_permissions(
         objects.Objects._current_table.c.user_id,
         objects.Objects._current_table.c.utc_datetime
     )
-    table = sqlalchemy.sql.Alias(stmt)
+    table = sqlalchemy.sql.alias(stmt)
 
     parameters = {
         'min_permissions_int': permissions.value,
