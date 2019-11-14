@@ -14,7 +14,7 @@ To use locally simply install the dependencies via
 pip install -r requirements.txt
 ```
 
-and then run
+set the [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html), and then run
 
 ```
 python -m sampledb run
