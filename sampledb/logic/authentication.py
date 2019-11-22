@@ -3,7 +3,7 @@ import typing
 
 
 from .. import logic, db
-from .ldap import validate_user, create_user_from_ldap
+from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
 from ..models import Authentication, AuthenticationType, User
 from . import errors
 
@@ -114,7 +114,7 @@ def login(login: str, password: str) -> typing.Optional[User]:
     for authentication_method in authentication_methods:
         if not authentication_method.confirmed:
             continue
-        if authentication_method.type == AuthenticationType.LDAP:
+        if authentication_method.type == AuthenticationType.LDAP and is_ldap_configured():
             if validate_user(login, password):
                 return authentication_method.user
         elif authentication_method.type in {AuthenticationType.EMAIL, AuthenticationType.OTHER}:
@@ -122,7 +122,7 @@ def login(login: str, password: str) -> typing.Optional[User]:
                 return authentication_method.user
 
     # no matching authentication method in db
-    if not authentication_methods and '@' not in login:
+    if not authentication_methods and '@' not in login and is_ldap_configured():
         # try to authenticate against ldap, if login is no email
         if not validate_user(login, password):
             return None

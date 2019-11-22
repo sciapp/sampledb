@@ -1,9 +1,10 @@
 import pytest
+import flask
 
 import sampledb
 import sampledb.models
 
-from sampledb.logic.errors import NoEmailInLDAPAccountError
+from sampledb.logic.errors import NoEmailInLDAPAccountError, LDAPNotConfiguredError
 
 from ..test_utils import app_context, flask_server, app
 
@@ -48,3 +49,13 @@ def test_validate_user(app):
     assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
 
 
+def test_is_ldap_configured():
+    assert sampledb.logic.ldap.is_ldap_configured()
+    ldap_server = flask.current_app.config['LDAP_SERVER']
+    flask.current_app.config['LDAP_SERVER'] = ''
+    assert not sampledb.logic.ldap.is_ldap_configured()
+    with pytest.raises(LDAPNotConfiguredError):
+        sampledb.logic.ldap.validate_user('', '')
+    with pytest.raises(LDAPNotConfiguredError):
+        sampledb.logic.ldap.create_user_from_ldap('')
+    flask.current_app.config['LDAP_SERVER'] = ldap_server
