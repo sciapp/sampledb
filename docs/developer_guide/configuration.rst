@@ -16,6 +16,8 @@ When running a SampleDB installation, you can set the the following environment 
      - A short description of the service
    * - SAMPLEDB_SERVICE_IMPRINT
      - The URL to use for the imprint link
+   * - SAMPLEDB_SERVICE_PRIVACY_POLICY
+     - The URL to use for the privacy policy link
    * - SAMPLEDB_MAIL_SERVER
      - The mail server used for outbound emails
    * - SAMPLEDB_MAIL_SENDER
