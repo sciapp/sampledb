@@ -8,7 +8,33 @@ This configuration is the pure base, representing defaults. These values may be 
 - environment variables starting with the prefix SAMPLEDB_ will further override any hardcoded configuration data.
 """
 
+import typing
+import sys
+
 from .utils import generate_secret_key, load_environment_configuration
+
+REQUIRED_CONFIG_KEYS: typing.Set[str] = {
+    'SQLALCHEMY_DATABASE_URI',
+    'MAIL_SERVER',
+    'MAIL_SENDER',
+    'CONTACT_EMAIL',
+}
+
+LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
+    'LDAP_NAME',
+    'LDAP_SERVER',
+    'LDAP_USER_BASE_DN',
+    'LDAP_UID_FILTER',
+    'LDAP_NAME_ATTRIBUTE',
+    'LDAP_MAIL_ATTRIBUTE',
+    'LDAP_OBJECT_DEF',
+    'LDAP_USER_DN',
+    'LDAP_PASSWORD',
+}
+
+JUPYTERHUB_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
+    'JUPYTERHUB_URL'
+}
 
 
 def use_environment_configuration(env_prefix):
@@ -18,6 +44,70 @@ def use_environment_configuration(env_prefix):
     config = load_environment_configuration(env_prefix)
     for name, value in config.items():
         globals()[name] = value
+
+
+def check_config(config: typing.Mapping[str, typing.Any]) -> None:
+    """
+    Check whether all neccessary configuration values are set.
+
+    Print a warning if missing values will lead to reduced functionality.
+    Exit if missing values will prevent SampleDB from working correctly.
+
+    :param config: the config mapping
+    """
+    defined_config_keys = {
+        key
+        for key, value in config.items()
+        if value is not None
+    }
+
+    show_config_info = False
+    can_run = True
+
+    missing_config_keys = REQUIRED_CONFIG_KEYS - defined_config_keys
+
+    if missing_config_keys:
+        print(
+            'Missing required configuration values:\n -',
+            '\n - '.join(missing_config_keys),
+            '\n',
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
+
+    missing_config_keys = LDAP_REQUIRED_CONFIG_KEYS - defined_config_keys
+    if missing_config_keys:
+        print(
+            'LDAP authentication will be disabled, because the following '
+            'configuration values are missing:\n -',
+            '\n - '.join(missing_config_keys),
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    missing_config_keys = JUPYTERHUB_REQUIRED_CONFIG_KEYS - defined_config_keys
+    if missing_config_keys:
+        print(
+            'JupyterHub integration will be disabled, because the following '
+            'configuration values are missing:\n -',
+            '\n - '.join(missing_config_keys),
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    if show_config_info:
+        print(
+            'For more information on setting SampleDB configuration, see: '
+            'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
+            'developer_guide/configuration.html',
+            file=sys.stderr
+        )
+
+    if not can_run:
+        exit(1)
 
 
 # prefix for all routes (used by run script)
@@ -50,15 +140,15 @@ LDAP_USER_DN = None
 LDAP_PASSWORD = None
 
 # email settings
-MAIL_SERVER = 'mail.fz-juelich.de'
-MAIL_SENDER = 'iffsamples@fz-juelich.de'
+MAIL_SERVER = None
+MAIL_SENDER = None
 CONTACT_EMAIL = 'f.rhiem@fz-juelich.de'
 
 # branding and legal info
-SERVICE_NAME = 'iffSamples'
+SERVICE_NAME = 'SampleDB'
 SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
-SERVICE_IMPRINT = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
-SERVICE_PRIVACY_POLICY = 'https://pgi-jcns.fz-juelich.de/portal/pages/privacypolicy.html'
+SERVICE_IMPRINT = None
+SERVICE_PRIVACY_POLICY = None
 
 # location for storing files
 # in this directory, per-action subdirectories will be created, containing
@@ -78,7 +168,7 @@ MIME_TYPES = {
 }
 
 # JupyterHub settings
-JUPYTERHUB_URL = 'https://iffjupyter.fz-juelich.de'
+JUPYTERHUB_URL = None
 
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment

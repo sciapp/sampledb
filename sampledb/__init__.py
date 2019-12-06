@@ -24,6 +24,9 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app)
 
     app.config.from_object(sampledb.config)
+
+    sampledb.config.check_config(app.config)
+
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
