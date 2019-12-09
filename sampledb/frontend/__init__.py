@@ -3,11 +3,16 @@
 
 """
 
+import os
 import flask
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
-frontend = flask.Blueprint('frontend', __name__, template_folder='templates')
+frontend = flask.Blueprint(
+    'frontend',
+    __name__,
+    template_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
+)
 
 
 from . import actions
