@@ -1,10 +1,13 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os.path
 
 setup_directory = os.path.abspath(os.path.dirname(__file__))
 
 with open(os.path.join(setup_directory, 'README.md')) as readme_file:
     long_description = readme_file.read()
+
+with open(os.path.join(setup_directory, 'requirements.txt')) as requirements_file:
+    requirements = requirements_file.readlines()
 
 setup(
     name='sampledb',
@@ -24,5 +27,21 @@ setup(
         'Framework :: Flask',
         'Topic :: Scientific/Engineering',
     ],
-    packages=['sampledb'],
+    packages=find_packages(exclude=['tests', 'tests.*', 'example_data']),
+    install_requires=requirements,
+    package_data={
+        'sampledb': [
+            'static/*/*.*',
+            'static/*/*/*.*',
+            'static/*/*/*/*.*'
+        ],
+        'sampledb.logic': [
+            'unit_definitions.txt'
+        ],
+        'sampledb.frontend': [
+            'templates/*/*.*',
+            'templates/*/*/*.*',
+            'templates/*/*/*/*.*'
+        ]
+    }
 )
