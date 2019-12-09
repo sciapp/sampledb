@@ -52,5 +52,9 @@ When running a SampleDB installation, you can set the the following environment 
      - The password for the user identified by SAMPLEDB_LDAP_USER_DN (optional)
    * - SAMPLEDB_JUPYTERHUB_URL
      - The base URL of a JupyterHub server with support for notebook templates (optional)
+   * - SAMPLEDB_TESTING_LDAP_LOGIN
+     - The uid of an LDAP user (only used during tests)
+   * - SAMPLEDB_TESTING_LDAP_PW
+     - The password for the ldap user identified by SAMPLEDB_TESTING_LDAP_LOGIN (only used during tests)
    * - SAMPLEDB_WTF_CSRF_TIME_LIMIT
      - The time limit for WTForms CSRF tokens in seconds. See: https://flask-wtf.readthedocs.io/en/stable/config.html

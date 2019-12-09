@@ -20,8 +20,16 @@ SampleDB is open source and we hope that ideas and improvements from different f
 ### Submitting changes
 
 - We aim to support a wide variety of use cases from different fields. Please keep this in mind and prefer generic solutions to specialized ones.
-- Adhere to the code style. You can check this using `python3 -m pycodestyle --ignore=E402,E501,W504 sampledb` and `python3 -m pyflakes sampledb`
+- Adhere to the code style. You can check this using `python3 -m pycodestyle --ignore=E402,E501,W504 sampledb` and `python3 -m pyflakes sampledb`.
 - Include tests if your change introduces a new feature or fixes a bug. Make sure that the test fails
-  without your change. You can run all tests using `python3 -m pytest -s --cov=sampledb/ tests`
-- If you introduce or significantly improve a feature, please document it and add it to the changelog in `docs/changelog.rst`. You can build the documentation using `python -m sphinx docs/ build/`
+  without your change. You can run all tests using `python3 -m pytest -s --cov=sampledb/ tests`. As the tests require an LDAP server, you will need to set the following [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html):
+  - `SAMPLEDB_LDAP_SERVER`
+  - `SAMPLEDB_LDAP_USER_BASE_DN`
+  - `SAMPLEDB_LDAP_UID_FILTER`
+  - `SAMPLEDB_LDAP_NAME_ATTRIBUTE`
+  - `SAMPLEDB_LDAP_MAIL_ATTRIBUTE`
+  - `SAMPLEDB_LDAP_OBJECT_DEF`
+  - `SAMPLEDB_TESTING_LDAP_LOGIN`
+  - `SAMPLEDB_TESTING_LDAP_PW`
+- If you introduce or significantly improve a feature, please document it and add it to the changelog in `docs/changelog.rst`. You can build the documentation using `python -m sphinx docs/ build/`.
 - Once you are done, push your changes to your fork of SampleDB and open up a [pull request](https://github.com/sciapp/sampledb/compare).
