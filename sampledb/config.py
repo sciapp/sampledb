@@ -28,8 +28,6 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'LDAP_NAME_ATTRIBUTE',
     'LDAP_MAIL_ATTRIBUTE',
     'LDAP_OBJECT_DEF',
-    'LDAP_USER_DN',
-    'LDAP_PASSWORD',
 }
 
 JUPYTERHUB_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
@@ -142,7 +140,7 @@ LDAP_PASSWORD = None
 # email settings
 MAIL_SERVER = None
 MAIL_SENDER = None
-CONTACT_EMAIL = 'f.rhiem@fz-juelich.de'
+CONTACT_EMAIL = None
 
 # branding and legal info
 SERVICE_NAME = 'SampleDB'

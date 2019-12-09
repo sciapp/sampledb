@@ -33,6 +33,7 @@ sampledb.config.LDAP_USER_DN = 'uid=' + sampledb.config.TESTING_LDAP_LOGIN + ','
 sampledb.config.LDAP_PASSWORD = sampledb.config.TESTING_LDAP_PW
 sampledb.config.MAIL_SENDER = 'iffsamples@fz-juelich.de'
 sampledb.config.MAIL_SERVER = 'mail.fz-juelich.de'
+sampledb.config.CONTACT_EMAIL = 'iffsamples@fz-juelich.de'
 sampledb.config.JUPYTERHUB_URL = 'iffjupyter.fz-juelich.de'
 
 # restore possibly overridden configuration data from environment variables
