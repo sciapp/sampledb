@@ -17,5 +17,8 @@ sampledb.config.CONTACT_EMAIL = 'sampledb@example.com'
 sampledb.config.JUPYTERHUB_URL = 'example.com'
 sampledb.config.LDAP_NAME = 'LDAP'
 
+sampledb.config.TESTING_LDAP_UNKNOWN_LOGIN = 'unknown-login-for-sampledb-tests'
+sampledb.config.TESTING_LDAP_WRONG_PASSWORD = 'wrong-password-for-sampledb-tests'
+
 # restore possibly overridden configuration data from environment variables
 sampledb.config.use_environment_configuration(env_prefix='SAMPLEDB_')

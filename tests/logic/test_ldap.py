@@ -10,43 +10,31 @@ from ..test_utils import app_context, flask_server, app
 
 
 def test_search_ldap(app):
-    user = sampledb.logic.ldap._get_user_dn_and_attributes('henkel1', ['uid'])
+    user = sampledb.logic.ldap._get_user_dn_and_attributes(app.config['TESTING_LDAP_UNKNOWN_LOGIN'], [app.config['LDAP_MAIL_ATTRIBUTE']])
     assert user is None
 
-    user = sampledb.logic.ldap._get_user_dn_and_attributes('henkel', ['uid'])
+    user = sampledb.logic.ldap._get_user_dn_and_attributes(app.config['TESTING_LDAP_LOGIN'], [app.config['LDAP_MAIL_ATTRIBUTE']])
     assert user is not None
-    user_dn, uid = user
-    assert uid == 'henkel'
+    user_dn, mail = user
+    assert '@' in mail
 
 
 def test_user_info(app):
-    user = sampledb.logic.ldap.create_user_from_ldap('henkel1')
+    user = sampledb.logic.ldap.create_user_from_ldap(app.config['TESTING_LDAP_UNKNOWN_LOGIN'])
     assert user is None
 
-    with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
-        sampledb.logic.ldap.create_user_from_ldap('gast')
-    # no email exist
-    assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
-
-    user = sampledb.logic.ldap.create_user_from_ldap('henkel')
+    user = sampledb.logic.ldap.create_user_from_ldap(app.config['TESTING_LDAP_LOGIN'])
     assert user is not None
 
 
 def test_validate_user(app):
-    username = app.config['TESTING_LDAP_LOGIN']
-    password = app.config['TESTING_LDAP_PW']
-    assert sampledb.logic.ldap.validate_user(username, password)
+    assert sampledb.logic.ldap.validate_user(app.config['TESTING_LDAP_LOGIN'], app.config['TESTING_LDAP_PW'])
 
     # wrong password
-    assert not sampledb.logic.ldap.validate_user(username, 'test')
+    assert not sampledb.logic.ldap.validate_user(app.config['TESTING_LDAP_LOGIN'], app.config['TESTING_LDAP_WRONG_PASSWORD'])
 
     # wrong uid
-    assert not sampledb.logic.ldap.validate_user('doro', password)
-
-    with pytest.raises(NoEmailInLDAPAccountError) as excinfo:
-        sampledb.logic.ldap.create_user_from_ldap('gast')
-    # no email exist
-    assert 'There is no email set for your LDAP account. Please contact your administrator.' in str(excinfo.value)
+    assert not sampledb.logic.ldap.validate_user(app.config['TESTING_LDAP_UNKNOWN_LOGIN'], app.config['TESTING_LDAP_PW'])
 
 
 def test_is_ldap_configured():

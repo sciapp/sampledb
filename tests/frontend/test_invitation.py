@@ -63,14 +63,14 @@ def test_send_invitation(flask_server, user):
     #  send invitation
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'email': 'd.henkel@fz-juelich.de',
+            'email': 'user@example.com',
             'csrf_token': csrf_token
         })
     assert r.status_code == 200
 
     # Check if an invitation mail was sent
     assert len(outbox) == 1
-    assert 'd.henkel@fz-juelich.de' in outbox[0].recipients
+    assert 'user@example.com' in outbox[0].recipients
     message = outbox[0].html
     assert 'SampleDB Email Confirmation' in message
 
@@ -89,7 +89,7 @@ def test_send_invitation(flask_server, user):
 
     # Submit the missing information and complete the registration
     r = session.post(confirmation_url, {
-        'email': 'd.henkel@fz-juelich.de',
+        'email': 'user@example.com',
         'name': 'Testuser',
         'password': 'test',
         'password2': 'test',
@@ -103,7 +103,7 @@ def test_send_invitation(flask_server, user):
 
     # test login
     with flask_server.app.app_context():
-        assert sampledb.logic.authentication.login('d.henkel@fz-juelich.de', 'test')
+        assert sampledb.logic.authentication.login('user@example.com', 'test')
 
 
 def test_registration_without_token_not_available(flask_server):
@@ -116,7 +116,7 @@ def test_registration_without_token_not_available(flask_server):
 
 def test_registration_with_wrong_token_404(flask_server):
     session = requests.session()
-    token = generate_token('d.henkel', salt='invitation',
+    token = generate_token('invalid', salt='invitation',
                            secret_key=flask_server.app.config['SECRET_KEY'])
     data = {'token': token}
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
@@ -128,7 +128,7 @@ def test_registration_with_wrong_token_404(flask_server):
 def test_registration_with_token_available(flask_server):
     session = requests.session()
     # generate token
-    token = generate_token('d.henkel@fz-juelich.de', salt='invitation', secret_key=flask_server.app.config['SECRET_KEY'])
+    token = generate_token('user@example.com', salt='invitation', secret_key=flask_server.app.config['SECRET_KEY'])
     data = {'token': token}
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
 
@@ -142,7 +142,7 @@ def test_registration_with_token_available(flask_server):
 def test_registration(flask_server):
     session = requests.session()
     # generate token
-    token = generate_token('d.henkel@fz-juelich.de', salt='invitation', secret_key=flask_server.app.config['SECRET_KEY'])
+    token = generate_token('user@example.com', salt='invitation', secret_key=flask_server.app.config['SECRET_KEY'])
     data = {'token': token}
     url = flask_server.base_url + 'users/invitation'
     r = session.get(url, params=data)
@@ -155,7 +155,7 @@ def test_registration(flask_server):
 
     # Submit the missing information and complete the registration
     r = session.post(url, {
-        'email': 'd.henkel@fz-juelich.de',
+        'email': 'user@example.com',
         'name': 'Testuser',
         'password': 'test',
         'password2': 'test',
@@ -166,7 +166,7 @@ def test_registration(flask_server):
     with flask_server.app.app_context():
         user = sampledb.models.users.User.query.filter_by(name="Testuser").one()
 
-    assert user.email == "d.henkel@fz-juelich.de"
+    assert user.email == "user@example.com"
 
 
 def test_send_registration_with_wrong_invitation_email(flask_server):
