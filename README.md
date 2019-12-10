@@ -31,7 +31,7 @@ docker run \
     --link sampledb-postgres \
     -e SAMPLEDB_MAIL_SERVER=mail.example.com \
     -e SAMPLEDB_MAIL_SENDER=sampledb@example.com \
-    - e SAMPLEDB_CONTACT_EMAIL=sampledb@example.com \
+    -e SAMPLEDB_CONTACT_EMAIL=sampledb@example.com \
     -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:@sampledb-postgres:5432/postgres \
     -e SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files/ \
     -v `pwd`/files:/home/sampledb/files:rw \
