@@ -8,7 +8,7 @@ You can find the documentation for the current release at https://scientific-it-
 
 ## Getting Started
 
-We recommend using our pre-built Docker images for setting up `SampleDB`. You will need two containers, one for a PostgreSQL database and another for SampleDB itself, and a directory to store all files in. If you would like to set up a development version of SampleDB instead, please see the [contribution guide](https://github.com/sciapp/sampledb/blob/master/CONTRIBUTING.md).
+We recommend using our pre-built Docker images for setting up `SampleDB`. You will need two containers, one for a PostgreSQL database and another for SampleDB itself, and a directory to store all files in. If you would like to set up a development version of SampleDB instead, please see the [contribution guide](https://github.com/sciapp/sampledb/blob/develop/CONTRIBUTING.md).
 
 First, start your database container:
 
@@ -38,7 +38,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    docker.pkg.github.com/sciapp/sampledb/sampledb:0.8.0
+    docker.pkg.github.com/sciapp/sampledb/sampledb:0.8.1
 ```
 
 This will start a basic SampleDB instance at `http://localhost:8000`.
@@ -63,4 +63,4 @@ and replace `help` with the script you want to run.
 
 ## Contributing
 
-If you want to improve SampleDB, please read the [contribution guide](https://github.com/sciapp/sampledb/blob/master/CONTRIBUTING.md) for a few notes on how to report issues or submit changes.
+If you want to improve SampleDB, please read the [contribution guide](https://github.com/sciapp/sampledb/blob/develop/CONTRIBUTING.md) for a few notes on how to report issues or submit changes.
