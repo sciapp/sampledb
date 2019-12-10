@@ -143,7 +143,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
             'name': 'Basic User',
-            'email': 'example1@fz-juelich.de',
+            'email': 'user@example.com',
             'csrf_token': csrf_token,
             'change': 'Change'
         })
@@ -151,9 +151,9 @@ def test_user_preferences_change_contactemail(flask_server, user):
 
     # Check if an invitation mail was sent
     assert len(outbox) == 1
-    assert 'example1@fz-juelich.de' in outbox[0].recipients
+    assert 'user@example.com' in outbox[0].recipients
     message = outbox[0].html
-    assert 'iffSamples Email Confirmation' in message
+    assert 'SampleDB Email Confirmation' in message
 
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
@@ -172,7 +172,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
 
     # check, if email was changed after open confirmation_url
     with flask_server.app.app_context():
-        user = sampledb.models.users.User.query.filter_by(email="example1@fz-juelich.de").first()
+        user = sampledb.models.users.User.query.filter_by(email="user@example.com").first()
 
     assert user is not None
 
@@ -197,7 +197,7 @@ def test_user_add_ldap_authentication_method_wrong_password(flask_server, user):
     # submit the form
     #  add ldap-account , password wrong
     r = session.post(url, {
-        'login': 'henkel',
+        'login': 'username',
         'password': flask_server.app.config['TESTING_LDAP_PW'],
         'authentication_method': 'L',
         'csrf_token': csrf_token,
@@ -379,7 +379,7 @@ def test_user_add_general_authentication_method(flask_server):
 
     #  add ldap-account , second ldap account not possible
     r = session.post(url, {
-        'login': 'henkel',
+        'login': 'username',
         'password': flask_server.app.config['TESTING_LDAP_PW'],
         'authentication_method': 'L',
         'csrf_token': csrf_token,
@@ -424,7 +424,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     #  add valid email authentication-method
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'login': 'd.henkel@fz-juelich.de',
+            'login': 'user@example.com',
             'password': 'abc.123',
             'authentication_method': 'E',
             'csrf_token': csrf_token,
@@ -434,9 +434,9 @@ def test_user_add_email_authentication_method(flask_server, user):
 
     # Check if an confirmation mail was sent
     assert len(outbox) == 1
-    assert 'd.henkel@fz-juelich.de' in outbox[0].recipients
+    assert 'user@example.com' in outbox[0].recipients
     message = outbox[0].html
-    assert 'iffSamples Email Confirmation' in message
+    assert 'SampleDB Email Confirmation' in message
 
     # Check if authentication-method add to db
     with flask_server.app.app_context():
@@ -459,7 +459,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
     # submit the form
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': 'd.henkel@fz-juelich.de',
+        'username': 'user@example.com',
         'password': 'abc.123',
         'remember_me': False,
         'csrf_token': csrf_token
@@ -490,7 +490,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
     # submit the form
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': 'd.henkel@fz-juelich.de',
+        'username': 'user@example.com',
         'password': 'abc.123',
         'remember_me': False,
         'csrf_token': csrf_token
@@ -612,7 +612,7 @@ def test_user_remove_authentication_method(flask_server):
 
     #  add authentication_method for testing remove
     r = session.post(url, {
-        'login': 'd.henkel@fz-juelich.de',
+        'login': 'user@example.com',
         'password': 'xxxxx',
         'authentication_method': 'E',
         'csrf_token': csrf_token,

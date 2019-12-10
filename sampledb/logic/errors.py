@@ -180,3 +180,7 @@ class PublicationDoesNotExistError(Exception):
 
 class InvalidDOIError(Exception):
     pass
+
+
+class LDAPNotConfiguredError(Exception):
+    pass

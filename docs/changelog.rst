@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.8.1
+-------------
+
+Released on December 10th, 2019.
+
+- Simplified deployment
+
 Version 0.8
 -----------
 

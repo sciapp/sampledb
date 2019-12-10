@@ -375,7 +375,7 @@ temp_dir = tempfile.mkdtemp()
 try:
     os.mkdir(os.path.join(temp_dir, 'uploaded_files'))
     sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
-    app = tests.test_utils.app()
+    app = tests.test_utils.create_app()
     with app.app_context():
         user = sampledb.models.User(
             name="Example User",
@@ -465,7 +465,7 @@ try:
         # disable Chrome sandbox for root in GitLab CI
         if 'CI' in os.environ and getpass.getuser() == 'root':
             options.add_argument('--no-sandbox')
-        with contextlib.contextmanager(tests.test_utils.flask_server)(app) as flask_server:
+        with contextlib.contextmanager(tests.test_utils.create_flask_server)(app) as flask_server:
             with contextlib.closing(Chrome(options=options)) as driver:
                 time.sleep(5)
                 object_permissions(flask_server.base_url, driver)

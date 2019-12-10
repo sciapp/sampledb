@@ -13,6 +13,19 @@ from ..models import Authentication, AuthenticationType
 from .. import db
 from . import errors
 from . import users
+from ..config import LDAP_REQUIRED_CONFIG_KEYS
+
+
+def is_ldap_configured() -> bool:
+    """
+    Check whether or not all required LDAP configuration values are set.
+
+    :return: whether all values are set, False otherwise
+    """
+    return all([
+        flask.current_app.config[key]
+        for key in LDAP_REQUIRED_CONFIG_KEYS
+    ])
 
 
 def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[str] = ()) -> typing.Optional[typing.Sequence[typing.Any]]:
@@ -53,9 +66,13 @@ def validate_user(user_ldap_uid: str, password: str) -> bool:
     :param user_ldap_uid: the LDAP uid of a user
     :param password: the user's LDAP password
     :return: whether the user credentials are correct or not
+    :raise errors.LDAPNotConfiguredError: when LDAP is not configured
     :raise errors.NoEmailInLDAPAccountError: when a user with the UID exists,
         but the LDAP_MAIL_ATTRIBUTE is not set for them
     """
+    if not is_ldap_configured():
+        raise errors.LDAPNotConfiguredError()
+
     mail_attribute = flask.current_app.config['LDAP_MAIL_ATTRIBUTE']
     user = _get_user_dn_and_attributes(user_ldap_uid, [mail_attribute])
     if user is None:
@@ -82,10 +99,14 @@ def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
     LDAP_MAIL_ATTRIBUTE.
 
     :param user_ldap_uid: the LDAP uid of a user
-    :return: the newly created user or None, if information is missing.
+    :return: the newly created user or None, if information is missing
+    :raise errors.LDAPNotConfiguredError: when LDAP is not configured
     :raise errors.NoEmailInLDAPAccountError: when the LDAP_MAIL_ATTRIBUTE is
         not set for the user
     """
+    if not is_ldap_configured():
+        raise errors.LDAPNotConfiguredError()
+
     name_attribute = flask.current_app.config['LDAP_NAME_ATTRIBUTE']
     mail_attribute = flask.current_app.config['LDAP_MAIL_ATTRIBUTE']
     user = _get_user_dn_and_attributes(
