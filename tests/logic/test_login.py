@@ -15,15 +15,15 @@ from ..test_utils import app_context, flask_server, app
 @pytest.fixture
 def users():
     names = ['User 1', 'User 2']
-    users = [User(name=name, email="example@fz-juelich.de", type=UserType.PERSON) for name in names]
+    users = [User(name=name, email="user@example.com", type=UserType.PERSON) for name in names]
     password = 'test123'
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     log = {
-        'login': 'example@fz-juelich.de',
+        'login': 'unconfirmed_user@example.com',
         'bcrypt_hash': pw_hash
     }
     log1 = {
-        'login': 'example1@fz-juelich.de',
+        'login': 'confirmed_user@example.com',
         'bcrypt_hash': pw_hash
     }
     confirmed = False
@@ -41,12 +41,12 @@ def users():
         sampledb.db.session.commit()
         assert Authentication.id is not None
 
-    user = User(name='Experiment 1', email="example@fz-juelich.de", type=UserType.OTHER)
+    user = User(name='Experiment 1', email="experiment@example.com", type=UserType.OTHER)
     users.append(user)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     log = {
-        'login': 'ombe',
+        'login': 'experiment_account',
         'bcrypt_hash': pw_hash
     }
     # force attribute refresh
@@ -70,30 +70,30 @@ def test_login_user(flask_server, users):
     user = sampledb.logic.authentication.login(username, password)
     assert user is not None
 
-    user = sampledb.logic.authentication.login('example1@fz-juelich.de', 'test123')
+    user = sampledb.logic.authentication.login('confirmed_user@example.com', 'test123')
     # user is confirmed
     assert user is not None
 
-    user = sampledb.logic.authentication.login('example@fz-juelich.de', 'test123')
+    user = sampledb.logic.authentication.login('unconfirmed_user@example.com', 'test123')
     # user is not confirmed
     assert user is None
 
-    user = sampledb.logic.authentication.login('ombe', 'test123')
+    user = sampledb.logic.authentication.login('experiment_account', 'test123')
     # user is confirmed and experiment
     assert user is not None
 
-    user = sampledb.logic.authentication.login('testmail@fz-juelich.de', 'test123')
+    user = sampledb.logic.authentication.login('unknown_user@example.com', 'test123')
     # user is not in db
     assert user is None
 
-    user = sampledb.logic.authentication.login('henkel', 'test123')
+    user = sampledb.logic.authentication.login('username', 'test123')
     # user is in ldap, password wrong
     assert user is None
 
 
 def test_add_login_ldap(flask_server, users):
     with pytest.raises(LDAPAccountOrPasswordWrongError) as excinfo:
-        sampledb.logic.authentication.add_authentication_method(1, 'henkel', 'abc', AuthenticationType.LDAP)
+        sampledb.logic.authentication.add_authentication_method(1, 'new_user', 'password', AuthenticationType.LDAP)
     # wrong password
     assert 'Ldap login or password wrong' in str(excinfo.value)
 
@@ -103,27 +103,27 @@ def test_add_login_ldap(flask_server, users):
     assert user is True
 
     with pytest.raises(LDAPAccountAlreadyExistError) as excinfo:
-        user = sampledb.logic.authentication.add_authentication_method(1, 'henkel', 'xxx', AuthenticationType.LDAP)
+        user = sampledb.logic.authentication.add_authentication_method(1, 'new_user', 'password', AuthenticationType.LDAP)
     # no second ldap authentication possible
     assert 'Ldap-Account already exists'
 
 
 def test_add_login(flask_server, users):
     with pytest.raises(AuthenticationMethodWrong) as excinfo:
-        user = sampledb.logic.authentication.add_authentication_method(3, "web.de", 'abc123', AuthenticationType.EMAIL)
+        user = sampledb.logic.authentication.add_authentication_method(3, "example.com", 'password', AuthenticationType.EMAIL)
     # no email
     assert 'Login must be a valid email address'
 
     # add authentication-method without password not allowed
-    result = sampledb.logic.authentication.add_authentication_method(3, "www@web.de", '', AuthenticationType.EMAIL)
+    result = sampledb.logic.authentication.add_authentication_method(3, "new_user@example.com", '', AuthenticationType.EMAIL)
     assert result is False
 
     # add authentication-method without login not allowed
-    result = sampledb.logic.authentication.add_authentication_method(3, None, 'xxx', AuthenticationType.EMAIL)
+    result = sampledb.logic.authentication.add_authentication_method(3, None, 'password', AuthenticationType.EMAIL)
     assert result is False
 
     # add authentication-method without login not allowed
-    result = sampledb.logic.authentication.add_authentication_method(3, 'www@web.de', 'xxx', None)
+    result = sampledb.logic.authentication.add_authentication_method(3, 'new_user@example.com', 'password', None)
     assert result is False
 
 
@@ -131,7 +131,7 @@ def test_add_login_email(app, users):
     # add authentication-method email
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
-        result = sampledb.logic.authentication.add_authentication_method(3, 'www@web.de', 'xxx', AuthenticationType.EMAIL)
+        result = sampledb.logic.authentication.add_authentication_method(3, 'new_user@example.com', 'xxx', AuthenticationType.EMAIL)
         assert result is True
 
 
@@ -143,7 +143,7 @@ def test_add_login_other_not_allowed(flask_server, users):
 
 def test_add_login_email_method_already_exists(flask_server, users):
     with pytest.raises(AuthenticationMethodAlreadyExists) as excinfo:
-        user = sampledb.logic.authentication.add_authentication_method(1, 'example1@fz-juelich.de', 'abc', AuthenticationType.EMAIL)
+        user = sampledb.logic.authentication.add_authentication_method(1, 'confirmed_user@example.com', 'abc', AuthenticationType.EMAIL)
     assert 'An authentication method with this login already exists' in str(excinfo.value)
 
 

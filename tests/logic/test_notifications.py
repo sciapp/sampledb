@@ -102,7 +102,7 @@ def test_send_notification(app, user):
     assert len(outbox) == 1
     assert 'example1@fz-juelich.de' in outbox[0].recipients
     message = outbox[0].html
-    assert 'iffSamples Notification' in message
+    assert 'SampleDB Notification' in message
     assert 'This is a test message' in message
 
 

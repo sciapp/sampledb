@@ -13,6 +13,7 @@ from ..models import Authentication, AuthenticationType
 from .. import db
 from . import errors
 from . import users
+from ..config import LDAP_REQUIRED_CONFIG_KEYS
 
 
 def is_ldap_configured() -> bool:
@@ -23,17 +24,7 @@ def is_ldap_configured() -> bool:
     """
     return all([
         flask.current_app.config[key]
-        for key in (
-            'LDAP_NAME',
-            'LDAP_SERVER',
-            'LDAP_USER_BASE_DN',
-            'LDAP_UID_FILTER',
-            'LDAP_NAME_ATTRIBUTE',
-            'LDAP_MAIL_ATTRIBUTE',
-            'LDAP_OBJECT_DEF',
-            'LDAP_USER_DN',
-            'LDAP_PASSWORD'
-        )
+        for key in LDAP_REQUIRED_CONFIG_KEYS
     ])
 
 

@@ -12,14 +12,14 @@ from ..test_utils import app_context, flask_server, app
 def test_add_user(flask_server):
     with flask_server.app.app_context():
         assert len(sampledb.models.User.query.all()) == 0
-        user = sampledb.logic.users.create_user(name='Experiment 1', email="example@fz-juelich.de", type=UserType.OTHER)
+        user = sampledb.logic.users.create_user(name='Experiment 1', email="user@example.com", type=UserType.OTHER)
         sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
         assert len(sampledb.models.User.query.all()) == 1
         assert user.id is not None
 
         assert len(sampledb.models.User.query.all()) == 1
-        user = sampledb.logic.users.create_user(name='Mustermann', email="example@fz-juelich.de", type=UserType.PERSON)
-        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'password')
+        user = sampledb.logic.users.create_user(name='Mustermann', email="user@example.com", type=UserType.PERSON)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'user@example.com', 'password')
         assert len(sampledb.models.User.query.all()) == 2
         assert user.id is not None
 
@@ -29,7 +29,7 @@ def test_add_user_ldap(flask_server, app):
         username = app.config['TESTING_LDAP_LOGIN']
         password = app.config['TESTING_LDAP_PW']
         assert len(sampledb.models.User.query.all()) == 0
-        user = sampledb.logic.users.create_user(name=username, email="d.henkel@fz-juelich.de", type=UserType.PERSON)
+        user = sampledb.logic.users.create_user(name=username, email="user@example.com", type=UserType.PERSON)
         sampledb.logic.authentication.add_ldap_authentication(user.id, username, password)
         assert len(sampledb.models.User.query.all()) == 1
         assert user.id is not None
