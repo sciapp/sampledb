@@ -150,6 +150,10 @@ class Objects(Resource):
 
     @http_basic_auth.login_required
     def post(self):
+        if flask.g.user.is_readonly:
+            return {
+                'message': 'user has been marked as read only'
+            }, 400
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, dict):
             return {

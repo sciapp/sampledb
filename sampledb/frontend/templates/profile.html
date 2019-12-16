@@ -8,7 +8,7 @@
   <dt>User ID</dt>
   <dd>#{{ user.id }}</dd>
   <dt>Name</dt>
-  <dd>{{ user.name }}{% if user.type.name.lower() == 'other' %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Bot users are meant for the automation of object creation and other tasks.">bot</span>{% endif %}</dd>
+  <dd>{{ user.name }}{% if user.type.name.lower() == 'other' %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Bot users are meant for the automation of object creation and other tasks.">bot</span>{% endif %}{% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Accounts marked as read only are unable to create or change entries in {{ service_name }}.">read only</span>{% endif %}</dd>
   <dt>Objects</dt>
   <dd><a href="{{ url_for('.objects', user=user.id) }}">View</a></dd>
 </dl>

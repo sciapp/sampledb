@@ -68,3 +68,8 @@ Bot Users
 ---------
 
 Tasks like object creation can be automated by using the :ref:`HTTP API <http_api>`. When this is done in connection to an instrument or a facility instead of an individual user, it may be better to create a dedicated user account solely for this purpose.
+
+Readonly Users
+--------------
+
+Users can be limited to READ permissions, e.g. for former employees who should still have access to their data but should not be able to create new SampleDB entries.

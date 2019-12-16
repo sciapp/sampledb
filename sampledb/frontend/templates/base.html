@@ -177,6 +177,13 @@
       </div>
     {% endfor %}
   {% endwith %}
+  {% block readonly_alert %}
+  {% if current_user.is_readonly %}
+  <div class="alert alert-info">
+    <p><strong>Note:</strong> Your account has been marked as read only. If you think this was done erroneously, please <a href="mailto:{{ contact_email }}?subject={{ service_name }}">contact an administrator</a>.</p>
+  </div>
+  {% endif %}
+  {% endblock %}
  {% block content %}{% endblock %}
 </div>
 <footer>

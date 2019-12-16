@@ -1,13 +1,13 @@
 # coding: utf-8
 """
-Script for setting whether a user is an administrator or not.
+Script for setting whether a user is limited to READ permissions or not.
 
-Usage: python -m sampledb set_administrator <user_id> <yes_or_no>
+Usage: python -m sampledb set_user_readonly <user_id> <yes_or_no>
 """
 
 import sys
-from .. import create_app, db
-from ..logic.users import get_user
+from .. import create_app
+from ..logic.users import get_user, set_user_readonly
 from ..logic.errors import UserDoesNotExistError
 
 
@@ -21,7 +21,7 @@ def main(arguments):
     except ValueError:
         print("Error: user_id must be an integer", file=sys.stderr)
         exit(1)
-    is_admin = yes_or_no == 'yes'
+    is_readonly = yes_or_no == 'yes'
     app = create_app()
     with app.app_context():
         try:
@@ -29,13 +29,11 @@ def main(arguments):
         except UserDoesNotExistError:
             print("Error: No user with this ID exists", file=sys.stderr)
             exit(1)
-        if user.is_admin == is_admin:
+        if user.is_readonly == is_readonly:
             print("Success: no change necessary")
         else:
-            user.is_admin = is_admin
-            db.session.add(user)
-            db.session.commit()
-            if is_admin:
-                print("Success: the user is an administrator now")
+            set_user_readonly(user.id, is_readonly)
+            if is_readonly:
+                print("Success: the user is readonly")
             else:
-                print("Success: the user is a regular user now")
+                print("Success: the user is not readonly")

@@ -29,6 +29,7 @@ from .notifications import create_notification_for_having_received_an_objects_pe
 from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
+from .users import get_user
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -46,7 +47,7 @@ def set_object_public(object_id: int, is_public: bool = True):
     db.session.commit()
 
 
-def get_object_permissions_for_users(object_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True):
+def get_object_permissions_for_users(object_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True):
     object_permissions = {}
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=object_id).all():
         object_permissions[user_object_permissions.user_id] = user_object_permissions.permissions
@@ -64,6 +65,10 @@ def get_object_permissions_for_users(object_id: int, include_instrument_responsi
                 permissions = min(permissions, project_object_permissions.permissions)
                 previous_permissions = object_permissions.get(user_id, Permissions.NONE)
                 object_permissions[user_id] = max(previous_permissions, permissions)
+    if include_readonly:
+        for user_id in object_permissions:
+            if get_user(user_id).is_readonly:
+                object_permissions[user_id] = min(object_permissions[user_id], Permissions.READ)
     return object_permissions
 
 
@@ -101,8 +106,8 @@ def _get_object_responsible_user_ids(object_id):
     return [user.id for user in instrument.responsible_users]
 
 
-def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True):
-    assert user_id is not None
+def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True):
+    user = get_user(user_id)
 
     if include_instrument_responsible_users and include_groups and include_projects:
         stmt = db.text("""
@@ -117,6 +122,8 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
         }).fetchone()[0]
         if permissions_int is None or permissions_int <= 0:
             return Permissions.NONE
+        elif include_readonly and user.is_readonly and permissions_int in (1, 2, 3):
+            return Permissions.READ
         elif permissions_int == 1:
             return Permissions.READ
         elif permissions_int == 2:
@@ -127,6 +134,8 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
     if include_instrument_responsible_users:
         # instrument responsible users always have GRANT permissions for an object
         if user_id in _get_object_responsible_user_ids(object_id):
+            if include_readonly and user.is_readonly:
+                return Permissions.READ
             return Permissions.GRANT
     # other users might have been granted permissions, either individually or as group or project members
     user_object_permissions = UserObjectPermissions.query.filter_by(object_id=object_id, user_id=user_id).first()
@@ -134,6 +143,8 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
         permissions = Permissions.NONE
     else:
         permissions = user_object_permissions.permissions
+    if include_readonly and user.is_readonly and Permissions.READ in permissions:
+        return Permissions.READ
     if Permissions.GRANT in permissions:
         return permissions
     if include_groups:
@@ -141,6 +152,8 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
             group_object_permissions = GroupObjectPermissions.query.filter_by(object_id=object_id, group_id=group.id).first()
             if group_object_permissions is not None and permissions in group_object_permissions.permissions:
                 permissions = group_object_permissions.permissions
+    if include_readonly and user.is_readonly and Permissions.READ in permissions:
+        return Permissions.READ
     if Permissions.GRANT in permissions:
         return permissions
     if include_projects:
@@ -150,6 +163,8 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
                 project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=object_id, project_id=user_project.id).first()
                 if project_object_permissions is not None:
                     permissions = min(user_project_permissions, project_object_permissions.permissions)
+    if include_readonly and user.is_readonly and Permissions.READ in permissions:
+        return Permissions.READ
     if Permissions.READ in permissions:
         return permissions
     # lastly, the object may be public, so all users have READ permissions

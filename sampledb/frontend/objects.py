@@ -37,13 +37,19 @@ from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
 from .labels import create_labels
 from .pdfexport import create_pdfexport
+from .utils import check_current_user_is_not_readonly
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 def on_unauthorized(object_id):
-    return flask.render_template('objects/unauthorized.html', object_id=object_id), 403
+    permissions_by_user = get_object_permissions_for_users(object_id)
+    has_grant_user = any(
+        Permissions.GRANT in permissions
+        for permissions in permissions_by_user.values()
+    )
+    return flask.render_template('objects/unauthorized.html', object_id=object_id, has_grant_user=has_grant_user), 403
 
 
 @frontend.route('/objects/')
@@ -779,6 +785,7 @@ def object(object_id):
             user_may_assign_location=user_may_edit,
             location_form=location_form
         )
+    check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
         should_upgrade_schema = True
     else:
@@ -831,6 +838,7 @@ def print_object_label(object_id):
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_comments(object_id):
+    check_current_user_is_not_readonly()
     comment_form = CommentForm()
     if comment_form.validate_on_submit():
         content = comment_form.content.data
@@ -862,6 +870,7 @@ def object_permissions_request(object_id):
 @frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_location(object_id):
+    check_current_user_is_not_readonly()
     location_form = ObjectLocationAssignmentForm()
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), '{} (#{})'.format(location.name, location.id))
@@ -892,6 +901,7 @@ def post_object_location(object_id):
 @frontend.route('/objects/<int:object_id>/publications/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_publication(object_id):
+    check_current_user_is_not_readonly()
     publication_form = ObjectPublicationForm()
     if publication_form.validate_on_submit():
         doi = publication_form.doi.data
@@ -961,6 +971,7 @@ def object_file(object_id, file_id):
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def update_file_information(object_id, file_id):
+    check_current_user_is_not_readonly()
     form = FileInformationForm()
     if not form.validate_on_submit():
         return flask.abort(400)
@@ -982,6 +993,7 @@ def update_file_information(object_id, file_id):
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>/hide', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def hide_file(object_id, file_id):
+    check_current_user_is_not_readonly()
     form = FileHidingForm()
     if not form.validate_on_submit():
         return flask.abort(400)
@@ -1001,6 +1013,7 @@ def hide_file(object_id, file_id):
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])
 def mobile_file_upload(object_id: int, token: str):
+    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
@@ -1011,6 +1024,7 @@ def mobile_file_upload(object_id: int, token: str):
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['POST'])
 def post_mobile_file_upload(object_id: int, token: str):
+    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
@@ -1026,6 +1040,7 @@ def post_mobile_file_upload(object_id: int, token: str):
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id):
+    check_current_user_is_not_readonly()
     external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():
@@ -1053,6 +1068,7 @@ def post_object_files(object_id):
 @frontend.route('/objects/new', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_object():
+    check_current_user_is_not_readonly()
     action_id = flask.request.args.get('action_id', None)
     previous_object_id = flask.request.args.get('previous_object_id', None)
     if not action_id and not previous_object_id:
@@ -1170,10 +1186,11 @@ def restore_object_version(object_id, version_id):
 @frontend.route('/objects/<int:object_id>/permissions')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_permissions(object_id):
+    check_current_user_is_not_readonly()
     object = get_object(object_id)
     action = get_action(object.action_id)
     instrument = action.instrument
-    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False)
+    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False)
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE

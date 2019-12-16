@@ -6,7 +6,9 @@
   <h1>Locations</h1>
   <p class="text-muted">Locations allow users to track where an object can be found. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#location">Read more.</a></p>
   <p>
+    {% if not current_user.is_readonly %}
     <a href="{{ url_for('.new_location') }}" class="btn btn-default" style="margin-bottom: 10px;">Create Location</a>
+    {% endif %}
   </p>
   {% if locations_tree %}
     <ul>

@@ -24,6 +24,7 @@ from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.settings import get_user_settings
 from .users.forms import ToggleFavoriteActionForm
+from .utils import check_current_user_is_not_readonly
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -103,6 +104,7 @@ def action(action_id):
     may_edit = Permissions.WRITE in permissions
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
+        check_current_user_is_not_readonly()
         if not may_edit:
             return flask.abort(403)
         return show_action_form(action)
@@ -118,6 +120,7 @@ def action(action_id):
 @frontend.route('/actions/new/', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_action():
+    check_current_user_is_not_readonly()
     previous_action = None
     previous_action_id = flask.request.args.get('previous_action_id', None)
     if previous_action_id is not None:

@@ -11,8 +11,10 @@
   </h1>
   <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description }}</pre>
   <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">View Objects</a>
+  {% if not current_user.is_readonly %}
   <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">Edit Location</a>
   <a href="{{ url_for('.new_location', parent_location_id=location.id) }}" class="btn btn-default">Create Sub-Location</a>
+  {% endif %}
   {% if locations_tree %}
     <h2>Sub-Locations</h2>
     <ul>

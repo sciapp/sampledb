@@ -184,3 +184,7 @@ class InvalidDOIError(Exception):
 
 class LDAPNotConfiguredError(Exception):
     pass
+
+
+class UserIsReadonlyError(Exception):
+    pass

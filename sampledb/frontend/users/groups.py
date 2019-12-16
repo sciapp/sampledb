@@ -10,6 +10,7 @@ from .. import frontend
 from ... import logic
 from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm, DeleteGroupForm, RemoveGroupMemberForm
 from ...logic.security_tokens import verify_token
+from ..utils import check_current_user_is_not_readonly
 
 
 @frontend.route('/groups/', methods=['GET', 'POST'])
@@ -36,6 +37,7 @@ def groups():
         create_group_form.description.data = ''
     show_create_form = False
     if 'create' in flask.request.form:
+        check_current_user_is_not_readonly()
         show_create_form = True
         if create_group_form.validate_on_submit():
             try:
@@ -103,6 +105,7 @@ def group(group_id):
             edit_group_form.description.data = group.description
 
         if 'edit' in flask.request.form:
+            check_current_user_is_not_readonly()
             show_edit_form = True
             if edit_group_form.validate_on_submit():
                 try:
@@ -118,6 +121,7 @@ def group(group_id):
                     flask.flash('Group information updated successfully.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'add_user' in flask.request.form:
+            check_current_user_is_not_readonly()
             if invite_user_form.validate_on_submit():
                 try:
                     logic.groups.invite_user_to_group(group_id, invite_user_form.user_id.data, flask_login.current_user.id)
@@ -147,6 +151,7 @@ def group(group_id):
                     flask.flash('You have successfully left the group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
         elif 'delete' in flask.request.form:
+            check_current_user_is_not_readonly()
             if delete_group_form.validate_on_submit():
                 try:
                     logic.groups.delete_group(group_id)
@@ -157,6 +162,7 @@ def group(group_id):
                     flask.flash('You have successfully deleted the group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
         elif 'remove_member' in flask.request.form:
+            check_current_user_is_not_readonly()
             if remove_group_member_form.validate_on_submit():
                 member_id_str = flask.request.form['remove_member']
                 try:
