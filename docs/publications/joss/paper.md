@@ -29,7 +29,7 @@ A Web API allows automated data entry using already existing information, e.g. b
 
 The latter is further simplified if ``SampleDB`` is used in conjunction with a ``JupyterHub`` server. Instrument scientists can provide Jupyter notebook templates for analyzing data from their instruments, along with a list of schema entries containing the necessary metadata. Users can then use these templates to create Jupyter notebooks from within ``SampleDB``, which will copy the required metadata from its ``SampleDB`` entry into the notebook, preparing a process-specific data analysis.
 
-``SampleDB`` was developed using Python 3, the Flask web framework [@flask] and the SQLAlchemy package [@sqlalchemy]. To run ``SampleDB``, we recommend using the provided [Docker images](https://github.com/sciapp/sampledb/packages) along with a PostgreSQL container, though it can also be run directly from source. A guide on setting up a ``SampleDB`` instance can be found on the [GitHub project site](https://github.com/sciapp/sampledb/).
+``SampleDB`` was developed using Python 3, the Flask web framework [@flask] and the SQLAlchemy package [@sqlalchemy]. To run ``SampleDB``, we recommend using the provided [Docker images](https://hub.docker.com/r/sciapp/sampledb/) along with a PostgreSQL container, though it can also be run directly from source. A guide on setting up a ``SampleDB`` instance can be found on the [GitHub project site](https://github.com/sciapp/sampledb/).
 
 # Acknowledgements
 
