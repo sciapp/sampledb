@@ -11,13 +11,19 @@
     <p>{{ action.description }}</p>
     {% if action.type == ActionType.MEASUREMENT %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
+      {% if not current_user.is_readonly %}
       <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Measurement</a>
+      {% endif %}
     {% elif action.type == ActionType.SIMULATION %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
+      {% if not current_user.is_readonly %}
       <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Simulation</a>
+      {% endif %}
     {% else %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
+      {% if not current_user.is_readonly %}
       <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% endblock %}

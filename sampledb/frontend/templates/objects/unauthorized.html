@@ -4,8 +4,9 @@
 
 {% block content %}
   <h1>Insufficient Permissions</h1>
-  <p>You do not have sufficient <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions">permissions</a> to access this object. Would you like to request read permissions?</p>
+  <p>You do not have sufficient <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions">permissions</a> to access this object. {% if has_grant_user %}Would you like to request read permissions?</p>
   <form action="{{ url_for('.object_permissions_request', object_id=object_id) }}" method="post">
     <button type="submit" class="btn btn-primary">Send Request</button>
   </form>
+  {% endif %}
 {% endblock %}

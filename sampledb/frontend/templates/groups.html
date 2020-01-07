@@ -5,14 +5,17 @@
 {% block content %}
   <h1>Groups</h1>
   <p class="text-muted">A group consists of equal users which share the object permissions granted to it. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/groups.html">Read more.</a></p>
+  {% if not current_user.is_readonly %}
   <p>
     <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">Create Group</button>
   </p>
+  {% endif %}
   <ul id="groups_list">
     {% for group in groups %}
     <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name }}</a>{% if group.is_member %} <span class="label label-default">Member</span>{% endif %}</li>
     {% endfor %}
   </ul>
+  {% if not current_user.is_readonly %}
   <div class="modal fade" id="createGroupModal" tabindex="-1" role="dialog" aria-labelledby="createGroupModalLabel">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -45,6 +48,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 {% endblock %}
 
 

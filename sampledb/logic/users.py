@@ -55,3 +55,19 @@ def create_user(name: str, email: str, type: UserType) -> User:
     db.session.add(user)
     db.session.commit()
     return user
+
+
+def set_user_readonly(user_id: int, readonly: bool) -> None:
+    """
+    Set whether a user should be limited to READ permissions.
+
+    :param user_id: the user ID of an existing user
+    :param readonly: True, if the user should be read only, False otherwise
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+
+    user = get_user(user_id)
+    user.is_readonly = readonly
+    db.session.add(user)
+    db.session.commit()

@@ -15,21 +15,25 @@
     {% for user_id in group_member_ids %}
     {% with user = get_user(user_id) %}
       <li><a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>
+        {% if not current_user.is_readonly %}
         {% if remove_group_member_form and user_id != current_user.id %}
         <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.group', group_id=group.id) }}" id="removeGroupMember{{ user_id }}Form">
           {{ remove_group_member_form.csrf_token() }}
           <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">Remove</button>
         </form>
         {% endif %}
+        {% endif %}
       </li>
     {% endwith %}
   {% endfor %}
   </ul>
+  {% if not current_user.is_readonly %}
   {% if edit_group_form %}
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editGroupModal">Edit Group</button>
   {% endif %}
   {% if invite_user_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Add User</button>
+  {% endif %}
   {% endif %}
   {% if leave_group_form %}
   <form method="post" style="display: inline" action="{{ url_for('.group', group_id=group.id) }}" id="leaveGroupForm">
@@ -37,6 +41,7 @@
     <button type="submit" class="btn btn-danger" name="leave" value="leave">Leave Group</button>
   </form>
   {% endif %}
+  {% if not current_user.is_readonly %}
   {% if delete_group_form %}
   <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteGroupModal">Delete Group</button>
   {% endif %}
@@ -130,6 +135,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
   {% endif %}
 {% endblock %}
 

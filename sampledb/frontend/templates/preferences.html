@@ -134,6 +134,7 @@
     </div>
   </form>
 
+  {% if not current_user.is_readonly %}
   <h2>Default Permissions</h2>
   <p><strong>Note:</strong> These permissions will be used for samples, measurements and simulations that you create in the future. To change the permissions for an already existing object, please use the <strong>Edit preferences</strong> button on the object's site.</p>
 
@@ -380,6 +381,8 @@
     </div>
     </form>
   {% endif %}
+  {% endif %}
+
   <h2>Other Settings</h2>
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
     {{ other_settings_form.csrf_token }}

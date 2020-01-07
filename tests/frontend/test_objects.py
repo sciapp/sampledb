@@ -227,6 +227,12 @@ def test_get_object_no_permissions(flask_server, user):
     assert r.status_code == 403
     assert '/objects/{}/permissions/request'.format(object.object_id) in r.content.decode('utf-8')
 
+    sampledb.logic.users.set_user_readonly(user.id, True)
+
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.object_id))
+    assert r.status_code == 403
+    assert '/objects/{}/permissions/request'.format(object.object_id) not in r.content.decode('utf-8')
+
 
 def test_request_object_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))

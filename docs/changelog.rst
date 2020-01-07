@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.9
+-----------
+
+Currently in development.
+
+- Added readonly users
+
 Version 0.8.1
 -------------
 

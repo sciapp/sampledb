@@ -15,6 +15,7 @@ from ..logic import errors
 from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility
 from ..logic.security_tokens import verify_token
 from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read
+from .utils import check_current_user_is_not_readonly
 
 
 class LocationForm(FlaskForm):
@@ -43,6 +44,7 @@ def location(location_id):
         return flask.abort(404)
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
+        check_current_user_is_not_readonly()
         return _show_location_form(location, None)
     locations_map, locations_tree = get_locations_tree()
     ancestors = []
@@ -64,6 +66,7 @@ def location(location_id):
 @frontend.route('/locations/new/', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_location():
+    check_current_user_is_not_readonly()
     parent_location = None
     parent_location_id = flask.request.args.get('parent_location_id', None)
     if parent_location_id is not None:
