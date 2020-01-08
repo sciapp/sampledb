@@ -683,7 +683,7 @@ def object(object_id):
 
         location_form.location.choices = locations
         possible_responsible_users = [('-1', '—')]
-        for user in logic.users.get_users():
+        for user in logic.users.get_users(exclude_hidden=True):
             possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
         location_form.responsible_user.choices = possible_responsible_users
 
@@ -877,7 +877,7 @@ def post_object_location(object_id):
         for location in get_locations()
     ]
     possible_responsible_users = [('-1', '—')]
-    for user in logic.users.get_users():
+    for user in logic.users.get_users(exclude_hidden=True):
         possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
     location_form.responsible_user.choices = possible_responsible_users
     if location_form.validate_on_submit():
@@ -1216,7 +1216,7 @@ def object_permissions(object_id):
                 continue
             project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
         edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
-        users = get_users()
+        users = get_users(exclude_hidden=True)
         users = [user for user in users if user.id not in user_permissions]
         add_user_permissions_form = ObjectUserPermissionsForm()
         groups = get_user_groups(flask_login.current_user.id)
