@@ -15,6 +15,7 @@ from . import create_other_user
 from . import send_announcement
 from . import set_administrator
 from . import set_user_readonly
+from . import set_user_hidden
 from . import run
 
 
@@ -31,5 +32,6 @@ script_functions = {
     'send_announcement': send_announcement.main,
     'set_administrator': set_administrator.main,
     'set_user_readonly': set_user_readonly.main,
+    'set_user_hidden': set_user_hidden.main,
     'run': run.main
 }

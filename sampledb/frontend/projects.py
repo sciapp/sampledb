@@ -76,7 +76,7 @@ def project(project_id):
 
     if Permissions.GRANT in user_permissions:
         invitable_user_list = []
-        for user in logic.users.get_users():
+        for user in logic.users.get_users(exclude_hidden=True):
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
