@@ -39,17 +39,19 @@ Authentication Methods
 
 Users can have multiple ways of signing in to |service_name|, for example using their LDAP account or using an email address. This section of the user preferences can be used to add, modify or remove such authentication methods, e.g. for users leaving their institute but still requiring access to their sample data.
 
+API Tokens
+``````````
+
+API tokens are meant as an alternative method for authentication when using the :ref:`HTTP API <http_api>` for individual scripts and allow you to monitor the requests made with the token. When you create a new API token, it will be shown to you once and you will be asked to save it. If you lose access to a token, simply delete it and create a new one as replacement.
+
+While API tokens pose less of a risk than using your own user credentials in a script, please keep your API tokens private. Do not commit them with a version control system like git and do not share them with others!
+
 Default Permissions
 ```````````````````
 
 To automatically set permissions for future objects, users can set **default permissions** in their preferences. These will be applied whenever an object like a sample or measurement is created afterwards.
 
 For more information, see :ref:`default_permissions`.
-
-Activity Log
-------------
-
-Users can view their or other users' activities in |service_name|, as far as these are related to objects they have permissions for. This can be useful, e.g. for quickly finding objects they've created.
 
 .. _notifications:
 

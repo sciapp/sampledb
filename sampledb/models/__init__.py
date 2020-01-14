@@ -17,6 +17,7 @@ from . import users
 
 from .actions import Action, ActionType
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions
+from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType
 from .comments import Comment
 from .favorites import FavoriteAction, FavoriteInstrument
@@ -38,6 +39,7 @@ from .user_log import UserLogEntry, UserLogEntryType
 
 
 __all__ = [
+    'api_log',
     'authentication',
     'favorites',
     'files',
@@ -55,6 +57,7 @@ __all__ = [
     'GroupActionPermissions',
     'ProjectActionPermissions',
     'PublicActions',
+    'APILogEntry',
     'Authentication',
     'AuthenticationType',
     'Comment',
@@ -62,6 +65,7 @@ __all__ = [
     'FavoriteInstrument',
     'File',
     'Group',
+    'HTTPMethod',
     'Instrument',
     'Location',
     'ObjectLocationAssignment',

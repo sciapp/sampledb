@@ -4,6 +4,7 @@
 """
 
 from . import activity
+from . import api_log
 from . import authentication
 from . import favorites
 from . import groups
@@ -16,6 +17,7 @@ from . import profile
 
 __all__ = [
     'activity',
+    'api_log',
     'authentication',
     'favorites',
     'groups',

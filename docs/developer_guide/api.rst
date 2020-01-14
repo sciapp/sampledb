@@ -6,7 +6,9 @@ HTTP API
 Authentication
 --------------
 
-The |service_name| HTTP API uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using the normal user credentials. Please make sure to use HTTPS when accessing the API.
+The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`.
+
+Please make sure to use HTTPS when accessing the API.
 
 Objects
 -------

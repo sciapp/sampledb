@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}API Log — {{ service_name }}{% endblock %}
+
+{% block content %}
+<h1>Log for API token "{{ api_token_description }}"</h1>
+
+{% if api_log_entries %}
+<p class="help-block">This table shows a list of all API request authenticated with this API token.</p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Datetime</th>
+      <th scope="col">Method</th>
+      <th scope="col">Endpoint</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for api_log_entry in api_log_entries %}
+    <tr>
+      <td>{{ api_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      <td>{{ api_log_entry.method.name }}</td>
+      <td style="font-family: monospace">{{ api_log_entry.route}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+  {% else %}
+  <p class="help-block">This API token has not been used so far.</p>
+  {% endif %}
+{% endblock %}

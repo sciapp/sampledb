@@ -5,7 +5,7 @@ RESTful API for iffSamples
 
 from flask_restful import Resource
 
-from .authentication import http_basic_auth
+from .authentication import multi_auth
 from ...logic import errors, locations
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -32,7 +32,7 @@ def object_location_assignment_to_json(object_location_assignment: locations.Obj
 
 
 class Location(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self, location_id: int):
         try:
             location = locations.get_location(location_id=location_id)
@@ -44,13 +44,13 @@ class Location(Resource):
 
 
 class Locations(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self):
         return [location_to_json(location) for location in locations.get_locations()]
 
 
 class ObjectLocationAssignment(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self, object_id: id, object_location_assignment_index: int):
         try:
             object_location_assignments = locations.get_object_location_assignments(object_id=object_id)
@@ -66,7 +66,7 @@ class ObjectLocationAssignment(Resource):
 
 
 class ObjectLocationAssignments(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self, object_id: int):
         try:
             return [
