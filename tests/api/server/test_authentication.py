@@ -4,8 +4,7 @@
 """
 
 import requests
-import pytest
-import json
+import secrets
 
 import sampledb
 import sampledb.logic
@@ -39,5 +38,16 @@ def test_authentication_other(flask_server):
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
     assert r.status_code == 401
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('username', 'password'))
+    assert r.status_code == 200
+
+
+def test_authentication_token(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        api_token = secrets.token_hex(32)
+        sampledb.logic.authentication.add_api_token(user.id, api_token, 'Demo API Token')
+    r = requests.get(flask_server.base_url + 'api/v1/objects/')
+    assert r.status_code == 401
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', headers={'Authorization': 'Bearer ' + api_token})
     assert r.status_code == 200
 

@@ -13,6 +13,7 @@ class AuthenticationType(enum.Enum):
     LDAP = 1
     EMAIL = 2
     OTHER = 3
+    API_TOKEN = 4
 
 
 class Authentication(db.Model):

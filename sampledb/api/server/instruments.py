@@ -5,7 +5,7 @@ RESTful API for iffSamples
 
 from flask_restful import Resource
 
-from sampledb.api.server.authentication import http_basic_auth
+from sampledb.api.server.authentication import multi_auth
 from sampledb.logic.instruments import get_instrument, get_instruments
 from sampledb.logic import errors
 
@@ -22,7 +22,7 @@ def instrument_to_json(instrument):
 
 
 class Instrument(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self, instrument_id: int):
         try:
             instrument = get_instrument(instrument_id=instrument_id)
@@ -34,7 +34,7 @@ class Instrument(Resource):
 
 
 class Instruments(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self):
         instruments = get_instruments()
         return [instrument_to_json(instrument) for instrument in instruments]

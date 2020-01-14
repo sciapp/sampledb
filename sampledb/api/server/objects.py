@@ -8,7 +8,7 @@ import flask
 
 from flask_restful import Resource
 
-from sampledb.api.server.authentication import http_basic_auth, object_permissions_required, Permissions
+from sampledb.api.server.authentication import multi_auth, object_permissions_required, Permissions
 from sampledb.logic.actions import get_action
 from sampledb.logic.objects import get_object, update_object, create_object
 from sampledb.logic.object_permissions import get_objects_with_permissions
@@ -115,7 +115,7 @@ class Object(Resource):
 
 
 class Objects(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self):
         # TODO: implement filters
         def filter_func(data):
@@ -148,7 +148,7 @@ class Objects(Resource):
             for object in objects
         ]
 
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def post(self):
         if flask.g.user.is_readonly:
             return {

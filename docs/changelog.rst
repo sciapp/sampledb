@@ -8,6 +8,7 @@ Currently in development.
 
 - Added readonly users
 - Allow hiding users
+- Added API tokens
 
 Version 0.8.1
 -------------
