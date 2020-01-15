@@ -43,7 +43,10 @@ def setup_data(app):
         user = User.query.get(user_id)
         assert user is not None
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('frontend.new_action', previous_action_id=4))
+        # Remove the message asking the user to sign in
+        flask.session.pop('_flashes', None)
+        flask.flash('You have been signed in automatically as part of the SampleDB Demo.', 'info')
+        return flask.redirect(flask.url_for('frontend.index'))
 
     sampledb.login_manager.login_view = 'autologin'
 
