@@ -26,14 +26,25 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     """
     Checks whether a URL is safe for redirecting a user to it.
 
-    URLs are deemed safe if they are absolute URLs on the current domain. This
-    is enforced by only allowing URLs that start with a slash and only consist
-    of alphanumerical characters or the the following characters: /=?&_.+-
+    URLs are deemed safe if they are absolute URLs on the current domain and
+    server path. This is enforced by only allowing URLs that start with the
+    absolute server path and only consist of alphanumerical characters or the
+    following characters: /=?&_.+-
 
     :param url: the URL to check
     :return: whether it is safe to redirect to or not
     """
-    return url.startswith('/') and all(c in '/=?&_.+-' or c.isalnum() for c in url)
+    server_path = flask.current_app.config.get('SERVER_PATH', '/')
+    # ensure the server path starts with a / to avoid relative paths or non-local paths
+    if not server_path.startswith('/'):
+        server_path = '/' + server_path
+    # ensure the server path ends with a / to avoid paths with it as a prefix
+    if not server_path.endswith('/'):
+        server_path = server_path + '/'
+    # prevent double slashes that would change the domain
+    if url.startswith('//'):
+        return False
+    return url.startswith(server_path) and all(c in '/=?&_.+-' or c.isalnum() for c in url)
 
 
 def _redirect_to_next_url():
