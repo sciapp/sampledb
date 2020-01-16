@@ -53,6 +53,9 @@ def user_preferences(user_id):
         if user_id != flask_login.current_user.id:
             return flask.abort(403)
         else:
+            if not flask_login.login_fresh():
+                # ensure only fresh sessions can edit preferences including passwords and api tokens
+                return flask.redirect(flask.url_for('.refresh_sign_in', next=flask.url_for('.user_preferences', user_id=flask_login.current_user.id)))
             # user eingeloggt, change preferences möglich
             user = flask_login.current_user
             return change_preferences(user, user_id)
