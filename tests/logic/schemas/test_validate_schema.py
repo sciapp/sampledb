@@ -979,6 +979,51 @@ def test_validate_sample_schema_with_unknown_property():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_measurement_schema():
+    schema = {
+        'title': 'Example',
+        'type': 'measurement',
+        'note': 'Example Note'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_measurement_schema_with_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'measurement',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_measurement_schema_without_note():
+    schema = {
+        'title': 'Example',
+        'type': 'measurement'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_measurement_schema_with_missing_title():
+    schema = {
+        'type': 'measurement'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_measurement_schema_with_unknown_property():
+    schema = {
+        'title': 'Example',
+        'type': 'measurement',
+        'action_id': 0
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_object_schema_with_display_properties():
     schema = {
         'title': 'Example',

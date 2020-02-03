@@ -321,6 +321,7 @@ def objects():
     display_properties = []
     display_property_titles = {}
     sample_ids = set()
+    measurement_ids = set()
     if action is not None:
         action_schema = action.schema
         display_properties = action_schema.get('displayProperties', [])
@@ -335,10 +336,16 @@ def objects():
             obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
             if obj['schema']['properties'][property_name]['type'] == 'sample':
                 sample_ids.add(obj['data'][property_name]['object_id'])
+            elif obj['schema']['properties'][property_name]['type'] == 'measurement':
+                measurement_ids.add(obj['data'][property_name]['object_id'])
 
     samples = {
         sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids
+    }
+    measurements = {
+        measurement_id: get_object(object_id=measurement_id)
+        for measurement_id in measurement_ids
     }
     if action_id is None:
         show_action = True
@@ -369,6 +376,7 @@ def objects():
         user=user,
         doi=doi,
         samples=samples,
+        measurements=measurements,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
@@ -617,12 +625,47 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         permissions=Permissions.READ,
         action_type=ActionType.SAMPLE_CREATION
     )
+    measurements = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        action_type=ActionType.MEASUREMENT
+    )
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, object_errors=object_errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, previous_object_id=previous_object_id)
+        return flask.render_template(
+            'objects/forms/form_create.html',
+            action_id=action_id,
+            schema=schema,
+            data=data,
+            errors=errors,
+            object_errors=object_errors,
+            form_data=form_data,
+            previous_actions=serializer.dumps(previous_actions),
+            form=form,
+            samples=samples,
+            measurements=measurements,
+            datetime=datetime,
+            tags=tags,
+            previous_object_id=previous_object_id
+        )
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, object_errors=object_errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, mode=mode)
+        return flask.render_template(
+            'objects/forms/form_edit.html',
+            schema=schema,
+            data=data,
+            object_id=object.object_id,
+            errors=errors,
+            object_errors=object_errors,
+            form_data=form_data,
+            previous_actions=serializer.dumps(previous_actions),
+            form=form,
+            samples=samples,
+            measurements=measurements,
+            datetime=datetime,
+            tags=tags,
+            mode=mode
+        )
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -649,6 +692,11 @@ def object(object_id):
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
             action_type=ActionType.SAMPLE_CREATION
+        )
+        measurements = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            action_type=ActionType.MEASUREMENT
         )
         instrument = action.instrument
         object_type = {
@@ -767,6 +815,7 @@ def object(object_id):
             version_id=object.version_id,
             user_may_grant=user_may_grant,
             samples=samples,
+            measurements=measurements,
             favorite_measurement_actions=favorite_measurement_actions,
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),

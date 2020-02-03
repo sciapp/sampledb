@@ -41,6 +41,8 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Opti
         return _validate_quantity(instance, schema, path)
     elif schema['type'] == 'sample':
         return _validate_sample(instance, schema, path)
+    elif schema['type'] == 'measurement':
+        return _validate_measurement(instance, schema, path)
     elif schema['type'] == 'tags':
         return _validate_tags(instance, schema, path)
     elif schema['type'] == 'hazards':
@@ -363,3 +365,36 @@ def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> No
     action = actions.get_action(sample.action_id)
     if action.type != actions.ActionType.SAMPLE_CREATION:
         raise ValidationError('object must be sample', path)
+
+
+def _validate_measurement(instance: dict, schema: dict, path: typing.List[str]) -> None:
+    """
+    Validates the given instance using the given measurement object schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    valid_keys = {'_type', 'object_id'}
+    required_keys = valid_keys
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if instance['_type'] != 'measurement':
+        raise ValidationError('expected _type "measurement"', path)
+    if not isinstance(instance['object_id'], int):
+        raise ValidationError('object_id must be int', path)
+    try:
+        measurement = objects.get_object(object_id=instance['object_id'])
+    except ObjectDoesNotExistError:
+        raise ValidationError('object does not exist', path)
+    action = actions.get_action(measurement.action_id)
+    if action.type != actions.ActionType.MEASUREMENT:
+        raise ValidationError('object must be measurement', path)

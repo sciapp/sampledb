@@ -10,6 +10,8 @@
   {% include "objects/view/quantity.html" %}
 {% elif schema.type == 'sample' %}
   {% include "objects/view/sample.html" %}
+{% elif schema.type == 'measurement' %}
+  {% include "objects/view/measurement.html" %}
 {% elif schema.type == 'object' %}
   {% include "objects/view/object.html" %}
 {% elif schema.type == 'array' %}
