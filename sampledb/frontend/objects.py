@@ -630,6 +630,17 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         permissions=Permissions.READ,
         action_type=ActionType.MEASUREMENT
     )
+    if object is not None:
+        samples = [
+            sample
+            for sample in samples
+            if sample.object_id != object.object_id
+        ]
+        measurements = [
+            measurement
+            for measurement in measurements
+            if measurement.object_id != object.object_id
+        ]
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     if object is None:
