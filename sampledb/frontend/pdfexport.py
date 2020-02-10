@@ -134,6 +134,8 @@ def _handle_any(data, schema, path, canvas):
         _handle_quantity(data, schema, path, canvas)
     elif schema['type'] == 'sample':
         _handle_sample(data, schema, path, canvas)
+    elif schema['type'] == 'measurement':
+        _handle_measurement(data, schema, path, canvas)
     elif schema['type'] == 'tags':
         _handle_tags(data, schema, path, canvas)
     elif schema['type'] == 'datetime':
@@ -197,6 +199,11 @@ def _handle_quantity(data, schema, path, canvas):
 
 
 def _handle_sample(data, schema, path, canvas):
+    text = '• {}: #{}'.format(schema['title'], data['object_id'])
+    _append_text(canvas, text)
+
+
+def _handle_measurement(data, schema, path, canvas):
     text = '• {}: #{}'.format(schema['title'], data['object_id'])
     _append_text(canvas, text)
 

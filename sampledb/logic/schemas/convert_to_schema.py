@@ -17,7 +17,7 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
     :param new_schema: the target sampledb object schema
     :return: the converted data and a list of conversion warnings/notes
     """
-    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'quantity', 'array', 'objects', 'hazards'):
+    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'quantity', 'array', 'objects', 'hazards'):
         return data, []
 
     if new_schema['type'] == 'tags' and previous_schema['type'] == 'text':
@@ -33,7 +33,7 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
         return new_data, []
     if previous_schema['type'] != new_schema['type']:
         return generate_placeholder(new_schema), ["Unable to convert property '{}' from type '{}' to type '{}'.".format(new_schema['title'], previous_schema['type'], new_schema['type'])]
-    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'hazards'):
+    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards'):
         return data, []
     if new_schema['type'] == 'quantity':
         previous_dimensionality = get_dimensionality_for_units(previous_schema['units'])

@@ -6,6 +6,7 @@ Version 0.9
 
 Currently in development.
 
+- Allow referencing measurements as object properties
 - Added readonly users
 - Allow hiding users
 - Added API tokens

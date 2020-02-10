@@ -233,7 +233,7 @@ def find_object_references(object: Object, find_previous_referenced_object_ids: 
     """
     referenced_object_ids = []
     for path, schema, data in _get_object_properties(object):
-        if schema['type'] == 'sample' and data is not None and data['object_id'] is not None:
+        if schema['type'] in ('sample', 'measurement') and data is not None and data['object_id'] is not None:
             referenced_object_id = data['object_id']
             previous_referenced_object_id = None
             if find_previous_referenced_object_ids and object.version_id > 0:
@@ -255,9 +255,9 @@ def _update_object_references(object: Object, user_id: int) -> None:
     """
     Searches for references to other objects and updates these accordingly.
 
-    At this time, only measurements or samples referencing samples will be
-    handled, adding an entry to the sample's object log about being used in a
-    measurement.
+    At this time, only measurements or samples referencing other measurements
+    or samples will be handled, adding an entry to the object's log about
+    being used in a sample or measurement.
 
     :param object: the updated (or newly created) object
     :param user_id: the user who caused the object update or creation

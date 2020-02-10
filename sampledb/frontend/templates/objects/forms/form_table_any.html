@@ -6,6 +6,10 @@
   {% include "objects/forms/form_table_datetime.html" %}
 {% elif schema['type'] == 'quantity' %}
   {% include "objects/forms/form_table_quantity.html" %}
+{% elif schema['type'] == 'sample' %}
+  {% include "objects/forms/form_table_sample.html" %}
+{% elif schema['type'] == 'measurement' %}
+  {% include "objects/forms/form_table_measurement.html" %}
 {#{% elif schema.type == 'object' %}#}
 {#  {% include "form_object.html" %}#}
 {#{% elif schema.type == 'array' %}#}
