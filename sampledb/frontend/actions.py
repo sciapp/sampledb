@@ -40,6 +40,7 @@ class ActionForm(FlaskForm):
     instrument = SelectField()
     schema = StringField(validators=[InputRequired()])
     is_public = BooleanField()
+    is_user_specific = BooleanField(default=True)
 
 
 @frontend.route('/actions/')
@@ -210,6 +211,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         }, indent=2)
         submit_text = "Create"
     may_change_public = action is None or action.user_id is not None
+    may_set_user_specific = action is None and flask_login.current_user.is_admin
     schema = None
     pygments_output = None
     error_message = None
@@ -334,7 +336,11 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if instrument_id < 0:
             instrument_id = None
         if action is None:
-            action = create_action(action_type, name, description, schema, instrument_id, flask_login.current_user.id)
+            if action_form.is_user_specific.data or not may_set_user_specific:
+                user_id = flask_login.current_user.id
+            else:
+                user_id = None
+            action = create_action(action_type, name, description, schema, instrument_id, user_id)
             flask.flash('The action was created successfully.', 'success')
             if may_change_public and is_public:
                 set_action_public(action.id, True)
@@ -355,5 +361,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         use_schema_editor=use_schema_editor,
         may_change_type=action is None,
         may_change_instrument=action is None,
+        may_set_user_specific=may_set_user_specific,
         may_change_public=may_change_public
     )
