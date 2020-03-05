@@ -260,3 +260,15 @@ def change_password_in_authentication_method(authentication_method_id: int, pass
     db.session.add(authentication_method)
     db.session.commit()
     return True
+
+
+def is_login_available(login: str) -> bool:
+    """
+    Return whether or not a login is still available for use.
+
+    For password-based authentication, the login can only be used once.
+
+    :param login: the login for which to check availability
+    :return: whether the login is available
+    """
+    return Authentication.query.filter(Authentication.login['login'].astext == login).first() is None

@@ -5,6 +5,10 @@
 {% block content %}
 <h1>Users</h1>
 
+{% if current_user.is_admin %}
+  <a href="{{ url_for('.create_other_user') }}" class="btn btn-default">Create Bot User</a>
+{% endif %}
+
 <table class="table">
   <thead>
     <tr>
