@@ -15,5 +15,5 @@ from ...logic.users import get_users
 def users():
     return flask.render_template(
         'users.html',
-        users=sorted(get_users(exclude_hidden=True), key=lambda u: u.id)
+        users=sorted(get_users(exclude_hidden=not flask_login.current_user.is_admin), key=lambda u: u.id)
     )
