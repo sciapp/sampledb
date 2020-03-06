@@ -10,6 +10,7 @@ Currently in development.
 - Added readonly users
 - Allow hiding users
 - Added API tokens
+- Added administration functions to the web frontend
 - Fixed various minor bugs
 
 Version 0.8.1
