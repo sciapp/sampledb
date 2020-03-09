@@ -128,6 +128,28 @@ def remove_instrument_responsible_user(instrument_id: int, user_id: int) -> None
     db.session.commit()
 
 
+def set_instrument_responsible_users(instrument_id: int, user_ids: typing.List[int]) -> None:
+    """
+    Set the list of instrument responsible users for a an instrument.
+
+    :param instrument_id: the ID of an existing instrument
+    :param user_ids: the IDs of existing users
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
+    :raise errors.UserDoesNotExistError: when no user with one of the given
+        user IDs exists
+    """
+    instrument = Instrument.query.get(instrument_id)
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    instrument.responsible_users.clear()
+    for user_id in user_ids:
+        user = users.get_user(user_id)
+        instrument.responsible_users.append(user)
+    db.session.add(instrument)
+    db.session.commit()
+
+
 def get_user_instruments(user_id: int) -> typing.List[int]:
     """
     Get a list of instruments a user with a given user ID is responsible for.

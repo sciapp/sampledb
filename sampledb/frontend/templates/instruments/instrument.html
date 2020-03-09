@@ -6,6 +6,11 @@
   <h1>{{ instrument.name }}</h1>
   <p>{{ instrument.description }}</p>
   {% include "instruments/instrument_scientists.html" %}
+  {% if not current_user.is_readonly %}
+  {% if current_user.is_admin or current_user in instrument.responsible_users %}
+    <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">Edit Instrument</a>
+  {% endif %}
+  {% endif %}
   {% for action in instrument.actions %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     <p>{{ action.description }}</p>

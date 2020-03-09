@@ -6,6 +6,7 @@ Version 0.9
 
 Currently in development.
 
+- Allow creating and editing instruments using the web frontend
 - Allow referencing measurements as object properties
 - Added readonly users
 - Allow hiding users

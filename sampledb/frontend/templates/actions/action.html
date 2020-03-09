@@ -35,10 +35,10 @@
     <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
     {% endif %}
   {% endif %}
+  {% if not current_user.is_readonly %}
   {% if may_edit %}
     <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action.">Edit Action</a>
   {% endif %}
-  {% if not current_user.is_readonly %}
   <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Create a new custom action based on the settings for this action.">Use as Template</a>
   {% endif %}
 {% endblock %}
