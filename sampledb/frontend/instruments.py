@@ -16,6 +16,7 @@ from ..logic.errors import InstrumentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users
 from .users.forms import ToggleFavoriteInstrumentForm
+from .utils import check_current_user_is_not_readonly
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -91,6 +92,7 @@ def edit_instrument(instrument_id):
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
         return flask.abort(404)
+    check_current_user_is_not_readonly()
     if not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
         return flask.abort(401)
     instrument_form = InstrumentForm()
