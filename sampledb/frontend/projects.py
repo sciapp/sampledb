@@ -11,6 +11,7 @@ from .. import logic
 from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
 from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm
+from .utils import check_current_user_is_not_readonly
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
@@ -75,7 +76,7 @@ def project(project_id):
 
     if Permissions.GRANT in user_permissions:
         invitable_user_list = []
-        for user in logic.users.get_users():
+        for user in logic.users.get_users(exclude_hidden=True):
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
@@ -149,6 +150,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.projects'))
     if 'delete' in flask.request.form and Permissions.GRANT in user_permissions:
         if delete_project_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             try:
                 logic.projects.delete_project(project_id=project_id)
             except logic.errors.ProjectDoesNotExistError:
@@ -159,6 +161,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.projects'))
     if 'remove_member' in flask.request.form and Permissions.GRANT in user_permissions:
         if remove_project_member_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             member_id_str = flask.request.form['remove_member']
             try:
                 member_id = int(member_id_str)
@@ -187,6 +190,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'remove_group' in flask.request.form and Permissions.GRANT in user_permissions:
         if remove_project_group_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             group_id_str = flask.request.form['remove_group']
             try:
                 group_id = int(group_id_str)
@@ -213,6 +217,7 @@ def project(project_id):
     if 'edit' in flask.request.form and Permissions.WRITE in user_permissions:
         show_edit_form = True
         if edit_project_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             try:
                 logic.projects.update_project(project_id, edit_project_form.name.data, edit_project_form.description.data)
             except logic.errors.ProjectDoesNotExistError:
@@ -227,6 +232,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'add_user' in flask.request.form and Permissions.GRANT in user_permissions:
         if invite_user_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             if not any(user.id == invite_user_form.user_id.data for user in invitable_user_list):
                 flask.flash('You cannot add this user.', 'error')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
@@ -251,6 +257,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'add_group' in flask.request.form and Permissions.GRANT in user_permissions:
         if invite_group_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             if not any(group.id == invite_group_form.group_id.data for group in invitable_group_list):
                 flask.flash('You cannot add this group.', 'error')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
@@ -268,6 +275,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'remove_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
         if remove_subproject_form is not None and remove_subproject_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             child_project_id = remove_subproject_form.child_project_id.data
             if child_project_id not in child_project_ids:
                 flask.flash('Project #{} is not a subproject of this project.'.format(int(child_project_id)), 'error')
@@ -277,6 +285,7 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'add_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
         if add_subproject_form is not None and add_subproject_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             child_project_id = add_subproject_form.child_project_id.data
             if child_project_id not in addable_project_ids:
                 flask.flash('Project #{} cannot become a subproject of this project.'.format(int(child_project_id)), 'error')
@@ -341,6 +350,7 @@ def projects():
     if 'create' in flask.request.form:
         show_create_form = True
         if create_project_form.validate_on_submit():
+            check_current_user_is_not_readonly()
             try:
                 project_id = logic.projects.create_project(create_project_form.name.data, create_project_form.description.data, flask_login.current_user.id).id
             except logic.errors.ProjectAlreadyExistsError:
@@ -383,6 +393,7 @@ def project_permissions(project_id):
 @frontend.route('/projects/<int:project_id>/permissions', methods=['POST'])
 @flask_login.login_required
 def update_project_permissions(project_id):
+    check_current_user_is_not_readonly()
     try:
         if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, include_groups=True):
             return flask.abort(403)

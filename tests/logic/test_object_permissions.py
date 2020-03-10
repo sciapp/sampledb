@@ -620,3 +620,45 @@ def test_default_public_permissions(users, independent_action):
     object_permissions.set_default_public(creator_id=creator.id, is_public=False)
     assert not object_permissions.default_is_public(creator_id=creator.id)
     assert object_permissions.object_is_public(object_id=object.id)
+
+
+def test_get_object_permissions_for_readonly_users(users, instrument, instrument_action_object):
+    user_id = users[0].id
+    object_id = instrument_action_object.object_id
+
+    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
+    sampledb.db.session.commit()
+    assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.WRITE,
+        users[1].id: Permissions.GRANT
+    }
+    sampledb.logic.users.set_user_readonly(user_id, readonly=True)
+    assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
+
+    instrument.responsible_users.append(users[0])
+    sampledb.db.session.add(instrument)
+    sampledb.db.session.commit()
+    assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.READ,
+        users[1].id: Permissions.GRANT
+    }
+    sampledb.logic.users.set_user_readonly(user_id, readonly=False)
+    assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
+        user_id: Permissions.GRANT,
+        users[1].id: Permissions.GRANT
+    }
+
+
+def test_get_readonly_user_object_permissions(user, independent_action_object):
+    user_id = user.id
+    object_id = independent_action_object.object_id
+    sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
+    sampledb.db.session.commit()
+    assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
+    sampledb.logic.users.set_user_readonly(user_id, readonly=True)
+    assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
+    sampledb.logic.users.set_user_readonly(user_id, readonly=False)
+    assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE

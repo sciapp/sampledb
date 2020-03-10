@@ -65,3 +65,25 @@ def test_update_missing_instrument():
     instrument = instruments.create_instrument(name="Example Instrument", description="")
     with pytest.raises(errors.InstrumentDoesNotExistError):
         instruments.update_instrument(instrument_id=instrument.id+1, name="Test", description="desc")
+
+
+def test_set_instrument_responsible_users():
+    user1 = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
+    user2 = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
+    sampledb.db.session.add(user1)
+    sampledb.db.session.add(user2)
+    sampledb.db.session.commit()
+    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    assert len(instrument.responsible_users) == 0
+    instruments.set_instrument_responsible_users(instrument.id, [user1.id])
+    assert len(instrument.responsible_users) == 1
+    assert user1 in instrument.responsible_users
+    instruments.set_instrument_responsible_users(instrument.id, [user2.id])
+    assert len(instrument.responsible_users) == 1
+    assert user2 in instrument.responsible_users
+    instruments.set_instrument_responsible_users(instrument.id, [user1.id, user2.id])
+    assert len(instrument.responsible_users) == 2
+    assert user1 in instrument.responsible_users
+    assert user2 in instrument.responsible_users
+    instruments.set_instrument_responsible_users(instrument.id, [])
+    assert len(instrument.responsible_users) == 0

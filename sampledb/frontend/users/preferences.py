@@ -3,6 +3,8 @@
 
 """
 
+import secrets
+
 import flask
 import flask_login
 import sqlalchemy.sql.expression
@@ -13,10 +15,10 @@ from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
-from .forms import NotificationModeForm, OtherSettingsForm
+from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm
 
 from ...logic import user_log
-from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_confirm_email, send_recovery_email
 from ...logic.security_tokens import verify_token
@@ -51,6 +53,9 @@ def user_preferences(user_id):
         if user_id != flask_login.current_user.id:
             return flask.abort(403)
         else:
+            if not flask_login.login_fresh():
+                # ensure only fresh sessions can edit preferences including passwords and api tokens
+                return flask.redirect(flask.url_for('.refresh_sign_in', next=flask.url_for('.user_preferences', user_id=flask_login.current_user.id)))
             # user eingeloggt, change preferences möglich
             user = flask_login.current_user
             return change_preferences(user, user_id)
@@ -59,13 +64,17 @@ def user_preferences(user_id):
 
 
 def change_preferences(user, user_id):
-    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
+    api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
+    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     authentication_method_form = AuthenticationMethodForm()
     authentication_password_form = AuthenticationPasswordForm()
+
+    created_api_token = None
+    create_api_token_form = CreateAPITokenForm()
 
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
@@ -97,7 +106,7 @@ def change_preferences(user, user_id):
         project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
     default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
 
-    users = get_users()
+    users = get_users(exclude_hidden=True)
     users = [user for user in users if user.id not in user_permissions]
     groups = get_user_groups(flask_login.current_user.id)
     groups = [group for group in groups if group.id not in group_permissions]
@@ -139,8 +148,9 @@ def change_preferences(user, user_id):
                                              public_permissions=public_permissions,
                                              authentication_method_form=authentication_method_form,
                                              authentication_form=authentication_form,
+                                             create_api_token_form=create_api_token_form,
                                              confirmed_authentication_methods=confirmed_authentication_methods,
-                                             authentications=authentication_methods, error=str(e))
+                                             authentications=authentication_methods, error=str(e), api_tokens=api_tokens)
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
         else:
@@ -188,8 +198,9 @@ def change_preferences(user, user_id):
                                              public_permissions=public_permissions,
                                              authentication_method_form=authentication_method_form,
                                              authentication_form=authentication_form,
+                                             create_api_token_form=create_api_token_form,
                                              confirmed_authentication_methods=confirmed_authentication_methods,
-                                             authentications=authentication_methods, error=str(e))
+                                             authentications=authentication_methods, error=str(e), api_tokens=api_tokens)
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
@@ -231,11 +242,44 @@ def change_preferences(user, user_id):
                                              public_permissions=public_permissions,
                                              authentication_method_form=authentication_method_form,
                                              authentication_form=authentication_form,
+                                             create_api_token_form=create_api_token_form,
                                              confirmed_authentication_methods=confirmed_authentication_methods,
-                                             authentications=authentication_methods, error_add=str(e))
-            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id).all()
+                                             authentications=authentication_methods, error_add=str(e), api_tokens=api_tokens)
+            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
         else:
             flask.flash("Failed to add an authentication method.", 'error')
+    if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
+        created_api_token = secrets.token_hex(32)
+        description = create_api_token_form.description.data
+        try:
+            add_api_token(flask_login.current_user.id, created_api_token, description)
+            api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
+        except Exception as e:
+            flask.flash("Failed to add an API token.", 'error')
+            return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
+                                         authentication_password_form=authentication_password_form,
+                                         default_permissions_form=default_permissions_form,
+                                         add_user_permissions_form=add_user_permissions_form,
+                                         add_group_permissions_form=add_group_permissions_form,
+                                         notification_mode_form=notification_mode_form,
+                                         Permissions=Permissions,
+                                         NotificationMode=NotificationMode,
+                                         NotificationType=NotificationType,
+                                         notification_modes=get_notification_modes(flask_login.current_user.id),
+                                         user_settings=user_settings,
+                                         other_settings_form=other_settings_form,
+                                         get_user=get_user,
+                                         users=users,
+                                         groups=groups,
+                                         get_group=get_group,
+                                         user_permissions=user_permissions,
+                                         group_permissions=group_permissions,
+                                         public_permissions=public_permissions,
+                                         authentication_method_form=authentication_method_form,
+                                         authentication_form=authentication_form,
+                                         create_api_token_form=create_api_token_form,
+                                         confirmed_authentication_methods=confirmed_authentication_methods,
+                                         authentications=authentication_methods, error_add=str(e), api_tokens=api_tokens)
     if 'edit_user_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
         set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
         for user_permissions_data in default_permissions_form.user_permissions.data:
@@ -301,7 +345,7 @@ def change_preferences(user, user_id):
                         break
         flask.flash("Successfully updated your notification settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true()).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         modified_settings = {
@@ -345,8 +389,10 @@ def change_preferences(user, user_id):
                                  public_permissions=public_permissions,
                                  authentication_method_form=authentication_method_form,
                                  authentication_form=authentication_form,
+                                 create_api_token_form=create_api_token_form,
+                                 created_api_token=created_api_token,
                                  confirmed_authentication_methods=confirmed_authentication_methods,
-                                 authentications=authentication_methods)
+                                 authentications=authentication_methods, api_tokens=api_tokens)
 
 
 def confirm_email():

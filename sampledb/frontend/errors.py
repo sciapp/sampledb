@@ -6,6 +6,7 @@
 import flask
 
 from . import frontend
+from ..logic.errors import UserIsReadonlyError
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -32,3 +33,8 @@ def internal_server_error(error):
         return flask.render_template('errors/500.html'), 500
     except Exception:
         return 'Internal Server Error', 500
+
+
+@frontend.errorhandler(UserIsReadonlyError)
+def user_is_readonly_error(error):
+    return flask.render_template('errors/user_is_readonly.html'), 403

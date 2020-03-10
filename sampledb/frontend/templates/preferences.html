@@ -89,6 +89,46 @@
        </table>
     </div>
 
+  <h3>API Tokens</h3>
+  <div>
+    <p>
+      <strong>Note:</strong> API tokens are an authentication method for use with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.
+    </p>
+    <table class="table">
+      {% if api_tokens %}
+         <thead>
+             <tr>
+                 <th>Description</th>
+                 <th></th>
+                 <th></th>
+             </tr>
+         </thead>
+         <tbody>
+           {% for authentication in api_tokens %}
+           <tr>
+             <td>{{ authentication.login['description'] }}</td>
+             <td><a href="{{ url_for('.current_user_api_log', api_token_id=authentication.id) }}">View Log</a></td>
+             <td class="text-right">
+               <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+                 {{ authentication_method_form.csrf_token() }}
+                 <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
+                 <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+               </form>
+             </td>
+           </tr>
+           {% endfor %}
+         </tbody>
+      {% endif %}
+       <tfoot>
+         <tr>
+           <td></td>
+           <td></td>
+           <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#createApiTokenModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+         </tr>
+       </tfoot>
+    </table>
+  </div>
+
   <h2>Notification Settings</h2>
   <p><strong>Note:</strong> {{ service_name }} will notify you about various events. By default, these notifications will be sent using the {{ service_name }} notification system, but you can also chose to receive them via email or decide to ignore some notification types.</p>
 
@@ -134,6 +174,7 @@
     </div>
   </form>
 
+  {% if not current_user.is_readonly %}
   <h2>Default Permissions</h2>
   <p><strong>Note:</strong> These permissions will be used for samples, measurements and simulations that you create in the future. To change the permissions for an already existing object, please use the <strong>Edit preferences</strong> button on the object's site.</p>
 
@@ -380,6 +421,8 @@
     </div>
     </form>
   {% endif %}
+  {% endif %}
+
   <h2>Other Settings</h2>
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
     {{ other_settings_form.csrf_token }}
@@ -416,12 +459,6 @@
       <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_other_settings" value="edit_other_settings">Save</button>
     </div>
   </form>
-
-
-
-
-
-
 
 <!-- Modal -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -501,11 +538,95 @@
   </div>
 </div>
 {% endfor %}
+
+<div class="modal fade" id="createApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="createApiTokenModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form class="form-horizontal" id="form-add-api-token" method="post" name="form-add-api-token" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="createApiTokenModalLabel">Create API Token</h4>
+      </div>
+      <div class="modal-body">
+            {{ create_api_token_form.csrf_token() }}
+            <div class="form-group{% if create_api_token_form.description.errors %} has-error{% endif %}">
+                <label for="input-description" class="col-sm-4 control-label">Description</label>
+                <div class="col-sm-8">
+                    <input class="form-control" type="text" id="input-description" name="description"  placeholder="Description" {% if create_api_token_form.description.data %}value="{{ create_api_token_form.description.data }}"{% endif %}>
+                    {% if create_api_token_form.description.errors %} <span class='help-block'>Please enter a description for the API token.</span> {%endif%}
+                </div>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" style="width:6em;">Cancel</button>
+        <button type="submit" class="btn btn-primary" name="create_api_token" value="create_api_token" style="width:6em;">Create</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if created_api_token %}
+<div class="modal fade" id="viewApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="viewApiTokenModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="viewApiTokenModalLabel">New API Token</h4>
+      </div>
+      <div class="modal-body">
+        <div id="api-token">
+          <div class="input-group">
+            <input type="text" readonly="readonly" class="disabled form-control" value="{{ created_api_token }}"/>
+            <span class="input-group-btn">
+              <button class="btn btn-default" type="button"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
+            </span>
+          </div>
+          <span class="help-block" id="api-token-copy-notes"></span>
+        </div>
+        <span class="help-block">Make sure you save it - you won't be able to access it again.</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" style="width:6em;">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  {% if created_api_token %}
+  <script>
+  $('#viewApiTokenModal').modal('show');
+  $('#api-token button').bind('click', function() {
+  var input = document.querySelector('#api-token input');
+  input.setSelectionRange(0, input.value.length + 1);
+  $(input).focus();
+  try {
+    var success = document.execCommand('copy');
+    if (success) {
+      $('#api-token-copy-notes').text("Copied!");
+      $('#api-token').removeClass('has-error').addClass('has-success');
+    } else {
+      $('#api-token-copy-notes').text("Could not copy to clipboard, please use Ctrl+C.");
+      $('#api-token').removeClass('has-success').addClass('has-error');
+    }
+  } catch (err) {
+      $('#api-token-copy-notes').text("Could not copy to clipboard, please use Ctrl+C.");
+      $('#api-token').removeClass('has-success').addClass('has-error');
+  }
+});
+
+  </script>
+  {% endif %}
+  {% if create_api_token_form.description.errors %}
+  <script>
+  $('#createApiTokenModal').modal('show');
+  </script>
+  {% endif %}
 {% endblock %}
 
 {% block stylesheets %}

@@ -1,0 +1,22 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "http://orcid.org/0000-0001-6461-9433",
+      "@type": "Person",
+      "email": "f.rhiem@fz-juelich.de",
+      "name": "Florian Rhiem",
+      "affiliation": "PGI/JCNS-TA, Forschungszentrum Jülich"
+    }
+  ],
+  "codeRepository": "https://github.com/sciapp/sampledb",
+  "datePublished": "2019-12-10",
+  "dateModified": "2019-12-10",
+  "dateCreated": "2019-12-10",
+  "description": "A sample and measurement metadata database",
+  "keywords": "Python, sample management, research data management",
+  "license": "MIT",
+  "title": "SampleDB",
+  "version": "v0.8.1"
+}

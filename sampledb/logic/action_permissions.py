@@ -84,6 +84,10 @@ def get_action_permissions_for_users(action_id, include_instrument_responsible_u
                 action_permissions[user_id] = max(previous_permissions, permissions)
     if action.user_id is not None:
         action_permissions[action.user_id] = Permissions.GRANT
+    for user_id in action_permissions:
+        user = users.get_user(user_id)
+        if user.is_readonly:
+            action_permissions[user_id] = min(action_permissions[user_id], Permissions.READ)
     return action_permissions
 
 
@@ -161,16 +165,21 @@ def get_user_action_permissions(action_id, user_id, include_instrument_responsib
     # ensure that the user can be found
     user = users.get_user(user_id)
 
+    if user.is_readonly:
+        max_permissions = Permissions.READ
+    else:
+        max_permissions = Permissions.GRANT
+
     # administrators always have GRANT permissions
     if user.is_admin:
-        return Permissions.GRANT
+        return min(Permissions.GRANT, max_permissions)
     # action owners always have GRANT permissions
     if action.user_id == user_id:
-        return Permissions.GRANT
+        return min(Permissions.GRANT, max_permissions)
     if include_instrument_responsible_users:
         # instrument responsible users always have GRANT permissions for an action
         if user_id in _get_action_responsible_user_ids(action_id):
-            return Permissions.GRANT
+            return min(Permissions.GRANT, max_permissions)
     # other users might have been granted permissions, either individually or as group or project members
     user_action_permissions = UserActionPermissions.query.filter_by(action_id=action_id, user_id=user_id).first()
     if user_action_permissions is None:
@@ -178,14 +187,14 @@ def get_user_action_permissions(action_id, user_id, include_instrument_responsib
     else:
         permissions = user_action_permissions.permissions
     if Permissions.GRANT in permissions:
-        return permissions
+        return min(permissions, max_permissions)
     if include_groups:
         for group in groups.get_user_groups(user_id):
             group_action_permissions = GroupActionPermissions.query.filter_by(action_id=action_id, group_id=group.id).first()
             if group_action_permissions is not None and permissions in group_action_permissions.permissions:
                 permissions = group_action_permissions.permissions
     if Permissions.GRANT in permissions:
-        return permissions
+        return min(permissions, max_permissions)
     if include_projects:
         for user_project in projects.get_user_projects(user_id, include_groups=include_groups):
             user_project_permissions = projects.get_user_project_permissions(user_project.id, user_id, include_groups=include_groups)
@@ -194,10 +203,10 @@ def get_user_action_permissions(action_id, user_id, include_instrument_responsib
                 if project_action_permissions is not None:
                     permissions = min(user_project_permissions, project_action_permissions.permissions)
     if Permissions.READ in permissions:
-        return permissions
+        return min(permissions, max_permissions)
     # lastly, the action may be public, so all users have READ permissions
     if action_is_public(action_id):
-        return Permissions.READ
+        return min(Permissions.READ, max_permissions)
     # otherwise the user has no permissions for this action
     return Permissions.NONE
 

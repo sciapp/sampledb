@@ -90,6 +90,7 @@ Additionally, there are special data types:
 - :ref:`Tags <tags>`
 - :ref:`Hazards <hazards>`
 - Sample References
+- Measurement References
 
 All metadata property definitions require a ``title`` and a ``type`` property. They can also contain a ``note`` property with information for users. Some data types allow or require additional properties.
 
@@ -254,6 +255,19 @@ Sample references do not allow additional properties.
     {
       "title": "Previous Sample",
       "type": "sample"
+    }
+
+Measurement References
+^^^^^^^^^^^^^^^^^^^^^^
+
+Measurement references do not allow additional properties.
+
+.. code-block:: json
+    :caption: A measurement reference property
+
+    {
+      "title": "Preparatory Measurement",
+      "type": "measurement"
     }
 
 Notebook Templates

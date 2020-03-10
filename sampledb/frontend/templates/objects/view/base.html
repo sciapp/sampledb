@@ -32,6 +32,7 @@
   {% include "objects/view/any.html" %}
   <div class="object-button-bar">
   {% if not is_archived %}
+    {% if not current_user.is_readonly %}
     {% if user_may_edit %}
     <div class="form-group">
       <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new version of the information for this object."><i class="fa fa-pencil" aria-hidden="true"></i> Edit Object</a>
@@ -78,6 +79,7 @@
         </ul>
       </div>
     </div>
+    {% endif %}
     {% endif %}
     <div class="form-group">
       <a href="{{ url_for('.print_object_label', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Show a PDF containing labels for this object."><i class="fa fa-tag" aria-hidden="true"></i> Show Labels</a>
@@ -591,7 +593,7 @@
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT %}
             {% if object_log_entry.data['measurement_id'] %}
-            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> used the object in measurement <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ object_log_entry.data['measurement'].data['name']['text'] }}</a>.</td>
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> used the object in measurement <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ object_log_entry.data['measurement'].data['name']['text'] }} (#{{ object_log_entry.data['measurement_id'] }})</a>.</td>
             <td class="text-right">
               <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">View</a>
             </td>
@@ -602,7 +604,7 @@
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION %}
             {% if object_log_entry.data['sample_id'] %}
-            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> used the object to create the sample <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">{{ object_log_entry.data['sample'].data['name']['text'] }}</a>.</td>
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> used the object to create the sample <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">{{ object_log_entry.data['sample'].data['name']['text'] }} (#{{ object_log_entry.data['sample_id'] }})</a>.</td>
             <td class="text-right">
               <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">View</a>
             </td>

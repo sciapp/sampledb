@@ -195,3 +195,9 @@ def test_change_password_in_authentication_method(flask_server, users):
     result = change_password_in_authentication_method(authentication_id, 'abc')
     # change password if authentication_method is OTHER
     assert result is True
+
+
+def test_is_login_available(flask_server, users):
+    assert sampledb.logic.authentication.is_login_available('test')
+    sampledb.logic.authentication.add_other_authentication(users[0].id, 'test', 'test')
+    assert not sampledb.logic.authentication.is_login_available('test')

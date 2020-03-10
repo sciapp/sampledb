@@ -49,3 +49,7 @@ class NotificationModeForm(FlaskForm):
 
 class OtherSettingsForm(FlaskForm):
     pass
+
+
+class CreateAPITokenForm(FlaskForm):
+    description = StringField('description', validators=[Length(min=1, max=100)])

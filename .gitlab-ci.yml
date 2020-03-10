@@ -9,6 +9,7 @@ variables:
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ""
   SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres:5432/postgres"
+  POSTGRES_HOST_AUTH_METHOD: trust
 
 test:
   stage: test
@@ -64,6 +65,8 @@ documentation:
 build:
   stage: build
   image: docker:stable
+  tags:
+    - privileged-executor
   variables:
     DOCKER_DRIVER: overlay2
   services:

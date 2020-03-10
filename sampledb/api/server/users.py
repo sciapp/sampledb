@@ -6,7 +6,7 @@ RESTful API for iffSamples
 import flask
 from flask_restful import Resource
 
-from .authentication import http_basic_auth
+from .authentication import multi_auth
 from ...logic import errors, users
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -20,7 +20,7 @@ def user_to_json(user: users.User):
 
 
 class User(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self, user_id: int):
         try:
             user = users.get_user(user_id=user_id)
@@ -32,12 +32,12 @@ class User(Resource):
 
 
 class CurrentUser(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self):
         return user_to_json(flask.g.user)
 
 
 class Users(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self):
         return [user_to_json(user) for user in users.get_users()]

@@ -34,6 +34,13 @@
         <label for="input-name" class="control-label">Name</label>
          <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ action_form.name.name }}" value="{{ action_form.name.data or '' }}">
       </div>
+      {% if may_set_user_specific %}
+      <div class="checkbox">
+        <label for="input-is_user_specific" style="font-weight:700">
+          <input type="checkbox" id="input-is_user_specific" name="{{ action_form.is_user_specific.name }}" {% if action_form.is_user_specific.data %}checked="checked"{% endif %}> User specific action
+        </label>
+      </div>
+      {% endif %}
       <div class="checkbox {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
         <label for="input-public" style="font-weight:700">
           <input type="checkbox" id="input-public" name="{{ action_form.is_public.name }}" {% if action_form.is_public.data %}checked="checked"{% endif %} {% if not may_change_public %}disabled="disabled"{% endif %}> Public
@@ -154,6 +161,7 @@
             <option value="bool">Boolean</option>
             <option value="datetime">Datetime</option>
             <option value="sample">Sample</option>
+            <option value="measurement">Measurement</option>
           </select>
         </div>
         <div class="schema-editor-form-group">

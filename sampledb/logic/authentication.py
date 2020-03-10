@@ -1,11 +1,11 @@
 import bcrypt
 import typing
-
+import flask
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
 from ..models import Authentication, AuthenticationType, User
-from . import errors
+from . import errors, api_log
 
 
 def _hash_password(password: str) -> str:
@@ -89,6 +89,33 @@ def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirme
     db.session.commit()
 
 
+def add_api_token(user_id: int, api_token: str, description: str) -> None:
+    """
+    Add an API token as an authentication method for a given user.
+
+    :param user_id: the ID of an existing user
+    :param api_token: the api token as a 64 character string
+    :param description: a description for the token
+    """
+
+    assert len(api_token) == 64
+    api_token = api_token.lower()
+    # split into a short part (8 hex digits / 4 bytes) for identification and a long part for authentication
+    login, password = api_token[:8], api_token[8:]
+    authentication = Authentication(
+        login={
+            'login': login,
+            'bcrypt_hash': _hash_password(password),
+            'description': description
+        },
+        authentication_type=AuthenticationType.API_TOKEN,
+        confirmed=True,
+        user_id=user_id
+    )
+    db.session.add(authentication)
+    db.session.commit()
+
+
 def login(login: str, password: str) -> typing.Optional[User]:
     """
     Authenticate a user and create an LDAP based user if necessary.
@@ -139,6 +166,30 @@ def login(login: str, password: str) -> typing.Optional[User]:
     return None
 
 
+def login_via_api_token(api_token: str) -> typing.Optional[User]:
+    """
+    Authenticate a user using an API token.
+
+    :param api_token: the API token to use during authentication
+    :return: the user or None
+    """
+    # convert to lower case to enforce case insensitivity
+    api_token = api_token.lower().strip()
+    username, password = api_token[:8], api_token[8:]
+    authentication_methods = Authentication.query.filter(
+        db.and_(Authentication.login['login'].astext == username,
+                Authentication.type == AuthenticationType.API_TOKEN)
+    ).all()
+
+    for authentication_method in authentication_methods:
+        if not authentication_method.confirmed:
+            continue
+        if _validate_password_authentication(authentication_method, password):
+            api_log.create_log_entry(authentication_method.id, getattr(api_log.HTTPMethod, flask.request.method, api_log.HTTPMethod.OTHER), flask.request.path)
+            return authentication_method.user
+    return None
+
+
 def add_authentication_method(user_id: int, login: str, password: str, authentication_type: AuthenticationType) -> bool:
     """
     Add an authentication method for a user.
@@ -179,9 +230,10 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
     if authentication_method is None:
         return False
-    authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id).count()
-    if authentication_methods_count <= 1:
-        raise errors.OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
+    if authentication_method.type != AuthenticationType.API_TOKEN:
+        authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN).count()
+        if authentication_methods_count <= 1:
+            raise errors.OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
     db.session.delete(authentication_method)
     db.session.commit()
     return True
@@ -208,3 +260,15 @@ def change_password_in_authentication_method(authentication_method_id: int, pass
     db.session.add(authentication_method)
     db.session.commit()
     return True
+
+
+def is_login_available(login: str) -> bool:
+    """
+    Return whether or not a login is still available for use.
+
+    For password-based authentication, the login can only be used once.
+
+    :param login: the login for which to check availability
+    :return: whether the login is available
+    """
+    return Authentication.query.filter(Authentication.login['login'].astext == login).first() is None

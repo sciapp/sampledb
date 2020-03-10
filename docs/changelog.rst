@@ -1,6 +1,19 @@
 Changelog
 =========
 
+Version 0.9
+-----------
+
+Released on March 10th, 2020.
+
+- Allow creating and editing instruments using the web frontend
+- Allow referencing measurements as object properties
+- Added readonly users
+- Allow hiding users
+- Added API tokens
+- Added administration functions to the web frontend
+- Fixed various minor bugs
+
 Version 0.8.1
 -------------
 

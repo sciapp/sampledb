@@ -19,12 +19,15 @@ def get_user(user_id: int) -> User:
     return user
 
 
-def get_users() -> typing.List[User]:
+def get_users(exclude_hidden: bool = False) -> typing.List[User]:
     """
     Returns all users.
 
+    :param exclude_hidden: whether or not to exclude hidden users
     :return: the list of users
     """
+    if exclude_hidden:
+        return User.query.filter_by(is_hidden=False).all()
     return User.query.all()
 
 
@@ -55,3 +58,35 @@ def create_user(name: str, email: str, type: UserType) -> User:
     db.session.add(user)
     db.session.commit()
     return user
+
+
+def set_user_readonly(user_id: int, readonly: bool) -> None:
+    """
+    Set whether a user should be limited to READ permissions.
+
+    :param user_id: the user ID of an existing user
+    :param readonly: True, if the user should be read only, False otherwise
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+
+    user = get_user(user_id)
+    user.is_readonly = readonly
+    db.session.add(user)
+    db.session.commit()
+
+
+def set_user_hidden(user_id: int, hidden: bool) -> None:
+    """
+    Set whether a user should be hidden from user lists.
+
+    :param user_id: the user ID of an existing user
+    :param hidden: True, if the user should be hidden, False otherwise
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+
+    user = get_user(user_id)
+    user.is_hidden = hidden
+    db.session.add(user)
+    db.session.commit()

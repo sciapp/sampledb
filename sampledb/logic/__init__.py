@@ -4,6 +4,7 @@
 """
 
 from . import actions
+from . import api_log
 from . import authentication
 from . import comments
 from . import datatypes
@@ -40,6 +41,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 __all__ = [
     'actions',
+    'api_log',
     'authentication',
     'comments',
     'datatypes',

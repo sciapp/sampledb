@@ -4,10 +4,16 @@
 
 {# hide user area in navbar #}
 {% block navbar_userarea %}
+  {% if is_for_refresh %}
+  {{ super() }}
+  {% endif %}
 {% endblock %}
 
 {% block content %}
   <h1 class="text-center">Sign in to {{ service_name }}</h1>
+  {% if is_for_refresh %}
+  <div class="help-block text-center">To ensure the security of your account information, please sign in again.</div>
+  {% endif %}
   <form class="form-horizontal" method="post" id="form-signin">
     {{ form.csrf_token() }}
     <div class="form-group{% if has_errors %} has-error{% endif %}">
@@ -22,6 +28,7 @@
         <input type="password" class="form-control" id="input-password" name="password" placeholder="Password">
       </div>
     </div>
+    {% if not is_for_refresh %}
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-4">
         <div class="checkbox">
@@ -36,6 +43,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-8">
         <button type="submit" class="btn btn-primary">Sign in</button>

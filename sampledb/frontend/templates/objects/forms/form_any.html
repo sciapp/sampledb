@@ -4,6 +4,8 @@
   {% include "objects/forms/form_select.html" %}
 {% elif schema['type'] == 'sample' %}
   {% include "objects/forms/form_sample.html" %}
+{% elif schema['type'] == 'measurement' %}
+  {% include "objects/forms/form_measurement.html" %}
 {% elif schema['type'] == 'datetime' %}
   {% include "objects/forms/form_datetime.html" %}
 {% elif schema['type'] == 'bool' %}

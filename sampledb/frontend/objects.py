@@ -37,13 +37,19 @@ from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
 from .labels import create_labels
 from .pdfexport import create_pdfexport
+from .utils import check_current_user_is_not_readonly
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 def on_unauthorized(object_id):
-    return flask.render_template('objects/unauthorized.html', object_id=object_id), 403
+    permissions_by_user = get_object_permissions_for_users(object_id)
+    has_grant_user = any(
+        Permissions.GRANT in permissions
+        for permissions in permissions_by_user.values()
+    )
+    return flask.render_template('objects/unauthorized.html', object_id=object_id, has_grant_user=has_grant_user), 403
 
 
 @frontend.route('/objects/')
@@ -315,6 +321,7 @@ def objects():
     display_properties = []
     display_property_titles = {}
     sample_ids = set()
+    measurement_ids = set()
     if action is not None:
         action_schema = action.schema
         display_properties = action_schema.get('displayProperties', [])
@@ -329,10 +336,16 @@ def objects():
             obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
             if obj['schema']['properties'][property_name]['type'] == 'sample':
                 sample_ids.add(obj['data'][property_name]['object_id'])
+            elif obj['schema']['properties'][property_name]['type'] == 'measurement':
+                measurement_ids.add(obj['data'][property_name]['object_id'])
 
     samples = {
         sample_id: get_object(object_id=sample_id)
         for sample_id in sample_ids
+    }
+    measurements = {
+        measurement_id: get_object(object_id=measurement_id)
+        for measurement_id in measurement_ids
     }
     if action_id is None:
         show_action = True
@@ -363,6 +376,7 @@ def objects():
         user=user,
         doi=doi,
         samples=samples,
+        measurements=measurements,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
@@ -611,12 +625,58 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         permissions=Permissions.READ,
         action_type=ActionType.SAMPLE_CREATION
     )
+    measurements = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        action_type=ActionType.MEASUREMENT
+    )
+    if object is not None:
+        samples = [
+            sample
+            for sample in samples
+            if sample.object_id != object.object_id
+        ]
+        measurements = [
+            measurement
+            for measurement in measurements
+            if measurement.object_id != object.object_id
+        ]
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     if object is None:
-        return flask.render_template('objects/forms/form_create.html', action_id=action_id, schema=schema, data=data, errors=errors, object_errors=object_errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, previous_object_id=previous_object_id)
+        return flask.render_template(
+            'objects/forms/form_create.html',
+            action_id=action_id,
+            schema=schema,
+            data=data,
+            errors=errors,
+            object_errors=object_errors,
+            form_data=form_data,
+            previous_actions=serializer.dumps(previous_actions),
+            form=form,
+            samples=samples,
+            measurements=measurements,
+            datetime=datetime,
+            tags=tags,
+            previous_object_id=previous_object_id
+        )
     else:
-        return flask.render_template('objects/forms/form_edit.html', schema=schema, data=data, object_id=object.object_id, errors=errors, object_errors=object_errors, form_data=form_data, previous_actions=serializer.dumps(previous_actions), form=form, samples=samples, datetime=datetime, tags=tags, mode=mode)
+        return flask.render_template(
+            'objects/forms/form_edit.html',
+            schema=schema,
+            data=data,
+            object_id=object.object_id,
+            errors=errors,
+            object_errors=object_errors,
+            form_data=form_data,
+            previous_actions=serializer.dumps(previous_actions),
+            form=form,
+            samples=samples,
+            measurements=measurements,
+            datetime=datetime,
+            tags=tags,
+            mode=mode
+        )
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -643,6 +703,11 @@ def object(object_id):
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ,
             action_type=ActionType.SAMPLE_CREATION
+        )
+        measurements = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            action_type=ActionType.MEASUREMENT
         )
         instrument = action.instrument
         object_type = {
@@ -677,7 +742,7 @@ def object(object_id):
 
         location_form.location.choices = locations
         possible_responsible_users = [('-1', '—')]
-        for user in logic.users.get_users():
+        for user in logic.users.get_users(exclude_hidden=True):
             possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
         location_form.responsible_user.choices = possible_responsible_users
 
@@ -761,6 +826,7 @@ def object(object_id):
             version_id=object.version_id,
             user_may_grant=user_may_grant,
             samples=samples,
+            measurements=measurements,
             favorite_measurement_actions=favorite_measurement_actions,
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),
@@ -779,6 +845,7 @@ def object(object_id):
             user_may_assign_location=user_may_edit,
             location_form=location_form
         )
+    check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
         should_upgrade_schema = True
     else:
@@ -831,6 +898,7 @@ def print_object_label(object_id):
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_comments(object_id):
+    check_current_user_is_not_readonly()
     comment_form = CommentForm()
     if comment_form.validate_on_submit():
         content = comment_form.content.data
@@ -862,13 +930,14 @@ def object_permissions_request(object_id):
 @frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_location(object_id):
+    check_current_user_is_not_readonly()
     location_form = ObjectLocationAssignmentForm()
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), '{} (#{})'.format(location.name, location.id))
         for location in get_locations()
     ]
     possible_responsible_users = [('-1', '—')]
-    for user in logic.users.get_users():
+    for user in logic.users.get_users(exclude_hidden=True):
         possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
     location_form.responsible_user.choices = possible_responsible_users
     if location_form.validate_on_submit():
@@ -892,6 +961,7 @@ def post_object_location(object_id):
 @frontend.route('/objects/<int:object_id>/publications/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_publication(object_id):
+    check_current_user_is_not_readonly()
     publication_form = ObjectPublicationForm()
     if publication_form.validate_on_submit():
         doi = publication_form.doi.data
@@ -961,6 +1031,7 @@ def object_file(object_id, file_id):
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def update_file_information(object_id, file_id):
+    check_current_user_is_not_readonly()
     form = FileInformationForm()
     if not form.validate_on_submit():
         return flask.abort(400)
@@ -982,6 +1053,7 @@ def update_file_information(object_id, file_id):
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>/hide', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def hide_file(object_id, file_id):
+    check_current_user_is_not_readonly()
     form = FileHidingForm()
     if not form.validate_on_submit():
         return flask.abort(400)
@@ -1001,6 +1073,7 @@ def hide_file(object_id, file_id):
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])
 def mobile_file_upload(object_id: int, token: str):
+    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
@@ -1011,6 +1084,7 @@ def mobile_file_upload(object_id: int, token: str):
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['POST'])
 def post_mobile_file_upload(object_id: int, token: str):
+    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
@@ -1026,6 +1100,7 @@ def post_mobile_file_upload(object_id: int, token: str):
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id):
+    check_current_user_is_not_readonly()
     external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():
@@ -1053,6 +1128,7 @@ def post_object_files(object_id):
 @frontend.route('/objects/new', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_object():
+    check_current_user_is_not_readonly()
     action_id = flask.request.args.get('action_id', None)
     previous_object_id = flask.request.args.get('previous_object_id', None)
     if not action_id and not previous_object_id:
@@ -1170,10 +1246,11 @@ def restore_object_version(object_id, version_id):
 @frontend.route('/objects/<int:object_id>/permissions')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_permissions(object_id):
+    check_current_user_is_not_readonly()
     object = get_object(object_id)
     action = get_action(object.action_id)
     instrument = action.instrument
-    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False)
+    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False)
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
@@ -1199,7 +1276,7 @@ def object_permissions(object_id):
                 continue
             project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
         edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
-        users = get_users()
+        users = get_users(exclude_hidden=True)
         users = [user for user in users if user.id not in user_permissions]
         add_user_permissions_form = ObjectUserPermissionsForm()
         groups = get_user_groups(flask_login.current_user.id)

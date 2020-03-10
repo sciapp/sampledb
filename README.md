@@ -38,7 +38,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    docker.pkg.github.com/sciapp/sampledb/sampledb:0.8.1
+    sciapp/sampledb:0.9.0
 ```
 
 This will start a basic SampleDB instance at `http://localhost:8000`.

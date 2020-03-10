@@ -17,7 +17,7 @@ def main(arguments):
         exit(1)
     user_id, yes_or_no = arguments
     try:
-        user_id == int(user_id)
+        user_id = int(user_id)
     except ValueError:
         print("Error: user_id must be an integer", file=sys.stderr)
         exit(1)

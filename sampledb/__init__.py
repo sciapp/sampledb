@@ -6,7 +6,7 @@ from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 
 login_manager = LoginManager()
-login_manager.session_protection = 'strong'
+login_manager.session_protection = 'basic'
 
 mail = Mail()
 db = SQLAlchemy()

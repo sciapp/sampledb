@@ -39,6 +39,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_text_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'sample':
         return parse_sample_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'measurement':
+        return parse_measurement_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'datetime':
         return parse_datetime_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'bool':
@@ -143,6 +145,29 @@ def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False)
         raise ValueError('object_id must be int')
     data = {
         '_type': 'sample',
+        'object_id': object_id
+    }
+    schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_measurement_form_data(form_data, schema, id_prefix, errors, required=False):
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if keys != [id_prefix + '__oid']:
+        raise ValueError('invalid measurement form data')
+    object_id = form_data.get(id_prefix + '__oid', [''])[0]
+    if not object_id:
+        if not required:
+            return None
+        else:
+            raise ValueError('Please select a measurement.')
+    try:
+        object_id = int(object_id)
+    except ValueError:
+        raise ValueError('object_id must be int')
+    data = {
+        '_type': 'measurement',
         'object_id': object_id
     }
     schemas.validate(data, schema)

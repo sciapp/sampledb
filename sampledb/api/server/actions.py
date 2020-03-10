@@ -6,7 +6,7 @@ RESTful API for iffSamples
 import flask
 from flask_restful import Resource
 
-from .authentication import http_basic_auth
+from .authentication import multi_auth
 from ...logic.actions import get_action, ActionType
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
 from ...logic import errors
@@ -30,7 +30,7 @@ def action_to_json(action):
 
 
 class Action(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self, action_id: int):
         try:
             action = get_action(action_id=action_id)
@@ -46,7 +46,7 @@ class Action(Resource):
 
 
 class Actions(Resource):
-    @http_basic_auth.login_required
+    @multi_auth.login_required
     def get(self):
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
         return [action_to_json(action) for action in actions]

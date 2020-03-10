@@ -9,9 +9,11 @@ import os
 from urllib.parse import quote_plus
 
 import flask
+import flask_login
 import qrcode
 import qrcode.image.svg
 
+from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 
@@ -67,6 +69,11 @@ def is_image(file):
 
 def get_num_unread_notifications(user):
     return get_num_notifications(user.id, unread_only=True)
+
+
+def check_current_user_is_not_readonly():
+    if flask_login.current_user.is_readonly:
+        raise UserIsReadonlyError()
 
 
 _jinja_filters['prettify_units'] = prettify_units
