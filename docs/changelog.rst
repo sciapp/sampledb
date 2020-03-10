@@ -4,7 +4,7 @@ Changelog
 Version 0.9
 -----------
 
-Currently in development.
+Released on March 10th, 2020.
 
 - Allow creating and editing instruments using the web frontend
 - Allow referencing measurements as object properties
