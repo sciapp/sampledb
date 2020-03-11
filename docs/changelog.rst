@@ -74,6 +74,14 @@ Released on February 13th, 2019.
 - Fixed various minor bugs
 
 
+Version 0.3.1
+-------------
+
+Released on January 21st, 2019.
+
+- Improved performance of object permissions
+
+
 Version 0.3
 -----------
 
