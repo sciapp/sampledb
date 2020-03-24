@@ -4,9 +4,11 @@ Example data for testing sampledb
 """
 
 import json
+import os
+
 import flask
 import flask_login
-import sqlalchemy
+
 import sampledb
 from sampledb.models import Objects, User, UserType, ActionType, AuthenticationType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
@@ -46,7 +48,7 @@ def setup_data(app):
         # Remove the message asking the user to sign in
         flask.session.pop('_flashes', None)
         flask.flash('You have been signed in automatically as part of the SampleDB Demo.', 'info')
-        return flask.redirect(flask.url_for('frontend.index'))
+        return flask.redirect(os.environ.get('SAMPLEDB_DEMO_REDIRECT_URI', flask.url_for('frontend.index')))
 
     sampledb.login_manager.login_view = 'autologin'
 
