@@ -82,7 +82,7 @@
     {% endif %}
     {% endif %}
     <div class="form-group">
-      <a href="{{ url_for('.print_object_label', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Show a PDF containing labels for this object."><i class="fa fa-tag" aria-hidden="true"></i> Show Labels</a>
+      <button type="button" class="btn btn-primary" id="button-show-object-label-modal" data-toggle="tooltip" data-placement="top" title="Generate a PDF containing labels for this object."><i class="fa fa-tag" aria-hidden="true"></i> Generate Labels</button>
     </div>
     <div class="form-group">
       <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal" data-toggle="tooltip" data-placement="top" title="Show a QR code for a link to this object."><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
@@ -389,6 +389,129 @@
     {% endif %}
   {% endif %}
 
+    <div class="modal fade" id="objectLabelModal" tabindex="-1" role="dialog" aria-labelledby="objectLabelModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="objectLabelModalLabel">Generate Labels</h4>
+          </div>
+          <form method="get" action="{{ url_for('.print_object_label', object_id=object_id) }}" class="form-horizontal" onsubmit="return validateLabelsForm()" id="form-generate-labels">
+          <div class="modal-body">
+              <div class="radio">
+                <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" onchange="updateLabelsForm()"/>Mixed label formats</label>
+              </div>
+              <span class="help-block">This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:{{ config['CONTACT_EMAIL'] }}">contact an administrator</a>.</span>
+              <div class="form-group">
+                <label for="input-label-mixed-paper-format" class="control-label col-sm-4">Paper Size</label>
+                <div class="col-sm-8">
+                <select class="selectpicker form-control" id="input-label-mixed-paper-format" name="mixed-paper-format">
+                  <option value="DIN A4 (Portrait)" selected="selected">DIN A4 (Portrait)</option>
+                  <option value="DIN A4 (Landscape)">DIN A4 (Landscape)</option>
+                  <option value="Letter (Portrait)">Letter / ANSI A (Portrait)</option>
+                  <option value="Letter (Landscape)">Letter / ANSI A (Landscape)</option>
+                </select>
+                </div>
+              </div>
+              <hr />
+              <div class="radio">
+                <label class="control-label"><input type="radio" name="mode" value="fixed-width" onchange="updateLabelsForm()"/>Fixed-width labels</label>
+              </div>
+              <span class="help-block">This will generate vertically oriented labels with a fixed-width and an optional minimum height.</span>
+              <div class="form-group">
+                <label for="input-label-width-paper-format" class="control-label col-sm-4">Paper Size</label>
+                <div class="col-sm-8">
+                <select class="selectpicker form-control" id="input-label-width-paper-format" name="width-paper-format">
+                  <option value="DIN A4 (Portrait)" selected="selected">DIN A4 (Portrait)</option>
+                  <option value="DIN A4 (Landscape)">DIN A4 (Landscape)</option>
+                  <option value="Letter (Portrait)">Letter / ANSI A (Portrait)</option>
+                  <option value="Letter (Landscape)">Letter / ANSI A (Landscape)</option>
+                </select>
+                <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="input-width" class="col-sm-4 control-label">Label Width:</label>
+                <div class="col-sm-8">
+                  <div class="input-group">
+                    <input type="text" class="form-control" aria-label="Label Width" value="40" name="label-width" id="input-width">
+                    <span class="input-group-addon">mm</span>
+                  </div>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="input-minimum-height" class="col-sm-4 control-label">Minimum Label Height:</label>
+                <div class="col-sm-8">
+                  <div class="input-group">
+                    <input type="text" class="form-control" aria-label="Minimum Label Height" value="0" name="label-minimum-height" id="input-minimum-height">
+                    <span class="input-group-addon">mm</span>
+                  </div>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="side-by-side"> QR Code and GHS symbols side-by-side
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="centered" checked="checked"> Center QR Code and GHS symbols
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <div class="radio">
+                <label class="control-label"><input type="radio" name="mode" value="minimum-height" onchange="updateLabelsForm()"/>Minimal-height labels</label>
+              </div>
+              <span class="help-block">This will generate vertically oriented labels with a height as low as possible and an optional minimum width.</span>
+              <div class="form-group">
+                <label for="input-label-height-paper-format" class="control-label col-sm-4">Paper Size</label>
+                <div class="col-sm-8">
+                <select class="selectpicker form-control" id="input-label-height-paper-format" name="height-paper-format">
+                  <option value="DIN A4 (Portrait)" selected="selected">DIN A4 (Portrait)</option>
+                  <option value="DIN A4 (Landscape)">DIN A4 (Landscape)</option>
+                  <option value="Letter (Portrait)">Letter / ANSI A (Portrait)</option>
+                  <option value="Letter (Landscape)">Letter / ANSI A (Landscape)</option>
+                </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="input-minimum-width" class="col-sm-4 control-label">Minimum Label Width:</label>
+                <div class="col-sm-8">
+                  <div class="input-group">
+                    <input type="text" class="form-control" aria-label="Minimum Label Width" value="0" name="label-minimum-width" id="input-minimum-width">
+                    <span class="input-group-addon">mm</span>
+                  </div>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="include-qrcode"> Include QR Code
+                    </label>
+                  </div>
+                </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" type="submit">Generate Labels</button>
+          </div>
+          </form>
+        </div>
+      </div>
+    </div>
   {% if object_qrcode %}
     <div class="modal fade" id="mobileObjectLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileObjectLinkModalLabel">
       <div class="modal-dialog" role="document">
@@ -818,6 +941,9 @@
         $('#button-show-object-qrcode-modal').click(function() {
             $('#mobileObjectLinkModal').modal('show');
         });
+        $('#button-show-object-label-modal').click(function() {
+            $('#objectLabelModal').modal('show');
+        });
         $('#input-file-upload').on('change', function() {
           var files = $(this).get(0).files;
           if (files.length === 0) {
@@ -940,5 +1066,124 @@
         wrapper.tooltip('hide');
       }.bind(wrapper), 500);
     });
+    {% if not is_archived %}
+    function validateLabelsForm() {
+      const PAGE_SIZES = {
+        {% for paper_format in PAGE_SIZES %}
+          "{{ paper_format }}": [
+            {{ PAGE_SIZES[paper_format][0] / mm }},
+            {{ PAGE_SIZES[paper_format][1] / mm }}
+          ]{% if loop.index < (PAGE_SIZES | length) %},{% endif %}
+        {% endfor %}
+      };
+      var labels_form = $('#form-generate-labels');
+      var is_valid = true;
+      labels_form.find('.has-error').removeClass('has-error');
+      labels_form.find('.has-success').removeClass('has-success');
+      labels_form.find('.help-block').text("");
+      if (labels_form.find('input[name="mode"][value="fixed-width"]').is(':checked')) {
+        var paper_format = labels_form.find('select[name="width-paper-format"] > option:checked').val();
+        if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
+          var paper_format_group = labels_form.find('select[name="width-paper-format"]').closest('.form-group');
+          paper_format_group.addClass('has-error');
+          paper_format_group.find('.help-block').text("Please select a paper format.");
+          is_valid = false;
+        } else {
+          labels_form.find('select[name="width-paper-format"]').closest('.form-group').addClass('has-success');
+          var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
+          var maximum_height = Math.floor(PAGE_SIZES[paper_format][1] - {{ VERTICAL_LABEL_MARGIN * 2 }});
+          var minimum_width = 20;
+          if (labels_form.find('input[name="side-by-side"]').is(':checked')) {
+            minimum_width = 40;
+          }
+          var input_width = $('#input-width');
+          var input_width_group = input_width.closest('.form-group');
+          var input_width_help = input_width_group.find('.help-block');
+          var label_width = +input_width.val();
+          if (!isNaN(label_width) && label_width >= minimum_width && label_width <= maximum_width) {
+            input_width_group.addClass('has-success');
+            input_width_help.text("");
+            input_width.val(label_width);
+          } else {
+            input_width_group.addClass('has-error');
+            input_width_help.text("Please enter a number between " + minimum_width.toString() + " and " + maximum_width.toString() + ".");
+            input_width.closest('.form-group').addClass('has-error');
+            is_valid = false;
+          }
+          var input_minimum_height = $('#input-minimum-height');
+          var input_minimum_height_group = input_minimum_height.closest('.form-group');
+          var input_minimum_height_help = input_minimum_height_group.find('.help-block');
+          var label_minimum_height = +input_minimum_height.val();
+          if (!isNaN(label_minimum_height) && label_minimum_height >= 0 && label_minimum_height <= maximum_height) {
+            input_minimum_height_group.addClass('has-success');
+            input_minimum_height.val(label_minimum_height);
+          } else {
+            input_minimum_height_group.addClass('has-error');
+            input_minimum_height_help.text("Please enter number between 0 and " + maximum_height.toString() + ".");
+            is_valid = false;
+          }
+        }
+      }
+      if (labels_form.find('input[name="mode"][value="minimum-height"]').is(':checked')) {
+        var paper_format = labels_form.find('select[name="height-paper-format"] > option:checked').val();
+        if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
+          var paper_format_group = labels_form.find('select[name="height-paper-format"]').closest('.form-group');
+          paper_format_group.addClass('has-error');
+          paper_format_group.find('.help-block').text("Please select a paper format.");
+          is_valid = false;
+        } else {
+          labels_form.find('select[name="height-paper-format"]').closest('.form-group').addClass('has-success');
+          var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
+          var input_minimum_width = $('#input-minimum-width');
+          var input_minimum_width_group = input_minimum_width.closest('.form-group');
+          var input_minimum_width_help = input_minimum_width_group.find('.help-block');
+          var label_minimum_width = +input_minimum_width.val();
+          if (!isNaN(label_minimum_width) && label_minimum_width >= 0 && label_minimum_width <= maximum_width) {
+            input_minimum_width_group.addClass('has-success');
+            input_minimum_width.val(label_minimum_width);
+          } else {
+            input_minimum_width_group.addClass('has-error');
+            input_minimum_width_help.text("Please enter a number between 0 and " + maximum_width.toString() + ".");
+            is_valid = false;
+          }
+        }
+      }
+      if (labels_form.find('input[name="mode"][value="mixed"]').is(':checked')) {
+        var paper_format = labels_form.find('select[name="mixed-paper-format"] > option:checked').val();
+        if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
+          var paper_format_group = labels_form.find('select[name="mixed-paper-format"]').closest('.form-group');
+          paper_format_group.addClass('has-error');
+          paper_format_group.find('.help-block').text("Please select a paper format.");
+          is_valid = false;
+        } else {
+          labels_form.find('select[name="mixed-paper-format"]').closest('.form-group').addClass('has-success');
+        }
+      }
+      if (labels_form.find('input[name="mode"]:checked').length == 0) {
+        labels_form.find('input[name="mode"]').closest('.radio').addClass('has-error');
+        is_valid = false;
+      }
+      return is_valid;
+    }
+    function updateLabelsForm() {
+      var labels_form = $('#form-generate-labels');
+      labels_form.find('.has-error').removeClass('has-error');
+      labels_form.find('.has-success').removeClass('has-success');
+      labels_form.find('.help-block').text("");
+      var is_mixed = labels_form.find('input[name="mode"][value="mixed"]').is(':checked');
+      labels_form.find('select[name="mixed-paper-format"]').prop('disabled', !is_mixed).selectpicker('refresh');
+      var is_fixed_width = labels_form.find('input[name="mode"][value="fixed-width"]').is(':checked');
+      labels_form.find('input[name="side-by-side"]').prop('disabled', !is_fixed_width);
+      labels_form.find('input[name="centered"]').prop('disabled', !is_fixed_width);
+      labels_form.find('input[name="label-width"]').prop('disabled', !is_fixed_width);
+      labels_form.find('input[name="label-minimum-height"]').prop('disabled', !is_fixed_width);
+      labels_form.find('select[name="width-paper-format"]').prop('disabled', !is_fixed_width).selectpicker('refresh');
+      var is_minimum_height = labels_form.find('input[name="mode"][value="minimum-height"]').is(':checked');
+      labels_form.find('input[name="include-qrcode"]').prop('disabled', !is_minimum_height);
+      labels_form.find('input[name="label-minimum-width"]').prop('disabled', !is_minimum_height);
+      labels_form.find('select[name="height-paper-format"]').prop('disabled', !is_minimum_height).selectpicker('refresh');
+    }
+    updateLabelsForm();
+    {% endif %}
   </script>
 {% endblock %}
