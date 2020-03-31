@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.10
+------------
+
+Currently in development.
+
+- Allow configuring label formats
+
 Version 0.9
 -----------
 
