@@ -192,6 +192,9 @@ Simple Search
 
 To use the simple search, users can enter words or phrases into the search field and will find all objects containing these.
 
+
+.. _advanced_search:
+
 Advanced Search
 ```````````````
 
