@@ -243,7 +243,7 @@ def objects():
 
                 def filter_func(data, search_notes):
                     """ Return all objects"""
-                    search_notes.append(('error', "Unable to parse search expression".format(query_string), 0, len(query_string)))
+                    search_notes.append(('error', "Unable to parse search expression", 0, len(query_string)))
                     return False
             else:
                 raise
