@@ -9,7 +9,7 @@ import flask
 from flask_restful import Resource
 
 from sampledb.api.server.authentication import multi_auth, object_permissions_required, Permissions
-from sampledb.logic.actions import get_action
+from sampledb.logic.actions import get_action, ActionType
 from sampledb.logic.object_search import generate_filter_func, wrap_filter_func
 from sampledb.logic.objects import get_object, update_object, create_object
 from sampledb.logic.object_permissions import get_objects_with_permissions
@@ -118,8 +118,37 @@ class Object(Resource):
 class Objects(Resource):
     @multi_auth.login_required
     def get(self):
-        action_id = None
-        action_type = None
+        action_id = flask.request.args.get('action_id', '')
+        if action_id:
+            try:
+                action_id = int(action_id)
+            except ValueError:
+                return [
+                    ['error', 'Unable to parse action_id']
+                ], 400
+            try:
+                get_action(action_id)
+            except errors.ActionDoesNotExistError:
+                return [
+                    ['error', 'No action with the given action_id exists']
+                ], 400
+        else:
+            action_id = None
+        action_type = flask.request.args.get('action_type', '')
+        if action_type:
+            action_type = action_type.lower()
+            if action_type == 'sample':
+                action_type = 'sample_creation'
+            for t in ActionType:
+                if t.name.lower() == action_type:
+                    action_type = t
+                    break
+            else:
+                return [
+                    ['error', 'No matching action type exists']
+                ], 400
+        else:
+            action_type = None
         project_id = None
         query_string = flask.request.args.get('q', '')
         if query_string:

@@ -65,6 +65,27 @@ def action():
     return action
 
 
+@pytest.fixture
+def other_action():
+    other_action = sampledb.logic.actions.create_action(
+        action_type=sampledb.logic.actions.ActionType.MEASUREMENT,
+        name="",
+        description="",
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    return other_action
+
+
 def test_get_object_version(flask_server, auth, user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1/versions/0', auth=auth)
     assert r.status_code == 404
@@ -550,8 +571,6 @@ def test_create_object(flask_server, auth, user, action):
 
 
 def test_search_objects(flask_server, auth, user, other_user, action):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)
-    assert r.status_code == 404
     data = {
         'name': {
             '_type': 'text',
@@ -594,3 +613,77 @@ def test_search_objects(flask_server, auth, user, other_user, action):
     assert r.json() == [
         ['error', 'Unfinished text']
     ]
+
+
+def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, other_action):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_id': str(action.id)
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_id': str(other_action.id)
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_id': '-1'
+    })
+    assert r.status_code == 400
+
+
+def test_get_objects_by_action_type(flask_server, auth, user, other_user, action, other_action):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_type': 'sample'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_type': 'measurement'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_type': 'other'
+    })
+    assert r.status_code == 400
