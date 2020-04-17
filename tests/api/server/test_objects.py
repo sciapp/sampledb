@@ -547,3 +547,50 @@ def test_create_object(flask_server, auth, user, action):
     assert r.json()['message'] == """validation failed:
  - unexpected keys in schema: {'value'} (at name)
  - unknown property "test" (at test)"""
+
+
+def test_search_objects(flask_server, auth, user, other_user, action):
+    r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)
+    assert r.status_code == 404
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example2"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example'
+    })
+    assert r.status_code == 400
+    assert r.json() == [
+        ['error', 'Unfinished text']
+    ]
