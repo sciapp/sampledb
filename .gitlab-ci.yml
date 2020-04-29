@@ -110,7 +110,7 @@ deploy-to-dev:
     - echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts
     - chmod 400 ~/.ssh/known_hosts
     # actual deployment is handled via authorized_keys command
-    - ssh -i ~/.ssh/deployment_key administrator@docker.iff.kfa-juelich.de "$CI_COMMIT_SHA"
+    - ssh -i ~/.ssh/deployment_key administrator@iffweb.iff.kfa-juelich.de "$CI_COMMIT_SHA"
 
 deploy-to-github:
   stage: deploy
