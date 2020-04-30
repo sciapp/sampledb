@@ -884,14 +884,27 @@ def test_user_preferences_change_password(flask_server, user):
     r = session.get(flask_server.base_url + 'users/me/sign_in')
     assert r.status_code == 200
 
-    #  change password
+    #  change password with typo in confirmation
     r = session.post(url, {
         'id': '1',
         'password': 'xxxx',
+        'password_confirmation': 'xyxx',
         'csrf_token': csrf_token,
         'edit': 'Edit'
     })
     assert r.status_code == 200
+    assert 'Please enter the same password as above.' in r.text
+
+    #  change password
+    r = session.post(url, {
+        'id': '1',
+        'password': 'xxxx',
+        'password_confirmation': 'xxxx',
+        'csrf_token': csrf_token,
+        'edit': 'Edit'
+    })
+    assert r.status_code == 200
+    assert 'Please enter the same password as above.' not in r.text
 
     # Create new session
     session = requests.session()
