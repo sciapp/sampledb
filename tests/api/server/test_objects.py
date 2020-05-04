@@ -611,7 +611,7 @@ def test_search_objects(flask_server, auth, user, other_user, action):
     })
     assert r.status_code == 400
     assert r.json() == {
-        'message': 'Unfinished text'
+        'message': 'Error: Unfinished text'
     }
 
 

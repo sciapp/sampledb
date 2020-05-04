@@ -180,7 +180,11 @@ class Objects(Resource):
             objects = []
         if any(search_note[0] == 'error' for search_note in search_notes):
             return {
-                'message': ' '.join(search_note[1] for search_note in search_notes)
+                'message': '\n'.join(
+                    'Error: ' + search_note[1]
+                    for search_note in search_notes
+                    if search_note[0] == 'error'
+                )
             }, 400
         else:
             return [
