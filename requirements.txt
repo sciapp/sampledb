@@ -12,7 +12,7 @@ cffi==1.13.2
 chardet==3.0.4
 cheroot==8.2.1
 CherryPy==18.4.0
-chromedriver-binary==79.0.3945.36.0
+chromedriver-binary==81.0.4044.69.0 
 Click==7.0
 coverage==4.5.4
 docutils==0.15.2
