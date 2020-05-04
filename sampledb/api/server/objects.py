@@ -123,15 +123,15 @@ class Objects(Resource):
             try:
                 action_id = int(action_id)
             except ValueError:
-                return [
-                    ['error', 'Unable to parse action_id']
-                ], 400
+                return {
+                    'message': 'Unable to parse action_id'
+                }, 400
             try:
                 get_action(action_id)
             except errors.ActionDoesNotExistError:
-                return [
-                    ['error', 'No action with the given action_id exists']
-                ], 400
+                return {
+                    'message': 'No action with the given action_id exists.'
+                }, 400
         else:
             action_id = None
         action_type = flask.request.args.get('action_type', '')
@@ -144,9 +144,9 @@ class Objects(Resource):
                     action_type = t
                     break
             else:
-                return [
-                    ['error', 'No matching action type exists']
-                ], 400
+                return {
+                    'messsage': 'No matching action type exists.'
+                }, 400
         else:
             action_type = None
         project_id = None
@@ -179,9 +179,9 @@ class Objects(Resource):
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
         if any(search_note[0] == 'error' for search_note in search_notes):
-            return [
-                [search_note[0], search_note[1]] for search_note in search_notes
-            ], 400
+            return {
+                'message': ' '.join(search_note[1] for search_note in search_notes)
+            }, 400
         else:
             return [
                 {

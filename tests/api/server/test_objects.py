@@ -610,9 +610,9 @@ def test_search_objects(flask_server, auth, user, other_user, action):
         'q': 'name=="Example'
     })
     assert r.status_code == 400
-    assert r.json() == [
-        ['error', 'Unfinished text']
-    ]
+    assert r.json() == {
+        'message': 'Unfinished text'
+    }
 
 
 def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, other_action):
