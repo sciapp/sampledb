@@ -7,6 +7,7 @@ Version 0.10
 Currently in development.
 
 - Allow configuring label formats
+- Added search filters to objects API
 
 Version 0.9
 -----------
