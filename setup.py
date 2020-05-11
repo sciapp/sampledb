@@ -11,7 +11,7 @@ with open(os.path.join(setup_directory, 'requirements.txt')) as requirements_fil
 
 setup(
     name='sampledb',
-    version='0.9.0',
+    version='0.10.0',
     description='A sample and measurement metadata database',
     long_description=long_description,
     long_description_content_type='text/markdown',
