@@ -9,7 +9,8 @@ import flask
 from flask_restful import Resource
 
 from sampledb.api.server.authentication import multi_auth, object_permissions_required, Permissions
-from sampledb.logic.actions import get_action
+from sampledb.logic.actions import get_action, ActionType
+from sampledb.logic.object_search import generate_filter_func, wrap_filter_func
 from sampledb.logic.objects import get_object, update_object, create_object
 from sampledb.logic.object_permissions import get_objects_with_permissions
 from sampledb.logic import errors
@@ -117,13 +118,54 @@ class Object(Resource):
 class Objects(Resource):
     @multi_auth.login_required
     def get(self):
-        # TODO: implement filters
-        def filter_func(data):
-            return True
-        action_id = None
-        action_type = None
+        action_id = flask.request.args.get('action_id', '')
+        if action_id:
+            try:
+                action_id = int(action_id)
+            except ValueError:
+                return {
+                    'message': 'Unable to parse action_id'
+                }, 400
+            try:
+                get_action(action_id)
+            except errors.ActionDoesNotExistError:
+                return {
+                    'message': 'No action with the given action_id exists.'
+                }, 400
+        else:
+            action_id = None
+        action_type = flask.request.args.get('action_type', '')
+        if action_type:
+            action_type = action_type.lower()
+            if action_type == 'sample':
+                action_type = 'sample_creation'
+            for t in ActionType:
+                if t.name.lower() == action_type:
+                    action_type = t
+                    break
+            else:
+                return {
+                    'messsage': 'No matching action type exists.'
+                }, 400
+        else:
+            action_type = None
         project_id = None
-        search_notes = []
+        query_string = flask.request.args.get('q', '')
+        if query_string:
+            try:
+                filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, True)
+            except Exception:
+                # TODO: ensure that advanced search does not cause exceptions
+                def filter_func(data, search_notes):
+                    """ Return all objects"""
+                    search_notes.append(('error', "Unable to parse search expression", 0, len(query_string)))
+                    return False
+            filter_func, search_notes = wrap_filter_func(filter_func)
+        else:
+            search_notes = []
+
+            def filter_func(data):
+                return True
         try:
             objects = get_objects_with_permissions(
                 user_id=flask.g.user.id,
@@ -136,17 +178,25 @@ class Objects(Resource):
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
-        # TODO handle search notes and set error code
-        return [
-            {
-                'object_id': object.object_id,
-                'version_id': object.version_id,
-                'action_id': object.action_id,
-                'schema': object.schema,
-                'data': object.data
-            }
-            for object in objects
-        ]
+        if any(search_note[0] == 'error' for search_note in search_notes):
+            return {
+                'message': '\n'.join(
+                    'Error: ' + search_note[1]
+                    for search_note in search_notes
+                    if search_note[0] == 'error'
+                )
+            }, 400
+        else:
+            return [
+                {
+                    'object_id': object.object_id,
+                    'version_id': object.version_id,
+                    'action_id': object.action_id,
+                    'schema': object.schema,
+                    'data': object.data
+                }
+                for object in objects
+            ], 200
 
     @multi_auth.login_required
     def post(self):

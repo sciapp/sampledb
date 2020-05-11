@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.10
+------------
+
+Released on May 11th, 2020.
+
+- Allow configuring label formats
+- Added search filters to objects API
+
 Version 0.9
 -----------
 
@@ -72,6 +80,14 @@ Released on February 13th, 2019.
 - Added schema editor
 - Added 'Use in Measurement' button to samples
 - Fixed various minor bugs
+
+
+Version 0.3.1
+-------------
+
+Released on January 21st, 2019.
+
+- Improved performance of object permissions
 
 
 Version 0.3

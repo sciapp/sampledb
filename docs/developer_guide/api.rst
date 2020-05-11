@@ -20,7 +20,7 @@ Reading a list of all objects
 
     Get a list of all objects visible to the current user.
 
-    The list only contains the current version of each object.
+    The list only contains the current version of each object. By passing the parameter :code:`q` to the query, the :ref:`advanced_search` can be used. By passing the parameters :code:`action_id` or :code:`action_type` objects can be filtered by the action they were created with or by their type (e.g. :code:`sample` or :code:`measurement`).
 
     **Example request**:
 

@@ -7,6 +7,7 @@ from copy import deepcopy
 import datetime
 import io
 import json
+import math
 import os
 import flask
 import flask_login
@@ -35,7 +36,7 @@ from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionResto
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
-from .labels import create_labels
+from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from .pdfexport import create_pdfexport
 from .utils import check_current_user_is_not_readonly
 
@@ -242,7 +243,7 @@ def objects():
 
                 def filter_func(data, search_notes):
                     """ Return all objects"""
-                    search_notes.append(('error', "Unable to parse search expression".format(query_string), 0, len(query_string)))
+                    search_notes.append(('error', "Unable to parse search expression", 0, len(query_string)))
                     return False
             else:
                 raise
@@ -840,6 +841,10 @@ def object(object_id):
             get_object_location_assignment=get_object_location_assignment,
             get_user=get_user,
             get_location=get_location,
+            PAGE_SIZES=PAGE_SIZES,
+            HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
+            VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
+            mm=mm,
             object_location_assignments=get_object_location_assignments(object_id),
             build_object_location_assignment_confirmation_url=build_object_location_assignment_confirmation_url,
             user_may_assign_location=user_may_edit,
@@ -856,6 +861,79 @@ def object(object_id):
 @frontend.route('/objects/<int:object_id>/label')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def print_object_label(object_id):
+    mode = flask.request.args.get('mode', 'mixed')
+    if mode == 'fixed-width':
+        create_mixed_labels = False
+        create_long_labels = False
+        include_qrcode_in_long_labels = None
+        paper_format = flask.request.args.get('width-paper-format', '')
+        if paper_format not in PAGE_SIZES:
+            paper_format = DEFAULT_PAPER_FORMAT
+        maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
+        maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
+        ghs_classes_side_by_side = 'side-by-side' in flask.request.args
+        label_minimum_width = 20
+        if ghs_classes_side_by_side:
+            label_minimum_width = 40
+        try:
+            label_width = float(flask.request.args.get('label-width', '20'))
+        except ValueError:
+            label_width = 0
+        if math.isnan(label_width):
+            label_width = 0
+        if label_width < label_minimum_width:
+            label_width = label_minimum_width
+        if label_width > maximum_width:
+            label_width = maximum_width
+        try:
+            label_minimum_height = float(flask.request.args.get('label-minimum-height', '0'))
+        except ValueError:
+            label_minimum_height = 0
+        if math.isnan(label_minimum_height):
+            label_minimum_height = 0
+        if label_minimum_height < 0:
+            label_minimum_height = 0
+        if label_minimum_height > maximum_height:
+            label_minimum_height = maximum_height
+        qrcode_width = 18
+        centered = 'centered' in flask.request.args
+    elif mode == 'minimum-height':
+        create_mixed_labels = False
+        create_long_labels = True
+        paper_format = flask.request.args.get('height-paper-format', '')
+        if paper_format not in PAGE_SIZES:
+            paper_format = DEFAULT_PAPER_FORMAT
+        maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
+        include_qrcode_in_long_labels = 'include-qrcode' in flask.request.args
+        label_width = 0
+        label_minimum_height = 0
+        try:
+            label_minimum_width = float(flask.request.args.get('label-minimum-width', '0'))
+        except ValueError:
+            label_minimum_width = 0
+        if math.isnan(label_minimum_width):
+            label_minimum_width = 0
+        if label_minimum_width < 0:
+            label_minimum_width = 0
+        if label_minimum_width > maximum_width:
+            label_minimum_width = maximum_width
+        qrcode_width = 0
+        ghs_classes_side_by_side = None
+        centered = None
+    else:
+        create_mixed_labels = True
+        create_long_labels = None
+        include_qrcode_in_long_labels = None
+        paper_format = flask.request.args.get('mixed-paper-format', '')
+        if paper_format not in PAGE_SIZES:
+            paper_format = DEFAULT_PAPER_FORMAT
+        label_width = 0
+        label_minimum_height = 0
+        qrcode_width = 0
+        label_minimum_width = 0
+        ghs_classes_side_by_side = None
+        centered = None
+
     object = get_object(object_id=object_id)
     object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
     for object_log_entry in object_log_entries:
@@ -886,7 +964,17 @@ def print_object_label(object_id):
         object_url=object_url,
         creation_user=creation_user,
         creation_date=creation_date,
-        ghs_classes=hazards
+        ghs_classes=hazards,
+        paper_format=paper_format,
+        create_mixed_labels=create_mixed_labels,
+        create_long_labels=create_long_labels,
+        include_qrcode_in_long_labels=include_qrcode_in_long_labels,
+        label_width=label_width,
+        label_minimum_height=label_minimum_height,
+        label_minimum_width=label_minimum_width,
+        qrcode_width=qrcode_width,
+        ghs_classes_side_by_side=ghs_classes_side_by_side,
+        centered=centered
     )
     return flask.send_file(
         io.BytesIO(pdf_data),

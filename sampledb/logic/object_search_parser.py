@@ -365,11 +365,11 @@ def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.L
     attributes = text.lower().strip().split('.')
     for attribute in attributes:
         if not all(character in 'abcdefghijklmnopqrstuvwxyz0123456789_?' for character in attribute):
-            raise ParseError("Invalid attribute name".format(text.strip()), start, end)
+            raise ParseError("Invalid attribute name", start, end)
         if '?' in attribute and attribute != '?':
-            raise ParseError("Invalid array placeholder".format(text.strip()), start, end)
+            raise ParseError("Invalid array placeholder", start, end)
     if attributes.count('?') > 1:
-        raise ParseError("Multiple array placeholders".format(text.strip()), start, end)
+        raise ParseError("Multiple array placeholders", start, end)
     return attributes
 
 
@@ -386,7 +386,7 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator, lis
         if tag is not None:
             accepted_characters = 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß'
             if not tag or not all(c in accepted_characters for c in tag):
-                raise ParseError("Invalid tag".format(token.input_text.strip()), start + 1, end)
+                raise ParseError("Invalid tag", start + 1, end)
             tokens.append(Tag(token.input_text, token.start_position, tag))
             continue
         boolean = parse_bool(token.input_text)
