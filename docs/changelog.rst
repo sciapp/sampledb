@@ -4,7 +4,7 @@ Changelog
 Version 0.10
 ------------
 
-Currently in development.
+Released on May 11th, 2020.
 
 - Allow configuring label formats
 - Added search filters to objects API
