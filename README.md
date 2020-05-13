@@ -15,7 +15,7 @@ First, start your database container:
 ```bash
 docker run \
     -d \
-    -e POSTGRES_PASSWORD= \
+    -e POSTGRES_PASSWORD=password \
     -e PGDATA=/var/lib/postgresql/data/pgdata \
     -v `pwd`/pgdata:/var/lib/postgresql/data/pgdata:rw \
     --restart=always \
@@ -32,7 +32,7 @@ docker run \
     -e SAMPLEDB_MAIL_SERVER=mail.example.com \
     -e SAMPLEDB_MAIL_SENDER=sampledb@example.com \
     -e SAMPLEDB_CONTACT_EMAIL=sampledb@example.com \
-    -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:@sampledb-postgres:5432/postgres \
+    -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres \
     -e SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files/ \
     -v `pwd`/files:/home/sampledb/files:rw \
     --restart=always \
