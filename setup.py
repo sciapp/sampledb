@@ -1,3 +1,4 @@
+import importlib.util
 from setuptools import setup, find_packages
 import os.path
 
@@ -9,9 +10,15 @@ with open(os.path.join(setup_directory, 'README.md')) as readme_file:
 with open(os.path.join(setup_directory, 'requirements.txt')) as requirements_file:
     requirements = requirements_file.readlines()
 
+version_file_path = os.path.join(setup_directory, 'sampledb', 'version.py')
+spec = importlib.util.spec_from_file_location("version", version_file_path)
+version = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(version)
+
+
 setup(
     name='sampledb',
-    version='0.10.0',
+    version=version.__version__,
     description='A sample and measurement metadata database',
     long_description=long_description,
     long_description_content_type='text/markdown',
