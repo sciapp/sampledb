@@ -1009,7 +1009,7 @@ Reading a location
 Reading a list of an object's locations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. http:get:: /api/v1/object/(int:object_id)/locations/
+.. http:get:: /api/v1/objects/(int:object_id)/locations/
 
     Get a list of all object locations assignments for a specific object (`object_id`).
 
@@ -1092,7 +1092,7 @@ Files
 Reading a list of an object's files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. http:get:: /api/v1/object/(int:object_id)/files/
+.. http:get:: /api/v1/objects/(int:object_id)/files/
 
     Get a list of all files for a specific object (`object_id`).
 
