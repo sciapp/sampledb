@@ -15,7 +15,7 @@
   {% if action.user_id is not none %}
   <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} This custom action is {% if not is_public %}not {% endif %}public.</p>
   {% endif %}
-  <p>{{ action.description }}</p>
+  {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}

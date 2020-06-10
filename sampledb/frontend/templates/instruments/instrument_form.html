@@ -26,6 +26,11 @@
         <label for="input-description" class="control-label">Description</label>
         <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ instrument_form.description.name }}" placeholder="Description">{{ instrument_form.description.data or instrument_form.description.default or '' }}</textarea>
       </div>
+      <div class="checkbox">
+        <label for="input-markdown" style="font-weight:400">
+          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
+        </label>
+      </div>
       <div class="form-group">
         <label for="input-instrument_repsonsible_users" class="control-label">Instrument Scientists</label>
         <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple">
