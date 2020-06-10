@@ -73,6 +73,14 @@ def _sign_in_impl(is_for_refresh):
             if user:
                 remember_me = form.remember_me.data
                 flask_login.login_user(user, remember=remember_me)
+                if user.is_admin and password == 'password':
+                    flask.flash(
+                        'You are using the default admin password from the '
+                        'SampleDB documentation. Please change your password '
+                        'before making this SampleDB instance available to '
+                        'other users.',
+                        'warning'
+                    )
                 return _redirect_to_next_url()
         has_errors = True
     elif form.errors:

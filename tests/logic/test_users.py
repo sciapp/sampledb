@@ -5,8 +5,18 @@ import sampledb.models
 import sampledb.logic
 from sampledb import db
 
-from ..test_utils import app_context
+from ..test_utils import app_context, app, flask_server
 
+
+@pytest.fixture
+def user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        # force attribute refresh
+        assert user.id is not None
+    return user
 
 def test_get_users_by_name():
     user1 = sampledb.models.User(
@@ -64,3 +74,30 @@ def test_get_users_exclude_hidden():
     users = sampledb.logic.users.get_users(exclude_hidden=True)
     users.sort(key=lambda u: u.id)
     assert users == [user2]
+
+
+def test_set_user_hidden(user):
+    user = sampledb.logic.users.get_user(user.id)
+    assert not user.is_hidden
+    sampledb.logic.users.set_user_hidden(user.id, True)
+    assert user.is_hidden
+    sampledb.logic.users.set_user_hidden(user.id, False)
+    assert not user.is_hidden
+
+
+def test_set_user_readonly(user):
+    user = sampledb.logic.users.get_user(user.id)
+    assert not user.is_readonly
+    sampledb.logic.users.set_user_readonly(user.id, True)
+    assert user.is_readonly
+    sampledb.logic.users.set_user_readonly(user.id, False)
+    assert not user.is_readonly
+
+
+def test_set_user_administrator(user):
+    user = sampledb.logic.users.get_user(user.id)
+    assert not user.is_admin
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    assert user.is_admin
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    assert not user.is_admin

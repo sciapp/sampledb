@@ -90,3 +90,19 @@ def set_user_hidden(user_id: int, hidden: bool) -> None:
     user.is_hidden = hidden
     db.session.add(user)
     db.session.commit()
+
+
+def set_user_administrator(user_id: int, is_admin: bool) -> None:
+    """
+    Set whether a user is an administrator.
+
+    :param user_id: the user ID of an existing user
+    :param is_admin: True, if the user is an administrator, False otherwise
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+
+    user = get_user(user_id)
+    user.is_admin = is_admin
+    db.session.add(user)
+    db.session.commit()

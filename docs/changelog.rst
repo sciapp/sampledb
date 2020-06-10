@@ -6,7 +6,8 @@ Version 0.11
 
 Currently in development.
 
-- Allow usage of Markdown in instrument and action descriptions.
+- Allow usage of Markdown in instrument and action descriptions
+- Added configuration values for creating an admin user during initial setup
 
 Version 0.10
 ------------

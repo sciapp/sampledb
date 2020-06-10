@@ -19,22 +19,32 @@ import sampledb.models.migrations
 import sampledb.config
 
 
-def create_app():
-    app = flask.Flask(__name__)
-    app.wsgi_app = ProxyFix(app.wsgi_app)
+def setup_database(app):
+    with app.app_context():
+        db.metadata.create_all(bind=db.engine)
+        sampledb.models.Objects.bind = db.engine
+        sampledb.models.migrations.run(db)
 
-    app.config.from_object(sampledb.config)
 
-    sampledb.config.check_config(app.config)
+def setup_admin_account_from_config(app):
+    with app.app_context():
+        if 'ADMIN_INFO' in app.config['internal'] and not sampledb.logic.users.get_users(exclude_hidden=False):
+            admin_username, admin_email, admin_password = app.config['internal']['ADMIN_INFO']
+            admin_user = sampledb.logic.users.create_user(
+                admin_username,
+                admin_email,
+                sampledb.logic.users.UserType.PERSON
+            )
+            sampledb.logic.authentication.add_other_authentication(
+                admin_user.id,
+                admin_username,
+                admin_password,
+                confirmed=True
+            )
+            sampledb.logic.users.set_user_administrator(admin_user.id, True)
 
-    login_manager.init_app(app)
-    mail.init_app(app)
-    db.init_app(app)
-    sampledb.api.server.api.init_app(app)
 
-    app.register_blueprint(sampledb.frontend.frontend)
-
-    login_manager.login_view = 'frontend.sign_in'
+def setup_jinja_environment(app):
     app.jinja_env.globals.update(
         jupyterhub_url=app.config['JUPYTERHUB_URL'],
         signout_form=sampledb.frontend.users_forms.SignoutForm,
@@ -47,11 +57,29 @@ def create_app():
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
 
+
+def create_app():
+    app = flask.Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app)
+
+    app.config.from_object(sampledb.config)
+
+    internal_config = sampledb.config.check_config(app.config)
+    app.config['internal'] = internal_config
+
+    login_manager.init_app(app)
+    mail.init_app(app)
+    db.init_app(app)
+    sampledb.api.server.api.init_app(app)
+
+    app.register_blueprint(sampledb.frontend.frontend)
+
+    login_manager.login_view = 'frontend.sign_in'
+
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
 
-    with app.app_context():
-        db.metadata.create_all(bind=db.engine)
-        sampledb.models.Objects.bind = db.engine
-        sampledb.models.migrations.run(db)
+    setup_database(app)
+    setup_admin_account_from_config(app)
+    setup_jinja_environment(app)
 
     return app
