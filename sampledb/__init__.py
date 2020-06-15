@@ -45,6 +45,9 @@ def setup_admin_account_from_config(app):
 
 
 def setup_jinja_environment(app):
+    with app.app_context():
+        is_ldap_configured = sampledb.logic.ldap.is_ldap_configured()
+
     app.jinja_env.globals.update(
         jupyterhub_url=app.config['JUPYTERHUB_URL'],
         signout_form=sampledb.frontend.users_forms.SignoutForm,
@@ -53,6 +56,7 @@ def setup_jinja_environment(app):
         service_imprint=app.config['SERVICE_IMPRINT'],
         service_privacy_policy=app.config['SERVICE_PRIVACY_POLICY'],
         ldap_name=app.config['LDAP_NAME'],
+        is_ldap_configured=is_ldap_configured,
         contact_email=app.config['CONTACT_EMAIL']
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)

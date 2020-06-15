@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Invite a Guest — {{ service_name }}{% endblock %}
+{% block title %}Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1 class="text-center">Invite a Guest</h1>
+  <h1 class="text-center">Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %}</h1>
   <div class="container" style="max-width:600px">
-  <p class="text-center">To invite a guest to {{ service_name }}, please submit their email address using the form below. They will then receive an email which can be used to complete the registration process.</p>
+  <p class="text-center">To invite {% if is_ldap_configured %}a guest{% else %}another user{% endif %} to {{ service_name }}, please submit their email address using the form below. They will then receive an email which can be used to complete the registration process.</p>
   <form class="form-horizontal" method="post" id="form-invitation">
     {{ invitation_form.csrf_token() }}
     <div class="form-group{% if invitation_form.email.errors or has_error %} has-error{% endif %}">
