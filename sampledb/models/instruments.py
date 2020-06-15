@@ -22,16 +22,19 @@ class Instrument(db.Model):
     name = db.Column(db.String, nullable=False, unique=True)
     description = db.Column(db.String, nullable=False, default='')
     responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name")
+    description_as_html = db.Column(db.String, nullable=True, default=None)
 
-    def __init__(self, name, description=''):
+    def __init__(self, name, description='', description_as_html=None):
         self.name = name
         self.description = description
+        self.description_as_html = description_as_html
 
     def __eq__(self, other):
         return (
             self.id == other.id and
             self.name == other.name and
             self.description == other.description and
+            self.description_as_html == other.description_as_html and
             self.responsible_users == other.responsible_users
         )
 

@@ -27,14 +27,16 @@ class Action(db.Model):
     schema = db.Column(db.JSON, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     user = db.relationship("User", backref="actions")
+    description_as_html = db.Column(db.String, nullable=True, default=None)
 
-    def __init__(self, action_type: ActionType, name: str, schema: dict, description: str = '', instrument_id: typing.Optional[int] = None, user_id: typing.Optional[int] = None):
+    def __init__(self, action_type: ActionType, name: str, schema: dict, description: str = '', instrument_id: typing.Optional[int] = None, user_id: typing.Optional[int] = None, description_as_html: typing.Optional[str] = None):
         self.type = action_type
         self.name = name
         self.description = description
         self.instrument_id = instrument_id
         self.schema = schema
         self.user_id = user_id
+        self.description_as_html = description_as_html
 
     def __eq__(self, other):
         return (
@@ -43,6 +45,7 @@ class Action(db.Model):
             self.user_id == other.user_id and
             self.name == other.name and
             self.description == other.description and
+            self.description_as_html == other.description_as_html and
             self.schema == other.schema
         )
 

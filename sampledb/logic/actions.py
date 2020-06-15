@@ -32,7 +32,8 @@ def create_action(
         description: str,
         schema: dict,
         instrument_id: typing.Optional[int] = None,
-        user_id: typing.Optional[int] = None
+        user_id: typing.Optional[int] = None,
+        description_as_html: typing.Optional[str] = None
 ) -> Action:
     """
     Creates a new action with the given type, name, description and schema. If
@@ -45,6 +46,7 @@ def create_action(
     :param schema: the schema for objects created using this action
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
+    :param description_as_html: None or the description as HTML
     :return: the created action
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
@@ -64,6 +66,7 @@ def create_action(
         action_type=action_type,
         name=name,
         description=description,
+        description_as_html=description_as_html,
         schema=schema,
         instrument_id=instrument_id,
         user_id=user_id
@@ -100,7 +103,13 @@ def get_action(action_id: int) -> Action:
     return action
 
 
-def update_action(action_id: int, name: str, description: str, schema: dict) -> None:
+def update_action(
+        action_id: int,
+        name: str,
+        description: str,
+        schema: dict,
+        description_as_html: typing.Optional[str] = None
+) -> None:
     """
     Updates the action with the given action ID, setting its name, description and schema.
 
@@ -108,6 +117,7 @@ def update_action(action_id: int, name: str, description: str, schema: dict) -> 
     :param name: the new name of the action
     :param description: the new (possibly empty) description of the action
     :param schema: the new schema for objects created using this action
+    :param description_as_html: None or the description as HTML
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -118,6 +128,7 @@ def update_action(action_id: int, name: str, description: str, schema: dict) -> 
         raise errors.ActionDoesNotExistError()
     action.name = name
     action.description = description
+    action.description_as_html = description_as_html
     action.schema = schema
     db.session.add(action)
     db.session.commit()

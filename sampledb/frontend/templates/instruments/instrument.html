@@ -4,7 +4,7 @@
 
 {% block content %}
   <h1>{{ instrument.name }}</h1>
-  <p>{{ instrument.description }}</p>
+  {% if instrument.description_as_html %}{{ instrument.description_as_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
   {% if current_user.is_admin or current_user in instrument.responsible_users %}
@@ -13,7 +13,7 @@
   {% endif %}
   {% for action in instrument.actions %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
-    <p>{{ action.description }}</p>
+    {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
     {% if action.type == ActionType.MEASUREMENT %}
       <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
       {% if not current_user.is_readonly %}

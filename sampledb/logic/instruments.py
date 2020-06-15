@@ -18,17 +18,19 @@ from ..models.instruments import instrument_user_association_table
 from . import users, errors
 
 
-def create_instrument(name: str, description: str) -> Instrument:
+def create_instrument(name: str, description: str, description_as_html: typing.Optional[str] = None) -> Instrument:
     """
     Creates a new instrument with the given name and description.
 
     :param name: the name of the instrument
     :param description: a (possibly empty) description of the instrument
+    :param description_as_html: None or the description as HTML
     :return: the new instrument
     """
     instrument = Instrument(
         name=name,
-        description=description
+        description=description,
+        description_as_html=description_as_html
     )
     db.session.add(instrument)
     db.session.commit()
@@ -59,13 +61,14 @@ def get_instrument(instrument_id: int) -> Instrument:
     return instrument
 
 
-def update_instrument(instrument_id: int, name: str, description: str) -> None:
+def update_instrument(instrument_id: int, name: str, description: str, description_as_html: typing.Optional[str] = None) -> None:
     """
     Updates the instrument name and description.
 
     :param instrument_id: the ID of an existing instrument
     :param name: the new name of the instrument
     :param description: the new (possibly empty) description of the instrument
+    :param description_as_html: None or the description as HTML
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
@@ -74,6 +77,7 @@ def update_instrument(instrument_id: int, name: str, description: str) -> None:
         raise errors.InstrumentDoesNotExistError()
     instrument.name = name
     instrument.description = description
+    instrument.description_as_html = description_as_html
     db.session.add(instrument)
     db.session.commit()
 

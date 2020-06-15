@@ -66,6 +66,11 @@
         <label for="input-description" class="control-label">Description</label>
         <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
       </div>
+      <div class="checkbox">
+        <label for="input-markdown" style="font-weight:400">
+          <input type="checkbox" id="input-markdown" name="{{ action_form.is_markdown.name }}" {% if action_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
+        </label>
+      </div>
       <div class="form-group {% if action_form.schema.name in action_form.errors %}has-error{% endif %}">
         <label for="input-schema" class="control-label">Schema</label>
         {% if use_schema_editor %}

@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.11
+------------
+
+Currently in development.
+
+- Allow usage of Markdown in instrument and action descriptions.
+
 Version 0.10
 ------------
 
