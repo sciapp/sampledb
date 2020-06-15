@@ -6,8 +6,8 @@ Usage: python -m sampledb set_administrator <user_id> <yes_or_no>
 """
 
 import sys
-from .. import create_app, db
-from ..logic.users import get_user
+from .. import create_app
+from ..logic.users import get_user, set_user_administrator
 from ..logic.errors import UserDoesNotExistError
 
 
@@ -32,9 +32,7 @@ def main(arguments):
         if user.is_admin == is_admin:
             print("Success: no change necessary")
         else:
-            user.is_admin = is_admin
-            db.session.add(user)
-            db.session.commit()
+            set_user_administrator(user.id, is_admin)
             if is_admin:
                 print("Success: the user is an administrator now")
             else:

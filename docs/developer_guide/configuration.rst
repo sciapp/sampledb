@@ -32,6 +32,12 @@ When running a SampleDB installation, you can set the the following environment 
      - The database URI for SQLAlchemy. See: http://flask-sqlalchemy.pocoo.org/2.3/config/
    * - SAMPLEDB_SECRET_KEY
      - The secret key for Flask and Flask extensions. See: http://flask.pocoo.org/docs/1.0/config/#SECRET_KEY
+   * - SAMPLEDB_ADMIN_PASSWORD
+     - If no users exist yet and this variable is set, a new user will be created with this password. If another user already exists, this will have no effect. This user will be a SampleDB admin. The username for this user will be set to value of SAMPLEDB_ADMIN_USERNAME, or 'admin' if SAMPLEDB_ADMIN_USERNAME is not set. The email address for this user will be set to the value of SAMPLEDB_ADMIN_EMAIL, or to the value of SAMPLEDB_CONTACT_EMAIL if SAMPLEDB_ADMIN_EMAIL is not set.
+   * - SAMPLEDB_ADMIN_USERNAME
+     - See SAMPLEDB_ADMIN_PASSWORD
+   * - SAMPLEDB_ADMIN_EMAIL
+     - See SAMPLEDB_ADMIN_PASSWORD
    * - SAMPLEDB_LDAP_NAME
      - The name of the LDAP server shown to the users
    * - SAMPLEDB_LDAP_SERVER

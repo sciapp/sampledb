@@ -32,6 +32,7 @@ docker run \
     -e SAMPLEDB_MAIL_SERVER=mail.example.com \
     -e SAMPLEDB_MAIL_SENDER=sampledb@example.com \
     -e SAMPLEDB_CONTACT_EMAIL=sampledb@example.com \
+    -e SAMPLEDB_ADMIN_PASSWORD=password \
     -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres \
     -e SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files/ \
     -v `pwd`/files:/home/sampledb/files:rw \
@@ -41,7 +42,7 @@ docker run \
     sciapp/sampledb:0.10.0
 ```
 
-This will start a basic SampleDB instance at `http://localhost:8000`.
+This will start a basic SampleDB instance at `http://localhost:8000` and allow you to sign in with the username `admin` and the password `password` (which you should change immediately after signing in).
 
 To use the administration scripts, run:
 
