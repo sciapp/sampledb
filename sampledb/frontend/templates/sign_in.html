@@ -13,6 +13,14 @@
   <h1 class="text-center">Sign in to {{ service_name }}</h1>
   {% if is_for_refresh %}
   <div class="help-block text-center">To ensure the security of your account information, please sign in again.</div>
+  {% else %}
+  <div class="help-block text-center">
+    {% if is_ldap_configured %}
+    If you have an LDAP account, you can use your LDAP username to sign in. Otherwise, if you do not have a {{ service_name }} account yet, please ask another user for an invitation.
+    {% else %}
+    If you do not have a {{ service_name }} account yet, please ask another user for an invitation.
+    {% endif %}
+  </div>
   {% endif %}
   <form class="form-horizontal" method="post" id="form-signin">
     {{ form.csrf_token() }}

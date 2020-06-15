@@ -23,16 +23,6 @@
     <h1>Welcome to {{ service_name }}</h1>
     <p>{{ service_description }}</p>
     <div class="container">
-    <div class="row">
-    <div class="col-md-6">
-      <h2>Employees</h2>
-      <p>You can use your normal account name and password to sign in at {{ service_name }}.</p>
-    </div>
-    <div class="col-md-6">
-      <h2>Guests</h2>
-      <p>Please ask the person responsible for the instrument you will be using for an {{ service_name }} Invitation.</p>
-    </div>
-    </div>
     <div class="col-md-4 col-md-offset-4">
       <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-block btn-lg btn-primary">Sign In</a>
     </div>

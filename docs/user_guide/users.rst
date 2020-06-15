@@ -8,15 +8,15 @@ Users
 Authentication
 --------------
 
-Employees at PGI or JCNS have a **LDAP username**, which they can use with the corresponding password to sign in. An account will be created automatically.
+Users at facilities which use LDAP for user management can use their **LDAP username** with the corresponding password to sign in. An account will be created automatically.
 
-Guests at a facility using |service_name| should ask another user of |service_name| for an **invitation**, e.g. the scientist responsible for the instrument they will be using. Once the guest has confirmed their email address by clicking the confirmation link in the invitation email, they can then set a password for their new |service_name| account.
+Guests, or users at facilities without LDAP, should ask another user of |service_name| for an **invitation**, e.g. the scientist responsible for the instrument they will be using. Once they have confirmed their email address by clicking the confirmation link in the invitation email, they can then set a password for their new |service_name| account.
 
 .. figure:: ../static/img/generated/guest_invitation.png
     :scale: 50 %
-    :alt: Guest Invitation Form
+    :alt: User Invitation Form
 
-    Guest Invitation Form
+    User Invitation Form
 
 Users can find the invitation form at |service_invitation_url|.
 
