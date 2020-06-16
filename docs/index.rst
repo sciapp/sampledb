@@ -22,14 +22,28 @@ User Guide
     user_guide/objects.rst
     user_guide/citations.rst
 
+Administrator Guide
+-------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    administrator_guide/getting_started.rst
+    administrator_guide/configuration.rst
+    administrator_guide/tls_termination.rst
+    administrator_guide/backup_and_restore.rst
+    administrator_guide/upgrading.rst
+    administrator_guide/administration_scripts.rst
+    administrator_guide/jupyterhub_support.rst
+
 Developer Guide
 ---------------
 
 .. toctree::
     :maxdepth: 2
 
-    developer_guide/configuration.rst
     developer_guide/api.rst
+    developer_guide/contributing.rst
 
 .. toctree::
     :hidden:
