@@ -17,7 +17,7 @@ bibliography: paper.bib
 
 # Summary
 
-One of the key aspects of good scientific practice is the handling of research data [@dfg]. Archiving research data and making it accessible to other researchers is crucial for reproducibility and can also yield new findings. This is not only true for research data resulting from experiments or simulations, but particularly for information on how a sample was created, how a measurement was performed and which parameters were used for a simulation.
+One of the key aspects of good scientific practice is the handling of research data [@dfg]. Archiving research data and making it findable, accessible, interoperable and re-usable by other researchers is crucial for reproducibility and can also yield new findings [@fair]. This is not only true for research data resulting from experiments or simulations, but particularly for information on how a sample was created, how a measurement was performed and which parameters were used for a simulation.
 
 ``SampleDB`` is a web-based sample and measurement metadata database developed at Jülich Centre for Neutron Science (JCNS) and Peter Grünberg Institute (PGI). Researchers can use ``SampleDB`` to store and retrieve information on samples, measurements and simulations, analyze them using Jupyter notebooks, track sample storage locations and responsibilities and view sample life cycles.
 
