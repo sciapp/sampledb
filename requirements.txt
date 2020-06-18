@@ -6,13 +6,14 @@ Babel==2.7.0
 backports.functools-lru-cache==1.6.1
 bcrypt==3.1.7
 beautifulsoup4==4.8.1
+bleach==3.1.5
 blinker==1.4
 certifi==2019.9.11
 cffi==1.13.2
 chardet==3.0.4
 cheroot==8.2.1
 CherryPy==18.4.0
-chromedriver-binary==81.0.4044.69.0 
+chromedriver-binary==83.0.4103.39.0
 Click==7.0
 coverage==4.5.4
 docutils==0.15.2
@@ -31,6 +32,7 @@ jaraco.functools==2.0
 Jinja2==2.10.3
 jsonschema==3.1.1
 ldap3==2.6.1
+Markdown==3.2.2
 MarkupSafe==1.1.1
 more-itertools==7.2.0
 packaging==19.2

@@ -6,7 +6,7 @@
 import flask
 import flask_login
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField
+from wtforms import StringField, SelectMultipleField, BooleanField
 from wtforms.validators import Length
 
 from . import frontend
@@ -16,7 +16,7 @@ from ..logic.errors import InstrumentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly
+from .utils import check_current_user_is_not_readonly, markdown_to_safe_html
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -56,6 +56,7 @@ class InstrumentForm(FlaskForm):
     name = StringField(validators=[Length(min=1, max=100)])
     description = StringField()
     instrument_responsible_users = SelectMultipleField()
+    is_markdown = BooleanField(default=None)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -70,7 +71,15 @@ def new_instrument():
         for user in get_users()
     ]
     if instrument_form.validate_on_submit():
-        instrument = create_instrument(instrument_form.name.data, instrument_form.description.data)
+        if instrument_form.is_markdown.data:
+            description_as_html = markdown_to_safe_html(instrument_form.description.data)
+        else:
+            description_as_html = None
+        instrument = create_instrument(
+            instrument_form.name.data,
+            instrument_form.description.data,
+            description_as_html=description_as_html
+        )
         flask.flash('The instrument was created successfully.', 'success')
         instrument_responsible_user_ids = [
             int(user_id)
@@ -106,8 +115,20 @@ def edit_instrument(instrument_id):
         str(user.id)
         for user in instrument.responsible_users
     ]
+
+    if not instrument_form.is_submitted():
+        instrument_form.is_markdown.data = (instrument.description_as_html is not None)
     if instrument_form.validate_on_submit():
-        update_instrument(instrument.id, instrument_form.name.data, instrument_form.description.data)
+        if instrument_form.is_markdown.data:
+            description_as_html = markdown_to_safe_html(instrument_form.description.data)
+        else:
+            description_as_html = None
+        update_instrument(
+            instrument.id,
+            instrument_form.name.data,
+            instrument_form.description.data,
+            description_as_html=description_as_html
+        )
         flask.flash('The instrument was updated successfully.', 'success')
         instrument_responsible_user_ids = [
             int(user_id)

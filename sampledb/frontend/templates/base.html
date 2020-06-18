@@ -140,7 +140,7 @@
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Groups</a></li>
               <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">Your Actions</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite a guest</a></li>
+              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %}</a></li>
               <li role="separator" class="divider"></li>
               <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">Sign out</button></form></li>
             </ul>

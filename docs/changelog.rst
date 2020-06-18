@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.11
+------------
+
+Released on June 18th, 2020.
+
+- Allow usage of Markdown in instrument and action descriptions
+- Added configuration values for creating an admin user during initial setup
+- Added administrator guide to documentation
+
 Version 0.10
 ------------
 

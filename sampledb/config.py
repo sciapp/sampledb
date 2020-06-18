@@ -10,6 +10,7 @@ This configuration is the pure base, representing defaults. These values may be 
 
 import typing
 import sys
+import sqlalchemy
 
 from .utils import generate_secret_key, load_environment_configuration
 
@@ -30,10 +31,6 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'LDAP_OBJECT_DEF',
 }
 
-JUPYTERHUB_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
-    'JUPYTERHUB_URL'
-}
-
 
 def use_environment_configuration(env_prefix):
     """
@@ -44,7 +41,9 @@ def use_environment_configuration(env_prefix):
         globals()[name] = value
 
 
-def check_config(config: typing.Mapping[str, typing.Any]) -> None:
+def check_config(
+        config: typing.Mapping[str, typing.Any]
+) -> typing.Dict[str, typing.Any]:
     """
     Check whether all neccessary configuration values are set.
 
@@ -61,6 +60,8 @@ def check_config(config: typing.Mapping[str, typing.Any]) -> None:
 
     show_config_info = False
     can_run = True
+
+    internal_config = {}
 
     missing_config_keys = REQUIRED_CONFIG_KEYS - defined_config_keys
 
@@ -85,15 +86,98 @@ def check_config(config: typing.Mapping[str, typing.Any]) -> None:
         )
         show_config_info = True
 
-    missing_config_keys = JUPYTERHUB_REQUIRED_CONFIG_KEYS - defined_config_keys
-    if missing_config_keys:
+    if 'JUPYTERHUB_URL' not in defined_config_keys and 'JUPYTERHUB_TEMPLATES_URL' not in defined_config_keys:
         print(
-            'JupyterHub integration will be disabled, because the following '
-            'configuration values are missing:\n -',
-            '\n - '.join(missing_config_keys),
+            'JupyterHub integration will be disabled, because none of following '
+            'configuration values are defined:\n -',
+            '\n - '.join(['JUPYTERHUB_URL', 'JUPYTERHUB_TEMPLATES_URL']),
             '\n',
             file=sys.stderr
         )
+        show_config_info = True
+
+    admin_password_set = 'ADMIN_PASSWORD' in defined_config_keys
+    admin_username_set = 'ADMIN_USERNAME' in defined_config_keys
+    admin_email_set = 'ADMIN_EMAIL' in defined_config_keys
+    if admin_password_set or admin_username_set or admin_email_set:
+        if not admin_password_set:
+            if admin_username_set and admin_email_set:
+                print(
+                    'ADMIN_USERNAME and ADMIN_EMAIL are set, but '
+                    'ADMIN_PASSWORD is missing. No admin user will be created.'
+                    '\n',
+                    file=sys.stderr
+                )
+            elif admin_username_set:
+                print(
+                    'ADMIN_USERNAME is set, but ADMIN_PASSWORD is missing. No '
+                    'admin user will be created.'
+                    '\n',
+                    file=sys.stderr
+                )
+            elif admin_email_set:
+                print(
+                    'ADMIN_EMAIL is set, but ADMIN_PASSWORD is missing. No '
+                    'admin user will be created.'
+                    '\n',
+                    file=sys.stderr
+                )
+        elif config['ADMIN_PASSWORD'] == '':
+            print(
+                'ADMIN_PASSWORD is an empty string. No admin user will be '
+                'created.'
+                '\n',
+                file=sys.stderr
+            )
+        elif len(config['ADMIN_PASSWORD']) < 8:
+            print(
+                'ADMIN_PASSWORD is too short. No admin user will be created.'
+                '\n',
+                file=sys.stderr
+            )
+        elif can_run:
+            engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'])
+            user_table_exists = bool(engine.execute(
+                "SELECT * "
+                "FROM information_schema.columns "
+                "WHERE table_name = 'users'"
+            ).fetchall())
+            if user_table_exists:
+                users_exist = bool(engine.execute(
+                    "SELECT * FROM users"
+                ).fetchall())
+            else:
+                users_exist = False
+            if users_exist:
+                print(
+                    'ADMIN_PASSWORD is set, but there already are users in '
+                    'the database. No admin user will be created.'
+                    '\n',
+                    file=sys.stderr
+                )
+            else:
+                admin_username = config.get('ADMIN_USERNAME', 'admin').lower()
+                admin_email = config.get('ADMIN_EMAIL', config['CONTACT_EMAIL']).lower()
+                print(
+                    'A new admin user with the username "{}", the email '
+                    'address "{}" and the given ADMIN_PASSWORD will be '
+                    'created.'
+                    '\n'.format(admin_username, admin_email),
+                    file=sys.stderr
+                )
+                internal_config['ADMIN_INFO'] = (
+                    admin_username, admin_email, config['ADMIN_PASSWORD']
+                )
+                if config['ADMIN_PASSWORD'] == 'password':
+                    print(
+                        '\033[33mYou are using the default ADMIN_PASSWORD from the '
+                        'SampleDB documentation. Please sign in and change your '
+                        'password before making this SampleDB instance available '
+                        'to other users.'
+                        '\033[0m\n',
+                        file=sys.stderr
+                    )
+
         show_config_info = True
 
     if show_config_info:
@@ -106,6 +190,8 @@ def check_config(config: typing.Mapping[str, typing.Any]) -> None:
 
     if not can_run:
         exit(1)
+
+    return internal_config
 
 
 # prefix for all routes (used by run script)
@@ -166,7 +252,9 @@ MIME_TYPES = {
 }
 
 # JupyterHub settings
+JUPYTERHUB_NAME = 'JupyterHub'
 JUPYTERHUB_URL = None
+JUPYTERHUB_TEMPLATES_URL = None
 
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment

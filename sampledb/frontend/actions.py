@@ -24,7 +24,7 @@ from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.settings import get_user_settings
 from .users.forms import ToggleFavoriteActionForm
-from .utils import check_current_user_is_not_readonly
+from .utils import check_current_user_is_not_readonly, markdown_to_safe_html
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -41,6 +41,7 @@ class ActionForm(FlaskForm):
     schema = StringField(validators=[InputRequired()])
     is_public = BooleanField()
     is_user_specific = BooleanField(default=True)
+    is_markdown = BooleanField(default=None)
 
 
 @frontend.route('/actions/')
@@ -253,6 +254,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.name.data = action.name
         if action_form.description.data is None:
             action_form.description.data = action.description
+        if not action_form.is_submitted():
+            action_form.is_markdown.data = (action.description_as_html is not None)
         if action_form.type.data is None or action_form.type.data == str(None):
             action_form.type.data = {
                 ActionType.SAMPLE_CREATION: 'sample',
@@ -266,6 +269,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.name.data = previous_action.name
         if action_form.description.data is None:
             action_form.description.data = previous_action.description
+        if not action_form.is_submitted():
+            action_form.is_markdown.data = (previous_action.description_as_html is not None)
         if action_form.type.data is None or action_form.type.data == str(None):
             action_form.type.data = {
                 ActionType.SAMPLE_CREATION: 'sample',
@@ -322,6 +327,11 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     if schema is not None and error_message is None and form_is_valid:
         name = action_form.name.data
         description = action_form.description.data
+        if action_form.is_markdown.data:
+            description_as_html = markdown_to_safe_html(description)
+        else:
+            description_as_html = None
+
         action_type = {
             'sample': ActionType.SAMPLE_CREATION,
             'measurement': ActionType.MEASUREMENT,
@@ -340,12 +350,26 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 user_id = flask_login.current_user.id
             else:
                 user_id = None
-            action = create_action(action_type, name, description, schema, instrument_id, user_id)
+            action = create_action(
+                action_type,
+                name,
+                description,
+                schema,
+                instrument_id,
+                user_id,
+                description_as_html=description_as_html
+            )
             flask.flash('The action was created successfully.', 'success')
             if may_change_public and is_public:
                 set_action_public(action.id, True)
         else:
-            update_action(action.id, name, description, schema)
+            update_action(
+                action.id,
+                name,
+                description,
+                schema,
+                description_as_html=description_as_html
+            )
             flask.flash('The action was updated successfully.', 'success')
             if may_change_public and is_public is not None:
                 set_action_public(action.id, is_public)

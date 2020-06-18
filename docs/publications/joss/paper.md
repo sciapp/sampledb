@@ -17,7 +17,7 @@ bibliography: paper.bib
 
 # Summary
 
-One of the key aspects of good scientific practice is the handling of research data [@dfg]. Archiving research data and making it accessible to other researchers is crucial for reproducibility and can also yield new findings. This is not only true for research data resulting from experiments or simulations, but particularly for information on how a sample was created, how a measurement was performed and which parameters were used for a simulation.
+One of the key aspects of good scientific practice is the handling of research data [@dfg]. Archiving research data and making it findable, accessible, interoperable and re-usable by other researchers is crucial for reproducibility and can also yield new findings [@fair]. This is not only true for research data resulting from experiments or simulations, but particularly for information on how a sample was created, how a measurement was performed and which parameters were used for a simulation.
 
 ``SampleDB`` is a web-based sample and measurement metadata database developed at Jülich Centre for Neutron Science (JCNS) and Peter Grünberg Institute (PGI). Researchers can use ``SampleDB`` to store and retrieve information on samples, measurements and simulations, analyze them using Jupyter notebooks, track sample storage locations and responsibilities and view sample life cycles.
 
@@ -29,7 +29,9 @@ A Web API allows automated data entry using already existing information, e.g. b
 
 The latter is further simplified if ``SampleDB`` is used in conjunction with a ``JupyterHub`` server. Instrument scientists can provide Jupyter notebook templates for analyzing data from their instruments, along with a list of schema entries containing the necessary metadata. Users can then use these templates to create Jupyter notebooks from within ``SampleDB``, which will copy the required metadata from its ``SampleDB`` entry into the notebook, preparing a process-specific data analysis.
 
-``SampleDB`` was developed using Python 3, the Flask web framework [@flask] and the SQLAlchemy package [@sqlalchemy]. To run ``SampleDB``, we recommend using the provided [Docker images](https://hub.docker.com/r/sciapp/sampledb/) along with a PostgreSQL container, though it can also be run directly from source. A guide on setting up a ``SampleDB`` instance can be found on the [GitHub project site](https://github.com/sciapp/sampledb/).
+Using a schema system for process-specific metadata allows ``SampleDB`` to support a wide variety of processes and presents an advantage over alternative applications, such as the JuliaBase project [@juliabase], which define instruments and processes as part of the application code. That approach inherently limits the group of users that can define or alter processes to those users with administrative access. Keeping application logic and process-specific metadata separate has the disadvantage that ``SampleDB`` cannot provide built-in data analysis tools the way other applications such as the JuliaBase project or BikaLIMS [@bikalims] / Senaite [@senaite] can, however the support for Jupyter notebook templates can be used as an alternative to these data analysis tools. Using pre-defined calculations as they are offered by BikaLIMS / Senaite could also be explored for ``SampleDB`` in the future.
+
+``SampleDB`` was developed using Python 3, the Flask web framework [@flask] and the SQLAlchemy package [@sqlalchemy]. To run ``SampleDB``, we recommend using the provided [Docker images](https://hub.docker.com/r/sciapp/sampledb/) along with a PostgreSQL container, though it can also be run directly from source. Information on setting up a ``SampleDB`` instance can be found on the [GitHub project site](https://github.com/sciapp/sampledb/) and a more in-depth guide can be found in the [project documentation](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/).
 
 # Acknowledgements
 

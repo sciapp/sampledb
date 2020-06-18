@@ -8,14 +8,18 @@ You can find the documentation for the current release at https://scientific-it-
 
 ## Getting Started
 
-We recommend using our pre-built Docker images for setting up `SampleDB`. You will need two containers, one for a PostgreSQL database and another for SampleDB itself, and a directory to store all files in. If you would like to set up a development version of SampleDB instead, please see the [contribution guide](https://github.com/sciapp/sampledb/blob/develop/CONTRIBUTING.md).
+We recommend using our pre-built Docker images for setting up `SampleDB`. You will need two containers, one for a PostgreSQL database and another for SampleDB itself, and a directory to store all files in.
+
+If you would like to set up a development version of SampleDB instead, please see the [contribution guide](https://github.com/sciapp/sampledb/blob/develop/CONTRIBUTING.md).
+
+If you do not have Docker installed yet, please [install Docker](https://docs.docker.com/engine/install/).
 
 First, start your database container:
 
 ```bash
 docker run \
     -d \
-    -e POSTGRES_PASSWORD= \
+    -e POSTGRES_PASSWORD=password \
     -e PGDATA=/var/lib/postgresql/data/pgdata \
     -v `pwd`/pgdata:/var/lib/postgresql/data/pgdata:rw \
     --restart=always \
@@ -29,38 +33,27 @@ Next, start the SampleDB container:
 docker run \
     -d \
     --link sampledb-postgres \
+    -e SAMPLEDB_CONTACT_EMAIL=sampledb@example.com \
     -e SAMPLEDB_MAIL_SERVER=mail.example.com \
     -e SAMPLEDB_MAIL_SENDER=sampledb@example.com \
-    -e SAMPLEDB_CONTACT_EMAIL=sampledb@example.com \
-    -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:@sampledb-postgres:5432/postgres \
+    -e SAMPLEDB_ADMIN_PASSWORD=password \
+    -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres \
     -e SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files/ \
     -v `pwd`/files:/home/sampledb/files:rw \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.10.0
+    sciapp/sampledb:0.11.0
 ```
 
-This will start a basic SampleDB instance at `http://localhost:8000`.
+This will start a minimal SampleDB installation at `http://localhost:8000` and allow you to sign in with the username `admin` and the password `password` (which you should change immediately after signing in).
 
-To use the administration scripts, run:
-
-```bash
-docker exec sampledb env/bin/python -m sampledb help
-```
-
-and replace `help` with the script you want to run.
-
-### Next steps:
-
-- You can set additional [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html) to customize or enable some features, including LDAP authentication and JupyterHub integration. You should at least configure a valid mail server, sender and contact email.
-
-- You can use the administration scripts to create instruments, actions and bot users for use with the WebAPI.
-
-- If you wish to run SampleDB in production, please ensure that you make backups of your database and the file directory, and ensure that your server stays secure. We strongly recommend placing SampleDB behind an nginx reverse proxy for TLS termination.
-
-- To update an existing SampleDB instance, please create a full backup and then start the SampleDB container using the new image.
+To learn how to further set up SampleDB, please follow the rest of the [Getting Started guide](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/getting_started.html).
 
 ## Contributing
 
 If you want to improve SampleDB, please read the [contribution guide](https://github.com/sciapp/sampledb/blob/develop/CONTRIBUTING.md) for a few notes on how to report issues or submit changes.
+
+## Support
+
+If you have any questions about SampleDB or run into any issues setting up or running SampleDB, please [open an issue on GitHub](https://github.com/sciapp/sampledb/issues/new).

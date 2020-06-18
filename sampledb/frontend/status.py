@@ -8,11 +8,13 @@ import flask
 
 from . import frontend
 from .. import db
+from .. import version
 
 
 @frontend.route('/status/')
 def status():
     status_info = {
+        'sampledb_version': version.__version__,
         'flask_status': True
     }
     try:

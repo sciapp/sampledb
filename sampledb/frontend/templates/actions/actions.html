@@ -5,6 +5,9 @@
 {% block content %}
   <h1>Actions</h1>
   <p class="text-muted">Actions represent processes like creating a sample, performing a measurement or running a simulation. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">Read more.</a></p>
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    <a href="{{ url_for('.new_action') }}" class="btn btn-default">Create Action</a>
+  {% endif %}
   {% for action in actions %}
     <form action="{{ url_for('.toggle_favorite_action', sample_id=request.args.get('sample_id', None), t=request.args.get('t', None)) }}" method="post">
       <input type="hidden" name="action_id" value="{{ action.id }}">
@@ -20,7 +23,7 @@
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>
-    <p>{{ action.description }}</p>
+    {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_scientists.html" %}
     {% endwith %}

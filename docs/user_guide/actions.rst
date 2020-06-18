@@ -19,7 +19,9 @@ To create a custom action, users can either use an existing action as a template
 .. note::
     Custom Actions are an advanced feature that most users of |service_name| will not need. If you would like your instrument or action to be included without writing your own schema, please `let us know`_.
 
-    If you would like to try working with custom actions, please `use the development and testing deployment of |service_name| <https://docker.iff.kfa-juelich.de/dev-sampledb/>`_.
+    .. only:: iffSamples
+
+        If you would like to try working with custom actions, please `use the development and testing deployment of iffSamples <https://docker.iff.kfa-juelich.de/dev-sampledb/>`_.
 
 .. _metadata:
 

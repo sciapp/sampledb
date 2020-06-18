@@ -24,9 +24,11 @@
 {% endblock %}
 
 {% block content %}
-  <div class="alert alert-warning">
-    <p><strong>Warning:</strong> Custom Actions are an advanced feature that most users of {{ service_name }} will not need. See the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">User Guide</a> for more information.</p>
-  </div>
+  {% if not current_user.is_admin %}
+    <div class="alert alert-warning">
+      <p><strong>Warning:</strong> Custom Actions are an advanced feature that most users of {{ service_name }} will not need. See the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">User Guide</a> for more information.</p>
+    </div>
+  {% endif %}
   <form method="post">
   {{ action_form.hidden_tag() }}
     <div class="col-md-12">
@@ -65,6 +67,11 @@
       <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
         <label for="input-description" class="control-label">Description</label>
         <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
+      </div>
+      <div class="checkbox">
+        <label for="input-markdown" style="font-weight:400">
+          <input type="checkbox" id="input-markdown" name="{{ action_form.is_markdown.name }}" {% if action_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
+        </label>
       </div>
       <div class="form-group {% if action_form.schema.name in action_form.errors %}has-error{% endif %}">
         <label for="input-schema" class="control-label">Schema</label>
