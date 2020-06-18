@@ -26,7 +26,7 @@ Depending on your specific configuration of JupyterHub, you will need to write a
 
 The templating server will check if the requested template exists and if so, ask the user for confirmation and will insert the properties in ``params`` into the notebook as a new cell. The resulting notebook is then stored on the persistent storage for your JupyterHub and the user is redirected to it.
 
-If the name of a template contains a parameter name in braces, e.g. ``Data_Analysis_{measurement_name}.ipynp``, then the value of that parameter is inserted into the name when generating the notebook.
+If the name of a template contains a parameter name in braces, e.g. ``Data_Analysis_{measurement_name}.ipynb``, then the value of that parameter is inserted into the name when generating the notebook.
 
 For more information and a Flask blueprint for writing a server for your JupyterHub instance, see `the notebook_templates project page <https://github.com/sciapp/notebook_templates>`_.
 
