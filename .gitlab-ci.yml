@@ -87,6 +87,7 @@ pages:
   only:
     - master
     - tags
+    - develop
   script:
     - mv build_documentation public
   artifacts:

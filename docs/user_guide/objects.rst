@@ -109,7 +109,7 @@ The activity log shows a timeline of the object's life cycle, containing events 
 
     Activity Log
 
-.. _permissions:
+.. _locations:
 
 Location
 --------
@@ -123,6 +123,8 @@ The location log shows where an object has been stored and when it was moved.
     :alt: Location
 
     Location
+
+.. _permissions:
 
 Permissions
 -----------
@@ -144,6 +146,8 @@ Each of these categories is built on top of the other, with **Write** permission
     Object Permissions
 
 To modify the permissions of an object, any user with **Grant** permissions can click the **Edit permissions** button on the object's page. They can then view the existing permissions, modify them or add new permissions for users, groups or projects.
+
+Although administrators are shown to have **Grant** permissions for all objects, this only reflects their access to the database mentioned above. At this time, administrators do not automatically have **Grant** permissions for all objects.
 
 .. _default_permissions:
 

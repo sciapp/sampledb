@@ -48,8 +48,16 @@ def setup_jinja_environment(app):
     with app.app_context():
         is_ldap_configured = sampledb.logic.ldap.is_ldap_configured()
 
+    if app.config['JUPYTERHUB_TEMPLATES_URL']:
+        jupyterhub_templates_url = app.config['JUPYTERHUB_TEMPLATES_URL']
+    elif app.config['JUPYTERHUB_URL']:
+        jupyterhub_templates_url = app.config['JUPYTERHUB_URL'] + '/templates'
+    else:
+        jupyterhub_templates_url = None
+
     app.jinja_env.globals.update(
-        jupyterhub_url=app.config['JUPYTERHUB_URL'],
+        jupyterhub_name=app.config['JUPYTERHUB_NAME'],
+        jupyterhub_templates_url=jupyterhub_templates_url,
         signout_form=sampledb.frontend.users_forms.SignoutForm,
         service_name=app.config['SERVICE_NAME'],
         service_description=app.config['SERVICE_DESCRIPTION'],

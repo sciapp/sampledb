@@ -31,10 +31,6 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'LDAP_OBJECT_DEF',
 }
 
-JUPYTERHUB_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
-    'JUPYTERHUB_URL'
-}
-
 
 def use_environment_configuration(env_prefix):
     """
@@ -90,12 +86,11 @@ def check_config(
         )
         show_config_info = True
 
-    missing_config_keys = JUPYTERHUB_REQUIRED_CONFIG_KEYS - defined_config_keys
-    if missing_config_keys:
+    if 'JUPYTERHUB_URL' not in defined_config_keys and 'JUPYTERHUB_TEMPLATES_URL' not in defined_config_keys:
         print(
-            'JupyterHub integration will be disabled, because the following '
-            'configuration values are missing:\n -',
-            '\n - '.join(missing_config_keys),
+            'JupyterHub integration will be disabled, because none of following '
+            'configuration values are defined:\n -',
+            '\n - '.join(['JUPYTERHUB_URL', 'JUPYTERHUB_TEMPLATES_URL']),
             '\n',
             file=sys.stderr
         )
@@ -257,7 +252,9 @@ MIME_TYPES = {
 }
 
 # JupyterHub settings
+JUPYTERHUB_NAME = 'JupyterHub'
 JUPYTERHUB_URL = None
+JUPYTERHUB_TEMPLATES_URL = None
 
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment
