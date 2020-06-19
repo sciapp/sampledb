@@ -73,9 +73,12 @@ def check_config(
 
     if missing_config_keys:
         print(
-            'Missing required configuration values:\n -',
-            '\n - '.join(missing_config_keys),
-            '\n',
+            ansi_color(
+                'Missing required configuration values:\n -' +
+                '\n - '.join(missing_config_keys) +
+                '\n',
+                color=31
+            ),
             file=sys.stderr
         )
         can_run = False
@@ -265,6 +268,23 @@ def check_config(
                     ),
                     file=sys.stderr
                 )
+
+    try:
+        os.makedirs(config['FILE_STORAGE_PATH'], exist_ok=True)
+        test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
+        if os.path.exists(test_file_path):
+            os.remove(test_file_path)
+        open(test_file_path, 'a').close()
+    except Exception:
+        print(
+            ansi_color(
+                'Failed to write to the directory given as FILE_STORAGE_PATH.\n',
+                color=31
+            ),
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
 
     if show_config_info:
         print(
