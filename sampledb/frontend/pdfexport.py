@@ -30,9 +30,35 @@ TOP_MARGIN = 31.7 * mm
 BOTTOM_MARGIN = 31.7 * mm
 
 
-def _set_up_page(canvas, object_id, qrcode_uri):
+def _set_up_page(canvas, object_id, qrcode_uri, logo_uri=None, logo_aspect_ratio=1, logo_alignment='right'):
     canvas.saveState()
     canvas.drawImage(qrcode_uri, PAGE_WIDTH - 27.5 * mm, PAGE_HEIGHT - 27.5 * mm, 20 * mm, 20 * mm)
+    if logo_uri:
+        if logo_aspect_ratio > 1:
+            logo_width = 19 * mm * logo_aspect_ratio
+            logo_height = 19 * mm
+        else:
+            logo_width = 19 * mm
+            logo_height = 19 * mm / logo_aspect_ratio
+        # right margin due to QR code
+        right_margin = 27.5 * mm
+        max_width = PAGE_WIDTH - right_margin - LEFT_MARGIN
+        if logo_width > max_width:
+            logo_height *= max_width / logo_width
+            logo_width = max_width
+        max_height = 19 * mm
+        if logo_height > max_height:
+            logo_width *= max_height / logo_height
+            logo_height = max_height
+        logo_alignment = logo_alignment.lower()
+        if logo_alignment == 'left':
+            x = LEFT_MARGIN
+        elif logo_alignment == 'center':
+            x = (LEFT_MARGIN + PAGE_WIDTH - right_margin - logo_width) / 2
+        else:
+            x = PAGE_WIDTH - right_margin - logo_width
+        y = PAGE_HEIGHT - 26.5 * mm
+        canvas.drawImage(logo_uri, x, y, logo_width, logo_height)
     canvas.setFont('Helvetica', 8)
     canvas.drawCentredString(PAGE_WIDTH - 17.5 * mm, PAGE_HEIGHT - 29 * mm, "#{}".format(object_id))
     canvas.drawCentredString(PAGE_WIDTH - 17.5 * mm, PAGE_HEIGHT - 33 * mm, "Exported on")
@@ -459,7 +485,10 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         # set PDF producer (not exposed by reportlab Canvas API)
         PDFInfo.producer = service_name
         canvas.showOutline()
-        canvas.set_up_page = lambda: _set_up_page(canvas, object_id, qrcode_uri)
+        logo_uri = flask.current_app.config['internal'].get('PDFEXPORT_LOGO_URL', None)
+        logo_aspect_ratio = flask.current_app.config['internal'].get('PDFEXPORT_LOGO_ASPECT_RATIO', 1)
+        logo_alignment = flask.current_app.config['PDFEXPORT_LOGO_ALIGNMENT']
+        canvas.set_up_page = lambda: _set_up_page(canvas, object_id, qrcode_uri, logo_uri, logo_aspect_ratio, logo_alignment)
         canvas.left_cursor = LEFT_MARGIN
         canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
         _write_metadata(object, canvas)

@@ -19,6 +19,17 @@ from .models import Permissions, migrations
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+def ansi_color(text: str, color: int):
+    """
+    Add ANSI color codes to text.
+
+    :param text: the text without ANSI colors
+    :param color: the desired color
+    :return: the text with the color added
+    """
+    return f'\033[{color}m{text}\033[0m'
+
+
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,

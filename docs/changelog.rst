@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.12
+------------
+
+Currently in development.
+
+- Allow adding a logo to object export PDF documents
+
 Version 0.11
 ------------
 
