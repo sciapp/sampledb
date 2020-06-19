@@ -8,9 +8,14 @@ This configuration is the pure base, representing defaults. These values may be 
 - environment variables starting with the prefix SAMPLEDB_ will further override any hardcoded configuration data.
 """
 
+import base64
+import io
+import os
+import requests
 import typing
 import sys
 import sqlalchemy
+from PIL import Image
 
 from .utils import generate_secret_key, load_environment_configuration
 
@@ -180,6 +185,77 @@ def check_config(
 
         show_config_info = True
 
+    if config['PDFEXPORT_LOGO_URL'] is not None:
+        logo_url = config['PDFEXPORT_LOGO_URL']
+        logo_image = None
+        if logo_url.startswith('file://'):
+            logo_path = logo_url[7:]
+            try:
+                logo_path = os.path.abspath(logo_path)
+                _, logo_extension = os.path.splitext(logo_path)
+                if logo_extension.lower() in ('.png', '.jpg', '.jpeg'):
+                    logo_image = Image.open(logo_path)
+                else:
+                    print(
+                        '\033[33m'
+                        f'Unsupported logo file format: {logo_extension}'
+                        '\033[0m\n',
+                        file=sys.stderr
+                    )
+            except Exception:
+                print(
+                    '\033[33m'
+                    f'Unable to read logo file at: {logo_path}'
+                    '\033[0m\n',
+                    file=sys.stderr
+                )
+        elif logo_url.startswith('http://') or logo_url.startswith('https://'):
+            try:
+                r = requests.get(logo_url, timeout=5)
+                if r.status_code != 200:
+                    print(
+                        '\033[33m'
+                        f'Unable to read logo from: {logo_url}. Got status code: {r.status_code}'
+                        '\033[0m\n',
+                        file=sys.stderr
+                    )
+                else:
+                    logo_file = io.BytesIO(r.content)
+                    logo_image = Image.open(logo_file)
+            except Exception:
+                print(
+                    '\033[33m'
+                    f'Unable to read logo from: {logo_url}'
+                    '\033[0m\n',
+                    file=sys.stderr
+                )
+        else:
+            print(
+                '\033[33m'
+                f'Unable to read logo from: {logo_url}. The following URL schemes are supported: file, http, https.'
+                '\033[0m\n',
+                file=sys.stderr
+            )
+        if logo_image:
+            try:
+                logo_width, logo_height = logo_image.size
+                internal_config['PDFEXPORT_LOGO_ASPECT_RATIO'] = logo_width / logo_height
+                logo_image = logo_image.convert('RGBA')
+                background_image = Image.new('RGBA', logo_image.size, 'white')
+                logo_image = Image.alpha_composite(background_image, logo_image)
+                logo_file = io.BytesIO()
+                logo_image.save(logo_file, "png")
+                logo_png_data = logo_file.getvalue()
+                logo_data_uri = 'data:image/png;base64,' + base64.b64encode(logo_png_data).decode('utf-8')
+                internal_config['PDFEXPORT_LOGO_URL'] = logo_data_uri
+            except Exception:
+                print(
+                    '\033[33m'
+                    f'Unable to read logo from: {logo_url}'
+                    '\033[0m\n',
+                    file=sys.stderr
+                )
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -255,6 +331,9 @@ MIME_TYPES = {
 JUPYTERHUB_NAME = 'JupyterHub'
 JUPYTERHUB_URL = None
 JUPYTERHUB_TEMPLATES_URL = None
+
+PDFEXPORT_LOGO_URL = None
+PDFEXPORT_LOGO_ALIGNMENT = 'right'
 
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment
