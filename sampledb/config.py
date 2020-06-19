@@ -17,7 +17,8 @@ import sys
 import sqlalchemy
 from PIL import Image
 
-from .utils import generate_secret_key, load_environment_configuration
+from .utils import generate_secret_key, load_environment_configuration, ansi_color
+
 
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'SQLALCHEMY_DATABASE_URI',
@@ -175,11 +176,14 @@ def check_config(
                 )
                 if config['ADMIN_PASSWORD'] == 'password':
                     print(
-                        '\033[33mYou are using the default ADMIN_PASSWORD from the '
-                        'SampleDB documentation. Please sign in and change your '
-                        'password before making this SampleDB instance available '
-                        'to other users.'
-                        '\033[0m\n',
+                        ansi_color(
+                            'You are using the default ADMIN_PASSWORD from the '
+                            'SampleDB documentation. Please sign in and change your '
+                            'password before making this SampleDB instance available '
+                            'to other users.'
+                            '\n',
+                            color=33
+                        ),
                         file=sys.stderr
                     )
 
@@ -197,16 +201,18 @@ def check_config(
                     logo_image = Image.open(logo_path)
                 else:
                     print(
-                        '\033[33m'
-                        f'Unsupported logo file format: {logo_extension}'
-                        '\033[0m\n',
+                        ansi_color(
+                            f'Unsupported logo file format: {logo_extension}\n',
+                            color=33
+                        ),
                         file=sys.stderr
                     )
             except Exception:
                 print(
-                    '\033[33m'
-                    f'Unable to read logo file at: {logo_path}'
-                    '\033[0m\n',
+                    ansi_color(
+                        f'Unable to read logo file at: {logo_path}\n',
+                        color=33
+                    ),
                     file=sys.stderr
                 )
         elif logo_url.startswith('http://') or logo_url.startswith('https://'):
@@ -214,9 +220,10 @@ def check_config(
                 r = requests.get(logo_url, timeout=5)
                 if r.status_code != 200:
                     print(
-                        '\033[33m'
-                        f'Unable to read logo from: {logo_url}. Got status code: {r.status_code}'
-                        '\033[0m\n',
+                        ansi_color(
+                            f'Unable to read logo from: {logo_url}. Got status code: {r.status_code}\n',
+                            color=33
+                        ),
                         file=sys.stderr
                     )
                 else:
@@ -224,16 +231,18 @@ def check_config(
                     logo_image = Image.open(logo_file)
             except Exception:
                 print(
-                    '\033[33m'
-                    f'Unable to read logo from: {logo_url}'
-                    '\033[0m\n',
+                    ansi_color(
+                        f'Unable to read logo from: {logo_url}\n',
+                        color=33
+                    ),
                     file=sys.stderr
                 )
         else:
             print(
-                '\033[33m'
-                f'Unable to read logo from: {logo_url}. The following URL schemes are supported: file, http, https.'
-                '\033[0m\n',
+                ansi_color(
+                    f'Unable to read logo from: {logo_url}. The following URL schemes are supported: file, http, https.\n',
+                    color=33
+                ),
                 file=sys.stderr
             )
         if logo_image:
@@ -250,9 +259,10 @@ def check_config(
                 internal_config['PDFEXPORT_LOGO_URL'] = logo_data_uri
             except Exception:
                 print(
-                    '\033[33m'
-                    f'Unable to read logo from: {logo_url}'
-                    '\033[0m\n',
+                    ansi_color(
+                        f'Unable to read logo from: {logo_url}\n',
+                        color=33
+                    ),
                     file=sys.stderr
                 )
 
