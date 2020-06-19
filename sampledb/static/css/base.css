@@ -541,3 +541,11 @@ th:hover .search-helper {
     margin-left: -15px;
     margin-right: -15px;
 }
+
+#file_table .file-description {
+    color: #737373;
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    word-wrap:break-word;
+    word-break: break-word
+}

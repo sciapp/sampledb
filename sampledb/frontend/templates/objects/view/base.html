@@ -141,7 +141,13 @@
         {% if not file.is_hidden %}
         <tr id="file-{{ file.id }}">
           <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
-          <td>{{ file.title }}</td>
+          <td>
+            {{ file.title }}
+            {% if file.description %}
+<span class="file-description">
+{{ file.description }}</span>
+            {% endif %}
+          </td>
           <td>
             <span class="pull-right" style="display:flex;">
               <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="View information"><i class="fa fa-info"></i></button>
