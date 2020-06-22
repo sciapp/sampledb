@@ -4,11 +4,13 @@
 """
 
 from . import actions
+from . import action_permissions
 from . import api_log
 from . import authentication
 from . import comments
 from . import datatypes
 from . import errors
+from . import export
 from . import favorites
 from . import files
 from . import groups
@@ -41,11 +43,13 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 __all__ = [
     'actions',
+    'action_permissions',
     'api_log',
     'authentication',
     'comments',
     'datatypes',
     'errors',
+    'export',
     'favorites',
     'files',
     'groups',

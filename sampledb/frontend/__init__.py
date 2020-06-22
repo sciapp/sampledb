@@ -17,6 +17,7 @@ frontend = flask.Blueprint(
 
 from . import actions
 from . import authentication_forms
+from . import export
 from . import index
 from . import instruments
 from . import locations
@@ -34,6 +35,7 @@ from . import utils
 __all__ = [
     'actions',
     'authentication_forms',
+    'export',
     'index',
     'instruments',
     'locations',
