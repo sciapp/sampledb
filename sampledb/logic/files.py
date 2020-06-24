@@ -87,6 +87,13 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             raise InvalidFileStorageError()
 
     @property
+    def url(self) -> str:
+        if self.storage == 'url':
+            return self.data['url']
+        else:
+            raise InvalidFileStorageError()
+
+    @property
     def uploader(self) -> users.User:
         return users.get_user(self.user_id)
 

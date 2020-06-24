@@ -6,6 +6,7 @@ Version 0.12
 
 Currently in development.
 
+- Add data export as PDF document, .zip or .tar.gz archive
 - Allow adding a logo to object export PDF documents
 
 Version 0.11
