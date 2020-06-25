@@ -26,6 +26,18 @@
             {% endif %}
         </div>
     </div>
+    <div class="form-group {% if change_user_form.orcid.errors %} has-error{% endif %}">
+        <label for="input-orcid" class="col-sm-4 control-label">ORCID iD</label>
+        <div class="col-sm-8">
+        <div class="input-group">
+          <span class="input-group-addon">https://orcid.org/</span>
+          <input class="form-control" type="text" id="input-orcid" name="{{change_user_form.orcid.name}}" value="{{ change_user_form.orcid.data or '' }}">
+        </div>
+        {% if change_user_form.orcid.errors %}
+          <span class="help-block">Please enter your ORCID iD or leave this field blank.</span>
+        {% endif %}
+        </div>
+    </div>
     <div class="form-group">
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">Save</button>
     </div>

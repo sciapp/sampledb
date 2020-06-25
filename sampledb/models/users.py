@@ -24,6 +24,7 @@ class User(db.Model, flask_login.UserMixin):
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     is_readonly = db.Column(db.Boolean, default=False, nullable=False)
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
+    orcid = db.Column(db.String, nullable=True)
 
     def __init__(self, name, email, type):
         self.name = name
@@ -38,7 +39,8 @@ class User(db.Model, flask_login.UserMixin):
             self.type == other.type and
             self.is_admin == other.is_admin and
             self.is_readonly == other.is_readonly and
-            self.is_hidden == other.is_hidden
+            self.is_hidden == other.is_hidden and
+            self.orcid == other.orcid
         )
 
     def get_id(self):

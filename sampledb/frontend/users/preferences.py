@@ -118,6 +118,8 @@ def change_preferences(user, user_id):
             change_user_form.name.data = user.name
         if change_user_form.email.data is None or change_user_form.email.data == "":
             change_user_form.email.data = user.email
+        if change_user_form.orcid.data is None or change_user_form.orcid.data == "":
+            change_user_form.orcid.data = user.orcid
 
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
         if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
@@ -168,6 +170,17 @@ def change_preferences(user, user_id):
                 # send confirm link
                 send_confirm_email(change_user_form.email.data, user.id, 'edit_profile')
                 flask.flash("Please see your email to confirm this change.", 'success')
+            if change_user_form.orcid.data != user.orcid:
+                if change_user_form.orcid.data and change_user_form.orcid.data.strip():
+                    orcid = change_user_form.orcid.data.strip()
+                else:
+                    orcid = None
+                if user.orcid != orcid and (orcid is not None or user.orcid is not None):
+                    user.orcid = orcid
+                    db.session.add(user)
+                    db.session.commit()
+                    user_log.edit_user_preferences(user_id=user_id)
+                    flask.flash("Successfully updated your ORCID iD.", 'success')
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
         authentication_method_id = authentication_method_form.id.data

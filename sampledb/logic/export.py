@@ -152,7 +152,8 @@ def get_archive_files(user_id: int) -> typing.Dict[str, bytes]:
         if user_info.id in relevant_user_ids:
             user_infos.append({
                 'id': user_info.id,
-                'name': user_info.name
+                'name': user_info.name,
+                'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None
             })
     infos['users'] = user_infos
 
