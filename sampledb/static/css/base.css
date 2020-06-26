@@ -402,24 +402,24 @@ th:hover .search-helper {
     padding: 0;
     border: 0;
 }
-.pdf_export_object_wrapper > input {
+.data_export_object_wrapper > input {
     display:none;
 }
-.pdf_export_object_wrapper > input ~ label.fa.fa-fw {
+.data_export_object_wrapper > input ~ label.fa.fa-fw {
     text-align: left;
 }
-.pdf_export_object_wrapper > input[disabled] ~ label {
+.data_export_object_wrapper > input[disabled] ~ label {
     color:#bbbbbb;
     pointer-events: none;
 }
-.pdf_export_object_wrapper > input ~ label:before {
+.data_export_object_wrapper > input ~ label:before {
     content:'\f096';
     cursor: pointer;
 }
-.pdf_export_object_wrapper > input:checked ~ label:before {
+.data_export_object_wrapper > input:checked ~ label:before {
     content:'\f046';
 }
-.pdf_export_object_wrapper > input[disabled] ~ label:before {
+.data_export_object_wrapper > input[disabled] ~ label:before {
     cursor: initial;
 }
 
