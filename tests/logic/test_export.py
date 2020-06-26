@@ -143,7 +143,8 @@ def validate_data(data):
         'users': [
             {
                 'id': 1,
-                'name': 'Basic User'
+                'name': 'Basic User',
+                'orcid_id': None
             }
         ],
         'locations': []

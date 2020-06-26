@@ -3,9 +3,11 @@
 
 """
 
+import re
+
 from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
-from wtforms.validators import DataRequired, Length, Email
+from wtforms.validators import DataRequired, Length, Email, ValidationError
 
 
 class NewUserForm(FlaskForm):
@@ -22,10 +24,29 @@ class NewUserForm(FlaskForm):
 class ChangeUserForm(FlaskForm):
     name = StringField('Full Name', validators=[DataRequired(), Length(min=1)])
     email = StringField('Contact Email', validators=[DataRequired("Please enter the contact email."), Email("Please enter your contact email.")])
+    orcid = StringField('ORCID iD')
     submit = SubmitField('Change Settings')
 
     def __init_(self, name=None, email=None):
         super(ChangeUserForm, self).__init__()
+
+    def validate_orcid(self, field):
+        orcid = field.data
+        # accept empty ORCID iDs
+        if orcid is None:
+            return
+        orcid = orcid.strip()
+        if not orcid:
+            return
+        # accept full ORCID iDs
+        orcid_prefix = 'https://orcid.org/'
+        if orcid.startswith(orcid_prefix):
+            orcid = orcid[len(orcid_prefix):]
+        # check ORCID iD syntax
+        if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
+            raise ValidationError("Please enter a valid ORCID iD.")
+        # keep sanitized ORCID iD on success
+        field.data = orcid
 
 
 class LoginForm(FlaskForm):
