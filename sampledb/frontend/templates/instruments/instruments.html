@@ -4,7 +4,7 @@
 
 {% block content %}
   <h1>Instruments</h1>
-  <p class="text-muted">Instruments in {{ service_name }} map real instruments in Jülich or at other facilities to <a href="{{ url_for('.actions') }}">actions</a> performed with them. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html">Read more.</a></p>
+  <p class="text-muted">Instruments in {{ service_name }} map real instruments to <a href="{{ url_for('.actions') }}">actions</a> performed with them. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html">Read more.</a></p>
   {% if current_user.is_admin and not current_user.is_readonly %}
     <a href="{{ url_for('.new_instrument') }}" class="btn btn-default">Create Instrument</a>
   {% endif %}

@@ -210,3 +210,14 @@ def link_publication(user_id: int, object_id: int, doi: str, title: typing.Optio
             'title': title
         }
     )
+
+
+def create_instrument_log_entry(user_id: int, instrument_id: int, instrument_log_entry_id: int):
+    _store_new_log_entry(
+        type=UserLogEntryType.CREATE_INSTRUMENT_LOG_ENTRY,
+        user_id=user_id,
+        data={
+            'instrument_id': instrument_id,
+            'instrument_log_entry_id': instrument_log_entry_id
+        }
+    )

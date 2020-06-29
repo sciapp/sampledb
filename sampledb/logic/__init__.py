@@ -15,6 +15,7 @@ from . import favorites
 from . import files
 from . import groups
 from . import instruments
+from . import instrument_log_entries
 from . import ldap
 from . import locations
 from . import notifications
@@ -54,6 +55,7 @@ __all__ = [
     'files',
     'groups',
     'instruments',
+    'instrument_log_entries',
     'ldap',
     'locations',
     'notifications',

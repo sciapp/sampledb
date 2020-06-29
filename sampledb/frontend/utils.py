@@ -68,12 +68,19 @@ def has_preview(file):
     return file_extension in flask.current_app.config.get('MIME_TYPES', {})
 
 
+def file_name_is_image(file_name):
+    file_extension = os.path.splitext(file_name)[1]
+    return flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '').startswith('image/')
+
+
 def is_image(file):
     if file.storage != 'local':
         return False
-    file_name = file.original_file_name
-    file_extension = os.path.splitext(file_name)[1]
-    return flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '').startswith('image/')
+    return file_name_is_image(file.original_file_name)
+
+
+def attachment_is_image(file_attachment):
+    return file_name_is_image(file_attachment.file_name)
 
 
 def get_num_unread_notifications(user):
@@ -88,5 +95,6 @@ def check_current_user_is_not_readonly():
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
+_jinja_filters['attachment_is_image'] = attachment_is_image
 _jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications
 _jinja_filters['urlencode'] = quote_plus

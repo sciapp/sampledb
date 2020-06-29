@@ -3,7 +3,7 @@
 Instruments
 ===========
 
-Instruments in |service_name| map real instruments in Jülich or at other facilities to :ref:`actions` performed with them.
+Instruments in |service_name| map real instruments to :ref:`actions` performed with them.
 
 You can view a list of instruments at |service_instruments_url|. To make navigating the growing list of instruments easier, users can select **favorites** by clicking the star next to an instrument's name.
 
@@ -16,3 +16,10 @@ Instrument Scientists
 ---------------------
 
 Most instruments are associated with one or more **instrument scientists**, who will automatically be granted permissions for all objects created with their instruments. For more information on how permissions are handled, see :ref:`permissions`.
+
+.. _instrument_log:
+
+Instrument Log
+--------------
+
+Instrument scientists can use the instrument log to keep track of problems, maintenance or other events. They can decide whether the log can be seen by other users, and whether other users can also create log entries, e.g. to report issues. When a new log entry is created, a notification will be sent to the instrument scientists.

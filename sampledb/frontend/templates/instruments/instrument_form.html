@@ -39,6 +39,16 @@
           {% endfor %}
         </select>
       </div>
+      <div class="checkbox">
+        <label for="input-users_can_create_log_entries">
+          <input type="checkbox" id="input-users_can_create_log_entries" name="{{ instrument_form.users_can_create_log_entries.name }}" {% if instrument_form.users_can_create_log_entries.data %}checked="checked"{% endif %}> Users can create log entries
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-users_can_view_log_entries">
+          <input type="checkbox" id="input-users_can_view_log_entries" name="{{ instrument_form.users_can_view_log_entries.name }}" {% if instrument_form.users_can_view_log_entries.data %}checked="checked"{% endif %}> Users can view log entries
+        </label>
+      </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
