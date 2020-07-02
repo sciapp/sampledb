@@ -37,7 +37,7 @@ from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
-from .pdfexport import create_pdfexport
+from . import pdfexport
 from .utils import check_current_user_is_not_readonly
 
 
@@ -1092,7 +1092,13 @@ def export_data(object_id):
         if not object_ids:
             return flask.abort(400)
     if file_extension == '.pdf':
-        pdf_data = create_pdfexport(object_ids)
+        sections = pdfexport.SECTIONS
+        if 'sections' in flask.request.args:
+            try:
+                sections = sections.intersection(json.loads(flask.request.args['sections']))
+            except Exception:
+                return flask.abort(400)
+        pdf_data = pdfexport.create_pdfexport(object_ids, sections)
         file_bytes = io.BytesIO(pdf_data)
     elif file_extension in logic.export.FILE_FORMATS:
         file_bytes = logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids)
