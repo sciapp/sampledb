@@ -102,6 +102,8 @@ class InstrumentForm(FlaskForm):
     description = StringField()
     instrument_responsible_users = SelectMultipleField()
     is_markdown = BooleanField(default=None)
+    notes = StringField()
+    notes_are_markdown = BooleanField(default=None)
     users_can_create_log_entries = BooleanField(default=False)
     users_can_view_log_entries = BooleanField(default=False)
 
@@ -122,10 +124,16 @@ def new_instrument():
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
         else:
             description_as_html = None
+        if instrument_form.notes_are_markdown.data:
+            notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+        else:
+            notes_as_html = None
         instrument = create_instrument(
             instrument_form.name.data,
             instrument_form.description.data,
             description_as_html=description_as_html,
+            notes=instrument_form.notes.data,
+            notes_as_html=notes_as_html,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data
         )
@@ -156,6 +164,7 @@ def edit_instrument(instrument_id):
     instrument_form = InstrumentForm()
     instrument_form.name.default = instrument.name
     instrument_form.description.default = instrument.description
+    instrument_form.notes.default = instrument.notes
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user.name)
         for user in get_users()
@@ -167,6 +176,7 @@ def edit_instrument(instrument_id):
 
     if not instrument_form.is_submitted():
         instrument_form.is_markdown.data = (instrument.description_as_html is not None)
+        instrument_form.notes_are_markdown.data = (instrument.notes_as_html is not None)
         instrument_form.users_can_create_log_entries.data = instrument.users_can_create_log_entries
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
     if instrument_form.validate_on_submit():
@@ -174,11 +184,17 @@ def edit_instrument(instrument_id):
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
         else:
             description_as_html = None
+        if instrument_form.notes_are_markdown.data:
+            notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+        else:
+            notes_as_html = None
         update_instrument(
             instrument.id,
             instrument_form.name.data,
             instrument_form.description.data,
             description_as_html=description_as_html,
+            notes=instrument_form.notes.data,
+            notes_as_html=notes_as_html,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data
         )

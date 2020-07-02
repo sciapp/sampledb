@@ -28,7 +28,16 @@
       </div>
       <div class="checkbox">
         <label for="input-markdown" style="font-weight:400">
-          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
+          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax for Description
+        </label>
+      </div>
+      <div class="form-group {% if instrument_form.notes.name in instrument_form.errors %}has-error{% endif %}">
+        <label for="input-description" class="control-label">Instrument Scientist Notes</label>
+        <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ instrument_form.notes.name }}" placeholder="Instrument Scientist Notes">{{ instrument_form.notes.data or instrument_form.notes.default or '' }}</textarea>
+      </div>
+      <div class="checkbox">
+        <label for="input-notes-are-markdown" style="font-weight:400">
+          <input type="checkbox" id="input-notes-are-markdown" name="{{ instrument_form.notes_are_markdown.name }}" {% if instrument_form.notes_are_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax for Notes
         </label>
       </div>
       <div class="form-group">

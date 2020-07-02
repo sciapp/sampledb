@@ -32,6 +32,18 @@
       {% endif %}
     {% endif %}
   {% endfor %}
+  {% if is_instrument_responsible_user %}
+  <h2>Instrument Scientist Notes</h2>
+    <p class="text-muted">
+      These notes are only visible to the instrument scientists.
+      <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-scientist-notes">Read more.</a>
+    </p>
+    {% if instrument.notes_as_html or instrument.notes %}
+      {% if instrument.notes_as_html %}{{ instrument.notes_as_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
+    {% else %}
+      &mdash;
+    {% endif %}
+  {% endif %}
   {% if is_instrument_responsible_user or instrument.users_can_create_log_entries or instrument.users_can_view_log_entries %}
     <h2>Instrument Log</h2>
     <p class="text-muted">

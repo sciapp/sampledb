@@ -27,6 +27,8 @@ class Instrument(db.Model):
     description_as_html = db.Column(db.String, nullable=True, default=None)
     users_can_create_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     users_can_view_log_entries = db.Column(db.Boolean, nullable=False, default=False)
+    notes = db.Column(db.String, nullable=False, default='')
+    notes_as_html = db.Column(db.String, nullable=True, default=None)
 
     def __init__(
             self,
@@ -34,13 +36,17 @@ class Instrument(db.Model):
             description: str = '',
             description_as_html: typing.Optional[str] = None,
             users_can_create_log_entries: bool = False,
-            users_can_view_log_entries: bool = False
+            users_can_view_log_entries: bool = False,
+            notes: str = '',
+            notes_as_html: typing.Optional[str] = None,
     ):
         self.name = name
         self.description = description
         self.description_as_html = description_as_html
         self.users_can_create_log_entries = users_can_create_log_entries
         self.users_can_view_log_entries = users_can_view_log_entries
+        self.notes = notes
+        self.notes_as_html = notes_as_html
 
     def __eq__(self, other):
         return (
@@ -50,6 +56,8 @@ class Instrument(db.Model):
             self.description_as_html == other.description_as_html and
             self.users_can_create_log_entries == other.users_can_create_log_entries and
             self.users_can_view_log_entries == other.users_can_view_log_entries and
+            self.notes == other.notes and
+            self.notes_as_html == other.notes_as_html and
             self.responsible_users == other.responsible_users
         )
 

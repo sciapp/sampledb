@@ -10,6 +10,7 @@ Currently in development.
 - Allow adding a logo to object export PDF documents
 - Allow setting a publicly visible ORCID iD
 - Added instrument log
+- Added instrument scientist notes
 
 Version 0.11
 ------------
