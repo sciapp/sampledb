@@ -16,7 +16,7 @@ import flask
 from .. import logic
 
 
-def get_archive_files(user_id: int) -> typing.Dict[str, bytes]:
+def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> typing.Dict[str, bytes]:
     archive_files = {}
     relevant_action_ids = set()
     relevant_instrument_ids = set()
@@ -29,6 +29,8 @@ def get_archive_files(user_id: int) -> typing.Dict[str, bytes]:
     infos = {}
     object_infos = []
     for object in objects:
+        if object_ids is not None and object.id not in object_ids:
+            continue
         object_infos.append({
             'id': object.id,
             'action_id': object.action_id,
@@ -202,8 +204,8 @@ This archive was created for user #{user_id} at {datetime.datetime.now().isoform
     return archive_files
 
 
-def get_zip_archive(user_id: int) -> bytes:
-    archive_files = get_archive_files(user_id)
+def get_zip_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> bytes:
+    archive_files = get_archive_files(user_id, object_ids=object_ids)
     zip_bytes = io.BytesIO()
     with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
         for file_name, file_content in archive_files.items():
@@ -211,8 +213,8 @@ def get_zip_archive(user_id: int) -> bytes:
     return zip_bytes.getvalue()
 
 
-def get_tar_gz_archive(user_id: int) -> bytes:
-    archive_files = get_archive_files(user_id)
+def get_tar_gz_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> bytes:
+    archive_files = get_archive_files(user_id, object_ids=object_ids)
     tar_bytes = io.BytesIO()
     with tarfile.open('sampledb_export.tar.gz', 'w:gz', fileobj=tar_bytes) as tar_file:
         for file_name, file_content in archive_files.items():
@@ -221,3 +223,9 @@ def get_tar_gz_archive(user_id: int) -> bytes:
             tar_info.mode = 444
             tar_file.addfile(tar_info, fileobj=io.BytesIO(file_content))
     return tar_bytes.getvalue()
+
+
+FILE_FORMATS = {
+    '.zip': ('.zip Archive', get_zip_archive),
+    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive)
+}

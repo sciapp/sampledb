@@ -164,14 +164,16 @@ When an object is created, its creator, any associated instrument scientists and
 
 .. _pdf_export:
 
-PDF Export
+Data Export
 ----------
 
 Users can export object information to a PDF file, e.g. for printing or offline usage. Note that the exported object information will not be fully complete, e.g. only files of some formats will be included in the PDF and only the current metadata version will be shown.
 
-Along with the current object, related objects can be exported along with it, e.g. a sample can be exported as PDF together with all measurements performed with it.
+Alternatively, users can export object information as an archive, which contains the full object information as a JSON file and all files uploaded for the object.
 
-Users can also create a PDF file for all objects which the user has **READ** permissions for (see :ref:`export`).
+Along with the current object, related objects can be exported along with it, e.g. a sample can be exported together with all measurements performed with it.
+
+Users can also export information for all objects which the user has **READ** permissions for (see :ref:`export`).
 
 Labels
 ------

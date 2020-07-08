@@ -1074,10 +1074,13 @@ def post_object_publication(object_id):
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
-@frontend.route('/objects/<int:object_id>/pdf')
+@frontend.route('/objects/<int:object_id>/export')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def export_to_pdf(object_id):
+def export_data(object_id):
     object_ids = [object_id]
+    file_extension = flask.request.args.get('format', '.pdf')
+    if file_extension != '.pdf' and file_extension not in logic.export.FILE_FORMATS:
+        return flask.abort(400)
     if 'object_ids' in flask.request.args:
         try:
             object_ids = json.loads(flask.request.args['object_ids'])
@@ -1088,13 +1091,22 @@ def export_to_pdf(object_id):
             return flask.abort(400)
         if not object_ids:
             return flask.abort(400)
-    pdf_data = create_pdfexport(object_ids)
-
-    return flask.send_file(
-        io.BytesIO(pdf_data),
-        mimetype='application/pdf',
-        cache_timeout=-1
-    )
+    if file_extension == '.pdf':
+        pdf_data = create_pdfexport(object_ids)
+        file_bytes = io.BytesIO(pdf_data)
+    elif file_extension in logic.export.FILE_FORMATS:
+        file_bytes = logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids)
+    else:
+        file_bytes = None
+    if file_bytes:
+        return flask.Response(
+            file_bytes,
+            200,
+            headers={
+                'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}'
+            }
+        )
+    return flask.abort(500)
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])

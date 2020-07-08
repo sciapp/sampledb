@@ -16,11 +16,7 @@ from .pdfexport import create_pdfexport
 
 class CreateExportForm(FlaskForm):
     file_extension = SelectField(
-        choices=[
-            ('.pdf', 'PDF file'),
-            ('.tar.gz', '.tar.gz archive'),
-            ('.zip', '.zip archive'),
-        ],
+        choices=[],
         validators=[InputRequired()]
     )
 
@@ -40,6 +36,12 @@ def export(user_id):
         return flask.abort(403)
 
     create_export_form = CreateExportForm()
+    create_export_form.file_extension.choices = [
+        ('.pdf', 'PDF file')
+    ] + [
+        (file_extension, file_format_info[0])
+        for file_extension, file_format_info in logic.export.FILE_FORMATS.items()
+    ]
     if create_export_form.validate_on_submit():
         file_extension = create_export_form.file_extension.data
         if file_extension == '.pdf':
@@ -51,10 +53,8 @@ def export(user_id):
                 object.id
                 for object in readable_objects
             )))
-        elif file_extension == '.zip':
-            file_bytes = logic.export.get_zip_archive(user_id)
-        elif file_extension == '.tar.gz':
-            file_bytes = logic.export.get_tar_gz_archive(user_id)
+        elif file_extension in logic.export.FILE_FORMATS:
+            file_bytes = logic.export.FILE_FORMATS[file_extension][1](user_id)
         else:
             flask.flash('Please select an export format.', 'warning')
             file_bytes = None
