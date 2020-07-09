@@ -23,7 +23,9 @@ def create_instrument(
         description: str,
         description_as_html: typing.Optional[str] = None,
         users_can_create_log_entries: bool = False,
-        users_can_view_log_entries: bool = False
+        users_can_view_log_entries: bool = False,
+        notes: str = '',
+        notes_as_html: typing.Optional[str] = None
 ) -> Instrument:
     """
     Creates a new instrument with the given name and description.
@@ -35,6 +37,8 @@ def create_instrument(
         entries for this instrument
     :param users_can_view_log_entries: whether or not users can view the log
         entries for this instrument
+    :param notes: the notes shown to instrument responsible users
+    :param notes_as_html: None or the notes as HTML
     :return: the new instrument
     """
     instrument = Instrument(
@@ -42,7 +46,9 @@ def create_instrument(
         description=description,
         description_as_html=description_as_html,
         users_can_create_log_entries=users_can_create_log_entries,
-        users_can_view_log_entries=users_can_view_log_entries
+        users_can_view_log_entries=users_can_view_log_entries,
+        notes=notes,
+        notes_as_html=notes_as_html
     )
     db.session.add(instrument)
     db.session.commit()
@@ -79,7 +85,9 @@ def update_instrument(
         description: str,
         description_as_html: typing.Optional[str] = None,
         users_can_create_log_entries: bool = False,
-        users_can_view_log_entries: bool = False
+        users_can_view_log_entries: bool = False,
+        notes: str = '',
+        notes_as_html: typing.Optional[str] = None
 ) -> None:
     """
     Updates the instrument name and description.
@@ -92,6 +100,8 @@ def update_instrument(
         entries for this instrument
     :param users_can_view_log_entries: whether or not users can view the log
         entries for this instrument
+    :param notes: the notes shown to instrument responsible users
+    :param notes_as_html: None or the notes as HTML
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
@@ -103,6 +113,8 @@ def update_instrument(
     instrument.description_as_html = description_as_html
     instrument.users_can_create_log_entries = users_can_create_log_entries
     instrument.users_can_view_log_entries = users_can_view_log_entries
+    instrument.notes = notes
+    instrument.notes_as_html = notes_as_html
     db.session.add(instrument)
     db.session.commit()
 

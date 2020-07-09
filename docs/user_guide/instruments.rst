@@ -17,6 +17,14 @@ Instrument Scientists
 
 Most instruments are associated with one or more **instrument scientists**, who will automatically be granted permissions for all objects created with their instruments. For more information on how permissions are handled, see :ref:`permissions`.
 
+.. _instrument_scientist_notes:
+
+Instrument Scientist Notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Instrument Scientists can save notes, e.g. for internal information on  instrument maintenance or configuration.
+These notes will not be shown to regular users, though they should not be used to store sensitive information such as passwords.
+
 .. _instrument_log:
 
 Instrument Log
