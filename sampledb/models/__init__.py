@@ -8,6 +8,7 @@ from . import favorites
 from . import files
 from . import groups
 from . import instruments
+from . import instrument_log_entries
 from . import locations
 from . import objects
 from . import object_permissions
@@ -24,6 +25,7 @@ from .favorites import FavoriteAction, FavoriteInstrument
 from .files import File
 from .groups import Group
 from .instruments import Instrument
+from .instrument_log_entries import InstrumentLogEntry
 from .locations import Location, ObjectLocationAssignment
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
@@ -45,6 +47,7 @@ __all__ = [
     'files',
     'groups',
     'instruments',
+    'instrument_log_entries',
     'locations',
     'objects',
     'object_permissions',
@@ -67,6 +70,7 @@ __all__ = [
     'Group',
     'HTTPMethod',
     'Instrument',
+    'InstrumentLogEntry',
     'Location',
     'ObjectLocationAssignment',
     'Notification',

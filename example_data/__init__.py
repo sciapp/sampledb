@@ -54,6 +54,26 @@ def setup_data(app):
 
     instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
+
+    log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+        instrument.id, basic_user.id, "This is an example instrument log entry"
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
+        instrument_log_entry_id=log_entry.id,
+        file_name="ghs01.png",
+        content=open('sampledb/static/img/ghs01.png', 'rb').read()
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
+        instrument_log_entry_id=log_entry.id,
+        file_name="ghs02.png",
+        content=open('sampledb/static/img/ghs02.png', 'rb').read()
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
+        instrument_log_entry_id=log_entry.id,
+        file_name="test.txt",
+        content="This is a test".encode('utf-8')
+    )
+
     with open('sampledb/schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation", "This is an example action", schema, instrument.id)

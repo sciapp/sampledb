@@ -87,6 +87,9 @@
                 {% else %}
                   <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>: <a href="{{ url_for('.object_permissions', object_id=notification.data['object_id'], add_user_id=notification.data['requester_id'], _anchor='add_user') }}">View object permissions</a>
                 {% endif %}
+              {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_CREATED %}
+                {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
+                <a href="{{ url_for('.user_profile', user_id=instrument_log_entry.user_id) }}">{{ get_user(instrument_log_entry.user_id).name }}</a> has created a new <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)) }}">log entry</a> for the instrument <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id) }}">{{ get_instrument(instrument_log_entry.instrument_id).name }}</a>.
               {% else %}
                 Unknown notification type.
               {% endif %}

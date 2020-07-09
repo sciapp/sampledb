@@ -3,6 +3,8 @@
 
 """
 
+import typing
+
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -23,11 +25,22 @@ class Instrument(db.Model):
     description = db.Column(db.String, nullable=False, default='')
     responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name")
     description_as_html = db.Column(db.String, nullable=True, default=None)
+    users_can_create_log_entries = db.Column(db.Boolean, nullable=False, default=False)
+    users_can_view_log_entries = db.Column(db.Boolean, nullable=False, default=False)
 
-    def __init__(self, name, description='', description_as_html=None):
+    def __init__(
+            self,
+            name: str,
+            description: str = '',
+            description_as_html: typing.Optional[str] = None,
+            users_can_create_log_entries: bool = False,
+            users_can_view_log_entries: bool = False
+    ):
         self.name = name
         self.description = description
         self.description_as_html = description_as_html
+        self.users_can_create_log_entries = users_can_create_log_entries
+        self.users_can_view_log_entries = users_can_view_log_entries
 
     def __eq__(self, other):
         return (
@@ -35,6 +48,8 @@ class Instrument(db.Model):
             self.name == other.name and
             self.description == other.description and
             self.description_as_html == other.description_as_html and
+            self.users_can_create_log_entries == other.users_can_create_log_entries and
+            self.users_can_view_log_entries == other.users_can_view_log_entries and
             self.responsible_users == other.responsible_users
         )
 

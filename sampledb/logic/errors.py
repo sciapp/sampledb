@@ -188,3 +188,11 @@ class LDAPNotConfiguredError(Exception):
 
 class UserIsReadonlyError(Exception):
     pass
+
+
+class InstrumentLogEntryDoesNotExistError(Exception):
+    pass
+
+
+class InstrumentLogFileAttachmentDoesNotExistError(Exception):
+    pass

@@ -11,6 +11,7 @@
     <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">Edit Instrument</a>
   {% endif %}
   {% endif %}
+  <h2>Actions</h2>
   {% for action in instrument.actions %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
@@ -31,4 +32,98 @@
       {% endif %}
     {% endif %}
   {% endfor %}
+  {% if is_instrument_responsible_user or instrument.users_can_create_log_entries or instrument.users_can_view_log_entries %}
+    <h2>Instrument Log</h2>
+    <p class="text-muted">
+      {% if is_instrument_responsible_user %}
+        Instrument scientists can use the instrument log to keep track of problems, maintenance or other events.
+        Instrument scientists can  <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}">edit the instrument settings</a> to configure whether users can create or view log entries.
+        {% if instrument.users_can_view_log_entries and instrument.users_can_create_log_entries %}
+          Currently, users can create and view log entries.
+        {% elif instrument.users_can_create_log_entries %}
+          Currently, users cannot view log entries, but they can create new entries.
+        {% elif instrument.users_can_view_log_entries %}
+          Currently, users can view log entries, but they cannot create new entries.
+        {% else %}
+          Currently, users can neither create nor view log entries.
+        {% endif %}
+      {% else %}
+        {% if instrument.users_can_view_log_entries %}
+          Instrument scientists can use the instrument log to keep track of problems, maintenance or other events.
+        {% endif %}
+        {% if instrument.users_can_create_log_entries %}
+          Users can create entries in the instrument log to notify instrument scientists about any issues they encounter.
+        {% endif %}
+      {% endif %}
+      <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-log">Read more.</a>
+    </p>
+    {% if is_instrument_responsible_user or instrument.users_can_view_log_entries %}
+      {% if instrument_log_entries %}
+        {% for log_entry in instrument_log_entries %}
+          <div class="well" id="log_entry-{{ log_entry.id }}">
+            <pre class="comment">{{ log_entry.content }}</pre>
+            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {{ log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+          {% set file_attachments = log_entry.file_attachments %}
+          {% if file_attachments %}
+            <div class="file-attachment-header">Attachments:</div>
+            <ul class="file-attachment-list">
+            {% for file_attachment in file_attachments %}<li>
+                <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
+                  <span class="file-attachment-preview">
+                  {% if file_attachment | attachment_is_image %}
+                    <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="&#xf15b;" />
+                  {% else %}
+                  <i class="fa fa-file"></i>
+                  {% endif %}
+                  </span>
+                  <span>{{ file_attachment.file_name }}</span></a></li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>There are no log entries for this instrument.</p>
+      {% endif %}
+    {% endif %}
+    {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
+    <form class="form" method="post" id="new_instrument_log_entry_form" enctype="multipart/form-data">
+      {{ instrument_log_entry_form.csrf_token }}
+      <div class="form-group {% if instrument_log_entry_form.content.errors %}has-error{% endif %}">
+        <textarea class="form-control" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{% if instrument_log_entry_form.content.data %}{{ instrument_log_entry_form.content.data }}{% endif %}</textarea>
+        {% if instrument_log_entry_form.content.errors %}
+        <span class="help-block">Please enter the log entry text.</span>
+        {% endif %}
+      </div>
+      <span class="input-group">
+        <span class="input-group-addon"><i class="fa fa-file"></i></span>
+        <input id="input-file-text" type="text" class="form-control disabled" disabled placeholder="Attachments" />
+        <div class="input-group-btn">
+          <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>Browse...<input id="input-file-upload" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
+        </div>
+      </span>
+      <div class="text-right">
+        <button type="submit" class="btn btn-primary" style="width:11em; margin: 20px 0;"><i class="fa fa-comment fa-fw"></i> Create Log Entry</button>
+      </div>
+    </form>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="text/javascript">
+    $(function () {
+      $('#input-file-upload').on('change', function () {
+        var files = $(this).get(0).files;
+        if (files.length === 0) {
+          $('#input-file-text').val("");
+        } else if (files.length === 1) {
+          $('#input-file-text').val(files[0].name);
+        } else {
+          $('#input-file-text').val(files.length + " files selected");
+        }
+      });
+    });
+  </script>
 {% endblock %}

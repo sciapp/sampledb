@@ -145,8 +145,18 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 'name': instrument_info.name,
                 'description': instrument_info.description,
                 'description_as_html': instrument_info.description_as_html,
-                'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users]
+                'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
+                'instrument_log_entries': []
             })
+            if instrument_info.users_can_view_log_entries:
+                for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
+                    relevant_user_ids.add(log_entry.user_id)
+                    instrument_infos[-1]['instrument_log_entries'].append({
+                        'id': log_entry.id,
+                        'author_id': log_entry.user_id,
+                        'content': log_entry.content,
+                        'utc_datetime': log_entry.utc_datetime.isoformat()
+                    })
     infos['instruments'] = instrument_infos
 
     user_infos = []

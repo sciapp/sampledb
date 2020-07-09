@@ -18,19 +18,31 @@ from ..models.instruments import instrument_user_association_table
 from . import users, errors
 
 
-def create_instrument(name: str, description: str, description_as_html: typing.Optional[str] = None) -> Instrument:
+def create_instrument(
+        name: str,
+        description: str,
+        description_as_html: typing.Optional[str] = None,
+        users_can_create_log_entries: bool = False,
+        users_can_view_log_entries: bool = False
+) -> Instrument:
     """
     Creates a new instrument with the given name and description.
 
     :param name: the name of the instrument
     :param description: a (possibly empty) description of the instrument
     :param description_as_html: None or the description as HTML
+    :param users_can_create_log_entries: whether or not users can create log
+        entries for this instrument
+    :param users_can_view_log_entries: whether or not users can view the log
+        entries for this instrument
     :return: the new instrument
     """
     instrument = Instrument(
         name=name,
         description=description,
-        description_as_html=description_as_html
+        description_as_html=description_as_html,
+        users_can_create_log_entries=users_can_create_log_entries,
+        users_can_view_log_entries=users_can_view_log_entries
     )
     db.session.add(instrument)
     db.session.commit()
@@ -61,7 +73,14 @@ def get_instrument(instrument_id: int) -> Instrument:
     return instrument
 
 
-def update_instrument(instrument_id: int, name: str, description: str, description_as_html: typing.Optional[str] = None) -> None:
+def update_instrument(
+        instrument_id: int,
+        name: str,
+        description: str,
+        description_as_html: typing.Optional[str] = None,
+        users_can_create_log_entries: bool = False,
+        users_can_view_log_entries: bool = False
+) -> None:
     """
     Updates the instrument name and description.
 
@@ -69,6 +88,10 @@ def update_instrument(instrument_id: int, name: str, description: str, descripti
     :param name: the new name of the instrument
     :param description: the new (possibly empty) description of the instrument
     :param description_as_html: None or the description as HTML
+    :param users_can_create_log_entries: whether or not users can create log
+        entries for this instrument
+    :param users_can_view_log_entries: whether or not users can view the log
+        entries for this instrument
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
@@ -78,6 +101,8 @@ def update_instrument(instrument_id: int, name: str, description: str, descripti
     instrument.name = name
     instrument.description = description
     instrument.description_as_html = description_as_html
+    instrument.users_can_create_log_entries = users_can_create_log_entries
+    instrument.users_can_view_log_entries = users_can_view_log_entries
     db.session.add(instrument)
     db.session.commit()
 
