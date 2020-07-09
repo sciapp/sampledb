@@ -22,6 +22,13 @@ from ..logic.actions import get_action, ActionType
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.users import get_user
 
+SECTIONS = {
+    'activity_log',
+    'locations',
+    'publications',
+    'files',
+    'comments'
+}
 
 PAGE_WIDTH, PAGE_HEIGHT = pagesize
 LEFT_MARGIN = 25.4 * mm
@@ -460,11 +467,15 @@ def _write_publications(object, canvas):
         canvas.showPage()
 
 
-def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
+def create_pdfexport(
+        object_ids: typing.Sequence[int],
+        sections: typing.Set[str] = SECTIONS
+) -> bytes:
     """
     Create a PDF containing the exported information of one or more objects.
 
     :param object_ids: the ID of the objects
+    :param sections: a list of sections to include in the generated PDF
     :return: the PDF data
     """
     pdf_stream = io.BytesIO()
@@ -492,11 +503,16 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         canvas.left_cursor = LEFT_MARGIN
         canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
         _write_metadata(object, canvas)
-        _write_activity_log(object, canvas)
-        _write_locations(object, canvas)
-        _write_publications(object, canvas)
-        _write_files(object, canvas)
-        _write_comments(object, canvas)
+        if 'activity_log' in sections:
+            _write_activity_log(object, canvas)
+        if 'locations' in sections:
+            _write_locations(object, canvas)
+        if 'publications' in sections:
+            _write_publications(object, canvas)
+        if 'files' in sections:
+            _write_files(object, canvas)
+        if 'comments' in sections:
+            _write_comments(object, canvas)
     canvas.save()
     pdf_stream.seek(0)
     return pdf_stream.read()

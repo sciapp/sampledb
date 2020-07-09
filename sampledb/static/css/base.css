@@ -599,3 +599,28 @@ th:hover .search-helper {
     display: inline-block;
     text-align: center;
 }
+
+#pdf–export-sections {
+    text-align: center;
+}
+#pdf–export-sections.disabled {
+    color: #7f7f7f;
+}
+
+#pdf–export-sections > div:first-of-type {
+    text-align: left;
+    font-weight: bold;
+}
+
+#pdf–export-sections label {
+    margin-right: 0.5em;
+    font-weight: normal;
+}
+
+#pdf–export-sections label:last-child {
+    margin-right: 0;
+}
+
+.related-objects > div:first-of-type {
+    font-weight: bold;
+}

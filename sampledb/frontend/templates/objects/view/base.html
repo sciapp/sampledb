@@ -806,7 +806,17 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="form-group" id="pdf–export-sections">
+              <div>PDF Export Sections</div>
+              <label><input type="checkbox" checked="checked" disabled="disabled" class="disabled"> Information</label>
+              <label><input type="checkbox" checked="checked" name="activity_log"> Activity Log</label>
+              <label><input type="checkbox" checked="checked" name="locations"> Locations</label>
+              <label><input type="checkbox" checked="checked" name="publications"> Publications</label>
+              <label><input type="checkbox" checked="checked" name="files"> Files</label>
+              <label><input type="checkbox" checked="checked" name="comments"> Comments</label>
+            </div>
             <div class="related-objects">
+              <div>Objects</div>
               {% set in_export_data_model = True %}
               {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
             </div>
@@ -1025,6 +1035,17 @@
       if (selected_format_option) {
         format = selected_format_option.val();
       }
+      $('#pdf–export-sections').toggleClass('disabled', format !== '.pdf');
+      var pdf_export_sections = $('#pdf–export-sections input');
+      var enabled_sections = [];
+      pdf_export_sections.each(function(_, input) {
+        if (!$(input).hasClass('disabled')) {
+          input.disabled = (format !== '.pdf');
+          if (input.checked) {
+            enabled_sections.push(input.name);
+          }
+        }
+      });
       var object_ids_to_export = [];
       $('input[name^=data_export_object_]').each(function() {
         if ($(this).prop('checked')) {
@@ -1033,13 +1054,17 @@
       });
       var export_link = $('#button-related-objects-export-data');
       if (object_ids_to_export.length > 0) {
-        export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)));
+        export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)));
         export_link.removeClass("disabled");
       } else {
         export_link.attr('href', "#");
         export_link.addClass("disabled");
       }
     }
+
+    $('#pdf–export-sections input').on('change', function() {
+      updateDataExportLink();
+    });
     $('input[name^=data_export_object_]').on('change', function() {
       $('input.' + this.name + ':not([name=' + this.name + '])').prop("checked",  $(this).prop("checked"));
       updateDataExportLink();
