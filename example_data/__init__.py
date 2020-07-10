@@ -52,7 +52,26 @@ def setup_data(app):
 
     sampledb.login_manager.login_view = 'autologin'
 
-    instrument = create_instrument(name="OMBE I", description="This is an example instrument.")
+    markdown_notes = """
+This example shows how Markdown can be used for instrument Notes.
+
+## Header
+
+*italics* **bold**
+
+
+| A | B | C |
+|--:|:-:|---|
+| Example | 100˚C | 5µm |
+| Data | 110˚C | 6µm |
+        """
+    instrument = create_instrument(
+        name="OMBE I",
+        description="This is an example instrument.",
+        users_can_create_log_entries=True,
+        notes = markdown_notes,
+        notes_as_html=sampledb.frontend.utils.markdown_to_safe_html(markdown_notes)
+    )
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(

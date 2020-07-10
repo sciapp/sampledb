@@ -4,7 +4,11 @@
 
 {% block content %}
   <h1>{{ instrument.name }}</h1>
+  {% if instrument.description_as_html or instrument.description %}
+  <div class="instrument-user-content">
   {% if instrument.description_as_html %}{{ instrument.description_as_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
+  </div>
+  {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
   {% if current_user.is_admin or current_user in instrument.responsible_users %}
@@ -39,7 +43,9 @@
       <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-scientist-notes">Read more.</a>
     </p>
     {% if instrument.notes_as_html or instrument.notes %}
+      <div class="instrument-user-content">
       {% if instrument.notes_as_html %}{{ instrument.notes_as_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
+      </div>
     {% else %}
       &mdash;
     {% endif %}
