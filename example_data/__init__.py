@@ -73,9 +73,42 @@ This example shows how Markdown can be used for instrument Notes.
         notes_as_html=sampledb.frontend.utils.markdown_to_safe_html(markdown_notes)
     )
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
-
-    log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+    log_category_error = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title='Error',
+        theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.RED
+    )
+    log_category_warning = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title='Warning',
+        theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.YELLOW
+    )
+    log_category_success = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title='Success',
+        theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.GREEN
+    )
+    log_category_other = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title='Other',
+        theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.BLUE
+    )
+    log_category_normal = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title='Normal',
+        theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.GRAY
+    )
+    for category in sampledb.logic.instrument_log_entries.get_instrument_log_categories(instrument.id):
+        sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+            instrument.id, basic_user.id, "This is an example instrument log entry",
+            [category.id]
+        )
+    sampledb.logic.instrument_log_entries.create_instrument_log_entry(
         instrument.id, basic_user.id, "This is an example instrument log entry"
+    )
+    log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+        instrument.id, basic_user.id, "This is an example instrument log entry",
+        [log_category_error.id, log_category_warning.id, log_category_normal.id, log_category_success.id]
     )
     sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
         instrument_log_entry_id=log_entry.id,

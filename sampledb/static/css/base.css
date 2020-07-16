@@ -656,3 +656,71 @@ th:hover .search-helper {
     vertical-align: bottom;
     border-bottom: 2px solid #ddd;
 }
+
+.instrument-log-entry {
+    position: relative;
+}
+.instrument-log-categories {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+}
+.instrument-log-categories span {
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    color: white;
+    padding:2px 4px;
+    font-size: 0.7em;
+    font-weight: bold;
+    font-variant: small-caps;
+    margin-right: 3px;
+}
+.instrument-log-categories span:last-of-type {
+    border-bottom-right-radius: 0;
+    margin-right: 0;
+}
+.instrument-log-entry-red, .instrument-log-entry-red pre {
+    border-color: #a94442;
+    background-color: #f7f5f5;
+}
+.instrument-log-entry-yellow, .instrument-log-entry-yellow pre {
+    border-color: #f0ad4e;
+    background-color: #f8f8f5;
+}
+.instrument-log-entry-green, .instrument-log-entry-green pre {
+    border-color: #5cb85c;
+    background-color: #f5f7f5;
+}
+.instrument-log-entry-blue, .instrument-log-entry-blue pre {
+    border-color: #337ab7;
+    background-color: #f5f5f7;
+}
+.instrument-log-entry-gray, .instrument-log-entry-gray pre {
+    border-color: #777777;
+    background-color: #f5f5f5;
+}
+.instrument-log-category-red {
+    background-color: #a94442;
+}
+.instrument-log-category-yellow {
+    background-color: #f0ad4e;
+}
+.instrument-log-category-green {
+    background-color: #5cb85c;
+}
+.instrument-log-category-blue {
+    background-color: #5bc0de;
+}
+.instrument-log-category-blue {
+    background-color: #337ab7;
+}
+.instrument-log-category-gray {
+    background-color: #777777;
+}
+
+.instrument-log-category-theme-btn {
+    border-radius: 0;
+    border-left: 0;
+    width:8em !important;
+}

@@ -3,19 +3,20 @@
 
 """
 
+import json
 import os
 
 import flask
 import flask_login
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField
-from wtforms.validators import Length
+from wtforms.validators import Length, DataRequired
 
 from . import frontend
 from ..logic.instruments import get_instruments, get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category
 from ..logic.actions import ActionType
-from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError, ObjectDoesNotExistError
+from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users
 from ..logic.objects import get_object
@@ -30,6 +31,7 @@ class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
     files = MultipleFileField()
     objects = SelectMultipleField()
+    categories = SelectMultipleField()
 
 
 @frontend.route('/instruments/')
@@ -82,6 +84,11 @@ def instrument(instrument_id):
         (str(object.id), "{} (#{})".format(object.data.get('name', {}).get('text', 'Unnamed Object'), object.id))
         for object in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
     ]
+    instrument_log_categories = get_instrument_log_categories(instrument_id)
+    instrument_log_entry_form.categories.choices = [
+        (str(category.id), category.title)
+        for category in instrument_log_categories
+    ]
     if instrument_log_entry_form.validate_on_submit():
         check_current_user_is_not_readonly()
         if is_instrument_responsible_user or instrument.users_can_create_log_entries:
@@ -100,7 +107,10 @@ def instrument(instrument_id):
                 log_entry = create_instrument_log_entry(
                     instrument_id=instrument_id,
                     user_id=flask_login.current_user.id,
-                    content=instrument_log_entry_form.content.data
+                    content=instrument_log_entry_form.content.data,
+                    category_ids=[
+                        int(category_id) for category_id in instrument_log_entry_form.categories.data
+                    ]
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:
@@ -109,7 +119,7 @@ def instrument(instrument_id):
                         create_instrument_log_file_attachment(log_entry.id, file_name, content)
                 for object_id in instrument_log_entry_form.objects.data:
                     try:
-                        create_instrument_log_object_attachment(log_entry.id, object_id)
+                        create_instrument_log_object_attachment(log_entry.id, int(object_id))
                     except ObjectDoesNotExistError:
                         continue
                 flask.flash('You have created a new instrument log entry.', 'success')
@@ -128,6 +138,7 @@ def instrument(instrument_id):
         'instruments/instrument.html',
         instrument=instrument,
         instrument_log_entries=instrument_log_entries,
+        instrument_log_categories=instrument_log_categories,
         attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
         instrument_log_entry_form=instrument_log_entry_form,
@@ -144,6 +155,7 @@ class InstrumentForm(FlaskForm):
     notes_are_markdown = BooleanField(default=None)
     users_can_create_log_entries = BooleanField(default=False)
     users_can_view_log_entries = BooleanField(default=False)
+    categories = StringField(validators=[DataRequired()])
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -181,6 +193,7 @@ def new_instrument():
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+        # TODO: categories
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
     return flask.render_template(
         'instruments/instrument_form.html',
@@ -242,10 +255,64 @@ def edit_instrument(instrument_id):
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+        try:
+            category_data = json.loads(instrument_form.categories.data)
+        except Exception:
+            pass
+        else:
+            themes_by_name = {
+                theme.name.lower(): theme
+                for theme in list(InstrumentLogCategoryTheme)
+            }
+            category_keys = {'id', 'title', 'theme'}
+            if not isinstance(category_data, list):
+                category_data = ()
+            existing_category_ids = {
+                category.id
+                for category in get_instrument_log_categories(instrument_id)
+            }
+            valid_category_ids = set()
+            for category in category_data:
+                # skip any invalid entries
+                if not isinstance(category, dict):
+                    continue
+                if set(category.keys()) != category_keys:
+                    continue
+                if not all(isinstance(category[key], str) for key in category_keys):
+                    continue
+                category_title = category['title'].strip()
+                if not category_title:
+                    continue
+                if len(category_title) > 100:
+                    continue
+                try:
+                    category_id = int(category['id'])
+                except ValueError:
+                    continue
+                category_theme = themes_by_name.get(category['theme'], InstrumentLogCategoryTheme.GRAY)
+                if category_id < 0:
+                    new_category = create_instrument_log_category(
+                        instrument.id,
+                        category['title'],
+                        category_theme
+                    )
+                    valid_category_ids.add(new_category.id)
+                elif category_id in existing_category_ids:
+                    update_instrument_log_category(
+                        category_id,
+                        category['title'],
+                        category_theme
+                    )
+                    valid_category_ids.add(category_id)
+            for category in get_instrument_log_categories(instrument_id):
+                if category.id not in valid_category_ids:
+                    delete_instrument_log_category(category.id)
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text='Update Instrument',
+        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
+        instrument_log_categories=get_instrument_log_categories(instrument.id),
         instrument_form=instrument_form
     )
 

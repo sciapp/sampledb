@@ -70,3 +70,55 @@ def test_create_log_entry(instrument, instrument_responsible_user, other_user):
 
     with pytest.raises(errors.InstrumentLogEntryDoesNotExistError):
         assert instrument_log_entries.get_instrument_log_entry(4)
+
+def test_log_entry_categories(instrument, instrument_responsible_user):
+    category_a = instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title="Category A",
+        theme=instrument_log_entries.InstrumentLogCategoryTheme.GRAY
+    )
+    category_b = instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title="Category B",
+        theme=instrument_log_entries.InstrumentLogCategoryTheme.RED
+    )
+    assert set(instrument_log_entries.get_instrument_log_categories(instrument.id)) == {category_a, category_b}
+
+    log_entry = instrument_log_entries.create_instrument_log_entry(
+        instrument_id=instrument.id,
+        user_id=instrument_responsible_user.id,
+        content="test",
+        category_ids=[
+            category_a.id,
+            category_b.id
+        ]
+    )
+    assert set(log_entry.categories) == {category_a, category_b}
+    instrument_log_entries.update_instrument_log_category(
+        category_id=category_a.id,
+        title="Category A+",
+        theme=instrument_log_entries.InstrumentLogCategoryTheme.GREEN
+    )
+    instrument_log_entries.delete_instrument_log_category(category_b.id)
+    assert category_b not in set(instrument_log_entries.get_instrument_log_categories(instrument.id))
+
+    log_entry = instrument_log_entries.get_instrument_log_entry(log_entry.id)
+    assert len(log_entry.categories) == 1
+    assert log_entry.categories[0].title == "Category A+"
+    assert log_entry.categories[0].theme.name.lower() == 'green'
+
+
+    log_entry = instrument_log_entries.create_instrument_log_entry(
+        instrument_id=instrument.id,
+        user_id=instrument_responsible_user.id,
+        content="test"
+    )
+    assert len(log_entry.categories) == 0
+
+    with pytest.raises(errors.InstrumentLogCategoryDoesNotExistError):
+        instrument_log_entries.create_instrument_log_entry(
+            instrument_id=instrument.id,
+            user_id=instrument_responsible_user.id,
+            content="test",
+            category_ids=[category_b.id]
+        )

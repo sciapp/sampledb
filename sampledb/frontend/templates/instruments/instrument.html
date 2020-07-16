@@ -77,8 +77,28 @@
     </p>
     {% if is_instrument_responsible_user or instrument.users_can_view_log_entries %}
       {% if instrument_log_entries %}
+        {% if instrument_log_categories %}
+          <div class="text-right" style="margin-bottom: 10px;">
+          <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
+            {% for category in instrument_log_categories %}
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
+            {% endfor %}
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> Uncategorized</label><br />
+              <script>
+                setup_instrument_log_filter_states();
+              </script>
+            ">
+              <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
+            </button>
+          </div>
+        {% endif %}
         {% for log_entry in instrument_log_entries %}
-          <div class="well" id="log_entry-{{ log_entry.id }}">
+          <div class="well instrument-log-entry {% if log_entry.categories %}instrument-log-entry-{{ log_entry.categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.categories %}{% for category in log_entry.categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" style="position: relative">
+            <div class="instrument-log-categories">
+              {% for category in log_entry.categories %}
+                  <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
+              {% endfor %}
+            </div>
             {% if log_entry.content %}
             <pre class="comment">{{ log_entry.content }}</pre>
             {% endif %}
@@ -131,6 +151,7 @@
           <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>Browse...<input id="input-file-upload" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
         </div>
       </span>
+      {% if instrument_log_entry_form.objects.choices %}
       <div class="form-group" style="margin: 15px 0 0 0">
         <select name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="No objects selected" data-width="100%">
           {% for choice in instrument_log_entry_form.objects.choices %}
@@ -138,7 +159,15 @@
           {% endfor %}
         </select>
       </div>
+      {% endif %}
       <div class="text-right">
+        {% if instrument_log_entry_form.categories.choices %}
+        <select name="{{ instrument_log_entry_form.categories.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="Log Entry Type" data-width="11em">
+          {% for choice in instrument_log_entry_form.categories.choices %}
+            <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
         <button type="submit" class="btn btn-primary" style="width:11em; margin: 20px 0;"><i class="fa fa-comment fa-fw"></i> Create Log Entry</button>
       </div>
     </form>
@@ -157,7 +186,36 @@
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
   <script type="text/javascript">
+    window.categoriesShown = {
+      {% for category in instrument_log_categories %}
+      '{{ category.id }}': true,
+      {% endfor %}
+      'none': true
+    };
+    function setup_instrument_log_filter_states() {
+      {% for category in instrument_log_categories %}
+      $('#instrument_log_filter_{{ category.id }}').prop('checked', window.categoriesShown['{{ category.id }}']);
+      {% endfor %}
+      $('#instrument_log_filter_none').prop('checked', window.categoriesShown['none']);
+      $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
+    }
+    function update_instrument_log_filter_states() {
+      $('.instrument-log-entry').hide();
+      {% for category in instrument_log_categories %}
+        window.categoriesShown['{{ category.id }}'] = $('#instrument_log_filter_{{ category.id }}').prop('checked');
+        if (window.categoriesShown['{{ category.id }}']) {
+          $('div[data-instrument-log-category-{{ category.id }}="yes"]').show();
+        }
+      {% endfor %}
+      window.categoriesShown['none'] = $('#instrument_log_filter_none').prop('checked');
+      if (window.categoriesShown['none']) {
+        $('div[data-instrument-log-category-none="yes"]').show();
+      }
+      $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
+    }
     $(function () {
+      setup_instrument_log_filter_states();
+      $('[data-toggle="popover"]').popover();
       $('#input-file-upload').on('change', function () {
         var files = $(this).get(0).files;
         if (files.length === 0) {
