@@ -25,7 +25,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 class InstrumentLogEntryForm(FlaskForm):
-    content = StringField(validators=[DataRequired()])
+    content = StringField()
     files = MultipleFileField()
 
 
@@ -68,22 +68,28 @@ def instrument(instrument_id):
     if instrument_log_entry_form.validate_on_submit():
         check_current_user_is_not_readonly()
         if is_instrument_responsible_user or instrument.users_can_create_log_entries:
-            log_entry = create_instrument_log_entry(
-                instrument_id=instrument_id,
-                user_id=flask_login.current_user.id,
-                content=instrument_log_entry_form.content.data
-            )
-            for file_storage in instrument_log_entry_form.files.data:
-                if file_storage.filename:
-                    file_name = file_storage.filename
-                    content = file_storage.stream.read()
-                    create_instrument_log_file_attachment(log_entry.id, file_name, content)
-            flask.flash('You have create a new instrument log entry.', 'success')
-            return flask.redirect(flask.url_for(
-                '.instrument',
-                instrument_id=instrument_id,
-                _anchor=f'log_entry-{log_entry.id}'
-            ))
+            log_entry_content = instrument_log_entry_form.content.data
+            log_entry_has_files = any(file_storage.filename for file_storage in instrument_log_entry_form.files.data)
+            if log_entry_content or log_entry_has_files:
+                log_entry = create_instrument_log_entry(
+                    instrument_id=instrument_id,
+                    user_id=flask_login.current_user.id,
+                    content=instrument_log_entry_form.content.data
+                )
+                for file_storage in instrument_log_entry_form.files.data:
+                    if file_storage.filename:
+                        file_name = file_storage.filename
+                        content = file_storage.stream.read()
+                        create_instrument_log_file_attachment(log_entry.id, file_name, content)
+                flask.flash('You have create a new instrument log entry.', 'success')
+                return flask.redirect(flask.url_for(
+                    '.instrument',
+                    instrument_id=instrument_id,
+                    _anchor=f'log_entry-{log_entry.id}'
+                ))
+            else:
+                flask.flash('Please enter a log entry text or select a file to create a log entry.', 'error')
+                return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
         else:
             flask.flash('You cannot create a log entry for this instrument.', 'error')
             return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))

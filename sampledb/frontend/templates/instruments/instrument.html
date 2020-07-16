@@ -79,7 +79,9 @@
       {% if instrument_log_entries %}
         {% for log_entry in instrument_log_entries %}
           <div class="well" id="log_entry-{{ log_entry.id }}">
+            {% if log_entry.content %}
             <pre class="comment">{{ log_entry.content }}</pre>
+            {% endif %}
             <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {{ log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
           {% set file_attachments = log_entry.file_attachments %}
           {% if file_attachments %}

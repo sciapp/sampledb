@@ -107,7 +107,7 @@ def create_instrument_log_entry(
 
     :param instrument_id: the ID of an existing instrument
     :param user_id: the ID of an existing user
-    :param content: the text content for the new comment
+    :param content: the text content for the new log entry
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
