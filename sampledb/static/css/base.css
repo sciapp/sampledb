@@ -550,28 +550,28 @@ th:hover .search-helper {
     word-break: break-word
 }
 
-.file-attachment-header {
+.file-attachment-header, .object-attachment-header {
     font-weight: 500;
     margin-top: 1em;
 }
 
-.file-attachment-list {
+.file-attachment-list, .object-attachment-list {
     list-style: none;
     padding: 0;
 }
-.file-attachment-list li:after {
+.file-attachment-list li:after, .object-attachment-list li:after {
     content: ', ';
 }
-.file-attachment-list li:last-child:after {
+.file-attachment-list li:last-child:after, .object-attachment-list li:last-child:after {
     content: '.';
 }
-.file-attachment-list li:nth-last-child(2):after {
+.file-attachment-list li:nth-last-child(2):after, .object-attachment-list li:nth-last-child(2):after {
     content: ' and ';
 }
-.file-attachment-list li:last-child:first-child:after {
+.file-attachment-list li:last-child:first-child:after, .object-attachment-list li:last-child:first-child:after {
     content: '';
 }
-.file-attachment-list li {
+.file-attachment-list li, .object-attachment-list li {
     display: inline-block;
 }
 

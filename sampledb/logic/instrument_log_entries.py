@@ -16,7 +16,7 @@ import datetime
 import typing
 
 from .. import db
-from . import errors, instruments, users, user_log, notifications
+from . import errors, instruments, users, user_log, notifications, objects
 from ..models import instrument_log_entries
 
 
@@ -61,6 +61,10 @@ class InstrumentLogEntry(
     def file_attachments(self) -> typing.List['InstrumentLogFileAttachment']:
         return get_instrument_log_file_attachments(self.id)
 
+    @property
+    def object_attachments(self) -> typing.List['InstrumentLogObjectAttachment']:
+        return get_instrument_log_object_attachments(self.id)
+
 
 class InstrumentLogFileAttachment(
     collections.namedtuple(
@@ -94,6 +98,39 @@ class InstrumentLogFileAttachment(
             log_entry_id=instrument_log_file_attachment.log_entry_id,
             file_name=instrument_log_file_attachment.file_name,
             content=instrument_log_file_attachment.content
+        )
+
+
+class InstrumentLogObjectAttachment(
+    collections.namedtuple(
+        'InstrumentLogObjectAttachment',
+        ['id', 'log_entry_id', 'object_id']
+    )
+):
+    """
+    This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogObjectAttachment.
+    """
+
+    def __new__(
+            cls,
+            id: int,
+            log_entry_id: int,
+            object_id: int
+    ):
+        self = super(InstrumentLogObjectAttachment, cls).__new__(
+            cls, id, log_entry_id, object_id
+        )
+        return self
+
+    @classmethod
+    def from_database(
+            cls,
+            instrument_log_object_attachment: instrument_log_entries.InstrumentLogObjectAttachment
+    ) -> 'InstrumentLogObjectAttachment':
+        return InstrumentLogObjectAttachment(
+            id=instrument_log_object_attachment.id,
+            log_entry_id=instrument_log_object_attachment.log_entry_id,
+            object_id=instrument_log_object_attachment.object_id
         )
 
 
@@ -228,7 +265,7 @@ def get_instrument_log_file_attachment(
         instrument_log_file_attachment_id: int
 ) -> InstrumentLogFileAttachment:
     """
-    Return an instrument log entry file attachments.
+    Return an instrument log entry file attachment.
 
     :param instrument_log_file_attachment_id: the ID of an existing instrument
         log file attachment
@@ -242,3 +279,71 @@ def get_instrument_log_file_attachment(
     if attachment is None:
         raise errors.InstrumentLogFileAttachmentDoesNotExistError()
     return InstrumentLogFileAttachment.from_database(attachment)
+
+
+def create_instrument_log_object_attachment(
+        instrument_log_entry_id: int,
+        object_id: int
+) -> None:
+    """
+    Create an object attachment to a instrument log entry.
+
+    :param instrument_log_entry_id: the ID of an existing instrument log entry
+    :param object_id: the ID of an existing object
+    :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
+        entry with the given ID exists
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    """
+    # ensure that the instrument log entry exists
+    log_entry = get_instrument_log_entry(instrument_log_entry_id)
+    # ensure the object exists
+    objects.get_object(object_id)
+    attachment = instrument_log_entries.InstrumentLogObjectAttachment(
+        log_entry_id=log_entry.id,
+        object_id=object_id
+    )
+    db.session.add(attachment)
+    db.session.commit()
+
+
+def get_instrument_log_object_attachments(
+        instrument_log_entry_id: int
+) -> typing.List[InstrumentLogObjectAttachment]:
+    """
+    Return a list of all object attachments for an instrument log entry.
+
+    :param instrument_log_entry_id: the ID of an existing instrument log entry
+    :return: the list of object attachments
+    :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
+        entry with the given ID exists
+    """
+    # ensure that the instrument log entry exists
+    log_entry = get_instrument_log_entry(instrument_log_entry_id)
+    attachments = instrument_log_entries.InstrumentLogObjectAttachment.query.filter_by(
+        log_entry_id=log_entry.id
+    ).order_by(instrument_log_entries.InstrumentLogObjectAttachment.id).all()
+    return [
+        InstrumentLogObjectAttachment.from_database(attachment)
+        for attachment in attachments
+    ]
+
+
+def get_instrument_log_object_attachment(
+        instrument_log_object_attachment_id: int
+) -> InstrumentLogObjectAttachment:
+    """
+    Return an instrument log entry object attachment.
+
+    :param instrument_log_object_attachment_id: the ID of an existing
+        instrument log object attachment
+    :return: the object attachment with the given ID
+    :raise errors.InstrumentLogObjectAttachmentDoesNotExistError: when no
+        instrument log entry object attachment with the given ID exists
+    """
+    attachment = instrument_log_entries.InstrumentLogObjectAttachment.query.filter_by(
+        id=instrument_log_object_attachment_id
+    ).first()
+    if attachment is None:
+        raise errors.InstrumentLogObjectAttachmentDoesNotExistError()
+    return InstrumentLogObjectAttachment.from_database(attachment)

@@ -42,7 +42,7 @@
       </div>
       <div class="form-group">
         <label for="input-instrument_repsonsible_users" class="control-label">Instrument Scientists</label>
-        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple">
+        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true">
           {% for choice in instrument_form.instrument_responsible_users.choices %}
               <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
           {% endfor %}

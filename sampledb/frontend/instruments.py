@@ -9,15 +9,17 @@ import flask
 import flask_login
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField
-from wtforms.validators import Length, DataRequired
+from wtforms.validators import Length
 
 from . import frontend
 from ..logic.instruments import get_instruments, get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments
 from ..logic.actions import ActionType
-from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError
+from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError, ObjectDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users
+from ..logic.objects import get_object
+from ..logic.object_permissions import Permissions, get_objects_with_permissions
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, markdown_to_safe_html
 
@@ -27,6 +29,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
     files = MultipleFileField()
+    objects = SelectMultipleField()
 
 
 @frontend.route('/instruments/')
@@ -62,15 +65,38 @@ def instrument(instrument_id):
     )
     if is_instrument_responsible_user or instrument.users_can_view_log_entries:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
+        attached_object_ids = set()
+        for log_entry in instrument_log_entries:
+            for object_attachment in get_instrument_log_object_attachments(log_entry.id):
+                attached_object_ids.add(object_attachment.object_id)
+        attached_objects = get_objects_with_permissions(flask_login.current_user.id, permissions=Permissions.READ, object_ids=attached_object_ids)
+        attached_object_names = {
+            object.id: object.data.get('name', {}).get('text', 'Unnamed Object')
+            for object in attached_objects
+        }
     else:
         instrument_log_entries = None
+        attached_object_names = {}
     instrument_log_entry_form = InstrumentLogEntryForm()
+    instrument_log_entry_form.objects.choices = [
+        (str(object.id), "{} (#{})".format(object.data.get('name', {}).get('text', 'Unnamed Object'), object.id))
+        for object in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
+    ]
     if instrument_log_entry_form.validate_on_submit():
         check_current_user_is_not_readonly()
         if is_instrument_responsible_user or instrument.users_can_create_log_entries:
             log_entry_content = instrument_log_entry_form.content.data
             log_entry_has_files = any(file_storage.filename for file_storage in instrument_log_entry_form.files.data)
-            if log_entry_content or log_entry_has_files:
+            object_ids = []
+            for object_id in instrument_log_entry_form.objects.data:
+                try:
+                    object_ids.append(get_object(int(object_id)).id)
+                except ObjectDoesNotExistError:
+                    continue
+                except ValueError:
+                    continue
+            log_entry_has_objects = bool(object_ids)
+            if log_entry_content or log_entry_has_files or log_entry_has_objects:
                 log_entry = create_instrument_log_entry(
                     instrument_id=instrument_id,
                     user_id=flask_login.current_user.id,
@@ -81,14 +107,19 @@ def instrument(instrument_id):
                         file_name = file_storage.filename
                         content = file_storage.stream.read()
                         create_instrument_log_file_attachment(log_entry.id, file_name, content)
-                flask.flash('You have create a new instrument log entry.', 'success')
+                for object_id in instrument_log_entry_form.objects.data:
+                    try:
+                        create_instrument_log_object_attachment(log_entry.id, object_id)
+                    except ObjectDoesNotExistError:
+                        continue
+                flask.flash('You have created a new instrument log entry.', 'success')
                 return flask.redirect(flask.url_for(
                     '.instrument',
                     instrument_id=instrument_id,
                     _anchor=f'log_entry-{log_entry.id}'
                 ))
             else:
-                flask.flash('Please enter a log entry text or select a file to create a log entry.', 'error')
+                flask.flash('Please enter a log entry text, select a file or select an object to create a log entry.', 'error')
                 return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
         else:
             flask.flash('You cannot create a log entry for this instrument.', 'error')
@@ -97,6 +128,7 @@ def instrument(instrument_id):
         'instruments/instrument.html',
         instrument=instrument,
         instrument_log_entries=instrument_log_entries,
+        attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
         instrument_log_entry_form=instrument_log_entry_form,
         ActionType=ActionType

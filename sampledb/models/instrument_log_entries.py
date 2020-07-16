@@ -10,6 +10,7 @@ import typing
 
 from .. import db
 from .instruments import Instrument
+from .objects import Objects
 
 
 class InstrumentLogEntry(db.Model):
@@ -55,3 +56,18 @@ class InstrumentLogFileAttachment(db.Model):
 
     def __repr__(self):
         return '<{0}(id={1.id}, log_entry_id={1.log_entry_id}, file_name="{1.file_name}")>'.format(type(self).__name__, self)
+
+
+class InstrumentLogObjectAttachment(db.Model):
+    __tablename__ = 'instrument_log_object_attachments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    log_entry_id = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), nullable=False)
+    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+
+    def __init__(self, log_entry_id: int, object_id: int):
+        self.log_entry_id = log_entry_id
+        self.object_id = object_id
+
+    def __repr__(self):
+        return '<{0}(id={1.id}, log_entry_id={1.log_entry_id}, object_id={1.object_id})>'.format(type(self).__name__, self)
