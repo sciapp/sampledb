@@ -193,11 +193,47 @@ def new_instrument():
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
-        # TODO: categories
+        try:
+            category_data = json.loads(instrument_form.categories.data)
+        except Exception:
+            pass
+        else:
+            themes_by_name = {
+                theme.name.lower(): theme
+                for theme in list(InstrumentLogCategoryTheme)
+            }
+            category_keys = {'id', 'title', 'theme'}
+            if not isinstance(category_data, list):
+                category_data = ()
+            for category in category_data:
+                # skip any invalid entries
+                if not isinstance(category, dict):
+                    continue
+                if set(category.keys()) != category_keys:
+                    continue
+                if not all(isinstance(category[key], str) for key in category_keys):
+                    continue
+                category_title = category['title'].strip()
+                if not category_title:
+                    continue
+                if len(category_title) > 100:
+                    continue
+                try:
+                    category_id = int(category['id'])
+                except ValueError:
+                    continue
+                category_theme = themes_by_name.get(category['theme'], InstrumentLogCategoryTheme.GRAY)
+                if category_id < 0:
+                    create_instrument_log_category(
+                        instrument.id,
+                        category['title'],
+                        category_theme
+                    )
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text='Create Instrument',
+        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
         instrument_form=instrument_form
     )
 
