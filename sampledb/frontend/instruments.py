@@ -129,7 +129,7 @@ def instrument(instrument_id):
                     _anchor=f'log_entry-{log_entry.id}'
                 ))
             else:
-                flask.flash('Please enter a log entry text, select a file or select an object to create a log entry.', 'error')
+                flask.flash('Please enter a log entry text, upload a file or select an object to create a log entry.', 'error')
                 return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
         else:
             flask.flash('You cannot create a log entry for this instrument.', 'error')

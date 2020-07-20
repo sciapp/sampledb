@@ -138,10 +138,16 @@
     {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
     <form class="form" method="post" id="new_instrument_log_entry_form" enctype="multipart/form-data">
       {{ instrument_log_entry_form.csrf_token }}
-      <div class="form-group {% if instrument_log_entry_form.content.errors %}has-error{% endif %}">
+      {% set log_entry_text_missing = [] %}
+      {% for message in get_flashed_messages() %}
+        {% if 'Please enter a log entry text' in message %}
+          {{ log_entry_text_missing.append(True) }}
+        {% endif %}
+      {% endfor %}
+      <div class="form-group {% if instrument_log_entry_form.content.errors or log_entry_text_missing %}has-error{% endif %}">
         <textarea class="form-control" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{% if instrument_log_entry_form.content.data %}{{ instrument_log_entry_form.content.data }}{% endif %}</textarea>
-        {% if instrument_log_entry_form.content.errors %}
-        <span class="help-block">Please enter the log entry text.</span>
+        {% if instrument_log_entry_form.content.errors or log_entry_text_missing %}
+        <span class="help-block">Please enter a log entry text, upload a file or select an object.</span>
         {% endif %}
       </div>
       <span class="input-group">
