@@ -196,3 +196,11 @@ class InstrumentLogEntryDoesNotExistError(Exception):
 
 class InstrumentLogFileAttachmentDoesNotExistError(Exception):
     pass
+
+
+class InstrumentLogObjectAttachmentDoesNotExistError(Exception):
+    pass
+
+
+class InstrumentLogCategoryDoesNotExistError(Exception):
+    pass

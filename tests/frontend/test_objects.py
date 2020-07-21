@@ -1281,3 +1281,47 @@ def test_edit_nested_array(flask_server, user):
     form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_submit': 'action_submit'}
     r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data, allow_redirects=False)
     assert r.status_code == 302
+
+
+def test_new_object_with_instrument_log_entry(flask_server, user):
+    with flask_server.app.app_context():
+        instrument = sampledb.logic.instruments.create_instrument('Test Instrument', '')
+        sampledb.logic.instruments.add_instrument_responsible_user(instrument.id, user.id)
+        category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+            instrument.id,
+            'Error',
+            sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.RED
+        )
+        assert instrument.id is not None
+        assert category.id is not None
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema, instrument.id)
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
+    assert r.status_code == 200
+    assert len(sampledb.logic.objects.get_objects()) == 0
+    with flask_server.app.app_context():
+        assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
+    document = BeautifulSoup(r.content, 'html.parser')
+    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+    form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object__name__text': 'OMBE-100', 'object__substrate__text': 'GaAs', 'object__checkbox__hidden': 'checkbox exists', 'object__created__datetime': '2017-02-24 11:56:00', 'object__dropdown__text': 'Option A', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1'}
+    # create instrument log entry for new object
+    form_data['create_instrument_log_entry'] = 'create_instrument_log_entry'
+    form_data['instrument_log_categories'] = [str(category.id), '42']
+    r = session.post(flask_server.base_url + 'objects/new', params={'action_id': action.id}, data=form_data)
+    assert r.status_code == 200
+    assert len(sampledb.logic.objects.get_objects()) == 1
+    object = sampledb.logic.objects.get_objects()[0]
+    with flask_server.app.app_context():
+        instrument_log_entries = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)
+        assert len(instrument_log_entries) == 1
+        log_entry = instrument_log_entries[0]
+        assert log_entry.user_id == user.id
+        assert log_entry.content == ''
+        assert log_entry.categories == [category]
+        assert len(log_entry.object_attachments) == 1
+        assert log_entry.object_attachments[0].object_id == object.id
+
+
+

@@ -513,6 +513,22 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     else:
         schema = action.schema
 
+    if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+        instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
+        if 'create_instrument_log_entry' in flask.request.form:
+            category_ids = []
+            for category_id in flask.request.form.getlist('instrument_log_categories'):
+                try:
+                    if int(category_id) in [category.id for category in instrument_log_categories]:
+                        category_ids.append(int(category_id))
+                except Exception:
+                    pass
+        else:
+            category_ids = None
+    else:
+        instrument_log_categories = None
+        category_ids = None
+
     if previous_object is not None:
         action_id = previous_object.action_id
         previous_object_id = previous_object.id
@@ -599,10 +615,33 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             data_sequence = [object_data] * num_objects_in_batch
                         objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id)
                         object_ids = [object.id for object in objects]
+                        if category_ids is not None:
+                            log_entry = logic.instrument_log_entries.create_instrument_log_entry(
+                                instrument_id=action.instrument.id,
+                                user_id=flask_login.current_user.id,
+                                content='',
+                                category_ids=category_ids
+                            )
+                            for object_id in object_ids:
+                                logic.instrument_log_entries.create_instrument_log_object_attachment(
+                                    instrument_log_entry_id=log_entry.id,
+                                    object_id=object_id
+                                )
                         flask.flash('The objects were created successfully.', 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
                         object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema)
+                        if category_ids is not None:
+                            log_entry = logic.instrument_log_entries.create_instrument_log_entry(
+                                instrument_id=action.instrument.id,
+                                user_id=flask_login.current_user.id,
+                                content='',
+                                category_ids=category_ids
+                            )
+                            logic.instrument_log_entries.create_instrument_log_object_attachment(
+                                instrument_log_entry_id=log_entry.id,
+                                object_id=object.id
+                            )
                         flask.flash('The object was created successfully.', 'success')
                 else:
                     update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
@@ -659,6 +698,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             measurements=measurements,
             datetime=datetime,
             tags=tags,
+            instrument_log_categories=instrument_log_categories,
             previous_object_id=previous_object_id
         )
     else:

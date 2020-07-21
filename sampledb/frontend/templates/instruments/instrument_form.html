@@ -12,6 +12,86 @@
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script>
+  window.categories = [
+    {% for category in instrument_log_categories %}
+      {
+        'id': '{{ category.id }}',
+        'title': '{{ category.title }}',
+        'theme': '{{ category.theme.name.lower() }}'
+      },
+    {% endfor %}
+  ];
+  window.new_category_counter = -1;
+  $(function() {
+    function updateCategoryJSON() {
+      var category_json = JSON.stringify(window.categories);
+      $('#input-categories').val(category_json);
+    }
+    updateCategoryJSON();
+    function updateEventHandler() {
+      $('[data-category-id][data-category-id!=""]').each(function() {
+        $(this).find('input').on('change', function() {
+          var category_element = $(this).closest('[data-category-id]');
+          var category_id = category_element.attr('data-category-id');
+          var category_title = category_element.find('input[type="text"]').val().trim();
+          if (category_title === "") {
+            category_element.parent().addClass('has-error').find('.help-block').html("Please enter a category title.");
+          } else if (category_title.length > 100) {
+            category_element.parent().addClass('has-error').find('.help-block').html("Please enter a shorter category title (at most 100 characters).");
+          } else {
+            category_element.parent().removeClass('has-error').find('.help-block').html("");
+          }
+          window.categories.forEach(function(category) {
+            if (category.id === category_id) {
+              category.title = category_title;
+            }
+          });
+          updateCategoryJSON();
+        }).change();
+        $(this).find('select').on('change', function() {
+          var category_element = $(this).closest('[data-category-id]');
+          var category_id = category_element.attr('data-category-id');
+          var category_theme = category_element.find('option:selected').val();
+          window.categories.forEach(function(category) {
+            if (category.id === category_id) {
+              category.theme = category_theme;
+            }
+          });
+          updateCategoryJSON();
+        });
+        $(this).find('.button-delete-category').on('click', function() {
+          var category_element = $(this).closest('[data-category-id]');
+          var category_id = category_element.attr('data-category-id');
+          category_element.parent().remove();
+          window.categories = window.categories.filter(function(category) {
+            return category.id !== category_id;
+          });
+          updateCategoryJSON();
+        });
+      });
+    }
+    $('#button-instrument-log-new-category').on('click', function () {
+      $($('#instrument-log-category-template').html()).insertBefore($(this).parent());
+      $(this).parent().prev('.form-group').find('.input-group').attr('data-category-id', window.new_category_counter);
+      window.categories.push({
+        'id': window.new_category_counter.toString(),
+        'title': '',
+        'theme': '{{ instrument_log_category_themes[0].name.lower() }}'
+      });
+      window.new_category_counter -= 1;
+      $('[data-category-id][data-category-id!=""] select').addClass('selectpicker');
+      $('.selectpicker').selectpicker();
+      updateEventHandler();
+      updateCategoryJSON();
+    });
+    updateEventHandler();
+    $('form').on('submit', function() {
+      console.log($(this).find('.has-error'));
+      return $(this).find('.has-error').length === 0;
+    })
+  });
+  </script>
 {% endblock %}
 
 {% block content %}
@@ -42,12 +122,50 @@
       </div>
       <div class="form-group">
         <label for="input-instrument_repsonsible_users" class="control-label">Instrument Scientists</label>
-        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple">
+        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true">
           {% for choice in instrument_form.instrument_responsible_users.choices %}
               <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
           {% endfor %}
         </select>
       </div>
+      <label>Instrument Log Categories</label>
+      <div class="hidden" id="instrument-log-category-template">
+        <div class="form-group">
+          <div class="input-group" data-category-id="">
+            <input type="text" class="form-control" placeholder="Category Name">
+            <select data-style="btn-default instrument-log-category-theme-btn" data-width="20em">
+              {% for theme in instrument_log_category_themes %}
+              <option {% if loop.index == 1 %}selected="selected"{% endif %} value="{{ theme.name.lower() }}">{{ theme.name.title() }}</option>
+              {% endfor %}
+            </select>
+            <span class="input-group-btn">
+              <button class="btn btn-danger button-delete-category" type="button"><i class="fa fa-trash"></i></button>
+            </span>
+          </div>
+          <span class="help-block"></span>
+        </div>
+      </div>
+      {% for category in instrument_log_categories %}
+      <div class="form-group">
+        <div class="input-group" data-category-id="{{ category.id }}">
+          <input type="text" class="form-control" placeholder="Category Name" value="{{ category.title }}">
+          <select class="selectpicker" data-style="btn-default instrument-log-category-theme-btn" data-width="20em">
+            {% for theme in instrument_log_category_themes %}
+            <option {% if category.theme == theme %}selected="selected"{% endif %} value="{{ theme.name.lower() }}">{{ theme.name.title() }}</option>
+            {% endfor %}
+          </select>
+          <span class="input-group-btn">
+            <button class="btn btn-danger button-delete-category" type="button"><i class="fa fa-trash"></i></button>
+          </span>
+        </div>
+        <span class="help-block"></span>
+      </div>
+      {% endfor %}
+      <div></div>
+      <div class="form-group text-right">
+        <button class="btn btn-success" type="button" id="button-instrument-log-new-category"><i class="fa fa-plus"></i></button>
+      </div>
+      <input type="hidden" id="input-categories" name="{{ instrument_form.categories.name }}" value="">
       <div class="checkbox">
         <label for="input-users_can_create_log_entries">
           <input type="checkbox" id="input-users_can_create_log_entries" name="{{ instrument_form.users_can_create_log_entries.name }}" {% if instrument_form.users_can_create_log_entries.data %}checked="checked"{% endif %}> Users can create log entries
