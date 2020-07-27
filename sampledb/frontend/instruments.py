@@ -6,6 +6,7 @@
 import json
 import os
 
+import itsdangerous
 import flask
 import flask_login
 from flask_wtf import FlaskForm
@@ -16,13 +17,13 @@ from . import frontend
 from ..logic.instruments import get_instruments, get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category
 from ..logic.actions import ActionType
-from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError
+from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
-from ..logic.users import get_users
+from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_objects_with_permissions
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly, markdown_to_safe_html
+from .utils import check_current_user_is_not_readonly, markdown_to_safe_html, generate_qrcode
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -79,6 +80,14 @@ def instrument(instrument_id):
     else:
         instrument_log_entries = None
         attached_object_names = {}
+    if is_instrument_responsible_user or instrument.users_can_create_log_entries:
+        serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='instrument-log-mobile-upload')
+        token = serializer.dumps([flask_login.current_user.id, instrument_id])
+        mobile_upload_url = flask.url_for('.instrument_log_mobile_file_upload', instrument_id=instrument_id, token=token, _external=True)
+        mobile_upload_qrcode = generate_qrcode(mobile_upload_url, should_cache=False)
+    else:
+        mobile_upload_url = None
+        mobile_upload_qrcode = None
     instrument_log_entry_form = InstrumentLogEntryForm()
     instrument_log_entry_form.objects.choices = [
         (str(object.id), "{} (#{})".format(object.data.get('name', {}).get('text', 'Unnamed Object'), object.id))
@@ -142,6 +151,8 @@ def instrument(instrument_id):
         attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
         instrument_log_entry_form=instrument_log_entry_form,
+        mobile_upload_url=mobile_upload_url,
+        mobile_upload_qrcode=mobile_upload_qrcode,
         ActionType=ActionType
     )
 
@@ -247,7 +258,7 @@ def edit_instrument(instrument_id):
         return flask.abort(404)
     check_current_user_is_not_readonly()
     if not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
-        return flask.abort(401)
+        return flask.abort(403)
     instrument_form = InstrumentForm()
     instrument_form.name.default = instrument.name
     instrument_form.description.default = instrument.description
@@ -387,3 +398,70 @@ def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_
                 'Content-Type': mime_type
             }
         )
+
+
+@frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['GET'])
+def instrument_log_mobile_file_upload(instrument_id: int, token: str):
+    try:
+        instrument = get_instrument(instrument_id)
+    except InstrumentDoesNotExistError:
+        return flask.abort(404)
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='instrument-log-mobile-upload')
+    try:
+        user_id, instrument_id = serializer.loads(token, max_age=15 * 60)
+    except itsdangerous.BadSignature:
+        return flask.abort(400)
+    try:
+        user = get_user(user_id)
+    except UserDoesNotExistError:
+        return flask.abort(403)
+    if not instrument.users_can_create_log_entries and user not in instrument.responsible_users:
+        return flask.abort(403)
+    if user.is_readonly:
+        return flask.abort(403)
+    return flask.render_template('mobile_upload.html', user_id=get_user(user_id), instrument=instrument)
+
+
+@frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['POST'])
+def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
+    try:
+        instrument = get_instrument(instrument_id)
+    except InstrumentDoesNotExistError:
+        return flask.abort(404)
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='instrument-log-mobile-upload')
+    try:
+        user_id, instrument_id = serializer.loads(token, max_age=15 * 60)
+    except itsdangerous.BadSignature:
+        return flask.abort(400)
+    try:
+        user = get_user(user_id)
+    except UserDoesNotExistError:
+        return flask.abort(403)
+    if not instrument.users_can_create_log_entries and user not in instrument.responsible_users:
+        return flask.abort(403)
+    if user.is_readonly:
+        return flask.abort(403)
+    files = flask.request.files.getlist('file_input')
+    if not files:
+        return flask.redirect(
+            flask.url_for(
+                '.instrument_log_mobile_file_upload',
+                instrument_id=instrument_id,
+                token=token
+            )
+        )
+    if files:
+        category_ids = []
+        log_entry = create_instrument_log_entry(
+            instrument_id=instrument_id,
+            user_id=user_id,
+            content='',
+            category_ids=category_ids
+        )
+        for file_storage in files:
+            create_instrument_log_file_attachment(
+                instrument_log_entry_id=log_entry.id,
+                file_name=file_storage.filename,
+                content=file_storage.stream.read()
+            )
+    return flask.render_template('mobile_upload_success.html')
