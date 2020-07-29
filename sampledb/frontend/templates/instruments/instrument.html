@@ -4,13 +4,18 @@
 
 {% block content %}
   <h1>{{ instrument.name }}</h1>
+  {% if instrument.description_as_html or instrument.description %}
+  <div class="instrument-user-content">
   {% if instrument.description_as_html %}{{ instrument.description_as_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
+  </div>
+  {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
   {% if current_user.is_admin or current_user in instrument.responsible_users %}
     <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">Edit Instrument</a>
   {% endif %}
   {% endif %}
+  <h2>Actions</h2>
   {% for action in instrument.actions %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
@@ -31,4 +36,222 @@
       {% endif %}
     {% endif %}
   {% endfor %}
+  {% if is_instrument_responsible_user %}
+  <h2>Instrument Scientist Notes</h2>
+    <p class="text-muted">
+      These notes are only visible to the instrument scientists.
+      <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-scientist-notes">Read more.</a>
+    </p>
+    {% if instrument.notes_as_html or instrument.notes %}
+      <div class="instrument-user-content">
+      {% if instrument.notes_as_html %}{{ instrument.notes_as_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
+      </div>
+    {% else %}
+      &mdash;
+    {% endif %}
+  {% endif %}
+  {% if is_instrument_responsible_user or instrument.users_can_create_log_entries or instrument.users_can_view_log_entries %}
+    <h2>Instrument Log</h2>
+    <p class="text-muted">
+      {% if is_instrument_responsible_user %}
+        Instrument scientists can use the instrument log to keep track of problems, maintenance or other events.
+        Instrument scientists can  <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}">edit the instrument settings</a> to configure whether users can create or view log entries.
+        {% if instrument.users_can_view_log_entries and instrument.users_can_create_log_entries %}
+          Currently, users can create and view log entries.
+        {% elif instrument.users_can_create_log_entries %}
+          Currently, users cannot view log entries, but they can create new entries.
+        {% elif instrument.users_can_view_log_entries %}
+          Currently, users can view log entries, but they cannot create new entries.
+        {% else %}
+          Currently, users can neither create nor view log entries.
+        {% endif %}
+      {% else %}
+        {% if instrument.users_can_view_log_entries %}
+          Instrument scientists can use the instrument log to keep track of problems, maintenance or other events.
+        {% endif %}
+        {% if instrument.users_can_create_log_entries %}
+          Users can create entries in the instrument log to notify instrument scientists about any issues they encounter.
+        {% endif %}
+      {% endif %}
+      <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-log">Read more.</a>
+    </p>
+    {% if is_instrument_responsible_user or instrument.users_can_view_log_entries %}
+      {% if instrument_log_entries %}
+        {% if instrument_log_categories %}
+          <div class="text-right" style="margin-bottom: 10px;">
+          <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
+            {% for category in instrument_log_categories %}
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
+            {% endfor %}
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> Uncategorized</label><br />
+              <script>
+                setup_instrument_log_filter_states();
+              </script>
+            ">
+              <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
+            </button>
+          </div>
+        {% endif %}
+        {% for log_entry in instrument_log_entries %}
+          <div class="well instrument-log-entry {% if log_entry.categories %}instrument-log-entry-{{ log_entry.categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.categories %}{% for category in log_entry.categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" style="position: relative">
+            <div class="instrument-log-categories">
+              {% for category in log_entry.categories %}
+                  <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
+              {% endfor %}
+            </div>
+            {% if log_entry.content %}
+            <pre class="comment">{{ log_entry.content }}</pre>
+            {% endif %}
+            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {{ log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+          {% set file_attachments = log_entry.file_attachments %}
+          {% if file_attachments %}
+            <div class="file-attachment-header">Attached Files:</div>
+            <ul class="file-attachment-list">
+            {% for file_attachment in file_attachments %}<li>
+                <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
+                  <span class="file-attachment-preview">
+                  {% if file_attachment | attachment_is_image %}
+                    <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="&#xf15b;" />
+                  {% else %}
+                  <i class="fa fa-file"></i>
+                  {% endif %}
+                  </span>
+                  <span>{{ file_attachment.file_name }}</span></a></li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+          {% set object_attachments = log_entry.object_attachments %}
+          {% if object_attachments %}
+            <div class="object-attachment-header">Attached Objects:</div>
+            <ul class="object-attachment-list">
+            {% for object_attachment in object_attachments %}<li>
+                <a href="{{ url_for('.object', object_id=object_attachment.object_id) }}">{{ attached_object_names.get(object_attachment.object_id, 'Object') }} (#{{ object_attachment.object_id }})</a></li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>There are no log entries for this instrument.</p>
+      {% endif %}
+    {% endif %}
+    {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
+    <form class="form" method="post" id="new_instrument_log_entry_form" enctype="multipart/form-data">
+      {{ instrument_log_entry_form.csrf_token }}
+      {% set log_entry_text_missing = [] %}
+      {% for message in get_flashed_messages() %}
+        {% if 'Please enter a log entry text' in message %}
+          {{ log_entry_text_missing.append(True) }}
+        {% endif %}
+      {% endfor %}
+      <div class="form-group {% if instrument_log_entry_form.content.errors or log_entry_text_missing %}has-error{% endif %}">
+        <textarea class="form-control" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{% if instrument_log_entry_form.content.data %}{{ instrument_log_entry_form.content.data }}{% endif %}</textarea>
+        {% if instrument_log_entry_form.content.errors or log_entry_text_missing %}
+        <span class="help-block">Please enter a log entry text, upload a file or select an object.</span>
+        {% endif %}
+      </div>
+      <span class="input-group">
+        <span class="input-group-addon"><i class="fa fa-file"></i></span>
+        <input id="input-file-text" type="text" class="form-control disabled" disabled placeholder="No files selected" />
+        <div class="input-group-btn">
+          <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>Browse...<input id="input-file-upload" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
+        </div>
+      </span>
+      {% if instrument_log_entry_form.objects.choices %}
+      <div class="form-group" style="margin: 15px 0 0 0">
+        <select name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="No objects selected" data-width="100%">
+          {% for choice in instrument_log_entry_form.objects.choices %}
+            <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="text-right">
+        {% if instrument_log_entry_form.categories.choices %}
+        <select name="{{ instrument_log_entry_form.categories.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="Log Entry Type" data-width="11em">
+          {% for choice in instrument_log_entry_form.categories.choices %}
+            <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+        <button type="submit" class="btn btn-primary" style="width:11em; margin: 15px 0;"><i class="fa fa-comment fa-fw"></i> Create Log Entry</button>
+      </div>
+    </form>
+    <div class="text-right form-group">
+      <span class="text-muted">or</span> <button type="button" class="btn btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="margin-left: 1em"><i class="fa fa-mobile-phone fa-fw"></i> Smartphone Upload as Log Entry </button>
+    </div>
+    {% endif %}
+  {% endif %}
+
+  {% if mobile_upload_qrcode and mobile_upload_url%}
+    <div class="modal fade" id="mobileFileLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileFileLinkModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="mobileFileLinkModalLabel">Mobile File Upload</h4>
+          </div>
+          <div class="modal-body">
+            <p class="text-center">To upload files from mobile devices, scan this QR code:</p>
+            <a href="{{ mobile_upload_url }}"><img src="{{ mobile_upload_qrcode }}" alt="{{ mobile_upload_url }}" style="width: 100%"/></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script type="text/javascript">
+    window.categoriesShown = {
+      {% for category in instrument_log_categories %}
+      '{{ category.id }}': true,
+      {% endfor %}
+      'none': true
+    };
+    function setup_instrument_log_filter_states() {
+      {% for category in instrument_log_categories %}
+      $('#instrument_log_filter_{{ category.id }}').prop('checked', window.categoriesShown['{{ category.id }}']);
+      {% endfor %}
+      $('#instrument_log_filter_none').prop('checked', window.categoriesShown['none']);
+      $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
+    }
+    function update_instrument_log_filter_states() {
+      $('.instrument-log-entry').hide();
+      {% for category in instrument_log_categories %}
+        window.categoriesShown['{{ category.id }}'] = $('#instrument_log_filter_{{ category.id }}').prop('checked');
+        if (window.categoriesShown['{{ category.id }}']) {
+          $('div[data-instrument-log-category-{{ category.id }}="yes"]').show();
+        }
+      {% endfor %}
+      window.categoriesShown['none'] = $('#instrument_log_filter_none').prop('checked');
+      if (window.categoriesShown['none']) {
+        $('div[data-instrument-log-category-none="yes"]').show();
+      }
+      $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
+    }
+    $(function () {
+      setup_instrument_log_filter_states();
+      $('[data-toggle="popover"]').popover();
+      $('#input-file-upload').on('change', function () {
+        var files = $(this).get(0).files;
+        if (files.length === 0) {
+          $('#input-file-text').val("");
+        } else if (files.length === 1) {
+          $('#input-file-text').val(files[0].name);
+        } else {
+          $('#input-file-text').val(files.length + " files selected");
+        }
+      });
+    });
+  </script>
 {% endblock %}

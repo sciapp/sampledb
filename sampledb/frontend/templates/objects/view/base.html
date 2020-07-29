@@ -88,7 +88,7 @@
       <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal" data-toggle="tooltip" data-placement="top" title="Show a QR code for a link to this object."><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
     </div>
     <div class="form-group">
-      <div data-toggle="tooltip" data-placement="top" title="Show a PDF containting the information for this object."><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdfExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export to PDF</button></div>
+      <div data-toggle="tooltip" data-placement="top" title="Export object information to an archive or PDF file."><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dataExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export Data</button></div>
     </div>
     {% if notebook_templates and jupyterhub_templates_url %}
       <div class="form-group">
@@ -141,7 +141,13 @@
         {% if not file.is_hidden %}
         <tr id="file-{{ file.id }}">
           <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
-          <td>{{ file.title }}</td>
+          <td>
+            {{ file.title }}
+            {% if file.description %}
+<span class="file-description">
+{{ file.description }}</span>
+            {% endif %}
+          </td>
           <td>
             <span class="pull-right" style="display:flex;">
               <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="View information"><i class="fa fa-info"></i></button>
@@ -779,20 +785,39 @@
     <h4>Related Objects</h4>
 
     <div class="related-objects">
-      {% set in_export_pdf_model = False %}
+      {% set in_export_data_model = False %}
       {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
     </div>
 
-    <div class="modal fade" id="pdfExportModal" tabindex="-1" role="dialog" aria-labelledby="pdfExportModalLabel">
+    <div class="modal fade" id="dataExportModal" tabindex="-1" role="dialog" aria-labelledby="dataExportModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="pdfExportModalLabel">Export to PDF</h4>
+            <h4 class="modal-title" id="dataExportModalLabel">Export Data</h4>
           </div>
           <div class="modal-body">
+            <div class="form-group">
+              <label for="select-export-format" class="control-label">Export Format</label>
+              <select id="select-export-format" class="selectpicker" data-width="100%">
+                <option value=".pdf" selected="selected">PDF file</option>
+                {% for file_extension in export_file_formats %}
+                  <option value="{{ file_extension }}">{{ export_file_formats[file_extension][0] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group" id="pdf–export-sections">
+              <div>PDF Export Sections</div>
+              <label><input type="checkbox" checked="checked" disabled="disabled" class="disabled"> Information</label>
+              <label><input type="checkbox" checked="checked" name="activity_log"> Activity Log</label>
+              <label><input type="checkbox" checked="checked" name="locations"> Locations</label>
+              <label><input type="checkbox" checked="checked" name="publications"> Publications</label>
+              <label><input type="checkbox" checked="checked" name="files"> Files</label>
+              <label><input type="checkbox" checked="checked" name="comments"> Comments</label>
+            </div>
             <div class="related-objects">
-              {% set in_export_pdf_model = True %}
+              <div>Objects</div>
+              {% set in_export_data_model = True %}
               {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
             </div>
           </div>
@@ -800,7 +825,7 @@
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">Select All</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">Deselect All</button>
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <a href="{{ url_for('.export_to_pdf', object_id=object_id) }}" class="btn btn-primary" id="button-related-objects-export-pdf">Export to PDF</a>
+            <a href="{{ url_for('.export_data', object_id=object_id) }}" class="btn btn-primary" id="button-related-objects-export-data">Export Data</a>
           </div>
         </div>
       </div>
@@ -1001,38 +1026,62 @@
       $('.file-info-main').show();
     });
     {% if related_objects_tree %}
-    $('input[name^=pdf_export_object_]').prop("checked", false);
-    $('input.pdf_export_object').prop("checked", false);
-    $('input.pdf_export_object_{{ object_id }}').prop("checked", true);
-    function updatePDFExportLink() {
+    $('input[name^=data_export_object_]').prop("checked", false);
+    $('input.data_export_object').prop("checked", false);
+    $('input.data_export_object_{{ object_id }}').prop("checked", true);
+    function updateDataExportLink() {
+      var format = ".pdf";
+      var selected_format_option = $('#select-export-format > option:selected');
+      if (selected_format_option) {
+        format = selected_format_option.val();
+      }
+      $('#pdf–export-sections').toggleClass('disabled', format !== '.pdf');
+      var pdf_export_sections = $('#pdf–export-sections input');
+      var enabled_sections = [];
+      pdf_export_sections.each(function(_, input) {
+        if (!$(input).hasClass('disabled')) {
+          input.disabled = (format !== '.pdf');
+          if (input.checked) {
+            enabled_sections.push(input.name);
+          }
+        }
+      });
       var object_ids_to_export = [];
-      $('input[name^=pdf_export_object_]').each(function() {
+      $('input[name^=data_export_object_]').each(function() {
         if ($(this).prop('checked')) {
           object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
         }
       });
-      var export_link = $('#button-related-objects-export-pdf');
+      var export_link = $('#button-related-objects-export-data');
       if (object_ids_to_export.length > 0) {
-        export_link.attr('href', "{{ url_for('.export_to_pdf', object_id=object_id) }}?object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)));
+        export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)));
         export_link.removeClass("disabled");
       } else {
         export_link.attr('href', "#");
         export_link.addClass("disabled");
       }
     }
-    $('input[name^=pdf_export_object_]').on('change', function() {
+
+    $('#pdf–export-sections input').on('change', function() {
+      updateDataExportLink();
+    });
+    $('input[name^=data_export_object_]').on('change', function() {
       $('input.' + this.name + ':not([name=' + this.name + '])').prop("checked",  $(this).prop("checked"));
-      updatePDFExportLink();
+      updateDataExportLink();
     });
     $('#button-related-objects-select-all').on('click', function() {
-      $('#pdfExportModal .related-objects-tree-toggle').prop("checked", true);
-      $('input.pdf_export_object').prop("checked", true);
-      updatePDFExportLink();
+      $('#dataExportModal .related-objects-tree-toggle').prop("checked", true);
+      $('input.data_export_object').prop("checked", true);
+      updateDataExportLink();
     });
     $('#button-related-objects-deselect-all').on('click', function() {
-      $('input.pdf_export_object').prop("checked", false);
-      updatePDFExportLink();
+      $('input.data_export_object').prop("checked", false);
+      updateDataExportLink();
     });
+    $('#select-export-format').on('change', function() {
+      updateDataExportLink();
+    });
+    updateDataExportLink();
     {% endif %}
     $('[data-toggle="tooltip"]').tooltip();
     });

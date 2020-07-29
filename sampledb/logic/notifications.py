@@ -498,3 +498,25 @@ def create_notification_for_having_received_an_objects_permissions_request(user_
             'requester_id': requester_id
         }
     )
+
+
+def create_notification_for_a_new_instrument_log_entry(user_id: int, instrument_log_entry_id: int) -> None:
+    """
+    Create a notification of type INSTRUMENT_LOG_ENTRY_CREATED.
+
+    :param user_id: the ID of an existing user
+    :param instrument_log_entry_id: the ID of the instrument log entry
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
+        entry with the given ID exists
+    """
+    # ensure the instrument log entry exists
+    logic.instrument_log_entries.get_instrument_log_entry(instrument_log_entry_id)
+    _create_notification(
+        type=NotificationType.INSTRUMENT_LOG_ENTRY_CREATED,
+        user_id=user_id,
+        data={
+            'instrument_log_entry_id': instrument_log_entry_id
+        }
+    )

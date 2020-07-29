@@ -28,6 +28,7 @@ class UserLogEntryType(enum.Enum):
     CREATE_LOCATION = 12
     UPDATE_LOCATION = 13
     LINK_PUBLICATION = 14
+    CREATE_INSTRUMENT_LOG_ENTRY = 15
 
 
 class UserLogEntry(db.Model):

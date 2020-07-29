@@ -82,8 +82,12 @@ Customization
      - The URL to use for the imprint link
    * - SAMPLEDB_SERVICE_PRIVACY_POLICY
      - The URL to use for the privacy policy link
+   * - SAMPLEDB_PDFEXPORT_LOGO_URL
+     - A file, http or https URL for a PNG or JPEG logo to be included in object export PDF documents
+   * - SAMPLEDB_PDFEXPORT_LOGO_ALIGNMENT
+     - The alignment (left, center or right) of the logo, if SAMPLEDB_PDFEXPORT_LOGO_URL is set (default: right)
 
-You can use these variables to customize how your SampleDB instance is called, described and which links are included in the footer.
+You can use these variables to customize how your SampleDB instance is called, described and which links are included in the footer. The logo at the given PDFEXPORT_LOGO_URL will be fetched when SampleDB is started and cached afterwards. To refresh the logo, you will need to restart SampleDB.
 
 .. _jupyterhub_configuration:
 

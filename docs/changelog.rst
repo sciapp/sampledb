@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 0.12
+------------
+
+Released on July 29th, 2020.
+
+- Added data export as PDF document, .zip or .tar.gz archive
+- Allow adding a logo to object export PDF documents
+- Allow setting a publicly visible ORCID iD
+- Added instrument log
+- Added instrument scientist notes
+
 Version 0.11
 ------------
 

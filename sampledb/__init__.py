@@ -56,6 +56,7 @@ def setup_jinja_environment(app):
         jupyterhub_templates_url = None
 
     app.jinja_env.globals.update(
+        export_file_formats=sampledb.logic.export.FILE_FORMATS,
         jupyterhub_name=app.config['JUPYTERHUB_NAME'],
         jupyterhub_templates_url=jupyterhub_templates_url,
         signout_form=sampledb.frontend.users_forms.SignoutForm,

@@ -300,4 +300,4 @@ Schemas may contain a list of references to notebook templates as a property of 
 
     The notebook template functionality is based on an additional webservice. Only users with access to a JupyterHub instance with this webservice and persistent storage there will be able to use it.
 
-    If no JupyterHub URL is :ref:`configured <configuration>`, this list will be ignored.
+    If no JupyterHub URL is :ref:`configured <jupyterhub_support>`, this list will be ignored.

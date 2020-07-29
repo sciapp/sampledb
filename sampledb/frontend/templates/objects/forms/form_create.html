@@ -17,6 +17,25 @@
     {% endif %}
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
+    {% if instrument_log_categories %}
+    <div class="form-group clearfix" style="padding:0 0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <div class="input-group pull-right">
+          <span class="input-group-addon" style="width:20em">
+            <label style="font-weight: 400">
+              <input type="checkbox" name="create_instrument_log_entry" {% if 'create_instrument_log_entry' in request.form %}checked="checked"{% endif %}>
+              Create Instrument Log Entry
+            </label>
+          </span>
+          <select class="selectpicker" multiple="multiple" data-width="280px" name="instrument_log_categories">
+            {% for category in instrument_log_categories %}
+            <option value="{{ category.id }}" {% if category.id | string in request.form.getlist('instrument_log_categories') %}selected="selected"{% endif %}>{{ category.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    {% endif %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-9 col-md-offset-3">
         <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">Save</button>

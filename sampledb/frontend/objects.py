@@ -37,7 +37,7 @@ from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
-from .pdfexport import create_pdfexport
+from . import pdfexport
 from .utils import check_current_user_is_not_readonly
 
 
@@ -513,6 +513,22 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     else:
         schema = action.schema
 
+    if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+        instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
+        if 'create_instrument_log_entry' in flask.request.form:
+            category_ids = []
+            for category_id in flask.request.form.getlist('instrument_log_categories'):
+                try:
+                    if int(category_id) in [category.id for category in instrument_log_categories]:
+                        category_ids.append(int(category_id))
+                except Exception:
+                    pass
+        else:
+            category_ids = None
+    else:
+        instrument_log_categories = None
+        category_ids = None
+
     if previous_object is not None:
         action_id = previous_object.action_id
         previous_object_id = previous_object.id
@@ -599,10 +615,33 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             data_sequence = [object_data] * num_objects_in_batch
                         objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id)
                         object_ids = [object.id for object in objects]
+                        if category_ids is not None:
+                            log_entry = logic.instrument_log_entries.create_instrument_log_entry(
+                                instrument_id=action.instrument.id,
+                                user_id=flask_login.current_user.id,
+                                content='',
+                                category_ids=category_ids
+                            )
+                            for object_id in object_ids:
+                                logic.instrument_log_entries.create_instrument_log_object_attachment(
+                                    instrument_log_entry_id=log_entry.id,
+                                    object_id=object_id
+                                )
                         flask.flash('The objects were created successfully.', 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
                         object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema)
+                        if category_ids is not None:
+                            log_entry = logic.instrument_log_entries.create_instrument_log_entry(
+                                instrument_id=action.instrument.id,
+                                user_id=flask_login.current_user.id,
+                                content='',
+                                category_ids=category_ids
+                            )
+                            logic.instrument_log_entries.create_instrument_log_object_attachment(
+                                instrument_log_entry_id=log_entry.id,
+                                object_id=object.id
+                            )
                         flask.flash('The object was created successfully.', 'success')
                 else:
                     update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
@@ -659,6 +698,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             measurements=measurements,
             datetime=datetime,
             tags=tags,
+            instrument_log_categories=instrument_log_categories,
             previous_object_id=previous_object_id
         )
     else:
@@ -1074,10 +1114,13 @@ def post_object_publication(object_id):
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
-@frontend.route('/objects/<int:object_id>/pdf')
+@frontend.route('/objects/<int:object_id>/export')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def export_to_pdf(object_id):
+def export_data(object_id):
     object_ids = [object_id]
+    file_extension = flask.request.args.get('format', '.pdf')
+    if file_extension != '.pdf' and file_extension not in logic.export.FILE_FORMATS:
+        return flask.abort(400)
     if 'object_ids' in flask.request.args:
         try:
             object_ids = json.loads(flask.request.args['object_ids'])
@@ -1088,13 +1131,28 @@ def export_to_pdf(object_id):
             return flask.abort(400)
         if not object_ids:
             return flask.abort(400)
-    pdf_data = create_pdfexport(object_ids)
-
-    return flask.send_file(
-        io.BytesIO(pdf_data),
-        mimetype='application/pdf',
-        cache_timeout=-1
-    )
+    if file_extension == '.pdf':
+        sections = pdfexport.SECTIONS
+        if 'sections' in flask.request.args:
+            try:
+                sections = sections.intersection(json.loads(flask.request.args['sections']))
+            except Exception:
+                return flask.abort(400)
+        pdf_data = pdfexport.create_pdfexport(object_ids, sections)
+        file_bytes = io.BytesIO(pdf_data)
+    elif file_extension in logic.export.FILE_FORMATS:
+        file_bytes = logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids)
+    else:
+        file_bytes = None
+    if file_bytes:
+        return flask.Response(
+            file_bytes,
+            200,
+            headers={
+                'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}'
+            }
+        )
+    return flask.abort(500)
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
@@ -1161,28 +1219,46 @@ def hide_file(object_id, file_id):
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])
 def mobile_file_upload(object_id: int, token: str):
-    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
-    return flask.render_template('mobile_upload.html', user_id=logic.users.get_user(user_id), object=logic.objects.get_object(object_id))
+    try:
+        user = logic.users.get_user(user_id)
+    except UserDoesNotExistError:
+        return flask.abort(403)
+    if user.is_readonly:
+        return flask.abort(403)
+    return flask.render_template('mobile_upload.html')
 
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['POST'])
 def post_mobile_file_upload(object_id: int, token: str):
-    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
+    try:
+        user = logic.users.get_user(user_id)
+    except UserDoesNotExistError:
+        return flask.abort(403)
+    if user.is_readonly:
+        return flask.abort(403)
     files = flask.request.files.getlist('file_input')
+    if not files:
+        return flask.redirect(
+            flask.url_for(
+                '.mobile_file_upload',
+                object_id=object_id,
+                token=token
+            )
+        )
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
         logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
-    return flask.render_template('mobile_upload_success.html', num_files=len(files))
+    return flask.render_template('mobile_upload_success.html')
 
 
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])

@@ -14,7 +14,7 @@ Here is an example BibTeX entry:
     @Misc{iffSamples,
       author = {Florian Rhiem and others},
       title = {{iffSamples}},
-      year = {2017--2019},
+      year = {2017--2020},
       url = "https://iffsamples.fz-juelich.de/documentation/",
       note = {[Online; accessed 2019-09-25]}
     }

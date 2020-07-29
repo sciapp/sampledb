@@ -22,6 +22,13 @@ from ..logic.actions import get_action, ActionType
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.users import get_user
 
+SECTIONS = {
+    'activity_log',
+    'locations',
+    'publications',
+    'files',
+    'comments'
+}
 
 PAGE_WIDTH, PAGE_HEIGHT = pagesize
 LEFT_MARGIN = 25.4 * mm
@@ -30,9 +37,35 @@ TOP_MARGIN = 31.7 * mm
 BOTTOM_MARGIN = 31.7 * mm
 
 
-def _set_up_page(canvas, object_id, qrcode_uri):
+def _set_up_page(canvas, object_id, qrcode_uri, logo_uri=None, logo_aspect_ratio=1, logo_alignment='right'):
     canvas.saveState()
     canvas.drawImage(qrcode_uri, PAGE_WIDTH - 27.5 * mm, PAGE_HEIGHT - 27.5 * mm, 20 * mm, 20 * mm)
+    if logo_uri:
+        if logo_aspect_ratio > 1:
+            logo_width = 19 * mm * logo_aspect_ratio
+            logo_height = 19 * mm
+        else:
+            logo_width = 19 * mm
+            logo_height = 19 * mm / logo_aspect_ratio
+        # right margin due to QR code
+        right_margin = 27.5 * mm
+        max_width = PAGE_WIDTH - right_margin - LEFT_MARGIN
+        if logo_width > max_width:
+            logo_height *= max_width / logo_width
+            logo_width = max_width
+        max_height = 19 * mm
+        if logo_height > max_height:
+            logo_width *= max_height / logo_height
+            logo_height = max_height
+        logo_alignment = logo_alignment.lower()
+        if logo_alignment == 'left':
+            x = LEFT_MARGIN
+        elif logo_alignment == 'center':
+            x = (LEFT_MARGIN + PAGE_WIDTH - right_margin - logo_width) / 2
+        else:
+            x = PAGE_WIDTH - right_margin - logo_width
+        y = PAGE_HEIGHT - 26.5 * mm
+        canvas.drawImage(logo_uri, x, y, logo_width, logo_height)
     canvas.setFont('Helvetica', 8)
     canvas.drawCentredString(PAGE_WIDTH - 17.5 * mm, PAGE_HEIGHT - 29 * mm, "#{}".format(object_id))
     canvas.drawCentredString(PAGE_WIDTH - 17.5 * mm, PAGE_HEIGHT - 33 * mm, "Exported on")
@@ -434,11 +467,15 @@ def _write_publications(object, canvas):
         canvas.showPage()
 
 
-def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
+def create_pdfexport(
+        object_ids: typing.Sequence[int],
+        sections: typing.Set[str] = SECTIONS
+) -> bytes:
     """
     Create a PDF containing the exported information of one or more objects.
 
     :param object_ids: the ID of the objects
+    :param sections: a list of sections to include in the generated PDF
     :return: the PDF data
     """
     pdf_stream = io.BytesIO()
@@ -459,15 +496,23 @@ def create_pdfexport(object_ids: typing.Sequence[int]) -> bytes:
         # set PDF producer (not exposed by reportlab Canvas API)
         PDFInfo.producer = service_name
         canvas.showOutline()
-        canvas.set_up_page = lambda: _set_up_page(canvas, object_id, qrcode_uri)
+        logo_uri = flask.current_app.config['internal'].get('PDFEXPORT_LOGO_URL', None)
+        logo_aspect_ratio = flask.current_app.config['internal'].get('PDFEXPORT_LOGO_ASPECT_RATIO', 1)
+        logo_alignment = flask.current_app.config['PDFEXPORT_LOGO_ALIGNMENT']
+        canvas.set_up_page = lambda: _set_up_page(canvas, object_id, qrcode_uri, logo_uri, logo_aspect_ratio, logo_alignment)
         canvas.left_cursor = LEFT_MARGIN
         canvas.top_cursor = PAGE_HEIGHT - TOP_MARGIN
         _write_metadata(object, canvas)
-        _write_activity_log(object, canvas)
-        _write_locations(object, canvas)
-        _write_publications(object, canvas)
-        _write_files(object, canvas)
-        _write_comments(object, canvas)
+        if 'activity_log' in sections:
+            _write_activity_log(object, canvas)
+        if 'locations' in sections:
+            _write_locations(object, canvas)
+        if 'publications' in sections:
+            _write_publications(object, canvas)
+        if 'files' in sections:
+            _write_files(object, canvas)
+        if 'comments' in sections:
+            _write_comments(object, canvas)
     canvas.save()
     pdf_stream.seek(0)
     return pdf_stream.read()
