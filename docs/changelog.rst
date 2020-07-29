@@ -4,7 +4,7 @@ Changelog
 Version 0.12
 ------------
 
-Currently in development.
+Released on July 29th, 2020.
 
 - Added data export as PDF document, .zip or .tar.gz archive
 - Allow adding a logo to object export PDF documents
