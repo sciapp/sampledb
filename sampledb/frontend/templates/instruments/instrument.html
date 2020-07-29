@@ -174,10 +174,30 @@
           {% endfor %}
         </select>
         {% endif %}
-        <button type="submit" class="btn btn-primary" style="width:11em; margin: 20px 0;"><i class="fa fa-comment fa-fw"></i> Create Log Entry</button>
+        <button type="submit" class="btn btn-primary" style="width:11em; margin: 15px 0;"><i class="fa fa-comment fa-fw"></i> Create Log Entry</button>
       </div>
     </form>
+    <div class="text-right form-group">
+      <span class="text-muted">or</span> <button type="button" class="btn btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="margin-left: 1em"><i class="fa fa-mobile-phone fa-fw"></i> Smartphone Upload as Log Entry </button>
+    </div>
     {% endif %}
+  {% endif %}
+
+  {% if mobile_upload_qrcode and mobile_upload_url%}
+    <div class="modal fade" id="mobileFileLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileFileLinkModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="mobileFileLinkModalLabel">Mobile File Upload</h4>
+          </div>
+          <div class="modal-body">
+            <p class="text-center">To upload files from mobile devices, scan this QR code:</p>
+            <a href="{{ mobile_upload_url }}"><img src="{{ mobile_upload_qrcode }}" alt="{{ mobile_upload_url }}" style="width: 100%"/></a>
+          </div>
+        </div>
+      </div>
+    </div>
   {% endif %}
 {% endblock %}
 

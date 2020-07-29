@@ -1219,28 +1219,46 @@ def hide_file(object_id, file_id):
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])
 def mobile_file_upload(object_id: int, token: str):
-    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
-    return flask.render_template('mobile_upload.html', user_id=logic.users.get_user(user_id), object=logic.objects.get_object(object_id))
+    try:
+        user = logic.users.get_user(user_id)
+    except UserDoesNotExistError:
+        return flask.abort(403)
+    if user.is_readonly:
+        return flask.abort(403)
+    return flask.render_template('mobile_upload.html')
 
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['POST'])
 def post_mobile_file_upload(object_id: int, token: str):
-    check_current_user_is_not_readonly()
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
     except itsdangerous.BadSignature:
         return flask.abort(400)
+    try:
+        user = logic.users.get_user(user_id)
+    except UserDoesNotExistError:
+        return flask.abort(403)
+    if user.is_readonly:
+        return flask.abort(403)
     files = flask.request.files.getlist('file_input')
+    if not files:
+        return flask.redirect(
+            flask.url_for(
+                '.mobile_file_upload',
+                object_id=object_id,
+                token=token
+            )
+        )
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
         logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
-    return flask.render_template('mobile_upload_success.html', num_files=len(files))
+    return flask.render_template('mobile_upload_success.html')
 
 
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
