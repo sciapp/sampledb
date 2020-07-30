@@ -900,6 +900,17 @@ def object(object_id):
     return show_object_form(object, action=get_action(object.action_id), should_upgrade_schema=should_upgrade_schema)
 
 
+@frontend.route('/objects/<int:object_id>/dc.rdf')
+@frontend.route('/objects/<int:object_id>/versions/<int:version_id>/dc.rdf')
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+def object_rdf(object_id, version_id=None):
+    rdf_xml = logic.rdf.generate_rdf(flask_login.current_user.id, object_id, version_id)
+    return flask.Response(
+        rdf_xml,
+        mimetype='application/rdf+xml',
+    )
+
+
 @frontend.route('/objects/<int:object_id>/label')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def print_object_label(object_id):
@@ -1151,7 +1162,8 @@ def export_data(object_id):
             file_bytes,
             200,
             headers={
-                'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}'
+                'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}',
+                'Content-Type': 'application/pdf' if file_extension == '.pdf' else logic.export.FILE_FORMATS[file_extension][2]
             }
         )
     return flask.abort(500)
@@ -1412,6 +1424,7 @@ def object_version(object_id, version_id):
         last_edit_user=get_user(object.user_id),
         object_id=object_id,
         version_id=version_id,
+        link_version_specific_rdf=True,
         restore_form=form,
         user_may_grant=user_may_grant
     )

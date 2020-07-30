@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.13
+------------
+
+Currently in development.
+
+- Added Dublin Core metadata in RDF/XML format
+
 Version 0.12
 ------------
 
