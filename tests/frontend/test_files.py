@@ -4,8 +4,7 @@
 """
 
 import io
-import json
-import os
+import zipfile
 import requests
 import pytest
 from bs4 import BeautifulSoup
@@ -192,3 +191,47 @@ def test_update_file_information(flask_server, user, tmpdir):
     file = sampledb.logic.files.get_file_for_object(object.id, 0)
     assert file.title == 'Title'
     assert file.description == 'Description'
+
+
+def test_download_zip_archive(flask_server, user, tmpdir):
+    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
+
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
+    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example Object'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+
+    r = session.get(flask_server.base_url + 'objects/{}/files/'.format(object.id))
+    assert r.status_code == 200
+    assert r.headers['Content-Type'] == 'application/zip'
+    assert r.headers['Content-Disposition'] == 'attachment; filename=object_1_files.zip'
+
+    zip_bytes = io.BytesIO(r.content)
+    zip_file = zipfile.ZipFile(zip_bytes)
+    assert zip_file.namelist() == []
+
+    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+
+    r = session.get(flask_server.base_url + 'objects/{}/files/'.format(object.id))
+    assert r.status_code == 200
+    assert r.headers['Content-Type'] == 'application/zip'
+    assert r.headers['Content-Disposition'] == 'attachment; filename=object_1_files.zip'
+
+    zip_bytes = io.BytesIO(r.content)
+    zip_file = zipfile.ZipFile(zip_bytes)
+    assert zip_file.namelist() == ['example_file.txt']
+    assert zip_file.read('example_file.txt') == 'Example Content'.encode('utf-8')

@@ -104,10 +104,14 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 })
                 if file_info.storage == 'local':
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
-                    file_bytes = file_info.open(read_only=True).read()
-                    file_name = os.path.basename(file_info.original_file_name)
-                    object_infos[-1]['files'][-1]['path'] = f'objects/{object.id}/files/{file_info.id}/{file_name}'
-                    archive_files[f"sampledb_export/objects/{object.id}/files/{file_info.id}/{file_name}"] = file_bytes
+                    try:
+                        file_bytes = file_info.open(read_only=True).read()
+                    except Exception:
+                        pass
+                    else:
+                        file_name = os.path.basename(file_info.original_file_name)
+                        object_infos[-1]['files'][-1]['path'] = f'objects/{object.id}/files/{file_info.id}/{file_name}'
+                        archive_files[f"sampledb_export/objects/{object.id}/files/{file_info.id}/{file_name}"] = file_bytes
                 elif file_info.storage == 'url':
                     object_infos[-1]['files'][-1]['url'] = file_info.url
             else:
@@ -236,6 +240,6 @@ def get_tar_gz_archive(user_id: int, object_ids: typing.Optional[typing.List[int
 
 
 FILE_FORMATS = {
-    '.zip': ('.zip Archive', get_zip_archive),
-    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive)
+    '.zip': ('.zip Archive', get_zip_archive, 'application/zip'),
+    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive, 'application/gzip')
 }

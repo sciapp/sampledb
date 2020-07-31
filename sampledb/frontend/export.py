@@ -53,16 +53,20 @@ def export(user_id):
                 object.id
                 for object in readable_objects
             )))
+            file_type = 'application/pdf'
         elif file_extension in logic.export.FILE_FORMATS:
             file_bytes = logic.export.FILE_FORMATS[file_extension][1](user_id)
+            file_type = logic.export.FILE_FORMATS[file_extension][2]
         else:
             flask.flash('Please select an export format.', 'warning')
             file_bytes = None
+            file_type = None
         if file_bytes:
             return flask.Response(
                 file_bytes,
                 200,
                 headers={
+                    'Content-Type': file_type,
                     'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}'
                 }
             )
