@@ -9,6 +9,8 @@ import io
 import json
 import math
 import os
+import zipfile
+
 import flask
 import flask_login
 import itsdangerous
@@ -1153,6 +1155,32 @@ def export_data(object_id):
             }
         )
     return flask.abort(500)
+
+
+@frontend.route('/objects/<int:object_id>/files/')
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+def object_files(object_id):
+    files = logic.files.get_files_for_object(object_id)
+    zip_bytes = io.BytesIO()
+    with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+        for file in files:
+            if file.is_hidden:
+                continue
+            if file.storage == 'local':
+                try:
+                    file_bytes = file.open(read_only=True).read()
+                except Exception:
+                    pass
+                else:
+                    zip_file.writestr(os.path.basename(file.original_file_name), file_bytes)
+    return flask.Response(
+        zip_bytes.getvalue(),
+        200,
+        headers={
+            'Content-Type': 'application/zip',
+            'Content-Disposition': f'attachment; filename=object_{object_id}_files.zip'
+        }
+    )
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])

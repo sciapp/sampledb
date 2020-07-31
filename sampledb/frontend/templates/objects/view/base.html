@@ -133,6 +133,7 @@
             " style="display: none">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
             </button>
+            <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="Download files as zip archive"><i class="fa fa-download"></i></a>
           </th>
         </tr>
       </thead>
