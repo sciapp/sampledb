@@ -31,6 +31,9 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
     for object in objects:
         if object_ids is not None and object.id not in object_ids:
             continue
+
+        archive_files[f"sampledb_export/{object.id}.rdf"] = logic.rdf.generate_rdf(user_id, object.id)
+
         object_infos.append({
             'id': object.id,
             'action_id': object.action_id,

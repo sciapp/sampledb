@@ -166,6 +166,7 @@ def test_zip_export(user, app, tmpdir):
         assert set(zip_file.namelist()) == {
             'sampledb_export/README.txt',
             'sampledb_export/data.json',
+            'sampledb_export/1.rdf',
             'sampledb_export/objects/1/files/0/test.txt'
         }
         with zip_file.open('sampledb_export/data.json') as data_file:
@@ -190,6 +191,7 @@ def test_tar_gz_export(user, app, tmpdir):
         assert set(tar_file.getnames()) == {
             'sampledb_export/README.txt',
             'sampledb_export/data.json',
+            'sampledb_export/1.rdf',
             'sampledb_export/objects/1/files/0/test.txt'
         }
         with tar_file.extractfile('sampledb_export/data.json') as data_file:

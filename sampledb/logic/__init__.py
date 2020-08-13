@@ -27,6 +27,7 @@ from . import object_permissions
 from . import object_sorting
 from . import projects
 from . import publications
+from . import rdf
 from . import schemas
 from . import security_tokens
 from . import settings
@@ -67,6 +68,7 @@ __all__ = [
     'object_sorting',
     'projects',
     'publications',
+    'rdf',
     'security_tokens',
     'settings',
     'tags',

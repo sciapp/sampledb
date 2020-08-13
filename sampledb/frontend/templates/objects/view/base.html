@@ -2,6 +2,11 @@
 
 {% block title %}Object #{{ object_id }}: {{ data['name']['text'] }} — {{ service_name }}{% endblock %}
 
+{% block head %}
+  {{ super() }}
+  <link rel="meta" type="application/rdf+xml" href="{% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}" />
+{% endblock %}
+
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
