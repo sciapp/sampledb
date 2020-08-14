@@ -150,7 +150,7 @@
         <span class="help-block">Please enter a log entry text, upload a file or select an object.</span>
         {% endif %}
       </div>
-      <span class="input-group">
+      <span class="input-group" id="upload-area">
         <span class="input-group-addon"><i class="fa fa-file"></i></span>
         <input id="input-file-text" type="text" class="form-control disabled" disabled placeholder="No files selected" />
         <div class="input-group-btn">
@@ -242,8 +242,8 @@
     $(function () {
       setup_instrument_log_filter_states();
       $('[data-toggle="popover"]').popover();
-      $('#input-file-upload').on('change', function () {
-        var files = $(this).get(0).files;
+      function changeHandler() {
+        var files =  $('#input-file-upload').get(0).files;
         if (files.length === 0) {
           $('#input-file-text').val("");
         } else if (files.length === 1) {
@@ -251,7 +251,19 @@
         } else {
           $('#input-file-text').val(files.length + " files selected");
         }
-      });
+      }
+      $('#input-file-upload').on('change', changeHandler);
+      function dropHandler(e) {
+        e.preventDefault();
+        $('#input-file-upload')[0].files = e.dataTransfer.files;
+        changeHandler();
+      }
+      function dragOverHandler(e) {
+        e.preventDefault();
+      }
+      var upload_area = $('#upload-area')[0];
+      upload_area.ondrop = dropHandler;
+      upload_area.ondragover = dragOverHandler;
     });
   </script>
 {% endblock %}

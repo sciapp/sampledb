@@ -339,7 +339,7 @@
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-12">
             <form class="form" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}" enctype="multipart/form-data">
-              <div class="input-group">
+              <div class="input-group" id="upload-area">
                 <span class="input-group-addon"><i class="fa fa-file"></i></span>
                 <input id="input-file-text" type="text" class="form-control disabled" disabled />
                 <span class="input-group-btn">
@@ -975,8 +975,8 @@
         $('#button-show-object-label-modal').click(function() {
             $('#objectLabelModal').modal('show');
         });
-        $('#input-file-upload').on('change', function() {
-          var files = $(this).get(0).files;
+        function changeHandler() {
+          var files = $('#input-file-upload').get(0).files;
           if (files.length === 0) {
             $('#input-file-text').val("");
           } else if (files.length === 1) {
@@ -988,7 +988,19 @@
           }
           $('#input-file-names-hidden').val("");
           $('#input-file-source-hidden').val("local");
-        });
+        }
+        $('#input-file-upload').on('change', changeHandler);
+        function dropHandler(e) {
+          e.preventDefault();
+          $('#input-file-upload')[0].files = e.dataTransfer.files;
+          changeHandler();
+        }
+        function dragOverHandler(e) {
+          e.preventDefault();
+        }
+        var upload_area = $('#upload-area')[0];
+        upload_area.ondrop = dropHandler;
+        upload_area.ondragover = dragOverHandler;
 
       {% endif %}
 
