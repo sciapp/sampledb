@@ -704,6 +704,383 @@ Reading an instrument
     :statuscode 404: the instrument does not exist
 
 
+Instrument Log Entries
+----------------------
+
+Reading a list of all log entries for an instrument
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/
+
+    Get a list of all log entries for a specific instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "log_entry_id": 1,
+                "utc_datetime": "2020-08-19T12:13:14.123456",
+                "author": 1,
+                "content": "Example Log Entry 1",
+                "categories": []
+            },
+            {
+                "log_entry_id": 2,
+                "utc_datetime": "2020-08-19T13:14:15.123456",
+                "author": 1,
+                "content": "Example Log Entry 2",
+                "categories": [
+                    {
+                        "category_id": 1
+                        "title": "Error Report"
+                    },
+                    {
+                        "category_id": 7
+                        "title": "Maintenance Log"
+                    }
+                ]
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument does not exist
+
+
+Reading an instrument log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)
+
+    Get the specific log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "log_entry_id": 2,
+            "utc_datetime": "2020-08-19T13:14:15.123456",
+            "author": 1,
+            "content": "Example Log Entry 2",
+            "categories": [
+                {
+                    "category_id": 1
+                    "title": "Error Report"
+                },
+                {
+                    "category_id": 7
+                    "title": "Maintenance Log"
+                }
+            ]
+        }
+
+    :>json number log_entry_id: the log entry's ID
+    :>json string utc_datetime: the date and time of the log entry in UTC in ISO format
+    :>json string content: the log entry's content
+    :>json number author: the user ID of the log entry's author
+    :>json list categories: the log entry's categories
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument or the log entry do not exist
+
+
+Reading a list of all log categories for an instrument
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_categories/
+
+    Get a list of all log categories for a specific instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_categories HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "category_id": 1
+                "title": "Error Report"
+            },
+            {
+                "category_id": 7
+                "title": "Maintenance Log"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument does not exist
+
+
+Reading an instrument log category
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_categories/(int:category_id)
+
+    Get the specific log category (`category_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_categories/7 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "category_id": 7
+            "title": "Maintenance Log"
+        }
+
+    :>json number category_id: the log category's ID
+    :>json string title: the log category's title
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument or the log category do not exist
+
+
+Reading a list of all file attachments for a log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/file_attachments/
+
+    Get a list of file attachments for a specific log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2/file_attachments HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "file_attachment_id": 1,
+                "file_name": "example.txt",
+                "content": "RXhhbXBsZSBDb250ZW50"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument or the log entry do not exist
+
+
+Reading a file attachment for a log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/file_attachments/(int:file_attachment_id)
+
+    Get a specific file attachment (`file_attachment_id`) for a log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2/file_attachments/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "file_attachment_id": 1,
+            "file_name": "example.txt",
+            "content": "RXhhbXBsZSBDb250ZW50"
+        }
+
+    :>json string file_attachment_id: the file attachment's ID
+    :>json string file_name: the original file name
+    :>json string content: the base64 encoded file content
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument, the log entry or the file attachment do not exist
+
+
+Reading a list of all object attachments for a log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/object_attachments/
+
+    Get a list of object attachments for a specific log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2/object_attachments HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "object_attachment_id": 1,
+                "object_id": 1
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument or the log entry do not exist
+
+
+Reading an object attachment for a log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/object_attachments/(int:object_attachment_id)
+
+    Get a specific object attachment (`object_attachment_id`) for a log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2/object_attachments/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "object_attachment_id": 1,
+            "object_id": 1
+        }
+
+    :>json string object_attachment_id: the object attachment's ID
+    :>json string object_id: the object ID
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument, the log entry or the object attachment do not exist
+
+
+Creating an instrument log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/instruments/(int:instrument_id)/log_entries/
+
+    Create a log entry for an instrument (`instrument_id`) and optionally attach files and objects to it.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/instruments/1/log_entries/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "content": "Example Log Entry Text",
+            "category_ids": [1, 7],
+            "file_attachments": [
+                {
+                    "file_name": "example.txt",
+                    "base64_content": "RXhhbXBsZSBDb250ZW50"
+                }
+            ],
+            "object_attachments": [
+                {
+                    "object_id": 1
+                },
+                {
+                    "object_id": 2
+                }
+            ]
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/instruments/1/log_entries/1
+
+    :<json string content: the log entry's content
+    :<json list category_ids: an optional list of category IDs for the log entry
+    :<json list file_attachments: an optional list of file attachments as json objects with file_name and base64_content attributes
+    :<json list object_attachments: an optional list of object attachments as json objects with an object_id attribute
+    :statuscode 201: the log entry and optional attachments have been created successfully
+    :statuscode 400: there was an error in the given json data
+    :statuscode 403: only instrument scientists can write to the instrument log
+    :statuscode 404: the instrument does not exist
+
+
 Actions
 -------
 

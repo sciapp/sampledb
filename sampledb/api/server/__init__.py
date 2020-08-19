@@ -8,6 +8,7 @@ from .objects import Object, Objects, ObjectVersion, ObjectVersions
 from .actions import Action, Actions
 from .files import ObjectFile, ObjectFiles
 from .instruments import Instrument, Instruments
+from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
 from .locations import Location, Locations, ObjectLocationAssignment, ObjectLocationAssignments
 from .object_permissions import UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions
 from .users import CurrentUser, User, Users
@@ -21,6 +22,14 @@ api.add_resource(Actions, '/api/v1/actions/', endpoint='api.actions')
 api.add_resource(Action, '/api/v1/actions/<int:action_id>', endpoint='api.action')
 api.add_resource(Instruments, '/api/v1/instruments/', endpoint='api.instruments')
 api.add_resource(Instrument, '/api/v1/instruments/<int:instrument_id>', endpoint='api.instrument')
+api.add_resource(InstrumentLogEntries, '/api/v1/instruments/<int:instrument_id>/log_entries/', endpoint='api.instrument_log_entries')
+api.add_resource(InstrumentLogEntry, '/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>', endpoint='api.instrument_log_entry')
+api.add_resource(InstrumentLogEntryFileAttachments, '/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/file_attachments/', endpoint='api.instrument_log_entry_file_attachments')
+api.add_resource(InstrumentLogEntryFileAttachment, '/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/file_attachments/<int:file_attachment_id>', endpoint='api.instrument_log_entry_file_attachment')
+api.add_resource(InstrumentLogEntryObjectAttachments, '/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/object_attachments/', endpoint='api.instrument_log_entry_object_attachments')
+api.add_resource(InstrumentLogEntryObjectAttachment, '/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/object_attachments/<int:object_attachment_id>', endpoint='api.instrument_log_entry_object_attachment')
+api.add_resource(InstrumentLogCategories, '/api/v1/instruments/<int:instrument_id>/log_categories/', endpoint='api.instrument_log_categories')
+api.add_resource(InstrumentLogCategory, '/api/v1/instruments/<int:instrument_id>/log_categories/<int:category_id>', endpoint='api.instrument_log_category')
 api.add_resource(Locations, '/api/v1/locations/', endpoint='api.locations')
 api.add_resource(Location, '/api/v1/locations/<int:location_id>', endpoint='api.location')
 api.add_resource(ObjectFiles, '/api/v1/objects/<int:object_id>/files/', endpoint='api.object_files')

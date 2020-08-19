@@ -15,7 +15,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def user_to_json(user: users.User):
     return {
         'user_id': user.id,
-        'name': user.name
+        'name': user.name,
+        'orcid': user.orcid if user.orcid else None
     }
 
 
