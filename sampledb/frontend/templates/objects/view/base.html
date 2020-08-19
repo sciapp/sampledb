@@ -146,7 +146,16 @@
       {% for file in files %}
         {% if not file.is_hidden %}
         <tr id="file-{{ file.id }}">
-          <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
+          <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}
+            <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;" class="show-fullscreen-image-preview"/>
+            <span class="fullscreen-image-preview">
+              <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">
+                <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
+              </a>
+              <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="Fullscreen Image Preview">
+            </span>{% endif %}
+          </td>
           <td>
             {{ file.title }}
             {% if file.description %}

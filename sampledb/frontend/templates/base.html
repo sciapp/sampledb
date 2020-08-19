@@ -261,6 +261,18 @@
      } else {
        $('#input-search').attr('placeholder', 'Search...');
      }
+    $('.fullscreen-image-preview').on('click', function(e) {
+      $(this).hide();
+    });
+    $('.fullscreen-image-preview img').on('click', function(e) {
+      e.stopPropagation();
+    });
+    $('.download-fullscreen-image-preview').on('click', function(e) {
+      e.stopPropagation();
+    });
+    $('.show-fullscreen-image-preview').on('click', function(e) {
+      $(this).next('.fullscreen-image-preview').css('display', 'flex');
+    });
    });
    </script>
 

@@ -7,6 +7,7 @@ Version 0.13
 Currently in development.
 
 - Added Dublin Core metadata in RDF/XML format
+- Added fullscreen image preview of object and instrument log images
 
 Version 0.12
 ------------
