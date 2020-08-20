@@ -387,7 +387,7 @@ def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_
             file_attachment.content,
             200,
             headers={
-                'Content-Disposition': f'attachment; filename={file_attachment.file_name}'
+                'Content-Disposition': f'attachment; filename="{file_attachment.file_name}"'
             }
         )
     else:
