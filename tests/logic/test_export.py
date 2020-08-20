@@ -69,12 +69,39 @@ def set_up_state(user: User):
     files.create_local_file(object.id, user.id, "test.txt", save_content)
     files.create_url_file(object.id, user.id, "https://example.com")
 
+    instrument = sampledb.logic.instruments.create_instrument(
+        name="Example Instrument",
+        description="Example Instrument Description",
+        users_can_view_log_entries=True
+    )
+    category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
+        instrument_id=instrument.id,
+        title="Category",
+        theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.RED
+    )
+    log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+        instrument_id=instrument.id,
+        user_id=user.id,
+        content="Example Log Entry Text",
+        category_ids=[category.id]
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
+        instrument_log_entry_id=log_entry.id,
+        file_name="example.txt",
+        content=b'Example Content'
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_object_attachment(
+        instrument_log_entry_id=log_entry.id,
+        object_id=object.id
+    )
+
 
 def validate_data(data):
     # remove datetimes before comparison
     del data['objects'][0]['versions'][0]['utc_datetime']
     del data['objects'][0]['files'][0]['utc_datetime']
     del data['objects'][0]['files'][1]['utc_datetime']
+    del data['instruments'][0]['instrument_log_entries'][0]['utc_datetime']
 
     assert data == {
         'objects': [
@@ -139,7 +166,39 @@ def validate_data(data):
                 'description_as_html': None
             }
         ],
-        'instruments': [],
+        'instruments': [
+            {
+                'id': 1,
+                'name': 'Example Instrument',
+                'description': 'Example Instrument Description',
+                'description_as_html': None,
+                'instrument_scientist_ids': [],
+                'instrument_log_entries': [
+                    {
+                        'id': 1,
+                        'content': 'Example Log Entry Text',
+                        'author_id': 1,
+                        'categories': [
+                            {
+                                'id': 1,
+                                'title': 'Category'
+                            }
+                        ],
+                        'file_attachments': [
+                            {
+                                'file_name': 'example.txt',
+                                'path': 'instruments/1/log_entries/1/files/1/example.txt'
+                            }
+                        ],
+                        'object_attachments': [
+                            {
+                                'object_id': 1
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
         'users': [
             {
                 'id': 1,
@@ -168,7 +227,8 @@ def test_zip_export(user, app, tmpdir):
             'sampledb_export/README.txt',
             'sampledb_export/data.json',
             'sampledb_export/1.rdf',
-            'sampledb_export/objects/1/files/0/test.txt'
+            'sampledb_export/objects/1/files/0/test.txt',
+            'sampledb_export/instruments/1/log_entries/1/files/1/example.txt'
         }
         with zip_file.open('sampledb_export/data.json') as data_file:
             data = json.load(data_file)
@@ -176,6 +236,9 @@ def test_zip_export(user, app, tmpdir):
 
         with zip_file.open('sampledb_export/objects/1/files/0/test.txt') as text_file:
             assert text_file.read().decode('utf-8') == "This is a test file."
+
+        with zip_file.open('sampledb_export/instruments/1/log_entries/1/files/1/example.txt') as text_file:
+            assert text_file.read() == b'Example Content'
 
 
 def test_tar_gz_export(user, app, tmpdir):
@@ -193,7 +256,8 @@ def test_tar_gz_export(user, app, tmpdir):
             'sampledb_export/README.txt',
             'sampledb_export/data.json',
             'sampledb_export/1.rdf',
-            'sampledb_export/objects/1/files/0/test.txt'
+            'sampledb_export/objects/1/files/0/test.txt',
+            'sampledb_export/instruments/1/log_entries/1/files/1/example.txt'
         }
         with tar_file.extractfile('sampledb_export/data.json') as data_file:
              data = json.load(data_file)
@@ -201,3 +265,6 @@ def test_tar_gz_export(user, app, tmpdir):
 
         with tar_file.extractfile('sampledb_export/objects/1/files/0/test.txt') as text_file:
             assert text_file.read().decode('utf-8') == "This is a test file."
+
+        with tar_file.extractfile('sampledb_export/instruments/1/log_entries/1/files/1/example.txt') as text_file:
+            assert text_file.read() == b'Example Content'
