@@ -38,6 +38,15 @@
         {% endif %}
         </div>
     </div>
+    <div class="form-group {% if change_user_form.affiliation.errors %} has-error{% endif %}">
+        <label for="input-affiliation" class="col-sm-4 control-label">Affiliation</label>
+        <div class="col-sm-8">
+          <input class="form-control" type="text" id="input-affiliation" name="{{change_user_form.affiliation.name}}" value="{{ change_user_form.affiliation.data or ""}}">
+          {% if change_user_form.affiliation.errors %}
+            <span class="help-block">Please enter your affiliation or leave this field blank.</span>
+          {% endif %}
+        </div>
+    </div>
     <div class="form-group">
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">Save</button>
     </div>

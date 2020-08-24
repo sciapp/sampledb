@@ -64,7 +64,8 @@ def test_get_user(flask_server, auth, user):
     assert r.json() == {
         'user_id': user.id,
         'name': "Basic User",
-        'orcid': None
+        'orcid': None,
+        'affiliation': None
     }
 
 
@@ -74,7 +75,8 @@ def test_get_current_user(flask_server, auth, user):
     assert r.json() == {
         'user_id': user.id,
         'name': "Basic User",
-        'orcid': None
+        'orcid': None,
+        'affiliation': None
     }
 
 
@@ -85,6 +87,7 @@ def test_get_users(flask_server, auth, user):
         {
             'user_id': user.id,
             'name': "Basic User",
-            'orcid': None
+            'orcid': None,
+            'affiliation': None
         }
     ]

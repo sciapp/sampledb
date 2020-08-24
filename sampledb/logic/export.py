@@ -172,7 +172,8 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
             user_infos.append({
                 'id': user_info.id,
                 'name': user_info.name,
-                'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None
+                'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None,
+                'affiliation': user_info.affiliation if user_info.affiliation else None
             })
     infos['users'] = user_infos
 
