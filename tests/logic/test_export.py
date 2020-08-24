@@ -144,7 +144,8 @@ def validate_data(data):
             {
                 'id': 1,
                 'name': 'Basic User',
-                'orcid_id': None
+                'orcid_id': None,
+                'affiliation': None
             }
         ],
         'locations': []
