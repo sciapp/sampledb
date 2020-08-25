@@ -84,6 +84,13 @@
               <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
             {% endfor %}
               <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> Uncategorized</label><br />
+              <hr />
+              <div class='input-group date'>
+                  <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
+                  <span class='input-group-addon'>
+                      <span class='glyphicon glyphicon-calendar'></span>
+                  </span>
+              </div>
               <script>
                 setup_instrument_log_filter_states();
               </script>
@@ -93,7 +100,7 @@
           </div>
         {% endif %}
         {% for log_entry in instrument_log_entries %}
-          <div class="well instrument-log-entry {% if log_entry.categories %}instrument-log-entry-{{ log_entry.categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.categories %}{% for category in log_entry.categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" style="position: relative">
+          <div class="well instrument-log-entry {% if log_entry.categories %}instrument-log-entry-{{ log_entry.categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.categories %}{% for category in log_entry.categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.utc_datetime.strftime("%Y-%m") }}" style="position: relative">
             <div class="instrument-log-categories">
               {% for category in log_entry.categories %}
                   <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
@@ -215,10 +222,13 @@
   {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
+  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
   <script type="text/javascript">
@@ -228,24 +238,54 @@
       {% endfor %}
       'none': true
     };
+    window.filterDate = null;
     function setup_instrument_log_filter_states() {
       {% for category in instrument_log_categories %}
       $('#instrument_log_filter_{{ category.id }}').prop('checked', window.categoriesShown['{{ category.id }}']);
       {% endfor %}
       $('#instrument_log_filter_none').prop('checked', window.categoriesShown['none']);
       $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
+        $('.input-group.date').each(function() {
+          var datetimepicker = $(this).datetimepicker({
+            date: window.filterDate,
+            format: 'YYYY-MM',
+            showClear: true,
+            showClose: true,
+            maxDate: moment(new Date())
+          });
+          datetimepicker.on('dp.change', function() {
+            update_instrument_log_filter_states();
+          });
+          $('#input-instrument-log-filter-date').on('click', function() {
+            datetimepicker.data("DateTimePicker").toggle();
+          });
+        });
     }
     function update_instrument_log_filter_states() {
+      var filter_date = $('#input-instrument-log-filter-date').val();
+      if (filter_date === "") {
+        window.filterDate = null;
+      } else {
+        window.filterDate = filter_date
+      }
       $('.instrument-log-entry').hide();
       {% for category in instrument_log_categories %}
         window.categoriesShown['{{ category.id }}'] = $('#instrument_log_filter_{{ category.id }}').prop('checked');
         if (window.categoriesShown['{{ category.id }}']) {
-          $('div[data-instrument-log-category-{{ category.id }}="yes"]').show();
+          if (filter_date !== "") {
+            $('div[data-instrument-log-category-{{ category.id }}="yes"][data-instrument-log-date='+filter_date+']').show();
+          } else {
+            $('div[data-instrument-log-category-{{ category.id }}="yes"]').show();
+          }
         }
       {% endfor %}
       window.categoriesShown['none'] = $('#instrument_log_filter_none').prop('checked');
       if (window.categoriesShown['none']) {
-        $('div[data-instrument-log-category-none="yes"]').show();
+        if (filter_date !== "") {
+          $('div[data-instrument-log-category-none="yes"][data-instrument-log-date='+filter_date+']').show();
+        } else {
+          $('div[data-instrument-log-category-none="yes"]').show();
+        }
       }
       $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
     }
