@@ -167,6 +167,7 @@ class InstrumentForm(FlaskForm):
     users_can_create_log_entries = BooleanField(default=False)
     users_can_view_log_entries = BooleanField(default=False)
     categories = StringField(validators=[DataRequired()])
+    create_log_entry_default = BooleanField(default=False)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -196,7 +197,8 @@ def new_instrument():
             notes=instrument_form.notes.data,
             notes_as_html=notes_as_html,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
-            users_can_view_log_entries=instrument_form.users_can_view_log_entries.data
+            users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
+            create_log_entry_default=instrument_form.create_log_entry_default.data
         )
         flask.flash('The instrument was created successfully.', 'success')
         instrument_responsible_user_ids = [
@@ -277,6 +279,7 @@ def edit_instrument(instrument_id):
         instrument_form.notes_are_markdown.data = (instrument.notes_as_html is not None)
         instrument_form.users_can_create_log_entries.data = instrument.users_can_create_log_entries
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
+        instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
@@ -294,7 +297,8 @@ def edit_instrument(instrument_id):
             notes=instrument_form.notes.data,
             notes_as_html=notes_as_html,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
-            users_can_view_log_entries=instrument_form.users_can_view_log_entries.data
+            users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
+            create_log_entry_default=instrument_form.create_log_entry_default.data
         )
         flask.flash('The instrument was updated successfully.', 'success')
         instrument_responsible_user_ids = [

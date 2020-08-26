@@ -24,6 +24,7 @@
   ];
   window.new_category_counter = -1;
   $(function() {
+    $('[data-toggle="tooltip"]').tooltip();
     function updateCategoryJSON() {
       var category_json = JSON.stringify(window.categories);
       $('#input-categories').val(category_json);
@@ -174,6 +175,11 @@
       <div class="checkbox">
         <label for="input-users_can_view_log_entries">
           <input type="checkbox" id="input-users_can_view_log_entries" name="{{ instrument_form.users_can_view_log_entries.name }}" {% if instrument_form.users_can_view_log_entries.data %}checked="checked"{% endif %}> Users can view log entries
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-create_log_entry_default">
+          <input type="checkbox" id="input-create_log_entry_default" name="{{ instrument_form.create_log_entry_default.name }}" {% if instrument_form.create_log_entry_default.data %}checked="checked"{% endif %}> Create log entries for objects created by instrument scientists <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="This sets the default for whether or not an instrument log entry should be created or not. The user can manually toggle the checkbox during object creation to override this default."></i>
         </label>
       </div>
     </div>
