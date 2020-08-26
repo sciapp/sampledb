@@ -768,3 +768,7 @@ th:hover .search-helper {
     background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     cursor: initial;
 }
+
+#input-instrument-log-filter-date {
+    width: 7em;
+}
