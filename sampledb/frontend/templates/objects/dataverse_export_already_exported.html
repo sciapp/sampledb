@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Export Data — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>Export to Dataverse</h1>
+  <p>This object has already been exported as: <a href="{{ dataverse_url }}">{{ dataverse_url }}</a>.</p>
+  <p><a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default">Back</a></p>
+{% endblock %}

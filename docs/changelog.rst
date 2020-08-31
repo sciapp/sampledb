@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.17
+------------
+
+Currently in development.
+
+- Added Dataverse export using the EngMeta "Process Metadata" block
+
 Version 0.16
 ------------
 

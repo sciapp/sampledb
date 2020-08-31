@@ -36,6 +36,7 @@ Administrator Guide
     administrator_guide/upgrading.rst
     administrator_guide/administration_scripts.rst
     administrator_guide/jupyterhub_support.rst
+    administrator_guide/dataverse_export.rst
 
 Developer Guide
 ---------------

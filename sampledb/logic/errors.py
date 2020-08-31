@@ -224,3 +224,7 @@ class ActionTypeDoesNotExistError(Exception):
 
 class CommentDoesNotExistError(Exception):
     pass
+
+
+class DataverseNotReachableError(Exception):
+    pass

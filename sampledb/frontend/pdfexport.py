@@ -377,6 +377,8 @@ def _write_activity_log(object, canvas):
                     text += ' referenced this object in the metadata of object #{}.'.format(object_log_entry.data['object_id'])
             else:
                 text += ' referenced this object in the metadata of another object.'
+        elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE:
+            text += ' exported this object to dataverse as {}.'.format(object_log_entry.data['dataverse_url'])
         else:
             text += ' performed an unknown action.'
         _append_text(canvas, text)

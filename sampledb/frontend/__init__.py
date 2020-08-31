@@ -18,6 +18,7 @@ frontend = flask.Blueprint(
 from . import actions
 from . import action_types
 from . import authentication_forms
+from . import dataverse_export
 from . import export
 from . import favicon
 from . import index
@@ -39,6 +40,7 @@ __all__ = [
     'actions',
     'action_types',
     'authentication_forms',
+    'dataverse_export',
     'export',
     'favicon',
     'index',
