@@ -516,6 +516,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         schema = action.schema
 
     if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+        may_create_log_entry = True
+        create_log_entry_default = action.instrument.create_log_entry_default
         instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
         if 'create_instrument_log_entry' in flask.request.form:
             category_ids = []
@@ -530,6 +532,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     else:
         instrument_log_categories = None
         category_ids = None
+        create_log_entry_default = None
+        may_create_log_entry = False
 
     if previous_object is not None:
         action_id = previous_object.action_id
@@ -700,7 +704,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             measurements=measurements,
             datetime=datetime,
             tags=tags,
+            may_create_log_entry=may_create_log_entry,
             instrument_log_categories=instrument_log_categories,
+            create_log_entry_default=create_log_entry_default,
             previous_object_id=previous_object_id
         )
     else:
