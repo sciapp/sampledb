@@ -4,7 +4,7 @@ Changelog
 Version 0.13
 ------------
 
-Currently in development.
+Released on September 2nd, 2020.
 
 - Added Dublin Core metadata in RDF/XML format
 - Added fullscreen image preview of object and instrument log images
