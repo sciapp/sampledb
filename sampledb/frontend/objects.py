@@ -9,6 +9,8 @@ import io
 import json
 import math
 import os
+import zipfile
+
 import flask
 import flask_login
 import itsdangerous
@@ -514,6 +516,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         schema = action.schema
 
     if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+        may_create_log_entry = True
+        create_log_entry_default = action.instrument.create_log_entry_default
         instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
         if 'create_instrument_log_entry' in flask.request.form:
             category_ids = []
@@ -528,6 +532,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     else:
         instrument_log_categories = None
         category_ids = None
+        create_log_entry_default = None
+        may_create_log_entry = False
 
     if previous_object is not None:
         action_id = previous_object.action_id
@@ -698,7 +704,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             measurements=measurements,
             datetime=datetime,
             tags=tags,
+            may_create_log_entry=may_create_log_entry,
             instrument_log_categories=instrument_log_categories,
+            create_log_entry_default=create_log_entry_default,
             previous_object_id=previous_object_id
         )
     else:
@@ -896,6 +904,17 @@ def object(object_id):
     else:
         should_upgrade_schema = False
     return show_object_form(object, action=get_action(object.action_id), should_upgrade_schema=should_upgrade_schema)
+
+
+@frontend.route('/objects/<int:object_id>/dc.rdf')
+@frontend.route('/objects/<int:object_id>/versions/<int:version_id>/dc.rdf')
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+def object_rdf(object_id, version_id=None):
+    rdf_xml = logic.rdf.generate_rdf(flask_login.current_user.id, object_id, version_id)
+    return flask.Response(
+        rdf_xml,
+        mimetype='application/rdf+xml',
+    )
 
 
 @frontend.route('/objects/<int:object_id>/label')
@@ -1149,10 +1168,37 @@ def export_data(object_id):
             file_bytes,
             200,
             headers={
-                'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}'
+                'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}',
+                'Content-Type': 'application/pdf' if file_extension == '.pdf' else logic.export.FILE_FORMATS[file_extension][2]
             }
         )
     return flask.abort(500)
+
+
+@frontend.route('/objects/<int:object_id>/files/')
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+def object_files(object_id):
+    files = logic.files.get_files_for_object(object_id)
+    zip_bytes = io.BytesIO()
+    with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+        for file in files:
+            if file.is_hidden:
+                continue
+            if file.storage == 'local':
+                try:
+                    file_bytes = file.open(read_only=True).read()
+                except Exception:
+                    pass
+                else:
+                    zip_file.writestr(os.path.basename(file.original_file_name), file_bytes)
+    return flask.Response(
+        zip_bytes.getvalue(),
+        200,
+        headers={
+            'Content-Type': 'application/zip',
+            'Content-Disposition': f'attachment; filename=object_{object_id}_files.zip'
+        }
+    )
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
@@ -1384,6 +1430,7 @@ def object_version(object_id, version_id):
         last_edit_user=get_user(object.user_id),
         object_id=object_id,
         version_id=version_id,
+        link_version_specific_rdf=True,
         restore_form=form,
         user_may_grant=user_may_grant
     )

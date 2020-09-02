@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 0.13
+------------
+
+Released on September 2nd, 2020.
+
+- Added Dublin Core metadata in RDF/XML format
+- Added fullscreen image preview of object and instrument log images
+- Added instrument log to HTTP API
+- Allow filtering instrument log by month
+- Allow setting a publicly visible user affiliation
+
 Version 0.12
 ------------
 

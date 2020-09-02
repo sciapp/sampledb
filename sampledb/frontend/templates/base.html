@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+{% block head %}
   <meta charset="UTF-8">
   <title>{% block title %}{{ service_name }}{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +10,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   {% endblock %}
+{% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
 
@@ -259,6 +261,18 @@
      } else {
        $('#input-search').attr('placeholder', 'Search...');
      }
+    $('.fullscreen-image-preview').on('click', function(e) {
+      $(this).hide();
+    });
+    $('.fullscreen-image-preview img').on('click', function(e) {
+      e.stopPropagation();
+    });
+    $('.download-fullscreen-image-preview').on('click', function(e) {
+      e.stopPropagation();
+    });
+    $('.show-fullscreen-image-preview').on('click', function(e) {
+      $(this).next('.fullscreen-image-preview').css('display', 'flex');
+    });
    });
    </script>
 

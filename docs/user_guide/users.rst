@@ -32,7 +32,7 @@ The preferences are split into the following sections:
 User Information
 ````````````````
 
-Users can update their user name displayed on |service_name|, e.g. in the event of a marriage. They can also change their email address, which will be updated once the new address has been confirmed, and set a publicly visible ORCID iD.
+Users can update their user name displayed on |service_name|, e.g. in the event of a marriage. They can also change their email address, which will be updated once the new address has been confirmed, and set a publicly visible ORCID iD and affiliation.
 
 Authentication Methods
 ``````````````````````

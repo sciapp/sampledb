@@ -2,6 +2,11 @@
 
 {% block title %}Object #{{ object_id }}: {{ data['name']['text'] }} — {{ service_name }}{% endblock %}
 
+{% block head %}
+  {{ super() }}
+  <link rel="meta" type="application/rdf+xml" href="{% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}" />
+{% endblock %}
+
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
@@ -133,6 +138,7 @@
             " style="display: none">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
             </button>
+            <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="Download files as zip archive"><i class="fa fa-download"></i></a>
           </th>
         </tr>
       </thead>
@@ -140,7 +146,16 @@
       {% for file in files %}
         {% if not file.is_hidden %}
         <tr id="file-{{ file.id }}">
-          <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}<a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" title="{{ file.title }}"><img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;"/></a>{% endif %}</td>
+          <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}
+            <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;" class="show-fullscreen-image-preview"/>
+            <span class="fullscreen-image-preview">
+              <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">
+                <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
+              </a>
+              <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="Fullscreen Image Preview">
+            </span>{% endif %}
+          </td>
           <td>
             {{ file.title }}
             {% if file.description %}
@@ -333,7 +348,7 @@
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-12">
             <form class="form" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}" enctype="multipart/form-data">
-              <div class="input-group">
+              <div class="input-group" id="upload-area">
                 <span class="input-group-addon"><i class="fa fa-file"></i></span>
                 <input id="input-file-text" type="text" class="form-control disabled" disabled />
                 <span class="input-group-btn">
@@ -969,8 +984,8 @@
         $('#button-show-object-label-modal').click(function() {
             $('#objectLabelModal').modal('show');
         });
-        $('#input-file-upload').on('change', function() {
-          var files = $(this).get(0).files;
+        function changeHandler() {
+          var files = $('#input-file-upload').get(0).files;
           if (files.length === 0) {
             $('#input-file-text').val("");
           } else if (files.length === 1) {
@@ -982,7 +997,19 @@
           }
           $('#input-file-names-hidden').val("");
           $('#input-file-source-hidden').val("local");
-        });
+        }
+        $('#input-file-upload').on('change', changeHandler);
+        function dropHandler(e) {
+          e.preventDefault();
+          $('#input-file-upload')[0].files = e.dataTransfer.files;
+          changeHandler();
+        }
+        function dragOverHandler(e) {
+          e.preventDefault();
+        }
+        var upload_area = $('#upload-area')[0];
+        upload_area.ondrop = dropHandler;
+        upload_area.ondragover = dragOverHandler;
 
       {% endif %}
 

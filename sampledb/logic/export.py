@@ -8,6 +8,7 @@ import io
 import json
 import os
 import tarfile
+import time
 import typing
 import zipfile
 
@@ -18,8 +19,14 @@ from .. import logic
 
 def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> typing.Dict[str, bytes]:
     archive_files = {}
+    if object_ids is None:
+        relevant_instrument_ids = {
+            instrument.id
+            for instrument in logic.instruments.get_instruments()
+        }
+    else:
+        relevant_instrument_ids = set()
     relevant_action_ids = set()
-    relevant_instrument_ids = set()
     relevant_user_ids = set()
     relevant_location_ids = set()
     objects = logic.object_permissions.get_objects_with_permissions(
@@ -31,6 +38,9 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
     for object in objects:
         if object_ids is not None and object.id not in object_ids:
             continue
+
+        archive_files[f"sampledb_export/{object.id}.rdf"] = logic.rdf.generate_rdf(user_id, object.id)
+
         object_infos.append({
             'id': object.id,
             'action_id': object.action_id,
@@ -104,10 +114,14 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 })
                 if file_info.storage == 'local':
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
-                    file_bytes = file_info.open(read_only=True).read()
-                    file_name = os.path.basename(file_info.original_file_name)
-                    object_infos[-1]['files'][-1]['path'] = f'objects/{object.id}/files/{file_info.id}/{file_name}'
-                    archive_files[f"sampledb_export/objects/{object.id}/files/{file_info.id}/{file_name}"] = file_bytes
+                    try:
+                        file_bytes = file_info.open(read_only=True).read()
+                    except Exception:
+                        pass
+                    else:
+                        file_name = os.path.basename(file_info.original_file_name)
+                        object_infos[-1]['files'][-1]['path'] = f'objects/{object.id}/files/{file_info.id}/{file_name}'
+                        archive_files[f"sampledb_export/objects/{object.id}/files/{file_info.id}/{file_name}"] = file_bytes
                 elif file_info.storage == 'url':
                     object_infos[-1]['files'][-1]['url'] = file_info.url
             else:
@@ -148,15 +162,39 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
                 'instrument_log_entries': []
             })
-            if instrument_info.users_can_view_log_entries:
+            if instrument_info.users_can_view_log_entries or user_id in [user.id for user in instrument_info.responsible_users]:
                 for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
                     relevant_user_ids.add(log_entry.user_id)
                     instrument_infos[-1]['instrument_log_entries'].append({
                         'id': log_entry.id,
                         'author_id': log_entry.user_id,
                         'content': log_entry.content,
-                        'utc_datetime': log_entry.utc_datetime.isoformat()
+                        'utc_datetime': log_entry.utc_datetime.isoformat(),
+                        'file_attachments': [],
+                        'object_attachments': [],
+                        'categories': []
                     })
+                    for category in log_entry.categories:
+                        instrument_infos[-1]['instrument_log_entries'][-1]['categories'].append({
+                            'id': category.id,
+                            'title': category.title
+                        })
+                    file_attachments = logic.instrument_log_entries.get_instrument_log_file_attachments(log_entry.id)
+                    for file_attachment in file_attachments:
+                        file_name = os.path.basename(file_attachment.file_name)
+                        file_path = f'instruments/{instrument_info.id}/log_entries/{log_entry.id}/files/{file_attachment.id}/{file_name}'
+                        instrument_infos[-1]['instrument_log_entries'][-1]['file_attachments'].append({
+                            'file_name': file_attachment.file_name,
+                            'path': file_path
+                        })
+                        archive_files["sampledb_export/" + file_path] = file_attachment.content
+
+                    object_attachments = logic.instrument_log_entries.get_instrument_log_object_attachments(log_entry.id)
+                    for object_attachment in object_attachments:
+                        instrument_infos[-1]['instrument_log_entries'][-1]['object_attachments'].append({
+                            'object_id': object_attachment.object_id
+                        })
+
     infos['instruments'] = instrument_infos
 
     user_infos = []
@@ -165,7 +203,8 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
             user_infos.append({
                 'id': user_info.id,
                 'name': user_info.name,
-                'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None
+                'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None,
+                'affiliation': user_info.affiliation if user_info.affiliation else None
             })
     infos['users'] = user_infos
 
@@ -190,7 +229,7 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
             })
     infos['locations'] = location_infos
 
-    archive_files['sampledb_export/data.json'] = json.dumps(infos)
+    archive_files['sampledb_export/data.json'] = json.dumps(infos, indent=2)
 
     readme_text = f"""SampleDB Export
 ===============
@@ -230,12 +269,13 @@ def get_tar_gz_archive(user_id: int, object_ids: typing.Optional[typing.List[int
         for file_name, file_content in archive_files.items():
             tar_info = tarfile.TarInfo(file_name)
             tar_info.size = len(file_content)
-            tar_info.mode = 444
+            tar_info.mode = 0o444
+            tar_info.mtime = time.time()
             tar_file.addfile(tar_info, fileobj=io.BytesIO(file_content))
     return tar_bytes.getvalue()
 
 
 FILE_FORMATS = {
-    '.zip': ('.zip Archive', get_zip_archive),
-    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive)
+    '.zip': ('.zip Archive', get_zip_archive, 'application/zip'),
+    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive, 'application/gzip')
 }

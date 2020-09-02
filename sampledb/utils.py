@@ -42,9 +42,12 @@ def object_permissions_required(
         def wrapper(*args, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized, **kwargs):
             assert 'object_id' in kwargs
             object_id = kwargs['object_id']
+            version_id = kwargs.get('version_id')
             try:
-                logic.objects.get_object(object_id)
+                logic.objects.get_object(object_id, version_id)
             except logic.errors.ObjectDoesNotExistError:
+                return flask.abort(404)
+            except logic.errors.ObjectVersionDoesNotExistError:
                 return flask.abort(404)
             if not (logic.object_permissions.object_is_public(object_id) and required_object_permissions in Permissions.READ):
                 user_id = user_id_callable()

@@ -21,6 +21,14 @@
       &mdash;
     {% endif %}
   </dd>
+  <dt>Affiliation</dt>
+  <dd>
+    {% if user.affiliation %}
+      {{ user.affiliation }}
+    {% else %}
+      &mdash;
+    {% endif %}
+  </dd>
   <dt>Objects</dt>
   <dd><a href="{{ url_for('.objects', user=user.id) }}">View</a></dd>
 </dl>
