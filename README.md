@@ -1,5 +1,6 @@
 # SampleDB
 
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![DOI](https://zenodo.org/badge/221237572.svg)](https://zenodo.org/badge/latestdoi/221237572)
 
 SampleDB is a web-based sample and measurement metadata database.
