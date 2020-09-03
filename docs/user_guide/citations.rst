@@ -3,20 +3,21 @@
 Citation Guide
 ==============
 
-To cite iffSamples, please use:
+To cite SampleDB, please use:
 
-- Florian Rhiem et al., iffSamples, [Online; accessed <today>], 2017-2019, URL: https://iffsamples.fz-juelich.de/documentation/
+- Florian Rhiem et al., SampleDB. [Online; accessed <today>]. 2017-2020. DOI: 10.5281/zenodo.4012176. URL: https://github.com/sciapp/sampledb
 
 Here is an example BibTeX entry:
 
 .. code-block:: bibtex
 
-    @Misc{iffSamples,
+    @Misc{SampleDB,
       author = {Florian Rhiem and others},
-      title = {{iffSamples}},
+      title = {{SampleDB}},
       year = {2017--2020},
-      url = "https://iffsamples.fz-juelich.de/documentation/",
-      note = {[Online; accessed 2019-09-25]}
+      url = "https://github.com/sciapp/sampledb",
+      note = {[Online; accessed 2020-09-02]},
+      doi = {10.5281/zenodo.4012176}
     }
 
-If you wish to reference a specific sample, measurement or simulation in iffSamples, you can use its URL, e.g. ``https://iffsamples.fz-juelich.de/objects/0``. Bear in mind, however, that users need to be signed in even to view public objects.
+If you wish to reference a specific sample, measurement or simulation in an instance of SampleDB, you can use its URL, e.g. ``https://iffsamples.fz-juelich.de/objects/0``. Bear in mind, however, that users need to be signed in even to view public objects.
