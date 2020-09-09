@@ -44,6 +44,9 @@ def location(location_id):
         return flask.abort(404)
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
+        if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
+            flask.flash('Only administrators can edit locations.', 'error')
+            return flask.abort(403)
         check_current_user_is_not_readonly()
         return _show_location_form(location, None)
     locations_map, locations_tree = get_locations_tree()
@@ -66,6 +69,9 @@ def location(location_id):
 @frontend.route('/locations/new/', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_location():
+    if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
+        flask.flash('Only administrators can create locations.', 'error')
+        return flask.abort(403)
     check_current_user_is_not_readonly()
     parent_location = None
     parent_location_id = flask.request.args.get('parent_location_id', None)

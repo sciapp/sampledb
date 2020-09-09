@@ -362,12 +362,16 @@ JUPYTERHUB_NAME = 'JupyterHub'
 JUPYTERHUB_URL = None
 JUPYTERHUB_TEMPLATES_URL = None
 
+# PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
 
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment
 WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
+
+# other settings
+ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
