@@ -302,6 +302,7 @@
           $('#input-file-text').val(files.length + " files selected");
         }
       }
+      {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
       $('#input-file-upload').on('change', changeHandler);
       function dropHandler(e) {
         e.preventDefault();
@@ -314,6 +315,7 @@
       var upload_area = $('#upload-area')[0];
       upload_area.ondrop = dropHandler;
       upload_area.ondragover = dragOverHandler;
+      {% endif %}
     });
   </script>
 {% endblock %}
