@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.13.1
+--------------
+
+Released on September 9th, 2020.
+
+- Fixed a user interface issue
+
 Version 0.13
 ------------
 
