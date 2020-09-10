@@ -1115,6 +1115,7 @@ Reading a list of all actions
                 "type": "sample",
                 "name": "Example Sample Creation",
                 "description": "This is an example action",
+                "is_hidden": false,
                 "schema": {
                     "title": "Example Sample",
                     "type": "object",
@@ -1133,6 +1134,7 @@ Reading a list of all actions
                 "type": "measurement",
                 "name": "Example Measurement",
                 "description": "This is an example action",
+                "is_hidden": false,
                 "schema": {
                     "title": "Example Measurement",
                     "type": "object",
@@ -1179,6 +1181,7 @@ Reading an action
             "type": "sample",
             "name": "Example Sample Creation",
             "description": "This is an example action",
+            "is_hidden": false,
             "schema": {
                 "title": "Example Sample",
                 "type": "object",
@@ -1197,6 +1200,7 @@ Reading an action
     :>json string type: the action's type ("sample", "measurement" or "simulation")
     :>json string name: the actions's name
     :>json string description: the actions's description
+    :>json bool is_hidden: whether or not the action is hidden
     :>json object schema: the actions's schema
     :statuscode 200: no error
     :statuscode 404: the action does not exist

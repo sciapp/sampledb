@@ -9,6 +9,7 @@ Currently in development.
 - Allow restricting location management to administrators
 - Do not show hidden users as instrument scientists
 - Added setting for admin permissions
+- Allow hiding actions
 
 Version 0.13.1
 --------------

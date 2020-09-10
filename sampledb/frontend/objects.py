@@ -800,7 +800,7 @@ def object(object_id):
         favorite_measurement_actions = [
             action
             for action in measurement_actions
-            if action.id in favorite_action_ids
+            if action.id in favorite_action_ids and not action.is_hidden
         ]
         # Sort by: instrument name (independent actions first), action name
         favorite_measurement_actions.sort(key=lambda action: (

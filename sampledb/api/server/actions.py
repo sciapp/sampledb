@@ -25,6 +25,7 @@ def action_to_json(action):
         }.get(action.type, 'unknown'),
         'name': action.name,
         'description': action.description,
+        'is_hidden': action.is_hidden,
         'schema': action.schema
     }
 
