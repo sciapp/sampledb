@@ -388,6 +388,10 @@ def change_preferences(user, user_id):
             except ValueError:
                 pass
 
+        if flask_login.current_user.is_admin:
+            use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
+            modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
+
         set_user_settings(flask_login.current_user.id, modified_settings)
         flask.flash("Successfully updated your settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
