@@ -19,7 +19,11 @@ from .utils import check_current_user_is_not_readonly
 def project(project_id):
     if 'token' in flask.request.args:
         token = flask.request.args.get('token')
-        token_data = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'])
+        expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+        token_data = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
+        if token_data is None:
+            flask.flash('Invalid project invitation token. Please request a new invitation.', 'error')
+            return flask.abort(403)
         if token_data.get('project_id', None) != project_id:
             return flask.abort(403)
         user_id = token_data.get('user_id', None)

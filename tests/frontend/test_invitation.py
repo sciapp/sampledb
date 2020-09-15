@@ -114,7 +114,7 @@ def test_registration_without_token_not_available(flask_server):
     assert r.status_code == 403
 
 
-def test_registration_with_wrong_token_404(flask_server):
+def test_registration_with_wrong_token_403(flask_server):
     session = requests.session()
     token = generate_token('invalid', salt='invitation',
                            secret_key=flask_server.app.config['SECRET_KEY'])
@@ -122,7 +122,7 @@ def test_registration_with_wrong_token_404(flask_server):
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
     url = flask_server.base_url + 'users/invitation'
     r = session.get(url, params=data)
-    assert r.status_code == 404
+    assert r.status_code == 403
 
 
 def test_registration_with_token_available(flask_server):

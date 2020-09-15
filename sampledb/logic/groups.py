@@ -23,7 +23,7 @@ import flask
 from .. import db
 from ..models import groups
 from .users import get_user
-from .security_tokens import generate_token, MAX_AGE
+from .security_tokens import generate_token
 from .notifications import create_notification_for_being_invited_to_a_group
 from . import errors
 
@@ -216,7 +216,8 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
         salt='invite_to_group',
         secret_key=flask.current_app.config['SECRET_KEY']
     )
-    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=MAX_AGE)
+    expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.group", group_id=group_id, token=token, _external=True)
     create_notification_for_being_invited_to_a_group(user_id, group_id, inviter_id, confirmation_url, expiration_utc_datetime)
 

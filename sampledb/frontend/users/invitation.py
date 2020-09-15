@@ -54,9 +54,11 @@ def invitation():
 
 def registration():
     token = flask.request.args.get('token')
-    email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
+    expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+    email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
     if email is None or '@' not in email:
-        return flask.abort(404)
+        flask.flash('Invalid invitation token. Please request a new invitation.', 'error')
+        return flask.abort(403)
     registration_form = RegistrationForm()
     if registration_form.email.data is None or registration_form.email.data == "":
         registration_form.email.data = email
