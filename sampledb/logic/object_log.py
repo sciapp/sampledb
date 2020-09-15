@@ -153,13 +153,20 @@ def assign_location(user_id: int, object_id: int, object_location_assignment_id:
     )
 
 
-def link_publication(user_id: int, object_id: int, doi: str, title: typing.Optional[str] = None):
+def link_publication(
+        user_id: int,
+        object_id: int,
+        doi: str,
+        title: typing.Optional[str] = None,
+        object_name: typing.Optional[str] = None
+):
     _store_new_log_entry(
         type=ObjectLogEntryType.LINK_PUBLICATION,
         object_id=object_id,
         user_id=user_id,
         data={
             'doi': doi,
-            'title': title
+            'title': title,
+            'object_name': object_name
         }
     )

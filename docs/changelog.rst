@@ -10,10 +10,11 @@ Currently in development.
 - Do not show hidden users as instrument scientists
 - Added setting for admin permissions
 - Allow hiding actions
-- Improved user interface
+- Added object name to properties of publications linked to an object
 - Made invitation time limit configurable
 - Show pending group and project invitations to members
 - Show all group and project invitations to administrators
+- Improved user interface
 
 Version 0.13.1
 --------------

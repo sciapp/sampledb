@@ -550,6 +550,7 @@
     </div>
   {% endif %}
 
+  {% if not is_archived %}
   <h4 id="locations">Location</h4>
   {% if object_location_assignments %}
     <table class="table">
@@ -614,7 +615,9 @@
       </div>
     </form>
   {% endif %}
+  {% endif %}
 
+  {% if not is_archived %}
   <h4 id="publications">Publications</h4>
   {% if object_publications %}
     <table class="table">
@@ -622,6 +625,7 @@
     <tr>
       <th scope="col" style="white-space: nowrap;width: 1%;">DOI</th>
       <th scope="col">Title</th>
+      <th scope="col">Object Name</th>
       <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;"></th>
     </tr>
     </thead>
@@ -630,6 +634,7 @@
       <tr>
         <td><a href="http://doi.org/{{ object_publication.doi | urlencode }}">{{ object_publication.doi }}</a></td>
         <td>{% if object_publication.title is none %}&mdash;{% else %}{{ object_publication.title }}{% endif %}</td>
+        <td>{% if object_publication.object_name is none %}&mdash;{% else %}{{ object_publication.object_name }}{% endif %}</td>
         <td><a href="{{ url_for('.objects', doi=object_publication.doi) }}">View&nbsp;Objects</a></td>
       </tr>
     {% endfor %}
@@ -639,20 +644,33 @@
     <p>This object has not been linked to a publication yet.</p>
   {% endif %}
   {% if user_may_link_publication %}
+    {% for message in get_flashed_messages() %}
+    {% if 'Please enter a valid DOI' in message %}
+      {{ publication_form.errors.__setitem__(publication_form.doi.name, 'Please enter a valid DOI.') or '' }}
+    {% endif %}
+    {% endfor %}
     <form class="form" method="post" action="{{ url_for('frontend.post_object_publication', object_id=object_id) }}" id="assign-publication-form">
       {{ publication_form.csrf_token }}
-      <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}">
+      <div class="form-group {% if publication_form.doi.name in publication_form.errors %}has-error{% endif %}">
         <label for="input-location" class="control-label">DOI</label>
         <input type="text" class="form-control" placeholder="DOI" style="margin-bottom: 10px;" name="{{ publication_form.doi.name }}" value="{% if publication_form.doi.data %}{{ publication_form.doi.data }}{% endif %}"/>
+        {% if publication_form.doi.name in publication_form.errors %}
+          <span class="help-block">{{ publication_form.errors[publication_form.doi.name] }}</span>
+        {% endif %}
       </div>
-      <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}">
+      <div class="form-group {% if publication_form.title.name in publication_form.errors %}has-error{% endif %}">
         <label for="input-location" class="control-label">Title</label>
         <input type="text" class="form-control" placeholder="Title" style="margin-bottom: 10px;" name="{{ publication_form.title.name }}" value="{% if publication_form.title.data %}{{ publication_form.title.data }}{% endif %}"/>
+      </div>
+      <div class="form-group {% if publication_form.object_name.name in publication_form.errors %}has-error{% endif %}">
+        <label for="input-location" class="control-label">Object Name</label>
+        <input type="text" class="form-control" placeholder="Object Name" style="margin-bottom: 10px;" name="{{ publication_form.object_name.name }}" value="{% if publication_form.object_name.data %}{{ publication_form.object_name.data }}{% endif %}"/>
       </div>
       <div class="text-right">
         <button type="submit" class="btn btn-primary" style="width:11em; margin-bottom: 20px;"><i class="fa fa-book fa-fw"></i> Link Publication</button>
       </div>
     </form>
+  {% endif %}
   {% endif %}
 
   {% if not is_archived %}
@@ -680,6 +698,7 @@
     {% endif %}
   {% endif %}
 
+  {% if not is_archived %}
   {% if object_log_entries %}
     <h4>Activity Log</h4>
     <table class="table" id="activity_log">
@@ -795,7 +814,9 @@
       </tbody>
     </table>
   {% endif %}
+  {% endif %}
 
+  {% if not is_archived %}
   {% if related_objects_tree %}
     <h4>Related Objects</h4>
 
@@ -845,6 +866,7 @@
         </div>
       </div>
     </div>
+  {% endif %}
   {% endif %}
 {% endblock %}
 

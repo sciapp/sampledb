@@ -96,6 +96,7 @@ class ObjectLocationAssignmentForm(FlaskForm):
 class ObjectPublicationForm(FlaskForm):
     doi = StringField()
     title = StringField()
+    object_name = StringField()
 
     def validate_doi(form, field):
         try:
