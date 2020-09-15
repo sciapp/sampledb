@@ -1,0 +1,7 @@
+{% if data is not none and "user_id" in data %}
+{% with referenced_user = get_user(data.user_id) %}
+<a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.name }} (#{{ referenced_user.id }})</a>
+{% endwith %}
+{% else %}
+&mdash;
+{% endif %}

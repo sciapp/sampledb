@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.15
+------------
+
+Currently in development.
+
+- Added user to metadata types
+
 Version 0.14
 ------------
 

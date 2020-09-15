@@ -64,6 +64,9 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 }
             )
 
+            for referenced_user_id, _ in logic.objects.find_user_references(object_version, False):
+                relevant_user_ids.add(referenced_user_id)
+
         for comment in logic.comments.get_comments_for_object(object.id):
             relevant_user_ids.add(comment.user_id)
             object_infos[-1]['comments'].append({

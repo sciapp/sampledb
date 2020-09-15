@@ -707,6 +707,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     )
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
+    users = get_users(exclude_hidden=True)
     if object is None:
         return flask.render_template(
             'objects/forms/form_create.html',
@@ -724,6 +725,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             existing_objects=existing_objects,
             datetime=datetime,
             tags=tags,
+            users=users,
             may_create_log_entry=may_create_log_entry,
             instrument_log_categories=instrument_log_categories,
             create_log_entry_default=create_log_entry_default,
@@ -745,6 +747,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             measurements=measurements,
             datetime=datetime,
             tags=tags,
+            users=users,
             mode=mode
         )
 
@@ -1460,6 +1463,7 @@ def object_version(object_id, version_id):
         version_id=version_id,
         link_version_specific_rdf=True,
         restore_form=form,
+        get_user=get_user,
         user_may_grant=user_may_grant
     )
 

@@ -7,8 +7,8 @@ import re
 import datetime
 import typing
 
-from ...logic import actions, objects, datatypes
-from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError
+from ...logic import actions, objects, datatypes, users
+from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
 from .utils import units_are_valid
 
 
@@ -47,6 +47,8 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Opti
         return _validate_tags(instance, schema, path)
     elif schema['type'] == 'hazards':
         return _validate_hazards(instance, schema, path)
+    elif schema['type'] == 'user':
+        return _validate_user(instance, schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -398,3 +400,33 @@ def _validate_measurement(instance: dict, schema: dict, path: typing.List[str]) 
     action = actions.get_action(measurement.action_id)
     if action.type != actions.ActionType.MEASUREMENT:
         raise ValidationError('object must be measurement', path)
+
+
+def _validate_user(instance: dict, schema: dict, path: typing.List[str]) -> None:
+    """
+    Validates the given instance using the given user object schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    valid_keys = {'_type', 'user_id'}
+    required_keys = valid_keys
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if instance['_type'] != 'user':
+        raise ValidationError('expected _type "user"', path)
+    if not isinstance(instance['user_id'], int):
+        raise ValidationError('user_id must be int', path)
+    try:
+        users.get_user(user_id=instance['user_id'])
+    except UserDoesNotExistError:
+        raise ValidationError('user does not exist', path)

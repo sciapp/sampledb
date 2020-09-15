@@ -1372,3 +1372,83 @@ def test_validate_hazards_duplicate_hazards():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_user():
+    from sampledb.models.users import User, UserType
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+
+    schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+
+    instance = {
+        '_type': 'user',
+        'user_id': user.id
+    }
+    validate(instance, schema)
+
+
+def test_validate_user_unexpected_keys():
+    from sampledb.models.users import User, UserType
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+
+    schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    instance = {
+        '_type': 'user',
+        'user_id': user.id,
+        'user_role': 'example'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_user_missing_keys():
+    schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    instance = {
+        '_type': 'user'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_user_wrong_type():
+    from sampledb.models.users import User, UserType
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+
+    schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    instance = {
+        '_type': 'user_id',
+        'user_id': user.id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_user_invalid_user_id():
+    schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    instance = {
+        '_type': 'user',
+        'user_id': 42
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)

@@ -308,6 +308,8 @@ $(function() {
       return null;
     } else if (schema['type'] === 'hazards') {
       return null;
+    } else if (schema['type'] === 'user') {
+      type = "user";
     } else {
       window.schema_editor_missing_type_support = true;
       return null;
@@ -332,6 +334,8 @@ $(function() {
         updateBoolProperty(path, real_path);
       } else if (type === "sample") {
         updateSampleProperty(path, real_path);
+      } else if (type === "user") {
+        updateUserProperty(path, real_path);
       } else if (type === "measurement") {
         updateMeasurementProperty(path, real_path);
       } else if (type === "quantity") {
@@ -857,6 +861,24 @@ $(function() {
       var schema = JSON.parse(input_schema.text());
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "measurement";
+
+      schema['properties'][real_path[real_path.length-1]] = property_schema;
+
+      input_schema.text(JSON.stringify(schema, null, 4));
+
+      window.schema_editor_errors[path.join('__') + '__specific'] = true;
+      if (!has_error) {
+        delete window.schema_editor_errors[path.join('__') + '__specific'];
+      }
+      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+    }
+
+    function updateUserProperty(path, real_path) {
+      var has_error = false;
+      updateGenericProperty(path, real_path);
+      var schema = JSON.parse(input_schema.text());
+      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      property_schema["type"] = "user";
 
       schema['properties'][real_path[real_path.length-1]] = property_schema;
 

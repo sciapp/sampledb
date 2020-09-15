@@ -1,0 +1,25 @@
+<div class="form-group{% if id_prefix+'_uid' in errors %} has-error{% elif id_prefix+'_uid' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
+  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <div class="col-md-9">
+  <select class="form-control selectpicker" name="{{ id_prefix }}_uid" data-live-search="true">
+      <option value="">&mdash;</option>
+  {% for user in users %}
+    {% if id_prefix+'_uid' in form_data %}
+      {% if form_data[id_prefix+'_uid'] == user.id | string %}
+      <option value="{{ user.id }}" selected="selected">{{ user.name }} (#{{ user.id }})</option>
+      {% else %}
+      <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+      {% endif %}
+    {% else %}
+      {% if data is not none and "user_id" in data and data.user_id == user.id %}
+      <option value="{{ user.id }}" selected="selected">{{ user.name }} (#{{ user.id }})</option>
+      {% else %}
+      <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  </select>
+    {% if id_prefix+'_uid' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_uid'] }}</span>{% endif %}
+    {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
+  </div>
+</div>
