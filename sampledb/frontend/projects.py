@@ -134,6 +134,15 @@ def project(project_id):
         remove_project_member_form = RemoveProjectMemberForm()
         remove_project_group_form = RemoveProjectGroupForm()
 
+    project_invitations = None
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    if Permissions.GRANT in user_permissions or flask_login.current_user.is_admin:
+        project_invitations = logic.projects.get_project_invitations(
+            project_id=project_id,
+            include_accepted_invitations=show_invitation_log,
+            include_expired_invitations=show_invitation_log
+        )
+
     if 'leave' in flask.request.form and Permissions.READ in user_permissions:
         if leave_project_form.validate_on_submit():
             try:
@@ -307,6 +316,8 @@ def project(project_id):
         project_member_group_ids=project_member_group_ids,
         project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
+        project_invitations=project_invitations,
+        show_invitation_log=show_invitation_log,
         leave_project_form=leave_project_form,
         delete_project_form=delete_project_form,
         remove_project_member_form=remove_project_member_form,

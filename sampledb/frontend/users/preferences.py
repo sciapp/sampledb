@@ -391,6 +391,8 @@ def change_preferences(user, user_id):
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
+            show_invitation_log = flask.request.form.get('input-show-invitation-log', 'yes') != 'no'
+            modified_settings['SHOW_INVITATION_LOG'] = show_invitation_log
 
         set_user_settings(flask_login.current_user.id, modified_settings)
         flask.flash("Successfully updated your settings.", 'success')

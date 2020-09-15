@@ -46,6 +46,32 @@ class Group(collections.namedtuple('Group', ['id', 'name', 'description'])):
         return Group(id=group.id, name=group.name, description=group.description)
 
 
+class GroupInvitation(collections.namedtuple('GroupInvitation', ['id', 'group_id', 'user_id', 'inviter_id', 'utc_datetime', 'accepted'])):
+    """
+    This class provides an immutable wrapper around models.groups.GroupInvitation.
+    """
+
+    def __new__(cls, id: int, group_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
+        self = super(GroupInvitation, cls).__new__(cls, id, group_id, user_id, inviter_id, utc_datetime, accepted)
+        return self
+
+    @classmethod
+    def from_database(cls, group_invitation: groups.GroupInvitation) -> 'GroupInvitation':
+        return GroupInvitation(
+            id=group_invitation.id,
+            group_id=group_invitation.group_id,
+            user_id=group_invitation.user_id,
+            inviter_id=group_invitation.inviter_id,
+            utc_datetime=group_invitation.utc_datetime,
+            accepted=group_invitation.accepted
+        )
+
+    @property
+    def expired(self):
+        expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
+        return datetime.datetime.utcnow() >= expiration_datetime
+
+
 def create_group(name: str, description: str, initial_user_id: int) -> Group:
     """
     Creates a new group with the given name and description and adds an
@@ -208,6 +234,14 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
     if user in group.members:
         raise errors.UserAlreadyMemberOfGroupError()
 
+    invitation = groups.GroupInvitation(
+        group_id=group_id,
+        user_id=user_id,
+        inviter_id=inviter_id,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    db.session.add(invitation)
+    db.session.commit()
     token = generate_token(
         {
             'user_id': user.id,
@@ -242,6 +276,16 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
     if user in group.members:
         raise errors.UserAlreadyMemberOfGroupError()
     group.members.append(user)
+    invitations = get_group_invitations(
+        group_id=group_id,
+        user_id=user_id,
+        include_expired_invitations=False,
+        include_accepted_invitations=False
+    )
+    for invitation in invitations:
+        invitation = groups.GroupInvitation.query.filter_by(id=invitation.id).first()
+        invitation.accepted = True
+        db.session.add(invitation)
     db.session.commit()
 
 
@@ -272,3 +316,41 @@ def remove_user_from_group(group_id: int, user_id: int) -> None:
     if not group.members:
         db.session.delete(group)
     db.session.commit()
+
+
+def get_group_invitations(
+        group_id: int,
+        user_id: typing.Optional[int] = None,
+        include_accepted_invitations: bool = True,
+        include_expired_invitations: bool = True
+) -> typing.List[GroupInvitation]:
+    """
+    Get all (current) invitations for a user to join a group.
+
+    :param group_id: the ID of an existing group
+    :param user_id: the ID of an existing user or None
+    :param include_accepted_invitations: whether or not to include invitations
+        that have already been accepted by the user
+    :param include_expired_invitations: whether or not to include invitations
+        that have already expired
+    :return: the list of group invitations
+    :raise errors.GroupDoesNotExistError: when no group with the given
+        group ID exists
+    """
+    group_invitations_query = groups.GroupInvitation.query.filter_by(group_id=group_id)
+    if user_id is not None:
+        group_invitations_query = group_invitations_query.filter_by(user_id=user_id)
+    if not include_accepted_invitations:
+        group_invitations_query = group_invitations_query.filter_by(accepted=False)
+    if not include_expired_invitations:
+        expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+        expired_invitation_datetime = datetime.datetime.utcnow() - datetime.timedelta(seconds=expiration_time_limit)
+        group_invitations_query = group_invitations_query.filter(groups.GroupInvitation.utc_datetime > expired_invitation_datetime)
+    group_invitations = group_invitations_query.order_by(groups.GroupInvitation.utc_datetime).all()
+    if not group_invitations:
+        # ensure that a group with this ID exists
+        get_group(group_id)
+    return [
+        GroupInvitation.from_database(group_invitation)
+        for group_invitation in group_invitations
+    ]
