@@ -1,0 +1,9 @@
+{% extends "mails/base.html" %}
+
+{% block subject %}{{ service_name }} Invitation{% endblock %}
+
+{% block content %}
+<p>Hello,</p>
+<p>you have been invited to create an {{ service_name }} account. To create an account, please click the button below:</p>
+<p style="text-align: center"><a href="{{ confirm_url | safe }}" style="display: inline-block; padding: 6px 12px; margin-bottom: 0; font-size: 14px; font-weight: 400; line-height: 1.42857143; text-align: center; white-space: nowrap; vertical-align: middle; -ms-touch-action: manipulation; touch-action: manipulation; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; background-image: none; border: 1px solid #122b40; border-radius: 4px; text-decoration: none; color: #f8f8f8; background-color: #023d6b;">Create Account</a></p>
+{% endblock %}

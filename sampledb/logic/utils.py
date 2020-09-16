@@ -12,16 +12,47 @@ from .security_tokens import generate_token
 from ..models import Authentication, AuthenticationType, User
 
 
-def send_confirm_email(email, id, salt):
-    if id is None:
-        route = "frontend.%s_route" % salt
-        token = generate_token(email, salt=salt,
-                               secret_key=flask.current_app.config['SECRET_KEY'])
-        confirm_url = flask.url_for(route, token=token, _external=True)
-    else:
-        token = generate_token([email, id], salt=salt,
-                               secret_key=flask.current_app.config['SECRET_KEY'])
-        confirm_url = flask.url_for("frontend.user_preferences", user_id=id, token=token, _external=True)
+def send_user_invitation_email(email, invitation_id):
+    token_data = {
+        'email': email,
+        'invitation_id': invitation_id
+    }
+    token = generate_token(
+        token_data,
+        salt='invitation',
+        secret_key=flask.current_app.config['SECRET_KEY']
+    )
+    confirm_url = flask.url_for('frontend.invitation_route', token=token, _external=True)
+
+    service_name = flask.current_app.config['SERVICE_NAME']
+    subject = service_name + " Invitation"
+    html = flask.render_template('mails/user_invitation.html', confirm_url=confirm_url)
+    text = flask.render_template('mails/user_invitation.txt', confirm_url=confirm_url)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
+    try:
+        mail.send(flask_mail.Message(
+            subject,
+            sender=flask.current_app.config['MAIL_SENDER'],
+            recipients=[email],
+            body=text,
+            html=html
+        ))
+    except smtplib.SMTPRecipientsRefused:
+        pass
+
+
+def send_email_confirmation_email(email, user_id, salt):
+    token_data = {
+        'email': email,
+        'user_id': user_id
+    }
+    token = generate_token(
+        token_data,
+        salt=salt,
+        secret_key=flask.current_app.config['SECRET_KEY']
+    )
+    confirm_url = flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True)
 
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Email Confirmation"

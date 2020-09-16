@@ -1,0 +1,8 @@
+{% extends "mails/base.txt" %}
+
+{% block content %}
+Hello,
+
+you have been invited to create an {{ service_name }} account. To create an account, please visit the following URL in your browser:
+{{ confirm_url | safe }}
+{% endblock %}

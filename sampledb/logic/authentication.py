@@ -61,7 +61,11 @@ def add_email_authentication(user_id: int, email: str, password: str, confirmed:
         raise errors.AuthenticationMethodWrong('Login must be a valid email address')
     _add_password_authentication(user_id, email, password, AuthenticationType.EMAIL, confirmed)
     if not confirmed:
-        logic.utils.send_confirm_email(email, user_id, 'add_login')
+        logic.utils.send_email_confirmation_email(
+            email=email,
+            user_id=user_id,
+            salt='add_login'
+        )
 
 
 def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirmed: bool = True) -> None:

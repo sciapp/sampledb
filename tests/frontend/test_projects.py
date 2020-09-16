@@ -576,7 +576,6 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
     app.config['SERVER_NAME'] = server_name
     invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
     r = user_session.get(invitation_url)
-    print(invitation_url)
     assert r.status_code == 200
     assert user_session.user_id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id)
     assert user_session.user_id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=parent_project_id)

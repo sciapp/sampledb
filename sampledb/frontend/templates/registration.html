@@ -1,11 +1,11 @@
 <!-- extend from base layout -->
 {% extends "base.html" %}
 
-{% block title %}Registration — {{ service_name }}{% endblock %}
+{% block title %}Account Creation — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1 class="text-center">Registration Form</h1>
-  <h4 class="text-center">Please fill the Form</h4>
+  <h1 class="text-center">Account Creation</h1>
+  <p class="text-center text-muted">Please enter the necessary information in the form below.</p>
   <form class="form-horizontal" method="post" id="form-register">
     {{ registration_form.csrf_token() }}
     <div class="form-group{% if registration_form.email.errors or has_error %} has-error{% endif %}">
@@ -43,7 +43,7 @@
     </div>
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-8">
-        <button type="submit" class="btn btn-primary">Send Registration</button>
+        <button type="submit" class="btn btn-primary">Create Account</button>
       </div>
     </div>
   </form>

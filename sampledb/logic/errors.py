@@ -204,3 +204,15 @@ class InstrumentLogObjectAttachmentDoesNotExistError(Exception):
 
 class InstrumentLogCategoryDoesNotExistError(Exception):
     pass
+
+
+class GroupInvitationDoesNotExistError(Exception):
+    pass
+
+
+class ProjectInvitationDoesNotExistError(Exception):
+    pass
+
+
+class UserInvitationDoesNotExistError(Exception):
+    pass

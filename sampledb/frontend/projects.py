@@ -24,6 +24,10 @@ def project(project_id):
         if token_data is None:
             flask.flash('Invalid project invitation token. Please request a new invitation.', 'error')
             return flask.abort(403)
+        if 'invitation_id' in token_data:
+            if logic.projects.get_project_invitation(token_data['invitation_id']).accepted:
+                flask.flash('This invitation token has already been used. Please request a new invitation.', 'error')
+                return flask.abort(403)
         if token_data.get('project_id', None) != project_id:
             return flask.abort(403)
         user_id = token_data.get('user_id', None)

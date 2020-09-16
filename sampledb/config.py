@@ -382,7 +382,7 @@ PDFEXPORT_LOGO_ALIGNMENT = 'right'
 WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
 
 # invitation link time limit
-INVITATION_TIME_LIMIT = 48 * 60 * 60
+INVITATION_TIME_LIMIT = 7 * 24 * 60 * 60
 
 # other settings
 ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
