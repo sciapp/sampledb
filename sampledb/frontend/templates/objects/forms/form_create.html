@@ -17,12 +17,31 @@
     {% endif %}
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
+    {% if can_copy_permissions and existing_objects %}
+    <div class="form-group clearfix" style="padding:0 0.75em">
+      <div class="col-md-9 col-md-offset-3">
+        <div class="input-group pull-right">
+          <span class="input-group-addon" style="width:20em; height: 34px; display: inline-block">
+            <label style="font-weight: 400">
+              <input type="checkbox" name="copy_permissions_from_other_object" {% if 'copy_permissions_from_other_object' in request.form or ('previous_object_id' in request.args and has_grant_for_previous_object and not 'action_submit' in request.form) %}checked="checked"{% endif %}>
+              Copy Permissions from other Objects
+            </label>
+          </span>
+          <select class="selectpicker" data-width="280px" name="copy_permissions_object_id" data-live-search="true">
+            {% for object in existing_objects %}
+            <option value="{{ object.id }}" {% if object.id | string == request.form.get('copy_permissions_object_id') or (object.id | string == request.args.get('previous_object_id') and has_grant_for_previous_object and not 'action_submit' in request.form) %}selected="selected"{% endif %}>{{ object.data['name']['text'] }} (#{{ object.id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    {% endif %}
     {% if may_create_log_entry%}
     <div class="form-group clearfix" style="padding:0 0.75em">
       <div class="col-md-9 col-md-offset-3">
         <div class="input-group pull-right">
         {% if instrument_log_categories %}
-          <span class="input-group-addon" style="width:20em">
+          <span class="input-group-addon" style="width:20em; height: 34px; display: inline-block">
             <label style="font-weight: 400">
               <input type="checkbox" name="create_instrument_log_entry" {% if 'create_instrument_log_entry' in request.form or (create_log_entry_default and not 'action_submit' in request.form) %}checked="checked"{% endif %}>
               Create Instrument Log Entry
