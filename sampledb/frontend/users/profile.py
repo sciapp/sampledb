@@ -37,7 +37,7 @@ def user_profile(user_id):
         user = users.get_user(user_id)
     except errors.UserDoesNotExistError:
         return flask.abort(404)
-    if flask_login.current_user.is_admin:
+    if flask_login.current_user.is_admin and not flask_login.current_user.is_readonly:
         user_read_only_form = UserReadOnlyForm()
         user_read_only_form.should_be_read_only.default = not user.is_readonly
         if user_read_only_form.validate_on_submit():

@@ -31,6 +31,15 @@ def get_users(exclude_hidden: bool = False) -> typing.List[User]:
     return User.query.all()
 
 
+def get_administrators() -> typing.List[User]:
+    """
+    Returns all current administrators.
+
+    :return: the list of administrators
+    """
+    return User.query.filter_by(is_admin=True).all()
+
+
 def get_users_by_name(name: str) -> typing.List[User]:
     """
     Return all users with a given name.

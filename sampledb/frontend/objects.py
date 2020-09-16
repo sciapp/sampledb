@@ -1461,7 +1461,7 @@ def object_permissions(object_id):
     object = get_object(object_id)
     action = get_action(object.action_id)
     instrument = action.instrument
-    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False)
+    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False, include_admin_permissions=False)
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
@@ -1566,7 +1566,7 @@ def update_object_permissions(object_id):
     elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
         user_id = add_user_permissions_form.user_id.data
         permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-        object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False)
+        object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_admin_permissions=False)
         assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
         assert user_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
