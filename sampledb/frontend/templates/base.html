@@ -200,6 +200,13 @@
   <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
    <script>
    $(function() {
+     $(".navbar-nav > .dropdown").hover(function(){
+        var dropdown_menu = $(this).children(".dropdown-menu");
+        if(dropdown_menu.is(":visible")){
+            dropdown_menu.parent().toggleClass("open");
+        }
+    });
+
      $('#button-search-all').on('click', function() {
        $('#input-search-action-type').attr('name', 't_');
        $('#input-search-action-id').attr('name', 'action_');

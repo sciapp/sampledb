@@ -10,6 +10,7 @@ Currently in development.
 - Do not show hidden users as instrument scientists
 - Added setting for admin permissions
 - Allow hiding actions
+- Improved user interface
 
 Version 0.13.1
 --------------
