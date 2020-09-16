@@ -23,6 +23,9 @@
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>
+    {% if action.is_hidden %}
+    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This action has been hidden from action lists.</p>
+    {% endif %}
     {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_scientists.html" %}

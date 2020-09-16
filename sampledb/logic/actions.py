@@ -33,7 +33,8 @@ def create_action(
         schema: dict,
         instrument_id: typing.Optional[int] = None,
         user_id: typing.Optional[int] = None,
-        description_as_html: typing.Optional[str] = None
+        description_as_html: typing.Optional[str] = None,
+        is_hidden: bool = False
 ) -> Action:
     """
     Creates a new action with the given type, name, description and schema. If
@@ -47,6 +48,7 @@ def create_action(
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
     :param description_as_html: None or the description as HTML
+    :param is_hidden: None or whether or not the action should be hidden
     :return: the created action
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
@@ -67,6 +69,7 @@ def create_action(
         name=name,
         description=description,
         description_as_html=description_as_html,
+        is_hidden=is_hidden,
         schema=schema,
         instrument_id=instrument_id,
         user_id=user_id
@@ -108,7 +111,8 @@ def update_action(
         name: str,
         description: str,
         schema: dict,
-        description_as_html: typing.Optional[str] = None
+        description_as_html: typing.Optional[str] = None,
+        is_hidden: typing.Optional[bool] = None
 ) -> None:
     """
     Updates the action with the given action ID, setting its name, description and schema.
@@ -118,6 +122,7 @@ def update_action(
     :param description: the new (possibly empty) description of the action
     :param schema: the new schema for objects created using this action
     :param description_as_html: None or the description as HTML
+    :param is_hidden: None or whether or not the action should be hidden
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -130,5 +135,7 @@ def update_action(
     action.description = description
     action.description_as_html = description_as_html
     action.schema = schema
+    if is_hidden is not None:
+        action.is_hidden = is_hidden
     db.session.add(action)
     db.session.commit()
