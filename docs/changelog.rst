@@ -11,6 +11,7 @@ Currently in development.
 - Added setting for admin permissions
 - Allow hiding actions
 - Improved user interface
+- Made invitation time limit configurable
 
 Version 0.13.1
 --------------

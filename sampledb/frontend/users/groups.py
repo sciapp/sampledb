@@ -57,9 +57,10 @@ def groups():
 def group(group_id):
     if 'token' in flask.request.args:
         token = flask.request.args.get('token')
-        token_data = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'])
+        expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+        token_data = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
         if token_data is None:
-            flask.flash('Invalid group invitation token. Did you try accessing a token older than 48 hours?', 'error')
+            flask.flash('Invalid group invitation token. Please request a new invitation.', 'error')
             return flask.abort(403)
         if token_data.get('group_id', None) != group_id:
             return flask.abort(403)

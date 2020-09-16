@@ -286,6 +286,17 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not isinstance(config['INVITATION_TIME_LIMIT'], int) or config['INVITATION_TIME_LIMIT'] <= 0:
+        print(
+            ansi_color(
+                f'Expected INVITATION_TIME_LIMIT to be a positive integer, but got {config["INVITATION_TIME_LIMIT"]!r}\n',
+                color=33
+            ),
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -370,8 +381,17 @@ PDFEXPORT_LOGO_ALIGNMENT = 'right'
 # users may take a long time to fill out a form during an experiment
 WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
 
+# invitation link time limit
+INVITATION_TIME_LIMIT = 48 * 60 * 60
+
 # other settings
 ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
+
+# convert INVITATION_TIME_LIMIT in case it was set as a string
+try:
+    INVITATION_TIME_LIMIT = int(INVITATION_TIME_LIMIT)
+except ValueError:
+    pass
