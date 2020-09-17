@@ -3,8 +3,6 @@
 
 """
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 import pytest
 
 from sampledb import db
@@ -12,8 +10,6 @@ import sampledb.logic
 from sampledb.logic import object_sorting
 import sampledb.models
 from sampledb.models import Action, User
-
-from ..test_utils import app_context
 
 
 @pytest.fixture

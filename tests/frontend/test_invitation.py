@@ -2,18 +2,13 @@
 """
 
 """
-import flask
 import requests
 import pytest
-import bcrypt
 from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
 from sampledb.logic.security_tokens import generate_token
-
-
-from tests.test_utils import flask_server, app
 
 
 @pytest.fixture

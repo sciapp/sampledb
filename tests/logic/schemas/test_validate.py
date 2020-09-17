@@ -11,10 +11,6 @@ from sampledb.logic.objects import create_object, get_object
 from sampledb.logic.schemas import validate
 from sampledb.logic.errors import ValidationError
 
-from ...test_utils import app_context
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 def test_validate_invalid_type():
     schema = {

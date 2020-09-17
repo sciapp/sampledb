@@ -8,7 +8,6 @@ from sampledb import db
 from sampledb.logic import instruments
 from sampledb.models.users import User, UserType
 import sampledb.__main__ as scripts
-from ..test_utils import app_context
 
 
 @pytest.fixture

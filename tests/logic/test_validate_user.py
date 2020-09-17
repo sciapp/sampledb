@@ -1,6 +1,5 @@
 import pytest
 import bcrypt
-from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
@@ -8,8 +7,6 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 
-
-from ..test_utils import app_context, flask_server, app
 
 @pytest.fixture
 def users():

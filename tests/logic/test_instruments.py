@@ -9,11 +9,6 @@ from sampledb.models import User, UserType
 from sampledb.logic import instruments, errors
 
 
-from ..test_utils import app_context
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
 def test_create_instrument():
     assert len(instruments.get_instruments()) == 0
     instrument = instruments.create_instrument(name="Example Instrument", description="")

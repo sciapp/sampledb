@@ -1,20 +1,12 @@
-import pytest
-import bcrypt
-from bs4 import BeautifulSoup
-
-from sampledb.models import User, UserType,  Authentication, AuthenticationType
-
 import sampledb
 import sampledb.models
 import sampledb.logic
 
 
-from ..test_utils import flask_server, app
-
-
 def test_send_confirm_email(app):
     # Submit the missing information and complete the registration
 
+    server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         username = app.config['TESTING_LDAP_LOGIN']
@@ -48,5 +40,5 @@ def test_send_confirm_email(app):
         assert 'testmail@fz-juelich.de' in outbox[0].recipients
         message = outbox[0].html
         assert 'SampleDB Email Confirmation' in message
-
+    app.config['SERVER_NAME'] = server_name
 

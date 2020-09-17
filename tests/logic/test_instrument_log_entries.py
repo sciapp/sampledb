@@ -8,11 +8,6 @@ import sampledb
 from sampledb.logic import instruments, instrument_log_entries, errors
 
 
-from ..test_utils import flask_server, app, app_context
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
 @pytest.fixture
 def instrument(flask_server):
     with flask_server.app.app_context():

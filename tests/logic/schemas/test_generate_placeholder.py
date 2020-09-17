@@ -8,8 +8,6 @@ import pytest
 from sampledb.logic.schemas import generate_placeholder
 from sampledb.logic.errors import SchemaError
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 def test_generate_bool_object():
     object_schema = {

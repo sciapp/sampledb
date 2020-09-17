@@ -8,8 +8,6 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 
-from ..test_utils import app_context
-
 
 @pytest.fixture
 def user():

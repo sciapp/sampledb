@@ -1,12 +1,10 @@
-import pytest
 
-from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
 import sampledb
 import sampledb.models
+from sampledb.models import UserType
 import sampledb.logic
 
-from ..test_utils import app_context, flask_server, app
 
 
 def test_add_user(flask_server):

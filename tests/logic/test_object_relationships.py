@@ -10,8 +10,6 @@ import sampledb.logic
 import sampledb.models
 from sampledb.models import User, UserType, ActionType
 
-from ..test_utils import flask_server, app, app_context
-
 
 @pytest.fixture
 def sample_action():

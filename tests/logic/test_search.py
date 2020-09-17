@@ -3,15 +3,11 @@
 
 """
 import sqlalchemy
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 import pytest
+
 from sampledb import db
 import sampledb.logic
 import sampledb.models
-
-from ..test_utils import flask_server, app, app_context
 
 
 @pytest.fixture

@@ -3,17 +3,12 @@
 
 """
 import re
-import flask
 import requests
 import pytest
-import bcrypt
 from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
-
-
-from tests.test_utils import flask_server, app
 
 
 @pytest.fixture

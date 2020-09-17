@@ -8,8 +8,6 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 
-from ..test_utils import flask_server, app, app_context
-
 
 @pytest.fixture
 def user():
@@ -92,6 +90,7 @@ def test_send_notification(app, user):
     sampledb.logic.notifications.set_notification_mode_for_all_types(user.id, sampledb.models.NotificationMode.EMAIL)
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
 
+    server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         with sampledb.mail.record_messages() as outbox:
@@ -104,6 +103,7 @@ def test_send_notification(app, user):
     message = outbox[0].html
     assert 'SampleDB Notification' in message
     assert 'This is a test message' in message
+    app.config['SERVER_NAME'] = server_name
 
 
 def test_create_announcement_notification(user):

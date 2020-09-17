@@ -5,14 +5,10 @@
 
 import requests
 import pytest
-import json
 
 import sampledb
 import sampledb.logic
 import sampledb.models
-
-
-from tests.test_utils import flask_server, app, app_context
 
 
 @pytest.fixture

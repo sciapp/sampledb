@@ -10,8 +10,6 @@ import sampledb.models
 import requests
 from bs4 import BeautifulSoup
 
-from ..test_utils import app_context, app, flask_server
-
 
 @pytest.fixture
 def user(flask_server):

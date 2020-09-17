@@ -3,18 +3,14 @@
 
 """
 
-import flask
 import requests
 import pytest
-import bcrypt
 from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
 import sampledb.logic
 from sampledb.logic.authentication import add_email_authentication
-
-from tests.test_utils import flask_server, app, app_context
 
 
 @pytest.fixture
