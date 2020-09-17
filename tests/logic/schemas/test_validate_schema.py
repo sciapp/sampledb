@@ -8,8 +8,6 @@ import pytest
 from sampledb.logic.schemas import validate_schema
 from sampledb.logic.errors import ValidationError
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 def wrap_into_basic_schema(schema, name='other'):
     return {

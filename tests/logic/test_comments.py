@@ -10,8 +10,6 @@ import sampledb
 from sampledb.models import User, UserType, Action, ActionType, Object
 from sampledb.logic import comments, objects, actions
 
-from ..test_utils import app_context
-
 
 @pytest.fixture
 def user():

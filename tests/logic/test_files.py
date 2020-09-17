@@ -4,14 +4,11 @@
 """
 
 import datetime
-import os
 import pytest
 
 import sampledb
 from sampledb.models import User, UserType, Action, ActionType, Object
 from sampledb.logic import files, objects, actions, errors
-
-from ..test_utils import app_context
 
 
 @pytest.fixture

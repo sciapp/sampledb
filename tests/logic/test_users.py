@@ -1,11 +1,8 @@
-
 import pytest
 
 import sampledb.models
 import sampledb.logic
 from sampledb import db
-
-from ..test_utils import app_context, app, flask_server
 
 
 @pytest.fixture

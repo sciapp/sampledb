@@ -6,9 +6,6 @@
 import pytest
 from sampledb.logic import instruments
 import sampledb.__main__ as scripts
-from ..test_utils import app_context
-
-
 
 
 def test_create_instrument(capsys):

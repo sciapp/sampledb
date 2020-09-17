@@ -4,9 +4,7 @@ import flask
 import sampledb
 import sampledb.models
 
-from sampledb.logic.errors import NoEmailInLDAPAccountError, LDAPNotConfiguredError
-
-from ..test_utils import app_context, flask_server, app
+from sampledb.logic.errors import LDAPNotConfiguredError
 
 
 def test_search_ldap(app):

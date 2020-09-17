@@ -15,8 +15,6 @@ import sampledb.models
 import sampledb.logic
 
 
-from tests.test_utils import flask_server, app, app_context
-
 SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(sampledb.__file__), 'schemas'))
 
 

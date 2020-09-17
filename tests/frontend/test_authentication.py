@@ -11,9 +11,6 @@ import sampledb
 import sampledb.models
 
 
-from tests.test_utils import flask_server, app
-
-
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():

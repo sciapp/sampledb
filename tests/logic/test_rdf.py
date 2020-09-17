@@ -12,8 +12,6 @@ import sampledb
 from sampledb.logic import actions, comments, objects, rdf
 from sampledb.models import ActionType
 
-from ..test_utils import flask_server, app, app_context
-
 
 @pytest.fixture
 def user(flask_server):

@@ -4,6 +4,7 @@
 """
 
 import datetime
+
 import pytest
 import sqlalchemy.dialects.postgresql as postgresql
 
@@ -12,8 +13,6 @@ import sampledb.logic
 import sampledb.models
 from sampledb import db
 from sampledb.models import User, UserType, ActionType
-
-from ..test_utils import flask_server, app, app_context
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

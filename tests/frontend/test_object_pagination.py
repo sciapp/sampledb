@@ -3,8 +3,6 @@
 
 """
 
-import os
-import json
 import requests
 import pytest
 import typing
@@ -15,10 +13,6 @@ from sampledb import db
 import sampledb.logic
 import sampledb.models
 from sampledb.models import User, Action
-
-
-from tests.test_utils import flask_server, app, app_context
-
 
 
 @pytest.fixture

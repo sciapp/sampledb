@@ -11,9 +11,6 @@ import sampledb.logic
 import sampledb.models
 
 
-from tests.test_utils import flask_server, app
-
-
 def test_authentication_ldap(flask_server):
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
     assert r.status_code == 401

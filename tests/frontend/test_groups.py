@@ -14,8 +14,6 @@ import sampledb.models
 import sampledb.logic
 from sampledb.logic.authentication import add_email_authentication
 
-from tests.test_utils import flask_server, app, app_context
-
 
 @pytest.fixture
 def user_session(flask_server):

@@ -3,14 +3,10 @@
 
 """
 
-import os
 import pytest
-import sampledb
 from sampledb import db
-from sampledb.logic import users, authentication
+from sampledb.logic import users
 import sampledb.__main__ as scripts
-
-from ..test_utils import app_context
 
 
 def test_set_readonly_yes(capsys):
