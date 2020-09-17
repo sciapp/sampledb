@@ -12,6 +12,8 @@ Currently in development.
 - Allow hiding actions
 - Improved user interface
 - Made invitation time limit configurable
+- Show pending group and project invitations to members
+- Show all group and project invitations to administrators
 
 Version 0.13.1
 --------------

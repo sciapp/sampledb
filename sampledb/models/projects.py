@@ -54,3 +54,14 @@ class SubprojectRelationship(db.Model):
         db.PrimaryKeyConstraint(parent_project_id, child_project_id),
         {},
     )
+
+
+class ProjectInvitation(db.Model):
+    __tablename__ = 'project_invitations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    inviter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    utc_datetime = db.Column(db.DateTime, nullable=False)
+    accepted = db.Column(db.Boolean, nullable=False, default=False)

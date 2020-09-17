@@ -194,12 +194,23 @@ def group(group_id):
         delete_group_form = None
         remove_group_member_form = None
 
+    group_invitations = None
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    if user_is_member or flask_login.current_user.is_admin:
+        group_invitations = logic.groups.get_group_invitations(
+            group_id=group_id,
+            include_accepted_invitations=show_invitation_log,
+            include_expired_invitations=show_invitation_log
+        )
+
     return flask.render_template(
         'group.html',
         group=group,
         group_member_ids=group_member_ids,
         get_users=logic.users.get_users,
         get_user=logic.users.get_user,
+        group_invitations=group_invitations,
+        show_invitation_log=show_invitation_log,
         leave_group_form=leave_group_form,
         delete_group_form=delete_group_form,
         remove_group_member_form=remove_group_member_form,

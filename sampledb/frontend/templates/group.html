@@ -14,7 +14,7 @@
   <ul>
     {% for user_id in group_member_ids %}
     {% with user = get_user(user_id) %}
-      <li><a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>
+      <li><a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }} (#{{ user_id }})</a>
         {% if not current_user.is_readonly %}
         {% if remove_group_member_form and user_id != current_user.id %}
         <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.group', group_id=group.id) }}" id="removeGroupMember{{ user_id }}Form">
@@ -27,12 +27,21 @@
     {% endwith %}
   {% endfor %}
   </ul>
+  {% if show_invitation_log %}
+    {% with all_invitations = group_invitations %}
+      {% include "invitation_log.html" %}
+    {% endwith %}
+  {% elif group_invitations %}
+    {% with pending_invitations = group_invitations %}
+      {% include "pending_invitations.html" %}
+    {% endwith %}
+  {% endif %}
   {% if not current_user.is_readonly %}
   {% if edit_group_form %}
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editGroupModal">Edit Group</button>
   {% endif %}
   {% if invite_user_form %}
-  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Add User</button>
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Invite User</button>
   {% endif %}
   {% endif %}
   {% if leave_group_form %}
@@ -87,7 +96,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="inviteUserModalLabel">Add User</h4>
+          <h4 class="modal-title" id="inviteUserModalLabel">Invite User</h4>
         </div>
         <form method="post" action="{{ url_for('.group', group_id=group.id) }}" class="form-horizontal">
           {{ invite_user_form.csrf_token() }}
@@ -107,7 +116,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="add_user" value="add_user">Add User</button>
+            <button type="submit" class="btn btn-primary" name="add_user" value="add_user">Invite User</button>
           </div>
         </form>
       </div>
