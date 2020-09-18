@@ -1113,21 +1113,28 @@ def post_object_publication(object_id):
     if publication_form.validate_on_submit():
         doi = publication_form.doi.data
         title = publication_form.title.data
+        object_name = publication_form.object_name.data
+        if title is not None:
+            title = title.strip()
         if not title:
             title = None
+        if object_name is not None:
+            object_name = object_name.strip()
+        if not object_name:
+            object_name = None
         existing_publication = ([
             publication
             for publication in logic.publications.get_publications_for_object(object_id)
             if publication.doi == doi
         ] or [None])[0]
-        if existing_publication is not None and existing_publication.title == title:
+        if existing_publication is not None and existing_publication.title == title and existing_publication.object_name == object_name:
             flask.flash('This object has already been linked to this publication.', 'info')
         else:
-            logic.publications.link_publication_to_object(user_id=flask_login.current_user.id, object_id=object_id, doi=doi, title=title)
+            logic.publications.link_publication_to_object(user_id=flask_login.current_user.id, object_id=object_id, doi=doi, title=title, object_name=object_name)
             if existing_publication is None:
                 flask.flash('Successfully linked this object to a publication.', 'success')
             else:
-                flask.flash('Successfully updated the title of this publication.', 'success')
+                flask.flash('Successfully updated the information for this publication.', 'success')
     else:
         flask.flash('Please enter a valid DOI for the publication you want to link this object to.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))

@@ -81,12 +81,13 @@ def test_link_publications_to_objects(user, action):
     assert publication.doi == '10.1000/valid'
     assert publication.title == 'Test'
 
-    sampledb.logic.publications.link_publication_to_object(user_id=user.id, object_id=object.id, doi='10.1000/valid', title='Title')
+    sampledb.logic.publications.link_publication_to_object(user_id=user.id, object_id=object.id, doi='10.1000/valid', title='Title', object_name='Object A')
 
     assert len(sampledb.logic.publications.get_publications_for_object(object_id=object.id)) == 1
     publication, = sampledb.logic.publications.get_publications_for_object(object_id=object.id)
     assert publication.doi == '10.1000/valid'
     assert publication.title == 'Title'
+    assert publication.object_name == 'Object A'
 
     with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
         sampledb.logic.publications.get_publications_for_object(object_id=object.id + 1)

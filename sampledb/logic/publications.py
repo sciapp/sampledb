@@ -15,24 +15,31 @@ from .objects import get_object
 from .users import get_user
 
 
-class Publication(collections.namedtuple('Publication', ['doi', 'title'])):
+class Publication(collections.namedtuple('Publication', ['doi', 'title', 'object_name'])):
     """
     This class provides an immutable wrapper around models.object_publications.ObjectPublication.
     """
 
-    def __new__(cls, doi: str, title: str):
-        self = super(Publication, cls).__new__(cls, doi, title)
+    def __new__(cls, doi: str, title: str, object_name: str):
+        self = super(Publication, cls).__new__(cls, doi, title, object_name)
         return self
 
     @classmethod
     def from_database(cls, publication: models.object_publications.ObjectPublication) -> 'Publication':
         return Publication(
             doi=publication.doi,
-            title=publication.title
+            title=publication.title,
+            object_name=publication.object_name
         )
 
 
-def link_publication_to_object(user_id: int, object_id: int, doi: str, title: typing.Optional[str] = None):
+def link_publication_to_object(
+        user_id: int,
+        object_id: int,
+        doi: str,
+        title: typing.Optional[str] = None,
+        object_name: typing.Optional[str] = None
+):
     """
     Link a publication to an object.
 
@@ -40,6 +47,7 @@ def link_publication_to_object(user_id: int, object_id: int, doi: str, title: ty
     :param object_id: the ID of an existing object
     :param doi: the DOI of an existing publication
     :param title: the title of the publication
+    :param object_name: the name of the object in the publication
     :raise errors.ObjectDoesNotExistError: when no object with the given object
         ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -51,10 +59,11 @@ def link_publication_to_object(user_id: int, object_id: int, doi: str, title: ty
     if link is None:
         link = models.object_publications.ObjectPublication(object_id=object_id, doi=doi)
     link.title = title
+    link.object_name = object_name
     db.session.add(link)
     db.session.commit()
-    user_log.link_publication(user_id=user_id, object_id=object_id, doi=doi, title=title)
-    object_log.link_publication(user_id=user_id, object_id=object_id, doi=doi, title=title)
+    user_log.link_publication(user_id=user_id, object_id=object_id, doi=doi, title=title, object_name=object_name)
+    object_log.link_publication(user_id=user_id, object_id=object_id, doi=doi, title=title, object_name=object_name)
 
 
 def get_publications_for_object(object_id: int) -> typing.Sequence[Publication]:
