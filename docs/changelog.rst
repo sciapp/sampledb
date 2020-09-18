@@ -9,7 +9,7 @@ Currently in development.
 - Allow restricting location management to administrators
 - Do not show hidden users as instrument scientists
 - Added setting for admin permissions
-- Allow hiding actions
+- Allow hiding instruments and actions
 - Added object name to properties of publications linked to an object
 - Improved invitation token handling
 - Made invitation time limit configurable

@@ -17,6 +17,9 @@
       <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
     </h2>
     </form>
+    {% if instrument.is_hidden %}
+    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This instrument has been hidden from instrument lists.</p>
+    {% endif %}
     {% if instrument.description_as_html %}{{ instrument.description_as_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
     {% include "instruments/instrument_scientists.html" %}
   {% endfor %}

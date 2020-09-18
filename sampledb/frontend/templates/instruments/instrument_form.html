@@ -182,6 +182,11 @@
           <input type="checkbox" id="input-create_log_entry_default" name="{{ instrument_form.create_log_entry_default.name }}" {% if instrument_form.create_log_entry_default.data %}checked="checked"{% endif %}> Create log entries for objects created by instrument scientists <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="This sets the default for whether or not an instrument log entry should be created or not. The user can manually toggle the checkbox during object creation to override this default."></i>
         </label>
       </div>
+      <div class="checkbox">
+        <label for="input-is_hidden">
+          <input type="checkbox" id="input-is_hidden" name="{{ instrument_form.is_hidden.name }}" {% if instrument_form.is_hidden.data %}checked="checked"{% endif %}> Hide this instrument from instrument lists
+        </label>
+      </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">

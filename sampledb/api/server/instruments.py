@@ -17,6 +17,7 @@ def instrument_to_json(instrument):
         'instrument_id': instrument.id,
         'name': instrument.name,
         'description': instrument.description,
+        'is_hidden': instrument.is_hidden,
         'instrument_scientists': [user.id for user in instrument.responsible_users]
     }
 
