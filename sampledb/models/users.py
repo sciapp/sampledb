@@ -49,3 +49,12 @@ class User(db.Model, flask_login.UserMixin):
 
     def __repr__(self):
         return '<{0}(id={1.id}, name={1.name})>'.format(type(self).__name__, self)
+
+
+class UserInvitation(db.Model):
+    __tablename__ = 'user_invitations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    inviter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    utc_datetime = db.Column(db.DateTime, nullable=False)
+    accepted = db.Column(db.Boolean, nullable=False, default=False)

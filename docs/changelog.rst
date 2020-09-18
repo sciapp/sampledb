@@ -11,6 +11,7 @@ Currently in development.
 - Added setting for admin permissions
 - Allow hiding actions
 - Added object name to properties of publications linked to an object
+- Improved invitation token handling
 - Made invitation time limit configurable
 - Show pending group and project invitations to members
 - Show all group and project invitations to administrators

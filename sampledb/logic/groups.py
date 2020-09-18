@@ -244,6 +244,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
     db.session.commit()
     token = generate_token(
         {
+            'invitation_id': invitation.id,
             'user_id': user.id,
             'group_id': group_id
         },
@@ -354,3 +355,18 @@ def get_group_invitations(
         GroupInvitation.from_database(group_invitation)
         for group_invitation in group_invitations
     ]
+
+
+def get_group_invitation(invitation_id: int) -> GroupInvitation:
+    """
+    Get an existing invitation.
+
+    :param invitation_id: the ID of an existing invitation
+    :return: the invitation
+    :raise errors.GroupInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = groups.GroupInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.GroupInvitationDoesNotExistError()
+    return GroupInvitation.from_database(invitation)

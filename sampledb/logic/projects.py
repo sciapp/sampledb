@@ -327,6 +327,7 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
     db.session.commit()
     token = generate_token(
         {
+            'invitation_id': invitation.id,
             'user_id': user_id,
             'project_id': project_id,
             'other_project_ids': add_to_parent_project_ids
@@ -796,3 +797,18 @@ def get_project_invitations(
         ProjectInvitation.from_database(project_invitation)
         for project_invitation in project_invitations
     ]
+
+
+def get_project_invitation(invitation_id: int) -> ProjectInvitation:
+    """
+    Get an existing invitation.
+
+    :param invitation_id: the ID of an existing invitation
+    :return: the invitation
+    :raise errors.ProjectInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = projects.ProjectInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.ProjectInvitationDoesNotExistError()
+    return ProjectInvitation.from_database(invitation)

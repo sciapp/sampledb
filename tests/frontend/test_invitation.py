@@ -67,7 +67,7 @@ def test_send_invitation(flask_server, user):
     assert len(outbox) == 1
     assert 'user@example.com' in outbox[0].recipients
     message = outbox[0].html
-    assert 'SampleDB Email Confirmation' in message
+    assert 'SampleDB Invitation' in message
 
     # logout and test confirmation url
     session = requests.session()
@@ -91,7 +91,7 @@ def test_send_invitation(flask_server, user):
         'csrf_token': csrf_token
     })
     assert r.status_code == 200
-    assert 'Your registration was successful.' in r.content.decode('utf-8')
+    assert 'Your account has been created successfully.' in r.content.decode('utf-8')
     # check , if user is added to db
     with flask_server.app.app_context():
         assert len(sampledb.models.User.query.all()) == 2
@@ -111,7 +111,7 @@ def test_registration_without_token_not_available(flask_server):
 
 def test_registration_with_wrong_token_403(flask_server):
     session = requests.session()
-    token = generate_token('invalid', salt='invitation',
+    token = generate_token('test@example.com', salt='user_invitation',
                            secret_key=flask_server.app.config['SECRET_KEY'])
     data = {'token': token}
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
@@ -131,7 +131,7 @@ def test_registration_with_token_available(flask_server):
     r = session.get(url, params=data)
     assert r.status_code == 200
 
-    assert 'Registration Form' in r.content.decode('utf-8')
+    assert 'Account Creation' in r.content.decode('utf-8')
 
 
 def test_registration(flask_server):
