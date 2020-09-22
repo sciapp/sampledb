@@ -237,7 +237,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if action_form.name.data is None:
             action_form.is_public.data = None
     else:
-        user_instrument_ids = get_user_instruments(flask_login.current_user.id)
+        user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
         action_form.instrument.choices = [('-1', '-')] + [
             (str(instrument_id), get_instrument(instrument_id).name)
             for instrument_id in user_instrument_ids

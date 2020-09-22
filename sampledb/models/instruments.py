@@ -30,6 +30,7 @@ class Instrument(db.Model):
     notes = db.Column(db.String, nullable=False, default='')
     notes_as_html = db.Column(db.String, nullable=True, default=None)
     create_log_entry_default = db.Column(db.Boolean, nullable=False, default=False)
+    is_hidden = db.Column(db.Boolean, nullable=False, default=False)
 
     def __init__(
             self,
@@ -40,7 +41,8 @@ class Instrument(db.Model):
             users_can_view_log_entries: bool = False,
             notes: str = '',
             notes_as_html: typing.Optional[str] = None,
-            create_log_entry_default: bool = False
+            create_log_entry_default: bool = False,
+            is_hidden: bool = False
     ):
         self.name = name
         self.description = description
@@ -50,6 +52,7 @@ class Instrument(db.Model):
         self.notes = notes
         self.notes_as_html = notes_as_html
         self.create_log_entry_default = create_log_entry_default
+        self.is_hidden = is_hidden
 
     def __eq__(self, other):
         return (
@@ -62,6 +65,7 @@ class Instrument(db.Model):
             self.notes == other.notes and
             self.notes_as_html == other.notes_as_html and
             self.create_log_entry_default == other.create_log_entry_default and
+            self.is_hidden == other.is_hidden and
             self.responsible_users == other.responsible_users
         )
 

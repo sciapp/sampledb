@@ -26,7 +26,8 @@ def create_instrument(
         users_can_view_log_entries: bool = False,
         notes: str = '',
         notes_as_html: typing.Optional[str] = None,
-        create_log_entry_default: bool = False
+        create_log_entry_default: bool = False,
+        is_hidden: bool = False
 ) -> Instrument:
     """
     Creates a new instrument with the given name and description.
@@ -42,6 +43,7 @@ def create_instrument(
     :param notes_as_html: None or the notes as HTML
     :param create_log_entry_default: the default for whether or not a log
         entry should be created during object creation by instrument scientists
+    :param is_hidden: whether or not this instrument is hidden
     :return: the new instrument
     """
     instrument = Instrument(
@@ -52,7 +54,8 @@ def create_instrument(
         users_can_view_log_entries=users_can_view_log_entries,
         notes=notes,
         notes_as_html=notes_as_html,
-        create_log_entry_default=create_log_entry_default
+        create_log_entry_default=create_log_entry_default,
+        is_hidden=is_hidden
     )
     db.session.add(instrument)
     db.session.commit()
@@ -92,7 +95,8 @@ def update_instrument(
         users_can_view_log_entries: bool = False,
         notes: str = '',
         notes_as_html: typing.Optional[str] = None,
-        create_log_entry_default: bool = False
+        create_log_entry_default: bool = False,
+        is_hidden: typing.Optional[bool] = None
 ) -> None:
     """
     Updates the instrument name and description.
@@ -109,6 +113,7 @@ def update_instrument(
     :param notes_as_html: None or the notes as HTML
     :param create_log_entry_default: the default for whether or not a log
         entry should be created during object creation by instrument scientists
+    :param is_hidden: None or whether or not this instrument is hidden
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
@@ -123,6 +128,8 @@ def update_instrument(
     instrument.notes = notes
     instrument.notes_as_html = notes_as_html
     instrument.create_log_entry_default = create_log_entry_default
+    if is_hidden is not None:
+        instrument.is_hidden = is_hidden
     db.session.add(instrument)
     db.session.commit()
 
@@ -199,19 +206,26 @@ def set_instrument_responsible_users(instrument_id: int, user_ids: typing.List[i
     db.session.commit()
 
 
-def get_user_instruments(user_id: int) -> typing.List[int]:
+def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.List[int]:
     """
     Get a list of instruments a user with a given user ID is responsible for.
 
     :param user_id: the ID of an existing user
+    :param exclude_hidden: whether hidden instruments should be excluded
     :return: a list of instrument IDs
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
     # ensure that the user exists
     users.get_user(user_id)
+    instrument_id_query = db.session.query(instrument_user_association_table.c.instrument_id).filter(instrument_user_association_table.c.user_id == user_id)
+    if exclude_hidden:
+        instrument_id_query = instrument_id_query.join(
+            Instrument,
+            instrument_user_association_table.c.instrument_id == Instrument.id
+        ).filter(Instrument.is_hidden == db.false())
     instrument_ids = [
         instrument_user_association[0]
-        for instrument_user_association in db.session.query(instrument_user_association_table.c.instrument_id).filter(instrument_user_association_table.c.user_id == user_id).order_by(instrument_user_association_table.c.instrument_id).all()
+        for instrument_user_association in instrument_id_query.order_by(instrument_user_association_table.c.instrument_id).all()
     ]
     return instrument_ids

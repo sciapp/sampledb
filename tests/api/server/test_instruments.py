@@ -44,6 +44,7 @@ def test_get_instrument(flask_server, auth, user):
         'instrument_id': instrument.id,
         'name': "Example Instrument",
         'description': "This is an example instrument",
+        'is_hidden': False,
         'instrument_scientists': []
     }
 
@@ -54,6 +55,7 @@ def test_get_instrument(flask_server, auth, user):
         'instrument_id': instrument.id,
         'name': "Example Instrument",
         'description': "This is an example instrument",
+        'is_hidden': False,
         'instrument_scientists': [user.id]
     }
 
@@ -74,6 +76,7 @@ def test_get_instruments(flask_server, auth):
             'instrument_id': instrument.id,
             'name': "Example Instrument",
             'description': "This is an example instrument",
+            'is_hidden': False,
             'instrument_scientists': []
         }
     ]
