@@ -358,8 +358,43 @@
       </div>
       </form>
     {% endif %}
+    {% if copy_permissions_form %}
+    <div class="container text-right">
+    <button type="button" class="btn btn-primary col-md-offset-9 col-md-3" style="margin-top: 1em;" data-toggle="modal" data-target="#copyPermissionsModal">
+      Copy Permissions
+    </button>
+     </div>
+    {% endif %}
     <div class="container">
-      <a href="{{ url_for('.object', object_id=object.object_id) }}" class="btn btn-default col-md-offset-9 col-md-3" style="margin-top: 1em;">Cancel</a>
+     <a href="{{ url_for('.object', object_id=object.object_id) }}" class="btn btn-default col-md-offset-9 col-md-3" style="margin-top: 1em; margin-bottom: 1em;">Cancel</a>
     </div>
+  {% endif %}
+
+  {% if copy_permissions_form %}
+  <div class="modal fade" id="copyPermissionsModal" tabindex="-1" role="dialog" aria-labelledby="copyPermissionsModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form method="post" action="{{ url_for('.object_permissions', object_id=object.id) }}">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="copyPermissionsModalLabel">Copy permissions from other Object</h4>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted">You can replace the current permissions by copying the permissions from another object.</p>
+              {{ copy_permissions_form.hidden_tag() }}
+              <select class="selectpicker" name="{{ copy_permissions_form.object_id.name }}" data-live-search="true" data-width="100%">
+                {% for object_id, object_name in copy_permissions_form.object_id.choices %}
+                  <option value="{{ object_id }}">{{ object_name }} (#{{ object_id }})</option>
+                {% endfor %}
+              </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <input type="submit" class="btn btn-primary" name="copy_permissions" value="Copy Permissions" />
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
   {% endif %}
 {% endblock %}

@@ -18,7 +18,14 @@ from . import object_log, user_log, object_permissions, errors, users, actions, 
 import sqlalchemy.exc
 
 
-def create_object(action_id: int, data: dict, user_id: int, previous_object_id: typing.Optional[int] = None, schema: typing.Optional[typing.Dict[str, typing.Any]] = None) -> Object:
+def create_object(
+        action_id: int,
+        data: dict,
+        user_id: int,
+        previous_object_id: typing.Optional[int] = None,
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        copy_permissions_object_id: typing.Optional[int] = None
+) -> Object:
     """
     Creates an object using the given action and its schema. This function
     also handles logging, object references and default object permissions.
@@ -28,6 +35,8 @@ def create_object(action_id: int, data: dict, user_id: int, previous_object_id: 
     :param user_id: the ID of the user who created the object
     :param previous_object_id: the ID of the base object
     :param schema: the object schema used for validation. If schema is None the action schema is used
+    :param copy_permissions_object_id: the ID of an existing object to copy
+        the permissions from or None
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -43,12 +52,21 @@ def create_object(action_id: int, data: dict, user_id: int, previous_object_id: 
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
-    object_permissions.set_initial_permissions(object)
+    if copy_permissions_object_id is None:
+        object_permissions.set_initial_permissions(object)
+    else:
+        object_permissions.copy_permissions(object.id, copy_permissions_object_id)
+        object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
     tags.update_object_tag_usage(object)
     return object
 
 
-def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], user_id: int) -> typing.Sequence[Object]:
+def create_object_batch(
+        action_id: int,
+        data_sequence: typing.Sequence[dict],
+        user_id: int,
+        copy_permissions_object_id: typing.Optional[int] = None
+) -> typing.Sequence[Object]:
     """
     Creates a batch of objects using the given action and its schema. This
     function also handles logging, object references and default object
@@ -59,6 +77,8 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
     :param data_sequence: a sequence containing the objects' data, which must
         fit to the action's schema
     :param user_id: the ID of the user who created the objects
+    :param copy_permissions_object_id: the ID of an existing object to copy
+        the permissions from or None
     :return: the created objects
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -83,7 +103,11 @@ def create_object_batch(action_id: int, data_sequence: typing.Sequence[dict], us
             for object in objects:
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
-                object_permissions.set_initial_permissions(object)
+                if copy_permissions_object_id is None:
+                    object_permissions.set_initial_permissions(object)
+                else:
+                    object_permissions.copy_permissions(object.id, copy_permissions_object_id)
+                    object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
                 tags.update_object_tag_usage(object)
     return objects
 

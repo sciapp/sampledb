@@ -118,16 +118,17 @@ def _get_object_responsible_user_ids(object_id):
     return [user.id for user in instrument.responsible_users]
 
 
-def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True):
+def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True, include_admin_permissions: bool = True):
     user = get_user(user_id)
 
-    # administrators have GRANT permissions if they use admin permissions
-    if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
-        # unless they are limited to READ permissions
-        if user.is_readonly:
-            return Permissions.READ
-        else:
-            return Permissions.GRANT
+    if include_admin_permissions:
+        # administrators have GRANT permissions if they use admin permissions
+        if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+            # unless they are limited to READ permissions
+            if user.is_readonly:
+                return Permissions.READ
+            else:
+                return Permissions.GRANT
 
     if include_instrument_responsible_users and include_groups and include_projects:
         stmt = db.text("""
@@ -433,3 +434,32 @@ def request_object_permissions(requester_id: int, object_id: int) -> None:
     ]
     for user_id in granting_user_ids:
         create_notification_for_having_received_an_objects_permissions_request(user_id, object_id, requester_id)
+
+
+def copy_permissions(target_object_id: int, source_object_id: int) -> None:
+    PublicObjects.query.filter_by(object_id=target_object_id).delete()
+    UserObjectPermissions.query.filter_by(object_id=target_object_id).delete()
+    GroupObjectPermissions.query.filter_by(object_id=target_object_id).delete()
+    ProjectObjectPermissions.query.filter_by(object_id=target_object_id).delete()
+
+    if PublicObjects.query.filter_by(object_id=source_object_id).first() is not None:
+        db.session.add(PublicObjects(object_id=target_object_id))
+    for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=source_object_id).all():
+        db.session.add(UserObjectPermissions(
+            object_id=target_object_id,
+            user_id=user_object_permissions.user_id,
+            permissions=user_object_permissions.permissions
+        ))
+    for group_object_permissions in GroupObjectPermissions.query.filter_by(object_id=source_object_id).all():
+        db.session.add(GroupObjectPermissions(
+            object_id=target_object_id,
+            group_id=group_object_permissions.group_id,
+            permissions=group_object_permissions.permissions
+        ))
+    for project_object_permissions in ProjectObjectPermissions.query.filter_by(object_id=source_object_id).all():
+        db.session.add(ProjectObjectPermissions(
+            object_id=target_object_id,
+            project_id=project_object_permissions.project_id,
+            permissions=project_object_permissions.permissions
+        ))
+    db.session.commit()

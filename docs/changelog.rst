@@ -15,6 +15,7 @@ Currently in development.
 - Made invitation time limit configurable
 - Show pending group and project invitations to members
 - Show all group and project invitations to administrators
+- Allow copying permissions from another object
 - Improved user interface
 
 Version 0.13.1
