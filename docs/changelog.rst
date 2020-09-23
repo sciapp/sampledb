@@ -4,7 +4,7 @@ Changelog
 Version 0.14
 ------------
 
-Currently in development.
+Released on September 23rd, 2020.
 
 - Allow restricting location management to administrators
 - Do not show hidden users as instrument scientists
