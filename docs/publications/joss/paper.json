@@ -12,11 +12,11 @@
   ],
   "codeRepository": "https://github.com/sciapp/sampledb",
   "datePublished": "2019-12-10",
-  "dateModified": "2020-09-09",
+  "dateModified": "2020-09-23",
   "dateCreated": "2019-12-10",
   "description": "A sample and measurement metadata database",
   "keywords": "Python, sample management, research data management",
   "license": "MIT",
   "title": "SampleDB",
-  "version": "v0.13.1"
+  "version": "v0.14.0"
 }
