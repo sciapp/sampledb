@@ -94,7 +94,8 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
         for publication_info in logic.publications.get_publications_for_object(object.id):
             object_infos[-1]['publications'].append({
                 'doi': publication_info.doi,
-                'title': publication_info.title
+                'title': publication_info.title,
+                'object_name': publication_info.object_name
             })
             if (publication_info.doi, publication_info.title) in publication_log_entries:
                 publication_log_entry = publication_log_entries[(publication_info.doi, publication_info.title)]

@@ -57,10 +57,15 @@ def groups():
 def group(group_id):
     if 'token' in flask.request.args:
         token = flask.request.args.get('token')
-        token_data = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'])
+        expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+        token_data = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
         if token_data is None:
-            flask.flash('Invalid group invitation token. Did you try accessing a token older than 48 hours?', 'error')
+            flask.flash('Invalid group invitation token. Please request a new invitation.', 'error')
             return flask.abort(403)
+        if 'invitation_id' in token_data:
+            if logic.groups.get_group_invitation(token_data['invitation_id']).accepted:
+                flask.flash('This invitation token has already been used. Please request a new invitation.', 'error')
+                return flask.abort(403)
         if token_data.get('group_id', None) != group_id:
             return flask.abort(403)
         user_id = token_data.get('user_id', None)
@@ -193,12 +198,23 @@ def group(group_id):
         delete_group_form = None
         remove_group_member_form = None
 
+    group_invitations = None
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    if user_is_member or flask_login.current_user.is_admin:
+        group_invitations = logic.groups.get_group_invitations(
+            group_id=group_id,
+            include_accepted_invitations=show_invitation_log,
+            include_expired_invitations=show_invitation_log
+        )
+
     return flask.render_template(
         'group.html',
         group=group,
         group_member_ids=group_member_ids,
         get_users=logic.users.get_users,
         get_user=logic.users.get_user,
+        group_invitations=group_invitations,
+        show_invitation_log=show_invitation_log,
         leave_group_form=leave_group_form,
         delete_group_form=delete_group_form,
         remove_group_member_form=remove_group_member_form,

@@ -3,16 +3,21 @@
 
 """
 
+import datetime
+
 import flask
 import flask_login
 
 from .. import frontend
-from ...logic.users import create_user
+from ...logic.users import create_user, get_user_invitation, set_user_invitation_accepted
 from ...logic.authentication import add_email_authentication
-from ...logic.utils import send_confirm_email
+from ...logic.utils import send_user_invitation_email
 from ...logic.security_tokens import verify_token
 
+from ...models import users
 from ...models import Authentication, UserType
+
+from ... import db
 
 from ..users_forms import InvitationForm, RegistrationForm
 
@@ -28,7 +33,6 @@ def invitation_route():
 
 
 def invitation():
-    # TODO: initial instrument permissions?
     invitation_form = InvitationForm()
     if flask.request.method == "GET":
         #  GET (invitation dialog )
@@ -44,8 +48,19 @@ def invitation():
                 has_error = True
             else:
                 has_success = True
+
+                user_invitation = users.UserInvitation(
+                    inviter_id=flask_login.current_user.id,
+                    utc_datetime=datetime.datetime.utcnow()
+                )
+                db.session.add(user_invitation)
+                db.session.commit()
+
                 # send confirm link
-                send_confirm_email(invitation_form.email.data, None, 'invitation')
+                send_user_invitation_email(
+                    email=email,
+                    invitation_id=user_invitation.id
+                )
         else:
             has_error = True
         return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success,
@@ -54,9 +69,20 @@ def invitation():
 
 def registration():
     token = flask.request.args.get('token')
-    email = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'])
-    if email is None or '@' not in email:
-        return flask.abort(404)
+    expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+    token_data = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
+    if token_data is None:
+        flask.flash('Invalid invitation token. Please request a new invitation.', 'error')
+        return flask.abort(403)
+    if isinstance(token_data, str):
+        email = token_data
+        invitation_id = None
+    else:
+        email = token_data['email']
+        invitation_id = token_data['invitation_id']
+        if get_user_invitation(invitation_id).accepted:
+            flask.flash('This invitation token has already been used. Please request a new invitation.', 'error')
+            return flask.abort(403)
     registration_form = RegistrationForm()
     if registration_form.email.data is None or registration_form.email.data == "":
         registration_form.email.data = email
@@ -79,7 +105,10 @@ def registration():
             if authentication_method is None:
                 user = create_user(name=name, email=email, type=UserType.PERSON)
                 add_email_authentication(user.id, email, password)
-                flask.flash('Your registration was successful.', 'success')
+                if invitation_id is not None:
+                    set_user_invitation_accepted(invitation_id)
+                flask.flash('Your account has been created successfully.', 'success')
+                flask_login.login_user(user)
                 return flask.redirect(flask.url_for('frontend.index'))
             flask.flash('There already is an account with this email address. Please use this account or contact an administrator.', 'error')
             return flask.redirect(flask.url_for('frontend.sign_in'))

@@ -1,8 +1,5 @@
-import itsdangerous
 import sampledb
 import sampledb.models
-
-from ..test_utils import  app
 
 
 def test_generate_token(app):

@@ -1,18 +1,11 @@
 import pytest
-import bcrypt
 import re
 from bs4 import BeautifulSoup
-
-from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
 import sampledb
 import sampledb.models
 import sampledb.logic
-from sampledb.logic.security_tokens import generate_token
 from sampledb.logic.authentication import add_email_authentication
-
-
-from ..test_utils import flask_server, app
 
 
 @pytest.fixture
@@ -55,6 +48,7 @@ def user2(app):
 
 
 def test_send_recovery_email_no_authentification_method(app, user_without_authentication):
+    server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         # Send recovery email
@@ -75,6 +69,7 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
         message = outbox[0].html
         assert 'SampleDB Account Recovery' in message
         assert 'There is no way to sign in to your SampleDB account' in message
+    app.config['SERVER_NAME'] = server_name
 
 
 def test_send_recovery_email_for_ldap_authentication(app):
@@ -121,6 +116,7 @@ def test_send_recovery_email_for_email_authentication(app, user):
 
 def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, user2):
     # Send recovery email
+    server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         users = []
@@ -140,3 +136,4 @@ def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, us
             preference_url = 'localhost/users/{}/preferences'.format(user.id)
             anchors = document.find_all('a', attrs={'href': re.compile(preference_url)})
             assert len(anchors) == 1
+    app.config['SERVER_NAME'] = server_name

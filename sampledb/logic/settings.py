@@ -23,7 +23,9 @@ from .users import get_user
 
 DEFAULT_SETTINGS = {
     "OBJECTS_PER_PAGE": 25,
-    "USE_SCHEMA_EDITOR": True
+    "USE_SCHEMA_EDITOR": True,
+    "USE_ADMIN_PERMISSIONS": False,
+    "SHOW_INVITATION_LOG": False,
 }
 
 

@@ -29,7 +29,8 @@ from .notifications import create_notification_for_having_received_an_objects_pe
 from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
-from .users import get_user
+from . import settings
+from .users import get_user, get_administrators
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -47,8 +48,19 @@ def set_object_public(object_id: int, is_public: bool = True):
     db.session.commit()
 
 
-def get_object_permissions_for_users(object_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True):
+def get_object_permissions_for_users(object_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True, include_admin_permissions: bool = True):
     object_permissions = {}
+
+    if include_admin_permissions:
+        for user in get_administrators():
+            if not settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+                # skip admins who do not use admin permissions
+                continue
+            if user.is_readonly:
+                object_permissions[user.id] = Permissions.READ
+            else:
+                object_permissions[user.id] = Permissions.GRANT
+
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=object_id).all():
         object_permissions[user_object_permissions.user_id] = user_object_permissions.permissions
     if include_instrument_responsible_users:
@@ -106,8 +118,17 @@ def _get_object_responsible_user_ids(object_id):
     return [user.id for user in instrument.responsible_users]
 
 
-def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True):
+def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True, include_admin_permissions: bool = True):
     user = get_user(user_id)
+
+    if include_admin_permissions:
+        # administrators have GRANT permissions if they use admin permissions
+        if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+            # unless they are limited to READ permissions
+            if user.is_readonly:
+                return Permissions.READ
+            else:
+                return Permissions.GRANT
 
     if include_instrument_responsible_users and include_groups and include_projects:
         stmt = db.text("""
@@ -255,6 +276,13 @@ def get_objects_with_permissions(
         object_ids: typing.Optional[typing.Sequence[int]] = None,
         **kwargs
 ) -> typing.List[Object]:
+
+    user = get_user(user_id)
+
+    # readonly users may not have more than READ permissions
+    if user.is_readonly and permissions != Permissions.READ:
+        return []
+
     if action_type is not None and action_id is not None:
         action_filter = db.and_(Action.type == action_type, Action.id == action_id)
     elif action_type is not None:
@@ -264,29 +292,33 @@ def get_objects_with_permissions(
     else:
         action_filter = None
 
-    stmt = db.text("""
-    SELECT
-    o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime
-    FROM (
+    if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+        # admins who use admin permissions do not need permission-based filtering
+        table = None
+    else:
+        stmt = db.text("""
         SELECT
-        object_id
-        FROM user_object_permissions_by_all
-        WHERE user_id = :user_id OR user_id IS NULL
-        GROUP BY (object_id)
-        HAVING MAX(permissions_int) >= :min_permissions_int
-    ) AS p
-    JOIN objects_current AS o ON o.object_id = p.object_id
-    """)
-    stmt = stmt.columns(
-        objects.Objects._current_table.c.object_id,
-        objects.Objects._current_table.c.version_id,
-        objects.Objects._current_table.c.action_id,
-        objects.Objects._current_table.c.data,
-        objects.Objects._current_table.c.schema,
-        objects.Objects._current_table.c.user_id,
-        objects.Objects._current_table.c.utc_datetime
-    )
-    table = sqlalchemy.sql.alias(stmt)
+        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime
+        FROM (
+            SELECT
+            object_id
+            FROM user_object_permissions_by_all
+            WHERE user_id = :user_id OR user_id IS NULL
+            GROUP BY (object_id)
+            HAVING MAX(permissions_int) >= :min_permissions_int
+        ) AS p
+        JOIN objects_current AS o ON o.object_id = p.object_id
+        """)
+        stmt = stmt.columns(
+            objects.Objects._current_table.c.object_id,
+            objects.Objects._current_table.c.version_id,
+            objects.Objects._current_table.c.action_id,
+            objects.Objects._current_table.c.data,
+            objects.Objects._current_table.c.schema,
+            objects.Objects._current_table.c.user_id,
+            objects.Objects._current_table.c.utc_datetime
+        )
+        table = sqlalchemy.sql.alias(stmt)
 
     parameters = {
         'min_permissions_int': permissions.value,
@@ -402,3 +434,32 @@ def request_object_permissions(requester_id: int, object_id: int) -> None:
     ]
     for user_id in granting_user_ids:
         create_notification_for_having_received_an_objects_permissions_request(user_id, object_id, requester_id)
+
+
+def copy_permissions(target_object_id: int, source_object_id: int) -> None:
+    PublicObjects.query.filter_by(object_id=target_object_id).delete()
+    UserObjectPermissions.query.filter_by(object_id=target_object_id).delete()
+    GroupObjectPermissions.query.filter_by(object_id=target_object_id).delete()
+    ProjectObjectPermissions.query.filter_by(object_id=target_object_id).delete()
+
+    if PublicObjects.query.filter_by(object_id=source_object_id).first() is not None:
+        db.session.add(PublicObjects(object_id=target_object_id))
+    for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=source_object_id).all():
+        db.session.add(UserObjectPermissions(
+            object_id=target_object_id,
+            user_id=user_object_permissions.user_id,
+            permissions=user_object_permissions.permissions
+        ))
+    for group_object_permissions in GroupObjectPermissions.query.filter_by(object_id=source_object_id).all():
+        db.session.add(GroupObjectPermissions(
+            object_id=target_object_id,
+            group_id=group_object_permissions.group_id,
+            permissions=group_object_permissions.permissions
+        ))
+    for project_object_permissions in ProjectObjectPermissions.query.filter_by(object_id=source_object_id).all():
+        db.session.add(ProjectObjectPermissions(
+            object_id=target_object_id,
+            project_id=project_object_permissions.project_id,
+            permissions=project_object_permissions.permissions
+        ))
+    db.session.commit()

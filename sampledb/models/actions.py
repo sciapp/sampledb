@@ -28,8 +28,9 @@ class Action(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     user = db.relationship("User", backref="actions")
     description_as_html = db.Column(db.String, nullable=True, default=None)
+    is_hidden = db.Column(db.Boolean, nullable=False, default=False)
 
-    def __init__(self, action_type: ActionType, name: str, schema: dict, description: str = '', instrument_id: typing.Optional[int] = None, user_id: typing.Optional[int] = None, description_as_html: typing.Optional[str] = None):
+    def __init__(self, action_type: ActionType, name: str, schema: dict, description: str = '', instrument_id: typing.Optional[int] = None, user_id: typing.Optional[int] = None, description_as_html: typing.Optional[str] = None, is_hidden: bool = False):
         self.type = action_type
         self.name = name
         self.description = description
@@ -37,6 +38,7 @@ class Action(db.Model):
         self.schema = schema
         self.user_id = user_id
         self.description_as_html = description_as_html
+        self.is_hidden = is_hidden
 
     def __eq__(self, other):
         return (
@@ -46,6 +48,7 @@ class Action(db.Model):
             self.name == other.name and
             self.description == other.description and
             self.description_as_html == other.description_as_html and
+            self.is_hidden == other.is_hidden and
             self.schema == other.schema
         )
 

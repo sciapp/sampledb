@@ -10,8 +10,6 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 
-from ..test_utils import app_context, app, flask_server
-
 
 def test_create_project():
     user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)

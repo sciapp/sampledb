@@ -8,7 +8,6 @@ import os
 import pytest
 import sampledb.logic
 import sampledb.__main__ as scripts
-from ..test_utils import app_context
 
 
 @pytest.fixture

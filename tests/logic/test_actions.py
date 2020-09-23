@@ -5,9 +5,7 @@
 
 import pytest
 import sampledb
-from sampledb.logic import actions, errors, instruments, schemas, users
-
-from ..test_utils import app_context
+from sampledb.logic import actions, errors, instruments, users
 
 SCHEMA = {
         'title': 'Example Action',

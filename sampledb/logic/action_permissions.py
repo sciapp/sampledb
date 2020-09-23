@@ -11,6 +11,7 @@ from . import groups
 from . import users
 from . import projects
 from . import instruments
+from . import settings
 from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions, Action, ActionType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -145,7 +146,7 @@ def get_action_permissions_for_projects(action_id: int) -> typing.Dict[int, Perm
     return action_permissions
 
 
-def get_user_action_permissions(action_id, user_id, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True) -> Permissions:
+def get_user_action_permissions(action_id, user_id, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_admin_permissions: bool = True) -> Permissions:
     """
     Get permissions for a specific action for a specific user.
 
@@ -154,6 +155,7 @@ def get_user_action_permissions(action_id, user_id, include_instrument_responsib
     :param include_instrument_responsible_users: whether instrument responsible user status should be included
     :param include_groups: whether groups that the users are members of should be included
     :param include_projects: whether projects that the users are members of should be included
+    :param include_admin_permissions: whether admin permissions should be included
     :return: the user's permissions for this action
     :raise errors.ActionDoesNotExistError: if no action with the given action
         ID exists
@@ -170,8 +172,8 @@ def get_user_action_permissions(action_id, user_id, include_instrument_responsib
     else:
         max_permissions = Permissions.GRANT
 
-    # administrators always have GRANT permissions
-    if user.is_admin:
+    # administrators have GRANT permissions if they use admin permissions
+    if include_admin_permissions and user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
         return min(Permissions.GRANT, max_permissions)
     # action owners always have GRANT permissions
     if action.user_id == user_id:

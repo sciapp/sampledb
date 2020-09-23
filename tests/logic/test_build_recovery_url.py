@@ -1,14 +1,11 @@
 import pytest
 import bcrypt
-from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
 
 import sampledb
 import sampledb.models
 import sampledb.logic
-
-from ..test_utils import flask_server, app, app_context
 
 
 @pytest.fixture
@@ -51,11 +48,13 @@ def test_build_recovery_url_with_wrong_parameter(users):
 
 def test_build_recovery_url_email(app, users):
     # build recovery_url_of_every_authentication_method
+    server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         authentication_method = Authentication.query.filter(Authentication.user_id == users[0].id).first()
         confirm_url = sampledb.logic.utils.build_confirm_url(authentication_method)
         assert confirm_url.startswith('http://localhost/users')
+    app.config['SERVER_NAME'] = server_name
 
 
 def test_build_recovery_url_ldap(app, users):

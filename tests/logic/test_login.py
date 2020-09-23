@@ -1,6 +1,5 @@
 import pytest
 import bcrypt
-from bs4 import BeautifulSoup
 
 from sampledb.models import User, UserType,  Authentication, AuthenticationType
 from sampledb.logic.errors import AuthenticationMethodWrong, OnlyOneAuthenticationMethod, \
@@ -8,8 +7,6 @@ from sampledb.logic.errors import AuthenticationMethodWrong, OnlyOneAuthenticati
 from sampledb.logic.authentication import remove_authentication_method, change_password_in_authentication_method
 import sampledb
 import sampledb.models
-
-from ..test_utils import app_context, flask_server, app
 
 
 @pytest.fixture
@@ -129,10 +126,12 @@ def test_add_login(flask_server, users):
 
 def test_add_login_email(app, users):
     # add authentication-method email
+    server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         result = sampledb.logic.authentication.add_authentication_method(3, 'new_user@example.com', 'xxx', AuthenticationType.EMAIL)
         assert result is True
+    app.config['SERVER_NAME'] = server_name
 
 
 def test_add_login_other_not_allowed(flask_server, users):

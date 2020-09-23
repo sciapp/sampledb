@@ -3,11 +3,39 @@
 
 """
 
+import collections
+import datetime
 import typing
+
+import flask
 
 from .. import db
 from . import errors
-from .. models import User, UserType
+from .. models import users, User, UserType
+
+
+class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id', 'utc_datetime', 'accepted'])):
+    """
+    This class provides an immutable wrapper around models.users.UserInvitation.
+    """
+
+    def __new__(cls, id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
+        self = super(UserInvitation, cls).__new__(cls, id, inviter_id, utc_datetime, accepted)
+        return self
+
+    @classmethod
+    def from_database(cls, user_invitation: users.UserInvitation) -> 'UserInvitation':
+        return UserInvitation(
+            id=user_invitation.id,
+            inviter_id=user_invitation.inviter_id,
+            utc_datetime=user_invitation.utc_datetime,
+            accepted=user_invitation.accepted
+        )
+
+    @property
+    def expired(self):
+        expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
+        return datetime.datetime.utcnow() >= expiration_datetime
 
 
 def get_user(user_id: int) -> User:
@@ -29,6 +57,15 @@ def get_users(exclude_hidden: bool = False) -> typing.List[User]:
     if exclude_hidden:
         return User.query.filter_by(is_hidden=False).all()
     return User.query.all()
+
+
+def get_administrators() -> typing.List[User]:
+    """
+    Returns all current administrators.
+
+    :return: the list of administrators
+    """
+    return User.query.filter_by(is_admin=True).all()
 
 
 def get_users_by_name(name: str) -> typing.List[User]:
@@ -105,4 +142,35 @@ def set_user_administrator(user_id: int, is_admin: bool) -> None:
     user = get_user(user_id)
     user.is_admin = is_admin
     db.session.add(user)
+    db.session.commit()
+
+
+def get_user_invitation(invitation_id: int) -> UserInvitation:
+    """
+    Get an existing invitation.
+
+    :param invitation_id: the ID of an existing invitation
+    :return: the invitation
+    :raise errors.UserInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = users.UserInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.UserInvitationDoesNotExistError()
+    return UserInvitation.from_database(invitation)
+
+
+def set_user_invitation_accepted(invitation_id: int) -> None:
+    """
+    Mark an invitation as having been accepted.
+
+    :param invitation_id: the ID of an existing invitation
+    :raise errors.UserInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = users.UserInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.UserInvitationDoesNotExistError()
+    invitation.accepted = True
+    db.session.add(invitation)
     db.session.commit()

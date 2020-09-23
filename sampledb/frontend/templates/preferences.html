@@ -477,6 +477,43 @@
         </select>
       </span>
     </div>
+    {% if user.is_admin %}
+  <h2>Administrator Settings</h2>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-use-admin-permissions-yes">
+        Use Admin Permissions
+      </label>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-use-admin-permissions" id="input-use-admin-permissions-yes" value="yes" {% if user_settings["USE_ADMIN_PERMISSIONS"] %}checked="checked"{% endif %}>
+          Yes &mdash; Use <b>GRANT</b> permissions for all objects
+        </label>
+      </div>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-use-admin-permissions" id="input-use-admin-permissions-no" value="no" {% if not user_settings["USE_ADMIN_PERMISSIONS"] %}checked="checked"{% endif %}>
+          No &mdash; Use regular permission system
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-show-invitation-log-yes">
+        Show full invitation log for groups and projects
+      </label>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-invitation-log" id="input-show-invitation-log-yes" value="yes" {% if user_settings["SHOW_INVITATION_LOG"] %}checked="checked"{% endif %}>
+          Yes &mdash; Show all past invitations
+        </label>
+      </div>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-invitation-log" id="input-show-invitation-log-no" value="no" {% if not user_settings["SHOW_INVITATION_LOG"] %}checked="checked"{% endif %}>
+          No &mdash; Only show pending invitations
+        </label>
+      </div>
+    </div>
+    {% endif %}
     <div class="form-group">
       <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_other_settings" value="edit_other_settings">Save</button>
     </div>

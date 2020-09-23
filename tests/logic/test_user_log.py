@@ -8,10 +8,6 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 
-from ..test_utils import flask_server, app, app_context
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 @pytest.fixture
 def user1():

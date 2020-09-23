@@ -3,8 +3,6 @@
 
 """
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 import sampledb.logic
 
 

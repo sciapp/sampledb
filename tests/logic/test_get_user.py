@@ -7,8 +7,6 @@ import sampledb.models
 import sampledb.logic
 
 
-from ..test_utils import app_context, flask_server, app
-
 @pytest.fixture
 def users():
     names = ['User 1', 'User 2']

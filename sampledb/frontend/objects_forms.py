@@ -96,9 +96,14 @@ class ObjectLocationAssignmentForm(FlaskForm):
 class ObjectPublicationForm(FlaskForm):
     doi = StringField()
     title = StringField()
+    object_name = StringField()
 
     def validate_doi(form, field):
         try:
             field.data = simplify_doi(field.data)
         except InvalidDOIError:
             raise ValidationError('Please enter a valid DOI')
+
+
+class CopyPermissionsForm(FlaskForm):
+    object_id = SelectField(validators=[InputRequired()])

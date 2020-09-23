@@ -19,7 +19,15 @@ from .utils import check_current_user_is_not_readonly
 def project(project_id):
     if 'token' in flask.request.args:
         token = flask.request.args.get('token')
-        token_data = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'])
+        expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+        token_data = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
+        if token_data is None:
+            flask.flash('Invalid project invitation token. Please request a new invitation.', 'error')
+            return flask.abort(403)
+        if 'invitation_id' in token_data:
+            if logic.projects.get_project_invitation(token_data['invitation_id']).accepted:
+                flask.flash('This invitation token has already been used. Please request a new invitation.', 'error')
+                return flask.abort(403)
         if token_data.get('project_id', None) != project_id:
             return flask.abort(403)
         user_id = token_data.get('user_id', None)
@@ -129,6 +137,15 @@ def project(project_id):
         delete_project_form = DeleteProjectForm()
         remove_project_member_form = RemoveProjectMemberForm()
         remove_project_group_form = RemoveProjectGroupForm()
+
+    project_invitations = None
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    if Permissions.GRANT in user_permissions or flask_login.current_user.is_admin:
+        project_invitations = logic.projects.get_project_invitations(
+            project_id=project_id,
+            include_accepted_invitations=show_invitation_log,
+            include_expired_invitations=show_invitation_log
+        )
 
     if 'leave' in flask.request.form and Permissions.READ in user_permissions:
         if leave_project_form.validate_on_submit():
@@ -303,6 +320,8 @@ def project(project_id):
         project_member_group_ids=project_member_group_ids,
         project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
+        project_invitations=project_invitations,
+        show_invitation_log=show_invitation_log,
         leave_project_form=leave_project_form,
         delete_project_form=delete_project_form,
         remove_project_member_form=remove_project_member_form,

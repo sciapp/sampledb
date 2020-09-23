@@ -20,7 +20,7 @@ from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm
 from ...logic import user_log
 from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token
 from ...logic.users import get_user, get_users
-from ...logic.utils import send_confirm_email, send_recovery_email
+from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.object_permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
 from ...logic.projects import get_user_projects, get_project
@@ -170,7 +170,11 @@ def change_preferences(user, user_id):
                 flask.flash("Successfully updated your user name.", 'success')
             if change_user_form.email.data != user.email:
                 # send confirm link
-                send_confirm_email(change_user_form.email.data, user.id, 'edit_profile')
+                send_email_confirmation_email(
+                    email=change_user_form.email.data,
+                    user_id=user.id,
+                    salt='edit_profile'
+                )
                 flask.flash("Please see your email to confirm this change.", 'success')
             if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation:
                 if change_user_form.orcid.data and change_user_form.orcid.data.strip():
@@ -388,6 +392,12 @@ def change_preferences(user, user_id):
             except ValueError:
                 pass
 
+        if flask_login.current_user.is_admin:
+            use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
+            modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
+            show_invitation_log = flask.request.form.get('input-show-invitation-log', 'yes') != 'no'
+            modified_settings['SHOW_INVITATION_LOG'] = show_invitation_log
+
         set_user_settings(flask_login.current_user.id, modified_settings)
         flask.flash("Successfully updated your settings.", 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
@@ -432,13 +442,17 @@ def confirm_email():
         if data1 is not None:
             data = data1
             salt = 'edit_profile'
-        if data2 is not None:
+        else:
             data = data2
             salt = 'add_login'
-        if len(data) != 2:
+        if isinstance(data, list) and len(data) == 2:
+            # TODO: remove support for old token data
+            email, user_id = data
+        elif isinstance(data, dict) and 'email' in data and 'user_id' in data:
+            email = data['email']
+            user_id = data['user_id']
+        else:
             return flask.abort(400)
-        email = data[0]
-        user_id = data[1]
         if salt == 'edit_profile':
             user = get_user(user_id)
             user.email = email

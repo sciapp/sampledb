@@ -462,7 +462,9 @@ def _write_publications(object, canvas):
         canvas.top_cursor = _draw_left_aligned_wrapped_text(canvas, "Publications", canvas.left_cursor, PAGE_WIDTH - RIGHT_MARGIN - canvas.left_cursor, canvas.top_cursor, "Helvetica-Bold", 14, 1.2)
         canvas.top_cursor -= 4 * mm
         for publication in publications:
-            text = '• {}: {}'.format(publication.doi, publication.title)
+            text = f'• {publication.doi}: {publication.title or "—"}'
+            if publication.object_name:
+                text += f' ({publication.object_name})'
             _append_text(canvas, text)
         canvas.showPage()
 

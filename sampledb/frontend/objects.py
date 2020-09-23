@@ -34,7 +34,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
 from .object_form_parser import parse_form_data
@@ -535,12 +535,25 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         create_log_entry_default = None
         may_create_log_entry = False
 
+    if object is None and 'copy_permissions_from_other_object' in flask.request.form and 'copy_permissions_object_id' in flask.request.form:
+        copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
+        try:
+            copy_permissions_object_id = int(copy_permissions_object_id)
+            if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+                copy_permissions_object_id = None
+        except Exception:
+            pass
+    else:
+        copy_permissions_object_id = None
+
     if previous_object is not None:
         action_id = previous_object.action_id
         previous_object_id = previous_object.id
+        has_grant_for_previous_object = Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id)
     else:
         action_id = action.id
         previous_object_id = None
+        has_grant_for_previous_object = False
     errors = []
     object_errors = {}
     form_data = {}
@@ -619,7 +632,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                 data_sequence.append(deepcopy(object_data))
                         else:
                             data_sequence = [object_data] * num_objects_in_batch
-                        objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id)
+                        objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id, copy_permissions_object_id=copy_permissions_object_id)
                         object_ids = [object.id for object in objects]
                         if category_ids is not None:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
@@ -636,7 +649,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                         flask.flash('The objects were created successfully.', 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
-                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema)
+                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema, copy_permissions_object_id=copy_permissions_object_id)
                         if category_ids is not None:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
                                 instrument_id=action.instrument.id,
@@ -688,6 +701,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             if measurement.object_id != object.object_id
         ]
 
+    existing_objects = get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.GRANT
+    )
+
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     if object is None:
         return flask.render_template(
@@ -702,12 +720,15 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             form=form,
             samples=samples,
             measurements=measurements,
+            can_copy_permissions=True,
+            existing_objects=existing_objects,
             datetime=datetime,
             tags=tags,
             may_create_log_entry=may_create_log_entry,
             instrument_log_categories=instrument_log_categories,
             create_log_entry_default=create_log_entry_default,
-            previous_object_id=previous_object_id
+            previous_object_id=previous_object_id,
+            has_grant_for_previous_object=has_grant_for_previous_object
         )
     else:
         return flask.render_template(
@@ -800,7 +821,7 @@ def object(object_id):
         favorite_measurement_actions = [
             action
             for action in measurement_actions
-            if action.id in favorite_action_ids
+            if action.id in favorite_action_ids and not action.is_hidden
         ]
         # Sort by: instrument name (independent actions first), action name
         favorite_measurement_actions.sort(key=lambda action: (
@@ -1113,21 +1134,28 @@ def post_object_publication(object_id):
     if publication_form.validate_on_submit():
         doi = publication_form.doi.data
         title = publication_form.title.data
+        object_name = publication_form.object_name.data
+        if title is not None:
+            title = title.strip()
         if not title:
             title = None
+        if object_name is not None:
+            object_name = object_name.strip()
+        if not object_name:
+            object_name = None
         existing_publication = ([
             publication
             for publication in logic.publications.get_publications_for_object(object_id)
             if publication.doi == doi
         ] or [None])[0]
-        if existing_publication is not None and existing_publication.title == title:
+        if existing_publication is not None and existing_publication.title == title and existing_publication.object_name == object_name:
             flask.flash('This object has already been linked to this publication.', 'info')
         else:
-            logic.publications.link_publication_to_object(user_id=flask_login.current_user.id, object_id=object_id, doi=doi, title=title)
+            logic.publications.link_publication_to_object(user_id=flask_login.current_user.id, object_id=object_id, doi=doi, title=title, object_name=object_name)
             if existing_publication is None:
                 flask.flash('Successfully linked this object to a publication.', 'success')
             else:
-                flask.flash('Successfully updated the title of this publication.', 'success')
+                flask.flash('Successfully updated the information for this publication.', 'success')
     else:
         flask.flash('Please enter a valid DOI for the publication you want to link this object to.', 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
@@ -1461,7 +1489,7 @@ def object_permissions(object_id):
     object = get_object(object_id)
     action = get_action(object.action_id)
     instrument = action.instrument
-    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False)
+    user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False, include_admin_permissions=False)
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
@@ -1496,11 +1524,22 @@ def object_permissions(object_id):
         projects = get_user_projects(flask_login.current_user.id, include_groups=True)
         projects = [project for project in projects if project.id not in project_permissions]
         add_project_permissions_form = ObjectProjectPermissionsForm()
+        copy_permissions_form = CopyPermissionsForm()
+        existing_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.GRANT
+        )
+        copy_permissions_form.object_id.choices = [
+            (str(existing_object.id), existing_object.data['name']['text'])
+            for existing_object in existing_objects
+            if existing_object.id != object_id
+        ]
     else:
         edit_user_permissions_form = None
         add_user_permissions_form = None
         add_group_permissions_form = None
         add_project_permissions_form = None
+        copy_permissions_form = None
         users = []
         groups = []
         projects = []
@@ -1523,6 +1562,7 @@ def object_permissions(object_id):
         add_group_permissions_form=add_group_permissions_form,
         get_group=get_group,
         add_project_permissions_form=add_project_permissions_form,
+        copy_permissions_form=copy_permissions_form,
         get_project=get_project,
         suggested_user_id=suggested_user_id
     )
@@ -1535,7 +1575,23 @@ def update_object_permissions(object_id):
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
     add_project_permissions_form = ObjectProjectPermissionsForm()
-    if 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+    copy_permissions_form = CopyPermissionsForm()
+    if 'copy_permissions' in flask.request.form:
+
+        existing_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.GRANT
+        )
+        copy_permissions_form.object_id.choices = [
+            (str(existing_object.id), existing_object.data['name']['text'])
+            for existing_object in existing_objects
+            if existing_object.id != object_id
+        ]
+        if copy_permissions_form.validate_on_submit():
+            logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
+            logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)
+            flask.flash("Successfully copied object permissions.", 'success')
+    elif 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
         set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
         for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
@@ -1566,7 +1622,7 @@ def update_object_permissions(object_id):
     elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
         user_id = add_user_permissions_form.user_id.data
         permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-        object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False)
+        object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_admin_permissions=False)
         assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
         assert user_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)

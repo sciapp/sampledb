@@ -1,6 +1,23 @@
 Changelog
 =========
 
+Version 0.14
+------------
+
+Released on September 23rd, 2020.
+
+- Allow restricting location management to administrators
+- Do not show hidden users as instrument scientists
+- Added setting for admin permissions
+- Allow hiding instruments and actions
+- Added object name to properties of publications linked to an object
+- Improved invitation token handling
+- Made invitation time limit configurable
+- Show pending group and project invitations to members
+- Show all group and project invitations to administrators
+- Allow copying permissions from another object
+- Improved user interface
+
 Version 0.13.1
 --------------
 

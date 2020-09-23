@@ -5,14 +5,10 @@
 
 import requests
 import pytest
-from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
 import sampledb.logic
-
-
-from tests.test_utils import flask_server, app, app_context
 
 
 @pytest.fixture

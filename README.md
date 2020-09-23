@@ -1,5 +1,8 @@
 # SampleDB
 
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![DOI](https://zenodo.org/badge/221237572.svg)](https://zenodo.org/badge/latestdoi/221237572)
+
 SampleDB is a web-based sample and measurement metadata database.
 
 ## Documentation
@@ -43,7 +46,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.13.1
+    sciapp/sampledb:0.14.0
 ```
 
 This will start a minimal SampleDB installation at `http://localhost:8000` and allow you to sign in with the username `admin` and the password `password` (which you should change immediately after signing in).

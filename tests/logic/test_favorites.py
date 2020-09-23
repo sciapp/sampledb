@@ -10,11 +10,6 @@ import sampledb.logic
 from sampledb.logic import favorites
 from sampledb.models import Action, ActionType, Instrument, User, UserType
 
-from ..test_utils import app_context
-
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 @pytest.fixture
 def users():

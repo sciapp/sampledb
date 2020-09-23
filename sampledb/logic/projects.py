@@ -27,7 +27,7 @@ import flask
 from .. import db
 from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .users import get_user
-from .security_tokens import generate_token, MAX_AGE
+from .security_tokens import generate_token
 from . import groups
 from . import errors
 from . import notifications
@@ -49,6 +49,32 @@ class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
     @classmethod
     def from_database(cls, project: projects.Project) -> 'Project':
         return Project(id=project.id, name=project.name, description=project.description)
+
+
+class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'project_id', 'user_id', 'inviter_id', 'utc_datetime', 'accepted'])):
+    """
+    This class provides an immutable wrapper around models.projects.ProjectInvitation.
+    """
+
+    def __new__(cls, id: int, project_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
+        self = super(ProjectInvitation, cls).__new__(cls, id, project_id, user_id, inviter_id, utc_datetime, accepted)
+        return self
+
+    @classmethod
+    def from_database(cls, project_invitation: projects.ProjectInvitation) -> 'ProjectInvitation':
+        return ProjectInvitation(
+            id=project_invitation.id,
+            project_id=project_invitation.project_id,
+            user_id=project_invitation.user_id,
+            inviter_id=project_invitation.inviter_id,
+            utc_datetime=project_invitation.utc_datetime,
+            accepted=project_invitation.accepted
+        )
+
+    @property
+    def expired(self):
+        expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
+        return datetime.datetime.utcnow() >= expiration_datetime
 
 
 def create_project(name: str, description: str, initial_user_id: int) -> Project:
@@ -291,9 +317,17 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
     get_user(user_id)
     if Permissions.READ in get_user_project_permissions(project_id, user_id):
         raise errors.UserAlreadyMemberOfProjectError()
-
+    invitation = projects.ProjectInvitation(
+        project_id=project_id,
+        user_id=user_id,
+        inviter_id=inviter_id,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    db.session.add(invitation)
+    db.session.commit()
     token = generate_token(
         {
+            'invitation_id': invitation.id,
             'user_id': user_id,
             'project_id': project_id,
             'other_project_ids': add_to_parent_project_ids
@@ -301,7 +335,8 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
         salt='invite_to_project',
         secret_key=flask.current_app.config['SECRET_KEY']
     )
-    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=MAX_AGE)
+    expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.project", project_id=project_id, token=token, _external=True)
     notifications.create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
@@ -337,6 +372,16 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
         raise errors.UserAlreadyMemberOfProjectError()
     user_permissions = UserProjectPermissions(project_id=project_id, user_id=user_id, permissions=permissions)
     db.session.add(user_permissions)
+    invitations = get_project_invitations(
+        project_id=project_id,
+        user_id=user_id,
+        include_expired_invitations=False,
+        include_accepted_invitations=False
+    )
+    for invitation in invitations:
+        invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
+        invitation.accepted = True
+        db.session.add(invitation)
     db.session.commit()
     if other_project_ids:
         ancestor_project_ids = get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
@@ -714,3 +759,56 @@ def can_child_add_users_to_parent_project(child_project_id: int, parent_project_
     if subproject_relationship is None:
         return False
     return subproject_relationship.child_can_add_users_to_parent
+
+
+def get_project_invitations(
+        project_id: int,
+        user_id: typing.Optional[int] = None,
+        include_accepted_invitations: bool = True,
+        include_expired_invitations: bool = True
+) -> typing.List[ProjectInvitation]:
+    """
+    Get all (current) invitations for a user to join a project.
+
+    :param project_id: the ID of an existing project
+    :param user_id: the ID of an existing user or None
+    :param include_accepted_invitations: whether or not to include invitations
+        that have already been accepted by the user
+    :param include_expired_invitations: whether or not to include invitations
+        that have already expired
+    :return: the list of project invitations
+    :raise errors.ProjectDoesNotExistError: when no project with the given
+        project ID exists
+    """
+    project_invitations_query = projects.ProjectInvitation.query.filter_by(project_id=project_id)
+    if user_id is not None:
+        project_invitations_query = project_invitations_query.filter_by(user_id=user_id)
+    if not include_accepted_invitations:
+        project_invitations_query = project_invitations_query.filter_by(accepted=False)
+    if not include_expired_invitations:
+        expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
+        expired_invitation_datetime = datetime.datetime.utcnow() - datetime.timedelta(seconds=expiration_time_limit)
+        project_invitations_query.filter(projects.ProjectInvitation.utc_datetime > expired_invitation_datetime)
+    project_invitations = project_invitations_query.order_by(projects.ProjectInvitation.utc_datetime).all()
+    if not project_invitations:
+        # ensure that a project with this ID exists
+        get_project(project_id)
+    return [
+        ProjectInvitation.from_database(project_invitation)
+        for project_invitation in project_invitations
+    ]
+
+
+def get_project_invitation(invitation_id: int) -> ProjectInvitation:
+    """
+    Get an existing invitation.
+
+    :param invitation_id: the ID of an existing invitation
+    :return: the invitation
+    :raise errors.ProjectInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = projects.ProjectInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.ProjectInvitationDoesNotExistError()
+    return ProjectInvitation.from_database(invitation)

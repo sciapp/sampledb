@@ -4,11 +4,8 @@
 """
 
 import pytest
-import io
-import sys
 from sampledb.logic.instruments import create_instrument
 import sampledb.__main__ as scripts
-from ..test_utils import app_context
 
 
 @pytest.fixture

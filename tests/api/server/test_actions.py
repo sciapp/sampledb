@@ -5,14 +5,10 @@
 
 import requests
 import pytest
-import json
 
 import sampledb
 import sampledb.logic
 import sampledb.models
-
-
-from tests.test_utils import flask_server, app, app_context
 
 
 @pytest.fixture
@@ -62,6 +58,7 @@ def test_get_action(flask_server, auth):
         'type': 'sample',
         'name': "Example Action",
         'description': "This is an example action",
+        'is_hidden': False,
         'schema': {
             'title': 'Example Object',
             'type': 'object',
@@ -106,6 +103,7 @@ def test_get_actions(flask_server, auth):
             'type': 'sample',
             'name': "Example Action",
             'description': "This is an example action",
+            'is_hidden': False,
             'schema': {
                 'title': 'Example Object',
                 'type': 'object',

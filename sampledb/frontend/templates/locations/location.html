@@ -11,7 +11,7 @@
   </h1>
   <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description }}</pre>
   <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">View Objects</a>
-  {% if not current_user.is_readonly %}
+  {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
   <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">Edit Location</a>
   <a href="{{ url_for('.new_location', parent_location_id=location.id) }}" class="btn btn-default">Create Sub-Location</a>
   {% endif %}

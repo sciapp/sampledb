@@ -659,6 +659,7 @@ Reading a list of all instruments
                 "instrument_id": 1,
                 "name": "Example Instrument",
                 "description": "This is an example instrument",
+                "is_hidden": false,
                 "instrument_scientists": [1, 42]
             }
         ]
@@ -693,12 +694,14 @@ Reading an instrument
             "instrument_id": 1,
             "name": "Example Instrument",
             "description": "This is an example instrument",
+            "is_hidden": false,
             "instrument_scientists": [1, 42]
         }
 
     :>json number instrument_id: the instrument's ID
     :>json string name: the instruments's name
     :>json string description: the instruments's description
+    :>json bool is_hidden: whether or not the instrument is hidden
     :>json list instrument_scientists: the instrument scientists' IDs
     :statuscode 200: no error
     :statuscode 404: the instrument does not exist
@@ -1115,6 +1118,7 @@ Reading a list of all actions
                 "type": "sample",
                 "name": "Example Sample Creation",
                 "description": "This is an example action",
+                "is_hidden": false,
                 "schema": {
                     "title": "Example Sample",
                     "type": "object",
@@ -1133,6 +1137,7 @@ Reading a list of all actions
                 "type": "measurement",
                 "name": "Example Measurement",
                 "description": "This is an example action",
+                "is_hidden": false,
                 "schema": {
                     "title": "Example Measurement",
                     "type": "object",
@@ -1179,6 +1184,7 @@ Reading an action
             "type": "sample",
             "name": "Example Sample Creation",
             "description": "This is an example action",
+            "is_hidden": false,
             "schema": {
                 "title": "Example Sample",
                 "type": "object",
@@ -1197,6 +1203,7 @@ Reading an action
     :>json string type: the action's type ("sample", "measurement" or "simulation")
     :>json string name: the actions's name
     :>json string description: the actions's description
+    :>json bool is_hidden: whether or not the action is hidden
     :>json object schema: the actions's schema
     :statuscode 200: no error
     :statuscode 404: the action does not exist

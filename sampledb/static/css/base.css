@@ -11,6 +11,20 @@ body > #main.container {
         width: 100%;
     }
 }
+@media screen and (min-width: 768px){
+  .navbar-nav > .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+    .dropdown-menu {
+        margin-top: 0;
+    }
+    .dropdown-toggle {
+        margin-bottom: 2px;
+    }
+    .navbar .dropdown-toggle, .nav-tabs .dropdown-toggle {
+        margin-bottom: 0;
+    }
+}
 body > footer {
     background-color: #f8f8f8;
     border-top: 1px solid #e7e7e7;

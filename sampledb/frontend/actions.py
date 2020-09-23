@@ -42,6 +42,7 @@ class ActionForm(FlaskForm):
     is_public = BooleanField()
     is_user_specific = BooleanField(default=True)
     is_markdown = BooleanField(default=None)
+    is_hidden = BooleanField(default=None)
 
 
 @frontend.route('/actions/')
@@ -70,6 +71,8 @@ def actions():
     action_permissions = {}
     for action in get_actions(action_type):
         if user_id is not None and action.user_id != user_id:
+            continue
+        if action.is_hidden and not flask_login.current_user.is_admin and user_id != flask_login.current_user.id:
             continue
         permissions = get_user_action_permissions(user_id=flask_login.current_user.id, action_id=action.id)
         if Permissions.READ in permissions:
@@ -234,7 +237,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if action_form.name.data is None:
             action_form.is_public.data = None
     else:
-        user_instrument_ids = get_user_instruments(flask_login.current_user.id)
+        user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
         action_form.instrument.choices = [('-1', '-')] + [
             (str(instrument_id), get_instrument(instrument_id).name)
             for instrument_id in user_instrument_ids
@@ -256,6 +259,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.description.data = action.description
         if not action_form.is_submitted():
             action_form.is_markdown.data = (action.description_as_html is not None)
+            action_form.is_hidden.data = action.is_hidden
         if action_form.type.data is None or action_form.type.data == str(None):
             action_form.type.data = {
                 ActionType.SAMPLE_CREATION: 'sample',
@@ -271,6 +275,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.description.data = previous_action.description
         if not action_form.is_submitted():
             action_form.is_markdown.data = (previous_action.description_as_html is not None)
+            action_form.is_hidden.data = False
         if action_form.type.data is None or action_form.type.data == str(None):
             action_form.type.data = {
                 ActionType.SAMPLE_CREATION: 'sample',
@@ -339,6 +344,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         }.get(action_form.type.data, None)
         instrument_id = action_form.instrument.data
         is_public = action_form.is_public.data
+        is_hidden = action_form.is_hidden.data
         try:
             instrument_id = int(instrument_id)
         except ValueError:
@@ -357,7 +363,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 schema,
                 instrument_id,
                 user_id,
-                description_as_html=description_as_html
+                description_as_html=description_as_html,
+                is_hidden=is_hidden
             )
             flask.flash('The action was created successfully.', 'success')
             if may_change_public and is_public:
@@ -368,7 +375,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 name,
                 description,
                 schema,
-                description_as_html=description_as_html
+                description_as_html=description_as_html,
+                is_hidden=is_hidden
             )
             flask.flash('The action was updated successfully.', 'success')
             if may_change_public and is_public is not None:
