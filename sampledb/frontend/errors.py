@@ -11,6 +11,14 @@ from ..logic.errors import UserIsReadonlyError
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+@frontend.app_errorhandler(400)
+def bad_request(error):
+    try:
+        return flask.render_template('errors/400.html'), 400
+    except Exception:
+        return 'Bad Request', 400
+
+
 @frontend.app_errorhandler(403)
 def forbidden(error):
     try:

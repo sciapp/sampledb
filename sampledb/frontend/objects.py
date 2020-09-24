@@ -763,6 +763,7 @@ def object(object_id):
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
     user_may_grant = Permissions.GRANT in user_permissions
+    user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
     action = get_action(object.action_id)
     if action.schema != object.schema:
         new_schema_available = True
@@ -893,6 +894,7 @@ def object(object_id):
             related_objects_tree=related_objects_tree,
             object_publications=object_publications,
             user_may_link_publication=user_may_link_publication,
+            user_may_use_as_template=user_may_use_as_template,
             publication_form=publication_form,
             get_object=get_object,
             get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
@@ -1366,20 +1368,30 @@ def new_object():
 
     previous_object = None
     action = None
-    if action_id:
-        try:
-            action = get_action(action_id)
-        except ActionDoesNotExistError:
-            return flask.abort(404)
-        if Permissions.READ not in get_user_action_permissions(action_id, user_id=flask_login.current_user.id):
-            return flask.abort(404)
     if previous_object_id:
         try:
             previous_object = get_object(previous_object_id)
         except ObjectDoesNotExistError:
+            flask.flash("This object does not exist.", 'error')
             return flask.abort(404)
         if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
+            flask.flash("You do not have the required permissions to use this object as a template.", 'error')
+            return flask.abort(403)
+        if action_id:
+            if action_id != str(previous_object.action_id):
+                flask.flash("This object was created with a different action.", 'error')
+                return flask.abort(400)
+            else:
+                action_id = previous_object.action_id
+    if action_id:
+        try:
+            action = get_action(action_id)
+        except ActionDoesNotExistError:
+            flask.flash("This action does not exist.", 'error')
             return flask.abort(404)
+        if Permissions.READ not in get_user_action_permissions(action_id, user_id=flask_login.current_user.id):
+            flask.flash("You do not have the required permissions to use this action.", 'error')
+            return flask.abort(403)
 
     placeholder_data = {}
 
