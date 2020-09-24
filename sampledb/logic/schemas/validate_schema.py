@@ -58,6 +58,8 @@ def validate_schema(schema: dict, path: typing.Optional[typing.List[str]] = None
         return _validate_tags_schema(schema, path)
     elif schema['type'] == 'hazards':
         return _validate_hazards_schema(schema, path)
+    elif schema['type'] == 'user':
+        return _validate_user_schema(schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -457,3 +459,24 @@ def _validate_notebook_templates(notebook_templates: typing.Any) -> None:
                 valid_param_values = {'object_id'}
                 if param_value not in valid_param_values:
                     raise ValidationError('notebook template param value must be a list or one of {}'.format(valid_param_values), path)
+
+
+def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
+    """
+    Validates the given user object schema and raises a ValidationError if it is invalid.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    valid_keys = {'type', 'title', 'note'}
+    required_keys = {'type', 'title'}
+    schema_keys = set(schema.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if 'note' in schema and not isinstance(schema['note'], str):
+        raise ValidationError('note must be str', path)

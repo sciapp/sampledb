@@ -33,7 +33,7 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
         return new_data, []
     if previous_schema['type'] != new_schema['type']:
         return generate_placeholder(new_schema), ["Unable to convert property '{}' from type '{}' to type '{}'.".format(new_schema['title'], previous_schema['type'], new_schema['type'])]
-    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards'):
+    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user'):
         return data, []
     if new_schema['type'] == 'quantity':
         previous_dimensionality = get_dimensionality_for_units(previous_schema['units'])

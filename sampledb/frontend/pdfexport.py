@@ -175,6 +175,8 @@ def _handle_any(data, schema, path, canvas):
         _handle_datetime(data, schema, path, canvas)
     elif schema['type'] == 'hazards':
         _handle_hazards(data, schema, path, canvas)
+    elif schema['type'] == 'user':
+        _handle_user(data, schema, path, canvas)
     else:
         _handle_unknown(data, schema, path, canvas)
 
@@ -238,6 +240,15 @@ def _handle_sample(data, schema, path, canvas):
 
 def _handle_measurement(data, schema, path, canvas):
     text = '• {}: #{}'.format(schema['title'], data['object_id'])
+    _append_text(canvas, text)
+
+
+def _handle_user(data, schema, path, canvas):
+    try:
+        user = logic.users.get_user(data['user_id'])
+        text = '• {}: {} (#{})'.format(schema['title'], user.name, data['user_id'])
+    except logic.errors.UserDoesNotExistError:
+        text = '• {}: #{}'.format(schema['title'], data['user_id'])
     _append_text(canvas, text)
 
 

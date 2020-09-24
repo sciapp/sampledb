@@ -294,3 +294,12 @@ def test_generate_hazards():
     assert placeholder_object == {
         '_type': 'hazards'
     }
+
+
+def test_generate_user_object():
+    object_schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None

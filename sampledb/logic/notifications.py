@@ -520,3 +520,25 @@ def create_notification_for_a_new_instrument_log_entry(user_id: int, instrument_
             'instrument_log_entry_id': instrument_log_entry_id
         }
     )
+
+
+def create_notification_for_being_referenced_by_object_metadata(user_id: int, object_id: int) -> None:
+    """
+    Create a notification of type REFERENCED_BY_OBJECT_METADATA.
+
+    :param user_id: the ID of an existing user
+    :param object_id: the ID of the object
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.ObjectDoesNotExistError: when no object with the given ID
+        exists
+    """
+    # ensure the instrument log entry exists
+    logic.objects.get_object(object_id)
+    _create_notification(
+        type=NotificationType.REFERENCED_BY_OBJECT_METADATA,
+        user_id=user_id,
+        data={
+            'object_id': object_id
+        }
+    )

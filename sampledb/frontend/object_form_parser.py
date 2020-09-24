@@ -51,6 +51,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'hazards':
         return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'user':
+        return parse_user_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
@@ -300,6 +302,29 @@ def parse_object_form_data(form_data, schema, id_prefix, errors, required=False)
             property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
             if property is not None:
                 data[property_name] = property
+    schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if keys != [id_prefix + '__uid']:
+        raise ValueError('invalid user form data')
+    user_id = form_data.get(id_prefix + '__uid', [''])[0]
+    if not user_id:
+        if not required:
+            return None
+        else:
+            raise ValueError('Please select a user.')
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        raise ValueError('user_id must be int')
+    data = {
+        '_type': 'user',
+        'user_id': user_id
+    }
     schemas.validate(data, schema)
     return data
 

@@ -1730,3 +1730,48 @@ def test_notebook_templates_with_invalid_type():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_user_schema():
+    schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'note': 'Example Note'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_user_schema_with_invalid_note():
+    schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'note': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_user_schema_without_note():
+    schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_user_schema_with_missing_title():
+    schema = {
+        'type': 'user'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_user_schema_with_unknown_property():
+    schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'user_role': 'example'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))

@@ -43,6 +43,8 @@ def generate_placeholder(schema: dict, path: typing.Optional[typing.List[str]] =
         return _generate_tags_placeholder(schema, path)
     elif schema['type'] == 'hazards':
         return _generate_hazards_placeholder(schema, path)
+    elif schema['type'] == 'user':
+        return _generate_user_placeholder(schema, path)
     else:
         raise SchemaError('invalid type', path)
 
@@ -211,5 +213,16 @@ def _generate_measurement_placeholder(schema: dict, path: typing.List[str]) -> N
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: None, as there can be no default measurement
+    """
+    return None
+
+
+def _generate_user_placeholder(schema: dict, path: typing.List[str]) -> None:
+    """
+    Generates a placeholder user object based on an object schema.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :return: None, as there can be no default user
     """
     return None

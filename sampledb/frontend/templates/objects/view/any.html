@@ -20,6 +20,8 @@
   {% include "objects/view/tags.html" %}
 {% elif schema.type == 'hazards' %}
   {% include "objects/view/hazards.html" %}
+{% elif schema.type == 'user' %}
+  {% include "objects/view/user.html" %}
 {% else %}
   {{ name }}{{ schema.type }}{{ schema['type'] }}
 {% endif %}

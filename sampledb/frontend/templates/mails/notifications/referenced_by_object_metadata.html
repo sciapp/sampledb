@@ -1,0 +1,5 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+  <p>You have been referenced in the metadata for <a href="{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}" style="color:#337ab7;">object #{{ data['object_id'] }}.</a></p>
+{% endblock %}

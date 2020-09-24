@@ -91,6 +91,7 @@ Additionally, there are special data types:
 
 - :ref:`Tags <tags>`
 - :ref:`Hazards <hazards>`
+- User References
 - Sample References
 - Measurement References
 
@@ -270,6 +271,19 @@ Measurement references do not allow additional properties.
     {
       "title": "Preparatory Measurement",
       "type": "measurement"
+    }
+
+User References
+^^^^^^^^^^^^^^^
+
+User references do not allow additional properties.
+
+.. code-block:: json
+    :caption: A measurement reference property
+
+    {
+      "title": "Client",
+      "type": "user"
     }
 
 Notebook Templates
