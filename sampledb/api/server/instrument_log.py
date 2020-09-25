@@ -11,7 +11,7 @@ from flask_restful import Resource
 
 from .authentication import multi_auth
 from ...logic.instruments import get_instrument
-from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, InstrumentLogEntry, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, InstrumentLogCategory
+from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, InstrumentLogEntry, InstrumentLogEntryVersion, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, InstrumentLogCategory
 from ...logic import errors
 from ...logic.object_permissions import get_user_object_permissions, Permissions
 
@@ -24,27 +24,40 @@ def instrument_log_entry_to_json(log_entry: InstrumentLogEntry):
     return {
         'log_entry_id': log_entry.id,
         'author': log_entry.user_id,
-        'utc_datetime': log_entry.utc_datetime.isoformat(),
-        'content': log_entry.content,
+        'versions': [
+            instrument_log_entry_version_to_json(version)
+            for version in log_entry.versions
+        ]
+    }
+
+
+def instrument_log_entry_version_to_json(version: InstrumentLogEntryVersion):
+    return {
+        'log_entry_id': version.log_entry_id,
+        'version_id': version.version_id,
+        'utc_datetime': version.utc_datetime.isoformat(),
+        'content': version.content,
         'categories': [
             category_to_json(category)
-            for category in log_entry.categories
-        ]
+            for category in version.categories
+        ],
     }
 
 
 def file_attachment_to_json(file_attachment: InstrumentLogFileAttachment):
     return {
         'file_attachment_id': file_attachment.id,
-        'file_name': file_attachment.file_name,
-        'base64_content': base64.b64encode(file_attachment.content).decode('ascii')
+        'file_name': file_attachment.file_name if not file_attachment.is_hidden else None,
+        'base64_content': base64.b64encode(file_attachment.content).decode('ascii') if not file_attachment.is_hidden else None,
+        'is_hidden': file_attachment.is_hidden
     }
 
 
 def object_attachment_to_json(object_attachment: InstrumentLogObjectAttachment):
     return {
         'object_attachment_id': object_attachment.id,
-        'object_id': object_attachment.object_id
+        'object_id': object_attachment.object_id if not object_attachment.is_hidden else None,
+        'is_hidden': object_attachment.is_hidden
     }
 
 

@@ -99,7 +99,7 @@ def validate_data(data):
     del data['objects'][0]['versions'][0]['utc_datetime']
     del data['objects'][0]['files'][0]['utc_datetime']
     del data['objects'][0]['files'][1]['utc_datetime']
-    del data['instruments'][0]['instrument_log_entries'][0]['utc_datetime']
+    del data['instruments'][0]['instrument_log_entries'][0]['versions'][0]['utc_datetime']
 
     assert data == {
         'objects': [
@@ -174,12 +174,18 @@ def validate_data(data):
                 'instrument_log_entries': [
                     {
                         'id': 1,
-                        'content': 'Example Log Entry Text',
                         'author_id': 1,
-                        'categories': [
+                        'versions': [
                             {
-                                'id': 1,
-                                'title': 'Category'
+                                'log_entry_id': 1,
+                                'version_id': 1,
+                                'content': 'Example Log Entry Text',
+                                'categories': [
+                                    {
+                                        'id': 1,
+                                        'title': 'Category'
+                                    }
+                                ]
                             }
                         ],
                         'file_attachments': [

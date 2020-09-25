@@ -172,17 +172,23 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                     instrument_infos[-1]['instrument_log_entries'].append({
                         'id': log_entry.id,
                         'author_id': log_entry.user_id,
-                        'content': log_entry.content,
-                        'utc_datetime': log_entry.utc_datetime.isoformat(),
                         'file_attachments': [],
                         'object_attachments': [],
-                        'categories': []
+                        'versions': []
                     })
-                    for category in log_entry.categories:
-                        instrument_infos[-1]['instrument_log_entries'][-1]['categories'].append({
-                            'id': category.id,
-                            'title': category.title
+                    for version in log_entry.versions:
+                        instrument_infos[-1]['instrument_log_entries'][-1]['versions'].append({
+                            'log_entry_id': log_entry.id,
+                            'version_id': version.version_id,
+                            'content': version.content,
+                            'utc_datetime': version.utc_datetime.isoformat(),
+                            'categories': []
                         })
+                        for category in version.categories:
+                            instrument_infos[-1]['instrument_log_entries'][-1]['versions'][-1]['categories'].append({
+                                'id': category.id,
+                                'title': category.title
+                            })
                     file_attachments = logic.instrument_log_entries.get_instrument_log_file_attachments(log_entry.id)
                     for file_attachment in file_attachments:
                         file_name = os.path.basename(file_attachment.file_name)

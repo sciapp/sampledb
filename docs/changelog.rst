@@ -6,6 +6,7 @@ Version 0.15
 
 Currently in development.
 
+- Added versioning to instrument log entries
 - Added user to metadata types
 - Allow setting instrument log entry order
 - Allow custom action types
