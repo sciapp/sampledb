@@ -22,16 +22,22 @@ multi_auth = MultiAuth(http_basic_auth, http_token_auth)
 def verify_token(api_token):
     if not api_token:
         return None
-    flask.g.user = login_via_api_token(api_token)
-    return flask.g.user
+    user = login_via_api_token(api_token)
+    if not user.is_active:
+        return None
+    flask.g.user = user
+    return user
 
 
 @http_basic_auth.verify_password
 def verify_password(username, password):
     if not username:
         return None
-    flask.g.user = login(username, password)
-    return flask.g.user
+    user = login(username, password)
+    if not user.is_active:
+        return None
+    flask.g.user = user
+    return user
 
 
 def object_permissions_required(permissions: Permissions):

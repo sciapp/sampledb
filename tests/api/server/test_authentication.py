@@ -48,3 +48,21 @@ def test_authentication_token(flask_server):
     r = requests.get(flask_server.base_url + 'api/v1/objects/', headers={'Authorization': 'Bearer ' + api_token})
     assert r.status_code == 200
 
+
+def test_authentication_inactive_user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
+        user_id = user.id
+    r = requests.get(flask_server.base_url + 'api/v1/objects/')
+    assert r.status_code == 401
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('username', 'password'))
+    assert r.status_code == 200
+    with flask_server.app.app_context():
+        sampledb.logic.users.set_user_active(user_id, False)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('username', 'password'))
+    assert r.status_code == 401
+    with flask_server.app.app_context():
+        sampledb.logic.users.set_user_active(user_id, True)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('username', 'password'))
+    assert r.status_code == 200

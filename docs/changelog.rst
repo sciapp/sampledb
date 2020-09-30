@@ -8,6 +8,7 @@ Currently in development.
 
 - Added user to metadata types
 - Allow custom action types
+- Allow administrators to deactivate users
 
 Version 0.14
 ------------
