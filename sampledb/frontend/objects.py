@@ -678,16 +678,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         user_id=flask_login.current_user.id,
         permissions=Permissions.READ
     )
-    referencable_objects = get_objects_with_permissions(
-        user_id=flask_login.current_user.id,
-        permissions=Permissions.READ
-    )
     if object is not None:
-        referencable_objects = [
-            referencable_object
-            for referencable_object in referencable_objects
-            if referencable_object.object_id != object.object_id
-        ]
         referencable_objects = [
             referencable_object
             for referencable_object in referencable_objects
