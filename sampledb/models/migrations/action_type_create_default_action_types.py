@@ -56,7 +56,7 @@ def run(db):
             'name': 'Simulation',
             'description': 'These Actions represent processes which run a simulation.',
             'object_name': 'Simulation',
-            'object_name_plural': 'Simulation',
+            'object_name_plural': 'Simulations',
             'view_text': 'View Simulations',
             'perform_text': 'Run Simulation',
             'admin_only': False,
