@@ -70,9 +70,20 @@
     </p>
     {% if is_instrument_responsible_user or instrument.users_can_view_log_entries %}
       {% if instrument_log_entries %}
-        {% if instrument_log_categories %}
           <div class="text-right" style="margin-bottom: 10px;">
-          <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
+          <button type="button" class="btn btn-sm btn-primary" style="height:32px" id="button-switch-instrument-log-order">
+            Sort by date
+            {% if instrument_log_order_ascending %}
+            <i class="fa fa-sort-asc"></i>
+            {% else %}
+            <i class="fa fa-sort-desc"></i>
+            {% endif %}
+          </button>
+          <form class="hidden" id="form-instrument-log-order">
+            {{ instrument_log_order_form.hidden_tag() }}
+            <input type="checkbox" name="{{ instrument_log_order_form.ascending.name }}" />
+          </form>
+          <button type="button" class="btn btn-sm btn-primary" style="height:32px" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
             {% for category in instrument_log_categories %}
               <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
             {% endfor %}
@@ -91,7 +102,7 @@
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
             </button>
           </div>
-        {% endif %}
+        <div id="instrument-log-container">
         {% for log_entry in instrument_log_entries %}
           <div class="well instrument-log-entry {% if log_entry.categories %}instrument-log-entry-{{ log_entry.categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.categories %}{% for category in log_entry.categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.utc_datetime.strftime("%Y-%m") }}" style="position: relative">
             <div class="instrument-log-categories">
@@ -141,6 +152,7 @@
           {% endif %}
           </div>
         {% endfor %}
+        </div>
       {% else %}
         <p>There are no log entries for this instrument.</p>
       {% endif %}
@@ -309,6 +321,22 @@
       upload_area.ondrop = dropHandler;
       upload_area.ondragover = dragOverHandler;
       {% endif %}
+      var log_order_button = $('#button-switch-instrument-log-order');
+      log_order_button.on('click', function () {
+        log_order_button.find('i').toggleClass('fa-sort-asc').toggleClass('fa-sort-desc');
+        var c = $('#instrument-log-container');
+        c.children().each(function (i, e) {
+          c.prepend(e);
+        });
+        var form = $('#form-instrument-log-order');
+        var ascending = (log_order_button.find('i.fa-sort-asc').length !== 0);
+        form.find('input[type="checkbox"]').prop('checked', ascending);
+        $.ajax({
+          type: "POST",
+          url: {{ url_for('.set_instrument_log_order') | tojson }},
+          data: form.serialize()
+        });
+      });
     });
   </script>
 {% endblock %}
