@@ -10,7 +10,7 @@ import flask
 import flask_login
 
 import sampledb
-from sampledb.models import Objects, User, UserType, ActionType, AuthenticationType
+from sampledb.models import Objects, User, UserType, ActionType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
@@ -231,7 +231,7 @@ This example shows how Markdown can be used for instrument Notes.
     sampledb.db.session.commit()
 
     sample_action = sampledb.logic.actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=ActionType.SAMPLE_CREATION,
         name="sample_action",
         description="",
         schema={
@@ -251,7 +251,7 @@ This example shows how Markdown can be used for instrument Notes.
         }
     )
     measurement_action = sampledb.logic.actions.create_action(
-        action_type=ActionType.MEASUREMENT,
+        action_type_id=ActionType.MEASUREMENT,
         name="measurement_action",
         description="",
         schema={

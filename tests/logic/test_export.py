@@ -11,7 +11,7 @@ import zipfile
 import pytest
 
 import sampledb
-from sampledb.models import User, ActionType
+from sampledb.models import User
 from sampledb.logic import export, objects, actions, files
 
 
@@ -28,7 +28,7 @@ def user(flask_server):
 
 def set_up_state(user: User):
     action = actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',
@@ -45,7 +45,7 @@ def set_up_state(user: User):
         instrument_id=None
     )
     actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Irrelevant Action',
         schema={
             'title': 'Example Object',
@@ -156,7 +156,7 @@ def validate_data(data):
         'actions': [
             {
                 'id': 1,
-                'type': 'sample_creation',
+                'type': 'sample',
                 'name': 'Example Action',
                 'user_id': None,
                 'instrument_id': None,

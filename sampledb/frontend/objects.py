@@ -18,8 +18,9 @@ import werkzeug.utils
 
 from . import frontend
 from .. import logic
+from .. import models
 from ..logic import user_log, object_log, comments, object_sorting
-from ..logic.actions import ActionType, get_action
+from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
@@ -33,7 +34,7 @@ from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
@@ -136,12 +137,24 @@ def objects():
             action_type = action.type
         else:
             action = None
-            action_type = flask.request.args.get('t', '')
-            action_type = {
-                'samples': ActionType.SAMPLE_CREATION,
-                'measurements': ActionType.MEASUREMENT,
-                'simulations': ActionType.SIMULATION
-            }.get(action_type, None)
+            action_type_id = flask.request.args.get('t', '')
+            if action_type_id is not None:
+                try:
+                    action_type_id = int(action_type_id)
+                except ValueError:
+                    # ensure old links still function
+                    action_type_id = {
+                        'samples': models.ActionType.SAMPLE_CREATION,
+                        'measurements': models.ActionType.MEASUREMENT,
+                        'simulations': models.ActionType.SIMULATION
+                    }.get(action_type_id, None)
+            if action_type_id is not None:
+                try:
+                    action_type = get_action_type(action_type_id)
+                except ActionTypeDoesNotExistError:
+                    action_type = None
+            else:
+                action_type = None
         try:
             project_id = int(flask.request.args.get('project', ''))
         except ValueError:
@@ -288,7 +301,7 @@ def objects():
                 limit=limit,
                 offset=offset,
                 action_id=action_id,
-                action_type=action_type,
+                action_type_id=action_type.id if action_type is not None else None,
                 project_id=project_id,
                 object_ids=object_ids,
                 num_objects_found=num_objects_found_list
@@ -323,8 +336,6 @@ def objects():
     # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
     display_properties = []
     display_property_titles = {}
-    sample_ids = set()
-    measurement_ids = set()
     if action is not None:
         action_schema = action.schema
         display_properties = action_schema.get('displayProperties', [])
@@ -337,19 +348,6 @@ def objects():
                 obj['display_properties'][property_name] = None
                 continue
             obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
-            if obj['schema']['properties'][property_name]['type'] == 'sample':
-                sample_ids.add(obj['data'][property_name]['object_id'])
-            elif obj['schema']['properties'][property_name]['type'] == 'measurement':
-                measurement_ids.add(obj['data'][property_name]['object_id'])
-
-    samples = {
-        sample_id: get_object(object_id=sample_id)
-        for sample_id in sample_ids
-    }
-    measurements = {
-        measurement_id: get_object(object_id=measurement_id)
-        for measurement_id in measurement_ids
-    }
     if action_id is None:
         show_action = True
     else:
@@ -370,7 +368,6 @@ def objects():
         action=action,
         action_id=action_id,
         action_type=action_type,
-        ActionType=ActionType,
         project=project,
         project_id=project_id,
         location_id=location_id,
@@ -378,8 +375,7 @@ def objects():
         user_id=user_id,
         user=user,
         doi=doi,
-        samples=samples,
-        measurements=measurements,
+        get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
@@ -678,33 +674,35 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         except ValueError:
             flask.abort(400)
 
-    # TODO: make this search more narrow
-    samples = get_objects_with_permissions(
+    referencable_objects = get_objects_with_permissions(
         user_id=flask_login.current_user.id,
-        permissions=Permissions.READ,
-        action_type=ActionType.SAMPLE_CREATION
+        permissions=Permissions.READ
     )
-    measurements = get_objects_with_permissions(
+    referencable_objects = get_objects_with_permissions(
         user_id=flask_login.current_user.id,
-        permissions=Permissions.READ,
-        action_type=ActionType.MEASUREMENT
+        permissions=Permissions.READ
     )
     if object is not None:
-        samples = [
-            sample
-            for sample in samples
-            if sample.object_id != object.object_id
+        referencable_objects = [
+            referencable_object
+            for referencable_object in referencable_objects
+            if referencable_object.object_id != object.object_id
         ]
-        measurements = [
-            measurement
-            for measurement in measurements
-            if measurement.object_id != object.object_id
+        referencable_objects = [
+            referencable_object
+            for referencable_object in referencable_objects
+            if referencable_object.object_id != object.object_id
         ]
 
     existing_objects = get_objects_with_permissions(
         user_id=flask_login.current_user.id,
         permissions=Permissions.GRANT
     )
+
+    action_type_id_by_action_id = {}
+    for action_type in get_action_types():
+        for action in get_actions(action_type.id):
+            action_type_id_by_action_id[action.id] = action_type.id
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
@@ -719,10 +717,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             form_data=form_data,
             previous_actions=serializer.dumps(previous_actions),
             form=form,
-            samples=samples,
-            measurements=measurements,
             can_copy_permissions=True,
             existing_objects=existing_objects,
+            referencable_objects=referencable_objects,
+            action_type_id_by_action_id=action_type_id_by_action_id,
+            ActionType=models.ActionType,
             datetime=datetime,
             tags=tags,
             users=users,
@@ -743,13 +742,25 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             form_data=form_data,
             previous_actions=serializer.dumps(previous_actions),
             form=form,
-            samples=samples,
-            measurements=measurements,
+            referencable_objects=referencable_objects,
+            action_type_id_by_action_id=action_type_id_by_action_id,
+            ActionType=models.ActionType,
             datetime=datetime,
             tags=tags,
             users=users,
             mode=mode
         )
+
+
+def get_object_if_current_user_has_read_permissions(object_id):
+    user_id = flask_login.current_user.id
+    try:
+        permissions = get_user_object_permissions(object_id, user_id)
+    except ObjectDoesNotExistError:
+        return None
+    if Permissions.READ not in permissions:
+        return None
+    return get_object(object_id)
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -771,23 +782,8 @@ def object(object_id):
     if not user_may_edit and flask.request.args.get('mode', '') == 'upgrade':
         return flask.abort(403)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
-        # TODO: make this search more narrow
-        samples = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ,
-            action_type=ActionType.SAMPLE_CREATION
-        )
-        measurements = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ,
-            action_type=ActionType.MEASUREMENT
-        )
         instrument = action.instrument
-        object_type = {
-            ActionType.SAMPLE_CREATION: "Sample",
-            ActionType.MEASUREMENT: "Measurement",
-            ActionType.SIMULATION: "Simulation"
-        }.get(action.type, "Object")
+        object_type = action.type.object_name
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
 
         if user_may_edit:
@@ -819,7 +815,7 @@ def object(object_id):
             possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
         location_form.responsible_user.choices = possible_responsible_users
 
-        measurement_actions = logic.actions.get_actions(logic.actions.ActionType.MEASUREMENT)
+        measurement_actions = logic.actions.get_actions(models.ActionType.MEASUREMENT)
         favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
         favorite_measurement_actions = [
             action
@@ -898,8 +894,6 @@ def object(object_id):
             restore_form=None,
             version_id=object.version_id,
             user_may_grant=user_may_grant,
-            samples=samples,
-            measurements=measurements,
             favorite_measurement_actions=favorite_measurement_actions,
             FileLogEntryType=FileLogEntryType,
             file_information_form=FileInformationForm(),
@@ -910,6 +904,7 @@ def object(object_id):
             user_may_link_publication=user_may_link_publication,
             publication_form=publication_form,
             get_object=get_object,
+            get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
             get_object_location_assignment=get_object_location_assignment,
             get_user=get_user,
             get_location=get_location,
@@ -1444,21 +1439,17 @@ def object_version(object_id, version_id):
     user_may_grant = Permissions.GRANT in user_permissions
     action = get_action(object.action_id)
     instrument = action.instrument
-    object_type = {
-        ActionType.SAMPLE_CREATION: "Sample",
-        ActionType.MEASUREMENT: "Measurement",
-        ActionType.SIMULATION: "Simulation"
-    }.get(action.type, "Object")
     return flask.render_template(
         'objects/view/base.html',
         is_archived=True,
-        object_type=object_type,
+        object_type=action.type.object_name,
         action=action,
         instrument=instrument,
         schema=object.schema,
         data=object.data,
         last_edit_datetime=object.utc_datetime,
         last_edit_user=get_user(object.user_id),
+        get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         object_id=object_id,
         version_id=version_id,
         link_version_specific_rdf=True,

@@ -1,15 +1,16 @@
 # coding: utf-8
 """
-RESTful API for iffSamples
+RESTful API for SampleDB
 """
 
 import flask
 from flask_restful import Resource
 
 from .authentication import multi_auth
-from ...logic.actions import get_action, ActionType
+from ...logic.actions import get_action
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
 from ...logic import errors
+from ...models.actions import ActionType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -21,8 +22,9 @@ def action_to_json(action):
         'type': {
             ActionType.SAMPLE_CREATION: 'sample',
             ActionType.MEASUREMENT: 'measurement',
-            ActionType.SIMULATION: 'simulation',
-        }.get(action.type, 'unknown'),
+            ActionType.SIMULATION: 'simulation'
+        }.get(action.type_id, 'custom'),
+        'type_id': action.type_id,
         'name': action.name,
         'description': action.description,
         'is_hidden': action.is_hidden,

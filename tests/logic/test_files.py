@@ -7,7 +7,7 @@ import datetime
 import pytest
 
 import sampledb
-from sampledb.models import User, UserType, Action, ActionType, Object
+from sampledb.models import User, UserType, Action, Object
 from sampledb.logic import files, objects, actions, errors
 
 
@@ -22,7 +22,7 @@ def user():
 @pytest.fixture
 def action():
     action = actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

@@ -8,6 +8,7 @@ import datetime
 import typing
 
 from ...logic import actions, objects, datatypes, users
+from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
 from .utils import units_are_valid
 
@@ -43,6 +44,8 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Opti
         return _validate_sample(instance, schema, path)
     elif schema['type'] == 'measurement':
         return _validate_measurement(instance, schema, path)
+    elif schema['type'] == 'object_reference':
+        return _validate_object_reference(instance, schema, path)
     elif schema['type'] == 'tags':
         return _validate_tags(instance, schema, path)
     elif schema['type'] == 'hazards':
@@ -365,7 +368,7 @@ def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> No
     except ObjectDoesNotExistError:
         raise ValidationError('object does not exist', path)
     action = actions.get_action(sample.action_id)
-    if action.type != actions.ActionType.SAMPLE_CREATION:
+    if action.type_id != ActionType.SAMPLE_CREATION:
         raise ValidationError('object must be sample', path)
 
 
@@ -398,7 +401,7 @@ def _validate_measurement(instance: dict, schema: dict, path: typing.List[str]) 
     except ObjectDoesNotExistError:
         raise ValidationError('object does not exist', path)
     action = actions.get_action(measurement.action_id)
-    if action.type != actions.ActionType.MEASUREMENT:
+    if action.type_id != ActionType.MEASUREMENT:
         raise ValidationError('object must be measurement', path)
 
 
@@ -430,3 +433,37 @@ def _validate_user(instance: dict, schema: dict, path: typing.List[str]) -> None
         users.get_user(user_id=instance['user_id'])
     except UserDoesNotExistError:
         raise ValidationError('user does not exist', path)
+
+
+def _validate_object_reference(instance: dict, schema: dict, path: typing.List[str]) -> None:
+    """
+    Validates the given instance using the given object reference object schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    valid_keys = {'_type', 'object_id'}
+    required_keys = valid_keys
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if instance['_type'] != 'object_reference':
+        raise ValidationError('expected _type "object_reference"', path)
+    if not isinstance(instance['object_id'], int):
+        raise ValidationError('object_id must be int', path)
+    try:
+        object = objects.get_object(object_id=instance['object_id'])
+    except ObjectDoesNotExistError:
+        raise ValidationError('object does not exist', path)
+    if 'action_type_id' in schema and isinstance(schema['action_type_id'], int):
+        action = actions.get_action(object.action_id)
+        if action.type_id != schema['action_type_id']:
+            raise ValidationError('object has wrong action type', path)

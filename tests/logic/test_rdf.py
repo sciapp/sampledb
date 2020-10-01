@@ -10,7 +10,6 @@ import pytest
 
 import sampledb
 from sampledb.logic import actions, comments, objects, rdf
-from sampledb.models import ActionType
 
 
 @pytest.fixture
@@ -37,7 +36,7 @@ def other_user(flask_server):
 
 def test_generate_rdf(flask_server, user, other_user):
     action = actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

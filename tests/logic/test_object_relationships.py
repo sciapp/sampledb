@@ -8,13 +8,13 @@ import pytest
 import sampledb
 import sampledb.logic
 import sampledb.models
-from sampledb.models import User, UserType, ActionType
+from sampledb.models import User, UserType
 
 
 @pytest.fixture
 def sample_action():
     action = sampledb.logic.actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="",
         description="",
         schema={
@@ -39,7 +39,7 @@ def sample_action():
 @pytest.fixture
 def measurement_action():
     action = sampledb.logic.actions.create_action(
-        action_type=ActionType.MEASUREMENT,
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
         name="",
         description="",
         schema={
@@ -82,9 +82,8 @@ def test_single_object(sample_action, user):
     assert tree == {
         'object_id': object.id,
         'path': [object.id],
-        'previous_objects': [],
-        'samples': [],
-        'measurements': []
+        'referenced_objects': [],
+        'referencing_objects': []
     }
 
 
@@ -111,17 +110,15 @@ def test_object_with_measurement(sample_action, measurement_action, user):
     assert tree == {
         'object_id': object.id,
         'path': [object.id],
-        'measurements': [
+        'referenced_objects': [],
+        'referencing_objects': [
             {
                 'object_id': measurement.id,
-                'path': [object.id, -1, measurement.id],
-                'measurements': [],
-                'samples': [],
-                'previous_objects': []
+                'path': [object.id, -2, measurement.id],
+                'referenced_objects': [],
+                'referencing_objects': []
             }
-        ],
-        'samples': [],
-        'previous_objects': []
+        ]
     }
 
 
@@ -148,17 +145,15 @@ def test_object_with_sample(sample_action, user):
     assert tree == {
         'object_id': object.id,
         'path': [object.id],
-        'measurements': [],
-        'samples': [
+        'referenced_objects': [],
+        'referencing_objects': [
             {
                 'object_id': sample.id,
-                'path': [object.id, -3, sample.id],
-                'measurements': [],
-                'samples': [],
-                'previous_objects': []
+                'path': [object.id, -2, sample.id],
+                'referenced_objects': [],
+                'referencing_objects': []
             }
-        ],
-        'previous_objects': []
+        ]
     }
 
 
@@ -196,20 +191,18 @@ def test_object_with_cyclic_sample(sample_action, user):
     assert tree == {
         'object_id': object.id,
         'path': [object.id],
-        'measurements': [],
-        'samples': [
+        'referenced_objects': [
             {
                 'object_id': sample.id,
-                'path': [object.id, -2, sample.id]
+                'path': [object.id, -1, sample.id],
+                'referenced_objects': [],
+                'referencing_objects': []
             }
         ],
-        'previous_objects': [
+        'referencing_objects': [
             {
                 'object_id': sample.id,
-                'path': [object.id, -2, sample.id],
-                'measurements': [],
-                'samples': [],
-                'previous_objects': []
+                'path': [object.id, -1, sample.id],
             }
         ]
     }

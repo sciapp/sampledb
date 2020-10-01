@@ -86,9 +86,11 @@
     </div>
     {% endif %}
     {% endif %}
+    {% if action.type.enable_labels %}
     <div class="form-group">
       <button type="button" class="btn btn-primary" id="button-show-object-label-modal" data-toggle="tooltip" data-placement="top" title="Generate a PDF containing labels for this object."><i class="fa fa-tag" aria-hidden="true"></i> Generate Labels</button>
     </div>
+    {% endif %}
     <div class="form-group">
       <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal" data-toggle="tooltip" data-placement="top" title="Show a QR code for a link to this object."><i class="fa fa-qrcode" aria-hidden="true"></i> Show QR Code</button>
     </div>
@@ -121,6 +123,7 @@
   </div>
 
   {% if not is_archived %}
+    {% if action.type.enable_files %}
     <h4>Files</h4>
     {% if files %}
     <table class="table" id="file_table">
@@ -408,8 +411,10 @@
       </form>
     </div>
     {% endif %}
+    {% endif %}
   {% endif %}
 
+    {% if action.type.enable_labels %}
     <div class="modal fade" id="objectLabelModal" tabindex="-1" role="dialog" aria-labelledby="objectLabelModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -533,6 +538,7 @@
         </div>
       </div>
     </div>
+  {% endif %}
   {% if object_qrcode %}
     <div class="modal fade" id="mobileObjectLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileObjectLinkModalLabel">
       <div class="modal-dialog" role="document">
@@ -550,7 +556,7 @@
     </div>
   {% endif %}
 
-  {% if not is_archived %}
+  {% if not is_archived and action.type.enable_locations %}
   <h4 id="locations">Location</h4>
   {% if object_location_assignments %}
     <table class="table">
@@ -617,7 +623,7 @@
   {% endif %}
   {% endif %}
 
-  {% if not is_archived %}
+  {% if not is_archived and action.type.enable_publications %}
   <h4 id="publications">Publications</h4>
   {% if object_publications %}
     <table class="table">
@@ -674,6 +680,7 @@
   {% endif %}
 
   {% if not is_archived %}
+  {% if action.type.enable_comments %}
     <h4>Comments</h4>
     {% if comments %}
       {% for comment in comments %}
@@ -697,8 +704,9 @@
       </form>
     {% endif %}
   {% endif %}
+  {% endif %}
 
-  {% if not is_archived %}
+  {% if not is_archived and action.type.enable_activity_log %}
   {% if object_log_entries %}
     <h4>Activity Log</h4>
     <table class="table" id="activity_log">
@@ -779,16 +787,20 @@
           {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> posted a comment for this object.</td>
             <td class="text-right">
+            {% if action.type.enable_comments %}
               {% if 'comment_id' in object_log_entry.data %}
                 <a href="#comment-{{ object_log_entry.data['comment_id'] }}">View</a>
               {% endif %}
+            {% endif %}
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE %}
-            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> {% for file in files %}{% if file.id == object_log_entry.data['file_id'] %}{% if file.storage == 'local' %}uploaded <a href="#file-{{ object_log_entry.data['file_id'] }}">{{ file.original_file_name }}</a>{% elif file.storage == 'url' %}linked <a href="{{ file.data.url }}">{{ file.data.url }}</a>{% else %}posted <a href="#file-{{ object_log_entry.data['file_id'] }}">file #{{ file.id }}</a>{% endif %}{% endif %}{% endfor %}.</td>
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> {% for file in files %}{% if file.id == object_log_entry.data['file_id'] %}{% if file.storage == 'local' %}uploaded {% if action.type.enable_files %}<a href="#file-{{ object_log_entry.data['file_id'] }}">{% endif %}{{ file.original_file_name }}{% if action.type.enable_files %}</a>{% endif %}{% elif file.storage == 'url' %}linked <a href="{{ file.data.url }}">{{ file.data.url }}</a>{% else %}posted {% if action.type.enable_files %}<a href="#file-{{ object_log_entry.data['file_id'] }}">file #{{ file.id }}</a>{% else %} a file{% endif %}{% endif %}{% endif %}{% endfor %}.</td>
             <td class="text-right">
+            {% if action.type.enable_files %}
               {% if 'file_id' in object_log_entry.data %}
                 <a href="#file-{{ object_log_entry.data['file_id'] }}">View</a>
               {% endif %}
+            {% endif %}
             </td>
           {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
             {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
@@ -804,8 +816,21 @@
           {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
             <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> linked publication <a href="https://doi.org/{{ object_log_entry.data['doi'] | urlencode }}">{{ object_log_entry.data['doi'] }}</a> to this object.</td>
             <td class="text-right">
+            {% if action.type.enable_publications %}
               <a href="#publications">View</a>
+            {% endif %}
             </td>
+          {% elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA %}
+            {% if object_log_entry.data['object_id'] %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> referenced the object in the metadata of <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">{{ object_log_entry.data['object'].data['name']['text'] }} (#{{ object_log_entry.data['object_id'] }})</a>.</td>
+            <td class="text-right">
+              <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">View</a>
+            </td>
+            {% else %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> referenced the object in the metadata of another object.</td>
+            <td class="text-right">
+            </td>
+            {% endif %}
           {% else %}
             <td>Unknown event</td><td></td>
           {% endif %}
@@ -816,14 +841,15 @@
   {% endif %}
   {% endif %}
 
-  {% if not is_archived %}
   {% if related_objects_tree %}
+  {% if not is_archived and action.type.enable_related_objects %}
     <h4>Related Objects</h4>
 
     <div class="related-objects">
       {% set in_export_data_model = False %}
       {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
     </div>
+  {% endif %}
 
     <div class="modal fade" id="dataExportModal" tabindex="-1" role="dialog" aria-labelledby="dataExportModalLabel">
       <div class="modal-dialog" role="document">
@@ -845,28 +871,42 @@
             <div class="form-group" id="pdf–export-sections">
               <div>PDF Export Sections</div>
               <label><input type="checkbox" checked="checked" disabled="disabled" class="disabled"> Information</label>
+              {% if action.type.enable_activity_log %}
               <label><input type="checkbox" checked="checked" name="activity_log"> Activity Log</label>
+              {% endif %}
+              {% if action.type.enable_locations %}
               <label><input type="checkbox" checked="checked" name="locations"> Locations</label>
+              {% endif %}
+              {% if action.type.enable_publications %}
               <label><input type="checkbox" checked="checked" name="publications"> Publications</label>
+              {% endif %}
+              {% if action.type.enable_files %}
               <label><input type="checkbox" checked="checked" name="files"> Files</label>
+              {% endif %}
+              {% if action.type.enable_comments %}
               <label><input type="checkbox" checked="checked" name="comments"> Comments</label>
+              {% endif %}
             </div>
+
+            {% if action.type.enable_related_objects %}
             <div class="related-objects">
               <div>Objects</div>
               {% set in_export_data_model = True %}
               {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
             </div>
+            {% endif %}
           </div>
           <div class="modal-footer">
+            {% if action.type.enable_related_objects %}
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">Select All</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">Deselect All</button>
+            {% endif %}
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
             <a href="{{ url_for('.export_data', object_id=object_id) }}" class="btn btn-primary" id="button-related-objects-export-data">Export Data</a>
           </div>
         </div>
       </div>
     </div>
-  {% endif %}
   {% endif %}
 {% endblock %}
 
@@ -889,7 +929,7 @@
           e.preventDefault();
           $(this).tab('show');
         });
-      {% if (not is_archived) and user_may_comment %}
+      {% if (not is_archived) and user_may_comment and action.type.enable_comments %}
         var comment_form = $('#new-comment-form');
         var comment_textarea = comment_form.find('textarea');
         comment_textarea.on('input change propertychange', function() {
@@ -907,7 +947,7 @@
       $(function () {
         $('[data-toggle="popover"]').popover()
       });
-      {% if object_log_entries %}
+      {% if object_log_entries and action.type.enable_activity_log %}
         var activity_log_filter_type_list = {
           "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
           "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
@@ -966,6 +1006,7 @@
         };
       {% endif %}
       {% if not is_archived %}
+        {% if action.type.enable_files %}
         window.file_table_toggle = function(should_show, category) {
           var file_table = $('#file_table').find('> tbody');
             var file_table_rows = file_table.find('tr[data-file-type='+category+']');
@@ -997,6 +1038,7 @@
             $('#file_table_filter_other').attr('checked', 'checked');
           }
         };
+        {% endif %}
         $('#button-show-mobile-file-upload-modal').click(function() {
             $('#mobileFileLinkModal').modal('show');
         });
@@ -1006,6 +1048,7 @@
         $('#button-show-object-label-modal').click(function() {
             $('#objectLabelModal').modal('show');
         });
+        {% if action.type.enable_files %}
         function changeHandler() {
           var files = $('#input-file-upload').get(0).files;
           if (files.length === 0) {
@@ -1034,9 +1077,10 @@
         upload_area.ondrop = dropHandler;
         upload_area.ondragover = dragOverHandler;
         {% endif %}
-
+        {% endif %}
       {% endif %}
 
+    {% if action.type.enable_files %}
     $('.button-file-info').on('click', function() {
       var file_id = $(this).attr('data-file_id');
       $('#fileInfoModal-'+file_id).modal('show');
@@ -1076,6 +1120,7 @@
       $('.file-info-hide').hide();
       $('.file-info-main').show();
     });
+    {% endif %}
     {% if related_objects_tree %}
     $('input[name^=data_export_object_]').prop("checked", false);
     $('input.data_export_object').prop("checked", false);
@@ -1098,11 +1143,15 @@
         }
       });
       var object_ids_to_export = [];
+      {% if action.type.enable_related_objects %}
       $('input[name^=data_export_object_]').each(function() {
         if ($(this).prop('checked')) {
           object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
         }
       });
+      {% else %}
+        object_ids_to_export.push({{ object_id }});
+      {% endif %}
       var export_link = $('#button-related-objects-export-data');
       if (object_ids_to_export.length > 0) {
         export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)));
@@ -1167,6 +1216,7 @@
       }.bind(wrapper), 500);
     });
     {% if not is_archived %}
+    {% if action.type.enable_labels %}
     function validateLabelsForm() {
       const PAGE_SIZES = {
         {% for paper_format in PAGE_SIZES %}
@@ -1284,6 +1334,7 @@
       labels_form.find('select[name="height-paper-format"]').prop('disabled', !is_minimum_height).selectpicker('refresh');
     }
     updateLabelsForm();
+    {% endif %}
     {% endif %}
   </script>
 {% endblock %}

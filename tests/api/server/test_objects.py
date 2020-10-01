@@ -44,7 +44,7 @@ def user(auth_user):
 @pytest.fixture
 def action():
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="",
         description="",
         schema={
@@ -65,7 +65,7 @@ def action():
 @pytest.fixture
 def other_action():
     other_action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.MEASUREMENT,
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
         name="",
         description="",
         schema={
@@ -664,6 +664,19 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
     )
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
         'action_type': 'sample'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
     })
     assert r.status_code == 200
     assert r.json() == [

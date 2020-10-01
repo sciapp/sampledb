@@ -33,36 +33,20 @@
     <h1>Welcome to {{ service_name }}</h1>
     <p>{{ service_description }}</p>
     <div class="container">
+    {% for action_type in get_action_types() %}
+      {% if action_type.show_on_frontpage %}
       <div class="row">
         <div class="col-md-offset-{% if not current_user.is_readonly %}2{% else %}4{% endif %} col-md-4">
-          <a href="{{ url_for('frontend.actions', t='samples') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">Create a Sample</a>
+          <a href="{{ url_for('frontend.actions', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.perform_text }}</a>
         </div>
         {% if not current_user.is_readonly %}
         <div class="col-md-4">
-          <a href="{{ url_for('frontend.objects', t='samples') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">View Samples</a>
+          <a href="{{ url_for('frontend.objects', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.view_text }}</a>
         </div>
         {% endif %}
       </div>
-      <div class="row">
-        <div class="col-md-offset-{% if not current_user.is_readonly %}2{% else %}4{% endif %} col-md-4">
-          <a href="{{ url_for('frontend.actions', t='measurements') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">Perform a Measurement</a>
-        </div>
-        {% if not current_user.is_readonly %}
-        <div class="col-md-4">
-          <a href="{{ url_for('frontend.objects', t='measurements') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">View Measurements</a>
-        </div>
-        {% endif %}
-      </div>
-      <div class="row">
-        <div class="col-md-offset-{% if not current_user.is_readonly %}2{% else %}4{% endif %} col-md-4">
-          <a href="{{ url_for('frontend.actions', t='simulations') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">Perform a Simulation</a>
-        </div>
-        {% if not current_user.is_readonly %}
-        <div class="col-md-4">
-          <a href="{{ url_for('frontend.objects', t='simulations') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">View Simulations</a>
-        </div>
-        {% endif %}
-      </div>
+      {% endif %}
+    {% endfor %}
     </div>
   </div>
 {% endif %}

@@ -1,15 +1,15 @@
 # coding: utf-8
 """
-Authentication functions for the iffSamples RESTful API.
+Authentication functions for the SampleDB RESTful API.
 """
 
 import flask
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 
-from sampledb.logic.authentication import login, login_via_api_token
-from sampledb.logic.object_permissions import Permissions
-from sampledb.utils import object_permissions_required as object_permissions_required_generic
+from ...logic.authentication import login, login_via_api_token
+from ...logic.object_permissions import Permissions
+from ...utils import object_permissions_required as object_permissions_required_generic
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

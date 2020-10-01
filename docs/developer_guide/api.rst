@@ -1116,6 +1116,7 @@ Reading a list of all actions
                 "action_id": 1,
                 "instrument_id": null,
                 "type": "sample",
+                "type_id": -99,
                 "name": "Example Sample Creation",
                 "description": "This is an example action",
                 "is_hidden": false,
@@ -1135,6 +1136,7 @@ Reading a list of all actions
                 "action_id": 2,
                 "instrument_id": 1,
                 "type": "measurement",
+                "type_id": -98,
                 "name": "Example Measurement",
                 "description": "This is an example action",
                 "is_hidden": false,
@@ -1182,6 +1184,7 @@ Reading an action
             "action_id": 1,
             "instrument_id": null,
             "type": "sample",
+            "type_id": -99,
             "name": "Example Sample Creation",
             "description": "This is an example action",
             "is_hidden": false,
@@ -1200,11 +1203,101 @@ Reading an action
 
     :>json number action_id: the action's ID
     :>json number instrument_id: the actions's instrument's ID or null
-    :>json string type: the action's type ("sample", "measurement" or "simulation")
+    :>json string type: the action's type ("sample", "measurement", "simulation" or "custom")
+    :>json number type_id: the ID of the action's type
     :>json string name: the actions's name
     :>json string description: the actions's description
     :>json bool is_hidden: whether or not the action is hidden
     :>json object schema: the actions's schema
+    :statuscode 200: no error
+    :statuscode 404: the action does not exist
+
+
+Action Types
+------------
+
+
+Reading a list of all action types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/action_types/
+
+    Get a list of all action types.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/action_types/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "type_id": -99,
+                "name": "Sample Creation",
+                "object_name": "sample",
+                "admin_only": false
+            },
+            {
+                "type_id": -98,
+                "name": "Measurement",
+                "object_name": "measurement",
+                "admin_only": false
+            },
+            {
+                "type_id": -97,
+                "name": "Simulation",
+                "object_name": "simulation",
+                "admin_only": false
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading an action type
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/action_types/(int:type_id)
+
+    Get the specific action type (`type_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/action_types/-99 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "type_id": -99,
+            "name": "Sample Creation",
+            "object_name": "sample",
+            "admin_only": false
+        }
+
+    :>json number type_id: the action type's ID
+    :>json string name: the action type's name
+    :>json string object_name: the name of objects created with this action type
+    :>json bool admin_only: whether or not actions with this type can only be created by administrators
     :statuscode 200: no error
     :statuscode 404: the action does not exist
 

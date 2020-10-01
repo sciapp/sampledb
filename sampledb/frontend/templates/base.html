@@ -45,14 +45,8 @@
         {% if project_id %}
           <input type="hidden" name="action" value="{{ project_id }}" id="input-search-project-id" />
         {% endif %}
-        {% if ActionType %}
-          {% if action_type == ActionType.SAMPLE_CREATION %}
-          <input type="hidden" name="t" value="samples" id="input-search-action-type" />
-          {% elif action_type == ActionType.MEASUREMENT %}
-          <input type="hidden" name="t" value="measurements" id="input-search-action-type" />
-          {% elif action_type == ActionType.SIMULATION %}
-          <input type="hidden" name="t" value="simulations" id="input-search-action-type" />
-          {% endif %}
+        {% if action_type %}
+          <input type="hidden" name="t" value="{{ action_type.id }}" id="input-search-action-type" />
         {% endif %}
         <div class="input-group">
           <input type="text" id="input-search" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
@@ -67,33 +61,21 @@
             {% if action_type or project_id %}
               <li class="divider"></li>
               {% if project_id %}
-                {% if action_type == ActionType.SAMPLE_CREATION %}
-                <li><a href="#" id="button-search-project-id">Search samples from this project</a></li>
-                {% elif action_type == ActionType.MEASUREMENT %}
-                <li><a href="#" id="button-search-project-id">Search measurements from this project</a></li>
-                {% elif action_type == ActionType.SIMULATION %}
-                <li><a href="#" id="button-search-project-id">Search simulations from this project</a></li>
+                {% if action_type %}
+                <li><a href="#" id="button-search-project-id">Search {{ action_type.object_name_plural.lower() }} from this project</a></li>
                 {% else %}
                 <li><a href="#" id="button-search-project-id">Search objects from this project</a></li>
                 {% endif %}
               {% endif %}
-              {% if action_id %}
-                {% if action_type == ActionType.SAMPLE_CREATION %}
-                <li><a href="#" id="button-search-action-id">Search samples from this action</a></li>
-                {% elif action_type == ActionType.MEASUREMENT %}
-                <li><a href="#" id="button-search-action-id">Search measurements from this action</a></li>
-                {% elif action_type == ActionType.SIMULATION %}
-                <li><a href="#" id="button-search-action-id">Search simulations from this action</a></li>
+              {% if action_id  %}
+                {% if action_type %}
+                <li><a href="#" id="button-search-action-id">Search {{ action_type.object_name_plural.lower() }} from this action</a></li>
                 {% else %}
                 <li><a href="#" id="button-search-action-id">Search objects from this action</a></li>
                 {% endif %}
               {% endif %}
-              {% if action_type == ActionType.SAMPLE_CREATION %}
-              <li><a href="#" id="button-search-action-type">Search all samples</a></li>
-              {% elif action_type == ActionType.MEASUREMENT %}
-              <li><a href="#" id="button-search-action-type">Search all measurements</a></li>
-              {% elif action_type == ActionType.SIMULATION %}
-              <li><a href="#" id="button-search-action-type">Search all simulations</a></li>
+              {% if action_type %}
+              <li><a href="#" id="button-search-action-type">Search all {{ action_type.object_name_plural.lower() }}</a></li>
               {% endif %}
               <li><a href="#" id="button-search-all">Search all objects</a></li>
             {% endif %}
@@ -103,13 +85,24 @@
       </form>
       <ul class="nav navbar-nav">
         <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
-        <li><a href="{{ url_for('frontend.actions') }}">Actions</a></li>
+        <li class="dropdown">
+          <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">Actions</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            {% for action_type in get_action_types() %}
+              {% if action_type.show_in_navbar %}
+              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name }}</a></li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </li>
         <li class="dropdown">
           <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">Objects</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            <li><a href="{{ url_for('frontend.objects', t='samples') }}">Samples</a></li>
-            <li><a href="{{ url_for('frontend.objects', t='measurements') }}">Measurements</a></li>
-            <li><a href="{{ url_for('frontend.objects', t='simulations') }}">Simulations</a></li>
+            {% for action_type in get_action_types() %}
+              {% if action_type.show_in_navbar %}
+              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.object_name_plural }}</a></li>
+              {% endif %}
+            {% endfor %}
             <li role="separator" class="divider nav-search-link"></li>
             <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">Search</a></li>
           </ul>
@@ -122,6 +115,10 @@
             <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">Locations</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">Tags</a></li>
+            {% if current_user.is_admin %}
+              <li role="separator" class="divider"></li>
+              <li><a href="{{ url_for('frontend.action_types') }}">Action Types</a></li>
+            {% endif %}
           </ul>
         </li>
         <li><a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/">Help</a></li>

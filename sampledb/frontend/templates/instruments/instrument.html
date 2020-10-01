@@ -23,21 +23,9 @@
     {% if not action.is_hidden or current_user.is_admin %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
-    {% if action.type == ActionType.MEASUREMENT %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Measurement</a>
-      {% endif %}
-    {% elif action.type == ActionType.SIMULATION %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Simulation</a>
-      {% endif %}
-    {% else %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
-      {% endif %}
+    <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
+    {% if not current_user.is_readonly %}
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text }}</a>
     {% endif %}
     {% endif %}
   {% endfor %}

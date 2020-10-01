@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-RESTful API for iffSamples
+RESTful API for SampleDB
 """
 
 import base64
@@ -9,11 +9,11 @@ import json
 import flask
 from flask_restful import Resource
 
-from sampledb.api.server.authentication import multi_auth
-from sampledb.logic.instruments import get_instrument
-from sampledb.logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, InstrumentLogEntry, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, InstrumentLogCategory
-from sampledb.logic import errors
-from sampledb.logic.object_permissions import get_user_object_permissions, Permissions
+from .authentication import multi_auth
+from ...logic.instruments import get_instrument
+from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, InstrumentLogEntry, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, InstrumentLogCategory
+from ...logic import errors
+from ...logic.object_permissions import get_user_object_permissions, Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
