@@ -1,10 +1,5 @@
 <div class="row" style="padding-right:0.75em">
   <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title }}</label>
-    {% if data.sample_id %}
-    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' +data.sample_id + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-    {% else %}
-    <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-    {% endif %}
   <div class="col-md-9">
   {% if data is not none and "object_id" in data %}
     {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
