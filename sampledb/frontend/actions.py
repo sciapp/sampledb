@@ -9,14 +9,15 @@ import typing
 import flask
 import flask_login
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, StringField, SelectField
-from wtforms.validators import InputRequired, Length
+from wtforms import BooleanField, StringField, SelectField, IntegerField
+from wtforms.validators import InputRequired, Length, ValidationError
 import pygments
 import pygments.lexers.data
 import pygments.formatters
 
 from . import frontend
-from ..logic.actions import ActionType, Action, create_action, get_action, get_actions, update_action
+from .. import models
+from ..logic.actions import Action, create_action, get_action, get_actions, update_action, get_action_type
 from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public
 from ..logic.favorites import get_user_favorite_action_ids
 from ..logic.instruments import get_instrument, get_user_instruments
@@ -32,11 +33,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 class ActionForm(FlaskForm):
     name = StringField(validators=[Length(min=1, max=100)])
     description = StringField()
-    type = SelectField(choices=[
-        ('sample', 'Sample Creation'),
-        ('measurement', 'Measurement'),
-        ('simulation', 'Simulation')
-    ])
+    type = IntegerField()
     instrument = SelectField()
     schema = StringField(validators=[InputRequired()])
     is_public = BooleanField()
@@ -44,16 +41,39 @@ class ActionForm(FlaskForm):
     is_markdown = BooleanField(default=None)
     is_hidden = BooleanField(default=None)
 
+    def validate_type(form, field):
+        try:
+            action_type_id = int(field.data)
+        except ValueError:
+            raise ValidationError("Invalid action type")
+        try:
+            action_type = get_action_type(action_type_id)
+        except errors.ActionTypeDoesNotExistError:
+            raise ValidationError("Unknown action type")
+        if action_type.admin_only and not flask_login.current_user.is_admin:
+            raise ValidationError("Actions with this type can only be created by administrators")
+
 
 @frontend.route('/actions/')
 @flask_login.login_required
 def actions():
-    action_type = flask.request.args.get('t', None)
-    action_type = {
-        'samples': ActionType.SAMPLE_CREATION,
-        'measurements': ActionType.MEASUREMENT,
-        'simulations': ActionType.SIMULATION
-    }.get(action_type, None)
+    action_type_id = flask.request.args.get('t', None)
+    action_type = None
+    if action_type_id is not None:
+        try:
+            action_type_id = int(action_type_id)
+        except ValueError:
+            # ensure old links still function
+            action_type_id = {
+                'samples': models.ActionType.SAMPLE_CREATION,
+                'measurements': models.ActionType.MEASUREMENT,
+                'simulations': models.ActionType.SIMULATION
+            }.get(action_type_id, None)
+        try:
+            action_type = get_action_type(action_type_id)
+        except errors.ActionTypeDoesNotExistError:
+            # fall back to all objects
+            action_type_id = None
     user_id = flask.request.args.get('user_id', None)
     if user_id is not None:
         try:
@@ -69,7 +89,7 @@ def actions():
             flask.flash('Invalid user ID.', 'error')
     actions = []
     action_permissions = {}
-    for action in get_actions(action_type):
+    for action in get_actions(action_type_id=action_type_id):
         if user_id is not None and action.user_id != user_id:
             continue
         if action.is_hidden and not flask_login.current_user.is_admin and user_id != flask_login.current_user.id:
@@ -89,7 +109,8 @@ def actions():
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
         'actions/actions.html',
-        actions=actions, ActionType=ActionType,
+        actions=actions,
+        action_type=action_type,
         action_permissions=action_permissions, Permissions=Permissions,
         user_favorite_action_ids=user_favorite_action_ids,
         toggle_favorite_action_form=toggle_favorite_action_form
@@ -116,7 +137,6 @@ def action(action_id):
     return flask.render_template(
         'actions/action.html',
         action=action,
-        ActionType=ActionType,
         may_edit=may_edit,
         is_public=action_is_public(action_id)
     )
@@ -126,6 +146,12 @@ def action(action_id):
 @flask_login.login_required
 def new_action():
     check_current_user_is_not_readonly()
+    action_type_id = flask.request.args.get('action_type_id')
+    if action_type_id is not None:
+        try:
+            action_type_id = int(action_type_id)
+        except ValueError:
+            action_type_id = None
     previous_action = None
     previous_action_id = flask.request.args.get('previous_action_id', None)
     if previous_action_id is not None:
@@ -143,7 +169,11 @@ def new_action():
                 previous_action = None
         except errors.ActionDoesNotExistError:
             flask.flash('The requested previous action does not exist.', 'error')
-    return show_action_form(None, previous_action)
+        else:
+            if previous_action.type.admin_only and not flask_login.current_user.is_admin:
+                flask.flash('Only administrators can create actions of this type.', 'error')
+                return flask.redirect(flask.url_for('.action', action_id=previous_action_id))
+    return show_action_form(None, previous_action, action_type_id)
 
 
 def _get_lines_for_path(schema: dict, path: typing.List[str]) -> typing.Optional[typing.Set[int]]:
@@ -194,7 +224,7 @@ def _get_lines_for_path(schema: dict, path: typing.List[str]) -> typing.Optional
     return new_error_lines
 
 
-def show_action_form(action: typing.Optional[Action] = None, previous_action: typing.Optional[Action] = None):
+def show_action_form(action: typing.Optional[Action] = None, previous_action: typing.Optional[Action] = None, action_type_id: typing.Optional[int] = None):
     if action is not None:
         schema_json = json.dumps(action.schema, indent=2)
         submit_text = "Save"
@@ -229,11 +259,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         else:
             action_form.instrument.choices = [('-1', '-')]
             action_form.instrument.data = str(-1)
-        action_form.type.data = action_form.type.data = {
-            ActionType.SAMPLE_CREATION: 'sample',
-            ActionType.MEASUREMENT: 'measurement',
-            ActionType.SIMULATION: 'simulation'
-        }.get(action.type, str(None))
+        action_form.type.data = action.type.id
         if action_form.name.data is None:
             action_form.is_public.data = None
     else:
@@ -249,8 +275,13 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 action_form.instrument.data = '-1'
 
     form_is_valid = False
-    if action_form.validate_on_submit():
+    if not action_form.is_submitted():
+        action_form.type.data = action_type_id
+    elif action_form.validate_on_submit():
         form_is_valid = True
+        action_type_id = action_form.type.data
+    else:
+        action_type_id = None
 
     if action is not None:
         if action_form.name.data is None:
@@ -260,12 +291,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if not action_form.is_submitted():
             action_form.is_markdown.data = (action.description_as_html is not None)
             action_form.is_hidden.data = action.is_hidden
-        if action_form.type.data is None or action_form.type.data == str(None):
-            action_form.type.data = {
-                ActionType.SAMPLE_CREATION: 'sample',
-                ActionType.MEASUREMENT: 'measurement',
-                ActionType.SIMULATION: 'simulation'
-            }.get(action.type, None)
+        if action_form.type.data is None:
+            action_form.type.data = action.type.id
         if action_form.is_public.data is None:
             action_form.is_public.data = action_is_public(action.id)
     elif previous_action is not None:
@@ -276,12 +303,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if not action_form.is_submitted():
             action_form.is_markdown.data = (previous_action.description_as_html is not None)
             action_form.is_hidden.data = False
-        if action_form.type.data is None or action_form.type.data == str(None):
-            action_form.type.data = {
-                ActionType.SAMPLE_CREATION: 'sample',
-                ActionType.MEASUREMENT: 'measurement',
-                ActionType.SIMULATION: 'simulation'
-            }.get(previous_action.type, None)
+        if action_form.type.data is None:
+            action_form.type.data = previous_action.type.id
         if action_form.is_public.data is None:
             action_form.is_public.data = action_is_public(previous_action.id)
 
@@ -337,11 +360,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         else:
             description_as_html = None
 
-        action_type = {
-            'sample': ActionType.SAMPLE_CREATION,
-            'measurement': ActionType.MEASUREMENT,
-            'simulation': ActionType.SIMULATION
-        }.get(action_form.type.data, None)
         instrument_id = action_form.instrument.data
         is_public = action_form.is_public.data
         is_hidden = action_form.is_hidden.data
@@ -357,7 +375,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             else:
                 user_id = None
             action = create_action(
-                action_type,
+                action_type_id,
                 name,
                 description,
                 schema,
@@ -382,6 +400,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             if may_change_public and is_public is not None:
                 set_action_public(action.id, is_public)
         return flask.redirect(flask.url_for('.action', action_id=action.id))
+
+    sample_action_type = get_action_type(models.ActionType.SAMPLE_CREATION)
+    measurement_action_type = get_action_type(models.ActionType.MEASUREMENT)
+
     use_schema_editor = get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]
     return flask.render_template(
         'actions/action_form.html',
@@ -390,6 +412,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         error_message=error_message,
         schema_json=schema_json,
         submit_text=submit_text,
+        sample_action_type=sample_action_type,
+        measurement_action_type=measurement_action_type,
         use_schema_editor=use_schema_editor,
         may_change_type=action is None,
         may_change_instrument=action is None,

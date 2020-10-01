@@ -8,7 +8,7 @@ import pytest
 import sampledb
 import sampledb.logic
 from sampledb.logic import favorites
-from sampledb.models import Action, ActionType, Instrument, User, UserType
+from sampledb.models import Action, Instrument, User, UserType
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def users():
 @pytest.fixture
 def independent_action():
     action = Action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

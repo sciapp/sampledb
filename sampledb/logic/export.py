@@ -145,7 +145,7 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
             if logic.action_permissions.Permissions.READ in action_permissions:
                 action_infos.append({
                     'id': action_info.id,
-                    'type': action_info.type.name.lower(),
+                    'type': action_info.type.object_name.lower(),
                     'name': action_info.name,
                     'user_id': action_info.user_id,
                     'instrument_id': action_info.instrument_id,

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Action Type #{{ action_type.id }}: {{ action_type.name }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>
+    <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.name }}">{{ action_type.name }}</a>
+  </h1>
+
+  <dl>
+    <dt>Description</dt><dd>{{ action_type.description or ('&mdash;' | safe) }}</dd>
+    <dt>Object Name (Singular)</dt><dd>{{ action_type.object_name }}</dd>
+    <dt>Object Name (Plural)</dt><dd>{{ action_type.object_name_plural }}</dd>
+    <dt>View Text</dt><dd>{{ action_type.view_text }}</dd>
+    <dt>Perform Text</dt><dd>{{ action_type.perform_text }}</dd>
+    <dt>Only for Administrators</dt><dd>{% if action_type.admin_only %}<i class="fa fa-check" aria-hidden="true"></i> Yes, only administrators can create actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, all users can create actions of this type{% endif %}</dd>
+    <dt>Show on Frontpage</dt><dd>{% if action_type.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> Yes, this action type should be shown on the frontpage{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, this action type should not be shown on the frontpage{% endif %}</dd>
+    <dt>Show on Navbar</dt><dd>{% if action_type.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> Yes, actions of this type should be shown in the navbar{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, actions of this type should not be shown in the navbar{% endif %}</dd>
+    <dt>Enable Labels</dt><dd>{% if action_type.enable_labels %}<i class="fa fa-check" aria-hidden="true"></i> Yes, labels are enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, labels are disabled for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Files</dt><dd>{% if action_type.enable_files %}<i class="fa fa-check" aria-hidden="true"></i> Yes, files are enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, files are disabled for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Locations and Responsible Users</dt><dd>{% if action_type.enable_locations %}<i class="fa fa-check" aria-hidden="true"></i> Yes, locations and responsible users are enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, locations and responsible users are disabled for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Publications</dt><dd>{% if action_type.enable_publications %}<i class="fa fa-check" aria-hidden="true"></i> Yes, publications are enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, publications are disabled for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Comments</dt><dd>{% if action_type.enable_comments %}<i class="fa fa-check" aria-hidden="true"></i> Yes, comments are enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, comments are disabled for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Activity Log</dt><dd>{% if action_type.enable_activity_log %}<i class="fa fa-check" aria-hidden="true"></i> Yes, the activity log is enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, the activity log is disabled for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Related Objects</dt><dd>{% if action_type.enable_related_objects %}<i class="fa fa-check" aria-hidden="true"></i> Yes, show related objects for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, do not show related objects for objects created with actions of this type{% endif %}</dd>
+  </dl>
+  <a href="{{ url_for('.actions', t=action_type.id) }}" class="btn btn-default">View Actions</a>
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    <a href="{{ url_for('.action_type', type_id=action_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action type.">Edit Action Type</a>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>
+{% endblock %}

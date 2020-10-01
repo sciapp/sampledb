@@ -11,8 +11,6 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 
-from sampledb.models import ActionType
-
 
 @pytest.fixture
 def user(flask_server):
@@ -40,7 +38,7 @@ def instrument():
 @pytest.fixture
 def action(instrument):
     action = sampledb.logic.actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

@@ -7,6 +7,7 @@ Version 0.15
 Currently in development.
 
 - Added user to metadata types
+- Allow custom action types
 
 Version 0.14
 ------------

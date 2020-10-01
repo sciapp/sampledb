@@ -4,6 +4,7 @@
 """
 import pytest
 
+import sampledb
 from sampledb.logic.schemas import validate, convert_to_schema
 from sampledb.logic.schemas.generate_placeholder import SchemaError
 
@@ -241,4 +242,165 @@ def test_convert_array():
             'tags': ['example text']
         }
     ]
+    assert not warnings
+
+
+def create_object_of_type(action_type_id):
+    user = sampledb.logic.users.create_user(
+        name='Example User',
+        email='email@example.com',
+        type=sampledb.logic.users.UserType.OTHER
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=action_type_id,
+        name='Example Action',
+        description='',
+        schema={
+            'type': 'object',
+            'title': 'Object Information',
+            'properties': {
+                'name': {
+                    'type': 'text',
+                    'title': 'Object Name'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    object = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        },
+        user_id=user.id
+    )
+    return object.id
+
+def test_convert_sample_to_object_reference():
+    object_id = create_object_of_type(sampledb.models.ActionType.SAMPLE_CREATION)
+    data = {
+        '_type': 'sample',
+        'object_id': object_id
+    }
+    previous_schema = {
+        'type': 'sample',
+        'title': 'Test'
+    }
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test'
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': None
+    }
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+    }
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': sampledb.models.ActionType.MEASUREMENT
+    }
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data is None
+    assert warnings
+
+
+def test_convert_object_reference_to_sample():
+    object_id = create_object_of_type(sampledb.models.ActionType.SAMPLE_CREATION)
+    data = {
+        '_type': 'object_reference',
+        'object_id': object_id
+    }
+    previous_schema = {
+        'type': 'object_reference',
+        'title': 'Test'
+    }
+    new_schema = {
+        'type': 'sample',
+        'title': 'Test'
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    previous_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': None
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    previous_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+
+def test_convert_object_reference_to_measurement():
+    object_id = create_object_of_type(sampledb.models.ActionType.MEASUREMENT)
+    data = {
+        '_type': 'object_reference',
+        'object_id': object_id
+    }
+    previous_schema = {
+        'type': 'object_reference',
+        'title': 'Test'
+    }
+    new_schema = {
+        'type': 'measurement',
+        'title': 'Test'
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    previous_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': None
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    previous_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_type_id': sampledb.models.ActionType.MEASUREMENT
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
     assert not warnings

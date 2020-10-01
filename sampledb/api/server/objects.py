@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-RESTful API for iffSamples
+RESTful API for SampleDB
 """
 
 import json
@@ -8,12 +8,13 @@ import flask
 
 from flask_restful import Resource
 
-from sampledb.api.server.authentication import multi_auth, object_permissions_required, Permissions
-from sampledb.logic.actions import get_action, ActionType
-from sampledb.logic.object_search import generate_filter_func, wrap_filter_func
-from sampledb.logic.objects import get_object, update_object, create_object
-from sampledb.logic.object_permissions import get_objects_with_permissions
-from sampledb.logic import errors
+from ...api.server.authentication import multi_auth, object_permissions_required, Permissions
+from ...logic.actions import get_action, get_action_type
+from ...logic.object_search import generate_filter_func, wrap_filter_func
+from ...logic.objects import get_object, update_object, create_object
+from ...logic.object_permissions import get_objects_with_permissions
+from ...logic import errors
+from ... import models
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -134,21 +135,28 @@ class Objects(Resource):
                 }, 400
         else:
             action_id = None
-        action_type = flask.request.args.get('action_type', '')
-        if action_type:
-            action_type = action_type.lower()
-            if action_type == 'sample':
-                action_type = 'sample_creation'
-            for t in ActionType:
-                if t.name.lower() == action_type:
-                    action_type = t
-                    break
+        action_type_id = flask.request.args.get('action_type_id', flask.request.args.get('action_type', None))
+        if action_type_id is not None:
+            try:
+                action_type_id = int(action_type_id)
+            except ValueError:
+                # ensure old links still function
+                action_type_id = {
+                    'sample': models.ActionType.SAMPLE_CREATION,
+                    'measurement': models.ActionType.MEASUREMENT,
+                    'simulation': models.ActionType.SIMULATION
+                }.get(action_type_id, None)
             else:
+                try:
+                    get_action_type(action_type_id)
+                except errors.ActionTypeDoesNotExistError:
+                    action_type_id = None
+            if action_type_id is None:
                 return {
                     'messsage': 'No matching action type exists.'
                 }, 400
         else:
-            action_type = None
+            action_type_id = None
         project_id = None
         query_string = flask.request.args.get('q', '')
         if query_string:
@@ -172,7 +180,7 @@ class Objects(Resource):
                 permissions=Permissions.READ,
                 filter_func=filter_func,
                 action_id=action_id,
-                action_type=action_type,
+                action_type_id=action_type_id,
                 project_id=project_id
             )
         except Exception as e:

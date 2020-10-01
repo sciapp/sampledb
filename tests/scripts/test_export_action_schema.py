@@ -7,6 +7,7 @@ import json
 import os
 import pytest
 import tempfile
+import sampledb
 from sampledb import db
 from sampledb.logic import instruments, actions
 import sampledb.__main__ as scripts
@@ -30,7 +31,7 @@ def action(instrument, schema_file_name):
     with open(schema_file_name) as schema_file:
         schema = json.load(schema_file)
     action = actions.create_action(
-        action_type=actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         description='Example Action Description',
         schema=schema,

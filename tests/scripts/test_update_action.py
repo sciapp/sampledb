@@ -6,6 +6,7 @@
 import json
 import os
 import pytest
+import sampledb
 from sampledb.logic import actions, instruments
 import sampledb.__main__ as scripts
 
@@ -25,7 +26,7 @@ def action(instrument, schema_file_name):
     with open(schema_file_name) as schema_file:
         schema = json.load(schema_file)
     return actions.create_action(
-        action_type=actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         description='Example Action Description',
         schema=schema,
@@ -45,7 +46,7 @@ def test_update_action(action, schema_file_name, capsys):
     action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == ''
-    assert action.type == actions.ActionType.SAMPLE_CREATION
+    assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
 
 
 def test_update_action_missing_arguments(action, capsys):
@@ -62,7 +63,7 @@ def test_update_action_missing_arguments(action, capsys):
     action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == description
-    assert action.type == actions.ActionType.SAMPLE_CREATION
+    assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
 
 
 def test_update_action_invalid_action_id(action, schema_file_name, capsys):
@@ -79,7 +80,7 @@ def test_update_action_invalid_action_id(action, schema_file_name, capsys):
     action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == description
-    assert action.type == actions.ActionType.SAMPLE_CREATION
+    assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
 
 
 def test_update_action_missing_action(action, schema_file_name, capsys):
@@ -96,7 +97,7 @@ def test_update_action_missing_action(action, schema_file_name, capsys):
     action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == description
-    assert action.type == actions.ActionType.SAMPLE_CREATION
+    assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
 
 
 def test_update_action_invalid_schema(action, capsys):
@@ -114,4 +115,4 @@ def test_update_action_invalid_schema(action, capsys):
     action = actions.get_actions()[0]
     assert action.name == name
     assert action.description == description
-    assert action.type == actions.ActionType.SAMPLE_CREATION
+    assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION

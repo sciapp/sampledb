@@ -23,7 +23,7 @@ def actions(instrument):
     return [
         sampledb.logic.actions.create_action(
             instrument_id=instrument.id,
-            action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+            action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
             name=name,
             description='',
             schema=schema

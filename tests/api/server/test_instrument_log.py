@@ -370,7 +370,7 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     assert r.json() == []
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="",
         schema={
@@ -471,7 +471,7 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     }
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="",
         schema={
@@ -599,7 +599,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     }
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="",
         schema={

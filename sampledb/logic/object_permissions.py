@@ -27,7 +27,7 @@ from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
 from . import settings
 from .users import get_user, get_administrators
@@ -271,7 +271,7 @@ def get_objects_with_permissions(
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
-        action_type: typing.Optional[ActionType] = None,
+        action_type_id: typing.Optional[int] = None,
         project_id: typing.Optional[int] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None,
         **kwargs
@@ -283,10 +283,10 @@ def get_objects_with_permissions(
     if user.is_readonly and permissions != Permissions.READ:
         return []
 
-    if action_type is not None and action_id is not None:
-        action_filter = db.and_(Action.type == action_type, Action.id == action_id)
-    elif action_type is not None:
-        action_filter = (Action.type == action_type)
+    if action_type_id is not None and action_id is not None:
+        action_filter = db.and_(Action.type_id == action_type_id, Action.id == action_id)
+    elif action_type_id is not None:
+        action_filter = (Action.type_id == action_type_id)
     elif action_id is not None:
         action_filter = (Action.id == action_id)
     else:

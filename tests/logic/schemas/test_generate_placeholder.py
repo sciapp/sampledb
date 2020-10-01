@@ -256,6 +256,15 @@ def test_generate_sample_object():
     assert placeholder_object is None
 
 
+def test_generate_object_reference_object():
+    object_schema = {
+        'title': 'Example Object Reference',
+        'type': 'object_reference'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None
+
+
 def test_generate_tags():
     object_schema = {
         'title': 'Keywords',

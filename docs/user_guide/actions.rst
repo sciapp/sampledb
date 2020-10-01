@@ -9,6 +9,11 @@ Either generic or associated with an :ref:`Instrument <instruments>`, each actio
 
 You can view a list of actions at |service_actions_url|. Similar to instruments, users can select **favorites** by clicking the star next to an action's name.
 
+Action Types
+------------
+
+The type of an Action describes the general kind of process it represents, such as **Sample Creation**. There are three built-in action types for creating samples, performing a measurement or running a simulation, but administrators can create custom action types.
+
 Custom Actions
 --------------
 
@@ -92,8 +97,9 @@ Additionally, there are special data types:
 - :ref:`Tags <tags>`
 - :ref:`Hazards <hazards>`
 - User References
-- Sample References
-- Measurement References
+- Object References
+    - Sample References
+    - Measurement References
 
 All metadata property definitions require a ``title`` and a ``type`` property. They can also contain a ``note`` property with information for users. Some data types allow or require additional properties.
 

@@ -250,7 +250,10 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
     return list(iter_object_properties([], object.schema, object.data))
 
 
-def find_object_references(object: Object, find_previous_referenced_object_ids: bool = True) -> typing.List[typing.Tuple[int, typing.Optional[int]]]:
+def find_object_references(
+        object: Object,
+        find_previous_referenced_object_ids: bool = True
+) -> typing.List[typing.Tuple[int, typing.Optional[int], str]]:
     """
     Searches for references to other objects.
 
@@ -260,7 +263,7 @@ def find_object_references(object: Object, find_previous_referenced_object_ids: 
     """
     referenced_object_ids = []
     for path, schema, data in _get_object_properties(object):
-        if schema['type'] in ('sample', 'measurement') and data is not None and data['object_id'] is not None:
+        if schema['type'] in ('sample', 'measurement', 'object_reference') and data is not None and data['object_id'] is not None:
             referenced_object_id = data['object_id']
             previous_referenced_object_id = None
             if find_previous_referenced_object_ids and object.version_id > 0:
@@ -274,7 +277,7 @@ def find_object_references(object: Object, find_previous_referenced_object_ids: 
                 else:
                     if previous_data is not None and 'object_id' in previous_data and previous_data['object_id'] is not None:
                         previous_referenced_object_id = previous_data['object_id']
-            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id))
+            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id, schema['type']))
     return referenced_object_ids
 
 
@@ -289,13 +292,15 @@ def _update_object_references(object: Object, user_id: int) -> None:
     :param object: the updated (or newly created) object
     :param user_id: the user who caused the object update or creation
     """
-    action_type = actions.get_action(object.action_id).type
-    for referenced_object_id, previous_referenced_object_id in find_object_references(object):
+    action_type_id = actions.get_action(object.action_id).type_id
+    for referenced_object_id, previous_referenced_object_id, schema_type in find_object_references(object):
         if referenced_object_id != previous_referenced_object_id:
-            if action_type == ActionType.MEASUREMENT:
+            if action_type_id == ActionType.MEASUREMENT and schema_type == 'sample':
                 object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=user_id, measurement_id=object.object_id)
-            elif action_type == ActionType.SAMPLE_CREATION:
+            elif action_type_id == ActionType.SAMPLE_CREATION and schema_type == 'sample':
                 object_log.use_object_in_sample(object_id=referenced_object_id, user_id=user_id, sample_id=object.object_id)
+            else:
+                object_log.reference_object_in_metadata(object_id=referenced_object_id, user_id=user_id, referencing_object_id=object.object_id)
 
 
 def _send_user_references_notifications(object: Object, user_id: int) -> None:

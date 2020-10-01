@@ -95,12 +95,8 @@
   {% else %}
     {% set object_suffix = "" %}
   {% endif %}
-  {% if action_type == ActionType.SAMPLE_CREATION %}
-  <h1>Samples{{ object_suffix }}</h1>
-  {% elif action_type == ActionType.MEASUREMENT %}
-  <h1>Measurements{{ object_suffix }}</h1>
-  {% elif action_type == ActionType.SIMULATION %}
-  <h1>Simulations{{ object_suffix }}</h1>
+  {% if action_type %}
+  <h1>{{ action_type.object_name_plural }}{{ object_suffix }}</h1>
   {% else %}
   <h1>Objects{{ object_suffix }}</h1>
   {% endif %}

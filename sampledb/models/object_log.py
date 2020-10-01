@@ -25,6 +25,7 @@ class ObjectLogEntryType(enum.Enum):
     CREATE_BATCH = 8
     ASSIGN_LOCATION = 9
     LINK_PUBLICATION = 10
+    REFERENCE_OBJECT_IN_METADATA = 11
 
 
 class ObjectLogEntry(db.Model):

@@ -830,13 +830,13 @@ def test_validate_object_invalid_property():
 
 def test_validate_sample():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
       "properties": {
@@ -862,13 +862,13 @@ def test_validate_sample():
 
 def test_validate_sample_invalid_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
       "properties": {
@@ -892,13 +892,13 @@ def test_validate_sample_invalid_type():
 
 def test_validate_sample_unexpected_keys():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
       "properties": {
@@ -938,13 +938,13 @@ def test_validate_sample_missing_keys():
 
 def test_validate_sample_wrong_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
       "properties": {
@@ -971,13 +971,13 @@ def test_validate_sample_wrong_type():
 
 def test_validate_sample_wrong_object_id_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'sample'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.SAMPLE_CREATION, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
       "properties": {
@@ -1017,13 +1017,13 @@ def test_validate_sample_invalid_object_id():
 
 def test_validate_measurement():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'measurement'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.MEASUREMENT, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
       "properties": {
@@ -1049,13 +1049,13 @@ def test_validate_measurement():
 
 def test_validate_measurement_invalid_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'measurement'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.MEASUREMENT, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
       "properties": {
@@ -1079,13 +1079,13 @@ def test_validate_measurement_invalid_type():
 
 def test_validate_measurement_unexpected_keys():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'measurement'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.MEASUREMENT, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
       "properties": {
@@ -1125,13 +1125,13 @@ def test_validate_measurement_missing_keys():
 
 def test_validate_measurement_wrong_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'measurement'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.MEASUREMENT, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
       "properties": {
@@ -1158,13 +1158,13 @@ def test_validate_measurement_wrong_type():
 
 def test_validate_measurement_wrong_object_id_type():
     from sampledb.models.users import User, UserType
-    from sampledb.models.actions import Action, ActionType
+    from sampledb.models.actions import Action
     schema = {
         'title': 'Example',
         'type': 'measurement'
     }
     user = User("User", "example@fz-juelich.de", UserType.OTHER)
-    action = Action(ActionType.MEASUREMENT, "Example Action", schema={
+    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
       "properties": {
@@ -1197,6 +1197,231 @@ def test_validate_measurement_invalid_object_id():
     instance = {
         '_type': 'measurement',
         'object_id': 42
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object.id
+    }
+    validate(instance, schema)
+    schema['action_type_id'] = None
+    validate(instance, schema)
+    schema['action_type_id'] = action.type_id
+    validate(instance, schema)
+
+
+def test_validate_object_reference_invalid_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = object_id
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference_unexpected_keys():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      'required': ['name']
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object_id,
+        'action_id': action.id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference_missing_keys():
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    instance = {
+        '_type': 'object_reference'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference_wrong_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object_id = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'sample',
+        'object_id': object_id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference_wrong_object_id_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference_invalid_object_id():
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    instance = {
+        '_type': 'sample',
+        'object_id': 42
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_object_reference_wrong_action_type():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'action_type_id': sampledb.models.ActionType.MEASUREMENT
+    }
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object.id
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)

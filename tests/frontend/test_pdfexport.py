@@ -26,7 +26,7 @@ def user_session(flask_server):
 @pytest.fixture
 def action(flask_server):
     action = sampledb.models.Action(
-        action_type=sampledb.models.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='ExampleAction',
         schema={
             'title': 'Example Object',

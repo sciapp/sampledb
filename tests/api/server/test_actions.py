@@ -35,7 +35,7 @@ def test_get_action(flask_server, auth):
     assert r.status_code == 404
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="This is an example action",
         schema={
@@ -56,6 +56,7 @@ def test_get_action(flask_server, auth):
         'action_id': action.id,
         'instrument_id': None,
         'type': 'sample',
+        'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
         'name': "Example Action",
         'description': "This is an example action",
         'is_hidden': False,
@@ -79,7 +80,7 @@ def test_get_actions(flask_server, auth):
     assert r.json() == []
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="This is an example action",
         schema={
@@ -101,6 +102,7 @@ def test_get_actions(flask_server, auth):
             'action_id': action.id,
             'instrument_id': None,
             'type': 'sample',
+            'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
             'name': "Example Action",
             'description': "This is an example action",
             'is_hidden': False,

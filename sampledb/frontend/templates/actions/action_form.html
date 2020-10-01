@@ -51,9 +51,11 @@
       <div class="form-group {% if action_form.type.name in action_form.errors %}has-error{% endif %}">
         <label for="input-type" class="control-label">Type</label>
         <select class="selectpicker form-control" id="input-type" name="{{ action_form.type.name }}" {% if not may_change_type %}disabled="disabled"{% endif %}>
-          <option value="sample" {% if action_form.type.data == 'sample' %}selected="selected"{% endif %}>Sample Creation</option>
-          <option value="measurement" {% if action_form.type.data == 'measurement' %}selected="selected"{% endif %}>Measurement</option>
-          <option value="simulation" {% if action_form.type.data == 'simulation' %}selected="selected"{% endif %}>Simulation</option>
+          {% for action_type in get_action_types() %}
+            {% if not action_type.admin_only or current_user.is_admin or action_form.type.data == action_type.id %}
+          <option value="{{ action_type.id }}" {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.name}}</option>
+            {% endif %}
+          {% endfor %}
         </select>
       </div>
       <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}style="display: none"{% endif %}>
@@ -172,9 +174,10 @@
             <option value="quantity">Quantity</option>
             <option value="bool">Boolean</option>
             <option value="datetime">Datetime</option>
-            <option value="sample">Sample</option>
-            <option value="measurement">Measurement</option>
+            <option value="sample">{{ sample_action_type.object_name }}</option>
+            <option value="measurement">{{ measurement_action_type.object_name }}</option>
             <option value="user">User</option>
+            <option value="object_reference">Object Reference</option>
           </select>
         </div>
         <div class="schema-editor-form-group">
