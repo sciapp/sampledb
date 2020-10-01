@@ -263,7 +263,7 @@ def set_initial_permissions(obj):
     set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
 
-def get_objects_with_permissions_for_form(
+def get_object_info_with_permissions(
         user_id: int,
         permissions: Permissions,
         limit: typing.Optional[int] = None,

@@ -189,6 +189,37 @@ def test_search_objects(flask_server, user):
             assert name not in str(document.find('tbody'))
 
 
+def test_objects_referencable(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example42']
+    objects = [
+        sampledb.logic.objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            user_id=user.id,
+            action_id=action1.id
+        )
+        for name in names
+    ]
+    sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+        user_id=user.id,
+        action_id=action2.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/referencable')
+    assert r.status_code == 200
+    data = json.loads(r.content)
+    assert len(data['referencable_objects']) == 4
+    assert data['referencable_objects'] == [
+        {'action_id': 2, 'id': 4, 'text': 'Other Object (#4)'},
+        {'action_id': 1, 'id': 3, 'text': 'Example42 (#3)'},
+        {'action_id': 1, 'id': 2, 'text': 'Example2 (#2)'},
+        {'action_id': 1, 'id': 1, 'text': 'Example1 (#1)'}
+    ]
+
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
