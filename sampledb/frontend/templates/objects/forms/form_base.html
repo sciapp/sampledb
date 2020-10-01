@@ -14,6 +14,9 @@
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
+{% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
+  <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+{% endif %}
 <script type="text/javascript">
     $(function () {
         $('.input-group.date').each(function() {

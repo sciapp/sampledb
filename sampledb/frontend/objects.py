@@ -22,7 +22,7 @@ from .. import models
 from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
 from ..logic.action_permissions import get_user_action_permissions
-from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_objects_with_permissions_for_form, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users, get_users_by_name
 from ..logic.schemas import validate, generate_placeholder
@@ -674,21 +674,20 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         except ValueError:
             flask.abort(400)
 
-    referencable_objects = get_objects_with_permissions(
-        user_id=flask_login.current_user.id,
-        permissions=Permissions.READ
-    )
-    if object is not None:
-        referencable_objects = [
-            referencable_object
-            for referencable_object in referencable_objects
-            if referencable_object.object_id != object.object_id
-        ]
+    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+        referencable_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+        if object is not None:
+            referencable_objects = [
+                referencable_object
+                for referencable_object in referencable_objects
+                if referencable_object.object_id != object.object_id
+            ]
 
-    existing_objects = get_objects_with_permissions(
-        user_id=flask_login.current_user.id,
-        permissions=Permissions.GRANT
-    )
+    else:
+        referencable_objects = []
 
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
@@ -698,6 +697,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
     if object is None:
+        existing_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.GRANT
+        )
+
         return flask.render_template(
             'objects/forms/form_create.html',
             action_id=action_id,
@@ -1072,6 +1076,20 @@ def post_object_comments(object_id):
 @flask_login.login_required
 def search():
     return flask.render_template('search.html')
+
+
+@frontend.route('/objects/referencable')
+@flask_login.login_required
+def referencable_objects():
+    referencable_objects = get_objects_with_permissions_for_form(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+    )
+
+    def dictify(x):
+        return {'id': x.object_id, 'text': '{} (#{})'.format(x.name_text, x.object_id), 'action_id': x.action_id}
+
+    return {'referencable_objects': [dictify(x) for x in referencable_objects]}
 
 
 @frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])

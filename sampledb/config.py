@@ -388,6 +388,8 @@ INVITATION_TIME_LIMIT = 7 * 24 * 60 * 60
 ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 ONLY_ADMINS_CAN_DELETE_GROUPS = False
 
+LOAD_OBJECTS_IN_BACKGROUND = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 

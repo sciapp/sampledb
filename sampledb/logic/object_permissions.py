@@ -263,6 +263,75 @@ def set_initial_permissions(obj):
     set_object_public(object_id=obj.object_id, is_public=should_be_public)
 
 
+def get_objects_with_permissions_for_form(
+        user_id: int,
+        permissions: Permissions,
+        limit: typing.Optional[int] = None,
+        offset: typing.Optional[int] = None,
+        action_id: typing.Optional[int] = None,
+        action_type_id: typing.Optional[int] = None
+) -> typing.List[Object]:
+
+    user = get_user(user_id)
+
+    # readonly users may not have more than READ permissions
+    if user.is_readonly and permissions != Permissions.READ:
+        return []
+
+    if action_type_id is not None and action_id is not None:
+        action_filter = db.and_(Action.type_id == action_type_id, Action.id == action_id)
+    elif action_type_id is not None:
+        action_filter = (Action.type_id == action_type_id)
+    elif action_id is not None:
+        action_filter = (Action.id == action_id)
+    else:
+        action_filter = None
+
+    if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+        # admins who use admin permissions do not need permission-based filtering
+        stmt = db.text("""
+        SELECT
+        o.object_id, o.data -> 'name' ->> 'text' as name_text, o.action_id
+        FROM objects_current AS o
+        """)
+    else:
+        stmt = db.text("""
+        SELECT
+        o.object_id, o.data -> 'name' ->> 'text' as name_text, o.action_id
+        FROM (
+            SELECT
+            object_id
+            FROM user_object_permissions_by_all
+            WHERE user_id = :user_id OR user_id IS NULL
+            GROUP BY (object_id)
+            HAVING MAX(permissions_int) >= :min_permissions_int
+        ) AS p
+        JOIN objects_current AS o ON o.object_id = p.object_id
+        """)
+
+    stmt = stmt.columns(
+        objects.Objects._current_table.c.object_id,
+        sqlalchemy.sql.expression.column('name_text'),
+        objects.Objects._current_table.c.action_id,
+    )
+
+    parameters = {
+        'min_permissions_int': permissions.value,
+        'user_id': user_id
+    }
+
+    table = stmt.alias('tbl')
+
+    where = table.c.action_id.in_(db.select([Action.__table__.c.id], whereclause=action_filter)) if action_filter is not None else None
+
+    table = db.select(
+        columns=[table],
+        whereclause=where
+    ).order_by(db.desc(table.c.object_id)).limit(limit).offset(offset)
+
+    return db.session.execute(table, parameters).fetchall()
+
+
 def get_objects_with_permissions(
         user_id: int,
         permissions: Permissions,
