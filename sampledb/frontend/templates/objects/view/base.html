@@ -53,9 +53,11 @@
       <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Modify who can read the information for this object, write it or grant permissions to other users."><i class="fa fa-lock" aria-hidden="true"></i> Edit Permissions</a>
     </div>
     {% endif %}
+    {% if user_may_use_as_template %}
     <div class="form-group">
       <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new object based on the information for this object."><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
     </div>
+    {% endif %}
     {% if object_type.lower() == 'sample' %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="Create a new measurement using this sample.">
