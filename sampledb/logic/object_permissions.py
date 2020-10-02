@@ -291,16 +291,16 @@ def get_object_info_with_permissions(
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
-        o.object_id, o.data -> 'name' ->> 'text' as name_text, o.action_id
+        o.object_id, o.data -> 'name' ->> 'text' as name_text, o.action_id, 3 as max_permission
         FROM objects_current AS o
         """)
     else:
         stmt = db.text("""
         SELECT
-        o.object_id, o.data -> 'name' ->> 'text' as name_text, o.action_id
+        o.object_id, o.data -> 'name' ->> 'text' as name_text, o.action_id, p.max_permission
         FROM (
             SELECT
-            object_id
+            object_id, MAX(permissions_int) AS max_permission
             FROM user_object_permissions_by_all
             WHERE user_id = :user_id OR user_id IS NULL
             GROUP BY (object_id)
@@ -313,6 +313,7 @@ def get_object_info_with_permissions(
         objects.Objects._current_table.c.object_id,
         sqlalchemy.sql.expression.column('name_text'),
         objects.Objects._current_table.c.action_id,
+        sqlalchemy.sql.expression.column('max_permission'),
     )
 
     parameters = {

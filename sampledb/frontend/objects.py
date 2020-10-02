@@ -688,6 +688,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     else:
         referencable_objects = []
+        existing_objects = []
 
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
@@ -697,10 +698,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
     if object is None:
-        existing_objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.GRANT
-        )
+        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+            existing_objects = get_objects_with_permissions(
+                user_id=flask_login.current_user.id,
+                permissions=Permissions.GRANT
+            )
 
         return flask.render_template(
             'objects/forms/form_create.html',
@@ -1081,13 +1083,30 @@ def search():
 @frontend.route('/objects/referencable')
 @flask_login.login_required
 def referencable_objects():
+    required_perm = Permissions.READ
+    if 'required_perm' in flask.request.args:
+        try:
+            required_perm = Permissions.from_name(flask.request.args['required_perm'])
+        except ValueError:
+            try:
+                required_perm = Permissions(int(flask.request.args['required_perm']))
+            except ValueError:
+                return {
+                    "message": "argument {} is not a valid permission.".format(flask.request.args['required_perm'])
+                }, 400
+
     referencable_objects = get_object_info_with_permissions(
         user_id=flask_login.current_user.id,
-        permissions=Permissions.READ,
+        permissions=required_perm,
     )
 
     def dictify(x):
-        return {'id': x.object_id, 'text': '{} (#{})'.format(x.name_text, x.object_id), 'action_id': x.action_id}
+        return {
+            'id': x.object_id,
+            'text': '{} (#{})'.format(x.name_text, x.object_id),
+            'action_id': x.action_id,
+            'max_permission': x.max_permission
+        }
 
     return {'referencable_objects': [dictify(x) for x in referencable_objects]}
 
@@ -1541,15 +1560,20 @@ def object_permissions(object_id):
         projects = [project for project in projects if project.id not in project_permissions]
         add_project_permissions_form = ObjectProjectPermissionsForm()
         copy_permissions_form = CopyPermissionsForm()
-        existing_objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.GRANT
-        )
-        copy_permissions_form.object_id.choices = [
-            (str(existing_object.id), existing_object.data['name']['text'])
-            for existing_object in existing_objects
-            if existing_object.id != object_id
-        ]
+        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+            existing_objects = get_objects_with_permissions(
+                user_id=flask_login.current_user.id,
+                permissions=Permissions.GRANT
+            )
+            copy_permissions_form.object_id.choices = [
+                (str(existing_object.id), existing_object.data['name']['text'])
+                for existing_object in existing_objects
+                if existing_object.id != object_id
+            ]
+            if len(copy_permissions_form.object_id.choices) == 0:
+                copy_permissions_form = None
+        else:
+            copy_permissions_form.object_id.choices = []
     else:
         edit_user_permissions_form = None
         add_user_permissions_form = None
@@ -1593,16 +1617,18 @@ def update_object_permissions(object_id):
     add_project_permissions_form = ObjectProjectPermissionsForm()
     copy_permissions_form = CopyPermissionsForm()
     if 'copy_permissions' in flask.request.form:
-
-        existing_objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.GRANT
-        )
-        copy_permissions_form.object_id.choices = [
-            (str(existing_object.id), existing_object.data['name']['text'])
-            for existing_object in existing_objects
-            if existing_object.id != object_id
-        ]
+        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+            existing_objects = get_objects_with_permissions(
+                user_id=flask_login.current_user.id,
+                permissions=Permissions.GRANT
+            )
+            copy_permissions_form.object_id.choices = [
+                (str(existing_object.id), existing_object.data['name']['text'])
+                for existing_object in existing_objects
+                if existing_object.id != object_id
+            ]
+        else:
+            copy_permissions_form.object_id.choices = []
         if copy_permissions_form.validate_on_submit():
             logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
             logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)

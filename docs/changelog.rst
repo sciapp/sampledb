@@ -15,6 +15,7 @@ Currently in development.
 - Fixed pagination for viewing objects of a project
 - Added Docker Compose configuration file
 - Ensure that file storage path is owned by sampledb user in docker container
+- Added ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` option to load object select options using ajax
 
 Version 0.14.1
 --------------
