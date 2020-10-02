@@ -22,6 +22,7 @@ from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_objects_with_permissions
+from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, markdown_to_safe_html, generate_qrcode
 
@@ -33,6 +34,10 @@ class InstrumentLogEntryForm(FlaskForm):
     files = MultipleFileField()
     objects = SelectMultipleField()
     categories = SelectMultipleField()
+
+
+class InstrumentLogOrderForm(FlaskForm):
+    ascending = BooleanField()
 
 
 @frontend.route('/instruments/')
@@ -147,6 +152,9 @@ def instrument(instrument_id):
         else:
             flask.flash('You cannot create a log entry for this instrument.', 'error')
             return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    instrument_log_order_ascending = get_user_settings(flask_login.current_user.id)["INSTRUMENT_LOG_ORDER_ASCENDING"]
+    if instrument_log_entries is not None and not instrument_log_order_ascending:
+        instrument_log_entries.reverse()
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
@@ -155,8 +163,10 @@ def instrument(instrument_id):
         attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
         instrument_log_entry_form=instrument_log_entry_form,
+        instrument_log_order_form=InstrumentLogOrderForm(),
         mobile_upload_url=mobile_upload_url,
         mobile_upload_qrcode=mobile_upload_qrcode,
+        instrument_log_order_ascending=instrument_log_order_ascending,
         ActionType=ActionType
     )
 
@@ -477,3 +487,16 @@ def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
                 content=file_storage.stream.read()
             )
     return flask.render_template('mobile_upload_success.html')
+
+
+@flask_login.login_required
+@frontend.route('/users/me/settings/instrument_log_order', methods=['POST'])
+def set_instrument_log_order():
+    form = InstrumentLogOrderForm()
+    if not form.validate_on_submit():
+        return flask.abort(400)
+    ascending = form.ascending.data
+    set_user_settings(flask_login.current_user.id, {
+        'INSTRUMENT_LOG_ORDER_ASCENDING': ascending
+    })
+    return "", 200
