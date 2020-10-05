@@ -10,6 +10,7 @@ Currently in development.
 - Allow setting instrument log entry order
 - Allow custom action types
 - Allow administrators to deactivate users
+- Fixed pagination for viewing objects of a project
 
 Version 0.14
 ------------
