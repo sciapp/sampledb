@@ -102,7 +102,10 @@ def group(group_id):
         leave_group_form = LeaveGroupForm()
         invite_user_form = InviteUserForm()
         edit_group_form = EditGroupForm()
-        delete_group_form = DeleteGroupForm()
+        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_GROUPS']:
+            delete_group_form = DeleteGroupForm()
+        else:
+            delete_group_form = None
         remove_group_member_form = RemoveGroupMemberForm()
         if edit_group_form.name.data is None:
             edit_group_form.name.data = group.name
@@ -155,7 +158,7 @@ def group(group_id):
                 else:
                     flask.flash('You have successfully left the group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
-        elif 'delete' in flask.request.form:
+        elif 'delete' in flask.request.form and delete_group_form:
             check_current_user_is_not_readonly()
             if delete_group_form.validate_on_submit():
                 try:
