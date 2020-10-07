@@ -14,6 +14,7 @@ Currently in development.
 - Allow disabling group deletion by non-administrators
 - Fixed pagination for viewing objects of a project
 - Added Docker Compose configuration file
+- Ensure that file storage path is owned by sampledb user in docker container
 
 Version 0.14
 ------------
