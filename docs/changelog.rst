@@ -12,6 +12,7 @@ Currently in development.
 - Allow administrators to deactivate users
 - Allow disabling group deletion by non-administrators
 - Fixed pagination for viewing objects of a project
+- Added Docker Compose configuration file
 
 Version 0.14
 ------------
