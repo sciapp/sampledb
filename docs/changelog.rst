@@ -11,6 +11,7 @@ Currently in development.
 - Allow custom action types
 - Allow administrators to deactivate users
 - Fixed pagination for viewing objects of a project
+- Added Docker Compose configuration file
 
 Version 0.14
 ------------
