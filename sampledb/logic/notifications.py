@@ -11,7 +11,7 @@ import smtplib
 import flask
 import flask_mail
 
-from . import errors, users, objects, groups, projects
+from . import errors
 from .. import logic
 from ..models import notifications
 from ..models.notifications import NotificationType, NotificationMode
@@ -52,7 +52,7 @@ def get_notifications(user_id: int, unread_only: bool = False, _additional_filte
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     query = notifications.Notification.query.filter_by(user_id=user_id)
     if unread_only:
         query = query.filter_by(was_read=False)
@@ -97,7 +97,7 @@ def get_num_notifications(user_id: int, unread_only: bool = False) -> int:
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     if unread_only:
         return notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
     else:
@@ -149,7 +149,7 @@ def _store_notification(type: NotificationType, user_id: int, data: typing.Dict[
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     notification = notifications.Notification(
         type=type,
         user_id=user_id,
@@ -170,14 +170,34 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    user = users.get_user(user_id)
+    user = logic.users.get_user(user_id)
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Notification"
 
     template_path = 'mails/notifications/' + type.name.lower()
 
-    html = flask.render_template(template_path + '.html', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group, get_project=projects.get_project)
-    text = flask.render_template(template_path + '.txt', user=user, type=type, data=data, get_user=users.get_user, get_group=groups.get_group, get_project=projects.get_project)
+    html = flask.render_template(
+        template_path + '.html',
+        user=user,
+        type=type,
+        data=data,
+        get_user=logic.users.get_user,
+        get_group=logic.groups.get_group,
+        get_project=logic.projects.get_project,
+        get_instrument=logic.instruments.get_instrument,
+        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry
+    )
+    text = flask.render_template(
+        template_path + '.txt',
+        user=user,
+        type=type,
+        data=data,
+        get_user=logic.users.get_user,
+        get_group=logic.groups.get_group,
+        get_project=logic.projects.get_project,
+        get_instrument=logic.instruments.get_instrument,
+        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry
+    )
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
     try:
@@ -256,7 +276,7 @@ def set_notification_mode_for_type(type: NotificationType, user_id: int, mode: N
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is None:
         notification_mode_for_type = notifications.NotificationModeForType(type=type, user_id=user_id, mode=mode)
@@ -276,7 +296,7 @@ def set_notification_mode_for_all_types(user_id: int, mode: NotificationMode) ->
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     notification_mode_for_types = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
     for notification_mode_for_type in notification_mode_for_types:
         db.session.delete(notification_mode_for_type)
@@ -295,13 +315,15 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
         return notification_mode_for_type.mode
     notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
     if notification_mode_for_all_types is not None:
         return notification_mode_for_all_types.mode
+    if type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED:
+        return NotificationMode.IGNORE
     return NotificationMode.WEBAPP
 
 
@@ -314,7 +336,7 @@ def get_notification_modes(user_id: int) -> typing.Dict[typing.Optional[Notifica
         exists
     """
     # ensure the user exists
-    users.get_user(user_id)
+    logic.users.get_user(user_id)
     notification_modes = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
     return {
         notification_mode_for_type.type: notification_mode_for_type.mode
@@ -392,9 +414,9 @@ def create_notification_for_being_invited_to_a_group(
         ID exists
     """
     # ensure the group exists
-    groups.get_group(group_id)
+    logic.groups.get_group(group_id)
     # ensure the inviter exists
-    users.get_user(inviter_id)
+    logic.users.get_user(inviter_id)
     _create_notification(
         type=NotificationType.INVITED_TO_GROUP,
         user_id=user_id,
@@ -428,9 +450,9 @@ def create_notification_for_being_invited_to_a_project(
         ID exists
     """
     # ensure the project exists
-    projects.get_project(project_id)
+    logic.projects.get_project(project_id)
     # ensure the inviter exists
-    users.get_user(inviter_id)
+    logic.users.get_user(inviter_id)
     _create_notification(
         type=NotificationType.INVITED_TO_PROJECT,
         user_id=user_id,
@@ -470,7 +492,7 @@ def create_announcement_notification_for_all_users(message: str, html: typing.Op
     :param message: the message for the notification
     :param html: a HTML-formatted version of the message (optional)
     """
-    for user in users.get_users():
+    for user in logic.users.get_users():
         create_announcement_notification(user.id, message, html)
 
 
@@ -487,9 +509,9 @@ def create_notification_for_having_received_an_objects_permissions_request(user_
         object ID exists
     """
     # ensure the object exists
-    objects.get_object(object_id)
+    logic.objects.get_object(object_id)
     # ensure the requester exists
-    users.get_user(requester_id)
+    logic.users.get_user(requester_id)
     _create_notification(
         type=NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST,
         user_id=user_id,
@@ -540,5 +562,33 @@ def create_notification_for_being_referenced_by_object_metadata(user_id: int, ob
         user_id=user_id,
         data={
             'object_id': object_id
+        }
+    )
+
+
+def create_notification_for_an_edited_instrument_log_entry(
+        user_id: int,
+        instrument_log_entry_id: int,
+        version_id: int
+) -> None:
+    """
+    Create a notification of type INSTRUMENT_LOG_ENTRY_EDITED.
+
+    :param user_id: the ID of an existing user
+    :param instrument_log_entry_id: the ID of the instrument log entry
+    :param version_id: the ID of the edited log entry version
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
+        entry with the given ID exists
+    """
+    # ensure the instrument log entry exists
+    logic.instrument_log_entries.get_instrument_log_entry(instrument_log_entry_id)
+    _create_notification(
+        type=NotificationType.INSTRUMENT_LOG_ENTRY_EDITED,
+        user_id=user_id,
+        data={
+            'instrument_log_entry_id': instrument_log_entry_id,
+            'version_id': version_id
         }
     )

@@ -14,7 +14,8 @@ the functions in this module should be called from within a Flask app context.
 
 import typing
 from ..models import Objects, Object, Action, ActionType
-from . import object_log, user_log, object_permissions, errors, users, actions, tags, notifications
+from . import object_log, user_log, object_permissions, errors, users, actions, tags
+from .notifications import create_notification_for_being_referenced_by_object_metadata
 import sqlalchemy.exc
 
 
@@ -313,7 +314,7 @@ def _send_user_references_notifications(object: Object, user_id: int) -> None:
 
     for referenced_user_id, previous_referenced_user_id in find_user_references(object):
         if referenced_user_id != user_id and referenced_user_id != previous_referenced_user_id:
-            notifications.create_notification_for_being_referenced_by_object_metadata(referenced_user_id, object.object_id)
+            create_notification_for_being_referenced_by_object_metadata(referenced_user_id, object.object_id)
 
 
 def find_user_references(object: Object, find_previous_referenced_user_ids: bool = True) -> typing.List[typing.Tuple[int, typing.Optional[int]]]:

@@ -92,6 +92,9 @@
                 <a href="{{ url_for('.user_profile', user_id=instrument_log_entry.user_id) }}">{{ get_user(instrument_log_entry.user_id).name }}</a> has created a new <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)) }}">log entry</a> for the instrument <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id) }}">{{ get_instrument(instrument_log_entry.instrument_id).name }}</a>.
               {% elif notification.type == NotificationType.REFERENCED_BY_OBJECT_METADATA %}
                 You were referenced in the metadata for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>.
+              {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED %}
+                {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
+                <a href="{{ url_for('.user_profile', user_id=instrument_log_entry.user_id) }}">{{ get_user(instrument_log_entry.user_id).name }}</a> has edited a <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)) }}">log entry</a> for the instrument <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id) }}">{{ get_instrument(instrument_log_entry.instrument_id).name }}</a>.
               {% else %}
                 Unknown notification type.
               {% endif %}

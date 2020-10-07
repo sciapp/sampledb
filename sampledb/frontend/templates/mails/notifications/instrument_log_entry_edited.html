@@ -1,0 +1,6 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+  {% set instrument_log_entry = get_instrument_log_entry(data['instrument_log_entry_id']) %}
+  <p><a href="{{ url_for('.user_profile', user_id=instrument_log_entry.user_id, _external=True) }}" style="color:#337ab7;">{{ get_user(instrument_log_entry.user_id).name }}</a> has edited a <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id), _external=True) }}" style="color:#337ab7;">log entry</a> for the instrument <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _external=True) }}" style="color:#337ab7;">{{ get_instrument(instrument_log_entry.instrument_id).name }}</a>.</p>
+{% endblock %}

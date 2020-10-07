@@ -23,7 +23,7 @@ def setup_data(app):
     # TODO: replace using user management logic
     admin = User(name="Administrator", email="example@fz-juelich.de", type=UserType.PERSON)
     admin.is_admin = True
-    instrument_responsible_user = User(name="Instrument Responsible User", email="example@fz-juelich.de", type=UserType.PERSON)
+    instrument_responsible_user = User(name="Instrument Responsible User", email="f.rhiem@fz-juelich.de", type=UserType.PERSON)
     basic_user = User(name="Basic User", email="example@fz-juelich.de", type=UserType.PERSON)
     for user in (admin, instrument_responsible_user, basic_user):
         sampledb.db.session.add(user)
