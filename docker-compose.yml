@@ -11,7 +11,7 @@ services:
     container_name: sampledb
     environment:
         - SAMPLEDB_CONTACT_EMAIL=sampledb@example.com
-        - SAMPLEDB_MAILSERVER=mail.example.com
+        - SAMPLEDB_MAIL_SERVER=mail.example.com
         - SAMPLEDB_MAIL_SENDER=sampledb@example.com
         - SAMPLEDB_ADMIN_PASSWORD=password
         - SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres
