@@ -18,7 +18,7 @@ def test_custom_units():
     assert sccm.dimensionality == cubic_centimeter_per_minute.dimensionality
     one_sccm = sampledb.logic.units.ureg.Quantity("1sccm")
     one_cubic_centimeter_per_minute = sampledb.logic.units.ureg.Quantity("1 cm**3 / min")
-    assert one_sccm == one_cubic_centimeter_per_minute
+    assert one_sccm.to_base_units() == one_cubic_centimeter_per_minute.to_base_units()
 
 
 def test_prettify_degrees_celsius():

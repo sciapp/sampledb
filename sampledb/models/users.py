@@ -33,16 +33,19 @@ class User(db.Model, flask_login.UserMixin):
         self.type = type
 
     def __eq__(self, other):
-        return (
-            self.id == other.id and
-            self.name == other.name and
-            self.email == other.email and
-            self.type == other.type and
-            self.is_admin == other.is_admin and
-            self.is_readonly == other.is_readonly and
-            self.is_hidden == other.is_hidden and
-            self.orcid == other.orcid
-        )
+        try:
+            return (
+                self.id == other.id and
+                self.name == other.name and
+                self.email == other.email and
+                self.type == other.type and
+                self.is_admin == other.is_admin and
+                self.is_readonly == other.is_readonly and
+                self.is_hidden == other.is_hidden and
+                self.orcid == other.orcid
+            )
+        except AttributeError:
+            return False
 
     def get_id(self):
         return self.id
