@@ -30,7 +30,7 @@ from .users import get_user
 from .security_tokens import generate_token
 from . import groups
 from . import errors
-from . import notifications
+from .notifications import create_notification_for_being_invited_to_a_project
 
 
 # project names are limited to this (semi-arbitrary) length
@@ -338,7 +338,7 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
     expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.project", project_id=project_id, token=token, _external=True)
-    notifications.create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
+    create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
 
 def add_user_to_project(project_id: int, user_id: int, permissions: Permissions, other_project_ids: typing.Sequence[int] = ()) -> None:

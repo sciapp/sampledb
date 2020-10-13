@@ -1,0 +1,7 @@
+{% extends "mails/notifications/base.txt" %}
+
+
+{% block message %}
+You have been referenced in the metadata for object #{{ data['object_id'] }}:
+{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}
+{% endblock %}

@@ -71,10 +71,16 @@ def test_get_instrument_log_entries(flask_server, auth, user):
     assert r.json() == [
         {
             'log_entry_id': log_entry.id,
-            'utc_datetime': log_entry.utc_datetime.isoformat(),
             'author': user.id,
-            'content': "Example Log Entry",
-            'categories': []
+            'versions': [
+                {
+                    'version_id': 1,
+                    'log_entry_id': log_entry.id,
+                    'utc_datetime': log_entry.versions[0].utc_datetime.isoformat(),
+                    'content': "Example Log Entry",
+                    'categories': []
+                }
+            ]
         }
     ]
 
@@ -96,13 +102,19 @@ def test_get_instrument_log_entries(flask_server, auth, user):
     assert len(r.json()) == 2
     assert r.json()[1] == {
         'log_entry_id': log_entry.id,
-        'utc_datetime': log_entry.utc_datetime.isoformat(),
         'author': user.id,
-        'content': "Example Log Entry 2",
-        'categories': [
+        'versions': [
             {
-                'category_id': category.id,
-                'title': "Category"
+                'version_id': 1,
+                'log_entry_id': log_entry.id,
+                'utc_datetime': log_entry.versions[0].utc_datetime.isoformat(),
+                'content': "Example Log Entry 2",
+                'categories': [
+                    {
+                        'category_id': category.id,
+                        'title': "Category"
+                    }
+                ]
             }
         ]
     }
@@ -149,10 +161,16 @@ def test_get_instrument_log_entry(flask_server, auth, user):
     assert r.status_code == 200
     assert r.json() == {
         'log_entry_id': log_entry.id,
-        'utc_datetime': log_entry.utc_datetime.isoformat(),
         'author': user.id,
-        'content': "Example Log Entry",
-        'categories': []
+        'versions': [
+            {
+                'version_id': 1,
+                'log_entry_id': log_entry.id,
+                'utc_datetime': log_entry.versions[0].utc_datetime.isoformat(),
+                'content': "Example Log Entry",
+                'categories': []
+            }
+        ]
     }
 
     instrument2 = sampledb.logic.instruments.create_instrument(
@@ -224,7 +242,8 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
         {
             'file_attachment_id': file_attachment.id,
             'file_name': 'example.txt',
-            'base64_content': 'RXhhbXBsZSBDb250ZW50'
+            'base64_content': 'RXhhbXBsZSBDb250ZW50',
+            'is_hidden': False
         }
     ]
 
@@ -298,7 +317,8 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
     assert r.json() == {
         'file_attachment_id': file_attachment.id,
         'file_name': 'example.txt',
-        'base64_content': 'RXhhbXBsZSBDb250ZW50'
+        'base64_content': 'RXhhbXBsZSBDb250ZW50',
+        'is_hidden': False
     }
 
     other_instrument = sampledb.logic.instruments.create_instrument(
@@ -370,7 +390,7 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     assert r.json() == []
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="",
         schema={
@@ -409,7 +429,8 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     assert r.json() == [
         {
             'object_attachment_id': object_attachment.id,
-            'object_id': object.id
+            'object_id': object.id,
+            'is_hidden': False
         }
     ]
 
@@ -471,7 +492,7 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     }
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="",
         schema={
@@ -509,7 +530,8 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     assert r.status_code == 200
     assert r.json() == {
         'object_attachment_id': object_attachment.id,
-        'object_id': object.id
+        'object_id': object.id,
+        'is_hidden': False
     }
 
     other_instrument = sampledb.logic.instruments.create_instrument(
@@ -599,7 +621,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     }
 
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="Example Action",
         description="",
         schema={
@@ -633,7 +655,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     log_entry_id = int(r.headers['Location'].split('/')[-1])
 
     log_entry = sampledb.logic.instrument_log_entries.get_instrument_log_entry(log_entry_id)
-    assert log_entry.content == 'Example Log Entry Text'
+    assert log_entry.versions[0].content == 'Example Log Entry Text'
     assert log_entry.user_id == user.id
 
     file_attachments = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(log_entry_id)

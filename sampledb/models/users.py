@@ -26,6 +26,7 @@ class User(db.Model, flask_login.UserMixin):
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
     orcid = db.Column(db.String, nullable=True)
     affiliation = db.Column(db.String, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 
     def __init__(self, name, email, type):
         self.name = name

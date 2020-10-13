@@ -12,6 +12,8 @@
   {% include "objects/view/sample.html" %}
 {% elif schema.type == 'measurement' %}
   {% include "objects/view/measurement.html" %}
+{% elif schema.type == 'object_reference' %}
+  {% include "objects/view/object_reference.html" %}
 {% elif schema.type == 'object' %}
   {% include "objects/view/object.html" %}
 {% elif schema.type == 'array' %}
@@ -20,6 +22,8 @@
   {% include "objects/view/tags.html" %}
 {% elif schema.type == 'hazards' %}
   {% include "objects/view/hazards.html" %}
+{% elif schema.type == 'user' %}
+  {% include "objects/view/user.html" %}
 {% else %}
   {{ name }}{{ schema.type }}{{ schema['type'] }}
 {% endif %}

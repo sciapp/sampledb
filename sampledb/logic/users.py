@@ -129,6 +129,22 @@ def set_user_hidden(user_id: int, hidden: bool) -> None:
     db.session.commit()
 
 
+def set_user_active(user_id: int, active: bool) -> None:
+    """
+    Set whether a user should be allowed to sign in.
+
+    :param user_id: the user ID of an existing user
+    :param active: True, if the user should be active, False otherwise
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+
+    user = get_user(user_id)
+    user.is_active = active
+    db.session.add(user)
+    db.session.commit()
+
+
 def set_user_administrator(user_id: int, is_admin: bool) -> None:
     """
     Set whether a user is an administrator.

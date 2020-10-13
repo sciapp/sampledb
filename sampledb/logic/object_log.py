@@ -5,6 +5,7 @@
 
 import datetime
 import typing
+
 from . import objects
 from . import object_permissions
 from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions
@@ -25,6 +26,9 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
             use_object_entry = True
             using_object_type = 'sample'
+        elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA:
+            use_object_entry = True
+            using_object_type = 'object'
         if use_object_entry:
             using_object_id = using_object_type + '_id'
             object_id = object_log_entry.data[using_object_id]
@@ -168,5 +172,16 @@ def link_publication(
             'doi': doi,
             'title': title,
             'object_name': object_name
+        }
+    )
+
+
+def reference_object_in_metadata(user_id: int, object_id: int, referencing_object_id: int):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'object_id': referencing_object_id
         }
     )

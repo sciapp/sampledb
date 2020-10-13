@@ -12,7 +12,7 @@ from . import users
 from . import projects
 from . import instruments
 from . import settings
-from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions, Action, ActionType
+from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions, Action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -303,7 +303,7 @@ def set_project_action_permissions(action_id: int, project_id: int, permissions:
     db.session.commit()
 
 
-def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type: typing.Optional[ActionType] = None) -> typing.List[Action]:
+def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
     """
     Get all actions which a user has the given permissions for.
 
@@ -312,18 +312,20 @@ def get_actions_with_permissions(user_id: int, permissions: Permissions, action_
     :param user_id: the ID of an existing user
     :param permissions: the minimum permissions required for the actions for
         the given user
-    :param action_type: the type of action to filter for
+    :param action_type_id: None or the ID of an existing action type
     :return: the actions with the given permissions for the given
         user
     :raise errors.UserDoesNotExistError: if no user with the given user ID
         exists
+    :raise errors.ActionTypeDoesNotExistError: when no action type with the
+        given action type ID exists
     """
     # ensure that the user can be found
     users.get_user(user_id)
     if permissions == Permissions.NONE:
         return []
     actions_with_permissions = []
-    for action in actions.get_actions(action_type):
+    for action in actions.get_actions(action_type_id):
         if permissions in get_user_action_permissions(user_id=user_id, action_id=action.id):
             actions_with_permissions.append(action)
     return actions_with_permissions

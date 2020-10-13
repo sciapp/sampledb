@@ -66,6 +66,7 @@ def setup_jinja_environment(app):
         service_privacy_policy=app.config['SERVICE_PRIVACY_POLICY'],
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
+        get_action_types=sampledb.logic.actions.get_action_types,
         contact_email=app.config['CONTACT_EMAIL']
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)

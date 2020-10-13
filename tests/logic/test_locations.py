@@ -6,7 +6,7 @@
 import pytest
 
 import sampledb
-from sampledb.models import User, UserType, UserLogEntryType, Action, ActionType, Object, ObjectLogEntryType
+from sampledb.models import User, UserType, UserLogEntryType, Action, Object, ObjectLogEntryType
 from sampledb.logic import locations, objects, actions, user_log, errors, object_log
 
 
@@ -23,7 +23,7 @@ def user(app):
 @pytest.fixture
 def action():
     action = actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

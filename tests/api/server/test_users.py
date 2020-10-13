@@ -30,27 +30,6 @@ def user(auth_user):
     return auth_user[1]
 
 
-@pytest.fixture
-def action():
-    action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
-        schema={
-            'title': 'Example Object',
-            'type': 'object',
-            'properties': {
-                'name': {
-                    'title': 'Object Name',
-                    'type': 'text'
-                }
-            },
-            'required': ['name']
-        }
-    )
-    return action
-
-
 def test_get_user(flask_server, auth, user):
     r = requests.get(flask_server.base_url + 'api/v1/users/10', auth=auth)
     assert r.status_code == 404

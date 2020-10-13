@@ -29,8 +29,13 @@ ADD sampledb sampledb
 # By default, expect a normal postgres container to be linked
 ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5432/postgres"
 
-# By default, run the sampledb server
-ENTRYPOINT ["env/bin/python", "-m", "sampledb"]
+# Set default file storage path
+ENV SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files
+
+# The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
+ADD docker-entrypoint.sh docker-entrypoint.sh
+USER root
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["run"]
 
 HEALTHCHECK --interval=1m --timeout=3s --start-period=1m CMD curl -f -H "Host: $SAMPLEDB_SERVER_NAME" "http://localhost:8000$SAMPLEDB_SERVER_PATH/status/" || exit 1

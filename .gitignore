@@ -1,9 +1,12 @@
 .*
 !.gitignore
 !.gitlab-ci.yml
+!.dockerignore
 _*
 !__init__.py
 !__main__.py
 ldapaccount.py
 docs/static/img/generated
 version.txt
+pgdata/
+files/

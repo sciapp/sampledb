@@ -18,7 +18,7 @@ import qrcode.image.pil
 from .. import logic
 from ..logic import object_log
 from ..logic.objects import get_object
-from ..logic.actions import get_action, ActionType
+from ..logic.actions import get_action
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.users import get_user
 
@@ -169,12 +169,16 @@ def _handle_any(data, schema, path, canvas):
         _handle_sample(data, schema, path, canvas)
     elif schema['type'] == 'measurement':
         _handle_measurement(data, schema, path, canvas)
+    elif schema['type'] == 'object_reference':
+        _handle_object_reference(data, schema, path, canvas)
     elif schema['type'] == 'tags':
         _handle_tags(data, schema, path, canvas)
     elif schema['type'] == 'datetime':
         _handle_datetime(data, schema, path, canvas)
     elif schema['type'] == 'hazards':
         _handle_hazards(data, schema, path, canvas)
+    elif schema['type'] == 'user':
+        _handle_user(data, schema, path, canvas)
     else:
         _handle_unknown(data, schema, path, canvas)
 
@@ -232,12 +236,35 @@ def _handle_quantity(data, schema, path, canvas):
 
 
 def _handle_sample(data, schema, path, canvas):
-    text = '• {}: #{}'.format(schema['title'], data['object_id'])
-    _append_text(canvas, text)
+    _handle_object_reference(data, schema, path, canvas)
 
 
 def _handle_measurement(data, schema, path, canvas):
-    text = '• {}: #{}'.format(schema['title'], data['object_id'])
+    _handle_object_reference(data, schema, path, canvas)
+
+
+def _handle_object_reference(data, schema, path, canvas):
+    try:
+        object = get_object(data['object_id'])
+    except logic.errors.ObjectDoesNotExistError:
+        object = None
+    else:
+        object_permissions = logic.object_permissions.get_user_object_permissions(data['object_id'], flask_login.current_user.id)
+        if logic.object_permissions.Permissions.READ not in object_permissions:
+            object = None
+    if object is None:
+        text = '• {}: #{}'.format(schema['title'], data['object_id'])
+    else:
+        text = '• {}: "{}" (#{})'.format(schema['title'], object.data['name']['text'], data['object_id'])
+    _append_text(canvas, text)
+
+
+def _handle_user(data, schema, path, canvas):
+    try:
+        user = logic.users.get_user(data['user_id'])
+        text = '• {}: {} (#{})'.format(schema['title'], user.name, data['user_id'])
+    except logic.errors.UserDoesNotExistError:
+        text = '• {}: #{}'.format(schema['title'], data['user_id'])
     _append_text(canvas, text)
 
 
@@ -272,11 +299,7 @@ def _handle_bool(data, schema, path, canvas):
 
 def _write_metadata(object, canvas):
     action = get_action(object.action_id)
-    object_type = {
-        ActionType.SAMPLE_CREATION: "Sample",
-        ActionType.MEASUREMENT: "Measurement",
-        ActionType.SIMULATION: "Simulation"
-    }.get(action.type, "Object")
+    object_type = action.type.object_name
     title = '{} #{}: {}'.format(object_type, object.id, object.data.get('name', {}).get('text', ''))
 
     canvas.bookmarkPage('object_{}'.format(object.id))
@@ -305,34 +328,57 @@ def _write_activity_log(object, canvas):
     for object_log_entry in reversed(object_log_entries):
         text = '• {} — {}'.format(object_log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M'), get_user(object_log_entry.user_id).name)
         if object_log_entry.type == ObjectLogEntryType.CREATE_BATCH:
-            text += ' created this object as part of a batch'
+            text += ' created this object as part of a batch.'
         elif object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT:
-            text += ' created this object'
+            text += ' created this object.'
         elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT:
-            text += ' edited this object'
+            text += ' edited this object.'
         elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT:
-            text += ' posted a comment'
+            text += ' posted a comment.'
         elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION:
-            text += ' restored a previous version of this object'
+            text += ' restored a previous version of this object.'
         elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE:
-            text += ' posted a file'
+            text += ' posted a file.'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
-            text += ' used this object in measurement #{}'.format(object_log_entry.data['measurement_id'])
+            if object_log_entry.data['measurement_id'] is not None:
+                permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['measurement_id'], flask_login.current_user.id)
+                if logic.object_permissions.Permissions.READ in permissions:
+                    text += ' used this object in measurement "{}" (#{}).'.format(get_object(object_log_entry.data['measurement_id']).data['name']['text'], object_log_entry.data['measurement_id'])
+                else:
+                    text += ' used this object to create sample #{}.'.format(object_log_entry.data['measurement_id'])
+            else:
+                text += ' used this object in a measurement.'
         elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
-            text += ' used this object to create sample #{}'.format(object_log_entry.data['sample_id'])
+            if object_log_entry.data['sample_id'] is not None:
+                permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['sample_id'], flask_login.current_user.id)
+                if logic.object_permissions.Permissions.READ in permissions:
+                    text += ' used this object to create sample "{}" (#{}).'.format(get_object(object_log_entry.data['sample_id']).data['name']['text'], object_log_entry.data['sample_id'])
+                else:
+                    text += ' used this object to create sample #{}.'.format(object_log_entry.data['sample_id'])
+            else:
+                text += ' used this object to create a sample.'
         elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION:
             object_location_assignment_id = object_log_entry.data['object_location_assignment_id']
             object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
             if object_location_assignment.location_id is not None and object_location_assignment.responsible_user_id is not None:
-                text += ' assigned this object to location #{} and user #{}'.format(object_location_assignment.location_id, object_location_assignment.responsible_user_id)
+                text += ' assigned this object to location #{} and user #{}.'.format(object_location_assignment.location_id, object_location_assignment.responsible_user_id)
             elif object_location_assignment.location_id is not None:
-                text += ' assigned this object to location #{}'.format(object_location_assignment.location_id)
+                text += ' assigned this object to location #{}.'.format(object_location_assignment.location_id)
             elif object_location_assignment.responsible_user_id is not None:
-                text += ' assigned this object to user #{}'.format(object_location_assignment.responsible_user_id)
+                text += ' assigned this object to user #{}.'.format(object_location_assignment.responsible_user_id)
         elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION:
             text += ' linked publication {} to this object.'.format(object_log_entry.data['doi'])
+        elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA:
+            if object_log_entry.data['object_id'] is not None:
+                permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['object_id'], flask_login.current_user.id)
+                if logic.object_permissions.Permissions.READ in permissions:
+                    text += ' referenced this object in the metadata of object "{}" (#{}).'.format(get_object(object_log_entry.data['object_id']).data['name']['text'], object_log_entry.data['object_id'])
+                else:
+                    text += ' referenced this object in the metadata of object #{}.'.format(object_log_entry.data['object_id'])
+            else:
+                text += ' referenced this object in the metadata of another object.'
         else:
-            text += ' performed an unknown action'
+            text += ' performed an unknown action.'
         _append_text(canvas, text)
     canvas.showPage()
 

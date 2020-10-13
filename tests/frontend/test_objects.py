@@ -1316,8 +1316,8 @@ def test_new_object_with_instrument_log_entry(flask_server, user):
         assert len(instrument_log_entries) == 1
         log_entry = instrument_log_entries[0]
         assert log_entry.user_id == user.id
-        assert log_entry.content == ''
-        assert log_entry.categories == [category]
+        assert log_entry.versions[0].content == ''
+        assert log_entry.versions[0].categories == [category]
         assert len(log_entry.object_attachments) == 1
         assert log_entry.object_attachments[0].object_id == object.id
 

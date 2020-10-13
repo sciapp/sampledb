@@ -1,0 +1,14 @@
+./pgdata/
+./files/
+CONTRIBUTING
+.git/
+./demo.py
+./docker-compose.yml
+./docs/
+./example-data
+./LICENSE
+./MANIFEST.in
+./README.md
+./server_schemas
+./setup.py
+./tests

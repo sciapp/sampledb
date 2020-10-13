@@ -27,7 +27,7 @@ from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, ActionType, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
 from . import settings
 from .users import get_user, get_administrators
@@ -271,9 +271,10 @@ def get_objects_with_permissions(
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
-        action_type: typing.Optional[ActionType] = None,
+        action_type_id: typing.Optional[int] = None,
         project_id: typing.Optional[int] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None,
+        num_objects_found: typing.Optional[typing.List[int]] = None,
         **kwargs
 ) -> typing.List[Object]:
 
@@ -283,10 +284,10 @@ def get_objects_with_permissions(
     if user.is_readonly and permissions != Permissions.READ:
         return []
 
-    if action_type is not None and action_id is not None:
-        action_filter = db.and_(Action.type == action_type, Action.id == action_id)
-    elif action_type is not None:
-        action_filter = (Action.type == action_type)
+    if action_type_id is not None and action_id is not None:
+        action_filter = db.and_(Action.type_id == action_type_id, Action.id == action_id)
+    elif action_type_id is not None:
+        action_filter = (Action.type_id == action_type_id)
     elif action_id is not None:
         action_filter = (Action.id == action_id)
     else:
@@ -325,20 +326,29 @@ def get_objects_with_permissions(
         'user_id': user_id
     }
 
-    objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, limit=limit, offset=offset, **kwargs)
-    if project_id is not None:
-        filtered_objs = []
-        for obj in objs:
-            project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=obj.object_id, project_id=project_id).first()
-            if project_object_permissions is not None and permissions in project_object_permissions.permissions:
-                filtered_objs.append(obj)
-        objs = filtered_objs
-    if object_ids is not None:
-        filtered_objs = []
-        for obj in objs:
-            if obj.object_id in object_ids:
-                filtered_objs.append(obj)
-        objs = filtered_objs
+    if project_id is None and object_ids is None:
+        objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, limit=limit, offset=offset, num_objects_found=num_objects_found, **kwargs)
+    else:
+        objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, **kwargs)
+        if project_id is not None:
+            filtered_objs = []
+            for obj in objs:
+                project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=obj.object_id, project_id=project_id).first()
+                if project_object_permissions is not None and permissions in project_object_permissions.permissions:
+                    filtered_objs.append(obj)
+            objs = filtered_objs
+        if object_ids is not None:
+            filtered_objs = []
+            for obj in objs:
+                if obj.object_id in object_ids:
+                    filtered_objs.append(obj)
+            objs = filtered_objs
+        if num_objects_found is not None:
+            num_objects_found.append(len(objs))
+        if offset:
+            objs = objs[offset:]
+        if limit:
+            objs = objs[:limit]
     return objs
 
 

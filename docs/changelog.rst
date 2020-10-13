@@ -1,6 +1,21 @@
 Changelog
 =========
 
+Version 0.15
+------------
+
+Currently in development.
+
+- Added versioning to instrument log entries
+- Added user to metadata types
+- Allow setting instrument log entry order
+- Allow custom action types
+- Allow administrators to deactivate users
+- Allow disabling group deletion by non-administrators
+- Fixed pagination for viewing objects of a project
+- Added Docker Compose configuration file
+- Ensure that file storage path is owned by sampledb user in docker container
+
 Version 0.14.1
 --------------
 
