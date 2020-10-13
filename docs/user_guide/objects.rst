@@ -165,7 +165,7 @@ When an object is created, its creator, any associated instrument scientists and
 .. _pdf_export:
 
 Data Export
-----------
+-----------
 
 Users can export object information to a PDF file, e.g. for printing or offline usage. Note that the exported object information will not be fully complete, e.g. only files of some formats will be included in the PDF and only the current metadata version will be shown.
 

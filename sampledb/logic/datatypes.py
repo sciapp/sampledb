@@ -215,7 +215,7 @@ class Quantity(object):
         if pint_units.dimensionless:
             assert obj['dimensionality'] == 'dimensionless'
         else:
-            assert ureg.check(obj['dimensionality'])(pint_units)
+            assert (1 * pint_units).check(obj['dimensionality'])
         return quantity
 
 

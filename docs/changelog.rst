@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.14.1
+--------------
+
+Released on October 13th, 2020.
+
+- Upgraded dependencies
+
 Version 0.14
 ------------
 

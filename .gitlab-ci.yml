@@ -23,7 +23,7 @@ test:
     # install dependencies
     - python3 -m pip install -r requirements.txt
     # run tests and gather coverage data
-    - python3 -m pytest -s --cov=sampledb/ --junitxml=pytest.xml tests
+    - python3 -m pytest -x -s --cov=sampledb/ --junitxml=pytest.xml tests
   artifacts:
     reports:
       junit: pytest.xml
