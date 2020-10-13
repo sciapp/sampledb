@@ -431,7 +431,7 @@ def apply_action_to_form_data(action, form_data):
         parent_id_prefix = action_id_prefix
         new_form_data = {}
         for name in form_data:
-            if not name.startswith(parent_id_prefix):
+            if not name.startswith(parent_id_prefix + '__'):
                 new_form_data[name] = form_data[name]
             else:
                 item_index, id_suffix = name[len(parent_id_prefix) + 2:].split('__', 1)

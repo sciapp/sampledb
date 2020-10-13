@@ -16,6 +16,7 @@ Currently in development.
 - Added Docker Compose configuration file
 - Ensure that file storage path is owned by sampledb user in docker container
 - Added ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` option to load object select options using ajax
+- Added "list" array style
 
 Version 0.14.1
 --------------

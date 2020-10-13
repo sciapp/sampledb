@@ -1,0 +1,11 @@
+{% if data is not none and "object_id" in data %}
+  {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
+    {% if not (obj is none) %}
+      <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</a>
+    {% else %}
+      <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
+    {% endif %}
+  {% endwith %}
+{% else %}
+  &mdash;
+{% endif %}

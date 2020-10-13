@@ -1,0 +1,9 @@
+{% if data is not none and "text" in data %}
+{% if 'multiline' in schema and schema['multiline']  %}
+<span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text }}</span>
+{% else %}
+{{ data.text }}
+{% endif %}
+{% else %}
+  &mdash;
+{% endif %}

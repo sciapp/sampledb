@@ -341,6 +341,7 @@ th:hover .search-helper {
     display:flex;
     flex-wrap: wrap;
     justify-content: flex-end;
+    margin-top: 10px;
 }
 
 .object-button-bar > div {

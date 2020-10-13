@@ -4,13 +4,13 @@
 {% else %}
   {% set base_search_query_attribute = "" %}
 {% endif %}
-<div class="form-group row">
-  <div class="col-md-3" style="text-align: right">
+<div class="row" style="padding-right: 0.75em;">
+  <div class="col-md-3" style="text-align: right; margin-bottom: 5px;">
 <strong>{{ schema.title }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></strong>
   </div>
+{% if schema.style == "table" %}
 </div>
 <div style="padding-left:2.5em;">
-{% if schema.style == "table" %}
   {% if schema["items"]["type"] == 'object' %}
   <table class="table">
     <thead>
@@ -152,7 +152,27 @@
   </tfoot>
   </table>
   {% endif %}
+</div>
+{% elif schema.style == "list" %}
+  <div class="col-md-9 array-style-list">
+  {% if data %}
+    <ul style="padding-left: 1.25em">
+    {% for item in data %}
+      {% set name = "item" %}
+      {% set schema = schema['items'] %}
+      {% set data = item %}
+      {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+      <li>{% include "objects/view/list_any.html" %}</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    &mdash;
+  {% endif %}
+  </div>
+</div>
 {% else %}
+</div>
+<div style="padding-left:2.5em;">
   {% if data is not none %}
     {% for item in data %}
       {% set name = "item" %}
@@ -164,6 +184,6 @@
         </div>
     {% endfor %}
   {% endif %}
-{% endif %}
 </div>
+{% endif %}
 <!-- array end -->
