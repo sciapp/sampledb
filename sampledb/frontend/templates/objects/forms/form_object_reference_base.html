@@ -1,0 +1,26 @@
+{% if id_prefix+'_oid' in form_data %}
+  {% set selected_id = form_data[id_prefix+'_oid'] %}
+{% elif data is not none and "object_id" in data %}
+  {% set selected_id = data.object_id | string %}
+{% else %}
+  {% set selected_id = None %}
+{% endif %}
+<div class="form-group{% if id_prefix+'_oid' in errors %} has-error{% elif id_prefix+'_oid' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
+  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <div class="col-md-9">
+      <select class="form-control selectpicker" name="{{ id_prefix }}_oid" data-live-search="true" {% if selected_action_type is not none %}data-sampledb-valid-action-ids="{{ action_type_id_by_action_id.items() | selectattr(1, 'eq', selected_action_type) | map(attribute=0) | list | tojson }}"{% endif %} data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
+      <option value="">&mdash;</option>
+  {% for obj in referencable_objects %}
+    {% if action_type_id_by_action_id is none or action_type_id_by_action_id[obj.action_id] == selected_action_type %}
+      {% if selected_id == obj.object_id | string %}
+        <option value="{{ obj.object_id }}" selected="selected">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</option>
+      {% else %}
+        <option value="{{ obj.object_id }}">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</option>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  </select>
+    {% if id_prefix+'_oid' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_oid'] }}</span>{% endif %}
+    {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
+  </div>
+</div>

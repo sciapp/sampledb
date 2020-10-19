@@ -11,6 +11,8 @@ from ..logic.object_permissions import Permissions
 from ..logic.publications import simplify_doi
 from ..logic.errors import InvalidDOIError
 
+from .validators import ObjectIdValidator
+
 
 class ObjectUserPermissionsForm(FlaskForm):
     user_id = IntegerField(
@@ -106,4 +108,4 @@ class ObjectPublicationForm(FlaskForm):
 
 
 class CopyPermissionsForm(FlaskForm):
-    object_id = SelectField(validators=[InputRequired()])
+    object_id = SelectField(validators=[ObjectIdValidator(Permissions.GRANT), InputRequired()], validate_choice=False)
