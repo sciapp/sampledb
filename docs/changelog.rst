@@ -17,6 +17,7 @@ Currently in development.
 - Ensure that file storage path is owned by sampledb user in docker container
 - Added ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` option to load object select options using ajax
 - Added "list" array style
+- Added Markdown editor for editing instrument and action Markdown content
 
 Version 0.14.1
 --------------

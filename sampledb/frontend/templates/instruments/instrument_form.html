@@ -6,12 +6,14 @@
   {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
   <script>
   window.categories = [
     {% for category in instrument_log_categories %}
@@ -91,6 +93,47 @@
       console.log($(this).find('.has-error'));
       return $(this).find('.has-error').length === 0;
     })
+    function updateDescriptionMarkdown() {
+      if ($('#input-markdown').prop('checked')) {
+        window.mde_descrption = new InscrybMDE({
+          element: $("#input-description")[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+          showIcons: ["code", "table"],
+          minHeight: '300px',
+        });
+      } else {
+        if (window.mde_descrption) {
+          window.mde_descrption.toTextArea();
+          window.mde_descrption = null;
+        }
+      }
+    }
+    $('#input-markdown').change(updateDescriptionMarkdown);
+    updateDescriptionMarkdown();
+
+    function updateNotesMarkdown() {
+      if ($('#input-notes-are-markdown').prop('checked')) {
+        window.mde_notes = new InscrybMDE({
+          element: $("#input-notes")[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+          showIcons: ["code", "table"],
+          minHeight: '300px',
+        });
+      } else {
+        if (window.mde_notes) {
+          window.mde_notes.toTextArea();
+          window.mde_notes = null;
+        }
+      }
+    }
+    $('#input-notes-are-markdown').change(updateNotesMarkdown);
+    updateNotesMarkdown();
   });
   </script>
 {% endblock %}
@@ -103,23 +146,19 @@
         <label for="input-name" class="control-label">Name</label>
          <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ instrument_form.name.name }}" value="{{ instrument_form.name.data or instrument_form.name.default or '' }}">
       </div>
-      <div class="form-group {% if instrument_form.description.name in instrument_form.errors %}has-error{% endif %}">
+      <div class="form-group {% if instrument_form.description.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 395px;">
         <label for="input-description" class="control-label">Description</label>
-        <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ instrument_form.description.name }}" placeholder="Description">{{ instrument_form.description.data or instrument_form.description.default or '' }}</textarea>
-      </div>
-      <div class="checkbox">
-        <label for="input-markdown" style="font-weight:400">
-          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax for Description
+        <label for="input-markdown" style="font-weight:400" class="pull-right">
+          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown
         </label>
+        <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" name="{{ instrument_form.description.name }}" placeholder="Description">{{ instrument_form.description.data or instrument_form.description.default or '' }}</textarea>
       </div>
-      <div class="form-group {% if instrument_form.notes.name in instrument_form.errors %}has-error{% endif %}">
-        <label for="input-description" class="control-label">Instrument Scientist Notes</label>
-        <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ instrument_form.notes.name }}" placeholder="Instrument Scientist Notes">{{ instrument_form.notes.data or instrument_form.notes.default or '' }}</textarea>
-      </div>
-      <div class="checkbox">
-        <label for="input-notes-are-markdown" style="font-weight:400">
+      <div class="form-group {% if instrument_form.notes.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 395px;">
+        <label for="input-notes" class="control-label">Instrument Scientist Notes</label>
+        <label for="input-notes-are-markdown" style="font-weight:400" class="pull-right">
           <input type="checkbox" id="input-notes-are-markdown" name="{{ instrument_form.notes_are_markdown.name }}" {% if instrument_form.notes_are_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax for Notes
         </label>
+        <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-notes" name="{{ instrument_form.notes.name }}" placeholder="Instrument Scientist Notes">{{ instrument_form.notes.data or instrument_form.notes.default or '' }}</textarea>
       </div>
       <div class="form-group">
         <label for="input-instrument_repsonsible_users" class="control-label">Instrument Scientists</label>

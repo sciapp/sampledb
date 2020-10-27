@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pygments.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
 {% if use_schema_editor %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/schema_editor.css') }}">
 {% endif %}
@@ -18,9 +19,34 @@
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
   {% if use_schema_editor %}
   <script src="{{ url_for('static', filename='js/schema_editor.js') }}"></script>
   {% endif %}
+  <script>
+  $(function(){
+    function updateDescriptionMarkdown() {
+      if ($('#input-markdown').prop('checked')) {
+        window.mde_descrption = new InscrybMDE({
+          element: $("#input-description")[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+          showIcons: ["code", "table"],
+          minHeight: '300px',
+        });
+      } else {
+        if (window.mde_descrption) {
+          window.mde_descrption.toTextArea();
+          window.mde_descrption = null;
+        }
+      }
+    }
+    $('#input-markdown').change(updateDescriptionMarkdown);
+    updateDescriptionMarkdown();
+  });
+  </script>
 {% endblock %}
 
 {% block content %}
@@ -66,14 +92,12 @@
           {% endfor %}
         </select>
       </div>
-      <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
+      <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}" style="min-height: 395px;">
         <label for="input-description" class="control-label">Description</label>
-        <textarea class="form-control" style="resize: vertical" rows="3" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
-      </div>
-      <div class="checkbox">
-        <label for="input-markdown" style="font-weight:400">
+        <label for="input-markdown" style="font-weight:400" class="pull-right">
           <input type="checkbox" id="input-markdown" name="{{ action_form.is_markdown.name }}" {% if action_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
         </label>
+        <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
       </div>
       <div class="checkbox">
         <label for="input-is_hidden" style="font-weight:400">
