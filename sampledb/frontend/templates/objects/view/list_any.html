@@ -1,0 +1,19 @@
+{% if schema['type'] == 'text' %}
+  {% include "objects/view/list_text.html" %}
+{% elif schema['type'] == 'datetime' %}
+  {% include "objects/view/list_datetime.html" %}
+{% elif schema['type'] == 'bool' %}
+  {% include "objects/view/list_bool.html" %}
+{% elif schema['type'] == 'quantity' %}
+  {% include "objects/view/list_quantity.html" %}
+{% elif schema.type == 'sample' %}
+  {% include "objects/view/list_sample.html" %}
+{% elif schema.type == 'measurement' %}
+  {% include "objects/view/list_measurement.html" %}
+{% elif schema.type == 'object_reference' %}
+  {% include "objects/view/list_object_reference.html" %}
+{% elif schema.type == 'user' %}
+  {% include "objects/view/list_user.html" %}
+{% else %}
+  {{ name }}{{ schema.type }}{{ schema['type'] }}
+{% endif %}
