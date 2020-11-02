@@ -18,7 +18,7 @@ $(function() {
     };
 
     $.get({
-      'url': '/objects/referencable',
+      'url': window.application_root_path + 'objects/referencable',
       'data': data,
       'json': true
     }, function (data) {
