@@ -9,6 +9,7 @@ Currently in development.
 - Allow restricting object references to specific action id
 - Improved performance of object lists
 - Improved performance of instrument pages
+- Added image upload via drag and drop to Markdown editors
 
 Version 0.15
 ------------

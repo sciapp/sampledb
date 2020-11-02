@@ -19,6 +19,7 @@ from ..logic.instrument_log_entries import get_instrument_log_entries, create_in
 from ..logic.actions import ActionType
 from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
+from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_object_info_with_permissions
@@ -289,12 +290,16 @@ def new_instrument():
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
+            mark_referenced_markdown_images_as_permanent(description_as_html)
         else:
             description_as_html = None
+
         if instrument_form.notes_are_markdown.data:
             notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+            mark_referenced_markdown_images_as_permanent(notes_as_html)
         else:
             notes_as_html = None
+
         instrument = create_instrument(
             instrument_form.name.data,
             instrument_form.description.data,
@@ -390,12 +395,16 @@ def edit_instrument(instrument_id):
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
+            mark_referenced_markdown_images_as_permanent(description_as_html)
         else:
             description_as_html = None
+
         if instrument_form.notes_are_markdown.data:
             notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+            mark_referenced_markdown_images_as_permanent(notes_as_html)
         else:
             notes_as_html = None
+
         update_instrument(
             instrument.id,
             instrument_form.name.data,
