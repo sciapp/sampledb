@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   {% endblock %}
+  <script type="text/javascript">
+    window.application_root_path = '{{ url_for('frontend.index') }}';
+  </script>
 {% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
