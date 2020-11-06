@@ -4,7 +4,7 @@ Changelog
 Version 0.15
 ------------
 
-Currently in development.
+Released on November 6th, 2020.
 
 - Added versioning to instrument log entries
 - Added user to metadata types
