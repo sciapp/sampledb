@@ -14,7 +14,7 @@ import sampledb.utils
 from example_data import setup_data
 
 sampledb.config.TEMPLATES_AUTO_RELOAD = True
-sampledb.config.SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{0}:@localhost:5432/{0}'.format(getpass.getuser())
+sampledb.config.SQLALCHEMY_DATABASE_URI = os.environ.get('SAMPLEDB_SQLALCHEMY_DATABASE_URI', 'postgresql+psycopg2://{0}:@localhost:5432/{0}'.format(getpass.getuser()))
 
 
 temp_dir = tempfile.mkdtemp()

@@ -23,21 +23,9 @@
     {% if not action.is_hidden or current_user.is_admin %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
-    {% if action.type == ActionType.MEASUREMENT %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Measurement</a>
-      {% endif %}
-    {% elif action.type == ActionType.SIMULATION %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Simulation</a>
-      {% endif %}
-    {% else %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
-      {% endif %}
+    <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
+    {% if not current_user.is_readonly %}
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text }}</a>
     {% endif %}
     {% endif %}
   {% endfor %}
@@ -82,9 +70,31 @@
     </p>
     {% if is_instrument_responsible_user or instrument.users_can_view_log_entries %}
       {% if instrument_log_entries %}
-        {% if instrument_log_categories %}
-          <div class="text-right" style="margin-bottom: 10px;">
-          <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
+        <div style="margin-bottom: 10px;" class="row">
+          <div class="col-md-6">
+          {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
+            <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+              <i class="fa fa-comment-o fa-fw"></i> Create Log Entry
+            </button>
+            <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
+              <i class="fa fa-mobile-phone fa-fw"></i> Smartphone Upload as Log Entry
+            </button>
+          {% endif %}
+          </div>
+          <div class="text-right col-md-6">
+          <button type="button" class="btn btn-sm btn-primary" style="height:32px" id="button-switch-instrument-log-order">
+            Sort by date
+            {% if instrument_log_order_ascending %}
+            <i class="fa fa-sort-asc"></i>
+            {% else %}
+            <i class="fa fa-sort-desc"></i>
+            {% endif %}
+          </button>
+          <form class="hidden" id="form-instrument-log-order">
+            {{ instrument_log_order_form.hidden_tag() }}
+            <input type="checkbox" name="{{ instrument_log_order_form.ascending.name }}" />
+          </form>
+          <button type="button" class="btn btn-sm btn-primary" style="height:32px" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
             {% for category in instrument_log_categories %}
               <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
             {% endfor %}
@@ -102,24 +112,49 @@
             ">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
             </button>
+            </div>
           </div>
-        {% endif %}
+        <div id="instrument-log-container">
         {% for log_entry in instrument_log_entries %}
-          <div class="well instrument-log-entry {% if log_entry.categories %}instrument-log-entry-{{ log_entry.categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.categories %}{% for category in log_entry.categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.utc_datetime.strftime("%Y-%m") }}" style="position: relative">
+          <div>
+          <input type="checkbox" id="instrument-log-show-versions-{{ log_entry.id }}" class="instrument-log-show-versions"/>
+          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.versions[0].utc_datetime.strftime("%Y-%m") }}" style="position: relative">
             <div class="instrument-log-categories">
-              {% for category in log_entry.categories %}
+              {% for category in log_entry.versions[-1].categories %}
                   <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
               {% endfor %}
             </div>
-            {% if log_entry.content %}
-            <pre class="comment">{{ log_entry.content }}</pre>
+            {% if log_entry.versions[-1].content %}
+            <pre class="comment">{{ log_entry.versions[-1].content }}</pre>
+            {% else %}
+              &mdash;
             {% endif %}
-            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {{ log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {% if log_entry.versions | length > 1 %}{{ log_entry.versions[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }} &ndash; {{ log_entry.versions[-1].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}{{ log_entry.versions[-1].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}</div>
+            {% if log_entry.versions[:-1] %}
+              <div class="text-right"><label for="instrument-log-show-versions-{{ log_entry.id }}" class="instrument-log-show-versions">previous versions</label>{% if log_entry.user_id == current_user.id and not current_user.is_readonly %}&nbsp;/&nbsp;<span class="instrument-log-show-edit" data-toggle="modal" data-target="#logEntryContentModal_{{ log_entry.id }}">Edit log entry</span>{% endif %}</div>
+              {% for version in log_entry.versions[:-1] | reverse %}
+                <div class="instrument-log-version">
+                  <hr />
+                  {% if version.content %}
+                  <pre class="comment text-muted">{{ version.content }}</pre>
+                  {% else %}
+                    &mdash;
+                  {% endif %}
+                  <div class="text-right text-muted">{{ version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                </div>
+              {% endfor %}
+            {% elif log_entry.user_id == current_user.id and not current_user.is_readonly %}
+              <div class="text-right"><span class="instrument-log-show-edit" data-toggle="modal" data-target="#logEntryContentModal_{{ log_entry.id }}">Edit log entry</span></div>
+            {% endif %}
+          {% if log_entry.file_attachments or log_entry.object_attachments %}
+              <hr />
+          {% endif %}
           {% set file_attachments = log_entry.file_attachments %}
           {% if file_attachments %}
             <div class="file-attachment-header">Attached Files:</div>
             <ul class="file-attachment-list">
-            {% for file_attachment in file_attachments %}<li>
+            {% with hidden_file_attachments = [] %}
+            {% for file_attachment in file_attachments %}{% if not file_attachment.is_hidden %}<li>
                   {% if file_attachment | attachment_is_image %}
                   <span class="file-attachment-preview">
                     <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="&#xf15b;" class="show-fullscreen-image-preview" />
@@ -139,69 +174,195 @@
                     </span>
                   {% endif %}
                     <span>{{ file_attachment.file_name }}</span></a></li>
-            {% endfor %}
+            {% else %}{{ hidden_file_attachments.append(file_attachment) or '' }}{% endif %}{% endfor %}
+            {% if hidden_file_attachments %}
+              <li>{{ hidden_file_attachments | length }} hidden file{% if hidden_file_attachments | length > 1 %}s{% endif %}</li>
+            {% endif %}
+            {% endwith %}
             </ul>
           {% endif %}
           {% set object_attachments = log_entry.object_attachments %}
           {% if object_attachments %}
             <div class="object-attachment-header">Attached Objects:</div>
             <ul class="object-attachment-list">
-            {% for object_attachment in object_attachments %}<li>
+            {% with hidden_object_attachments = [] %}
+            {% for object_attachment in object_attachments %}{% if not object_attachment.is_hidden %}<li>
                 <a href="{{ url_for('.object', object_id=object_attachment.object_id) }}">{{ attached_object_names.get(object_attachment.object_id, 'Object') }} (#{{ object_attachment.object_id }})</a></li>
-            {% endfor %}
+            {% else %}{{ hidden_object_attachments.append(object_attachment) or '' }}{% endif %}{% endfor %}
+            {% if hidden_object_attachments %}
+              <li>{{ hidden_object_attachments | length }} hidden object{% if hidden_object_attachments | length > 1 %}s{% endif %}</li>
+            {% endif %}
+            {% endwith %}
             </ul>
           {% endif %}
           </div>
+          {% if not current_user.is_readonly and log_entry.user_id == current_user.id %}
+            <div class="modal fade" id="logEntryContentModal_{{ log_entry.id }}" tabindex="-1" role="dialog" aria-labelledby="logEntryContentModalLabel_{{ log_entry.id }}">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="logEntryContentModalLabel_{{ log_entry.id }}">Edit Log Entry</h4>
+                </div>
+                <form method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                  {{ instrument_log_entry_form.csrf_token }}
+                  <input type="hidden" name="{{ instrument_log_entry_form.log_entry_id.name }}" value="{{ log_entry.id }}" />
+                  <div class="form-group">
+                    <label for="textarea-log-entry-text-{{ log_entry.id }}">Edit content</label>
+                    <textarea class="form-control" id="textarea-log-entry-text-{{ log_entry.id }}" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{{ log_entry.versions[-1].content or '' }}</textarea>
+                  </div>
+                  <label for="input-file-upload-{{ log_entry.id }}">Add file attachments</label>
+                 <div class="input-group" id="upload-area-{{ log_entry.id }}">
+                    <span class="input-group-addon"><i class="fa fa-file"></i></span>
+                    <input id="input-file-text-{{ log_entry.id }}" type="text" class="form-control disabled" disabled placeholder="No files selected" />
+                    <div class="input-group-btn">
+                      <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>Browse...<input id="input-file-upload-{{ log_entry.id }}" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
+                    </div>
+                  </div>
+                  {% if instrument_log_entry_form.objects.choices %}
+                  <div class="form-group" style="margin: 15px 0">
+                    <label for="select-object-attachments-{{ log_entry.id }}">Add object attachments</label>
+                    <select id="select-object-attachments-{{ log_entry.id }}" name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="No objects selected" data-width="100%">
+                      {% for choice in instrument_log_entry_form.objects.choices %}
+                        {% set ns = namespace(found=False) %}
+                        {% for object_attachment in log_entry.object_attachments %}
+                          {% if object_attachment.object_id | string == choice[0] and not object_attachment.is_hidden%}
+                            {% set ns.found = True %}
+                          {% endif %}
+                        {% endfor %}
+                        {% if not ns.found %}
+                        <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                  {% endif %}
+                  {% if instrument_log_entry_form.categories.choices %}
+                  <div class="form-group">
+                    <label for="select-categories-{{ log_entry.id }}">Edit categories</label>
+                    <select id="select-categories-{{ log_entry.id }}" name="{{ instrument_log_entry_form.categories.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="No categories selected" data-width="100%">
+                      {% for choice in instrument_log_entry_form.categories.choices %}
+                        <option value="{{ choice[0] }}" {% for category in log_entry.versions[-1].categories %}{% if category.id | string == choice[0] %}selected="selected"{% endif %}{% endfor %}>{{ choice[1] }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  {% endif %}
+
+                {% if log_entry.file_attachments or log_entry.object_attachments %}
+                  <hr />
+                    <p class="text-muted">You can hide a file or object, if it was attached erroneously.</p>
+
+                  {% if log_entry.file_attachments %}
+                  <div class="form-group" style="margin: 15px 0">
+                    <label for="select-existing-file-attachments-{{ log_entry.id }}">Hide file attachments</label>
+                    <select id="select-existing-file-attachments-{{ log_entry.id }}" name="{{ instrument_log_entry_form.existing_files.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="No attached files selected" data-width="100%">
+                      {% for file_attachment in log_entry.file_attachments %}
+                        <option value="{{ file_attachment.id }}">{{ file_attachment.file_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  {% endif %}
+
+                  {% if log_entry.object_attachments %}
+                  <div class="form-group" style="margin: 15px 0">
+                    <label for="select-existing-object-attachments-{{ log_entry.id }}">Hide object attachments</label>
+                    <select id="select-existing-object-attachments-{{ log_entry.id }}" name="{{ instrument_log_entry_form.existing_objects.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="No attached objects selected" data-width="100%">
+                      {% for object_attachment in log_entry.object_attachments %}
+                        <option value="{{ object_attachment.id }}">{{ attached_object_names.get(object_attachment.object_id, 'Object') }} (#{{ object_attachment.object_id }})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  {% endif %}
+                {% endif %}
+
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  <button type="submit" name="action_edit_content" class="btn btn-primary">Save changes</button>
+                </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          </div>
         {% endfor %}
+        </div>
       {% else %}
-        <p>There are no log entries for this instrument.</p>
+        <p class="text-muted">There are no log entries for this instrument.</p>
+        {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
+          <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+            <i class="fa fa-comment-o fa-fw"></i> Create Log Entry
+          </button>
+          <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
+            <i class="fa fa-mobile-phone fa-fw"></i> Smartphone Upload as Log Entry
+          </button>
+        {% endif %}
       {% endif %}
     {% endif %}
     {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
-    <form class="form" method="post" id="new_instrument_log_entry_form" enctype="multipart/form-data">
-      {{ instrument_log_entry_form.csrf_token }}
-      {% set log_entry_text_missing = [] %}
-      {% for message in get_flashed_messages() %}
-        {% if 'Please enter a log entry text' in message %}
-          {{ log_entry_text_missing.append(True) }}
-        {% endif %}
-      {% endfor %}
-      <div class="form-group {% if instrument_log_entry_form.content.errors or log_entry_text_missing %}has-error{% endif %}">
-        <textarea class="form-control" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{% if instrument_log_entry_form.content.data %}{{ instrument_log_entry_form.content.data }}{% endif %}</textarea>
-        {% if instrument_log_entry_form.content.errors or log_entry_text_missing %}
-        <span class="help-block">Please enter a log entry text, upload a file or select an object.</span>
-        {% endif %}
-      </div>
-      <span class="input-group" id="upload-area">
-        <span class="input-group-addon"><i class="fa fa-file"></i></span>
-        <input id="input-file-text" type="text" class="form-control disabled" disabled placeholder="No files selected" />
-        <div class="input-group-btn">
-          <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>Browse...<input id="input-file-upload" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
-        </div>
-      </span>
-      {% if instrument_log_entry_form.objects.choices %}
-      <div class="form-group" style="margin: 15px 0 0 0">
-        <select name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="No objects selected" data-width="100%">
-          {% for choice in instrument_log_entry_form.objects.choices %}
-            <option value="{{ choice[0] }}">{{ choice[1] }}</option>
-          {% endfor %}
-        </select>
-      </div>
+
+    {% set log_entry_text_missing = [] %}
+    {% for message in get_flashed_messages() %}
+      {% if 'Please enter a log entry text' in message %}
+        {{ log_entry_text_missing.append(True) or '' }}
       {% endif %}
-      <div class="text-right">
-        {% if instrument_log_entry_form.categories.choices %}
-        <select name="{{ instrument_log_entry_form.categories.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="Log Entry Type" data-width="11em">
-          {% for choice in instrument_log_entry_form.categories.choices %}
-            <option value="{{ choice[0] }}">{{ choice[1] }}</option>
-          {% endfor %}
-        </select>
-        {% endif %}
-        <button type="submit" class="btn btn-primary" style="width:11em; margin: 15px 0;"><i class="fa fa-comment fa-fw"></i> Create Log Entry</button>
+    {% endfor %}
+      <div class="modal fade" id="newLogEntryModal" tabindex="-1" role="dialog" aria-labelledby="newLogEntryModalLabel">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <form class="form" method="post" id="new_instrument_log_entry_form" enctype="multipart/form-data">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="newLogEntryModalLabel">Create Log Entry</h4>
+              </div>
+              <div class="modal-body">
+                {{ instrument_log_entry_form.csrf_token }}
+                <div class="form-group {% if log_entry_text_missing %}has-error{% endif %}">
+                  <label for="textarea-log-entry-text" class="control-label">Content</label>
+                  <textarea class="form-control" id="textarea-log-entry-text" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}"></textarea>
+                  {% if log_entry_text_missing %}
+                    <span class="help-block">Please enter a text or add an attachment.</span>
+                  {% endif %}
+                </div>
+                <label for="input-file-upload">Add file attachments</label>
+                <div class="input-group" id="upload-area">
+                  <span class="input-group-addon"><i class="fa fa-file"></i></span>
+                  <input id="input-file-text" type="text" class="form-control disabled" disabled placeholder="No files selected" />
+                  <div class="input-group-btn">
+                    <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>Browse...<input id="input-file-upload" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
+                  </div>
+                </div>
+                {% if instrument_log_entry_form.objects.choices %}
+                <div class="form-group" style="margin: 15px 0">
+                  <label for="select-object-attachments">Add object attachments</label>
+                  <select id="select-object-attachments" name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="No objects selected" data-width="100%">
+                    {% for choice in instrument_log_entry_form.objects.choices %}
+                      <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                {% endif %}
+                {% if instrument_log_entry_form.categories.choices %}
+                <div class="form-group">
+                  <label for="select-categories">Add categories</label>
+                  <select id="select-categories" name="{{ instrument_log_entry_form.categories.name }}" class="selectpicker" multiple="multiple" data-none-selected-text="No categories selected" data-width="100%">
+                    {% for choice in instrument_log_entry_form.categories.choices %}
+                      <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                {% endif %}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create log entry</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-    </form>
-    <div class="text-right form-group">
-      <span class="text-muted">or</span> <button type="button" class="btn btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="margin-left: 1em"><i class="fa fa-mobile-phone fa-fw"></i> Smartphone Upload as Log Entry </button>
-    </div>
     {% endif %}
   {% endif %}
 
@@ -297,6 +458,34 @@
     $(function () {
       setup_instrument_log_filter_states();
       $('[data-toggle="popover"]').popover();
+      {% if instrument_log_entries %}
+      {% for log_entry in instrument_log_entries %}
+        {% if not current_user.is_readonly and (current_user.id == log_entry.user_id) %}
+        function changeHandler{{ log_entry.id }}() {
+          var files =  $('#input-file-upload-{{ log_entry.id }}').get(0).files;
+          if (files.length === 0) {
+            $('#input-file-text-{{ log_entry.id }}').val("");
+          } else if (files.length === 1) {
+            $('#input-file-text-{{ log_entry.id }}').val(files[0].name);
+          } else {
+            $('#input-file-text-{{ log_entry.id }}').val(files.length + " files selected");
+          }
+        }
+        $('#input-file-upload-{{ log_entry.id }}').on('change', changeHandler{{ log_entry.id }});
+        function dropHandler{{ log_entry.id }}(e) {
+          e.preventDefault();
+          $('#input-file-upload-{{ log_entry.id }}')[0].files = e.dataTransfer.files;
+          changeHandler{{ log_entry.id }}();
+        }
+        function dragOverHandler{{ log_entry.id }}(e) {
+          e.preventDefault();
+        }
+        var upload_area = $('#upload-area-{{ log_entry.id }}')[0];
+        upload_area.ondrop = dropHandler{{ log_entry.id }};
+        upload_area.ondragover = dragOverHandler{{ log_entry.id }};
+        {% endif %}
+      {% endfor %}
+      {% endif %}
       function changeHandler() {
         var files =  $('#input-file-upload').get(0).files;
         if (files.length === 0) {
@@ -320,6 +509,32 @@
       var upload_area = $('#upload-area')[0];
       upload_area.ondrop = dropHandler;
       upload_area.ondragover = dragOverHandler;
+      {% endif %}
+      var log_order_button = $('#button-switch-instrument-log-order');
+      log_order_button.on('click', function () {
+        log_order_button.find('i').toggleClass('fa-sort-asc').toggleClass('fa-sort-desc');
+        var c = $('#instrument-log-container');
+        c.children().each(function (i, e) {
+          c.prepend(e);
+        });
+        var form = $('#form-instrument-log-order');
+        var ascending = (log_order_button.find('i.fa-sort-asc').length !== 0);
+        form.find('input[type="checkbox"]').prop('checked', ascending);
+        $.ajax({
+          type: "POST",
+          url: {{ url_for('.set_instrument_log_order') | tojson }},
+          data: form.serialize()
+        });
+      });
+
+      {% set log_entry_text_missing = [] %}
+      {% for message in get_flashed_messages() %}
+        {% if 'Please enter a log entry text' in message %}
+          {{ log_entry_text_missing.append(True) or '' }}
+        {% endif %}
+      {% endfor %}
+      {% if log_entry_text_missing %}
+      $('#newLogEntryModal').modal({'show': true});
       {% endif %}
     });
   </script>

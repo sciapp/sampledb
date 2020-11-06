@@ -24,6 +24,11 @@ class UserHiddenForm(FlaskForm):
     should_be_hidden = BooleanField()
 
 
+class UserActiveForm(FlaskForm):
+    action = StringField(validators=[validators.AnyOf(['toggle_active'])])
+    should_be_active = BooleanField()
+
+
 @frontend.route('/users/me')
 @flask_login.login_required
 def current_user_profile():
@@ -56,14 +61,25 @@ def user_profile(user_id):
             else:
                 flask.flash('The user has been unmarked as hidden.', 'success')
             return flask.redirect(flask.url_for('.user_profile', user_id=user.id))
+        user_active_form = UserActiveForm()
+        user_active_form.should_be_active.default = not user.is_active
+        if user_active_form.validate_on_submit():
+            users.set_user_active(user.id, user_active_form.should_be_active.data)
+            if user_active_form.should_be_active.data:
+                flask.flash('The user has been activated.', 'success')
+            else:
+                flask.flash('The user has been deactivated.', 'success')
+            return flask.redirect(flask.url_for('.user_profile', user_id=user.id))
     elif flask.request.method.lower() == 'post':
         return flask.abort(HTTPStatus.METHOD_NOT_ALLOWED)
     else:
         user_read_only_form = None
         user_hidden_form = None
+        user_active_form = None
     return flask.render_template(
         'profile.html',
         user_read_only_form=user_read_only_form,
         user_hidden_form=user_hidden_form,
+        user_active_form=user_active_form,
         user=user
     )

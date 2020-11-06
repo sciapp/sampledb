@@ -1,0 +1,33 @@
+<div class="form-group{% if id_prefix+'_text' in errors %} has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %}" style="padding-right:0.75em; flex-grow: 1">
+  <select class="form-control selectpicker" name="{{ id_prefix }}_text">
+  {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') or 'default' in schema %}
+    {% if not is_required %}
+      <option value="">&ndash;</option>
+    {% endif %}
+  {% else %}
+  <option selected="selected" value="">&ndash;</option>
+  {% endif %}
+  {% for option in schema.choices %}
+    {% if id_prefix+'_text' in form_data %}
+      {% if form_data[id_prefix+'_text'] == option %}
+      <option selected="selected">{{ option }}</option>
+      {% else %}
+      <option>{{ option }}</option>
+      {% endif %}
+    {% elif data is not none and "text" in data %}
+      {% if data.text == option %}
+      <option selected="selected">{{ option }}</option>
+      {% else %}
+      <option>{{ option }}</option>
+      {% endif %}
+    {% else %}
+      {% if 'default' in schema and schema['default'] == option %}
+      <option selected="selected">{{ option }}</option>
+      {% else %}
+      <option>{{ option }}</option>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  </select>
+  {% if id_prefix+'_text' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_text'] }}</span>{% endif %}
+</div>

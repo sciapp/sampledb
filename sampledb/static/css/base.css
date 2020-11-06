@@ -341,6 +341,7 @@ th:hover .search-helper {
     display:flex;
     flex-wrap: wrap;
     justify-content: flex-end;
+    margin-top: 10px;
 }
 
 .object-button-bar > div {
@@ -785,4 +786,37 @@ th:hover .search-helper {
 
 #input-instrument-log-filter-date {
     width: 7em;
+}
+
+label.instrument-log-show-versions,
+span.instrument-log-show-edit {
+    font-size: 0.8em;
+    font-weight: normal;
+    cursor: pointer;
+    color: #337ab7;
+    padding: 0;
+    margin-bottom: 5px;
+}
+
+label.instrument-log-show-versions:before {
+    content: 'Show ';
+}
+input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versions:before {
+    content: 'Hide ';
+}
+
+.instrument-log-edit-form {
+    display: none;
+}
+
+.instrument-log-version {
+    display: none;
+}
+
+input.instrument-log-show-versions {
+    display: none;
+}
+
+input.instrument-log-show-versions:checked ~ div .instrument-log-version {
+    display: block;
 }

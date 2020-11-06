@@ -18,12 +18,16 @@ def run(db):
             logger.info("Skipped (index).")
             continue
 
-        # Perform migration
-        if function(db):
-            logger.info("Done.")
-        else:
-            logger.info("Skipped (condition).")
+        try:
+            # Perform migration
+            if function(db):
+                logger.info("Done.")
+            else:
+                logger.info("Skipped (condition).")
 
-        # Update migration index to skip this migration by index in the future
-        update_migration_index(db, index)
-        db.session.commit()
+            # Update migration index to skip this migration by index in the future
+            update_migration_index(db, index)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise

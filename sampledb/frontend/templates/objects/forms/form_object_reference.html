@@ -1,0 +1,6 @@
+{% if 'action_type_id' not in schema or schema['action_type_id'] is none %}
+  {% set selected_action_type = none %}
+{% else %}
+  {% set selected_action_type = schema['action_type_id'] %}
+{% endif %}
+{% include 'objects/forms/form_object_reference_base.html' %}

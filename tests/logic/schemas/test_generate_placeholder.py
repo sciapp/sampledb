@@ -256,6 +256,15 @@ def test_generate_sample_object():
     assert placeholder_object is None
 
 
+def test_generate_object_reference_object():
+    object_schema = {
+        'title': 'Example Object Reference',
+        'type': 'object_reference'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None
+
+
 def test_generate_tags():
     object_schema = {
         'title': 'Keywords',
@@ -294,3 +303,12 @@ def test_generate_hazards():
     assert placeholder_object == {
         '_type': 'hazards'
     }
+
+
+def test_generate_user_object():
+    object_schema = {
+        'title': 'Example User',
+        'type': 'user'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None

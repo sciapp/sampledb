@@ -10,22 +10,33 @@ import itsdangerous
 import flask
 import flask_login
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField
-from wtforms.validators import Length, DataRequired
+from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField
+from wtforms.validators import Length, DataRequired, ValidationError
 
 from . import frontend
 from ..logic.instruments import get_instruments, get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.actions import ActionType
-from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError
+from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_objects_with_permissions
+from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, markdown_to_safe_html, generate_qrcode
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+class MultipleIntegerField(SelectMultipleField):
+    def pre_validate(self, form):
+        if self.data:
+            for d in self.data:
+                try:
+                    int(d)
+                except ValueError:
+                    raise ValidationError("Invalid value")
 
 
 class InstrumentLogEntryForm(FlaskForm):
@@ -33,6 +44,13 @@ class InstrumentLogEntryForm(FlaskForm):
     files = MultipleFileField()
     objects = SelectMultipleField()
     categories = SelectMultipleField()
+    log_entry_id = IntegerField()
+    existing_files = MultipleIntegerField()
+    existing_objects = MultipleIntegerField()
+
+
+class InstrumentLogOrderForm(FlaskForm):
+    ascending = BooleanField()
 
 
 @frontend.route('/instruments/')
@@ -104,7 +122,64 @@ def instrument(instrument_id):
     ]
     if instrument_log_entry_form.validate_on_submit():
         check_current_user_is_not_readonly()
-        if is_instrument_responsible_user or instrument.users_can_create_log_entries:
+        if 'action_edit_content' in flask.request.form:
+            if is_instrument_responsible_user or instrument.users_can_view_log_entries:
+                try:
+                    log_entry_id = int(instrument_log_entry_form.log_entry_id.data)
+                    log_entry = get_instrument_log_entry(log_entry_id)
+                except ValueError:
+                    return flask.abort(400)
+                except InstrumentLogEntryDoesNotExistError:
+                    return flask.abort(400)
+                update_instrument_log_entry(
+                    log_entry_id=log_entry_id,
+                    content=instrument_log_entry_form.content.data,
+                    category_ids=[
+                        int(category_id) for category_id in instrument_log_entry_form.categories.data
+                    ]
+                )
+                for file_storage in instrument_log_entry_form.files.data:
+                    if file_storage.filename:
+                        file_name = file_storage.filename
+                        content = file_storage.stream.read()
+                        create_instrument_log_file_attachment(log_entry.id, file_name, content)
+                previously_attached_object_ids = {
+                    object_attachment.object_id: object_attachment
+                    for object_attachment in log_entry.object_attachments
+                }
+                for object_id in instrument_log_entry_form.objects.data:
+                    if int(object_id) in previously_attached_object_ids:
+                        object_attachment = previously_attached_object_ids[int(object_id)]
+                        if object_attachment.is_hidden:
+                            hide_instrument_log_object_attachment(object_attachment.id, set_hidden=False)
+                        continue
+                    try:
+                        create_instrument_log_object_attachment(log_entry.id, int(object_id))
+                    except ObjectDoesNotExistError:
+                        continue
+                if instrument_log_entry_form.existing_files.data:
+                    for file_attachment_id in instrument_log_entry_form.existing_files.data:
+                        file_attachment_id = int(file_attachment_id)
+                        try:
+                            file_attachment = get_instrument_log_file_attachment(file_attachment_id)
+                            if file_attachment.log_entry_id == log_entry_id:
+                                hide_instrument_log_file_attachment(file_attachment_id)
+                        except InstrumentLogFileAttachmentDoesNotExistError:
+                            continue
+                if instrument_log_entry_form.existing_objects.data:
+                    for object_attachment_id in instrument_log_entry_form.existing_objects.data:
+                        object_attachment_id = int(object_attachment_id)
+                        try:
+                            object_attachment = get_instrument_log_object_attachment(object_attachment_id)
+                            if object_attachment.log_entry_id == log_entry_id:
+                                hide_instrument_log_object_attachment(object_attachment_id)
+                        except InstrumentLogObjectAttachmentDoesNotExistError:
+                            continue
+                flask.flash('You have successfully updated the instrument log entry.', 'success')
+                return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+            else:
+                return flask.abort(400)
+        elif is_instrument_responsible_user or instrument.users_can_create_log_entries:
             log_entry_content = instrument_log_entry_form.content.data
             log_entry_has_files = any(file_storage.filename for file_storage in instrument_log_entry_form.files.data)
             object_ids = []
@@ -147,6 +222,9 @@ def instrument(instrument_id):
         else:
             flask.flash('You cannot create a log entry for this instrument.', 'error')
             return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    instrument_log_order_ascending = get_user_settings(flask_login.current_user.id)["INSTRUMENT_LOG_ORDER_ASCENDING"]
+    if instrument_log_entries is not None and not instrument_log_order_ascending:
+        instrument_log_entries.reverse()
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
@@ -155,8 +233,10 @@ def instrument(instrument_id):
         attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
         instrument_log_entry_form=instrument_log_entry_form,
+        instrument_log_order_form=InstrumentLogOrderForm(),
         mobile_upload_url=mobile_upload_url,
         mobile_upload_qrcode=mobile_upload_qrcode,
+        instrument_log_order_ascending=instrument_log_order_ascending,
         ActionType=ActionType
     )
 
@@ -179,7 +259,7 @@ class InstrumentForm(FlaskForm):
 @flask_login.login_required
 def new_instrument():
     if not flask_login.current_user.is_admin:
-        return flask.abort(401)
+        return flask.abort(403)
     check_current_user_is_not_readonly()
     instrument_form = InstrumentForm()
     instrument_form.instrument_responsible_users.choices = [
@@ -477,3 +557,16 @@ def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
                 content=file_storage.stream.read()
             )
     return flask.render_template('mobile_upload_success.html')
+
+
+@flask_login.login_required
+@frontend.route('/users/me/settings/instrument_log_order', methods=['POST'])
+def set_instrument_log_order():
+    form = InstrumentLogOrderForm()
+    if not form.validate_on_submit():
+        return flask.abort(400)
+    ascending = form.ascending.data
+    set_user_settings(flask_login.current_user.id, {
+        'INSTRUMENT_LOG_ORDER_ASCENDING': ascending
+    })
+    return "", 200

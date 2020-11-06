@@ -1,13 +1,13 @@
 # coding: utf-8
 """
-RESTful API for iffSamples
+RESTful API for SampleDB
 """
 
 from flask_restful import Resource
 
-from sampledb.api.server.authentication import multi_auth
-from sampledb.logic.instruments import get_instrument, get_instruments
-from sampledb.logic import errors
+from .authentication import multi_auth
+from ...logic.instruments import get_instrument, get_instruments
+from ...logic import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

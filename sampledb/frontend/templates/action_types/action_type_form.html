@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Action Type — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+  {{ action_type_form.hidden_tag() }}
+    <div class="col-md-12">
+      <div class="form-group {% if action_type_form.name.name in action_type_form.errors %}has-error{% endif %}">
+        <label for="input-name" class="control-label">Name</label>
+         <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ action_type_form.name.name }}" value="{{ action_type_form.name.data or '' }}">
+      </div>
+      <div class="form-group {% if action_type_form.description.name in action_type_form.errors %}has-error{% endif %}">
+        <label for="input-description" class="control-label">Description</label>
+         <input type="text" class="form-control" id="input-description" placeholder="Description" name="{{ action_type_form.description.name }}" value="{{ action_type_form.description.data or '' }}">
+      </div>
+      <div class="form-group {% if action_type_form.object_name.name in action_type_form.errors %}has-error{% endif %}">
+        <label for="input-object_name" class="control-label">Object Name (Singular)</label>
+         <input type="text" class="form-control" id="input-object_name" placeholder="Object Name (Singular)" name="{{ action_type_form.object_name.name }}" value="{{ action_type_form.object_name.data or '' }}">
+      </div>
+      <div class="form-group {% if action_type_form.object_name_plural.name in action_type_form.errors %}has-error{% endif %}">
+        <label for="input-object_name_plural" class="control-label">Object Name (Plural)</label>
+         <input type="text" class="form-control" id="input-object_name_plural" placeholder="Object Name (Plural)" name="{{ action_type_form.object_name_plural.name }}" value="{{ action_type_form.object_name_plural.data or '' }}">
+      </div>
+      <div class="form-group {% if action_type_form.view_text.name in action_type_form.errors %}has-error{% endif %}">
+        <label for="input-view_text" class="control-label">View Text</label>
+         <input type="text" class="form-control" id="input-view_text" placeholder="View Text" name="{{ action_type_form.view_text.name }}" value="{{ action_type_form.view_text.data or '' }}">
+      </div>
+      <div class="form-group {% if action_type_form.perform_text.name in action_type_form.errors %}has-error{% endif %}">
+        <label for="input-perform_text" class="control-label">Perform Text</label>
+         <input type="text" class="form-control" id="input-perform_text" placeholder="Perform Text" name="{{ action_type_form.perform_text.name }}" value="{{ action_type_form.perform_text.data or '' }}">
+      </div>
+      <div class="checkbox">
+        <label for="input-admin_only" style="font-weight:400">
+          <input type="checkbox" id="input-admin_only" name="{{ action_type_form.admin_only.name }}" {% if action_type_form.admin_only.data %}checked="checked"{% endif %}> Only administrators can create actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-show_on_frontpage" style="font-weight:400">
+          <input type="checkbox" id="input-show_on_frontpage" name="{{ action_type_form.show_on_frontpage.name }}" {% if action_type_form.show_on_frontpage.data %}checked="checked"{% endif %}> Show this action type on the frontpage
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-show_in_navbar" style="font-weight:400">
+          <input type="checkbox" id="input-show_in_navbar" name="{{ action_type_form.show_in_navbar.name }}" {% if action_type_form.show_in_navbar.data %}checked="checked"{% endif %}> Show actions of this type in the navbar
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_labels" style="font-weight:400">
+          <input type="checkbox" id="input-enable_labels" name="{{ action_type_form.enable_labels.name }}" {% if action_type_form.enable_labels.data %}checked="checked"{% endif %}> Enable labels for objects created with actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_files" style="font-weight:400">
+          <input type="checkbox" id="input-enable_files" name="{{ action_type_form.enable_files.name }}" {% if action_type_form.enable_files.data %}checked="checked"{% endif %}> Enable files for objects created with actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_locations" style="font-weight:400">
+          <input type="checkbox" id="input-enable_locations" name="{{ action_type_form.enable_locations.name }}" {% if action_type_form.enable_locations.data %}checked="checked"{% endif %}> Enable locations and responsible users for objects created with actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_publications" style="font-weight:400">
+          <input type="checkbox" id="input-enable_publications" name="{{ action_type_form.enable_publications.name }}" {% if action_type_form.enable_publications.data %}checked="checked"{% endif %}> Enable publications for objects created with actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_comments" style="font-weight:400">
+          <input type="checkbox" id="input-enable_comments" name="{{ action_type_form.enable_comments.name }}" {% if action_type_form.enable_comments.data %}checked="checked"{% endif %}> Enable comments for objects created with actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_activity_log" style="font-weight:400">
+          <input type="checkbox" id="input-enable_activity_log" name="{{ action_type_form.enable_activity_log.name }}" {% if action_type_form.enable_activity_log.data %}checked="checked"{% endif %}> Enable the activity log for objects created with actions of this type
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-enable_related_objects" style="font-weight:400">
+          <input type="checkbox" id="input-enable_related_objects" name="{{ action_type_form.enable_related_objects.name }}" {% if action_type_form.enable_related_objects.data %}checked="checked"{% endif %}> Show related objects for objects created with actions of this type
+        </label>
+      </div>
+    </div>
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.action_types') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

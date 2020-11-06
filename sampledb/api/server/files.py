@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-RESTful API for iffSamples
+RESTful API for SampleDB
 """
 
 import collections
@@ -10,10 +10,11 @@ import flask
 from flask_restful import Resource
 import wtforms.validators
 
-from sampledb.api.server.authentication import object_permissions_required, Permissions
-from sampledb.logic.objects import get_object
-from sampledb.logic.files import File, get_file_for_object, get_files_for_object, create_local_file, create_url_file
-from sampledb.logic import errors
+from .authentication import object_permissions_required, Permissions
+from ...logic.actions import get_action
+from ...logic.objects import get_object
+from ...logic.files import File, get_file_for_object, get_files_for_object, create_local_file, create_url_file
+from ...logic import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -68,6 +69,11 @@ class ObjectFiles(Resource):
                 "message": "JSON object body required"
             }, 400
         object = get_object(object_id=object_id)
+        action = get_action(action_id=object.action_id)
+        if not action.type.enable_files:
+            return {
+                "message": "Adding files is not enabled for objects of this type"
+            }, 403
         if 'object_id' in request_json:
             if request_json['object_id'] != object.object_id:
                 return {

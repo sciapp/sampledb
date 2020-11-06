@@ -170,7 +170,9 @@
               NotificationType.INVITED_TO_GROUP: ("Being invited to a group", False),
               NotificationType.INVITED_TO_PROJECT: ("Being invited to a project", False),
               NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST: ("Receiving object permission requests", False),
-              NotificationType.INSTRUMENT_LOG_ENTRY_CREATED: ("Receiving a new instrument log entry", False),
+              NotificationType.INSTRUMENT_LOG_ENTRY_CREATED: ("Receiving a new instrument log entry", True),
+              NotificationType.INSTRUMENT_LOG_ENTRY_EDITED: ("Receiving an edit to an instrument log", True),
+              NotificationType.REFERENCED_BY_OBJECT_METADATA: ("Being referenced in object metadata", True),
               NotificationType.OTHER: ("Other", False)
             }
         %}
@@ -183,7 +185,7 @@
             <td class="text-center" style="vertical-align: middle">
               {% if notification_mode != NotificationMode.IGNORE or notification_can_be_ignored %}
                 <label for="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" class="sr-only">{{ notification_mode.name.lower() }}</label>
-                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
+                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.IGNORE if (notification_type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED) else NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
               {% endif %}
             </td>
             {% endfor %}

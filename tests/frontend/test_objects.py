@@ -189,6 +189,59 @@ def test_search_objects(flask_server, user):
             assert name not in str(document.find('tbody'))
 
 
+def test_objects_referencable(flask_server, user):
+    schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
+    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
+    names = ['Example1', 'Example2', 'Example42']
+    objects = [
+        sampledb.logic.objects.create_object(
+            data={'name': {'_type': 'text', 'text': name}},
+            user_id=user.id,
+            action_id=action1.id
+        )
+        for name in names
+    ]
+    sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+        user_id=user.id,
+        action_id=action2.id
+    )
+
+    with flask_server.app.app_context():
+        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(new_user)
+        sampledb.db.session.commit()
+        new_user_id = new_user.id
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[0].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.READ)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[1].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.WRITE)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[2].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.GRANT)
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/referencable')
+    assert r.status_code == 200
+    data = json.loads(r.content)
+    assert len(data['referencable_objects']) == 4
+    assert data['referencable_objects'] == [
+        {'action_id': 2, 'id': 4, 'max_permission': 3, 'text': 'Other Object (#4)'},
+        {'action_id': 1, 'id': 3, 'max_permission': 3, 'text': 'Example42 (#3)'},
+        {'action_id': 1, 'id': 2, 'max_permission': 3, 'text': 'Example2 (#2)'},
+        {'action_id': 1, 'id': 1, 'max_permission': 3, 'text': 'Example1 (#1)'}
+    ]
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(new_user_id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/referencable?required_perm=WRITE')
+    assert r.status_code == 200
+    data = json.loads(r.content)
+    assert len(data['referencable_objects']) == 2
+    assert data['referencable_objects'] == [
+        {'action_id': 1, 'id': 3, 'max_permission': 3, 'text': 'Example42 (#3)'},
+        {'action_id': 1, 'id': 2, 'max_permission': 2, 'text': 'Example2 (#2)'}
+    ]
+
+
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
@@ -1316,8 +1369,8 @@ def test_new_object_with_instrument_log_entry(flask_server, user):
         assert len(instrument_log_entries) == 1
         log_entry = instrument_log_entries[0]
         assert log_entry.user_id == user.id
-        assert log_entry.content == ''
-        assert log_entry.categories == [category]
+        assert log_entry.versions[0].content == ''
+        assert log_entry.versions[0].categories == [category]
         assert len(log_entry.object_attachments) == 1
         assert log_entry.object_attachments[0].object_id == object.id
 

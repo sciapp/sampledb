@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Action Types — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>Action Types</h1>
+  <p class="text-muted">Action Types represent different kinds of actions, such as sample creation or measurements. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html#action-types">Read more.</a></p>
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    <a href="{{ url_for('.new_action_type') }}" class="btn btn-default">Create Action Type</a>
+  {% endif %}
+  {% for action_type in action_types %}
+    <h2>
+      <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.name }}">{{ action_type.name }}</a>
+    </h2>
+    <p>
+      <a href="{{ url_for('.actions', t=action_type.id) }}" class="btn btn-default">View Actions</a>
+      {% if current_user.is_admin and not current_user.is_readonly %}
+      <a href="{{ url_for('.action_type', type_id=action_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action type.">Edit Action Type</a>
+      {% endif %}
+    </p>
+  {% endfor %}
+{% endblock %}

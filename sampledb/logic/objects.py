@@ -15,6 +15,7 @@ the functions in this module should be called from within a Flask app context.
 import typing
 from ..models import Objects, Object, Action, ActionType
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
+from .notifications import create_notification_for_being_referenced_by_object_metadata
 import sqlalchemy.exc
 
 
@@ -52,6 +53,7 @@ def create_object(
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
+    _send_user_references_notifications(object, user_id)
     if copy_permissions_object_id is None:
         object_permissions.set_initial_permissions(object)
     else:
@@ -103,6 +105,7 @@ def create_object_batch(
             for object in objects:
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
+                _send_user_references_notifications(object, user_id)
                 if copy_permissions_object_id is None:
                     object_permissions.set_initial_permissions(object)
                 else:
@@ -132,6 +135,7 @@ def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optio
     user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
     object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
     _update_object_references(object, user_id=user_id)
+    _send_user_references_notifications(object, user_id)
     tags.update_object_tag_usage(object)
 
 
@@ -247,7 +251,10 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
     return list(iter_object_properties([], object.schema, object.data))
 
 
-def find_object_references(object: Object, find_previous_referenced_object_ids: bool = True) -> typing.List[typing.Tuple[int, typing.Optional[int]]]:
+def find_object_references(
+        object: Object,
+        find_previous_referenced_object_ids: bool = True
+) -> typing.List[typing.Tuple[int, typing.Optional[int], str]]:
     """
     Searches for references to other objects.
 
@@ -257,7 +264,7 @@ def find_object_references(object: Object, find_previous_referenced_object_ids: 
     """
     referenced_object_ids = []
     for path, schema, data in _get_object_properties(object):
-        if schema['type'] in ('sample', 'measurement') and data is not None and data['object_id'] is not None:
+        if schema['type'] in ('sample', 'measurement', 'object_reference') and data is not None and data['object_id'] is not None:
             referenced_object_id = data['object_id']
             previous_referenced_object_id = None
             if find_previous_referenced_object_ids and object.version_id > 0:
@@ -269,9 +276,9 @@ def find_object_references(object: Object, find_previous_referenced_object_ids: 
                 except (KeyError, IndexError):
                     pass
                 else:
-                    if previous_data is not None and previous_data['object_id'] is not None:
+                    if previous_data is not None and 'object_id' in previous_data and previous_data['object_id'] is not None:
                         previous_referenced_object_id = previous_data['object_id']
-            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id))
+            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id, schema['type']))
     return referenced_object_ids
 
 
@@ -286,10 +293,53 @@ def _update_object_references(object: Object, user_id: int) -> None:
     :param object: the updated (or newly created) object
     :param user_id: the user who caused the object update or creation
     """
-    action_type = actions.get_action(object.action_id).type
-    for referenced_object_id, previous_referenced_object_id in find_object_references(object):
+    action_type_id = actions.get_action(object.action_id).type_id
+    for referenced_object_id, previous_referenced_object_id, schema_type in find_object_references(object):
         if referenced_object_id != previous_referenced_object_id:
-            if action_type == ActionType.MEASUREMENT:
+            if action_type_id == ActionType.MEASUREMENT and schema_type == 'sample':
                 object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=user_id, measurement_id=object.object_id)
-            elif action_type == ActionType.SAMPLE_CREATION:
+            elif action_type_id == ActionType.SAMPLE_CREATION and schema_type == 'sample':
                 object_log.use_object_in_sample(object_id=referenced_object_id, user_id=user_id, sample_id=object.object_id)
+            else:
+                object_log.reference_object_in_metadata(object_id=referenced_object_id, user_id=user_id, referencing_object_id=object.object_id)
+
+
+def _send_user_references_notifications(object: Object, user_id: int) -> None:
+    """
+    Searches for references to users and notifies them accordingly.
+
+    :param object: the updated (or newly created) object
+    :param user_id: the user who caused the object update or creation
+    """
+
+    for referenced_user_id, previous_referenced_user_id in find_user_references(object):
+        if referenced_user_id != user_id and referenced_user_id != previous_referenced_user_id:
+            create_notification_for_being_referenced_by_object_metadata(referenced_user_id, object.object_id)
+
+
+def find_user_references(object: Object, find_previous_referenced_user_ids: bool = True) -> typing.List[typing.Tuple[int, typing.Optional[int]]]:
+    """
+    Searches for references to users.
+
+    :param object: the updated (or newly created) object
+    :param find_previous_referenced_user_ids: whether or not to find
+        previous referenced user ids
+    """
+    referenced_user_ids = []
+    for path, schema, data in _get_object_properties(object):
+        if schema['type'] == 'user' and data is not None and data['user_id'] is not None:
+            referenced_user_id = data['user_id']
+            previous_referenced_user_id = None
+            if find_previous_referenced_user_ids and object.version_id > 0:
+                previous_object_version = get_object(object.object_id, object.version_id - 1)
+                previous_data = previous_object_version.data
+                try:
+                    for path_element in path:
+                        previous_data = previous_data[path_element]
+                except (KeyError, IndexError):
+                    pass
+                else:
+                    if previous_data is not None and 'user_id' in previous_data and previous_data['user_id'] is not None:
+                        previous_referenced_user_id = previous_data['user_id']
+            referenced_user_ids.append((referenced_user_id, previous_referenced_user_id))
+    return referenced_user_ids

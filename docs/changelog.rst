@@ -1,6 +1,24 @@
 Changelog
 =========
 
+Version 0.15
+------------
+
+Released on November 6th, 2020.
+
+- Added versioning to instrument log entries
+- Added user to metadata types
+- Allow setting instrument log entry order
+- Allow custom action types
+- Allow administrators to deactivate users
+- Allow disabling group deletion by non-administrators
+- Fixed pagination for viewing objects of a project
+- Added Docker Compose configuration file
+- Ensure that file storage path is owned by sampledb user in docker container
+- Added ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` option to load object select options using ajax
+- Added "list" array style
+- Added Markdown editor for editing instrument and action Markdown content
+
 Version 0.14.1
 --------------
 

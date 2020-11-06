@@ -216,3 +216,7 @@ class ProjectInvitationDoesNotExistError(Exception):
 
 class UserInvitationDoesNotExistError(Exception):
     pass
+
+
+class ActionTypeDoesNotExistError(Exception):
+    pass

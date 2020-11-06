@@ -1,0 +1,9 @@
+{% if data is none %}
+  &mdash;
+{% else %}
+  {% if schema['units'] == "1" %}
+    {{ '%g'| format(data.magnitude_in_base_units) }}
+  {% else %}
+    {{ '%g'| format((data | to_datatype).magnitude) }} {{ (data | to_datatype).units | prettify_units }}
+  {% endif %}
+{% endif %}

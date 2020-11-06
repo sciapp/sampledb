@@ -8,7 +8,7 @@ import pytest
 import sampledb
 import sampledb.logic
 from sampledb.logic import object_permissions, groups
-from sampledb.models import User, UserType, Action, ActionType, Instrument, Permissions, UserObjectPermissions
+from sampledb.models import User, UserType, Action, Instrument, Permissions, UserObjectPermissions
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def users():
 @pytest.fixture
 def independent_action():
     action = Action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',
@@ -65,7 +65,7 @@ def instrument():
 @pytest.fixture
 def instrument_action(instrument):
     action = Action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',

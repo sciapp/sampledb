@@ -11,8 +11,6 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 
-from sampledb.models import ActionType
-
 
 @pytest.fixture
 def user(flask_server):
@@ -40,7 +38,7 @@ def instrument():
 @pytest.fixture
 def action(instrument):
     action = sampledb.logic.actions.create_action(
-        action_type=ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Example Action',
         schema={
             'title': 'Example Object',
@@ -93,8 +91,8 @@ def test_create_instrument_log_entry(flask_server, user, instrument, object_id):
     log_entry = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)[0]
     assert log_entry.user_id == user.id
     assert log_entry.instrument_id == instrument.id
-    assert log_entry.content == 'Test Log Entry'
-    assert log_entry.categories == []
+    assert log_entry.versions[0].content == 'Test Log Entry'
+    assert log_entry.versions[0].categories == []
 
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
         instrument_id=instrument.id,
@@ -111,8 +109,8 @@ def test_create_instrument_log_entry(flask_server, user, instrument, object_id):
     assert r.status_code == 200
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 2
     for log_entry in sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id):
-        if log_entry.content == 'Test Log Entry 2':
-            assert log_entry.categories == [category]
+        if log_entry.versions[0].content == 'Test Log Entry 2':
+            assert log_entry.versions[0].categories == [category]
             break
     else:
         assert False

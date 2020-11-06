@@ -1,25 +1,20 @@
 {% set object = get_object(related_objects_tree['object_id']) %}
-{% if in_export_data_model %}<span class="data_export_object_wrapper"><input type="checkbox" title="Include #{{ related_objects_tree['object_id'] }} in Export" {% if 'previous_objects' in related_objects_tree %}name="data_export_object_{{ related_objects_tree['object_id'] }}" id="data_export_object_{{ related_objects_tree['object_id'] }}" data-object-id="{{ related_objects_tree['object_id'] }}" {% else %}disabled="disabled"{% endif %} class="data_export_object data_export_object_{{ related_objects_tree['object_id'] }}"><label for="data_export_object_{{ related_objects_tree['object_id'] }}" class="fa fa-fw"><span class="sr-only">Include #{{ related_objects_tree['object_id'] }} in Export</span></label></span>{% endif %}
+{% if in_export_data_model %}<span class="data_export_object_wrapper"><input type="checkbox" title="Include #{{ related_objects_tree['object_id'] }} in Export" {% if 'referenced_objects' in related_objects_tree %}name="data_export_object_{{ related_objects_tree['object_id'] }}" id="data_export_object_{{ related_objects_tree['object_id'] }}" data-object-id="{{ related_objects_tree['object_id'] }}" {% else %}disabled="disabled"{% endif %} class="data_export_object data_export_object_{{ related_objects_tree['object_id'] }}"><label for="data_export_object_{{ related_objects_tree['object_id'] }}" class="fa fa-fw"><span class="sr-only">Include #{{ related_objects_tree['object_id'] }} in Export</span></label></span>{% endif %}
 <a href="{{ url_for('.object', object_id=related_objects_tree['object_id']) }}">{{ object.data['name']['text'] }} &bullet; #{{ related_objects_tree['object_id'] }}</a>
 
-{% if ('measurements' in related_objects_tree and related_objects_tree['measurements']) or ('previous_objects' in related_objects_tree and related_objects_tree['previous_objects']) or ('samples' in related_objects_tree and related_objects_tree['samples']) %}
+{% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'])%}
 <ul>
 {% endif %}
-{% if 'measurements' in related_objects_tree and related_objects_tree['measurements'] %}
-  {% for related_objects_tree in related_objects_tree['measurements'] %}
-    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-file-text" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Measured using {{ object.data['name']['text'] }}"></i>{% include "objects/view/related_objects.html" %}</li>
+{% if 'referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects'] %}
+  {% for related_objects_tree in related_objects_tree['referenced_objects'] %}
+    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Referenced by the metadata of {{ object.data['name']['text'] }} (# {{ object.object_id }})"></i>{% include "objects/view/related_objects.html" %}</li>
   {% endfor %}
 {% endif %}
-{% if 'previous_objects' in related_objects_tree and related_objects_tree['previous_objects'] %}
-  {% for related_objects_tree in related_objects_tree['previous_objects'] %}
-    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Used for creating {{ object.data['name']['text'] }}"></i>{% include "objects/view/related_objects.html" %}</li>
+{% if 'referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'] %}
+  {% for related_objects_tree in related_objects_tree['referencing_objects'] %}
+    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="References {{ object.data['name']['text'] }} (# {{ object.object_id }}) in its metadata"></i>{% include "objects/view/related_objects.html" %}</li>
   {% endfor %}
 {% endif %}
-{% if 'samples' in related_objects_tree and related_objects_tree['samples'] %}
-  {% for related_objects_tree in related_objects_tree['samples'] %}
-    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Created using {{ object.data['name']['text'] }}"></i>{% include "objects/view/related_objects.html" %}</li>
-  {% endfor %}
-{% endif %}
-{% if ('measurements' in related_objects_tree and related_objects_tree['measurements']) or ('previous_objects' in related_objects_tree and related_objects_tree['previous_objects']) or ('samples' in related_objects_tree and related_objects_tree['samples']) %}
+{% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects']) %}
 </ul>
 {% endif %}

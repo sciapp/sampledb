@@ -16,7 +16,8 @@ import datetime
 import typing
 
 from .. import db
-from . import errors, instruments, users, user_log, notifications, objects
+from . import errors, instruments, users, user_log, objects
+from .notifications import create_notification_for_a_new_instrument_log_entry, create_notification_for_an_edited_instrument_log_entry
 from ..models import instrument_log_entries
 from ..models.instrument_log_entries import InstrumentLogCategoryTheme
 
@@ -24,7 +25,7 @@ from ..models.instrument_log_entries import InstrumentLogCategoryTheme
 class InstrumentLogEntry(
     collections.namedtuple(
         'InstrumentLogEntry',
-        ['id', 'instrument_id', 'user_id', 'content', 'utc_datetime', 'categories']
+        ['id', 'instrument_id', 'user_id', 'versions']
     )
 ):
     """
@@ -36,12 +37,10 @@ class InstrumentLogEntry(
             id: int,
             instrument_id: int,
             user_id: int,
-            content: str,
-            utc_datetime: datetime.datetime,
-            categories: typing.List['InstrumentLogCategory']
+            versions: typing.Tuple['InstrumentLogEntryVersion'] = ()
     ):
         self = super(InstrumentLogEntry, cls).__new__(
-            cls, id, instrument_id, user_id, content, utc_datetime, categories
+            cls, id, instrument_id, user_id, versions
         )
         return self
 
@@ -51,12 +50,10 @@ class InstrumentLogEntry(
             id=instrument_log_entry.id,
             instrument_id=instrument_log_entry.instrument_id,
             user_id=instrument_log_entry.user_id,
-            content=instrument_log_entry.content,
-            utc_datetime=instrument_log_entry.utc_datetime,
-            categories=[
-                InstrumentLogCategory.from_database(category)
-                for category in sorted(instrument_log_entry.categories, key=lambda category: category.theme.value)
-            ]
+            versions=tuple(sorted([
+                InstrumentLogEntryVersion.from_database(version)
+                for version in instrument_log_entry.versions
+            ], key=lambda v: (v.utc_datetime, v.version_id)))
         )
 
     @property
@@ -72,10 +69,47 @@ class InstrumentLogEntry(
         return get_instrument_log_object_attachments(self.id)
 
 
+class InstrumentLogEntryVersion(
+    collections.namedtuple(
+        'InstrumentLogEntryVersion',
+        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories']
+    )
+):
+    """
+    This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogEntryVersion.
+    """
+
+    def __new__(
+            cls,
+            log_entry_id: int,
+            version_id: int,
+            content: str,
+            utc_datetime: datetime.datetime,
+            categories: typing.List['InstrumentLogCategory']
+    ):
+        self = super(InstrumentLogEntryVersion, cls).__new__(
+            cls, log_entry_id, version_id, content, utc_datetime, categories
+        )
+        return self
+
+    @classmethod
+    def from_database(cls, instrument_log_entry_version: instrument_log_entries.InstrumentLogEntryVersion) -> 'InstrumentLogEntryVersion':
+        return InstrumentLogEntryVersion(
+            log_entry_id=instrument_log_entry_version.log_entry_id,
+            version_id=instrument_log_entry_version.version_id,
+            content=instrument_log_entry_version.content,
+            utc_datetime=instrument_log_entry_version.utc_datetime,
+            categories=[
+                InstrumentLogCategory.from_database(category)
+                for category in sorted(instrument_log_entry_version.categories, key=lambda category: category.theme.value)
+            ]
+        )
+
+
 class InstrumentLogFileAttachment(
     collections.namedtuple(
         'InstrumentLogFileAttachment',
-        ['id', 'log_entry_id', 'file_name', 'content']
+        ['id', 'log_entry_id', 'file_name', 'content', 'is_hidden']
     )
 ):
     """
@@ -87,10 +121,11 @@ class InstrumentLogFileAttachment(
             id: int,
             log_entry_id: int,
             file_name: str,
-            content: bytes
+            content: bytes,
+            is_hidden: bool = False
     ):
         self = super(InstrumentLogFileAttachment, cls).__new__(
-            cls, id, log_entry_id, file_name, content
+            cls, id, log_entry_id, file_name, content, is_hidden
         )
         return self
 
@@ -103,14 +138,15 @@ class InstrumentLogFileAttachment(
             id=instrument_log_file_attachment.id,
             log_entry_id=instrument_log_file_attachment.log_entry_id,
             file_name=instrument_log_file_attachment.file_name,
-            content=instrument_log_file_attachment.content
+            content=instrument_log_file_attachment.content,
+            is_hidden=instrument_log_file_attachment.is_hidden
         )
 
 
 class InstrumentLogObjectAttachment(
     collections.namedtuple(
         'InstrumentLogObjectAttachment',
-        ['id', 'log_entry_id', 'object_id']
+        ['id', 'log_entry_id', 'object_id', 'is_hidden']
     )
 ):
     """
@@ -121,10 +157,11 @@ class InstrumentLogObjectAttachment(
             cls,
             id: int,
             log_entry_id: int,
-            object_id: int
+            object_id: int,
+            is_hidden: bool = False
     ):
         self = super(InstrumentLogObjectAttachment, cls).__new__(
-            cls, id, log_entry_id, object_id
+            cls, id, log_entry_id, object_id, is_hidden
         )
         return self
 
@@ -136,7 +173,8 @@ class InstrumentLogObjectAttachment(
         return InstrumentLogObjectAttachment(
             id=instrument_log_object_attachment.id,
             log_entry_id=instrument_log_object_attachment.log_entry_id,
-            object_id=instrument_log_object_attachment.object_id
+            object_id=instrument_log_object_attachment.object_id,
+            is_hidden=instrument_log_object_attachment.is_hidden
         )
 
 
@@ -288,11 +326,17 @@ def create_instrument_log_entry(
             raise errors.InstrumentLogCategoryDoesNotExistError()
     instrument_log_entry = instrument_log_entries.InstrumentLogEntry(
         instrument_id=instrument_id,
-        user_id=user_id,
+        user_id=user_id
+    )
+    db.session.add(instrument_log_entry)
+    db.session.commit()
+    instrument_log_entry_version = instrument_log_entries.InstrumentLogEntryVersion(
+        log_entry_id=instrument_log_entry.id,
+        version_id=1,
         content=content
     )
-    instrument_log_entry.categories = list(categories)
-    db.session.add(instrument_log_entry)
+    instrument_log_entry_version.categories = list(categories)
+    db.session.add(instrument_log_entry_version)
     db.session.commit()
     user_log.create_instrument_log_entry(
         user_id=user_id,
@@ -301,10 +345,69 @@ def create_instrument_log_entry(
     )
     for responsible_user in instrument.responsible_users:
         if responsible_user.id != user_id:
-            notifications.create_notification_for_a_new_instrument_log_entry(
+            create_notification_for_a_new_instrument_log_entry(
                 user_id=responsible_user.id,
                 instrument_log_entry_id=instrument_log_entry.id
             )
+    return InstrumentLogEntry.from_database(instrument_log_entry)
+
+
+def update_instrument_log_entry(
+        log_entry_id: int,
+        content: str,
+        category_ids: typing.Sequence[int] = ()
+) -> InstrumentLogEntry:
+    """
+    Update an existing instrument log entry.
+
+    :param log_entry_id: the ID of an existing instrument log entry
+    :param content: the text content for the new log entry
+    :param category_ids: the instrument-specific log category IDs
+    :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
+        entry with the given ID exists
+    :raise errors.InstrumentLogCategoryDoesNotExistError: when no log category
+        with the given ID exists for this instrument
+    """
+    # ensure that the instrument exists
+    instrument_log_entry = instrument_log_entries.InstrumentLogEntry.query.filter_by(id=log_entry_id).first()
+    if instrument_log_entry is None:
+        raise errors.InstrumentLogEntryDoesNotExistError()
+    instrument_id = instrument_log_entry.instrument_id
+    categories = []
+    for category_id in set(category_ids):
+        category = instrument_log_entries.InstrumentLogCategory.query.filter_by(
+            id=category_id,
+            instrument_id=instrument_id
+        ).first()
+        if category:
+            categories.append(category)
+        else:
+            raise errors.InstrumentLogCategoryDoesNotExistError()
+
+    next_version_id = max(
+        v.version_id
+        for v in instrument_log_entry.versions
+    ) + 1
+
+    instrument_log_entry_version = instrument_log_entries.InstrumentLogEntryVersion(
+        log_entry_id=instrument_log_entry.id,
+        version_id=next_version_id,
+        content=content
+    )
+    db.session.add(instrument_log_entry_version)
+    instrument_log_entry_version.categories = list(categories)
+    db.session.commit()
+
+    instrument = instruments.get_instrument(instrument_log_entry.instrument_id)
+
+    for responsible_user in instrument.responsible_users:
+        if responsible_user.id != instrument_log_entry.user_id:
+            create_notification_for_an_edited_instrument_log_entry(
+                user_id=responsible_user.id,
+                instrument_log_entry_id=instrument_log_entry.id,
+                version_id=next_version_id
+            )
+
     return InstrumentLogEntry.from_database(instrument_log_entry)
 
 
@@ -335,9 +438,8 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
     """
     log_entries = instrument_log_entries.InstrumentLogEntry.query.filter_by(
         instrument_id=instrument_id
-    ).order_by(
-        db.asc(instrument_log_entries.InstrumentLogEntry.utc_datetime)
     ).all()
+    log_entries.sort(key=lambda e: e.versions[0].utc_datetime)
     if not log_entries:
         # ensure that the instrument exists
         instruments.get_instrument(instrument_id)
@@ -480,3 +582,47 @@ def get_instrument_log_object_attachment(
     if attachment is None:
         raise errors.InstrumentLogObjectAttachmentDoesNotExistError()
     return InstrumentLogObjectAttachment.from_database(attachment)
+
+
+def hide_instrument_log_object_attachment(
+        instrument_log_object_attachment_id: int,
+        set_hidden: bool = True
+) -> None:
+    """
+    Hide an instrument log entry object attachment.
+
+    :param instrument_log_object_attachment_id: the ID of an existing
+        instrument log object attachment
+    :param set_hidden: whether or not the attachment should be hidden
+    :raise errors.InstrumentLogObjectAttachmentDoesNotExistError: when no
+        instrument log entry object attachment with the given ID exists
+    """
+    attachment = instrument_log_entries.InstrumentLogObjectAttachment.query.filter_by(
+        id=instrument_log_object_attachment_id
+    ).first()
+    if attachment is None:
+        raise errors.InstrumentLogObjectAttachmentDoesNotExistError()
+    attachment.is_hidden = set_hidden
+    db.session.add(attachment)
+    db.session.commit()
+
+
+def hide_instrument_log_file_attachment(
+        instrument_log_file_attachment_id: int
+) -> None:
+    """
+    Hide an instrument log entry file attachment.
+
+    :param instrument_log_file_attachment_id: the ID of an existing
+        instrument log file attachment
+    :raise errors.InstrumentLogFileAttachmentDoesNotExistError: when no
+        instrument log entry file attachment with the given ID exists
+    """
+    attachment = instrument_log_entries.InstrumentLogFileAttachment.query.filter_by(
+        id=instrument_log_file_attachment_id
+    ).first()
+    if attachment is None:
+        raise errors.InstrumentLogFileAttachmentDoesNotExistError()
+    attachment.is_hidden = True
+    db.session.add(attachment)
+    db.session.commit()

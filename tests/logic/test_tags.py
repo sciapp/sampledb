@@ -23,7 +23,7 @@ def user():
 @pytest.fixture
 def action():
     action = sampledb.logic.actions.create_action(
-        action_type=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name="",
         description="",
         schema={

@@ -1,0 +1,9 @@
+<div class="form-group{% if id_prefix+'_datetime' in errors %} has-error{% elif id_prefix+'_datetime' in form_data %} has-success{% endif %} row" style="padding-right:0.75em; flex-grow: 1">
+  <div class="input-group date" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] }}{% elif data is not none %}{{ data.utc_datetime }}{% elif 'default' in schema %}{{ schema.default }}{% else %}{{ datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}">
+    <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
+    <span class="input-group-addon">
+      <span class="glyphicon glyphicon-calendar"></span>
+    </span>
+  </div>
+  {% if id_prefix+'_datetime' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_datetime'] }}</span>{% endif %}
+</div>

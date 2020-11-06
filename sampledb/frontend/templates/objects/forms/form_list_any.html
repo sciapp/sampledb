@@ -1,0 +1,21 @@
+{% if schema['type'] == 'text' and 'choices' not in schema  %}
+  {% include "objects/forms/form_list_text.html" %}
+{% elif schema['type'] == 'text' and 'choices' in schema %}
+  {% include "objects/forms/form_list_select.html" %}
+{% elif schema['type'] == 'sample' %}
+  {% include "objects/forms/form_list_sample.html" %}
+{% elif schema['type'] == 'measurement' %}
+  {% include "objects/forms/form_list_measurement.html" %}
+{% elif schema['type'] == 'object_reference' %}
+  {% include "objects/forms/form_list_object_reference.html" %}
+{% elif schema['type'] == 'datetime' %}
+  {% include "objects/forms/form_list_datetime.html" %}
+{% elif schema['type'] == 'bool' %}
+  {% include "objects/forms/form_list_bool.html" %}
+{% elif schema['type'] == 'quantity' %}
+  {% include "objects/forms/form_list_quantity.html" %}
+{% elif schema.type == 'user' %}
+  {% include "objects/forms/form_list_user.html" %}
+{% else %}
+  {{ name }}{{ schema.type }}{{ schema['type'] }}
+{% endif %}

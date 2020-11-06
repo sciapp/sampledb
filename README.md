@@ -17,6 +17,22 @@ If you would like to set up a development version of SampleDB instead, please se
 
 If you do not have Docker installed yet, please [install Docker](https://docs.docker.com/engine/install/).
 
+### Using docker-compose
+
+First, get the [docker-compose.yml](https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml) configuration file. You can git clone this repo or just get the file:
+
+```bash
+curl https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml --output docker-compose.yml
+```
+
+Then simply bring everything up with:
+
+```bash
+docker-compose up -d
+```
+
+### Using docker commands
+
 First, start your database container:
 
 ```bash
@@ -46,8 +62,10 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.14.1
+    sciapp/sampledb:0.15.0
 ```
+
+### Once it's started
 
 This will start a minimal SampleDB installation at `http://localhost:8000` and allow you to sign in with the username `admin` and the password `password` (which you should change immediately after signing in).
 

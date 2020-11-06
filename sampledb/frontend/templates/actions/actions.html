@@ -3,10 +3,14 @@
 {% block title %}Actions — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Actions</h1>
-  <p class="text-muted">Actions represent processes like creating a sample, performing a measurement or running a simulation. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">Read more.</a></p>
+  <h1>{% if action_type %}{{ action_type.name }} {% endif %}Actions</h1>
+  <p class="text-muted">{% if action_type and action_type.description %}{{ action_type.description }}{% else %}Actions represent processes like creating a sample, performing a measurement or running a simulation.{% endif %} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">Read more.</a></p>
   {% if current_user.is_admin and not current_user.is_readonly %}
+    {% if action_type %}
+    <a href="{{ url_for('.new_action', action_type_id=action_type.id) }}" class="btn btn-default">Create Action</a>
+    {% else %}
     <a href="{{ url_for('.new_action') }}" class="btn btn-default">Create Action</a>
+    {% endif %}
   {% endif %}
   {% for action in actions %}
     <form action="{{ url_for('.toggle_favorite_action', sample_id=request.args.get('sample_id', None), t=request.args.get('t', None)) }}" method="post">
@@ -31,22 +35,10 @@
       {% include "instruments/instrument_scientists.html" %}
     {% endwith %}
     <p>
-    {% if action.type == ActionType.MEASUREMENT %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Measurements</a>
+      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
       {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">Perform Measurement</a>
+      <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.perform_text }}</a>
       {% endif %}
-    {% elif action.type == ActionType.SIMULATION %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Simulations</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Perform Simulation</a>
-      {% endif %}
-    {% else %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">View Samples</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">Create Sample</a>
-      {% endif %}
-    {% endif %}
     </p>
   {% endfor %}
 {% endblock %}

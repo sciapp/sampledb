@@ -46,7 +46,7 @@ def test_create_missing_instrument_action():
     instrument = instruments.create_instrument("Example Instrument", "Example Instrument Description")
     assert len(actions.get_actions()) == 0
     with pytest.raises(errors.InstrumentDoesNotExistError):
-        actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=SCHEMA, instrument_id=instrument.id+1)
+        actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, name="Example Action", description="", schema=SCHEMA, instrument_id=instrument.id + 1)
 
 
 def test_create_action_invalid_schema():

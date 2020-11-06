@@ -10,6 +10,9 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
+    <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+  {% endif %}
   <script>
     $(function () {
       $('[data-toggle="tooltip"]').tooltip()
@@ -359,10 +362,16 @@
       </form>
     {% endif %}
     {% if copy_permissions_form %}
-    <div class="container text-right">
-    <button type="button" class="btn btn-primary col-md-offset-9 col-md-3" style="margin-top: 1em;" data-toggle="modal" data-target="#copyPermissionsModal">
-      Copy Permissions
-    </button>
+    <div class="container text-right" id="copyPermissionsLoading" style="display: none;">
+      <span class="btn btn-primary col-md-offset-9 col-md-3 disabled" style="margin-top: 1em;">
+        <i class="fa fa-spinner fa-spin"></i>
+        <span class="sr-only">Loading...</span>
+      </span>
+     </div>
+    <div class="container text-right" id="copyPermissionsBtnDiv">
+      <button type="button" class="btn btn-primary col-md-offset-9 col-md-3" id="copyPermissionsBtn" style="margin-top: 1em;" data-toggle="modal" data-target="#copyPermissionsModal">
+        Copy Permissions
+      </button>
      </div>
     {% endif %}
     <div class="container">
@@ -382,7 +391,7 @@
           <div class="modal-body">
             <p class="text-muted">You can replace the current permissions by copying the permissions from another object.</p>
               {{ copy_permissions_form.hidden_tag() }}
-              <select class="selectpicker" name="{{ copy_permissions_form.object_id.name }}" data-live-search="true" data-width="100%">
+              <select class="selectpicker" name="{{ copy_permissions_form.object_id.name }}" data-live-search="true" data-width="100%" data-sampledb-remove="{{ object.id }}" data-sampledb-required-perm="3" data-sampledb-start-show="#copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsBtnDiv" data-sampledb-empty-disable="#copyPermissionsBtn" data-sampledb-stop-hide="#copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsBtnDiv">
                 {% for object_id, object_name in copy_permissions_form.object_id.choices %}
                   <option value="{{ object_id }}">{{ object_name }} (#{{ object_id }})</option>
                 {% endfor %}

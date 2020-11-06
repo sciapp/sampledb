@@ -3,8 +3,6 @@
   <div class="col-md-3 control-label">
 <strong>{{ schema.title }}</strong>
   </div>
-</div>
-<div style="padding-left:2.5em;">
 {% set minItems = schema.get('minItems', 0) %}
 {% set maxItems = schema.get('maxItems', None) %}
 {% if data is not none %}
@@ -13,6 +11,8 @@
 {% set numItems = 0 %}
 {% endif %}
 {% if schema.style == "table" %}
+</div>
+<div style="padding-left:2.5em;">
   {% if schema['items']['type'] == 'object' %}
   <table class="table">
     <thead>
@@ -170,7 +170,42 @@
   </tfoot>
   </table>
   {% endif %}
+{% elif schema.style == "list" %}
+  {% set itemName = schema['items'].title %}
+  {% if data is not none %}
+    {% for item in data %}
+      {% set name = "item" %}
+      {% set schema = schema['items'] %}
+      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+      {% set data = item %}
+        <div class="col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %}" style="display:flex; padding-left:2em; padding-right:1.75em">
+          {% include "objects/forms/form_list_any.html" %}
+          <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
+          {% if numItems > minItems %}
+            <button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px;"><i class="fa fa-minus"></i></button>
+          {% else %}
+            <button type="button" class="btn btn-danger disabled" style="height:34px;"><i class="fa fa-minus"></i></button>
+          {% endif %}
+          </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+    <div class="col-md-9 {% if data %}col-md-offset-3{% endif %}" style="display: flex; padding-left:1em; padding-right:1.75em">
+      <div style="flex-grow: 1">
+      {% if 'note' in schema['items'] %}
+        <span class="help-block"><strong>Note:</strong> {{ schema['items']['note'] }}</span>
+      {% endif %}
+      </div>
+    <div style="flex-grow: 0; flex-basis: 4em;"></div>
+    {% if maxItems is none or numItems < maxItems %}
+      <button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success" style="height:34px;"><i class="fa fa-plus"></i></button>
+    {% else %}
+      <button type="button" class="btn btn-success disabled" style="height:34px;"><i class="fa fa-plus"></i></button>
+    {% endif %}
+    </div>
 {% else %}
+</div>
+<div style="padding-left:2.5em;">
   {% set itemName = schema['items'].title %}
   {% if data is not none %}
     {% for item in data %}

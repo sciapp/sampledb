@@ -53,9 +53,9 @@ def test_create_log_entry(instrument, instrument_responsible_user, other_user):
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 2
     log_entries = instrument_log_entries.get_instrument_log_entries(instrument.id)
     assert log_entries[0].author == instrument_responsible_user
-    assert log_entries[0].content == "test"
+    assert log_entries[0].versions[-1].content == "test"
     assert log_entries[1].author == other_user
-    assert log_entries[1].content == "test2"
+    assert log_entries[1].versions[-1].content == "test2"
     for i in range(2):
         assert log_entries[i].instrument_id == instrument.id
         assert instrument_log_entries.get_instrument_log_entry(log_entries[i].id) == log_entries[i]
@@ -88,7 +88,7 @@ def test_log_entry_categories(instrument, instrument_responsible_user):
             category_b.id
         ]
     )
-    assert set(log_entry.categories) == {category_a, category_b}
+    assert set(log_entry.versions[-1].categories) == {category_a, category_b}
     instrument_log_entries.update_instrument_log_category(
         category_id=category_a.id,
         title="Category A+",
@@ -98,17 +98,16 @@ def test_log_entry_categories(instrument, instrument_responsible_user):
     assert category_b not in set(instrument_log_entries.get_instrument_log_categories(instrument.id))
 
     log_entry = instrument_log_entries.get_instrument_log_entry(log_entry.id)
-    assert len(log_entry.categories) == 1
-    assert log_entry.categories[0].title == "Category A+"
-    assert log_entry.categories[0].theme.name.lower() == 'green'
-
+    assert len(log_entry.versions[-1].categories) == 1
+    assert log_entry.versions[-1].categories[0].title == "Category A+"
+    assert log_entry.versions[-1].categories[0].theme.name.lower() == 'green'
 
     log_entry = instrument_log_entries.create_instrument_log_entry(
         instrument_id=instrument.id,
         user_id=instrument_responsible_user.id,
         content="test"
     )
-    assert len(log_entry.categories) == 0
+    assert len(log_entry.versions[-1].categories) == 0
 
     with pytest.raises(errors.InstrumentLogCategoryDoesNotExistError):
         instrument_log_entries.create_instrument_log_entry(

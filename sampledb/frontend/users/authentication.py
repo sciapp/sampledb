@@ -19,7 +19,11 @@ def load_user(user_id):
         user_id = int(user_id)
     except ValueError:
         return None
-    return get_user(user_id)
+    user = get_user(user_id)
+    if not user.is_active:
+        flask.flash('Your user account has been deactivated. Please contact an administrator.', 'error')
+        return None
+    return user
 
 
 def _is_url_safe_for_redirect(url: str) -> bool:
@@ -65,6 +69,10 @@ def _sign_in_impl(is_for_refresh):
         username = username.lower()
         password = form.password.data
         user = login(username, password)
+        if user and not user.is_active:
+            flask_login.logout_user()
+            flask.flash('Your user account has been deactivated. Please contact an administrator.', 'error')
+            return flask.redirect(flask.url_for('frontend.sign_in'))
         if is_for_refresh:
             if user and user == flask_login.current_user:
                 flask_login.confirm_login()

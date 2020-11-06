@@ -1,0 +1,13 @@
+<div class="form-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}" style="padding-right:0.75em; flex-grow: 1">
+    {% if schema['units'] == "1" %}
+      <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units }}"{% endif %}>
+      {% if id_prefix+'_text' in errors %}<span class="help-block">{{ errors[id_prefix+'_text'] }}</span>{% endif %}
+    {% else %}
+      <input type="hidden" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
+      <div class="input-group">
+        <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none %}value="{{ '%g'| format((data | to_datatype).magnitude) }}"{% endif %}>
+        <span class="input-group-addon" style="min-width: 100px; text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ schema['units'] | prettify_units  }}{% endif %}</span>
+      </div>
+    {% endif %}
+    {% if id_prefix+'_magnitude' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_magnitude'] }}</span>{% endif %}
+</div>

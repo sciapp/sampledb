@@ -1,0 +1,8 @@
+{% extends "mails/notifications/base.txt" %}
+
+
+{% block message %}
+{% set instrument_log_entry = get_instrument_log_entry(data['instrument_log_entry_id']) %}
+{{ get_user(instrument_log_entry.user_id).name }} has edited a log entry for the instrument {{ get_instrument(instrument_log_entry.instrument_id).name }}:
+{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id), _external=True) }}
+{% endblock %}

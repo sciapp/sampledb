@@ -150,5 +150,9 @@ Miscellaneous
      - The time limit for invitation links in seconds.
    * - SAMPLEDB_ONLY_ADMINS_CAN_MANAGE_LOCATIONS
      - If set, only administrators will be able to create and edit locations.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_GROUPS
+     - If set, only administrators will be able to delete non-empty groups.
+   * - SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND
+     - If set, object selections will be loaded in the background using AJAX.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

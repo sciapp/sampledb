@@ -1,0 +1,47 @@
+# sampledb docker-compose configuration file
+# use : "docker-compose up -d" to start containers
+# https://github.com/sciapp/sampledb
+# Note: you will need to edit some values below to run it in production!
+version: '3'
+
+services:
+  web:
+    image: sciapp/sampledb:0.15.0
+    restart: always
+    container_name: sampledb
+    environment:
+        - SAMPLEDB_CONTACT_EMAIL=sampledb@example.com
+        - SAMPLEDB_MAIL_SERVER=mail.example.com
+        - SAMPLEDB_MAIL_SENDER=sampledb@example.com
+        - SAMPLEDB_ADMIN_PASSWORD=password
+        - SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres
+        - SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files/
+    ports:
+        # if you want sampledb to run on a different port, change the first number
+        # host:container
+        - '8000:8000'
+    volumes:
+        # this is where you will keep the uploaded files persistently
+        # host:container
+        - ./files:/home/sampledb/files
+    networks:
+      - sampledb-net
+
+  # the postgres database image
+  db:
+    image: postgres:12
+    restart: always
+    container_name: sampledb-postgres
+    environment:
+        - POSTGRES_PASSWORD=password
+        - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+        # this is where you will keep the database persistently
+        # host:container
+        - ./pgdata:/var/lib/postgresql/data/pgdata
+    networks:
+      - sampledb-net
+
+# the internal sampledb network
+networks:
+  sampledb-net:
