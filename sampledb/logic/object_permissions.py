@@ -269,7 +269,8 @@ def get_object_info_with_permissions(
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
-        action_type_id: typing.Optional[int] = None
+        action_type_id: typing.Optional[int] = None,
+        object_ids: typing.Optional[typing.Sequence[int]] = None
 ) -> typing.List[Object]:
 
     user = get_user(user_id)
@@ -325,12 +326,21 @@ def get_object_info_with_permissions(
 
     where = table.c.action_id.in_(db.select([Action.__table__.c.id], whereclause=action_filter)) if action_filter is not None else None
 
+    if object_ids is not None:
+        object_id_where = table.c.object_id.in_(tuple(object_ids))
+        if where is None:
+            where = object_id_where
+        else:
+            where = db.and_(where, object_id_where)
+
     table = db.select(
         columns=[table],
         whereclause=where
     ).order_by(db.desc(table.c.object_id)).limit(limit).offset(offset)
 
-    return db.session.execute(table, parameters).fetchall()
+    object_infos = db.session.execute(table, parameters).fetchall()
+
+    return object_infos
 
 
 def get_objects_with_permissions(

@@ -21,10 +21,12 @@ from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachm
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
-from ..logic.object_permissions import Permissions, get_objects_with_permissions
+from ..logic.object_permissions import Permissions, get_object_info_with_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, markdown_to_safe_html, generate_qrcode
+from .validators import MultipleObjectIdValidator
+
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -39,10 +41,21 @@ class MultipleIntegerField(SelectMultipleField):
                     raise ValidationError("Invalid value")
 
 
+class SelectMultipleFieldFix(SelectMultipleField):
+    def pre_validate(self, form):
+        # TODO: use SelectMultipleField directly after wtforms release
+        # SelectMultipleField does not yet support the validate_choice flag
+        # used by SelectField. This is already fixed in master of wtforms, but
+        # until the new version is released, this adds support for the flag.
+        if not self.validate_choice:
+            return None
+        super(SelectMultipleFieldFix, self).pre_validate(form)
+
+
 class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
     files = MultipleFileField()
-    objects = SelectMultipleField()
+    objects = SelectMultipleFieldFix(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
     categories = SelectMultipleField()
     log_entry_id = IntegerField()
     existing_files = MultipleIntegerField()
@@ -94,10 +107,14 @@ def instrument(instrument_id):
         for log_entry in instrument_log_entries:
             for object_attachment in get_instrument_log_object_attachments(log_entry.id):
                 attached_object_ids.add(object_attachment.object_id)
-        attached_objects = get_objects_with_permissions(flask_login.current_user.id, permissions=Permissions.READ, object_ids=attached_object_ids)
+        attached_object_infos = get_object_info_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            object_ids=list(attached_object_ids)
+        )
         attached_object_names = {
-            object.id: object.data.get('name', {}).get('text', 'Unnamed Object')
-            for object in attached_objects
+            object_info.object_id: object_info.name_text
+            for object_info in attached_object_infos
         }
     else:
         instrument_log_entries = None
@@ -111,10 +128,13 @@ def instrument(instrument_id):
         mobile_upload_url = None
         mobile_upload_qrcode = None
     instrument_log_entry_form = InstrumentLogEntryForm()
-    instrument_log_entry_form.objects.choices = [
-        (str(object.id), "{} (#{})".format(object.data.get('name', {}).get('text', 'Unnamed Object'), object.id))
-        for object in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
-    ]
+    if flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+        instrument_log_entry_form.objects.choices = []
+    else:
+        instrument_log_entry_form.objects.choices = [
+            (str(object_info.object_id), "{} (#{})".format(object_info.name_text, object_info.object_id))
+            for object_info in get_object_info_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
+        ]
     instrument_log_categories = get_instrument_log_categories(instrument_id)
     instrument_log_entry_form.categories.choices = [
         (str(category.id), category.title)
