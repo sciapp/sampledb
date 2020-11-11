@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.16
+------------
+
+Currently in development.
+
+- Improved performance of object lists
+
 Version 0.15
 ------------
 
