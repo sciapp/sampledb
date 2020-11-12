@@ -279,6 +279,7 @@ def create_object_of_type(action_type_id):
     )
     return object.id
 
+
 def test_convert_sample_to_object_reference():
     object_id = create_object_of_type(sampledb.models.ActionType.SAMPLE_CREATION)
     data = {
@@ -295,7 +296,10 @@ def test_convert_sample_to_object_reference():
     }
     validate(data, previous_schema)
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
-    assert new_data == data
+    assert new_data == {
+        '_type': 'object_reference',
+        'object_id': object_id
+    }
     assert not warnings
 
     new_schema = {
@@ -304,7 +308,10 @@ def test_convert_sample_to_object_reference():
         'action_type_id': None
     }
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
-    assert new_data == data
+    assert new_data == {
+        '_type': 'object_reference',
+        'object_id': object_id
+    }
     assert not warnings
 
     new_schema = {
@@ -313,13 +320,37 @@ def test_convert_sample_to_object_reference():
         'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
     }
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
-    assert new_data == data
+    assert new_data == {
+        '_type': 'object_reference',
+        'object_id': object_id
+    }
     assert not warnings
 
     new_schema = {
         'type': 'object_reference',
         'title': 'Test',
         'action_type_id': sampledb.models.ActionType.MEASUREMENT
+    }
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data is None
+    assert warnings
+
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_id': sampledb.logic.objects.get_object(object_id).action_id
+    }
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == {
+        '_type': 'object_reference',
+        'object_id': object_id
+    }
+    assert not warnings
+
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_id': sampledb.logic.objects.get_object(object_id).action_id + 1
     }
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
     assert new_data is None

@@ -463,6 +463,8 @@ def _validate_object_reference(instance: dict, schema: dict, path: typing.List[s
         object = objects.get_object(object_id=instance['object_id'])
     except ObjectDoesNotExistError:
         raise ValidationError('object does not exist', path)
+    if 'action_id' in schema and isinstance(schema['action_id'], int) and object.action_id != schema['action_id']:
+        raise ValidationError('object has wrong action', path)
     if 'action_type_id' in schema and isinstance(schema['action_type_id'], int):
         action = actions.get_action(object.action_id)
         if action.type_id != schema['action_type_id']:

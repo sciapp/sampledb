@@ -34,15 +34,34 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
         }
         return new_data, []
     if new_schema['type'] == 'object_reference' and previous_schema['type'] in ('sample', 'measurement'):
-        if 'action_type_id' in new_schema:
+        action_type_compatible = False
+        if 'action_type_id' in new_schema and new_schema['action_type_id'] is not None:
             if previous_schema['type'] == 'sample' and new_schema['action_type_id'] == ActionType.SAMPLE_CREATION:
-                return data, []
+                action_type_compatible = True
             if previous_schema['type'] == 'measurement' and new_schema['action_type_id'] == ActionType.MEASUREMENT:
-                return data, []
-            if new_schema['action_type_id'] is None:
-                return data, []
+                action_type_compatible = True
         else:
-            return data, []
+            action_type_compatible = True
+        action_compatible = False
+        if 'action_id' in new_schema and new_schema['action_id'] is not None:
+            if 'object_id' in data:
+                try:
+                    referenced_object = objects.get_object(data['object_id'])
+                    action_id = referenced_object.action_id
+                except errors.ObjectDoesNotExistError:
+                    pass
+                else:
+                    if action_id == new_schema['action_id']:
+                        action_compatible = True
+            else:
+                action_compatible = True
+        else:
+            action_compatible = True
+        if action_type_compatible and action_compatible:
+            return {
+                '_type': 'object_reference',
+                'object_id': data['object_id']
+            }, []
     if previous_schema['type'] == 'object_reference' and new_schema['type'] in ('sample', 'measurement'):
         if 'action_type_id' in previous_schema:
             if new_schema['type'] == 'sample' and previous_schema['action_type_id'] == ActionType.SAMPLE_CREATION:
@@ -69,9 +88,9 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
     if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user'):
         return data, []
     if new_schema['type'] == 'object_reference':
-        if 'action_type_id' not in new_schema or new_schema['action_type_id'] is None or ('action_type_id' in previous_schema and new_schema['action_type_id'] == previous_schema['action_type_id']):
-            return data, []
-        elif 'action_type_id' not in previous_schema or previous_schema['action_type_id'] is None:
+        referenced_object = None
+        action_type_compatible = 'action_type_id' not in new_schema or new_schema['action_type_id'] is None or ('action_type_id' in previous_schema and new_schema['action_type_id'] == previous_schema['action_type_id'])
+        if not action_type_compatible and ('action_type_id' not in previous_schema or previous_schema['action_type_id'] is None):
             if 'object_id' in data:
                 try:
                     referenced_object = objects.get_object(data['object_id'])
@@ -83,7 +102,25 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
                     pass
                 else:
                     if action_type_id == new_schema['action_type_id']:
-                        return data, []
+                        action_type_compatible = True
+            else:
+                action_type_compatible = True
+        action_compatible = 'action_id' not in new_schema or new_schema['action_id'] is None or ('action_id' in previous_schema and new_schema['action_id'] == previous_schema['action_id'])
+        if not action_compatible and ('action_id' not in previous_schema or previous_schema['action_id'] is None):
+            if 'object_id' in data:
+                try:
+                    if referenced_object is None:
+                        referenced_object = objects.get_object(data['object_id'])
+                    action_id = referenced_object.action_id
+                except errors.ObjectDoesNotExistError:
+                    pass
+                else:
+                    if action_id == new_schema['action_id']:
+                        action_compatible = True
+            else:
+                action_compatible = True
+        if action_type_compatible and action_compatible:
+            return data, []
     if new_schema['type'] == 'quantity':
         previous_dimensionality = get_dimensionality_for_units(previous_schema['units'])
         new_dimensionality = get_dimensionality_for_units(new_schema['units'])
