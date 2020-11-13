@@ -61,6 +61,9 @@ def on_unauthorized(object_id):
 def objects():
     object_ids = flask.request.args.get('ids', '')
     objects = []
+    display_properties = []
+    display_property_titles = {}
+    name_only = True
     if object_ids:
         object_ids = object_ids.split(',')
         try:
@@ -135,6 +138,12 @@ def objects():
         if action_id is not None:
             action = get_action(action_id)
             action_type = action.type
+            action_schema = action.schema
+            display_properties = action_schema.get('displayProperties', [])
+            for property_name in display_properties:
+                display_property_titles[property_name] = action_schema['properties'][property_name]['title']
+            if display_properties:
+                name_only = False
         else:
             action = None
             action_type_id = flask.request.args.get('t', '')
@@ -217,6 +226,8 @@ def objects():
 
         if sorting_property_name is None:
             sorting_property_name = '_object_id'
+        else:
+            name_only = False
         if sorting_property_name == '_object_id':
             sorting_property = object_sorting.object_id()
         elif sorting_property_name == '_creation_date':
@@ -229,6 +240,8 @@ def objects():
         sorting_function = sorting_order(sorting_property)
 
         query_string = flask.request.args.get('q', '')
+        if query_string:
+            name_only = False
         search_tree = None
         use_advanced_search = flask.request.args.get('advanced', None) is not None
         must_use_advanced_search = use_advanced_search
@@ -304,7 +317,8 @@ def objects():
                 action_type_id=action_type.id if action_type is not None else None,
                 project_id=project_id,
                 object_ids=object_ids,
-                num_objects_found=num_objects_found_list
+                num_objects_found=num_objects_found_list,
+                name_only=name_only
             )
             num_objects_found = num_objects_found_list[0]
         except Exception as e:
@@ -315,34 +329,32 @@ def objects():
             objects = []
             advanced_search_had_error = True
 
+    cached_actions = {}
+    cached_users = {}
+
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
             original_object = obj
         else:
             original_object = get_object(object_id=obj.object_id, version_id=0)
+        if obj.action_id not in cached_actions:
+            cached_actions[obj.action_id] = get_action(obj.action_id)
+        if obj.user_id not in cached_users:
+            cached_users[obj.user_id] = get_user(obj.user_id)
+        if original_object.user_id not in cached_users:
+            cached_users[original_object.user_id] = get_user(original_object.user_id)
         objects[i] = {
             'object_id': obj.object_id,
-            'version_id': obj.version_id,
-            'created_by': get_user(original_object.user_id),
+            'created_by': cached_users[original_object.user_id],
             'created_at': original_object.utc_datetime.strftime('%Y-%m-%d'),
-            'modified_by': get_user(obj.user_id),
+            'modified_by': cached_users[obj.user_id],
             'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d'),
             'data': obj.data,
             'schema': obj.schema,
-            'action': get_action(obj.action_id),
+            'action': cached_actions[obj.action_id],
             'display_properties': {}
         }
 
-    # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
-    display_properties = []
-    display_property_titles = {}
-    if action is not None:
-        action_schema = action.schema
-        display_properties = action_schema.get('displayProperties', [])
-        for property_name in display_properties:
-            display_property_titles[property_name] = action_schema['properties'][property_name]['title']
-
-    for obj in objects:
         for property_name in display_properties:
             if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:
                 obj['display_properties'][property_name] = None
