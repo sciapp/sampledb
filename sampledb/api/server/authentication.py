@@ -23,7 +23,7 @@ def verify_token(api_token):
     if not api_token:
         return None
     user = login_via_api_token(api_token)
-    if not user.is_active:
+    if user is None or not user.is_active:
         return None
     flask.g.user = user
     return user
