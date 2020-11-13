@@ -7,6 +7,7 @@ Version 0.16
 Currently in development.
 
 - Improved performance of object lists
+- Improved performance of instrument pages
 
 Version 0.15
 ------------
