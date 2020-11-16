@@ -1427,6 +1427,48 @@ def test_validate_object_reference_wrong_action_type():
         validate(instance, schema)
 
 
+def test_validate_object_reference_wrong_action():
+    from sampledb.models.users import User, UserType
+    from sampledb.models.actions import Action
+    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
+      "title": "Sample Information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Sample Name",
+          "type": "text"
+        }
+      },
+      "required": ["name"]
+    })
+
+    sampledb.db.session.add(user)
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object.id
+    }
+
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'action_id': action.id
+    }
+    validate(instance, schema)
+
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'action_id': action.id + 1
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_tags():
     schema = {
         'title': 'Example',

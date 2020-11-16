@@ -6,6 +6,7 @@ Version 0.16
 
 Currently in development.
 
+- Allow restricting object references to specific action id
 - Improved performance of object lists
 - Improved performance of instrument pages
 

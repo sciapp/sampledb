@@ -421,7 +421,7 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -434,6 +434,8 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
         raise ValidationError('note must be str', path)
     if 'action_type_id' in schema and not isinstance(schema['action_type_id'], (int, type(None))):
         raise ValidationError('action_type_id must be int or None', path)
+    if 'action_id' in schema and not isinstance(schema['action_id'], (int, type(None))):
+        raise ValidationError('action_id must be int or None', path)
 
 
 def _validate_notebook_templates(notebook_templates: typing.Any) -> None:

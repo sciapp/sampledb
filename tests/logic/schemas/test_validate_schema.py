@@ -1033,6 +1033,29 @@ def test_validate_object_reference_schema():
     validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_object_reference_schema_with_action_id():
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': ActionType.SAMPLE_CREATION,
+        'action_id': 1
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_object_reference_schema_with_invalid_action_id_type():
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': ActionType.SAMPLE_CREATION,
+        'action_id': '1'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_object_reference_schema_with_invalid_note():
     schema = {
         'title': 'Example',
@@ -1091,7 +1114,7 @@ def test_validate_object_reference_schema_with_unknown_property():
     schema = {
         'title': 'Example',
         'type': 'object_reference',
-        'action_id': 0
+        'object_id': 0
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
