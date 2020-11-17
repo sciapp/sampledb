@@ -356,10 +356,10 @@ def objects():
         }
 
         for property_name in display_properties:
-            if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:
-                obj['display_properties'][property_name] = None
+            if property_name not in objects[i]['data'] or '_type' not in objects[i]['data'][property_name] or property_name not in objects[i]['schema']['properties']:
+                objects[i]['display_properties'][property_name] = None
                 continue
-            obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
+            objects[i]['display_properties'][property_name] = (objects[i]['data'][property_name], objects[i]['schema']['properties'][property_name])
     if action_id is None:
         show_action = True
     else:
