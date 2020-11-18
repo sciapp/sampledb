@@ -20,6 +20,7 @@
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
   {% if use_schema_editor %}
   <script src="{{ url_for('static', filename='js/schema_editor.js') }}"></script>
   {% endif %}
@@ -36,6 +37,7 @@
           showIcons: ["code", "table"],
           minHeight: '300px',
         });
+        setupImageDragAndDrop(window.mde_descrption);
       } else {
         if (window.mde_descrption) {
           window.mde_descrption.toTextArea();

@@ -29,6 +29,7 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
     relevant_action_ids = set()
     relevant_user_ids = set()
     relevant_location_ids = set()
+    relevant_markdown_images = set()
     objects = logic.object_permissions.get_objects_with_permissions(
         user_id,
         logic.object_permissions.Permissions.READ
@@ -152,6 +153,8 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                     'description': action_info.description,
                     'description_as_html': action_info.description_as_html
                 })
+            if action_info.description_as_html:
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(action_info.description_as_html))
     infos['actions'] = action_infos
 
     instrument_infos = []
@@ -166,7 +169,11 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
                 'instrument_log_entries': []
             })
-            if instrument_info.users_can_view_log_entries or user_id in [user.id for user in instrument_info.responsible_users]:
+            user_is_instrument_responsible = user_id in [user.id for user in instrument_info.responsible_users]
+            if user_is_instrument_responsible:
+                instrument_infos[-1]['notes'] = instrument_info.notes
+                instrument_infos[-1]['notes_as_html'] = instrument_info.notes_as_html
+            if instrument_info.users_can_view_log_entries or user_is_instrument_responsible:
                 for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
                     relevant_user_ids.add(log_entry.user_id)
                     instrument_infos[-1]['instrument_log_entries'].append({
@@ -204,7 +211,10 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                         instrument_infos[-1]['instrument_log_entries'][-1]['object_attachments'].append({
                             'object_id': object_attachment.object_id
                         })
-
+            if instrument_info.description_as_html:
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(instrument_info.description_as_html))
+            if user_is_instrument_responsible and instrument_info.notes_as_html:
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(instrument_info.notes_as_html))
     infos['instruments'] = instrument_infos
 
     user_infos = []
@@ -238,6 +248,11 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 'description': location_info.description
             })
     infos['locations'] = location_infos
+
+    for file_name in relevant_markdown_images:
+        content = logic.markdown_images.get_markdown_image(file_name, user_id)
+        if content is not None:
+            archive_files[f'sampledb_export/markdown_files/{file_name}'] = content
 
     archive_files['sampledb_export/data.json'] = json.dumps(infos, indent=2)
 

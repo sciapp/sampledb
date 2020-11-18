@@ -14,6 +14,7 @@
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
   <script>
   window.categories = [
     {% for category in instrument_log_categories %}
@@ -93,6 +94,7 @@
       console.log($(this).find('.has-error'));
       return $(this).find('.has-error').length === 0;
     })
+
     function updateDescriptionMarkdown() {
       if ($('#input-markdown').prop('checked')) {
         window.mde_descrption = new InscrybMDE({
@@ -104,6 +106,7 @@
           showIcons: ["code", "table"],
           minHeight: '300px',
         });
+        setupImageDragAndDrop(window.mde_descrption);
       } else {
         if (window.mde_descrption) {
           window.mde_descrption.toTextArea();
@@ -125,6 +128,7 @@
           showIcons: ["code", "table"],
           minHeight: '300px',
         });
+        setupImageDragAndDrop(window.mde_notes);
       } else {
         if (window.mde_notes) {
           window.mde_notes.toTextArea();

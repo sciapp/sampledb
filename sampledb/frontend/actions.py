@@ -21,6 +21,7 @@ from ..logic.actions import Action, create_action, get_action, get_actions, upda
 from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public
 from ..logic.favorites import get_user_favorite_action_ids
 from ..logic.instruments import get_instrument, get_user_instruments
+from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.settings import get_user_settings
@@ -357,6 +358,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         description = action_form.description.data
         if action_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(description)
+            mark_referenced_markdown_images_as_permanent(description_as_html)
         else:
             description_as_html = None
 
