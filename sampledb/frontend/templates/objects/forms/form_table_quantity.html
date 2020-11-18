@@ -1,11 +1,11 @@
 
 {% if schema['units'] == "1" %}
   <div class="{% if id_prefix+'_magnitude' in errors %}has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}">
-  <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units }}"{% endif %}>
+  <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.placeholder or schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units }}"{% endif %}>
   </div>
 {% else %}
   <div class="input-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}">
-    <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none %}value="{{ '%g'| format((data | to_datatype).magnitude) }}"{% endif %}>
+    <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.placeholder or schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none %}value="{{ '%g'| format((data | to_datatype).magnitude) }}"{% endif %}>
     <input type="hidden" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
     <span class="input-group-addon">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ schema['units'] | prettify_units }}{% endif %}</span>
   </div>

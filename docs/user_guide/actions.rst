@@ -160,7 +160,7 @@ Arrays represent a list of items. Arrays may have a minium (``minItems``) and ma
 Texts
 ^^^^^
 
-Texts may have a minimum (``minLength``) and maximum length (``maxLength``) and a default value (``default``). Acceptable values can be restricted using a `regular expression <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_ (``pattern``) and text properties can optionally contain multiple lines (``multiline``).
+Texts may have a minimum (``minLength``) and maximum length (``maxLength``) and a default value (``default``). Acceptable values can be restricted using a `regular expression <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_ (``pattern``) and text properties can optionally contain multiple lines (``multiline``). Text schemas may also provide a ``placeholder`` to display in the input field instead of the title, if no ``choices`` are provided.
 
 .. code-block:: json
     :caption: A sample name as a text property with a default, a pattern and length restrictions
@@ -200,7 +200,7 @@ Booleans may have a default value (``default``), either ``true`` or ``false``.
 Quantities
 ^^^^^^^^^^
 
-Quantities require units (``units``, can be ``1``) and may have a default value (``default``) given in the base units of the quantities' dimensions.
+Quantities require units (``units``, can be ``1``) and may have a default value (``default``) given in the base units of the quantities' dimensions. Quantity schemas may also provide a ``placeholder`` to display in the input field instead of the title.
 
 .. code-block:: json
     :caption: A temperature property with a default of 25°C (298.15K)

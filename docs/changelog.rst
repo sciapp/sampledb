@@ -10,6 +10,7 @@ Currently in development.
 - Improved performance of object lists
 - Improved performance of instrument pages
 - Added image upload via drag and drop to Markdown editors
+- Added support for placeholder texts for text and quantity schemas
 
 Version 0.15
 ------------
