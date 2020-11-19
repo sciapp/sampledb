@@ -373,6 +373,145 @@ def test_get_objects(flask_server, auth, user, other_user, action):
     ]
 
 
+def test_get_objects_with_limit_and_offset(flask_server, auth, user, action):
+    for i in range(10):
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': str(i)
+            }
+        }
+        sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(10))
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"offset": 3}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(7))
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"limit": 5}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(5,10))
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"limit": 5, "offset": 3}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(2,7))
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"offset": -3}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(10))
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"limit": -5}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(10))
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"limit": 1e20, "offset": 1e20}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in reversed(range(10))
+    ]
+
+
+def test_get_objects_with_name_only(flask_server, auth, user):
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        name="",
+        description="",
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'other_property': {
+                    'title': 'Other Property',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'other_property': {
+            '_type': 'text',
+            'text': 'Value'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"name_only": "yes"}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": action.id,
+            "schema": {
+                'title': 'Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Name',
+                        'type': 'text'
+                    }
+                }
+            },
+            "data": {
+                'name': {
+                    '_type': 'text',
+                    'text': 'Example'
+                }
+            }
+        }
+    ]
+
+
 def test_create_object(flask_server, auth, user, action):
     object_json = {
         'action_id': action.id,
