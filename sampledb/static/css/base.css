@@ -679,6 +679,8 @@ th:hover .search-helper {
 
 .instrument-user-content img, .action-user-content img {
     max-width: 100%;
+    cursor: pointer;
+    max-height: max(200px, 50vh);
 }
 
 .instrument-log-entry {
@@ -766,6 +768,7 @@ th:hover .search-helper {
     align-items:center;
     cursor: pointer;
     padding: 40px;
+    text-align: center;
 }
 .close-fullscreen-image-preview {
     position: fixed;
