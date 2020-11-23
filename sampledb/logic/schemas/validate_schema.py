@@ -251,7 +251,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'note'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'note', 'placeholder'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -279,6 +279,10 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
                 raise ValidationError('choice must be str', path + [str(i)])
             if choice.isspace():
                 raise ValidationError('choice must contain more than whitespace', path + [str(i)])
+    if 'placeholder' in schema and 'choices' in schema:
+        raise ValidationError('placeholder cannot be used together with choices', path)
+    if 'placeholder' in schema and not isinstance(schema['placeholder'], str):
+        raise ValidationError('placeholder must be str', path)
     if 'pattern' in schema and not isinstance(schema['pattern'], str):
         raise ValidationError('pattern must be str', path)
     if 'pattern' in schema:
@@ -349,7 +353,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -369,6 +373,9 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
+
+    if 'placeholder' in schema and not isinstance(schema['placeholder'], str):
+        raise ValidationError('placeholder must be str', path)
 
 
 def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
