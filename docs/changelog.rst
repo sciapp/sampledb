@@ -11,6 +11,7 @@ Currently in development.
 - Improved performance of instrument pages
 - Added image upload via drag and drop to Markdown editors
 - Added support for placeholder texts for text and quantity schemas
+- Added additional options to the HTTP API objects endpoint
 
 Version 0.15
 ------------

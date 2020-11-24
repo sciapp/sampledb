@@ -22,6 +22,10 @@ Reading a list of all objects
 
     The list only contains the current version of each object. By passing the parameter :code:`q` to the query, the :ref:`advanced_search` can be used. By passing the parameters :code:`action_id` or :code:`action_type` objects can be filtered by the action they were created with or by their type (e.g. :code:`sample` or :code:`measurement`).
 
+    Instead of returning all objects, the parameters :code:`limit` and :code:`offset` can be used to reduce to maximum number of objects returned and to provide an offset in the returned set, so allow simple pagination.
+
+    If the parameter :code:`name_only` is provided, the object data and schema will be reduced to the name property, omitting all other properties and schema information.
+
     **Example request**:
 
     .. sourcecode:: http
