@@ -11,13 +11,27 @@
   </p>
   {% endif %}
   <ul id="projects_list">
-    {% for project in projects %}
+  {% for level, project_id in project_id_hierarchy_list %}
+    {% with project = projects_by_id[project_id] %}
     <li><a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name }}</a>{% if project.permissions != Permissions.NONE %} <span class="label label-default">Member
     {% if project.permissions == Permissions.READ %}(Read){% endif %}
     {% if project.permissions == Permissions.WRITE %}(Write){% endif %}
     {% if project.permissions == Permissions.GRANT %}(Grant){% endif %}
-    </span>{% endif %}</li>
-    {% endfor %}
+    </span>{% endif %}
+      {% if loop.index < project_id_hierarchy_list | length %}
+        {% if project_id_hierarchy_list[loop.index][0] > level %}
+          {{ ('<ul>' * (project_id_hierarchy_list[loop.index][0] - level)) | safe }}
+        {% elif project_id_hierarchy_list[loop.index][0] < level %}
+          {{ ('</ul>' * (level - project_id_hierarchy_list[loop.index][0])) | safe }}
+        {% endif %}
+      {% else %}
+        {% for _ in range(level) %}
+          </ul>
+        {% endfor %}
+      {% endif %}
+    </li>
+    {% endwith %}
+  {% endfor %}
   </ul>
   {% if not current_user.is_readonly %}
   <div class="modal fade" id="createProjectModal" tabindex="-1" role="dialog" aria-labelledby="createProjectModalLabel">

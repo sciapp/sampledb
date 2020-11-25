@@ -812,3 +812,58 @@ def get_project_invitation(invitation_id: int) -> ProjectInvitation:
     if invitation is None:
         raise errors.ProjectInvitationDoesNotExistError()
     return ProjectInvitation.from_database(invitation)
+
+
+def get_project_id_hierarchy_list(project_ids: typing.List[int]) -> typing.List[typing.Tuple[int, int]]:
+    """
+    Return a list of project IDs and the degree that they are related to a root project.
+
+    This list is sorted so that child projects follow their parents. If a
+    project is the child of multiple parent projects, it and its descendents
+    will be included repeatedly.
+
+    :param project_ids: the project IDs to include
+    :return: a list of tuples containing the project level and ID
+    """
+    child_project_ids = {
+        project_id: [
+            child_project_id
+            for child_project_id in get_child_project_ids(project_id)
+            if child_project_id in project_ids
+        ]
+        for project_id in project_ids
+    }
+
+    root_project_ids = [
+        project_id
+        for project_id in project_ids
+        if not any(
+            project_id in ids
+            for ids in child_project_ids.values()
+        )
+    ]
+
+    project_id_hierarchy_list = []
+    parent_project_queue = [
+        (0, project_id)
+        for project_id in sorted(root_project_ids, reverse=True)
+    ]
+    while parent_project_queue:
+        level, parent_project_id = parent_project_queue.pop()
+        project_id_hierarchy_list.append((level, parent_project_id))
+        parent_project_queue.extend([
+            (level + 1, project_id)
+            for project_id in reversed(child_project_ids[parent_project_id])
+        ])
+        if not parent_project_queue:
+            # In case of cyclical relationships, which should be
+            # impossible, projects may not be included yet, so
+            # if there are any left, this picks the one with the lowest ID.
+            remaining_project_ids = set(project_ids) - {
+                project_id
+                for level, project_id in project_id_hierarchy_list
+            }
+            if remaining_project_ids:
+                parent_project_queue.append((0, sorted(remaining_project_ids)[0]))
+
+    return project_id_hierarchy_list

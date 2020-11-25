@@ -1595,6 +1595,24 @@ def object_permissions(object_id):
         users = []
         groups = []
         projects = []
+
+    acceptable_project_ids = {
+        project.id
+        for project in projects
+    }
+
+    all_projects = logic.projects.get_projects()
+    all_projects_by_id = {
+        project.id: project
+        for project in all_projects
+    }
+
+    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
+    project_id_hierarchy_list = [
+        (level, project_id, project_id in acceptable_project_ids)
+        for level, project_id in project_id_hierarchy_list
+    ]
+
     return flask.render_template(
         'objects/object_permissions.html',
         instrument=instrument,
@@ -1609,7 +1627,8 @@ def object_permissions(object_id):
         form=edit_user_permissions_form,
         users=users,
         groups=groups,
-        projects=projects,
+        projects_by_id=all_projects_by_id,
+        project_id_hierarchy_list=project_id_hierarchy_list,
         add_user_permissions_form=add_user_permissions_form,
         add_group_permissions_form=add_group_permissions_form,
         get_group=get_group,

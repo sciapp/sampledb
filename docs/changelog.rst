@@ -12,6 +12,7 @@ Currently in development.
 - Added image upload via drag and drop to Markdown editors
 - Added support for placeholder texts for text and quantity schemas
 - Added additional options to the HTTP API objects endpoint
+- Display projects based on parent-child relationship
 
 Version 0.15
 ------------
