@@ -8,6 +8,7 @@ Currently in development.
 
 - Allow restricting object references to specific action id
 - Improved performance of object lists
+- Allow setting display properties as part of the object list URL
 - Improved performance of instrument pages
 - Added image upload via drag and drop to Markdown editors
 - Added support for placeholder texts for text and quantity schemas
