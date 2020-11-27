@@ -33,6 +33,20 @@
   <dt>Objects</dt>
   <dd><a href="{{ url_for('.objects', user=user.id) }}">View</a></dd>
 </dl>
+  <div class="btn-group">
+    <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">View Objects</a>
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu">
+      <li><a href="{{ url_for('.objects', user=user.id) }}">… with activity by this user</a></li>
+      <li role="separator" class="divider"></li>
+      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='READ') }}">… with <b>READ</b> permissions</a></li>
+      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='WRITE') }}">… with <b>WRITE</b> permissions</a></li>
+      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='GRANT') }}">… with <b>GRANT</b> permissions</a></li>
+    </ul>
+  </div>
   {% if user_read_only_form %}
   <form method="post" action="{{ url_for('.user_profile', user_id=user.id) }}" style="display: inline">
     {{ user_read_only_form.hidden_tag() }}

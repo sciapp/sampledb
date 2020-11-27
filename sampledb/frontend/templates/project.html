@@ -76,7 +76,18 @@
     {% endwith %}
   {% endif %}
   {% if show_objects_link %}
-    <a href="{{ url_for('.objects', project=project.id) }}" class="btn btn-primary" >View Objects</a>
+    <div class="btn-group">
+      <a href="{{ url_for('.objects', project=project.id) }}" class="btn btn-default">View Objects</a>
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="caret"></span>
+        <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a href="{{ url_for('.objects', project=project.id, project_permissions='READ') }}">… with <b>READ</b> permissions</a></li>
+        <li><a href="{{ url_for('.objects', project=project.id, project_permissions='WRITE') }}">… with <b>WRITE</b> permissions</a></li>
+        <li><a href="{{ url_for('.objects', project=project.id, project_permissions='GRANT') }}">… with <b>GRANT</b> permissions</a></li>
+      </ul>
+    </div>
   {% endif %}
   {% if not current_user.is_readonly %}
   {% if edit_project_form %}

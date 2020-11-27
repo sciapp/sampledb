@@ -99,6 +99,7 @@ def group(group_id):
     show_edit_form = False
 
     if user_is_member:
+        show_objects_link = True
         leave_group_form = LeaveGroupForm()
         invite_user_form = InviteUserForm()
         edit_group_form = EditGroupForm()
@@ -200,6 +201,7 @@ def group(group_id):
         invite_user_form = None
         delete_group_form = None
         remove_group_member_form = None
+        show_objects_link = False
 
     group_invitations = None
     show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
@@ -217,6 +219,7 @@ def group(group_id):
         get_users=logic.users.get_users,
         get_user=logic.users.get_user,
         group_invitations=group_invitations,
+        show_objects_link=show_objects_link,
         show_invitation_log=show_invitation_log,
         leave_group_form=leave_group_form,
         delete_group_form=delete_group_form,

@@ -92,6 +92,8 @@ def objects():
         doi = None
         object_ids_at_location = None
         project = None
+        group = None
+        group_id = None
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
@@ -115,6 +117,14 @@ def objects():
         except UserDoesNotExistError:
             user_id = None
             user = None
+        if user_id is not None:
+            user_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('user_permissions', '').lower())
+        else:
+            user_permissions = None
         try:
             doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
         except logic.errors.InvalidDOIError:
@@ -164,6 +174,7 @@ def objects():
                     action_type = None
             else:
                 action_type = None
+        project_permissions = None
         try:
             project_id = int(flask.request.args.get('project', ''))
         except ValueError:
@@ -172,8 +183,38 @@ def objects():
             if Permissions.READ not in get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
                 return flask.abort(403)
             project = get_project(project_id)
+            project_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('project_permissions', '').lower())
         else:
             project = None
+
+        group_permissions = None
+        try:
+            group_id = int(flask.request.args.get('group', ''))
+        except ValueError:
+            group_id = None
+        if group_id is not None:
+            try:
+                group = logic.groups.get_group(group_id)
+                group_member_ids = logic.groups.get_group_member_ids(group_id)
+            except logic.errors.GroupDoesNotExistError:
+                group = None
+            else:
+                if flask_login.current_user.id not in group_member_ids:
+                    return flask.abort(403)
+        else:
+            group = None
+        if group is not None:
+            group_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('group_permissions', '').lower())
+        else:
+            group_permissions = None
 
         if flask.request.args.get('limit', '') == 'all':
             limit = None
@@ -277,7 +318,7 @@ def objects():
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
         search_notes.extend(additional_search_notes)
-        if user_id is None:
+        if user_id is None or user_permissions is not None:
             object_ids_for_user = None
         else:
             object_ids_for_user = user_log.get_user_related_object_ids(user_id)
@@ -301,26 +342,35 @@ def objects():
                 if object_ids is None:
                     object_ids = set()
                 object_ids = object_ids.union(object_ids_for_doi)
-            if object_ids:
+            if object_ids is not None:
                 pagination_enabled = False
                 limit = None
                 offset = None
-            num_objects_found_list = []
-            objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.READ,
-                filter_func=filter_func,
-                sorting_func=sorting_function,
-                limit=limit,
-                offset=offset,
-                action_id=action_id,
-                action_type_id=action_type.id if action_type is not None else None,
-                project_id=project_id,
-                object_ids=object_ids,
-                num_objects_found=num_objects_found_list,
-                name_only=name_only
-            )
-            num_objects_found = num_objects_found_list[0]
+            if object_ids is not None and not object_ids:
+                objects = []
+                num_objects_found = 0
+            else:
+                num_objects_found_list = []
+                objects = get_objects_with_permissions(
+                    user_id=flask_login.current_user.id,
+                    permissions=Permissions.READ,
+                    filter_func=filter_func,
+                    sorting_func=sorting_function,
+                    limit=limit,
+                    offset=offset,
+                    action_id=action_id,
+                    action_type_id=action_type.id if action_type is not None else None,
+                    other_user_id=user_id,
+                    other_user_permissions=user_permissions,
+                    project_id=project_id,
+                    project_permissions=project_permissions,
+                    group_id=group_id,
+                    group_permissions=group_permissions,
+                    object_ids=object_ids,
+                    num_objects_found=num_objects_found_list,
+                    name_only=name_only
+                )
+                num_objects_found = num_objects_found_list[0]
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
@@ -382,6 +432,8 @@ def objects():
         action_type=action_type,
         project=project,
         project_id=project_id,
+        group=group,
+        group_id=group_id,
         location_id=location_id,
         location=location,
         user_id=user_id,
