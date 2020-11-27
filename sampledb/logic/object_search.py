@@ -358,7 +358,7 @@ def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer
     if left_operand.dimensionality != right_operand.dimensionality:
         search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
         return outer_filter(false()), None
-    if left_operand.maginitude_in_base_units < right_operand.maginitude_in_base_units:
+    if left_operand.magnitude_in_base_units < right_operand.magnitude_in_base_units:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -397,7 +397,7 @@ def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer
     if left_operand.dimensionality != right_operand.dimensionality:
         search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
         return outer_filter(false()), None
-    if left_operand.maginitude_in_base_units > right_operand.maginitude_in_base_units:
+    if left_operand.magnitude_in_base_units > right_operand.magnitude_in_base_units:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -436,7 +436,7 @@ def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer
     if left_operand.dimensionality != right_operand.dimensionality:
         search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
         return outer_filter(false()), None
-    if left_operand.maginitude_in_base_units <= right_operand.maginitude_in_base_units:
+    if left_operand.magnitude_in_base_units <= right_operand.magnitude_in_base_units:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -480,7 +480,7 @@ def _(left_operand: datatypes.Quantity, right_operand: datatypes.Quantity, outer
     if left_operand.dimensionality != right_operand.dimensionality:
         search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
         return outer_filter(false()), None
-    if left_operand.maginitude_in_base_units >= right_operand.maginitude_in_base_units:
+    if left_operand.magnitude_in_base_units >= right_operand.magnitude_in_base_units:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
