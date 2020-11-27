@@ -379,7 +379,22 @@ def projects():
             else:
                 flask.flash('The project has been created successfully.', 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    return flask.render_template("projects.html", projects=projects, create_project_form=create_project_form, show_create_form=show_create_form, Permissions=logic.projects.Permissions)
+
+    projects_by_id = {
+        project.id: project
+        for project in projects
+    }
+
+    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(projects_by_id))
+
+    return flask.render_template(
+        "projects.html",
+        create_project_form=create_project_form,
+        show_create_form=show_create_form,
+        Permissions=logic.projects.Permissions,
+        projects_by_id=projects_by_id,
+        project_id_hierarchy_list=project_id_hierarchy_list
+    )
 
 
 @frontend.route('/projects/<int:project_id>/permissions')

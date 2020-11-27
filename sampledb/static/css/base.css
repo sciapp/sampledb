@@ -832,3 +832,7 @@ input.instrument-log-show-versions {
 input.instrument-log-show-versions:checked ~ div .instrument-log-version {
     display: block;
 }
+
+#projects_list ul {
+    padding-left: 1.5em;
+}

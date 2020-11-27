@@ -1462,3 +1462,79 @@ def test_cyclic_subproject_relationships():
     # Indirect cycle
     with pytest.raises(sampledb.logic.errors.InvalidSubprojectRelationshipError):
         sampledb.logic.projects.create_subproject_relationship(project_id3, project_id1)
+
+
+def test_project_id_hierarchy_list():
+    user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    project_id1 = sampledb.logic.projects.create_project("Test Project 1", "", user.id).id
+    project_id2 = sampledb.logic.projects.create_project("Test Project 2", "", user.id).id
+    project_id3 = sampledb.logic.projects.create_project("Test Project 3", "", user.id).id
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3
+    ]) == [
+        (0, project_id1), (0, project_id2), (0, project_id3)
+    ]
+
+    sampledb.logic.projects.create_subproject_relationship(project_id1, project_id2)
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3
+    ]) == [
+        (0, project_id1), (1, project_id2), (0, project_id3)
+    ]
+
+    sampledb.logic.projects.create_subproject_relationship(project_id2, project_id3)
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3
+    ]) == [
+        (0, project_id1), (1, project_id2), (2, project_id3)
+    ]
+
+    project_id4 = sampledb.logic.projects.create_project("Test Project 4", "", user.id).id
+    project_id5 = sampledb.logic.projects.create_project("Test Project 5", "", user.id).id
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3, project_id4, project_id5
+    ]) == [
+        (0, project_id1), (1, project_id2), (2, project_id3), (0, project_id4), (0, project_id5)
+    ]
+
+    sampledb.logic.projects.create_subproject_relationship(project_id4, project_id5)
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3, project_id4, project_id5
+    ]) == [
+        (0, project_id1), (1, project_id2), (2, project_id3), (0, project_id4), (1, project_id5)
+    ]
+
+    sampledb.logic.projects.create_subproject_relationship(project_id1, project_id4)
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3, project_id4, project_id5
+    ]) == [
+        (0, project_id1), (1, project_id2), (2, project_id3), (1, project_id4), (2, project_id5)
+    ]
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3, project_id5
+    ]) == [
+        (0, project_id1), (1, project_id2), (2, project_id3), (0, project_id5)
+    ]
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id2, project_id3, project_id4, project_id5
+    ]) == [
+        (0, project_id2), (1, project_id3), (0, project_id4), (1, project_id5)
+    ]
+
+    sampledb.logic.projects.create_subproject_relationship(project_id1, project_id5)
+
+    assert sampledb.logic.projects.get_project_id_hierarchy_list([
+        project_id1, project_id2, project_id3, project_id4, project_id5
+    ]) == [
+        (0, project_id1), (1, project_id2), (2, project_id3), (1, project_id4), (2, project_id5), (1, project_id5)
+    ]
