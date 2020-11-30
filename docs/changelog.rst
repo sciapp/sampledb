@@ -4,7 +4,7 @@ Changelog
 Version 0.16
 ------------
 
-Currently in development.
+Released on December 9th, 2020.
 
 - Allow restricting object references to specific action id
 - Improved performance of object lists
