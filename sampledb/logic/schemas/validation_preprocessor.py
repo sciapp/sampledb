@@ -27,7 +27,7 @@ def _validation_preprocessor_object(instance: dict, schema: dict, object_id: int
     :param instance: the sample object
     :param schema: the valid sampledb object schema
     """
-    if flask.current_app.config['ALLOW_PARTIAL_OBJECT_UPDATES'] == False:
+    if flask.current_app.config['ALLOW_PARTIAL_OBJECT_UPDATES'] is False:
         return
     
     if not isinstance(instance, dict) or object_id == None:
