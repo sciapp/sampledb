@@ -11,19 +11,23 @@ from ...logic import actions, objects, datatypes, users
 from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
 from .utils import units_are_valid
+from .validation_preprocessor import _validation_preprocessor_object, _validation_preprocessor_quantity
 
-
-def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Optional[typing.List[str]] = None) -> None:
+def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Optional[typing.List[str]] = None, object_id: int = None) -> typing.Union[dict, list]:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
 
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
+    :param object_id (optional): id of the object that gets validated
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
         path = []
+    # run through the object preprocessor if its the object itself (not a reference)
+    if object_id is not None and 'name' in instance:
+        _validation_preprocessor_object(instance, schema, object_id)
     if not isinstance(schema, dict):
         raise ValidationError('invalid schema (must be dict)', path)
     if 'type' not in schema:
@@ -39,6 +43,7 @@ def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Opti
     elif schema['type'] == 'bool':
         return _validate_bool(instance, schema, path)
     elif schema['type'] == 'quantity':
+        _validation_preprocessor_quantity(instance, schema)
         return _validate_quantity(instance, schema, path)
     elif schema['type'] == 'sample':
         return _validate_sample(instance, schema, path)
@@ -306,8 +311,8 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units'}
-    required_keys = valid_keys
+    valid_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'}
+    required_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units'}
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -324,7 +329,7 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     if not isinstance(instance['magnitude_in_base_units'], float) and not isinstance(instance['magnitude_in_base_units'], int):
         raise ValidationError('magnitude_in_base_units must be float or int', path)
     try:
-        quantity = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'])
+        quantity = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'], already_in_base_units=True)
     except Exception:
         raise ValidationError('Unable to create quantity', path)
     if not isinstance(instance['dimensionality'], str):

@@ -44,7 +44,12 @@ def use_environment_configuration(env_prefix):
     """
     config = load_environment_configuration(env_prefix)
     for name, value in config.items():
-        globals()[name] = value
+        if value.lower() == "true":
+            globals()[name] = True
+        elif value.lower() == "false":
+            globals()[name] = False
+        else:
+            globals()[name] = value
 
 
 def check_config(
@@ -389,6 +394,9 @@ ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 ONLY_ADMINS_CAN_DELETE_GROUPS = False
 
 LOAD_OBJECTS_IN_BACKGROUND = False
+
+# as default disable partial object updates (only changing one value at a time and keep the rest untouched)
+ALLOW_PARTIAL_OBJECT_UPDATES = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

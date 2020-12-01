@@ -190,7 +190,7 @@ class VersionedJSONSerializableObjectTables(object):
         if self._schema_validator:
             self._schema_validator(schema)
         if self._data_validator:
-            self._data_validator(data, schema)
+            self._data_validator(data, schema, object_id=object_id)
         with connection.begin() as transaction:
             # Copy current version to previous versions
             if connection.execute(
