@@ -14,10 +14,8 @@
   {% include "objects/view/table_user.html" %}
 {% elif schema['type'] == 'object_reference' %}
   {% include "objects/view/table_object_reference.html" %}
-{#{% elif schema.type == 'object' %}#}
-{#  {% include "form_object.html" %}#}
-{#{% elif schema.type == 'array' %}#}
-{#  {% include "form_array.html" %}#}
+{% elif schema['type'] == 'bool' %}
+  {% include "objects/view/table_bool.html" %}
 {% else %}
-  {{ name }}{{ schema.type }}{{ schema['type'] }}
+  &hellip;
 {% endif %}
