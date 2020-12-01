@@ -13,6 +13,7 @@ Currently in development.
 - Added support for placeholder texts for text and quantity schemas
 - Added additional options to the HTTP API objects endpoint
 - Display projects based on parent-child relationship
+- Improved "View Objects" for users, groups and projects
 
 Version 0.15
 ------------

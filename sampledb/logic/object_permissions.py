@@ -352,7 +352,12 @@ def get_objects_with_permissions(
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
         action_type_id: typing.Optional[int] = None,
+        other_user_id: typing.Optional[int] = None,
+        other_user_permissions: typing.Optional[Permissions] = None,
+        group_id: typing.Optional[int] = None,
+        group_permissions: typing.Optional[Permissions] = None,
         project_id: typing.Optional[int] = None,
+        project_permissions: typing.Optional[Permissions] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None,
         num_objects_found: typing.Optional[typing.List[int]] = None,
         name_only: bool = False,
@@ -405,22 +410,56 @@ def get_objects_with_permissions(
         ON o.object_id = up.object_id
         """
 
+    if other_user_id is not None:
+        stmt += """
+        JOIN (
+            SELECT
+            u.object_id
+            FROM user_object_permissions_by_all as u
+            WHERE u.user_id = :other_user_id OR u.user_id IS NULL
+            GROUP BY (u.object_id)
+            HAVING MAX(u.permissions_int) >= :min_other_user_permissions_int
+        ) AS oup
+        ON o.object_id = oup.object_id
+        """
+        parameters['other_user_id'] = other_user_id
+        if other_user_permissions is None:
+            other_user_permissions = permissions
+        parameters['min_other_user_permissions_int'] = other_user_permissions.value
+
     if project_id is not None:
         stmt += """
         JOIN project_object_permissions as pp
         ON (
             pp.object_id = o.object_id AND
             pp.project_id = :project_id AND
-            ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> pp.permissions::text)::int >= :min_permissions_int
+            ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> pp.permissions::text)::int >= :min_project_permissions_int
         )
         """
         parameters['project_id'] = project_id
+        if project_permissions is None:
+            project_permissions = permissions
+        parameters['min_project_permissions_int'] = project_permissions.value
+
+    if group_id is not None:
+        stmt += """
+        JOIN group_object_permissions as gp
+        ON (
+            gp.object_id = o.object_id AND
+            gp.group_id = :group_id AND
+            ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> gp.permissions::text)::int >= :min_group_permissions_int
+        )
+        """
+        parameters['group_id'] = group_id
+        if group_permissions is None:
+            group_permissions = permissions
+        parameters['min_group_permissions_int'] = group_permissions.value
 
     if object_ids:
         stmt += """
         WHERE o.object_id IN :object_ids
         """
-        parameters['object_ids'] = object_ids
+        parameters['object_ids'] = tuple(object_ids)
 
     table = sqlalchemy.sql.alias(db.text(stmt).columns(
         objects.Objects._current_table.c.object_id,
