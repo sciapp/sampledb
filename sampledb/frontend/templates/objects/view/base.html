@@ -107,7 +107,12 @@
           </button>
           <ul class="dropdown-menu" aria-labelledby="notebookDropdownMenuButton">
             {% for notebook_template in notebook_templates %}
-              <li><a class="dropdown-item" href="{{ jupyterhub_templates_url }}/t/{{ notebook_template.url }}?params={{ notebook_template.params | tojson | urlencode }}">{{ notebook_template.title }}</a></li>
+              <li>
+                <form action="{{ jupyterhub_templates_url }}/t/{{ notebook_template.url }}" method="post">
+                <input type="hidden" name="params" value='{{ notebook_template.params | tojson }}'>
+                <input type="submit" value="{{ notebook_template.title }}" class="btn btn-link dropdown-menu-button" />
+                </form>
+              </li>
             {% endfor %}
           </ul>
         </div>
