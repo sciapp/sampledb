@@ -50,9 +50,10 @@ def object(user: User, action: Action):
 def test_comments(user: User, object: Object):
     start_datetime = datetime.datetime.utcnow()
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
-    comments.create_comment(object_id=object.object_id, user_id=user.id, content="Test 1")
+    comment_id = comments.create_comment(object_id=object.object_id, user_id=user.id, content="Test 1")
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
     comment = comments.get_comments_for_object(object_id=object.object_id)[0]
+    assert comment.id == comment_id
     assert comment.user_id == user.id
     assert comment.author == user
     assert comment.object_id == object.object_id

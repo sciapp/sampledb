@@ -220,3 +220,7 @@ class UserInvitationDoesNotExistError(Exception):
 
 class ActionTypeDoesNotExistError(Exception):
     pass
+
+
+class CommentDoesNotExistError(Exception):
+    pass
