@@ -63,6 +63,15 @@ def objects():
     objects = []
     display_properties = []
     display_property_titles = {}
+    if 'display_properties' in flask.request.args:
+        for property_info in flask.request.args.get('display_properties', '').split(','):
+            if ':' in property_info:
+                property_name, property_title = property_info.split(':', 1)
+            else:
+                property_name, property_title = property_info, property_info
+            if property_name not in display_properties:
+                display_properties.append(property_name)
+            display_property_titles[property_name] = property_title
     name_only = True
     if object_ids:
         object_ids = object_ids.split(',')
@@ -149,11 +158,10 @@ def objects():
             action = get_action(action_id)
             action_type = action.type
             action_schema = action.schema
-            display_properties = action_schema.get('displayProperties', [])
-            for property_name in display_properties:
-                display_property_titles[property_name] = action_schema['properties'][property_name]['title']
-            if display_properties:
-                name_only = False
+            if not display_properties:
+                display_properties = action_schema.get('displayProperties', [])
+                for property_name in display_properties:
+                    display_property_titles[property_name] = action_schema['properties'][property_name]['title']
         else:
             action = None
             action_type_id = flask.request.args.get('t', '')
@@ -175,6 +183,8 @@ def objects():
             else:
                 action_type = None
         project_permissions = None
+        if display_properties:
+            name_only = False
         try:
             project_id = int(flask.request.args.get('project', ''))
         except ValueError:

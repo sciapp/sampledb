@@ -10,9 +10,14 @@
     <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
     {% endif %}
   <div class="col-md-9">
-    <label>
-      <span class="sr-only">{{ schema.title }}</span>
-        <input type="checkbox"  {% if data is not none and "value" in data and data.value%}checked="checked"{% endif %} disabled>
-    </label>
+    {% if data is not none and "value" in data and not (data.value is none) %}
+      {% if data.value %}
+        <i class="fa fa-check"></i>
+      {% else %}
+        <i class="fa fa-times"></i>
+      {% endif %}
+    {% else %}
+      &mdash;
+    {% endif %}
   </div>
 </div>
