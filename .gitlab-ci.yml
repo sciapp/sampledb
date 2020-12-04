@@ -130,3 +130,37 @@ deploy-to-github:
     - chmod 400 ~/.ssh/*
     - git clone --mirror "$CI_REPOSITORY_URL" repo
     - cd repo && git push --mirror git@github.com:sciapp/sampledb.git && cd -
+
+deploy-to-dockerhub:
+  stage: deploy
+  image: docker:stable
+  tags:
+    - privileged-executor
+  variables:
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:stable-dind
+  only:
+    - tags@Scientific-IT-Systems/SampleDB
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  - cat $DOCKERHUB_PASSWORD_FILE | docker login --username $DOCKERHUB_USERNAME --password-stdin
+  - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+      export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
+      docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA sciapp/sampledb:$VERSION;
+      docker push sciapp/sampledb:$VERSION;
+    fi
+
+deploy-to-pypi:
+  stage: deploy
+  image: python:3
+  only:
+    - tags@Scientific-IT-Systems/SampleDB
+  script:
+    - python3 -m pip install setuptools wheel twine
+    - python3 setup.py sdist
+    - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+        export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
+        python3 -m twine upload dist/sampledb-$VERSION.tar.gz;
+      fi
