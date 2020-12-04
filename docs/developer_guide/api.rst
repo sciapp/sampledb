@@ -1720,3 +1720,119 @@ Posting a link
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
+
+Comments
+--------
+
+
+Reading a list of an object's comments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/comments/
+
+    Get a list of all comments for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/comments/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "object_id": 1,
+                "user_id": 1,
+                "comment_id": 0,
+                "content": "This is an example comment"
+                "utc_datetime": "2020-12-03T01:02:03.456789"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Reading information for a comment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/comments/(int:comment_id)
+
+    Get a specific comment (`comment_id`) for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/comments/0 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "object_id": 1,
+            "user_id": 1,
+            "comment_id": 0,
+            "content": "This is an example comment"
+            "utc_datetime": "2020-12-03T01:02:03.456789"
+        }
+
+    :>json number object_id: the object's ID
+    :>json number user_id: the ID of the user who posted the comment
+    :>json number comment_id: the comment's ID
+    :>json string content: the comment's content
+    :>json string utc_datetime: the time the comment was posted in UTC formatted in ISO 8601 format
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object or the comment does not exist
+
+
+Posting a comment
+^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/(int:object_id)/comments/
+
+    Create a new comment for a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/objects/1/comments/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "content": "This is an example comment"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/comments/0
+
+    :<json string content: the (non-empty) content for the new comment
+    :statuscode 201: the comment has been created successfully
+    :statuscode 403: the user does not have WRITE permissions for this object
+    :statuscode 404: the object does not exist

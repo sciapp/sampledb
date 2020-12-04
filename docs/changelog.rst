@@ -15,6 +15,7 @@ Currently in development.
 - Added additional options to the HTTP API objects endpoint
 - Display projects based on parent-child relationship
 - Improved "View Objects" for users, groups and projects
+- Added object comments to the HTTP API
 
 Version 0.15
 ------------

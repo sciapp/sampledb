@@ -10,17 +10,18 @@ querying of comments.
 import typing
 
 from .. import db
-from . import user_log, object_log, objects, users
+from . import user_log, object_log, objects, users, errors
 from ..models import Comment
 
 
-def create_comment(object_id: int, user_id: int, content: str) -> None:
+def create_comment(object_id: int, user_id: int, content: str) -> int:
     """
     Creates a new comment and adds it to the object and user logs.
 
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user
     :param content: the text content for the new comment
+    :return: the ID of the new comment
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -39,6 +40,7 @@ def create_comment(object_id: int, user_id: int, content: str) -> None:
     db.session.commit()
     object_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)
     user_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)
+    return comment.id
 
 
 def get_comments_for_object(object_id: int) -> typing.List[Comment]:
@@ -55,3 +57,23 @@ def get_comments_for_object(object_id: int) -> typing.List[Comment]:
         # ensure that the object exists
         objects.get_object(object_id)
     return comments
+
+
+def get_comment_for_object(object_id: int, comment_id: int) -> Comment:
+    """
+    Returns a specific comment for a given object.
+
+    :param object_id: the ID of an existing object
+    :param comment_id: the ID of an existing comment
+    :return: the specified comment
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.CommentDoesNotExistError: when no comment with the given
+        comment ID exists for this object
+    """
+    comment = Comment.query.filter_by(object_id=object_id, id=comment_id).first()
+    if not comment:
+        # ensure that the object exists
+        objects.get_object(object_id)
+        raise errors.CommentDoesNotExistError()
+    return comment
