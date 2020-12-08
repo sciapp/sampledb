@@ -142,14 +142,21 @@ deploy-to-dockerhub:
     - docker:stable-dind
   only:
     - tags@Scientific-IT-Systems/SampleDB
+    - develop@Scientific-IT-Systems/SampleDB
   script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   - cat $DOCKERHUB_PASSWORD_FILE | docker login --username $DOCKERHUB_USERNAME --password-stdin
+  - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then
+      docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA sciapp/sampledb:develop;
+      docker push sciapp/sampledb:develop;
+    fi
   - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
       export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
       docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA sciapp/sampledb:$VERSION;
       docker push sciapp/sampledb:$VERSION;
+      docker tag sciapp/sampledb:$VERSION sciapp/sampledb:latest;
+      docker push sciapp/sampledb:latest;
     fi
 
 deploy-to-pypi:
