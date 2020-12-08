@@ -4,7 +4,7 @@
 """
 
 import pytest
-from sampledb.logic.instruments import create_instrument
+from sampledb.logic.instruments import create_instrument, get_instruments
 import sampledb.__main__ as scripts
 
 
@@ -19,8 +19,9 @@ def instruments():
 def test_list_instruments(instruments, capsys):
     scripts.main([scripts.__file__, 'list_instruments'])
     output = capsys.readouterr()[0]
-    for instrument_id, instrument_name in [(1, 'Instrument 1'), (2, 'Instrument 2')]:
-        assert '- #{0}: {1}'.format(instrument_id, instrument_name) in output
+    instruments = get_instruments()
+    for instrument in get_instruments():
+        assert '- #{0}: {1}'.format(instrument.id, instrument.name) in output
 
 
 def test_list_instruments_arguments(instruments, capsys):

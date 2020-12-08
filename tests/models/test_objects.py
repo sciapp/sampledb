@@ -23,13 +23,13 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = 'test_users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
 
 class Action(Base):
-    __tablename__ = 'actions'
+    __tablename__ = 'test_actions'
     id = db.Column(db.Integer, primary_key=True)
     schema = db.Column(postgresql.JSONB)
 
@@ -42,7 +42,7 @@ class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObje
 def engine():
     db_url = sampledb.config.SQLALCHEMY_DATABASE_URI
     engine = db.create_engine(db_url)
-    sampledb.utils.empty_database(engine)
+    sampledb.utils.empty_database(engine, only_delete=False)
     return engine
 
 
@@ -62,7 +62,7 @@ def session(engine):
 @pytest.fixture
 def objects(engine):
     objects = VersionedJSONSerializableObjectTables(
-        'objects',
+        'test_objects',
         object_type=Object,
         user_id_column=User.id,
         action_id_column=Action.id,

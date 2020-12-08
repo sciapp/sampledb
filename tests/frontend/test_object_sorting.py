@@ -48,13 +48,15 @@ def action() -> Action:
 
 
 def test_get_objects_sort_by_object_id(flask_server: typing.Any, user: User, action: Action):
+    object_ids = []
     for i in range(10):
-        sampledb.logic.objects.create_object(action_id=action.id, data={
+        object = sampledb.logic.objects.create_object(action_id=action.id, data={
             'name': {
                 '_type': 'text',
                 'text': str(i)
             }
         }, user_id=user.id)
+        object_ids.append(object.object_id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
 
@@ -64,7 +66,7 @@ def test_get_objects_sort_by_object_id(flask_server: typing.Any, user: User, act
     rows = document.find(id='table-objects').find('tbody').find_all('tr')
     assert len(rows) == 10
     for i, row in enumerate(rows):
-        assert row.find('th').text == str(10-i)
+        assert row.find('th').text == str(object_ids[9-i])
 
     r = session.get(flask_server.base_url + 'objects?sortby=_object_id&order=desc')
     assert r.status_code == 200
@@ -72,7 +74,7 @@ def test_get_objects_sort_by_object_id(flask_server: typing.Any, user: User, act
     rows = document.find(id='table-objects').find('tbody').find_all('tr')
     assert len(rows) == 10
     for i, row in enumerate(rows):
-        assert row.find('th').text == str(10-i)
+        assert row.find('th').text == str(object_ids[9-i])
 
     r = session.get(flask_server.base_url + 'objects?sortby=_object_id&order=asc')
     assert r.status_code == 200
@@ -80,4 +82,4 @@ def test_get_objects_sort_by_object_id(flask_server: typing.Any, user: User, act
     rows = document.find(id='table-objects').find('tbody').find_all('tr')
     assert len(rows) == 10
     for i, row in enumerate(rows):
-        assert row.find('th').text == str(1+i)
+        assert row.find('th').text == str(object_ids[i])

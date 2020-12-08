@@ -202,11 +202,13 @@ def test_objects_referencable(flask_server, user):
         )
         for name in names
     ]
-    sampledb.logic.objects.create_object(
+    other_object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Other Object'}},
         user_id=user.id,
         action_id=action2.id
     )
+    action1_id = action1.id
+    action2_id = action2.id
 
     with flask_server.app.app_context():
         new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
@@ -224,10 +226,10 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 4
     assert data['referencable_objects'] == [
-        {'action_id': 2, 'id': 4, 'max_permission': 3, 'text': 'Other Object (#4)'},
-        {'action_id': 1, 'id': 3, 'max_permission': 3, 'text': 'Example42 (#3)'},
-        {'action_id': 1, 'id': 2, 'max_permission': 3, 'text': 'Example2 (#2)'},
-        {'action_id': 1, 'id': 1, 'max_permission': 3, 'text': 'Example1 (#1)'}
+        {'action_id': action2_id, 'id': other_object.object_id, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})'},
+        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})'},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})'},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})'}
     ]
 
     session = requests.session()
@@ -237,8 +239,8 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 2
     assert data['referencable_objects'] == [
-        {'action_id': 1, 'id': 3, 'max_permission': 3, 'text': 'Example42 (#3)'},
-        {'action_id': 1, 'id': 2, 'max_permission': 2, 'text': 'Example2 (#2)'}
+        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})'},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})'}
     ]
 
 

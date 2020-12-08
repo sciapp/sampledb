@@ -31,7 +31,7 @@ def user(auth_user):
     return auth_user[1]
 
 
-def test_get_instrument_log_entries(flask_server, auth, user):
+def test_get_instrument_log_entries(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + 'api/v1/instruments/1/log_entries', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
@@ -844,7 +844,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 3
 
 
-def test_instrument_log_categories(flask_server, auth, user):
+def test_instrument_log_categories(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + 'api/v1/instruments/1/log_categories/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
@@ -855,8 +855,7 @@ def test_instrument_log_categories(flask_server, auth, user):
         name="Example Instrument",
         description="This is an example instrument"
     )
-
-    r = requests.get(flask_server.base_url + f'api/v1/instruments/1/log_categories/', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_categories/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
         'message': f"log categories for instrument {instrument.id} can only be accessed by instrument scientists"
@@ -901,7 +900,7 @@ def test_instrument_log_category(flask_server, auth, user):
         description="This is an example instrument"
     )
 
-    r = requests.get(flask_server.base_url + f'api/v1/instruments/1/log_categories/1', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_categories/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
         'message': f"log categories for instrument {instrument.id} can only be accessed by instrument scientists"

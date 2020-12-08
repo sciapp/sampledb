@@ -64,7 +64,8 @@ def test_create_log_entry(instrument, instrument_responsible_user, other_user):
         instrument_log_entries.create_instrument_log_entry(instrument.id + 1, instrument_responsible_user.id, "test")
 
     with pytest.raises(errors.InstrumentLogEntryDoesNotExistError):
-        assert instrument_log_entries.get_instrument_log_entry(4)
+        assert instrument_log_entries.get_instrument_log_entry(log_entries[0].id + 100)
+
 
 def test_log_entry_categories(instrument, instrument_responsible_user):
     category_a = instrument_log_entries.create_instrument_log_category(
