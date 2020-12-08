@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <title>{% block title %}{{ service_name }}{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" href="{{ url_for('frontend.favicon') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('frontend.apple_touch_icon') }}">
   {% block stylesheets %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">

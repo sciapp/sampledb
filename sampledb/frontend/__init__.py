@@ -19,6 +19,7 @@ from . import actions
 from . import action_types
 from . import authentication_forms
 from . import export
+from . import favicon
 from . import index
 from . import instruments
 from . import locations
@@ -39,6 +40,7 @@ __all__ = [
     'action_types',
     'authentication_forms',
     'export',
+    'favicon',
     'index',
     'instruments',
     'locations',
