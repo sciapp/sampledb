@@ -17,12 +17,13 @@ You can find information on how to set up JupyterHub in the `Get Started guide <
 Notebook Templating Server
 --------------------------
 
-Depending on your specific configuration of JupyterHub, you will need to write and set up a notebook templating server. SampleDB will redirect the user to a URL containing the name of the desired template and a selection of metadata, e.g.: ``https://jupyterhub.example.com/templates/t/some_instrument/data_analysis.ipynb?params={%22measurement_name%22:%22Experiment-12345%22}`` In this example:
+Depending on your specific configuration of JupyterHub, you will need to write and set up a notebook templating server. SampleDB will redirect the user to a URL containing the name of the desired template, e.g.: ``https://jupyterhub.example.com/templates/t/some_instrument/data_analysis.ipynb`` In this example:
 
 - ``https://jupyterhub.example.com/templates/`` is the base URL of a notebook templating server,
-- ``/t/`` is a separator,
-- ``/some_instrument/data_analysis.ipynb`` is the name of the template, and
-- the GET parameter ``params`` with the value ``{%22measurement_name%22:%22Experiment-12345%22}`` contains the selected metadata.
+- ``/t/`` is a separator, and
+- ``/some_instrument/data_analysis.ipynb`` is the name of the template.
+
+The selected metadata will be sent as an urlencoded form parameter in the request body, e.g. ``{"measurement_name": "Experiment-12345"}`` would be sent as ``params=%7B%measurement_name%22%3A+%22Experiment-12345%22%7D``.
 
 The templating server will check if the requested template exists and if so, ask the user for confirmation and will insert the properties in ``params`` into the notebook as a new cell. The resulting notebook is then stored on the persistent storage for your JupyterHub and the user is redirected to it.
 

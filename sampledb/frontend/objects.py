@@ -61,6 +61,18 @@ def on_unauthorized(object_id):
 def objects():
     object_ids = flask.request.args.get('ids', '')
     objects = []
+    display_properties = []
+    display_property_titles = {}
+    if 'display_properties' in flask.request.args:
+        for property_info in flask.request.args.get('display_properties', '').split(','):
+            if ':' in property_info:
+                property_name, property_title = property_info.split(':', 1)
+            else:
+                property_name, property_title = property_info, property_info
+            if property_name not in display_properties:
+                display_properties.append(property_name)
+            display_property_titles[property_name] = property_title
+    name_only = True
     if object_ids:
         object_ids = object_ids.split(',')
         try:
@@ -89,6 +101,8 @@ def objects():
         doi = None
         object_ids_at_location = None
         project = None
+        group = None
+        group_id = None
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
@@ -112,6 +126,14 @@ def objects():
         except UserDoesNotExistError:
             user_id = None
             user = None
+        if user_id is not None:
+            user_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('user_permissions', '').lower())
+        else:
+            user_permissions = None
         try:
             doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
         except logic.errors.InvalidDOIError:
@@ -135,6 +157,11 @@ def objects():
         if action_id is not None:
             action = get_action(action_id)
             action_type = action.type
+            action_schema = action.schema
+            if not display_properties:
+                display_properties = action_schema.get('displayProperties', [])
+                for property_name in display_properties:
+                    display_property_titles[property_name] = action_schema['properties'][property_name]['title']
         else:
             action = None
             action_type_id = flask.request.args.get('t', '')
@@ -155,6 +182,9 @@ def objects():
                     action_type = None
             else:
                 action_type = None
+        project_permissions = None
+        if display_properties:
+            name_only = False
         try:
             project_id = int(flask.request.args.get('project', ''))
         except ValueError:
@@ -163,8 +193,38 @@ def objects():
             if Permissions.READ not in get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
                 return flask.abort(403)
             project = get_project(project_id)
+            project_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('project_permissions', '').lower())
         else:
             project = None
+
+        group_permissions = None
+        try:
+            group_id = int(flask.request.args.get('group', ''))
+        except ValueError:
+            group_id = None
+        if group_id is not None:
+            try:
+                group = logic.groups.get_group(group_id)
+                group_member_ids = logic.groups.get_group_member_ids(group_id)
+            except logic.errors.GroupDoesNotExistError:
+                group = None
+            else:
+                if flask_login.current_user.id not in group_member_ids:
+                    return flask.abort(403)
+        else:
+            group = None
+        if group is not None:
+            group_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('group_permissions', '').lower())
+        else:
+            group_permissions = None
 
         if flask.request.args.get('limit', '') == 'all':
             limit = None
@@ -217,6 +277,8 @@ def objects():
 
         if sorting_property_name is None:
             sorting_property_name = '_object_id'
+        else:
+            name_only = False
         if sorting_property_name == '_object_id':
             sorting_property = object_sorting.object_id()
         elif sorting_property_name == '_creation_date':
@@ -229,6 +291,8 @@ def objects():
         sorting_function = sorting_order(sorting_property)
 
         query_string = flask.request.args.get('q', '')
+        if query_string:
+            name_only = False
         search_tree = None
         use_advanced_search = flask.request.args.get('advanced', None) is not None
         must_use_advanced_search = use_advanced_search
@@ -264,7 +328,7 @@ def objects():
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
         search_notes.extend(additional_search_notes)
-        if user_id is None:
+        if user_id is None or user_permissions is not None:
             object_ids_for_user = None
         else:
             object_ids_for_user = user_log.get_user_related_object_ids(user_id)
@@ -288,25 +352,35 @@ def objects():
                 if object_ids is None:
                     object_ids = set()
                 object_ids = object_ids.union(object_ids_for_doi)
-            if object_ids:
+            if object_ids is not None:
                 pagination_enabled = False
                 limit = None
                 offset = None
-            num_objects_found_list = []
-            objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.READ,
-                filter_func=filter_func,
-                sorting_func=sorting_function,
-                limit=limit,
-                offset=offset,
-                action_id=action_id,
-                action_type_id=action_type.id if action_type is not None else None,
-                project_id=project_id,
-                object_ids=object_ids,
-                num_objects_found=num_objects_found_list
-            )
-            num_objects_found = num_objects_found_list[0]
+            if object_ids is not None and not object_ids:
+                objects = []
+                num_objects_found = 0
+            else:
+                num_objects_found_list = []
+                objects = get_objects_with_permissions(
+                    user_id=flask_login.current_user.id,
+                    permissions=Permissions.READ,
+                    filter_func=filter_func,
+                    sorting_func=sorting_function,
+                    limit=limit,
+                    offset=offset,
+                    action_id=action_id,
+                    action_type_id=action_type.id if action_type is not None else None,
+                    other_user_id=user_id,
+                    other_user_permissions=user_permissions,
+                    project_id=project_id,
+                    project_permissions=project_permissions,
+                    group_id=group_id,
+                    group_permissions=group_permissions,
+                    object_ids=object_ids,
+                    num_objects_found=num_objects_found_list,
+                    name_only=name_only
+                )
+                num_objects_found = num_objects_found_list[0]
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
             objects = []
@@ -315,39 +389,37 @@ def objects():
             objects = []
             advanced_search_had_error = True
 
+    cached_actions = {}
+    cached_users = {}
+
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
             original_object = obj
         else:
             original_object = get_object(object_id=obj.object_id, version_id=0)
+        if obj.action_id not in cached_actions:
+            cached_actions[obj.action_id] = get_action(obj.action_id)
+        if obj.user_id not in cached_users:
+            cached_users[obj.user_id] = get_user(obj.user_id)
+        if original_object.user_id not in cached_users:
+            cached_users[original_object.user_id] = get_user(original_object.user_id)
         objects[i] = {
             'object_id': obj.object_id,
-            'version_id': obj.version_id,
-            'created_by': get_user(original_object.user_id),
+            'created_by': cached_users[original_object.user_id],
             'created_at': original_object.utc_datetime.strftime('%Y-%m-%d'),
-            'modified_by': get_user(obj.user_id),
+            'modified_by': cached_users[obj.user_id],
             'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d'),
             'data': obj.data,
             'schema': obj.schema,
-            'action': get_action(obj.action_id),
+            'action': cached_actions[obj.action_id],
             'display_properties': {}
         }
 
-    # TODO: select display_properties? nested display_properties? find common properties? use searched for properties?
-    display_properties = []
-    display_property_titles = {}
-    if action is not None:
-        action_schema = action.schema
-        display_properties = action_schema.get('displayProperties', [])
         for property_name in display_properties:
-            display_property_titles[property_name] = action_schema['properties'][property_name]['title']
-
-    for obj in objects:
-        for property_name in display_properties:
-            if property_name not in obj['data'] or '_type' not in obj['data'][property_name] or property_name not in obj['schema']['properties']:
-                obj['display_properties'][property_name] = None
+            if property_name not in objects[i]['data'] or '_type' not in objects[i]['data'][property_name] or property_name not in objects[i]['schema']['properties']:
+                objects[i]['display_properties'][property_name] = None
                 continue
-            obj['display_properties'][property_name] = (obj['data'][property_name], obj['schema']['properties'][property_name])
+            objects[i]['display_properties'][property_name] = (objects[i]['data'][property_name], objects[i]['schema']['properties'][property_name])
     if action_id is None:
         show_action = True
     else:
@@ -370,6 +442,8 @@ def objects():
         action_type=action_type,
         project=project,
         project_id=project_id,
+        group=group,
+        group_id=group_id,
         location_id=location_id,
         location=location,
         user_id=user_id,
@@ -1583,6 +1657,24 @@ def object_permissions(object_id):
         users = []
         groups = []
         projects = []
+
+    acceptable_project_ids = {
+        project.id
+        for project in projects
+    }
+
+    all_projects = logic.projects.get_projects()
+    all_projects_by_id = {
+        project.id: project
+        for project in all_projects
+    }
+
+    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
+    project_id_hierarchy_list = [
+        (level, project_id, project_id in acceptable_project_ids)
+        for level, project_id in project_id_hierarchy_list
+    ]
+
     return flask.render_template(
         'objects/object_permissions.html',
         instrument=instrument,
@@ -1597,7 +1689,8 @@ def object_permissions(object_id):
         form=edit_user_permissions_form,
         users=users,
         groups=groups,
-        projects=projects,
+        projects_by_id=all_projects_by_id,
+        project_id_hierarchy_list=project_id_hierarchy_list,
         add_user_permissions_form=add_user_permissions_form,
         add_group_permissions_form=add_group_permissions_form,
         get_group=get_group,

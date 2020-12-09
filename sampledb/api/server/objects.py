@@ -153,11 +153,28 @@ class Objects(Resource):
                     action_type_id = None
             if action_type_id is None:
                 return {
-                    'messsage': 'No matching action type exists.'
+                    'message': 'No matching action type exists.'
                 }, 400
         else:
             action_type_id = None
         project_id = None
+        limit = flask.request.args.get('limit')
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except ValueError:
+                limit = None
+        if limit is not None and not 1 <= limit < 1e15:
+            limit = None
+        offset = flask.request.args.get('offset')
+        if offset is not None:
+            try:
+                offset = int(offset)
+            except ValueError:
+                offset = None
+        if offset is not None and not 0 <= offset < 1e15:
+            offset = None
+        name_only = bool(flask.request.args.get('name_only'))
         query_string = flask.request.args.get('q', '')
         if query_string:
             try:
@@ -181,7 +198,10 @@ class Objects(Resource):
                 filter_func=filter_func,
                 action_id=action_id,
                 action_type_id=action_type_id,
-                project_id=project_id
+                project_id=project_id,
+                limit=limit,
+                offset=offset,
+                name_only=name_only
             )
         except Exception as e:
             search_notes.append(('error', "Error during search: {}".format(e), 0, 0))

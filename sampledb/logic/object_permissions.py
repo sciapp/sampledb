@@ -269,7 +269,8 @@ def get_object_info_with_permissions(
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
-        action_type_id: typing.Optional[int] = None
+        action_type_id: typing.Optional[int] = None,
+        object_ids: typing.Optional[typing.Sequence[int]] = None
 ) -> typing.List[Object]:
 
     user = get_user(user_id)
@@ -325,12 +326,21 @@ def get_object_info_with_permissions(
 
     where = table.c.action_id.in_(db.select([Action.__table__.c.id], whereclause=action_filter)) if action_filter is not None else None
 
+    if object_ids is not None:
+        object_id_where = table.c.object_id.in_(tuple(object_ids))
+        if where is None:
+            where = object_id_where
+        else:
+            where = db.and_(where, object_id_where)
+
     table = db.select(
         columns=[table],
         whereclause=where
     ).order_by(db.desc(table.c.object_id)).limit(limit).offset(offset)
 
-    return db.session.execute(table, parameters).fetchall()
+    object_infos = db.session.execute(table, parameters).fetchall()
+
+    return object_infos
 
 
 def get_objects_with_permissions(
@@ -342,9 +352,15 @@ def get_objects_with_permissions(
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
         action_type_id: typing.Optional[int] = None,
+        other_user_id: typing.Optional[int] = None,
+        other_user_permissions: typing.Optional[Permissions] = None,
+        group_id: typing.Optional[int] = None,
+        group_permissions: typing.Optional[Permissions] = None,
         project_id: typing.Optional[int] = None,
+        project_permissions: typing.Optional[Permissions] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None,
         num_objects_found: typing.Optional[typing.List[int]] = None,
+        name_only: bool = False,
         **kwargs
 ) -> typing.List[Object]:
 
@@ -363,63 +379,109 @@ def get_objects_with_permissions(
     else:
         action_filter = None
 
-    if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
-        # admins who use admin permissions do not need permission-based filtering
-        table = None
-    else:
-        stmt = db.text("""
-        SELECT
-        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime
-        FROM (
-            SELECT
-            object_id
-            FROM user_object_permissions_by_all
-            WHERE user_id = :user_id OR user_id IS NULL
-            GROUP BY (object_id)
-            HAVING MAX(permissions_int) >= :min_permissions_int
-        ) AS p
-        JOIN objects_current AS o ON o.object_id = p.object_id
-        """)
-        stmt = stmt.columns(
-            objects.Objects._current_table.c.object_id,
-            objects.Objects._current_table.c.version_id,
-            objects.Objects._current_table.c.action_id,
-            objects.Objects._current_table.c.data,
-            objects.Objects._current_table.c.schema,
-            objects.Objects._current_table.c.user_id,
-            objects.Objects._current_table.c.utc_datetime
-        )
-        table = sqlalchemy.sql.alias(stmt)
-
     parameters = {
         'min_permissions_int': permissions.value,
         'user_id': user_id
     }
 
-    if project_id is None and object_ids is None:
-        objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, limit=limit, offset=offset, num_objects_found=num_objects_found, **kwargs)
+    if name_only:
+        stmt = """
+        SELECT
+        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.data -> 'name' -> 'text') as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime
+        FROM objects_current AS o
+        """
     else:
-        objs = objects.get_objects(filter_func=filter_func, action_filter=action_filter, table=table, parameters=parameters, sorting_func=sorting_func, **kwargs)
-        if project_id is not None:
-            filtered_objs = []
-            for obj in objs:
-                project_object_permissions = ProjectObjectPermissions.query.filter_by(object_id=obj.object_id, project_id=project_id).first()
-                if project_object_permissions is not None and permissions in project_object_permissions.permissions:
-                    filtered_objs.append(obj)
-            objs = filtered_objs
-        if object_ids is not None:
-            filtered_objs = []
-            for obj in objs:
-                if obj.object_id in object_ids:
-                    filtered_objs.append(obj)
-            objs = filtered_objs
-        if num_objects_found is not None:
-            num_objects_found.append(len(objs))
-        if offset:
-            objs = objs[offset:]
-        if limit:
-            objs = objs[:limit]
-    return objs
+        stmt = """
+        SELECT
+        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime
+        FROM objects_current AS o
+        """
+
+    if not user.is_admin or not settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+        stmt += """
+        JOIN (
+            SELECT
+            u.object_id
+            FROM user_object_permissions_by_all as u
+            WHERE u.user_id = :user_id OR u.user_id IS NULL
+            GROUP BY (u.object_id)
+            HAVING MAX(u.permissions_int) >= :min_permissions_int
+        ) AS up
+        ON o.object_id = up.object_id
+        """
+
+    if other_user_id is not None:
+        stmt += """
+        JOIN (
+            SELECT
+            u.object_id
+            FROM user_object_permissions_by_all as u
+            WHERE u.user_id = :other_user_id OR u.user_id IS NULL
+            GROUP BY (u.object_id)
+            HAVING MAX(u.permissions_int) >= :min_other_user_permissions_int
+        ) AS oup
+        ON o.object_id = oup.object_id
+        """
+        parameters['other_user_id'] = other_user_id
+        if other_user_permissions is None:
+            other_user_permissions = permissions
+        parameters['min_other_user_permissions_int'] = other_user_permissions.value
+
+    if project_id is not None:
+        stmt += """
+        JOIN project_object_permissions as pp
+        ON (
+            pp.object_id = o.object_id AND
+            pp.project_id = :project_id AND
+            ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> pp.permissions::text)::int >= :min_project_permissions_int
+        )
+        """
+        parameters['project_id'] = project_id
+        if project_permissions is None:
+            project_permissions = permissions
+        parameters['min_project_permissions_int'] = project_permissions.value
+
+    if group_id is not None:
+        stmt += """
+        JOIN group_object_permissions as gp
+        ON (
+            gp.object_id = o.object_id AND
+            gp.group_id = :group_id AND
+            ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> gp.permissions::text)::int >= :min_group_permissions_int
+        )
+        """
+        parameters['group_id'] = group_id
+        if group_permissions is None:
+            group_permissions = permissions
+        parameters['min_group_permissions_int'] = group_permissions.value
+
+    if object_ids:
+        stmt += """
+        WHERE o.object_id IN :object_ids
+        """
+        parameters['object_ids'] = tuple(object_ids)
+
+    table = sqlalchemy.sql.alias(db.text(stmt).columns(
+        objects.Objects._current_table.c.object_id,
+        objects.Objects._current_table.c.version_id,
+        objects.Objects._current_table.c.action_id,
+        objects.Objects._current_table.c.data,
+        objects.Objects._current_table.c.schema,
+        objects.Objects._current_table.c.user_id,
+        objects.Objects._current_table.c.utc_datetime
+    ))
+
+    return objects.get_objects(
+        filter_func=filter_func,
+        action_filter=action_filter,
+        table=table,
+        parameters=parameters,
+        sorting_func=sorting_func,
+        limit=limit,
+        offset=offset,
+        num_objects_found=num_objects_found,
+        **kwargs
+    )
 
 
 class InvalidDefaultPermissionsError(Exception):

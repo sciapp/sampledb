@@ -61,6 +61,7 @@ def test_simplify_doi():
     assert sampledb.logic.publications.simplify_doi('10.1000/valid') == '10.1000/valid'
     assert sampledb.logic.publications.simplify_doi('10.1000/VALID') == '10.1000/valid'
     assert sampledb.logic.publications.simplify_doi('doi:10.1000/VALID') == '10.1000/valid'
+    assert sampledb.logic.publications.simplify_doi('https://doi.org/10.1000/VALID') == '10.1000/valid'
 
 
 def test_link_publications_to_objects(user, action):

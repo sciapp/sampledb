@@ -43,7 +43,7 @@ def quantity_binary_operator(db_obj, other, operator):
     return db.and_(
         db_obj['_type'].astext == 'quantity',
         db_obj['dimensionality'].astext == str(other.dimensionality),
-        operator(db_obj['magnitude_in_base_units'].astext.cast(db.Float), other.maginitude_in_base_units)
+        operator(db_obj['magnitude_in_base_units'].astext.cast(db.Float), other.magnitude_in_base_units)
     )
 
 
@@ -74,15 +74,15 @@ def quantity_between(db_obj, left, right, including=True):
         return db.and_(
             db_obj['_type'].astext == 'quantity',
             db_obj['dimensionality'].astext == str(left.dimensionality),
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 + EPSILON) >= left.maginitude_in_base_units,
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 - EPSILON) <= right.maginitude_in_base_units
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 + EPSILON) >= left.magnitude_in_base_units,
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 - EPSILON) <= right.magnitude_in_base_units
         )
     else:
         return db.and_(
             db_obj['_type'].astext == 'quantity',
             db_obj['dimensionality'].astext == str(left.dimensionality),
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) > left.maginitude_in_base_units,
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) < right.maginitude_in_base_units
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) > left.magnitude_in_base_units,
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) < right.magnitude_in_base_units
         )
 
 

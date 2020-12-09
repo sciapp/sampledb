@@ -170,7 +170,7 @@ class Quantity(object):
         if units is None:
             self.units = None
             self.pint_units = ureg.Unit('1')
-            self.maginitude_in_base_units = self.magnitude
+            self.magnitude_in_base_units = self.magnitude
         else:
             if isinstance(units, ureg.Unit):
                 self.pint_units = units
@@ -181,7 +181,7 @@ class Quantity(object):
                     self.pint_units = ureg.Unit(self.units)
                 except (pint.errors.UndefinedUnitError, AttributeError):
                     raise ValueError("Invalid units '{}'".format(self.units))
-            self.maginitude_in_base_units = ureg.Quantity(self.magnitude, self.pint_units).to_base_units().magnitude
+            self.magnitude_in_base_units = ureg.Quantity(self.magnitude, self.pint_units).to_base_units().magnitude
         self.dimensionality = self.pint_units.dimensionality
 
     def __repr__(self):
@@ -192,7 +192,7 @@ class Quantity(object):
 
     def to_json(self):
         return {
-            'magnitude_in_base_units': self.maginitude_in_base_units,
+            'magnitude_in_base_units': self.magnitude_in_base_units,
             'units': self.units,
             'dimensionality': str(self.dimensionality)
         }

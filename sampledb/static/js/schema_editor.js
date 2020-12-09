@@ -597,6 +597,13 @@ $(function() {
         property_schema['default'] = default_value;
       }
 
+      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-text-placeholder-checkbox').prop('checked');
+      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-text-placeholder-input').val();
+
+      if (has_placeholder) {
+        property_schema['placeholder'] = placeholder_value;
+      }
+
       var has_pattern = $('#schema-editor-object__' + path.join('__') + '-text-pattern-checkbox').prop('checked');
       var pattern = $('#schema-editor-object__' + path.join('__') + '-text-pattern-input').val();
 
@@ -738,6 +745,13 @@ $(function() {
 
       if (has_default) {
         property_schema['default'] = default_value;
+      }
+
+      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-multiline-placeholder-checkbox').prop('checked');
+      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-multiline-placeholder-input').val();
+
+      if (has_placeholder) {
+        property_schema['placeholder'] = placeholder_value;
       }
 
       var has_minlength = $('#schema-editor-object__' + path.join('__') + '-multiline-minlength-checkbox').prop('checked');
@@ -972,6 +986,13 @@ $(function() {
         }
       }
 
+      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-quantity-placeholder-checkbox').prop('checked');
+      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-quantity-placeholder-input').val();
+
+      if (has_placeholder) {
+        property_schema['placeholder'] = placeholder_value;
+      }
+
       schema['properties'][real_path[real_path.length-1]] = property_schema;
 
       input_schema.text(JSON.stringify(schema, null, 4));
@@ -1042,6 +1063,32 @@ $(function() {
     });
     default_checkbox.on('change', updateProperty.bind(path));
     default_input.on('change', updateProperty.bind(path));
+
+    var placeholder_label = node.find('.schema-editor-text-property-placeholder-label');
+    var placeholder_input = node.find('.schema-editor-text-property-placeholder-input');
+    var placeholder_checkbox = node.find('.schema-editor-text-property-placeholder-checkbox');
+    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-text-placeholder-checkbox');
+    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-text-placeholder-input');
+    placeholder_label.attr('for', placeholder_input.attr('id'));
+    if (type === 'text' && 'placeholder' in schema) {
+      placeholder_input.val(schema['placeholder']);
+      placeholder_checkbox.prop('checked', true);
+      placeholder_input.prop('disabled', false);
+    } else {
+      placeholder_input.val("");
+      placeholder_checkbox.prop('checked', false);
+      placeholder_input.prop('disabled', true);
+    }
+    placeholder_checkbox.on('change', function() {
+      var placeholder_input = $(this).parent().parent().find('.schema-editor-text-property-placeholder-input');
+      if ($(this).prop('checked')) {
+        placeholder_input.prop('disabled', false);
+      } else {
+        placeholder_input.prop('disabled', true);
+      }
+    });
+    placeholder_checkbox.on('change', updateProperty.bind(path));
+    placeholder_input.on('change', updateProperty.bind(path));
 
     var pattern_label = node.find('.schema-editor-text-property-pattern-label');
     var pattern_input = node.find('.schema-editor-text-property-pattern-input');
@@ -1188,6 +1235,32 @@ $(function() {
     default_checkbox.on('change', updateProperty.bind(path));
     default_input.on('change', updateProperty.bind(path));
 
+    var placeholder_label = node.find('.schema-editor-multiline-property-placeholder-label');
+    var placeholder_input = node.find('.schema-editor-multiline-property-placeholder-input');
+    var placeholder_checkbox = node.find('.schema-editor-multiline-property-placeholder-checkbox');
+    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-placeholder-checkbox');
+    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-placeholder-input');
+    placeholder_label.attr('for', placeholder_input.attr('id'));
+    if (type === 'multiline' && 'placeholder' in schema) {
+      placeholder_input.val(schema['placeholder']);
+      placeholder_checkbox.prop('checked', true);
+      placeholder_input.prop('disabled', false);
+    } else {
+      placeholder_input.val("");
+      placeholder_checkbox.prop('checked', false);
+      placeholder_input.prop('disabled', true);
+    }
+    placeholder_checkbox.on('change', function() {
+      var placeholder_input = $(this).parent().parent().find('.schema-editor-multiline-property-placeholder-input');
+      if ($(this).prop('checked')) {
+        placeholder_input.prop('disabled', false);
+      } else {
+        placeholder_input.prop('disabled', true);
+      }
+    });
+    placeholder_checkbox.on('change', updateProperty.bind(path));
+    placeholder_input.on('change', updateProperty.bind(path));
+
     var minlength_label = node.find('.schema-editor-multiline-property-minlength-label');
     var minlength_input = node.find('.schema-editor-multiline-property-minlength-input');
     var minlength_checkbox = node.find('.schema-editor-multiline-property-minlength-checkbox');
@@ -1296,6 +1369,32 @@ $(function() {
     });
     default_checkbox.on('change', updateProperty.bind(path));
     default_input.on('change', updateProperty.bind(path));
+
+    var placeholder_label = node.find('.schema-editor-quantity-property-placeholder-label');
+    var placeholder_input = node.find('.schema-editor-quantity-property-placeholder-input');
+    var placeholder_checkbox = node.find('.schema-editor-quantity-property-placeholder-checkbox');
+    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-placeholder-checkbox');
+    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-placeholder-input');
+    placeholder_label.attr('for', placeholder_input.attr('id'));
+    if (type === 'quantity' && 'placeholder' in schema) {
+      placeholder_input.val(schema['placeholder']);
+      placeholder_checkbox.prop('checked', true);
+      placeholder_input.prop('disabled', false);
+    } else {
+      placeholder_input.val("");
+      placeholder_checkbox.prop('checked', false);
+      placeholder_input.prop('disabled', true);
+    }
+    placeholder_checkbox.on('change', function() {
+      var placeholder_input = $(this).parent().parent().find('.schema-editor-quantity-property-placeholder-input');
+      if ($(this).prop('checked')) {
+        placeholder_input.prop('disabled', false);
+      } else {
+        placeholder_input.prop('disabled', true);
+      }
+    });
+    placeholder_checkbox.on('change', updateProperty.bind(path));
+    placeholder_input.on('change', updateProperty.bind(path));
 
     var units_label = node.find('.schema-editor-quantity-property-units-label');
     var units_input = node.find('.schema-editor-quantity-property-units-input');

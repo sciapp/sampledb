@@ -27,11 +27,18 @@ $(function() {
         var $x = $(this);
         var valid = $x.data('sampledbValidActionIds');
         var required_perm = $x.data('sampledbRequiredPerm') || 1;
-        var remove_id = $x.data('sampledbRemove');
+        var remove_ids = $x.data('sampledbRemove');
+        if (typeof remove_ids === 'string') {
+          remove_ids = $.map(remove_ids.split(","), function(id){
+             return +id;
+          });
+        } else {
+          remove_ids = [remove_ids];
+        }
 
         var to_add = referencable_objects
           .filter(function (el) {
-            return el.max_permission >= required_perm && el.id != remove_id;
+            return el.max_permission >= required_perm && $.inArray(el.id, remove_ids) === -1;
           }).filter(function (el) {
             return !valid || valid.includes(el.action_id);
           });

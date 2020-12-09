@@ -10,6 +10,7 @@ from . import groups
 from . import instruments
 from . import instrument_log_entries
 from . import locations
+from . import markdown_images
 from . import objects
 from . import object_permissions
 from . import projects
@@ -27,6 +28,7 @@ from .groups import Group
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .locations import Location, ObjectLocationAssignment
+from .markdown_images import MarkdownImage
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
@@ -49,6 +51,7 @@ __all__ = [
     'instruments',
     'instrument_log_entries',
     'locations',
+    'markdown_images',
     'objects',
     'object_permissions',
     'projects',
@@ -73,6 +76,7 @@ __all__ = [
     'InstrumentLogEntry',
     'Location',
     'ObjectLocationAssignment',
+    'MarkdownImage',
     'Notification',
     'NotificationType',
     'NotificationMode',

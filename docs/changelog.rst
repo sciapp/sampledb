@@ -1,6 +1,22 @@
 Changelog
 =========
 
+Version 0.16
+------------
+
+Released on December 9th, 2020.
+
+- Allow restricting object references to specific action id
+- Improved performance of object lists
+- Allow setting display properties as part of the object list URL
+- Improved performance of instrument pages
+- Added image upload via drag and drop to Markdown editors
+- Added support for placeholder texts for text and quantity schemas
+- Added additional options to the HTTP API objects endpoint
+- Display projects based on parent-child relationship
+- Improved "View Objects" for users, groups and projects
+- Added object comments to the HTTP API
+
 Version 0.15
 ------------
 

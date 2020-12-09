@@ -27,6 +27,20 @@
     {% endwith %}
   {% endfor %}
   </ul>
+  {% if show_objects_link %}
+    <div class="btn-group">
+      <a href="{{ url_for('.objects', group=group.id) }}" class="btn btn-default">View Objects</a>
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="caret"></span>
+        <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='READ') }}">… with <b>READ</b> permissions</a></li>
+        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='WRITE') }}">… with <b>WRITE</b> permissions</a></li>
+        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='GRANT') }}">… with <b>GRANT</b> permissions</a></li>
+      </ul>
+    </div>
+  {% endif %}
   {% if show_invitation_log %}
     {% with all_invitations = group_invitations %}
       {% include "invitation_log.html" %}

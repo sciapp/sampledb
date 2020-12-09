@@ -108,8 +108,14 @@ def simplify_doi(doi: str) -> str:
     :raise errors.InvalidDOIError: when the DOI is invalid
     """
     doi = doi.lower()
-    if doi.startswith('doi:'):
-        doi = doi[4:]
+    doi_prefixes = [
+        'doi:',
+        'https://doi.org/'
+    ]
+    for doi_prefix in doi_prefixes:
+        if doi.startswith(doi_prefix):
+            doi = doi[len(doi_prefix):]
+            break
     # DOI organizer part must start with '10.'
     if not doi.startswith('10.'):
         raise errors.InvalidDOIError()

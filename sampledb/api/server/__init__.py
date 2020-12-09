@@ -7,6 +7,7 @@ from flask_restful import Api
 from .objects import Object, Objects, ObjectVersion, ObjectVersions
 from .actions import Action, Actions
 from .action_types import ActionType, ActionTypes
+from .comments import ObjectComment, ObjectComments
 from .files import ObjectFile, ObjectFiles
 from .instruments import Instrument, Instruments
 from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
@@ -23,6 +24,8 @@ api.add_resource(Actions, '/api/v1/actions/', endpoint='api.actions')
 api.add_resource(Action, '/api/v1/actions/<int:action_id>', endpoint='api.action')
 api.add_resource(ActionTypes, '/api/v1/action_types/', endpoint='api.action_types')
 api.add_resource(ActionType, '/api/v1/action_types/<int(signed=True):type_id>', endpoint='api.action_type')
+api.add_resource(ObjectComments, '/api/v1/objects/<int:object_id>/comments/', endpoint='api.object_comments')
+api.add_resource(ObjectComment, '/api/v1/objects/<int:object_id>/comments/<int:comment_id>', endpoint='api.object_comment')
 api.add_resource(Instruments, '/api/v1/instruments/', endpoint='api.instruments')
 api.add_resource(Instrument, '/api/v1/instruments/<int:instrument_id>', endpoint='api.instrument')
 api.add_resource(InstrumentLogEntries, '/api/v1/instruments/<int:instrument_id>/log_entries/', endpoint='api.instrument_log_entries')
