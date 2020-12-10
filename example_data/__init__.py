@@ -10,6 +10,8 @@ import flask
 import flask_login
 
 import sampledb
+import sampledb.logic.markdown_to_html
+import sampledb.logic.utils
 from sampledb.models import Objects, User, UserType, ActionType
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.actions import create_action
@@ -70,7 +72,7 @@ This example shows how Markdown can be used for instrument Notes.
         description="This is an example instrument.",
         users_can_create_log_entries=True,
         notes = markdown_notes,
-        notes_as_html=sampledb.frontend.utils.markdown_to_safe_html(markdown_notes)
+        notes_as_html=sampledb.logic.markdown_to_html.markdown_to_safe_html(markdown_notes)
     )
     add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
     log_category_error = sampledb.logic.instrument_log_entries.create_instrument_log_category(

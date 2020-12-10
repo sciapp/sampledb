@@ -26,7 +26,8 @@ from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.settings import get_user_settings
 from .users.forms import ToggleFavoriteActionForm
-from .utils import check_current_user_is_not_readonly, markdown_to_safe_html
+from .utils import check_current_user_is_not_readonly
+from ..logic.markdown_to_html import markdown_to_safe_html
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

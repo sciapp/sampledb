@@ -8,10 +8,8 @@ from io import BytesIO
 import os
 from urllib.parse import quote_plus
 
-import bleach
 import flask
 import flask_login
-import markdown
 import qrcode
 import qrcode.image.svg
 
@@ -51,13 +49,6 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
     if should_cache:
         qrcode_cache[url] = qrcode_url
     return qrcode_url
-
-
-def markdown_to_safe_html(markdown_text):
-    return markdown.markdown(
-        bleach.clean(markdown_text),
-        extensions=['tables']
-    )
 
 
 def has_preview(file):

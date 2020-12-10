@@ -25,7 +25,8 @@ from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_object_info_with_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly, markdown_to_safe_html, generate_qrcode
+from .utils import check_current_user_is_not_readonly, generate_qrcode
+from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
 
 
