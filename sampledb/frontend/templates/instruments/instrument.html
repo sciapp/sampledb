@@ -22,9 +22,9 @@
   {% for action in instrument.actions %}
     {% if not action.is_hidden or current_user.is_admin %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
-    {% if action.description %}
+    {% if action.short_description %}
     <div class="action-user-content">
-    {% if action.description_is_markdown %}{{ action.description | markdown_to_safe_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
+    {% if action.short_description_is_markdown %}{{ action.short_description | markdown_to_safe_html | safe }}{% else %}<p>{{ action.short_description }}</p>{% endif %}
     </div>
     {% endif %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>

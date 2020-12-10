@@ -151,10 +151,14 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                     'user_id': action_info.user_id,
                     'instrument_id': action_info.instrument_id,
                     'description': action_info.description,
-                    'description_is_markdown': action_info.description_is_markdown
+                    'description_is_markdown': action_info.description_is_markdown,
+                    'short_description': action_info.short_description,
+                    'short_description_is_markdown': action_info.short_description_is_markdown
                 })
             if action_info.description_is_markdown:
                 relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description)))
+            if action_info.short_description_is_markdown:
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description)))
     infos['actions'] = action_infos
 
     instrument_infos = []
@@ -166,6 +170,8 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                 'name': instrument_info.name,
                 'description': instrument_info.description,
                 'description_is_markdown': instrument_info.description_is_markdown,
+                'short_description': instrument_info.short_description,
+                'short_description_is_markdown': instrument_info.short_description_is_markdown,
                 'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
                 'instrument_log_entries': []
             })
@@ -213,6 +219,8 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                         })
             if instrument_info.description_is_markdown:
                 relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.description)))
+            if instrument_info.short_description_is_markdown:
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.short_description)))
             if user_is_instrument_responsible and instrument_info.notes_is_markdown:
                 relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.notes)))
     infos['instruments'] = instrument_infos

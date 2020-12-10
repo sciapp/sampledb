@@ -20,9 +20,9 @@
     {% if instrument.is_hidden %}
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This instrument has been hidden from instrument lists.</p>
     {% endif %}
-    {% if instrument.description %}
+    {% if instrument.short_description %}
     <div class="instrument-user-content">
-    {% if instrument.description_is_markdown %}{{ instrument.description | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
+    {% if instrument.short_description_is_markdown %}{{ instrument.short_description | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.short_description }}</p>{% endif %}
     </div>
     {% endif %}
     {% include "instruments/instrument_scientists.html" %}

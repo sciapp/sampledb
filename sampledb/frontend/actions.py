@@ -42,6 +42,8 @@ class ActionForm(FlaskForm):
     is_user_specific = BooleanField(default=True)
     is_markdown = BooleanField(default=None)
     is_hidden = BooleanField(default=None)
+    short_description = StringField()
+    short_description_is_markdown = BooleanField(default=None)
 
     def validate_type(form, field):
         try:
@@ -297,6 +299,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.type.data = action.type.id
         if action_form.is_public.data is None:
             action_form.is_public.data = action_is_public(action.id)
+        if action_form.short_description.data is None:
+            action_form.short_description.data = action.short_description
+        if not action_form.is_submitted():
+            action_form.short_description_is_markdown.data = action.short_description_is_markdown
     elif previous_action is not None:
         if action_form.name.data is None:
             action_form.name.data = previous_action.name
@@ -309,6 +315,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.type.data = previous_action.type.id
         if action_form.is_public.data is None:
             action_form.is_public.data = action_is_public(previous_action.id)
+        if action_form.short_description.data is None:
+            action_form.short_description.data = previous_action.short_description
+        if not action_form.is_submitted():
+            action_form.short_description_is_markdown.data = previous_action.short_description_is_markdown
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -361,6 +371,11 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             description_as_html = markdown_to_safe_html(description)
             mark_referenced_markdown_images_as_permanent(description_as_html)
 
+        short_description = action_form.short_description.data
+        if action_form.short_description_is_markdown.data:
+            short_description_as_html = markdown_to_safe_html(short_description)
+            mark_referenced_markdown_images_as_permanent(short_description_as_html)
+
         instrument_id = action_form.instrument.data
         is_public = action_form.is_public.data
         is_hidden = action_form.is_hidden.data
@@ -383,7 +398,9 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 instrument_id,
                 user_id,
                 description_is_markdown=action_form.is_markdown.data,
-                is_hidden=is_hidden
+                is_hidden=is_hidden,
+                short_description=short_description,
+                short_description_is_markdown=action_form.short_description_is_markdown.data
             )
             flask.flash('The action was created successfully.', 'success')
             if may_change_public and is_public:
@@ -395,7 +412,9 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 description,
                 schema,
                 description_is_markdown=action_form.is_markdown.data,
-                is_hidden=is_hidden
+                is_hidden=is_hidden,
+                short_description=short_description,
+                short_description_is_markdown=action_form.short_description_is_markdown.data
             )
             flask.flash('The action was updated successfully.', 'success')
             if may_change_public and is_public is not None:

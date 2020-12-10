@@ -7,6 +7,7 @@ Version 0.17
 Currently in development.
 
 - Added Dataverse export using the EngMeta "Process Metadata" block
+- Added short descriptions to actions and instruments
 
 Version 0.16
 ------------

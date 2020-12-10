@@ -22,13 +22,15 @@ class Instrument(db.Model):
     name = db.Column(db.String, nullable=False, unique=True)
     description = db.Column(db.String, nullable=False, default='')
     responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name")
-    description_is_markdown = db.Column(db.String, nullable=False, default=False)
+    description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
     users_can_create_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     users_can_view_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     notes = db.Column(db.String, nullable=False, default='')
     notes_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
     create_log_entry_default = db.Column(db.Boolean, nullable=False, default=False)
     is_hidden = db.Column(db.Boolean, nullable=False, default=False)
+    short_description = db.Column(db.String, nullable=False, default='')
+    short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
 
     def __init__(
             self,
@@ -40,7 +42,9 @@ class Instrument(db.Model):
             notes: str = '',
             notes_is_markdown: bool = False,
             create_log_entry_default: bool = False,
-            is_hidden: bool = False
+            is_hidden: bool = False,
+            short_description: str = '',
+            short_description_is_markdown: bool = False
     ):
         self.name = name
         self.description = description
@@ -51,6 +55,8 @@ class Instrument(db.Model):
         self.notes_is_markdown = notes_is_markdown
         self.create_log_entry_default = create_log_entry_default
         self.is_hidden = is_hidden
+        self.short_description = short_description
+        self.short_description_is_markdown = short_description_is_markdown
 
     def __eq__(self, other):
         return (
@@ -62,6 +68,8 @@ class Instrument(db.Model):
             self.users_can_view_log_entries == other.users_can_view_log_entries and
             self.notes == other.notes and
             self.notes_is_markdown == other.notes_is_markdown and
+            self.short_description == other.short_description and
+            self.short_description_is_markdown == other.short_description_is_markdown and
             self.create_log_entry_default == other.create_log_entry_default and
             self.is_hidden == other.is_hidden and
             self.responsible_users == other.responsible_users

@@ -27,7 +27,9 @@ def create_instrument(
         notes: str = '',
         notes_is_markdown: bool = False,
         create_log_entry_default: bool = False,
-        is_hidden: bool = False
+        is_hidden: bool = False,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> Instrument:
     """
     Creates a new instrument with the given name and description.
@@ -44,6 +46,9 @@ def create_instrument(
     :param create_log_entry_default: the default for whether or not a log
         entry should be created during object creation by instrument scientists
     :param is_hidden: whether or not this instrument is hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :return: the new instrument
     """
     instrument = Instrument(
@@ -55,7 +60,9 @@ def create_instrument(
         notes=notes,
         notes_is_markdown=notes_is_markdown,
         create_log_entry_default=create_log_entry_default,
-        is_hidden=is_hidden
+        is_hidden=is_hidden,
+        short_description=short_description,
+        short_description_is_markdown=short_description_is_markdown
     )
     db.session.add(instrument)
     db.session.commit()
@@ -96,7 +103,9 @@ def update_instrument(
         notes: str = '',
         notes_is_markdown: bool = False,
         create_log_entry_default: bool = False,
-        is_hidden: typing.Optional[bool] = None
+        is_hidden: typing.Optional[bool] = None,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> None:
     """
     Updates the instrument name and description.
@@ -114,6 +123,9 @@ def update_instrument(
     :param create_log_entry_default: the default for whether or not a log
         entry should be created during object creation by instrument scientists
     :param is_hidden: None or whether or not this instrument is hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
@@ -128,6 +140,8 @@ def update_instrument(
     instrument.notes = notes
     instrument.notes_is_markdown = notes_is_markdown
     instrument.create_log_entry_default = create_log_entry_default
+    instrument.short_description = short_description
+    instrument.short_description_is_markdown = short_description_is_markdown
     if is_hidden is not None:
         instrument.is_hidden = is_hidden
     db.session.add(instrument)

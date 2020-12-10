@@ -275,6 +275,8 @@ class InstrumentForm(FlaskForm):
     categories = StringField(validators=[DataRequired()])
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
+    short_description = StringField()
+    short_description_is_markdown = BooleanField(default=None)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -306,7 +308,9 @@ def new_instrument():
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data
+            is_hidden=instrument_form.is_hidden.data,
+            short_description=instrument_form.short_description.data,
+            short_description_is_markdown=instrument_form.short_description_is_markdown.data
         )
         flask.flash('The instrument was created successfully.', 'success')
         instrument_responsible_user_ids = [
@@ -372,6 +376,7 @@ def edit_instrument(instrument_id):
     instrument_form = InstrumentForm()
     instrument_form.name.default = instrument.name
     instrument_form.description.default = instrument.description
+    instrument_form.short_description.default = instrument.short_description
     instrument_form.notes.default = instrument.notes
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user.name)
@@ -384,6 +389,7 @@ def edit_instrument(instrument_id):
 
     if not instrument_form.is_submitted():
         instrument_form.is_markdown.data = instrument.description_is_markdown
+        instrument_form.short_description_is_markdown.data = instrument.short_description_is_markdown
         instrument_form.notes_are_markdown.data = instrument.notes_is_markdown
         instrument_form.users_can_create_log_entries.data = instrument.users_can_create_log_entries
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
@@ -408,7 +414,9 @@ def edit_instrument(instrument_id):
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data
+            is_hidden=instrument_form.is_hidden.data,
+            short_description=instrument_form.short_description.data,
+            short_description_is_markdown=instrument_form.short_description_is_markdown.data
         )
         flask.flash('The instrument was updated successfully.', 'success')
         instrument_responsible_user_ids = [
