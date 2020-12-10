@@ -30,9 +30,9 @@
     {% if action.is_hidden %}
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This action has been hidden from action lists.</p>
     {% endif %}
-    {% if action.description_as_html or action.description %}
+    {% if action.description %}
     <div class="action-user-content">
-    {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
+    {% if action.description_is_markdown %}{{ action.description | markdown_to_safe_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
     </div>
     {% endif %}
     {% with instrument = action.instrument %}

@@ -292,21 +292,17 @@ def new_instrument():
         if instrument_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
             mark_referenced_markdown_images_as_permanent(description_as_html)
-        else:
-            description_as_html = None
 
         if instrument_form.notes_are_markdown.data:
             notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
             mark_referenced_markdown_images_as_permanent(notes_as_html)
-        else:
-            notes_as_html = None
 
         instrument = create_instrument(
             instrument_form.name.data,
             instrument_form.description.data,
-            description_as_html=description_as_html,
+            description_is_markdown=instrument_form.is_markdown.data,
             notes=instrument_form.notes.data,
-            notes_as_html=notes_as_html,
+            notes_is_markdown=instrument_form.notes_are_markdown.data,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
@@ -387,8 +383,8 @@ def edit_instrument(instrument_id):
     ]
 
     if not instrument_form.is_submitted():
-        instrument_form.is_markdown.data = (instrument.description_as_html is not None)
-        instrument_form.notes_are_markdown.data = (instrument.notes_as_html is not None)
+        instrument_form.is_markdown.data = instrument.description_is_markdown
+        instrument_form.notes_are_markdown.data = instrument.notes_is_markdown
         instrument_form.users_can_create_log_entries.data = instrument.users_can_create_log_entries
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
@@ -397,22 +393,18 @@ def edit_instrument(instrument_id):
         if instrument_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(instrument_form.description.data)
             mark_referenced_markdown_images_as_permanent(description_as_html)
-        else:
-            description_as_html = None
 
         if instrument_form.notes_are_markdown.data:
             notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
             mark_referenced_markdown_images_as_permanent(notes_as_html)
-        else:
-            notes_as_html = None
 
         update_instrument(
             instrument.id,
             instrument_form.name.data,
             instrument_form.description.data,
-            description_as_html=description_as_html,
+            description_is_markdown=instrument_form.is_markdown.data,
             notes=instrument_form.notes.data,
-            notes_as_html=notes_as_html,
+            notes_is_markdown=instrument_form.notes_are_markdown.data,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,

@@ -16,6 +16,7 @@ import qrcode.image.svg
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
+from ..logic.markdown_to_html import markdown_to_safe_html
 
 
 def jinja_filter(func):
@@ -89,3 +90,4 @@ _jinja_filters['is_image'] = is_image
 _jinja_filters['attachment_is_image'] = attachment_is_image
 _jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications
 _jinja_filters['urlencode'] = quote_plus
+_jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html

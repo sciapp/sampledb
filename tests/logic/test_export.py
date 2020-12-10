@@ -169,7 +169,7 @@ def validate_data(data):
                 'user_id': None,
                 'instrument_id': None,
                 'description': '',
-                'description_as_html': None
+                'description_is_markdown': False
             }
         ],
         'instruments': [
@@ -177,7 +177,7 @@ def validate_data(data):
                 'id': instrument_id,
                 'name': 'Example Instrument',
                 'description': 'Example Instrument Description',
-                'description_as_html': None,
+                'description_is_markdown': False,
                 'instrument_scientist_ids': [],
                 'instrument_log_entries': [
                     {

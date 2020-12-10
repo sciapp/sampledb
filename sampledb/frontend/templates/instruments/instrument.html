@@ -7,9 +7,9 @@
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This instrument has been hidden from instrument lists.</p>
   {% endif %}
-  {% if instrument.description_as_html or instrument.description %}
+  {% if instrument.description %}
   <div class="instrument-user-content">
-  {% if instrument.description_as_html %}{{ instrument.description_as_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
+  {% if instrument.description_is_markdown %}{{ instrument.description | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
   </div>
   {% endif %}
   {% include "instruments/instrument_scientists.html" %}
@@ -22,7 +22,11 @@
   {% for action in instrument.actions %}
     {% if not action.is_hidden or current_user.is_admin %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
-    {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
+    {% if action.description %}
+    <div class="action-user-content">
+    {% if action.description_is_markdown %}{{ action.description | markdown_to_safe_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
+    </div>
+    {% endif %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
     {% if not current_user.is_readonly %}
     <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text }}</a>
@@ -35,9 +39,9 @@
       These notes are only visible to the instrument scientists.
       <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-scientist-notes">Read more.</a>
     </p>
-    {% if instrument.notes_as_html or instrument.notes %}
+    {% if instrument.notes %}
       <div class="instrument-user-content">
-      {% if instrument.notes_as_html %}{{ instrument.notes_as_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
+      {% if instrument.notes_is_markdown %}{{ instrument.notes | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
       </div>
     {% else %}
       &mdash;

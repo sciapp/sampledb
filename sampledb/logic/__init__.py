@@ -20,6 +20,7 @@ from . import instrument_log_entries
 from . import ldap
 from . import locations
 from . import markdown_images
+from . import markdown_to_html
 from . import notifications
 from . import objects
 from . import object_log
@@ -63,6 +64,7 @@ __all__ = [
     'ldap',
     'locations',
     'markdown_images',
+    'markdown_to_html',
     'notifications',
     'objects',
     'object_log',

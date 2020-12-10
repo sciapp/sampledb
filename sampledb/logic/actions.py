@@ -244,7 +244,7 @@ def create_action(
         schema: dict,
         instrument_id: typing.Optional[int] = None,
         user_id: typing.Optional[int] = None,
-        description_as_html: typing.Optional[str] = None,
+        description_is_markdown: bool = False,
         is_hidden: bool = False
 ) -> Action:
     """
@@ -258,7 +258,7 @@ def create_action(
     :param schema: the schema for objects created using this action
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param is_hidden: None or whether or not the action should be hidden
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
@@ -284,7 +284,7 @@ def create_action(
         action_type_id=action_type_id,
         name=name,
         description=description,
-        description_as_html=description_as_html,
+        description_is_markdown=description_is_markdown,
         is_hidden=is_hidden,
         schema=schema,
         instrument_id=instrument_id,
@@ -333,7 +333,7 @@ def update_action(
         name: str,
         description: str,
         schema: dict,
-        description_as_html: typing.Optional[str] = None,
+        description_is_markdown: bool = False,
         is_hidden: typing.Optional[bool] = None
 ) -> None:
     """
@@ -343,7 +343,7 @@ def update_action(
     :param name: the new name of the action
     :param description: the new (possibly empty) description of the action
     :param schema: the new schema for objects created using this action
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param is_hidden: None or whether or not the action should be hidden
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
@@ -355,7 +355,7 @@ def update_action(
         raise errors.ActionDoesNotExistError()
     action.name = name
     action.description = description
-    action.description_as_html = description_as_html
+    action.description_is_markdown = description_is_markdown
     action.schema = schema
     if is_hidden is not None:
         action.is_hidden = is_hidden

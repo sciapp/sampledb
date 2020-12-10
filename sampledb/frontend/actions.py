@@ -291,7 +291,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if action_form.description.data is None:
             action_form.description.data = action.description
         if not action_form.is_submitted():
-            action_form.is_markdown.data = (action.description_as_html is not None)
+            action_form.is_markdown.data = action.description_is_markdown
             action_form.is_hidden.data = action.is_hidden
         if action_form.type.data is None:
             action_form.type.data = action.type.id
@@ -303,7 +303,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if action_form.description.data is None:
             action_form.description.data = previous_action.description
         if not action_form.is_submitted():
-            action_form.is_markdown.data = (previous_action.description_as_html is not None)
+            action_form.is_markdown.data = previous_action.description_is_markdown
             action_form.is_hidden.data = False
         if action_form.type.data is None:
             action_form.type.data = previous_action.type.id
@@ -360,8 +360,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if action_form.is_markdown.data:
             description_as_html = markdown_to_safe_html(description)
             mark_referenced_markdown_images_as_permanent(description_as_html)
-        else:
-            description_as_html = None
 
         instrument_id = action_form.instrument.data
         is_public = action_form.is_public.data
@@ -384,7 +382,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 schema,
                 instrument_id,
                 user_id,
-                description_as_html=description_as_html,
+                description_is_markdown=action_form.is_markdown.data,
                 is_hidden=is_hidden
             )
             flask.flash('The action was created successfully.', 'success')
@@ -396,7 +394,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 name,
                 description,
                 schema,
-                description_as_html=description_as_html,
+                description_is_markdown=action_form.is_markdown.data,
                 is_hidden=is_hidden
             )
             flask.flash('The action was updated successfully.', 'success')
