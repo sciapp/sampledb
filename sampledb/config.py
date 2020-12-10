@@ -105,6 +105,15 @@ def check_config(
         )
         show_config_info = True
 
+    if 'DATAVERSE_URL' not in defined_config_keys:
+        print(
+            'Dataverse export will be disabled, because the configuration '
+            'value DATAVERSE_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
     admin_password_set = 'ADMIN_PASSWORD' in defined_config_keys
     admin_username_set = 'ADMIN_USERNAME' in defined_config_keys
     admin_email_set = 'ADMIN_EMAIL' in defined_config_keys
@@ -372,6 +381,11 @@ MIME_TYPES = {
 JUPYTERHUB_NAME = 'JupyterHub'
 JUPYTERHUB_URL = None
 JUPYTERHUB_TEMPLATES_URL = None
+
+# Dataverse settings
+DATAVERSE_NAME = 'Dataverse'
+DATAVERSE_URL = None
+DATAVERSE_ROOT_IDS = ':root'
 
 # PDF export settings
 PDFEXPORT_LOGO_URL = None

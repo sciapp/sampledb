@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Export to {{ config['DATAVERSE_NAME'] }} — {{ service_name }}{% endblock %}
+
+
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script>
+  $(function() {
+    $('.dataverse-export-select-all').click(function() {
+      $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', true);
+    });
+    $('.dataverse-export-select-none').click(function() {
+      $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', false);
+    });
+  });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <h1>Export to Dataverse</h1>
+  <p class="text-muted">{{ service_name }} can export the metadata and files of this object to {{ config['DATAVERSE_NAME'] }}. It will create a draft dataset, which you can then review and publish.</p>
+  <form method="post">
+  {{ dataverse_export_form.hidden_tag() }}
+  <input type="hidden" value="{{ dataverse_export_form.api_token.data }}" name="{{ dataverse_export_form.api_token.name }}" />
+  <div>
+    <label>Properties</label>
+    <p class="text-muted">Select which properties should be exported to {{ config['DATAVERSE_NAME'] }}.</p>
+    <div class="form-group">
+      <span class="btn btn-default dataverse-export-select-all" style="width:8em">Select all</span>
+      <span class="btn btn-default dataverse-export-select-none" style="width:8em">Unselect all</span>
+    </div>
+    <div class="form-group">
+    {% for value, path in properties %}
+      <label style="font-weight: normal"><input type="checkbox" class="dataverse-export-property" {% if get_property_export_default(path) or path in export_properties %}checked="checked"{% endif %} {% if path == ['name'] %}disabled="disabled"{% endif %} name="property,{{ path | join(',') }}"/> {{ get_title_for_property(path) }}</label><br />
+    {% endfor %}
+    </div>
+  </div>
+  {% if dataverse_export_form.tags.choices %}
+  <div>
+    <label>Tags / Keywords</label>
+    <p class="text-muted">Select which tags should be exported as keywords to {{ config['DATAVERSE_NAME'] }}.</p>
+    <div class="form-group">
+      <span class="btn btn-default dataverse-export-select-all" style="width:8em">Select all</span>
+      <span class="btn btn-default dataverse-export-select-none" style="width:8em">Unselect all</span>
+    </div>
+    <div class="form-group">
+      {% for tag, _ in dataverse_export_form.tags.choices %}
+      <label style="font-weight: normal"><input type="checkbox" name="tags" value="{{ tag }}" /> {{ tag }}</label><br />
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% if dataverse_export_form.files.choices %}
+  <div>
+    <label>Files</label>
+    <p class="text-muted">Select which files should be exported to {{ config['DATAVERSE_NAME'] }}.</p>
+    <div class="form-group">
+      <span class="btn btn-default dataverse-export-select-all" style="width:8em">Select all</span>
+      <span class="btn btn-default dataverse-export-select-none" style="width:8em">Unselect all</span>
+    </div>
+    <div class="form-group">
+      {% for file_id, file_name in dataverse_export_form.files.choices %}
+      <label style="font-weight: normal"><input type="checkbox" name="files" value="{{ file_id }}" class="dataverse-export-file" /> {{ file_name }} (#{{ file_id }})</label><br />
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  <div>
+    <label>Dataverse</label>
+    <p class="text-muted">Select which dataverse this object should be exported to.</p>
+    <select class="selectpicker form-group" data-live-search="true" name="{{ dataverse_export_form.dataverse.name }}">
+      {% if not dataverse_export_form.dataverse.data %}
+      <option disabled="disabled" selected="selected" value="">&mdash;</option>
+      {% endif %}
+      {% for level, dataverse, enabled in dataverses %}
+      <option value="{{ dataverse.id }}" {% if dataverse_export_form.dataverse.data == (dataverse.id | string) %}selected="selected"{% endif %} {% if not enabled %}disabled="disabled"{% endif %}>{{ '\u00A0' * (2 * level) + dataverse.title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group">
+    <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default" style="width:8em">Cancel</a>
+    <input type="submit" class="btn btn-primary" value="Export" style="width:8em" />
+  </div>
+  </form>
+{% endblock %}

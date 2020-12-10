@@ -4,6 +4,7 @@
 """
 
 from . import authentication
+from . import dataverse_export
 from . import favorites
 from . import files
 from . import groups
@@ -22,6 +23,7 @@ from .action_permissions import UserActionPermissions, GroupActionPermissions, P
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType
 from .comments import Comment
+from .dataverse_export import DataverseExport
 from .favorites import FavoriteAction, FavoriteInstrument
 from .files import File
 from .groups import Group
@@ -45,6 +47,7 @@ from .user_log import UserLogEntry, UserLogEntryType
 __all__ = [
     'api_log',
     'authentication',
+    'dataverse_export',
     'favorites',
     'files',
     'groups',
@@ -67,6 +70,7 @@ __all__ = [
     'Authentication',
     'AuthenticationType',
     'Comment',
+    'DataverseExport',
     'FavoriteAction',
     'FavoriteInstrument',
     'File',

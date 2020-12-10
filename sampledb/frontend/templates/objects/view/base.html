@@ -99,6 +99,19 @@
     <div class="form-group">
       <div data-toggle="tooltip" data-placement="top" title="Export object information to an archive or PDF file."><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dataExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> Export Data</button></div>
     </div>
+    {% if show_dataverse_export %}
+    <div class="form-group">
+      <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Export object information and files to {{ config['DATAVERSE_NAME'] }}.">
+        <img src="{{ url_for("static", filename="img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>Export to {{ config['DATAVERSE_NAME'] }}
+      </a>
+    </div>
+    {% elif dataverse_url %}
+    <div class="form-group">
+      <a href="{{ dataverse_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="View object information on {{ config['DATAVERSE_NAME'] }}.">
+        <img src="{{ url_for("static", filename="img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>View on {{ config['DATAVERSE_NAME'] }}
+      </a>
+    </div>
+    {% endif %}
     {% if notebook_templates and jupyterhub_templates_url %}
       <div class="form-group">
         <div class="btn-group" data-toggle="tooltip" data-placement="top" title="Create a Jupyter Notebook in {{ jupyterhub_name }} to analyze this object.">
@@ -838,6 +851,13 @@
             <td class="text-right">
             </td>
             {% endif %}
+          {% elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> exported this object to a Dataverse.</td>
+            <td class="text-right">
+            {% if object_log_entry.data.get('dataverse_url') %}
+              <a href="{{ object_log_entry.data['dataverse_url'] }}">View</a>
+            {% endif %}
+            </td>
           {% else %}
             <td>Unknown event</td><td></td>
           {% endif %}

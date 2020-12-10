@@ -17,7 +17,8 @@
     "substrate": {
       "title": "Substrate",
       "type": "text",
-      "minLength": 1
+      "minLength": 1,
+      "dataverse_export": true
     },
     "checkbox": {
       "title": "Checkbox",

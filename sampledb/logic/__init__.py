@@ -9,6 +9,7 @@ from . import api_log
 from . import authentication
 from . import comments
 from . import datatypes
+from . import dataverse_export
 from . import errors
 from . import export
 from . import favorites
@@ -51,6 +52,7 @@ __all__ = [
     'authentication',
     'comments',
     'datatypes',
+    'dataverse_export',
     'errors',
     'export',
     'favorites',

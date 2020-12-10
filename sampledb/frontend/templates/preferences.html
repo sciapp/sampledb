@@ -449,6 +449,16 @@
 
   <h2>Other Settings</h2>
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
+    {% if user_settings['DATAVERSE_API_TOKEN'] %}
+    <div class="form-group">
+      <label class="control-label col-md-4">
+        Dataverse API Token
+      </label>
+      <input type="submit" name="delete_dataverse_api_token" class="btn btn-danger col-md-offset-5 col-md-3" value="Delete Dataverse API Token" />
+    </div>
+    {% endif %}
+  </form>
+  <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
     {{ other_settings_form.csrf_token }}
     <div class="form-group">
     <label class="col-md-4 control-label" for="input-use-schema-editor-yes">

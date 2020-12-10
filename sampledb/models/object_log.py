@@ -26,6 +26,7 @@ class ObjectLogEntryType(enum.Enum):
     ASSIGN_LOCATION = 9
     LINK_PUBLICATION = 10
     REFERENCE_OBJECT_IN_METADATA = 11
+    EXPORT_TO_DATAVERSE = 12
 
 
 class ObjectLogEntry(db.Model):

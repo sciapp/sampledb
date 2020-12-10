@@ -10,7 +10,7 @@ from sampledb.logic.errors import ValidationError
 from sampledb.models import ActionType
 
 
-def wrap_into_basic_schema(schema, name='other'):
+def wrap_into_basic_schema(schema, name='other', required=False):
     return {
         'title': "Basic Schema",
         'type': 'object',
@@ -21,7 +21,7 @@ def wrap_into_basic_schema(schema, name='other'):
             },
             name: schema
         },
-        'required': ['name']
+        'required': ['name', name] if required else ['name']
     }
 
 
@@ -1924,3 +1924,58 @@ def test_validate_user_schema_with_unknown_property():
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_schemas_with_export_bool():
+    schema = {
+        'title': 'Example Property',
+        'type': 'quantity',
+        'units': '1',
+        'dataverse_export': True
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+    for property_type in ('text', 'bool', 'user', 'sample', 'measurement', 'object_reference', 'datetime', 'tags', 'hazards'):
+        schema = {
+            'title': 'Example Property',
+            'type': property_type,
+            'dataverse_export': True
+        }
+        validate_schema(wrap_into_basic_schema(schema, property_type, required=True))
+
+    schema = {
+        'title': 'Example Property',
+        'type': 'quantity',
+        'units': '1',
+        'dataverse_export': 'dataverse_export'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    for property_type in ('text', 'bool', 'user', 'sample', 'measurement', 'object_reference', 'datetime', 'tags', 'hazards'):
+        schema = {
+            'title': 'Example Property',
+            'type': property_type,
+            'dataverse_export': 'dataverse_export'
+        }
+        with pytest.raises(ValidationError):
+            validate_schema(wrap_into_basic_schema(schema, property_type, required=True))
+
+
+def test_schema_with_name_export():
+    schema = {
+        'title': "Basic Schema",
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': "Name",
+                'type': 'text',
+                'dataverse_export': False
+            }
+        },
+        'required': ['name']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['properties']['name']['dataverse_export'] = True
+    validate_schema(schema)

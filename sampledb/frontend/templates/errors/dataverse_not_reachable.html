@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config['DATAVERSE_NAME'] }} not reachable — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>{{ config['DATAVERSE_NAME'] }} not reachable</h1>
+  <p>{{ service_name }} cannot reach the {{ config['DATAVERSE_NAME'] }} API at this time. Please try again later.</p>
+{% endblock %}

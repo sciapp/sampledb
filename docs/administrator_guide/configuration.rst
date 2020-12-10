@@ -100,13 +100,32 @@ JupyterHub Support
    * - Variable Name
      - Description
    * - SAMPLEDB_JUPYTERHUB_NAME
-     - The name of your JupyterHub server
+     - The name of your JupyterHub server (default: ``JupyterHub``)
    * - SAMPLEDB_JUPYTERHUB_URL
      - The base URL of your JupyterHub server
    * - SAMPLEDB_JUPYTERHUB_TEMPLATES_URL
      - The URL of a Jupyter notebook templating server (default: SAMPLEDB_JUPYTERHUB_URL + ``/templates``, if SAMPLEDB_JUPYTERHUB_URL is set)
 
 For more information on JupyterHub support and Jupyter notebook templates, see :ref:`jupyterhub_support`.
+
+.. _dataverse_configuration:
+
+Dataverse Export
+----------------
+
+.. list-table:: Dataverse Export Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_DATAVERSE_NAME
+     - The name of the Dataverse server (default: ``Dataverse``)
+   * - SAMPLEDB_DATAVERSE_URL
+     - The base URL of the Dataverse server
+   * - SAMPLEDB_DATAVERSE_ROOT_IDS
+     - A comma seperated list of IDs of Dataverses, which objects may be exported to  (default: ``:root``)
+
+For more information on the Dataverse export, see :ref:`dataverse_export`.
 
 Administrator Account
 ---------------------

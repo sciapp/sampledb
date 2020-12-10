@@ -858,6 +858,14 @@ def object(object_id):
         object_type = action.type.object_name
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
 
+        dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
+        if dataverse_enabled:
+            dataverse_url = logic.dataverse_export.get_dataverse_url(object_id)
+            show_dataverse_export = user_may_grant and not dataverse_url
+        else:
+            dataverse_url = None
+            show_dataverse_export = False
+
         if user_may_edit:
             serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
             token = serializer.dumps([flask_login.current_user.id, object_id])
@@ -975,6 +983,8 @@ def object(object_id):
             object_publications=object_publications,
             user_may_link_publication=user_may_link_publication,
             user_may_use_as_template=user_may_use_as_template,
+            show_dataverse_export=show_dataverse_export,
+            dataverse_url=dataverse_url,
             publication_form=publication_form,
             get_object=get_object,
             get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
