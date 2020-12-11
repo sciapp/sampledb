@@ -539,7 +539,7 @@ def transform_literal_to_query(data, literal: object_search_parser.Literal, sear
                 if i > 0:
                     jsonb_selector += " -> "
                 jsonb_selector += attribute
-            array_items = select(columns=[db.text('value FROM jsonb_array_elements_text(data -> {})'.format(jsonb_selector))])
+            array_items = select(columns=[db.text('value FROM jsonb_array_elements_text((data -> {0})::jsonb) WHERE jsonb_typeof(data -> {0}) = \'array\''.format(jsonb_selector))])
             db_obj = db.literal_column('value').cast(postgresql.JSONB)
             for attribute in attributes[array_placeholder_index + 1:]:
                 db_obj = db_obj[attribute]

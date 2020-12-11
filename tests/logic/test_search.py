@@ -2413,3 +2413,89 @@ def test_find_by_automatic_advanced_search(user, action) -> None:
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(objects) == 0
     assert len(search_notes) == 0
+
+
+def test_with_name_collision(user) -> None:
+    schema1 = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'vs': {
+                'title': 'vs',
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    schema2 = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'vs': {
+                'title': 'vs',
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'title': 'v',
+                    'properties': {
+                        'v': {
+                            'title': 'v',
+                            'type': 'text'
+                        }
+                    }
+                }
+            }
+        },
+        'required': ['name']
+    }
+    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'a1', '', schema1)
+    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'a2', '', schema2)
+
+    data1 = {
+        'name': {
+            '_type': 'text',
+            'text': 'o1'
+        },
+        'vs': {
+            '_type': 'text',
+            'text': 'v1'
+        }
+    }
+    data2 = {
+        'name': {
+            '_type': 'text',
+            'text': 'o1'
+        },
+        'vs': [
+            {
+                'v': {
+                    '_type': 'text',
+                    'text': 'v1'
+                }
+            }
+        ]
+    }
+    sampledb.logic.objects.create_object(action1.id, data1, user.id)
+    sampledb.logic.objects.create_object(action2.id, data2, user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('vs == "v1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1
+    assert objects[0].data == data1
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('vs.?.v == "v1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1
+    assert objects[0].data == data2
+    assert len(search_notes) == 0
