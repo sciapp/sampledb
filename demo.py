@@ -23,7 +23,7 @@ try:
     sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
 
     # fully empty the database first
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=False)
     app = create_app()
     app.config['SERVER_NAME'] = 'localhost:5000'
     with app.app_context():

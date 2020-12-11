@@ -32,7 +32,7 @@ def engine():
         json_deserializer=lambda obj: json.loads(obj, object_hook=datatypes.JSONEncoder.object_hook)
     )
 
-    sampledb.utils.empty_database(engine)
+    sampledb.utils.empty_database(engine, only_delete=False)
     return engine
 
 

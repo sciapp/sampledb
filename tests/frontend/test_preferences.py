@@ -58,12 +58,11 @@ def test_user_preferences(flask_server):
 
 
 def test_user_preferences_userid_wrong(flask_server, user):
-    # Try logging in with ldap-test-account
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
-    r = session.get(flask_server.base_url + 'users/10/preferences')
+    r = session.get(f'{flask_server.base_url}users/{user.id + 1}/preferences')
     assert r.status_code == 403
 
 
@@ -155,7 +154,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
 
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'users/1/preferences')
+    assert confirmation_url.startswith(f'{flask_server.base_url}users/{user_id}/preferences')
     r = session.get(confirmation_url)
 
     with flask_server.app.app_context():
@@ -469,14 +468,14 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
     # Get the confirmation url from the mail and open it
     confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
-    assert confirmation_url.startswith(flask_server.base_url + 'users/1/preferences')
+    assert confirmation_url.startswith(f'{flask_server.base_url}users/{user.id}/preferences')
     r = session.get(confirmation_url)
     assert r.status_code == 200
 
     # initially, the a link to the preferences page will be displayed
     r = session.get(flask_server.base_url)
     assert r.status_code == 200
-    assert '/users/1/preferences' in r.content.decode('utf-8')
+    assert f'/users/{user.id}/preferences' in r.content.decode('utf-8')
     # Try to login
     r = session.get(flask_server.base_url + 'users/me/sign_in')
     assert r.status_code == 200
@@ -584,7 +583,7 @@ def test_user_remove_authentication_method(flask_server):
 
     #  delete  authentication-method, only one exists
     r = session.post(url, {
-        'id': '1',
+        'id': str(sampledb.models.Authentication.query.first().id),
         'csrf_token': csrf_token,
         'remove': 'Remove'
     })
@@ -620,9 +619,9 @@ def test_user_remove_authentication_method(flask_server):
     with flask_server.app.app_context():
         assert len(sampledb.models.Authentication.query.all()) == 2
 
-    #  delete  authentication-method, only one exists
+    #  delete  authentication-method, two exist
     r = session.post(url, {
-        'id': '2',
+        'id': str(sampledb.models.Authentication.query.all()[1].id),
         'csrf_token': csrf_token,
         'remove': 'Remove'
     })
@@ -882,7 +881,7 @@ def test_user_preferences_change_password(flask_server, user):
 
     #  change password with typo in confirmation
     r = session.post(url, {
-        'id': '1',
+        'id': str(sampledb.models.Authentication.query.first().id),
         'password': 'xxxx',
         'password_confirmation': 'xyxx',
         'csrf_token': csrf_token,
@@ -893,7 +892,7 @@ def test_user_preferences_change_password(flask_server, user):
 
     #  change password
     r = session.post(url, {
-        'id': '1',
+        'id': str(sampledb.models.Authentication.query.first().id),
         'password': 'xxxx',
         'password_confirmation': 'xxxx',
         'csrf_token': csrf_token,

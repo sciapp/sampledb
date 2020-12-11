@@ -210,7 +210,7 @@ def test_add_user(flask_server, user_session, user):
 
     assert len(sampledb.logic.projects.get_user_projects(new_user.id)) == 0
 
-    assert invitation_url.startswith(flask_server.base_url + 'projects/1')
+    assert invitation_url.startswith(f'{flask_server.base_url}projects/{project_id}')
     r = user_session.get(invitation_url)
     assert r.status_code == 403
     assert 'Please sign in as user &#34;{}&#34; to accept this invitation'.format(user.name) in r.content.decode('utf-8')

@@ -67,10 +67,13 @@ def create_flask_server(app):
 
 
 @pytest.fixture(scope='session')
-def flask_server():
+def flask_server(worker_id):
+    if worker_id != 'master':
+        sampledb.config.SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:@postgres:5432/testdb_" + worker_id[2:]
+
     app = create_app()
     # empty the database first, to ensure all tests rebuild it before use
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     yield from create_flask_server(app)
 
 
@@ -78,7 +81,7 @@ def create_app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
     os.environ['FLASK_ENV'] = 'development'
     os.environ['FLASK_TESTING'] = 'True'
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     sampledb_app = sampledb.create_app()
 
     @sampledb_app.route('/users/me/loginstatus')
@@ -100,7 +103,7 @@ def app(flask_server):
     app = flask_server.app
     # reset config and database before each test
     app.config = copy.deepcopy(flask_server.initial_config)
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI))
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     sampledb.setup_database(app)
     return app
 
