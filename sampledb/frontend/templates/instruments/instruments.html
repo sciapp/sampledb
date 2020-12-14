@@ -22,7 +22,7 @@
     {% endif %}
     {% if instrument.short_description %}
     <div class="instrument-user-content">
-    {% if instrument.short_description_is_markdown %}{{ instrument.short_description | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.short_description }}</p>{% endif %}
+    {% if instrument.short_description_is_markdown %}{{ instrument.short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}{% else %}<p>{{ instrument.short_description }}</p>{% endif %}
     </div>
     {% endif %}
     {% include "instruments/instrument_scientists.html" %}

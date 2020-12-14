@@ -292,11 +292,15 @@ def new_instrument():
     ]
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(instrument_form.description.data)
+            description_as_html = markdown_to_safe_html(instrument_form.description.data, anchor_prefix='instrument-description')
             mark_referenced_markdown_images_as_permanent(description_as_html)
 
+        if instrument_form.short_description_is_markdown.data:
+            short_description_as_html = markdown_to_safe_html(instrument_form.short_description.data, anchor_prefix='instrument-short-description')
+            mark_referenced_markdown_images_as_permanent(short_description_as_html)
+
         if instrument_form.notes_are_markdown.data:
-            notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+            notes_as_html = markdown_to_safe_html(instrument_form.notes.data, anchor_prefix='instrument-notes')
             mark_referenced_markdown_images_as_permanent(notes_as_html)
 
         instrument = create_instrument(
@@ -397,11 +401,15 @@ def edit_instrument(instrument_id):
         instrument_form.is_hidden.data = instrument.is_hidden
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(instrument_form.description.data)
+            description_as_html = markdown_to_safe_html(instrument_form.description.data, anchor_prefix='instrument-description')
             mark_referenced_markdown_images_as_permanent(description_as_html)
 
+        if instrument_form.short_description_is_markdown.data:
+            short_description_as_html = markdown_to_safe_html(instrument_form.short_description.data, anchor_prefix='instrument-short-description')
+            mark_referenced_markdown_images_as_permanent(short_description_as_html)
+
         if instrument_form.notes_are_markdown.data:
-            notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+            notes_as_html = markdown_to_safe_html(instrument_form.notes.data, anchor_prefix='instrument-notes')
             mark_referenced_markdown_images_as_permanent(notes_as_html)
 
         update_instrument(

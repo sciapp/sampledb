@@ -9,7 +9,7 @@
   {% endif %}
   {% if instrument.description %}
   <div class="instrument-user-content">
-  {% if instrument.description_is_markdown %}{{ instrument.description | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
+  {% if instrument.description_is_markdown %}{{ instrument.description | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
   </div>
   {% endif %}
   {% include "instruments/instrument_scientists.html" %}
@@ -24,7 +24,7 @@
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
     {% if action.short_description %}
     <div class="action-user-content">
-    {% if action.short_description_is_markdown %}{{ action.short_description | markdown_to_safe_html | safe }}{% else %}<p>{{ action.short_description }}</p>{% endif %}
+    {% if action.short_description_is_markdown %}{{ action.short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description }}</p>{% endif %}
     </div>
     {% endif %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
@@ -41,7 +41,7 @@
     </p>
     {% if instrument.notes %}
       <div class="instrument-user-content">
-      {% if instrument.notes_is_markdown %}{{ instrument.notes | markdown_to_safe_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
+      {% if instrument.notes_is_markdown %}{{ instrument.notes | markdown_to_safe_html(anchor_prefix='instrument-notes') | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
       </div>
     {% else %}
       &mdash;

@@ -53,10 +53,10 @@ def setup_data(app):
 
     sampledb.login_manager.login_view = 'autologin'
 
-    markdown_notes = """
+    markdown_notes = """# Header
 This example shows how Markdown can be used for instrument Notes.
 
-## Header
+## Subheader
 
 *italics* **bold**
 

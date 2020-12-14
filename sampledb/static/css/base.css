@@ -849,3 +849,13 @@ input.instrument-log-show-versions:checked ~ div .instrument-log-version {
     color:#262626;
     text-decoration: none;
 }
+
+a.headerlink, a.headerlink:active, a.headerlink:hover, a.headerlink:focus {
+    visibility: hidden;
+    text-decoration: none;
+    margin-left: 0.5em;
+}
+
+*:hover > a.headerlink {
+    visibility: visible;
+}

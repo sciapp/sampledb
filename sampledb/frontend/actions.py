@@ -368,12 +368,12 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         name = action_form.name.data
         description = action_form.description.data
         if action_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(description)
+            description_as_html = markdown_to_safe_html(description, anchor_prefix='action-description')
             mark_referenced_markdown_images_as_permanent(description_as_html)
 
         short_description = action_form.short_description.data
         if action_form.short_description_is_markdown.data:
-            short_description_as_html = markdown_to_safe_html(short_description)
+            short_description_as_html = markdown_to_safe_html(short_description, anchor_prefix='action-short-description')
             mark_referenced_markdown_images_as_permanent(short_description_as_html)
 
         instrument_id = action_form.instrument.data
