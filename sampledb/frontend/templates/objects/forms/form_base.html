@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
@@ -14,6 +15,7 @@
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
 {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
   <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
 {% endif %}
@@ -24,6 +26,18 @@
             format: 'YYYY-MM-DD HH:mm:ss',
             date: $(this).attr('data-datetime')
           });
+        });
+
+        $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
+            var mde_field = new InscrybMDE({
+                element: e,
+                indentWithTabs: false,
+                spellChecker: false,
+                status: false,
+                hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+                showIcons: ["code", "table"],
+                minHeight: '100px',
+            });
         });
     });
 

@@ -160,7 +160,7 @@ Arrays represent a list of items. Arrays may have a minium (``minItems``) and ma
 Texts
 ^^^^^
 
-Texts may have a minimum (``minLength``) and maximum length (``maxLength``) and a default value (``default``). Acceptable values can be restricted using a `regular expression <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_ (``pattern``) and text properties can optionally contain multiple lines (``multiline``). Text schemas may also provide a ``placeholder`` to display in the input field instead of the title, if no ``choices`` are provided.
+Texts may have a minimum (``minLength``) and maximum length (``maxLength``) and a default value (``default``). Acceptable values can be restricted using a `regular expression <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_ (``pattern``) and text properties can optionally contain multiple lines (``multiline``). Text schemas may also provide a ``placeholder`` to display in the input field instead of the title, if no ``choices`` are provided. Texts can also contain Markdown content (``markdown``).
 
 .. code-block:: json
     :caption: A sample name as a text property with a default, a pattern and length restrictions
@@ -181,6 +181,15 @@ Texts may have a minimum (``minLength``) and maximum length (``maxLength``) and 
       "title": "Description",
       "type": "text",
       "multiline": true
+    }
+
+.. code-block:: json
+    :caption: A sample description allowing Markdown content
+
+    {
+      "title": "Description",
+      "type": "text",
+      "markdown": true
     }
 
 Booleans

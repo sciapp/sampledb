@@ -205,6 +205,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if not path:
         if 'name' not in schema['properties'] or schema['properties']['name']['type'] != 'text':
             raise ValidationError('Schema must include a text property "name"', path)
+        if schema['properties']['name'].get('multiline') or schema['properties']['name'].get('markdown'):
+            raise ValidationError('Object name must not be multiline or markdown text', path)
         if 'required' not in schema or 'name' not in schema['required']:
             raise ValidationError('"name" must be a required property for the root object', path)
 
@@ -255,7 +257,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'note', 'placeholder', 'dataverse_export'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -296,6 +298,14 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
             raise ValidationError('pattern is no valid regular expression', path)
     if 'multiline' in schema and not isinstance(schema['multiline'], bool):
         raise ValidationError('multiline must be bool', path)
+    if 'markdown' in schema and not isinstance(schema['markdown'], bool):
+        raise ValidationError('markdown must be bool', path)
+    if schema.get('markdown') and schema.get('multiline'):
+        raise ValidationError('text may not both be multiline and markdown', path)
+    if 'choices' in schema and schema.get('multiline'):
+        raise ValidationError('text may not both be multiline and have choices', path)
+    if 'choices' in schema and schema.get('markdown'):
+        raise ValidationError('text may not both be markdown and have choices', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'dataverse_export' in schema and not schema['dataverse_export'] and path == ['name']:
