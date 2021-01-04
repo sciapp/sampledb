@@ -25,6 +25,7 @@ test:
       done
     # install dependencies
     - python3 -m pip install -r requirements.txt
+    - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
     # run tests and gather coverage data
     - python3 -m pytest -x -s -n=4 --cov=sampledb/ --junitxml=pytest.xml tests
   artifacts:

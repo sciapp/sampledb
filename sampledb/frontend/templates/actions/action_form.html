@@ -47,6 +47,28 @@
     }
     $('#input-markdown').change(updateDescriptionMarkdown);
     updateDescriptionMarkdown();
+
+    function updateShortDescriptionMarkdown() {
+      if ($('#input-short-description-is-markdown').prop('checked')) {
+        window.mde_short_descrption = new InscrybMDE({
+          element: $("#input-short-description")[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+          showIcons: ["code", "table"],
+          minHeight: '100px',
+        });
+        setupImageDragAndDrop(window.mde_short_descrption);
+      } else {
+        if (window.mde_short_descrption) {
+          window.mde_short_descrption.toTextArea();
+          window.mde_short_descrption = null;
+        }
+      }
+    }
+    $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
+    updateShortDescriptionMarkdown();
   });
   </script>
 {% endblock %}
@@ -95,11 +117,18 @@
         </select>
       </div>
       <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}" style="min-height: 395px;">
-        <label for="input-description" class="control-label">Description</label>
+        <label for="input-description" class="control-label">Description <span class="text-muted" style="font-weight: normal">shown on the action site</span></label>
         <label for="input-markdown" style="font-weight:400" class="pull-right">
           <input type="checkbox" id="input-markdown" name="{{ action_form.is_markdown.name }}" {% if action_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
         </label>
         <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
+      </div>
+      <div class="form-group {% if action_form.short_description.name in action_form.errors %}has-error{% endif %}" style="min-height: 195px;">
+        <label for="input-short-description" class="control-label">Short Description <span class="text-muted" style="font-weight: normal">shown in action lists</span></label>
+        <label for="input-short-description-is-markdown" style="font-weight:400" class="pull-right">
+          <input type="checkbox" id="input-short-description-is-markdown" name="{{ action_form.short_description_is_markdown.name }}" {% if action_form.short_description_is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
+        </label>
+        <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description" name="{{ action_form.short_description.name }}" placeholder="Short Description">{{ action_form.short_description.data or '' }}</textarea>
       </div>
       <div class="checkbox">
         <label for="input-is_hidden" style="font-weight:400">

@@ -117,6 +117,28 @@
     $('#input-markdown').change(updateDescriptionMarkdown);
     updateDescriptionMarkdown();
 
+    function updateShortDescriptionMarkdown() {
+      if ($('#input-short-description-is-markdown').prop('checked')) {
+        window.mde_short_descrption = new InscrybMDE({
+          element: $("#input-short-description")[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+          showIcons: ["code", "table"],
+          minHeight: '100px',
+        });
+        setupImageDragAndDrop(window.mde_short_descrption);
+      } else {
+        if (window.mde_short_descrption) {
+          window.mde_short_descrption.toTextArea();
+          window.mde_short_descrption = null;
+        }
+      }
+    }
+    $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
+    updateShortDescriptionMarkdown();
+
     function updateNotesMarkdown() {
       if ($('#input-notes-are-markdown').prop('checked')) {
         window.mde_notes = new InscrybMDE({
@@ -151,11 +173,18 @@
          <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ instrument_form.name.name }}" value="{{ instrument_form.name.data or instrument_form.name.default or '' }}">
       </div>
       <div class="form-group {% if instrument_form.description.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 395px;">
-        <label for="input-description" class="control-label">Description</label>
+        <label for="input-description" class="control-label">Description <span class="text-muted" style="font-weight: normal">shown on the instrument site</span></label>
         <label for="input-markdown" style="font-weight:400" class="pull-right">
           <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown
         </label>
         <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" name="{{ instrument_form.description.name }}" placeholder="Description">{{ instrument_form.description.data or instrument_form.description.default or '' }}</textarea>
+      </div>
+      <div class="form-group {% if instrument_form.short_description.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 195px;">
+        <label for="input-short-description" class="control-label">Short Description <span class="text-muted" style="font-weight: normal">shown in the instrument list</span></label>
+        <label for="input-short-description-is-markdown" style="font-weight:400" class="pull-right">
+          <input type="checkbox" id="input-short-description-is-markdown" name="{{ instrument_form.short_description_is_markdown.name }}" {% if instrument_form.short_description_is_markdown.data %}checked="checked"{% endif %}> Use Markdown
+        </label>
+        <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description" name="{{ instrument_form.short_description.name }}" placeholder="Short Description">{{ instrument_form.short_description.data or instrument_form.short_description.default or '' }}</textarea>
       </div>
       <div class="form-group {% if instrument_form.notes.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 395px;">
         <label for="input-notes" class="control-label">Instrument Scientist Notes</label>

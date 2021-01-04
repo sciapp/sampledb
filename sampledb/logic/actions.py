@@ -244,8 +244,10 @@ def create_action(
         schema: dict,
         instrument_id: typing.Optional[int] = None,
         user_id: typing.Optional[int] = None,
-        description_as_html: typing.Optional[str] = None,
-        is_hidden: bool = False
+        description_is_markdown: bool = False,
+        is_hidden: bool = False,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> Action:
     """
     Creates a new action with the given type, name, description and schema. If
@@ -258,8 +260,11 @@ def create_action(
     :param schema: the schema for objects created using this action
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param is_hidden: None or whether or not the action should be hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -284,11 +289,13 @@ def create_action(
         action_type_id=action_type_id,
         name=name,
         description=description,
-        description_as_html=description_as_html,
+        description_is_markdown=description_is_markdown,
         is_hidden=is_hidden,
         schema=schema,
         instrument_id=instrument_id,
-        user_id=user_id
+        user_id=user_id,
+        short_description=short_description,
+        short_description_is_markdown=short_description_is_markdown
     )
     db.session.add(action)
     db.session.commit()
@@ -333,8 +340,10 @@ def update_action(
         name: str,
         description: str,
         schema: dict,
-        description_as_html: typing.Optional[str] = None,
-        is_hidden: typing.Optional[bool] = None
+        description_is_markdown: bool = False,
+        is_hidden: typing.Optional[bool] = None,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> None:
     """
     Updates the action with the given action ID, setting its name, description and schema.
@@ -343,8 +352,11 @@ def update_action(
     :param name: the new name of the action
     :param description: the new (possibly empty) description of the action
     :param schema: the new schema for objects created using this action
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param is_hidden: None or whether or not the action should be hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -355,8 +367,10 @@ def update_action(
         raise errors.ActionDoesNotExistError()
     action.name = name
     action.description = description
-    action.description_as_html = description_as_html
+    action.description_is_markdown = description_is_markdown
     action.schema = schema
+    action.short_description = short_description
+    action.short_description_is_markdown = short_description_is_markdown
     if is_hidden is not None:
         action.is_hidden = is_hidden
     db.session.add(action)
