@@ -5,12 +5,13 @@
 
 import bleach
 from markdown import markdown as _markdown_to_html
+from markdown.extensions.toc import TocExtension, slugify_unicode
 
 from .. import db
 from ..models import MarkdownToHTMLCacheEntry
 
 
-def markdown_to_safe_html(markdown: str, use_cache: bool = True) -> str:
+def markdown_to_safe_html(markdown: str, use_cache: bool = True, anchor_prefix: str = 'markdown-anchor') -> str:
     """
     Convert Markdown content to (safe) HTML.
 
@@ -20,20 +21,39 @@ def markdown_to_safe_html(markdown: str, use_cache: bool = True) -> str:
 
     :param markdown: the Markdown content to convert
     :param use_cache: whether the cache should be used
+    :param anchor_prefix: the prefix to use for anchors
     :return: the content as HTML
     """
+
+    parameters = {
+        'anchor_prefix': anchor_prefix
+    }
+
     if use_cache:
-        cache_entry = MarkdownToHTMLCacheEntry.query.get(markdown)
+        cache_entry = MarkdownToHTMLCacheEntry.query.filter(
+            MarkdownToHTMLCacheEntry.markdown == markdown,
+            MarkdownToHTMLCacheEntry.parameters['anchor_prefix'].astext == anchor_prefix
+        ).first()
         if cache_entry is not None and cache_entry.html is not None:
             return cache_entry.html
 
+    toc_extension = TocExtension(
+        marker='',
+        permalink=True,
+        permalink_class='text-muted headerlink',
+        slugify=lambda value, separator: slugify_unicode(anchor_prefix + '-' + value, separator)
+    )
+
     html = _markdown_to_html(
         bleach.clean(markdown),
-        extensions=['tables']
+        extensions=[
+            'tables',
+            toc_extension
+        ]
     )
 
     if use_cache:
-        cache_entry = MarkdownToHTMLCacheEntry(markdown=markdown, html=html)
+        cache_entry = MarkdownToHTMLCacheEntry(markdown=markdown, parameters=parameters, html=html)
         db.session.add(cache_entry)
         db.session.commit()
 
@@ -46,7 +66,14 @@ def regenerate_cache() -> None:
     """
     cache_entries = MarkdownToHTMLCacheEntry.query.all()
     for cache_entry in cache_entries:
-        cache_entry.html = markdown_to_safe_html(cache_entry.markdown, use_cache=False)
+        parameters = {}
+        if 'anchor_prefix' in cache_entry.parameters:
+            parameters['anchor_prefix'] = cache_entry.parameters['anchor_prefix']
+        cache_entry.html = markdown_to_safe_html(
+            cache_entry.markdown,
+            use_cache=False,
+            **parameters
+        )
         db.session.add(cache_entry)
     db.session.commit()
 

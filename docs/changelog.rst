@@ -8,6 +8,7 @@ Currently in development.
 
 - Added Dataverse export using the EngMeta "Process Metadata" block
 - Added short descriptions to actions and instruments
+- Allow linking to headers in Markdown content
 
 Version 0.16
 ------------
