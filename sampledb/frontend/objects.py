@@ -689,6 +689,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     print('object schema validation failed')
                     # TODO: handle error
                     flask.abort(400)
+                for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
+                    markdown_as_html = logic.markdown_to_html.markdown_to_safe_html(markdown)
+                    logic.markdown_images.mark_referenced_markdown_images_as_permanent(markdown_as_html)
                 if object is None:
                     if schema.get('batch', False) and num_objects_in_batch is not None:
                         if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:

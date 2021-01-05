@@ -1,0 +1,13 @@
+{% if data %}
+  <ol>
+    {% for item in data %}
+      {% with schema = schema['items'] %}
+      {% with data = item %}
+        <li>{% include "pdfexport/any.html" %}</li>
+      {% endwith %}
+      {% endwith %}
+    {% endfor %}
+  </ol>
+{% else %}
+  &mdash;
+{% endif %}

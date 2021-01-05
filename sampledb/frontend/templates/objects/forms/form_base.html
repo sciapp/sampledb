@@ -16,6 +16,7 @@
   <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
 {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
   <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
 {% endif %}
@@ -38,6 +39,7 @@
                 showIcons: ["code", "table"],
                 minHeight: '100px',
             });
+            setupImageDragAndDrop(mde_field);
         });
     });
 
