@@ -9,6 +9,7 @@ Currently in development.
 - Added Dataverse export using the EngMeta "Process Metadata" block
 - Added short descriptions to actions and instruments
 - Allow linking to headers in Markdown content
+- Allow disabling of "Use in Measurement" button for samples
 
 Version 0.16
 ------------

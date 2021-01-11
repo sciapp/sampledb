@@ -23,7 +23,7 @@
   </div>
   {% endif %}
 
-  <h3>{{ object_type }} #{{ object_id }}: {{ data['name']['text'] }}</h3>
+  <h3>{{ action.type.object_name }} #{{ object_id }}: {{ data['name']['text'] }}</h3>
 
   <h4>Information</h4>
   <div class="row" style="padding-right:0.75em">
@@ -58,10 +58,11 @@
       <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new object based on the information for this object."><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
     </div>
     {% endif %}
-    {% if object_type.lower() == 'sample' %}
+    {% if action.type.id == action.type.SAMPLE_CREATION and not config['DISABLE_USE_IN_MEASUREMENT'] %}
+
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="Create a new measurement using this sample.">
-        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> Use in Measurement <span class="caret"></span></button>
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> Use in {{ get_action_type(action.type.MEASUREMENT).name }} <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
           <li><strong style="padding: 3px 20px">Favorites:</strong></li>
           {% if favorite_measurement_actions %}
@@ -82,7 +83,7 @@
           <li><span style="padding: 3px 20px">&mdash;</span></li>
           {% endif %}
           <li role="separator" class="divider"></li>
-          <li><a href="{{ url_for('.actions', t='measurements', sample_id=object_id) }}">See other Measurement Actions...</a></li>
+          <li><a href="{{ url_for('.actions', t='measurements', sample_id=object_id) }}">See other {{ get_action_type(action.type.MEASUREMENT).name }} Actions...</a></li>
         </ul>
       </div>
     </div>
@@ -218,7 +219,7 @@
       </tbody>
     </table>
     {% else %}
-      <p>There are no files for this {{ object_type.lower() }}.</p>
+      <p>There are no files for this {{ action.type.object_name.lower() }}.</p>
     {% endif %}
 
     {% for file in files %}

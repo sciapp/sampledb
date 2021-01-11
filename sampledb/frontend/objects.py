@@ -998,7 +998,8 @@ def object(object_id):
             object_location_assignments=get_object_location_assignments(object_id),
             build_object_location_assignment_confirmation_url=build_object_location_assignment_confirmation_url,
             user_may_assign_location=user_may_edit,
-            location_form=location_form
+            location_form=location_form,
+            get_action_type=get_action_type
         )
     check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
@@ -1579,7 +1580,8 @@ def object_version(object_id, version_id):
         link_version_specific_rdf=True,
         restore_form=form,
         get_user=get_user,
-        user_may_grant=user_may_grant
+        user_may_grant=user_may_grant,
+        get_action_type=get_action_type
     )
 
 
