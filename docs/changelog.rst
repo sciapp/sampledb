@@ -8,6 +8,7 @@ Currently in development.
 
 - Added Dataverse export using the EngMeta "Process Metadata" block
 - Added short descriptions to actions and instruments
+- Added array style "horizontal_table"
 - Allow linking to headers in Markdown content
 - Allow disabling of "Use in Measurement" button for samples
 - Added markdown support to object metadata

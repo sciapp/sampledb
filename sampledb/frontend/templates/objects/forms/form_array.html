@@ -10,7 +10,7 @@
 {% else %}
 {% set numItems = 0 %}
 {% endif %}
-{% if schema.style == "table" %}
+{% if schema.style == "table" or schema.style == "horizontal_table" %}
 </div>
 <div style="padding-left:2.5em;">
   {% if schema['items']['type'] == 'object' %}

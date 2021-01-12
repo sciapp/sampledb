@@ -127,8 +127,8 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
     if has_min_items and has_max_items:
         if schema['minItems'] > schema['maxItems']:
             raise ValidationError('minItems must be less than or equal to maxItems', path)
-    if 'style' in schema and schema['style'] not in ('table', 'list'):
-        raise ValidationError('style must be either "list" or "table"', path)
+    if 'style' in schema and schema['style'] not in ('table', 'horizontal_table', 'list'):
+        raise ValidationError('style must be one of "list", "table" and "horizontal_table"', path)
     validate_schema(schema['items'], path + ['[?]'])
     if 'default' in schema:
         validate(schema['default'], schema, path + ['(default)'])
