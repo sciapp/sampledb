@@ -1,0 +1,11 @@
+{% if data and data.text %}
+{% if data.is_markdown %}
+  <div class="object-user-content">{{ data.text | markdown_to_safe_html | safe }}</div>
+{% elif schema.multiline %}
+  <div class="object-user-content multiline">{{ data.text }}</div>
+{% else %}
+  {{ data.text }}
+{% endif %}
+{% else %}
+  &mdash;
+{% endif %}

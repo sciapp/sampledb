@@ -1,0 +1,30 @@
+<ul class="object-property-list">
+{% if 'propertyOrder' not in schema %}
+  {% for property_name in schema['properties'] %}
+    {% if property_name not in schema['propertyOrder'] %}
+      {% with schema = schema['properties'][property_name] %}
+      {% with data = data[property_name] %}
+        <li>{{ schema.title }}: {% include "pdfexport/any.html" %}</li>
+      {% endwith %}
+      {% endwith %}
+    {% endif %}
+  {% endfor %}
+{% else %}
+  {% for property_name in schema['propertyOrder'] %}
+      {% with schema = schema['properties'][property_name] %}
+      {% with data = data[property_name] %}
+        <li>{{ schema.title }}: {% include "pdfexport/any.html" %}</li>
+      {% endwith %}
+      {% endwith %}
+  {% endfor %}
+  {% for property_name in schema['properties'] %}
+    {% if property_name not in schema['propertyOrder'] %}
+      {% with schema = schema['properties'][property_name] %}
+      {% with data = data[property_name] %}
+        <li>{{ schema.title }}: {% include "pdfexport/any.html" %}</li>
+      {% endwith %}
+      {% endwith %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+</ul>

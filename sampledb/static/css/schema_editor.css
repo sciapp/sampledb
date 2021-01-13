@@ -87,6 +87,7 @@
 .schema-editor-bool-property-settings,
 .schema-editor-text-property-settings,
 .schema-editor-multiline-property-settings,
+.schema-editor-markdown-property-settings,
 .schema-editor-choice-property-settings {
     display: none;
 }

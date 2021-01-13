@@ -270,7 +270,7 @@ This example shows how Markdown can be used for instrument Notes.
                 'comment': {
                     'title': 'Comment',
                     'type': 'text',
-                    'multiline': True
+                    'markdown': True
                 }
             },
             'required': ['name']
@@ -318,7 +318,8 @@ This example shows how Markdown can be used for instrument Notes.
         },
         'comment': {
             '_type': 'text',
-            'text': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'
+            'text': 'This is a test.\nThis **is** a *second* line.\n\nThis line follows an empty line.',
+            'is_markdown': True
         }
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)

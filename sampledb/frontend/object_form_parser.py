@@ -70,6 +70,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
         '_type': 'text',
         'text': str(text)
     }
+    if schema.get('markdown'):
+        data['is_markdown'] = True
     schemas.validate(data, schema)
     return data
 

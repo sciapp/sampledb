@@ -48,6 +48,8 @@ def markdown_to_safe_html(markdown: str, use_cache: bool = True, anchor_prefix: 
         bleach.clean(markdown),
         extensions=[
             'tables',
+            'sane_lists',
+            'fenced_code',
             toc_extension
         ]
     )
@@ -84,3 +86,28 @@ def clear_cache() -> None:
     """
     MarkdownToHTMLCacheEntry.query.delete()
     db.session.commit()
+
+
+def get_markdown_from_object_data(data):
+    """
+    Extract Markdown text properties from object data.
+
+    :param data: the object data to get Markdown text from
+    :return: a list of all found Markdown texts
+    """
+    markdown_texts = []
+    if isinstance(data, dict):
+        properties = data.values()
+    elif isinstance(data, list):
+        properties = data
+    else:
+        return []
+    for property in properties:
+        if isinstance(property, dict) and '_type' in property:
+            if property['_type'] == 'text' and property.get('is_markdown') and isinstance(property.get('text'), str):
+                markdown_texts.append(property['text'])
+                continue
+        else:
+            markdown_texts.extend(get_markdown_from_object_data(property))
+            continue
+    return markdown_texts

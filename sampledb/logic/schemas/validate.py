@@ -213,7 +213,9 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
     valid_keys = {'_type', 'text'}
-    required_keys = valid_keys
+    required_keys = set(valid_keys)
+    if schema.get('markdown', False):
+        valid_keys.add('is_markdown')
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -237,6 +239,8 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
     if 'pattern' in schema:
         if re.match(schema['pattern'], instance['text']) is None:
             raise ValidationError('The text must match the pattern: {}.'.format(schema['pattern']), path)
+    if 'is_markdown' in instance and not isinstance(instance['is_markdown'], bool):
+        raise ValidationError('is_markdown must be bool', path)
 
 
 def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> None:

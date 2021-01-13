@@ -18,8 +18,8 @@ test:
     - postgres:12
   script:
     - apt-get update
-    # set up Python 3.6
-    - apt-get install -y git python3-pip postgresql-client
+    # set up Python 3
+    - apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
       done
@@ -37,7 +37,7 @@ analyze:
   image: ubuntu:18.04
   script:
     - apt-get update
-    # set up Python 3.6
+    # set up Python 3
     - apt-get install -y git python3-pip
     # install static analysis packages
     - python3 -m pip install pycodestyle pyflakes
@@ -51,7 +51,7 @@ documentation:
     - postgres:latest
   script:
     - apt-get update
-    # set up Python 3.6
+    # set up Python 3
     - apt-get install -y git python3-pip
     # install dependencies
     - python3 -m pip install -r requirements.txt

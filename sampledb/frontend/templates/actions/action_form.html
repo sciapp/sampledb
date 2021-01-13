@@ -225,6 +225,7 @@
           <select class="form-control schema-editor-generic-property-type-input">
             <option value="text">Text (Simple)</option>
             <option value="multiline">Text (Multiline)</option>
+            <option value="markdown">Text (Markdown)</option>
             <option value="choice">Text (Choice)</option>
             <option value="quantity">Quantity</option>
             <option value="bool">Boolean</option>
@@ -304,6 +305,27 @@
         <div class="schema-editor-form-group">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-maxlength-checkbox"></label><label class="control-label schema-editor-multiline-property-maxlength-label">Maximum Length</label>
           <input type="text" class="form-control schema-editor-multiline-property-maxlength-input" placeholder="Maximum Length" value="">
+          <span class="help-block"></span>
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-markdown-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-placeholder-checkbox"></label><label class="control-label schema-editor-markdown-property-placeholder-label">Placeholder</label>
+          <input type="text" class="form-control schema-editor-markdown-property-placeholder-input" placeholder="Placeholder" value="">
+        </div>
+        <div class="schema-editor-form-group-wide">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-default-checkbox"></label><label class="control-label schema-editor-markdown-property-default-label">Default</label>
+          <textarea rows="1" class="form-control schema-editor-markdown-property-default-input" placeholder="Default"></textarea>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-minlength-checkbox"></label><label class="control-label schema-editor-markdown-property-minlength-label">Minimum Length</label>
+          <input type="text" class="form-control schema-editor-markdown-property-minlength-input" placeholder="Minimum Length" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-maxlength-checkbox"></label><label class="control-label schema-editor-markdown-property-maxlength-label">Maximum Length</label>
+          <input type="text" class="form-control schema-editor-markdown-property-maxlength-input" placeholder="Maximum Length" value="">
           <span class="help-block"></span>
         </div>
       </div>

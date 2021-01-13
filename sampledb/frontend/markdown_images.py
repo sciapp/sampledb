@@ -20,6 +20,7 @@ _temporary_markdown_images = {}
 IMAGE_FORMATS = {
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
 }
 
 
