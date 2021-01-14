@@ -171,7 +171,7 @@
         {% for file_extension in ['.png', '.jpg', '.jpeg'] %}
           {% if file.original_file_name.endswith(file_extension) %}
             <h3>File #{{ file.id }}: {{ file.title }}</h3>
-            <img src="/object_files/{{ object.id }}/{{ file.id }}" class="object-file-image"/>
+            <img src="./object_files/{{ object.id }}/{{ file.id }}" class="object-file-image"/>
           {% endif %}
         {% endfor %}
       {% endif %}

@@ -47,12 +47,9 @@ def create_pdfexport(
             if image_data is None:
                 url = ''
             else:
-                file_extension = os.path.splitext(file_name)[1]
+                file_extension = os.path.splitext(file_name)[1].lower()
                 if file_extension in IMAGE_FORMATS:
-                    return {
-                        'file_obj': io.BytesIO(image_data),
-                        'mimetype': IMAGE_FORMATS[file_extension]
-                    }
+                    url = 'data:' + IMAGE_FORMATS[file_extension] + ';base64,' + base64.b64encode(image_data).decode('utf-8')
                 else:
                     url = ''
         if url.startswith(base_url + 'object_files/'):
@@ -66,10 +63,9 @@ def create_pdfexport(
                 if file.storage == 'local' and not file.is_hidden:
                     for file_extension in IMAGE_FORMATS:
                         if file.original_file_name.endswith(file_extension):
-                            return {
-                                'file_obj': file.open(read_only=True),
-                                'mimetype': IMAGE_FORMATS[file_extension]
-                            }
+                            image_data = file.open(read_only=True).read()
+                            url = 'data:' + IMAGE_FORMATS[file_extension] + ';base64,' + base64.b64encode(image_data).decode('utf-8')
+                            break
             except Exception:
                 pass
         # only allow Data URLs and URLs via http or https
