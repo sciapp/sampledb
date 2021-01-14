@@ -9,6 +9,9 @@ Users can be members of any number of groups, leave the groups they are in or in
 
 As all users in a group are equal, groups may be best suited for those who want to freely share objects with their colleagues without fine-grained permissions. For a more detailed or hierarchical approach, see :ref:`projects`.
 
+.. note::
+    Administrators can disable creation of groups by regular users.
+
 .. list-table:: Comparing Groups and Projects
    :header-rows: 1
 

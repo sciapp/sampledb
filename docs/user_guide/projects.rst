@@ -11,6 +11,9 @@ A project can be a subproject of another, sharing the parent project's permissio
 
 Projects may be best suited for those who want to model their object permissions in |service_name| according to an organizational hierarchy. For a simpler approach, see :ref:`groups`.
 
+.. note::
+    Administrators can disable creation of projects by regular users.
+
 .. list-table:: Comparing Groups and Projects
    :header-rows: 1
 
