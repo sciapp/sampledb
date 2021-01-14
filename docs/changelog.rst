@@ -12,7 +12,7 @@ Currently in development.
 - Allow disabling of "Use in Measurement" button for samples
 - Added markdown support to object metadata
 - Reimplemented PDF export
-- Added a configuration variable to allow only administrators to create projects
+- Added configuration variables to allow only administrators to create groups or projects
 
 Version 0.16
 ------------

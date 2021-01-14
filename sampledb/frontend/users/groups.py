@@ -40,15 +40,18 @@ def groups():
         check_current_user_is_not_readonly()
         show_create_form = True
         if create_group_form.validate_on_submit():
-            try:
-                group_id = logic.groups.create_group(create_group_form.name.data, create_group_form.description.data, flask_login.current_user.id).id
-            except logic.errors.GroupAlreadyExistsError:
-                create_group_form.name.errors.append('A group with this name already exists.')
-            except logic.errors.InvalidGroupNameError:
-                create_group_form.name.errors.append('This group name is invalid.')
+            if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_CREATE_GROUPS']:
+                try:
+                    group_id = logic.groups.create_group(create_group_form.name.data, create_group_form.description.data, flask_login.current_user.id).id
+                except logic.errors.GroupAlreadyExistsError:
+                    create_group_form.name.errors.append('A group with this name already exists.')
+                except logic.errors.InvalidGroupNameError:
+                    create_group_form.name.errors.append('This group name is invalid.')
+                else:
+                    flask.flash('The group has been created successfully.', 'success')
+                    return flask.redirect(flask.url_for('.group', group_id=group_id))
             else:
-                flask.flash('The group has been created successfully.', 'success')
-                return flask.redirect(flask.url_for('.group', group_id=group_id))
+                create_group_form.name.errors.append('Only administrators can create groups.')
     return flask.render_template("groups.html", groups=groups, create_group_form=create_group_form, show_create_form=show_create_form)
 
 
