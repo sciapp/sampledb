@@ -5,7 +5,7 @@
 {% block content %}
   <h1>Projects</h1>
   <p class="text-muted">A project is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project itself. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">Read more.</a></p>
-  {% if not current_user.is_readonly %}
+  {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS']) %}
   <p>
     <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">Create Project</button>
   </p>

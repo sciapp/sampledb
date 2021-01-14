@@ -370,15 +370,18 @@ def projects():
         show_create_form = True
         if create_project_form.validate_on_submit():
             check_current_user_is_not_readonly()
-            try:
-                project_id = logic.projects.create_project(create_project_form.name.data, create_project_form.description.data, flask_login.current_user.id).id
-            except logic.errors.ProjectAlreadyExistsError:
-                create_project_form.name.errors.append('A project with this name already exists.')
-            except logic.errors.InvalidProjectNameError:
-                create_project_form.name.errors.append('This project name is invalid.')
+            if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_CREATE_PROJECTS']:
+                try:
+                    project_id = logic.projects.create_project(create_project_form.name.data, create_project_form.description.data, flask_login.current_user.id).id
+                except logic.errors.ProjectAlreadyExistsError:
+                    create_project_form.name.errors.append('A project with this name already exists.')
+                except logic.errors.InvalidProjectNameError:
+                    create_project_form.name.errors.append('This project name is invalid.')
+                else:
+                    flask.flash('The project has been created successfully.', 'success')
+                    return flask.redirect(flask.url_for('.project', project_id=project_id))
             else:
-                flask.flash('The project has been created successfully.', 'success')
-                return flask.redirect(flask.url_for('.project', project_id=project_id))
+                create_project_form.name.errors.append('Only administrators can create projects.')
 
     projects_by_id = {
         project.id: project
