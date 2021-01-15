@@ -1,5 +1,5 @@
 <div class="form-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
-  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <label class="control-label col-md-3 {% if is_required %}required-label{% endif %}">{{ schema.title }}</label>
     <div class="col-md-9">
     {% if schema['units'] == "1" %}
       <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ schema.placeholder or schema.title }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units }}"{% endif %}>

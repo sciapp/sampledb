@@ -1,5 +1,5 @@
 <div class="form-group{% if id_prefix+'_datetime' in errors %} has-error{% elif id_prefix+'_datetime' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
-  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <label class="control-label col-md-3 {% if is_required %}required-label{% endif %}">{{ schema.title }}</label>
   <div class="col-md-9">
     <div class="input-group date" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] }}{% elif data is not none %}{{ data.utc_datetime }}{% elif 'default' in schema %}{{ schema.default }}{% else %}{{ datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}">
         <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
