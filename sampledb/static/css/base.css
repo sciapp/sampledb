@@ -870,3 +870,22 @@ a.headerlink, a.headerlink:active, a.headerlink:hover, a.headerlink:focus {
 *:hover > a.headerlink {
     visibility: visible;
 }
+
+span.required-label {
+    position: relative;
+}
+span.required-label:before {
+    content: '*';
+    position: absolute;
+    right: -7px;
+    width:7px;
+    text-align: left;
+}
+
+label.required-label:before {
+    content: '*';
+    position: absolute;
+    right: 0;
+    width:15px;
+    text-align: left;
+}

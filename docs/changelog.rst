@@ -14,6 +14,7 @@ Currently in development.
 - Added markdown support to object metadata
 - Reimplemented PDF export
 - Added configuration variables to allow only administrators to create groups or projects
+- Added asterisks to mark required fields when editing objects
 
 Version 0.16
 ------------
