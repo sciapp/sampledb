@@ -468,6 +468,83 @@ $(function() {
     });
     type_input.on('change', updateProperty.bind(path));
 
+    function setOptionalValueInPropertySchema(path, type, name, property_schema) {
+      var has_value = $('#schema-editor-object__' + path.join('__') + '-' + type + '-' + name + '-checkbox').prop('checked');
+      var value = $('#schema-editor-object__' + path.join('__') + '-' + type + '-' + name + '-input').val();
+
+      if (has_value) {
+        property_schema[name] = value;
+      }
+    }
+
+    function setMinAndMaxLengthInPropertySchema(path, type, property_schema, has_error) {
+      var has_minlength = $('#schema-editor-object__' + path.join('__') + '-' + type + '-minlength-checkbox').prop('checked');
+      var minlength_input = $('#schema-editor-object__' + path.join('__') + '-' + type + '-minlength-input');
+      var minlength = minlength_input.val();
+      var minlength_group = minlength_input.parent();
+      var minlength_help = minlength_group.find('.help-block');
+
+      if (has_minlength) {
+        if (isNaN(minlength)) {
+          minlength_help.text("Please enter a number.");
+          minlength_group.addClass("has-error");
+          has_error = true;
+        } else {
+          minlength = Number.parseInt(minlength);
+          if (minlength >= 0) {
+            property_schema['minLength'] = minlength;
+            minlength_help.text("");
+            minlength_group.removeClass("has-error");
+          } else {
+            minlength_help.text("Please enter a number greater than or equal to zero.");
+            minlength_group.addClass("has-error");
+            has_error = true;
+          }
+        }
+      } else {
+        delete property_schema["minLength"];
+        minlength_help.text("");
+        minlength_group.removeClass("has-error");
+      }
+
+      var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-' + type + '-maxlength-checkbox').prop('checked');
+      var maxlength_input = $('#schema-editor-object__' + path.join('__') + '-' + type + '-maxlength-input');
+      var maxlength = maxlength_input.val();
+      var maxlength_group = maxlength_input.parent();
+      var maxlength_help = maxlength_group.find('.help-block');
+
+      if (has_maxlength) {
+        if (isNaN(maxlength)) {
+          maxlength_help.text("Please enter a number.");
+          maxlength_group.addClass("has-error");
+          has_error = true;
+        } else {
+          maxlength = Number.parseInt(maxlength);
+          if (maxlength >= 0) {
+            property_schema['maxLength'] = maxlength;
+            maxlength_help.text("");
+            maxlength_group.removeClass("has-error");
+          } else {
+            maxlength_help.text("Please enter a number greater than or equal to zero.");
+            maxlength_group.addClass("has-error");
+            has_error = true;
+          }
+        }
+      } else {
+        delete property_schema["maxLength"];
+        maxlength_help.text("");
+        maxlength_group.removeClass("has-error");
+      }
+      if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
+        minlength_help.text("Please enter a number less than or equal to the maximum length.");
+        minlength_group.addClass("has-error");
+        maxlength_help.text("Please enter a number greater than or equal to the minimum length.");
+        maxlength_group.addClass("has-error");
+        has_error = true;
+      }
+      return has_error;
+    }
+
     function updateGenericProperty(path, real_path) {
       var has_error = false;
       var schema = JSON.parse(input_schema.text());
@@ -587,99 +664,7 @@ $(function() {
       $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
     }
 
-    function updateTextProperty(path, real_path) {
-      updateGenericProperty(path, real_path);
-      var has_error = false;
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
-      property_schema["type"] = "text";
-
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-text-default-checkbox').prop('checked');
-      var default_value = $('#schema-editor-object__' + path.join('__') + '-text-default-input').val();
-
-      if (has_default) {
-        property_schema['default'] = default_value;
-      }
-
-      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-text-placeholder-checkbox').prop('checked');
-      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-text-placeholder-input').val();
-
-      if (has_placeholder) {
-        property_schema['placeholder'] = placeholder_value;
-      }
-
-      var has_pattern = $('#schema-editor-object__' + path.join('__') + '-text-pattern-checkbox').prop('checked');
-      var pattern = $('#schema-editor-object__' + path.join('__') + '-text-pattern-input').val();
-
-      if (has_pattern) {
-        property_schema['pattern'] = pattern;
-      }
-
-      var has_minlength = $('#schema-editor-object__' + path.join('__') + '-text-minlength-checkbox').prop('checked');
-      var minlength_input = $('#schema-editor-object__' + path.join('__') + '-text-minlength-input');
-      var minlength = minlength_input.val();
-      var minlength_group = minlength_input.parent();
-      var minlength_help = minlength_group.find('.help-block');
-
-      if (has_minlength) {
-        if (isNaN(minlength)) {
-          minlength_help.text("Please enter a number.");
-          minlength_group.addClass("has-error");
-          has_error = true;
-        } else {
-          minlength = Number.parseInt(minlength);
-          if (minlength >= 0) {
-            property_schema['minLength'] = minlength;
-            minlength_help.text("");
-            minlength_group.removeClass("has-error");
-          } else {
-            minlength_help.text("Please enter a number greater than or equal to zero.");
-            minlength_group.addClass("has-error");
-            has_error = true;
-          }
-        }
-      } else {
-        delete property_schema["minLength"];
-        minlength_help.text("");
-        minlength_group.removeClass("has-error");
-      }
-
-      var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-text-maxlength-checkbox').prop('checked');
-      var maxlength_input = $('#schema-editor-object__' + path.join('__') + '-text-maxlength-input');
-      var maxlength = maxlength_input.val();
-      var maxlength_group = maxlength_input.parent();
-      var maxlength_help = maxlength_group.find('.help-block');
-
-      if (has_maxlength) {
-        if (isNaN(maxlength)) {
-          maxlength_help.text("Please enter a number.");
-          maxlength_group.addClass("has-error");
-          has_error = true;
-        } else {
-          maxlength = Number.parseInt(maxlength);
-          if (maxlength >= 0) {
-            property_schema['maxLength'] = maxlength;
-            maxlength_help.text("");
-            maxlength_group.removeClass("has-error");
-          } else {
-            maxlength_help.text("Please enter a number greater than or equal to zero.");
-            maxlength_group.addClass("has-error");
-            has_error = true;
-          }
-        }
-      } else {
-        delete property_schema["maxLength"];
-        maxlength_help.text("");
-        maxlength_group.removeClass("has-error");
-      }
-      if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
-        minlength_help.text("Please enter a number less than or equal to the maximum length.");
-        minlength_group.addClass("has-error");
-        maxlength_help.text("Please enter a number greater than or equal to the minimum length.");
-        maxlength_group.addClass("has-error");
-        has_error = true;
-      }
-
+    function updateSpecificProperty(path, real_path, schema, property_schema, has_error) {
       schema['properties'][real_path[real_path.length-1]] = property_schema;
 
       input_schema.text(JSON.stringify(schema, null, 4));
@@ -691,6 +676,21 @@ $(function() {
       $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
     }
 
+    function updateTextProperty(path, real_path) {
+      updateGenericProperty(path, real_path);
+      var has_error = false;
+      var schema = JSON.parse(input_schema.text());
+      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      property_schema["type"] = "text";
+
+      setOptionalValueInPropertySchema(path, 'text', 'default', property_schema);
+      setOptionalValueInPropertySchema(path, 'text', 'placeholder', property_schema);
+      setOptionalValueInPropertySchema(path, 'text', 'pattern', property_schema);
+      has_error = setMinAndMaxLengthInPropertySchema(path, 'text', property_schema, has_error);
+
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
+    }
+
     function updateChoiceProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
@@ -698,12 +698,7 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "text";
 
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-choice-default-checkbox').prop('checked');
-      var default_value = $('#schema-editor-object__' + path.join('__') + '-choice-default-input').val();
-
-      if (has_default) {
-        property_schema['default'] = default_value;
-      }
+      setOptionalValueInPropertySchema(path, 'choice', 'default', property_schema);
 
       var choices_input = $('#schema-editor-object__' + path.join('__') + '-choice-choices-input');
       var choices_group = choices_input.parent();
@@ -731,9 +726,7 @@ $(function() {
       }
       property_schema['choices'] = choices;
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateMultilineProperty(path, real_path) {
@@ -744,94 +737,11 @@ $(function() {
       property_schema["type"] = "text";
       property_schema["multiline"] = true;
 
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-multiline-default-checkbox').prop('checked');
-      var default_value = $('#schema-editor-object__' + path.join('__') + '-multiline-default-input').val();
+      setOptionalValueInPropertySchema(path, 'multiline', 'default', property_schema);
+      setOptionalValueInPropertySchema(path, 'multiline', 'placeholder', property_schema);
+      has_error = setMinAndMaxLengthInPropertySchema(path, 'multiline', property_schema, has_error);
 
-      if (has_default) {
-        property_schema['default'] = default_value;
-      }
-
-      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-multiline-placeholder-checkbox').prop('checked');
-      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-multiline-placeholder-input').val();
-
-      if (has_placeholder) {
-        property_schema['placeholder'] = placeholder_value;
-      }
-
-      var has_minlength = $('#schema-editor-object__' + path.join('__') + '-multiline-minlength-checkbox').prop('checked');
-      var minlength_input = $('#schema-editor-object__' + path.join('__') + '-multiline-minlength-input');
-      var minlength = minlength_input.val();
-      var minlength_group = minlength_input.parent();
-      var minlength_help = minlength_group.find('.help-block');
-
-      if (has_minlength) {
-        if (isNaN(minlength)) {
-          minlength_help.text("Please enter a number.");
-          minlength_group.addClass("has-error");
-          has_error = true;
-        } else {
-          minlength = Number.parseInt(minlength);
-          if (minlength >= 0) {
-            property_schema['minLength'] = minlength;
-            minlength_help.text("");
-            minlength_group.removeClass("has-error");
-          } else {
-            minlength_help.text("Please enter a number greater than or equal to zero.");
-            minlength_group.addClass("has-error");
-            has_error = true;
-          }
-        }
-      } else {
-        delete property_schema["minLength"];
-        minlength_help.text("");
-        minlength_group.removeClass("has-error");
-      }
-
-      var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-multiline-maxlength-checkbox').prop('checked');
-      var maxlength_input = $('#schema-editor-object__' + path.join('__') + '-multiline-maxlength-input');
-      var maxlength = maxlength_input.val();
-      var maxlength_group = maxlength_input.parent();
-      var maxlength_help = maxlength_group.find('.help-block');
-
-      if (has_maxlength) {
-        if (isNaN(maxlength)) {
-          maxlength_help.text("Please enter a number.");
-          maxlength_group.addClass("has-error");
-          has_error = true;
-        } else {
-          maxlength = Number.parseInt(maxlength);
-          if (maxlength >= 0) {
-            property_schema['maxLength'] = maxlength;
-            maxlength_help.text("");
-            maxlength_group.removeClass("has-error");
-          } else {
-            maxlength_help.text("Please enter a number greater than or equal to zero.");
-            maxlength_group.addClass("has-error");
-            has_error = true;
-          }
-        }
-      } else {
-        delete property_schema["maxLength"];
-        maxlength_help.text("");
-        maxlength_group.removeClass("has-error");
-      }
-      if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
-        minlength_help.text("Please enter a number less than or equal to the maximum length.");
-        minlength_group.addClass("has-error");
-        maxlength_help.text("Please enter a number greater than or equal to the minimum length.");
-        maxlength_group.addClass("has-error");
-        has_error = true;
-      }
-
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateMarkdownProperty(path, real_path) {
@@ -842,94 +752,11 @@ $(function() {
       property_schema["type"] = "text";
       property_schema["markdown"] = true;
 
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-markdown-default-checkbox').prop('checked');
-      var default_value = $('#schema-editor-object__' + path.join('__') + '-markdown-default-input').val();
+      setOptionalValueInPropertySchema(path, 'markdown', 'default', property_schema);
+      setOptionalValueInPropertySchema(path, 'markdown', 'placeholder', property_schema);
+      has_error = setMinAndMaxLengthInPropertySchema(path, 'markdown', property_schema, has_error);
 
-      if (has_default) {
-        property_schema['default'] = default_value;
-      }
-
-      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-markdown-placeholder-checkbox').prop('checked');
-      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-markdown-placeholder-input').val();
-
-      if (has_placeholder) {
-        property_schema['placeholder'] = placeholder_value;
-      }
-
-      var has_minlength = $('#schema-editor-object__' + path.join('__') + '-markdown-minlength-checkbox').prop('checked');
-      var minlength_input = $('#schema-editor-object__' + path.join('__') + '-markdown-minlength-input');
-      var minlength = minlength_input.val();
-      var minlength_group = minlength_input.parent();
-      var minlength_help = minlength_group.find('.help-block');
-
-      if (has_minlength) {
-        if (isNaN(minlength)) {
-          minlength_help.text("Please enter a number.");
-          minlength_group.addClass("has-error");
-          has_error = true;
-        } else {
-          minlength = Number.parseInt(minlength);
-          if (minlength >= 0) {
-            property_schema['minLength'] = minlength;
-            minlength_help.text("");
-            minlength_group.removeClass("has-error");
-          } else {
-            minlength_help.text("Please enter a number greater than or equal to zero.");
-            minlength_group.addClass("has-error");
-            has_error = true;
-          }
-        }
-      } else {
-        delete property_schema["minLength"];
-        minlength_help.text("");
-        minlength_group.removeClass("has-error");
-      }
-
-      var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-markdown-maxlength-checkbox').prop('checked');
-      var maxlength_input = $('#schema-editor-object__' + path.join('__') + '-markdown-maxlength-input');
-      var maxlength = maxlength_input.val();
-      var maxlength_group = maxlength_input.parent();
-      var maxlength_help = maxlength_group.find('.help-block');
-
-      if (has_maxlength) {
-        if (isNaN(maxlength)) {
-          maxlength_help.text("Please enter a number.");
-          maxlength_group.addClass("has-error");
-          has_error = true;
-        } else {
-          maxlength = Number.parseInt(maxlength);
-          if (maxlength >= 0) {
-            property_schema['maxLength'] = maxlength;
-            maxlength_help.text("");
-            maxlength_group.removeClass("has-error");
-          } else {
-            maxlength_help.text("Please enter a number greater than or equal to zero.");
-            maxlength_group.addClass("has-error");
-            has_error = true;
-          }
-        }
-      } else {
-        delete property_schema["maxLength"];
-        maxlength_help.text("");
-        maxlength_group.removeClass("has-error");
-      }
-      if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
-        minlength_help.text("Please enter a number less than or equal to the maximum length.");
-        minlength_group.addClass("has-error");
-        maxlength_help.text("Please enter a number greater than or equal to the minimum length.");
-        maxlength_group.addClass("has-error");
-        has_error = true;
-      }
-
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateBoolProperty(path, real_path) {
@@ -945,16 +772,9 @@ $(function() {
       if (has_default) {
         property_schema['default'] = default_value;
       }
+      console.log(default_value);
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateSampleProperty(path, real_path) {
@@ -964,15 +784,7 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "sample";
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateMeasurementProperty(path, real_path) {
@@ -982,15 +794,7 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "measurement";
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateUserProperty(path, real_path) {
@@ -1000,15 +804,7 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "user";
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateObjectReferenceProperty(path, real_path) {
@@ -1018,15 +814,7 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "object_reference";
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateDatetimeProperty(path, real_path) {
@@ -1036,15 +824,7 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "datetime";
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     function updateQuantityProperty(path, real_path) {
@@ -1086,6 +866,9 @@ $(function() {
           default_help.text("");
           default_group.removeClass("has-error");
         }
+      } else {
+        default_help.text("");
+        default_group.removeClass("has-error");
       }
 
       var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-quantity-placeholder-checkbox').prop('checked');
@@ -1095,15 +878,7 @@ $(function() {
         property_schema['placeholder'] = placeholder_value;
       }
 
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
-
-      input_schema.text(JSON.stringify(schema, null, 4));
-
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-      if (!has_error) {
-        delete window.schema_editor_errors[path.join('__') + '__specific'];
-      }
-      $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
     var required_label = node.find('.schema-editor-generic-property-required-label');
@@ -1140,161 +915,41 @@ $(function() {
     note_checkbox.on('change', updateProperty.bind(path));
     note_input.on('change', updateProperty.bind(path));
 
-    var default_label = node.find('.schema-editor-text-property-default-label');
-    var default_input = node.find('.schema-editor-text-property-default-input');
-    var default_checkbox = node.find('.schema-editor-text-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-text-default-checkbox');
-    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-text-default-input');
-    default_label.attr('for', default_input.attr('id'));
-    if (type === 'text' && 'default' in schema) {
-      default_input.val(schema['default']);
-      default_checkbox.prop('checked', true);
-      default_input.prop('disabled', false);
-    } else {
-      default_input.val("");
-      default_checkbox.prop('checked', false);
-      default_input.prop('disabled', true);
-    }
-    default_checkbox.on('change', function() {
-      var default_input = $(this).parent().parent().find('.schema-editor-text-property-default-input');
-      if ($(this).prop('checked')) {
-        default_input.prop('disabled', false);
+    function setupValueFromSchema(path, type, name, schema, is_type) {
+      var value_label = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-label');
+      var value_input = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-input');
+      var value_checkbox = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-checkbox');
+      value_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-checkbox');
+      value_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-input');
+      value_label.attr('for', value_input.attr('id'));
+      if (is_type && name in schema) {
+        value_input.val(schema[name]);
+        value_checkbox.prop('checked', true);
+        value_input.prop('disabled', false);
       } else {
-        default_input.prop('disabled', true);
+        value_input.val("");
+        value_checkbox.prop('checked', false);
+        value_input.prop('disabled', true);
       }
-    });
-    default_checkbox.on('change', updateProperty.bind(path));
-    default_input.on('change', updateProperty.bind(path));
+      value_checkbox.on('change', function() {
+        var value_input = $(this).parent().parent().find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-input');
+        if ($(this).prop('checked')) {
+          value_input.prop('disabled', false);
+        } else {
+          value_input.prop('disabled', true);
+        }
+      });
+      value_checkbox.on('change', updateProperty.bind(path));
+      value_input.on('change', updateProperty.bind(path));
+    }
 
-    var placeholder_label = node.find('.schema-editor-text-property-placeholder-label');
-    var placeholder_input = node.find('.schema-editor-text-property-placeholder-input');
-    var placeholder_checkbox = node.find('.schema-editor-text-property-placeholder-checkbox');
-    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-text-placeholder-checkbox');
-    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-text-placeholder-input');
-    placeholder_label.attr('for', placeholder_input.attr('id'));
-    if (type === 'text' && 'placeholder' in schema) {
-      placeholder_input.val(schema['placeholder']);
-      placeholder_checkbox.prop('checked', true);
-      placeholder_input.prop('disabled', false);
-    } else {
-      placeholder_input.val("");
-      placeholder_checkbox.prop('checked', false);
-      placeholder_input.prop('disabled', true);
-    }
-    placeholder_checkbox.on('change', function() {
-      var placeholder_input = $(this).parent().parent().find('.schema-editor-text-property-placeholder-input');
-      if ($(this).prop('checked')) {
-        placeholder_input.prop('disabled', false);
-      } else {
-        placeholder_input.prop('disabled', true);
-      }
-    });
-    placeholder_checkbox.on('change', updateProperty.bind(path));
-    placeholder_input.on('change', updateProperty.bind(path));
+    setupValueFromSchema(path, 'text', 'default', schema, type === 'text');
+    setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text');
+    setupValueFromSchema(path, 'text', 'pattern', schema, type === 'text');
+    setupValueFromSchema(path, 'text', 'minLength', schema, type === 'text');
+    setupValueFromSchema(path, 'text', 'maxLength', schema, type === 'text');
 
-    var pattern_label = node.find('.schema-editor-text-property-pattern-label');
-    var pattern_input = node.find('.schema-editor-text-property-pattern-input');
-    var pattern_checkbox = node.find('.schema-editor-text-property-pattern-checkbox');
-    pattern_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-text-pattern-checkbox');
-    pattern_input.attr('id', 'schema-editor-object__' + path.join('__') + '-text-pattern-input');
-    pattern_label.attr('for', pattern_input.attr('id'));
-    if (type === 'text' && 'pattern' in schema) {
-      pattern_input.val(schema['pattern']);
-      pattern_checkbox.prop('checked', true);
-      pattern_input.prop('disabled', false);
-    } else {
-      pattern_input.val("");
-      pattern_checkbox.prop('checked', false);
-      pattern_input.prop('disabled', true);
-    }
-    pattern_checkbox.on('change', function() {
-      var pattern_input = $(this).parent().parent().find('.schema-editor-text-property-pattern-input');
-      if ($(this).prop('checked')) {
-        pattern_input.prop('disabled', false);
-      } else {
-        pattern_input.prop('disabled', true);
-      }
-    });
-    pattern_checkbox.on('change', updateProperty.bind(path));
-    pattern_input.on('change', updateProperty.bind(path));
-
-    var minlength_label = node.find('.schema-editor-text-property-minlength-label');
-    var minlength_input = node.find('.schema-editor-text-property-minlength-input');
-    var minlength_checkbox = node.find('.schema-editor-text-property-minlength-checkbox');
-    minlength_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-text-minlength-checkbox');
-    minlength_input.attr('id', 'schema-editor-object__' + path.join('__') + '-text-minlength-input');
-    minlength_label.attr('for', minlength_input.attr('id'));
-    if (type === 'text' && 'minLength' in schema) {
-      minlength_input.val(schema['minLength']);
-      minlength_checkbox.prop('checked', true);
-      minlength_input.prop('disabled', false);
-    } else {
-      minlength_input.val("");
-      minlength_checkbox.prop('checked', false);
-      minlength_input.prop('disabled', true);
-    }
-    minlength_checkbox.on('change', function() {
-      var minlength_input = $(this).parent().parent().find('.schema-editor-text-property-minlength-input');
-      if ($(this).prop('checked')) {
-        minlength_input.prop('disabled', false);
-      } else {
-        minlength_input.prop('disabled', true);
-      }
-    });
-    minlength_checkbox.on('change', updateProperty.bind(path));
-    minlength_input.on('change', updateProperty.bind(path));
-
-    var maxlength_label = node.find('.schema-editor-text-property-maxlength-label');
-    var maxlength_input = node.find('.schema-editor-text-property-maxlength-input');
-    var maxlength_checkbox = node.find('.schema-editor-text-property-maxlength-checkbox');
-    maxlength_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-text-maxlength-checkbox');
-    maxlength_input.attr('id', 'schema-editor-object__' + path.join('__') + '-text-maxlength-input');
-    maxlength_label.attr('for', maxlength_input.attr('id'));
-    if (type === 'text' && 'maxLength' in schema) {
-      maxlength_input.val(schema['maxLength']);
-      maxlength_checkbox.prop('checked', true);
-      maxlength_input.prop('disabled', false);
-    } else {
-      maxlength_input.val("");
-      maxlength_checkbox.prop('checked', false);
-      maxlength_input.prop('disabled', true);
-    }
-    maxlength_checkbox.on('change', function() {
-      var maxlength_input = $(this).parent().parent().find('.schema-editor-text-property-maxlength-input');
-      if ($(this).prop('checked')) {
-        maxlength_input.prop('disabled', false);
-      } else {
-        maxlength_input.prop('disabled', true);
-      }
-    });
-    maxlength_checkbox.on('change', updateProperty.bind(path));
-    maxlength_input.on('change', updateProperty.bind(path));
-
-    var default_label = node.find('.schema-editor-choice-property-default-label');
-    var default_input = node.find('.schema-editor-choice-property-default-input');
-    var default_checkbox = node.find('.schema-editor-choice-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-choice-default-checkbox');
-    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-choice-default-input');
-    default_label.attr('for', default_input.attr('id'));
-    if (type === 'choice' && 'default' in schema) {
-      default_input.val(schema['default']);
-      default_checkbox.prop('checked', true);
-      default_input.prop('disabled', false);
-    } else {
-      default_input.val("");
-      default_checkbox.prop('checked', false);
-      default_input.prop('disabled', true);
-    }
-    default_checkbox.on('change', function() {
-      var default_input = $(this).parent().parent().find('.schema-editor-choice-property-default-input');
-      if ($(this).prop('checked')) {
-        default_input.prop('disabled', false);
-      } else {
-        default_input.prop('disabled', true);
-      }
-    });
-    default_checkbox.on('change', updateProperty.bind(path));
-    default_input.on('change', updateProperty.bind(path));
+    setupValueFromSchema(path, 'choice', 'default', schema, type === 'choice');
 
     var choices_label = node.find('.schema-editor-choice-property-choices-label');
     var choices_input = node.find('.schema-editor-choice-property-choices-input');
@@ -1311,213 +966,15 @@ $(function() {
     }
     choices_input.on('change', updateProperty.bind(path));
 
-    var default_label = node.find('.schema-editor-multiline-property-default-label');
-    var default_input = node.find('.schema-editor-multiline-property-default-input');
-    var default_checkbox = node.find('.schema-editor-multiline-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-default-checkbox');
-    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-default-input');
-    default_label.attr('for', default_input.attr('id'));
-    if (type === 'multiline' && 'default' in schema) {
-      default_input.val(schema['default']);
-      default_checkbox.prop('checked', true);
-      default_input.prop('disabled', false);
-    } else {
-      default_input.val("");
-      default_checkbox.prop('checked', false);
-      default_input.prop('disabled', true);
-    }
-    default_checkbox.on('change', function() {
-      var default_input = $(this).parent().parent().find('.schema-editor-multiline-property-default-input');
-      if ($(this).prop('checked')) {
-        default_input.prop('disabled', false);
-      } else {
-        default_input.prop('disabled', true);
-      }
-    });
-    default_checkbox.on('change', updateProperty.bind(path));
-    default_input.on('change', updateProperty.bind(path));
+    setupValueFromSchema(path, 'multiline', 'default', schema, type === 'multiline');
+    setupValueFromSchema(path, 'multiline', 'placeholder', schema, type === 'multiline');
+    setupValueFromSchema(path, 'multiline', 'minLength', schema, type === 'multiline');
+    setupValueFromSchema(path, 'multiline', 'maxLength', schema, type === 'multiline');
 
-    var placeholder_label = node.find('.schema-editor-multiline-property-placeholder-label');
-    var placeholder_input = node.find('.schema-editor-multiline-property-placeholder-input');
-    var placeholder_checkbox = node.find('.schema-editor-multiline-property-placeholder-checkbox');
-    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-placeholder-checkbox');
-    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-placeholder-input');
-    placeholder_label.attr('for', placeholder_input.attr('id'));
-    if (type === 'multiline' && 'placeholder' in schema) {
-      placeholder_input.val(schema['placeholder']);
-      placeholder_checkbox.prop('checked', true);
-      placeholder_input.prop('disabled', false);
-    } else {
-      placeholder_input.val("");
-      placeholder_checkbox.prop('checked', false);
-      placeholder_input.prop('disabled', true);
-    }
-    placeholder_checkbox.on('change', function() {
-      var placeholder_input = $(this).parent().parent().find('.schema-editor-multiline-property-placeholder-input');
-      if ($(this).prop('checked')) {
-        placeholder_input.prop('disabled', false);
-      } else {
-        placeholder_input.prop('disabled', true);
-      }
-    });
-    placeholder_checkbox.on('change', updateProperty.bind(path));
-    placeholder_input.on('change', updateProperty.bind(path));
-
-    var minlength_label = node.find('.schema-editor-multiline-property-minlength-label');
-    var minlength_input = node.find('.schema-editor-multiline-property-minlength-input');
-    var minlength_checkbox = node.find('.schema-editor-multiline-property-minlength-checkbox');
-    minlength_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-minlength-checkbox');
-    minlength_input.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-minlength-input');
-    minlength_label.attr('for', minlength_input.attr('id'));
-    if (type === 'multiline' && 'minLength' in schema) {
-      minlength_input.val(schema['minLength']);
-      minlength_checkbox.prop('checked', true);
-      minlength_input.prop('disabled', false);
-    } else {
-      minlength_input.val("");
-      minlength_checkbox.prop('checked', false);
-      minlength_input.prop('disabled', true);
-    }
-    minlength_checkbox.on('change', function() {
-      var minlength_input = $(this).parent().parent().find('.schema-editor-multiline-property-minlength-input');
-      if ($(this).prop('checked')) {
-        minlength_input.prop('disabled', false);
-      } else {
-        minlength_input.prop('disabled', true);
-      }
-    });
-    minlength_checkbox.on('change', updateProperty.bind(path));
-    minlength_input.on('change', updateProperty.bind(path));
-
-    var maxlength_label = node.find('.schema-editor-multiline-property-maxlength-label');
-    var maxlength_input = node.find('.schema-editor-multiline-property-maxlength-input');
-    var maxlength_checkbox = node.find('.schema-editor-multiline-property-maxlength-checkbox');
-    maxlength_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-maxlength-checkbox');
-    maxlength_input.attr('id', 'schema-editor-object__' + path.join('__') + '-multiline-maxlength-input');
-    maxlength_label.attr('for', maxlength_input.attr('id'));
-    if (type === 'multiline' && 'maxLength' in schema) {
-      maxlength_input.val(schema['maxLength']);
-      maxlength_checkbox.prop('checked', true);
-        maxlength_input.prop('disabled', false);
-    } else {
-      maxlength_input.val("");
-      maxlength_checkbox.prop('checked', false);
-        maxlength_input.prop('disabled', true);
-    }
-    maxlength_checkbox.on('change', function() {
-      var maxlength_input = $(this).parent().parent().find('.schema-editor-multiline-property-maxlength-input');
-      if ($(this).prop('checked')) {
-        maxlength_input.prop('disabled', false);
-      } else {
-        maxlength_input.prop('disabled', true);
-      }
-    });
-    maxlength_checkbox.on('change', updateProperty.bind(path));
-    maxlength_input.on('change', updateProperty.bind(path));
-
-    var default_label = node.find('.schema-editor-markdown-property-default-label');
-    var default_input = node.find('.schema-editor-markdown-property-default-input');
-    var default_checkbox = node.find('.schema-editor-markdown-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-default-checkbox');
-    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-default-input');
-    default_label.attr('for', default_input.attr('id'));
-    if (type === 'markdown' && 'default' in schema) {
-      default_input.val(schema['default']);
-      default_checkbox.prop('checked', true);
-      default_input.prop('disabled', false);
-    } else {
-      default_input.val("");
-      default_checkbox.prop('checked', false);
-      default_input.prop('disabled', true);
-    }
-    default_checkbox.on('change', function() {
-      var default_input = $(this).parent().parent().find('.schema-editor-markdown-property-default-input');
-      if ($(this).prop('checked')) {
-        default_input.prop('disabled', false);
-      } else {
-        default_input.prop('disabled', true);
-      }
-    });
-    default_checkbox.on('change', updateProperty.bind(path));
-    default_input.on('change', updateProperty.bind(path));
-
-    var placeholder_label = node.find('.schema-editor-markdown-property-placeholder-label');
-    var placeholder_input = node.find('.schema-editor-markdown-property-placeholder-input');
-    var placeholder_checkbox = node.find('.schema-editor-markdown-property-placeholder-checkbox');
-    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-placeholder-checkbox');
-    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-placeholder-input');
-    placeholder_label.attr('for', placeholder_input.attr('id'));
-    if (type === 'markdown' && 'placeholder' in schema) {
-      placeholder_input.val(schema['placeholder']);
-      placeholder_checkbox.prop('checked', true);
-      placeholder_input.prop('disabled', false);
-    } else {
-      placeholder_input.val("");
-      placeholder_checkbox.prop('checked', false);
-      placeholder_input.prop('disabled', true);
-    }
-    placeholder_checkbox.on('change', function() {
-      var placeholder_input = $(this).parent().parent().find('.schema-editor-markdown-property-placeholder-input');
-      if ($(this).prop('checked')) {
-        placeholder_input.prop('disabled', false);
-      } else {
-        placeholder_input.prop('disabled', true);
-      }
-    });
-    placeholder_checkbox.on('change', updateProperty.bind(path));
-    placeholder_input.on('change', updateProperty.bind(path));
-
-    var minlength_label = node.find('.schema-editor-markdown-property-minlength-label');
-    var minlength_input = node.find('.schema-editor-markdown-property-minlength-input');
-    var minlength_checkbox = node.find('.schema-editor-markdown-property-minlength-checkbox');
-    minlength_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-minlength-checkbox');
-    minlength_input.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-minlength-input');
-    minlength_label.attr('for', minlength_input.attr('id'));
-    if (type === 'markdown' && 'minLength' in schema) {
-      minlength_input.val(schema['minLength']);
-      minlength_checkbox.prop('checked', true);
-      minlength_input.prop('disabled', false);
-    } else {
-      minlength_input.val("");
-      minlength_checkbox.prop('checked', false);
-      minlength_input.prop('disabled', true);
-    }
-    minlength_checkbox.on('change', function() {
-      var minlength_input = $(this).parent().parent().find('.schema-editor-markdown-property-minlength-input');
-      if ($(this).prop('checked')) {
-        minlength_input.prop('disabled', false);
-      } else {
-        minlength_input.prop('disabled', true);
-      }
-    });
-    minlength_checkbox.on('change', updateProperty.bind(path));
-    minlength_input.on('change', updateProperty.bind(path));
-
-    var maxlength_label = node.find('.schema-editor-markdown-property-maxlength-label');
-    var maxlength_input = node.find('.schema-editor-markdown-property-maxlength-input');
-    var maxlength_checkbox = node.find('.schema-editor-markdown-property-maxlength-checkbox');
-    maxlength_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-maxlength-checkbox');
-    maxlength_input.attr('id', 'schema-editor-object__' + path.join('__') + '-markdown-maxlength-input');
-    maxlength_label.attr('for', maxlength_input.attr('id'));
-    if (type === 'markdown' && 'maxLength' in schema) {
-      maxlength_input.val(schema['maxLength']);
-      maxlength_checkbox.prop('checked', true);
-        maxlength_input.prop('disabled', false);
-    } else {
-      maxlength_input.val("");
-      maxlength_checkbox.prop('checked', false);
-        maxlength_input.prop('disabled', true);
-    }
-    maxlength_checkbox.on('change', function() {
-      var maxlength_input = $(this).parent().parent().find('.schema-editor-markdown-property-maxlength-input');
-      if ($(this).prop('checked')) {
-        maxlength_input.prop('disabled', false);
-      } else {
-        maxlength_input.prop('disabled', true);
-      }
-    });
-    maxlength_checkbox.on('change', updateProperty.bind(path));
-    maxlength_input.on('change', updateProperty.bind(path));
+    setupValueFromSchema(path, 'markdown', 'default', schema, type === 'markdown');
+    setupValueFromSchema(path, 'markdown', 'placeholder', schema, type === 'markdown');
+    setupValueFromSchema(path, 'markdown', 'minLength', schema, type === 'markdown');
+    setupValueFromSchema(path, 'markdown', 'maxLength', schema, type === 'markdown');
 
     var default_label = node.find('.schema-editor-bool-property-default-label');
     var default_input = node.find('.schema-editor-bool-property-default-input');
@@ -1528,6 +985,11 @@ $(function() {
     default_input.bootstrapToggle();
     if (type === 'bool' && 'default' in schema) {
       default_input.prop('checked', schema['default']);
+      if (schema['default']) {
+        default_input.bootstrapToggle('on');
+      } else {
+        default_input.bootstrapToggle('off');
+      }
       default_checkbox.prop('checked', true);
       default_input.prop('disabled', false);
       default_input.closest('.toggle').removeClass('disabled');
@@ -1550,57 +1012,8 @@ $(function() {
     default_checkbox.on('change', updateProperty.bind(path));
     default_input.on('change', updateProperty.bind(path));
 
-    var default_label = node.find('.schema-editor-quantity-property-default-label');
-    var default_input = node.find('.schema-editor-quantity-property-default-input');
-    var default_checkbox = node.find('.schema-editor-quantity-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-default-checkbox');
-    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-default-input');
-    default_label.attr('for', default_input.attr('id'));
-    if (type === 'quantity' && 'default' in schema) {
-      default_input.val(schema['default']);
-      default_checkbox.prop('checked', true);
-      default_input.prop('disabled', false);
-    } else {
-      default_input.val("");
-      default_checkbox.prop('checked', false);
-      default_input.prop('disabled', true);
-    }
-    default_checkbox.on('change', function() {
-      var default_input = $(this).parent().parent().find('.schema-editor-quantity-property-default-input');
-      if ($(this).prop('checked')) {
-        default_input.prop('disabled', false);
-      } else {
-        default_input.prop('disabled', true);
-      }
-    });
-    default_checkbox.on('change', updateProperty.bind(path));
-    default_input.on('change', updateProperty.bind(path));
-
-    var placeholder_label = node.find('.schema-editor-quantity-property-placeholder-label');
-    var placeholder_input = node.find('.schema-editor-quantity-property-placeholder-input');
-    var placeholder_checkbox = node.find('.schema-editor-quantity-property-placeholder-checkbox');
-    placeholder_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-placeholder-checkbox');
-    placeholder_input.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-placeholder-input');
-    placeholder_label.attr('for', placeholder_input.attr('id'));
-    if (type === 'quantity' && 'placeholder' in schema) {
-      placeholder_input.val(schema['placeholder']);
-      placeholder_checkbox.prop('checked', true);
-      placeholder_input.prop('disabled', false);
-    } else {
-      placeholder_input.val("");
-      placeholder_checkbox.prop('checked', false);
-      placeholder_input.prop('disabled', true);
-    }
-    placeholder_checkbox.on('change', function() {
-      var placeholder_input = $(this).parent().parent().find('.schema-editor-quantity-property-placeholder-input');
-      if ($(this).prop('checked')) {
-        placeholder_input.prop('disabled', false);
-      } else {
-        placeholder_input.prop('disabled', true);
-      }
-    });
-    placeholder_checkbox.on('change', updateProperty.bind(path));
-    placeholder_input.on('change', updateProperty.bind(path));
+    setupValueFromSchema(path, 'quantity', 'default', schema, type === 'quantity');
+    setupValueFromSchema(path, 'quantity', 'placeholder', schema, type === 'quantity');
 
     var units_label = node.find('.schema-editor-quantity-property-units-label');
     var units_input = node.find('.schema-editor-quantity-property-units-input');
