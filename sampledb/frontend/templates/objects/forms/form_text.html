@@ -1,5 +1,5 @@
 <div class="form-group row{% if id_prefix+'_text' in errors %} has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
-  <label class="control-label col-md-3 {% if schema.minLength %}required-label{% endif %}">{{ schema.title }}</label>
+  <label class="control-label col-md-3 {% if schema.minLength or (is_required and schema.choices) %}required-label{% endif %}">{{ schema.title }}</label>
   <div class="col-md-9">
     {% if schema.markdown %}
       <textarea style="resize: vertical; min-height: 171px;" class="form-control" data-markdown-textarea="true" name="{{ id_prefix }}_text" placeholder="{{ schema.placeholder or schema.title }}">{% if id_prefix+'_text' in form_data %}{{ form_data[id_prefix+'_text'] }}{% elif data is not none and "text" in data %}{{ data.text }}{% endif %}</textarea>

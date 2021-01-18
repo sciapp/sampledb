@@ -1,4 +1,4 @@
-{% if data is not none and "text" in data %}
+{% if data is not none and data.text %}
 {% if schema.markdown and data.is_markdown  %}
 <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;" class="object-user-content">{{ data.text | markdown_to_safe_html | safe }}</span>
 {% elif 'multiline' in schema and schema['multiline']  %}

@@ -64,7 +64,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     if keys != [id_prefix + '__text']:
         raise ValueError('invalid text form data')
     text = form_data.get(id_prefix + '__text', [None])[0]
-    if text is None and not required:
+    if not text and not required:
         return None
     data = {
         '_type': 'text',

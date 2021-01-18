@@ -1,1 +1,5 @@
-{{ data.text }}
+{% if data is not none and data.text %}
+  {{ data.text }}
+{% else %}
+  &mdash;
+{% endif %}

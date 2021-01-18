@@ -7,6 +7,7 @@
     {% endif %}
   </label>
   <div class="col-md-9">
+  {% if data %}
     {% if schema.markdown and data.is_markdown %}
       <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | markdown_to_safe_html | safe }}</pre>
     {% elif 'multiline' in schema and schema['multiline']  %}
@@ -16,7 +17,14 @@
           &mdash;
         {% endif %}
     {% else %}
-    {{ data.text }}
+      {% if data.text %}
+        {{ data.text }}
+      {% else %}
+        &mdash;
+      {% endif %}
     {% endif %}
+  {% else %}
+    &mdash;
+  {% endif %}
   </div>
 </div>
