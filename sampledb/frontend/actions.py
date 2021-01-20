@@ -55,7 +55,7 @@ class ActionForm(FlaskForm):
         except errors.ActionTypeDoesNotExistError:
             raise ValidationError("Unknown action type")
         if action_type.admin_only and not flask_login.current_user.is_admin:
-            raise ValidationError("Actions with this type can only be created by administrators")
+            raise ValidationError("Actions with this type can only be created or editted by administrators")
 
 
 @frontend.route('/actions/')
@@ -132,6 +132,8 @@ def action(action_id):
     if Permissions.READ not in permissions:
         return flask.abort(403)
     may_edit = Permissions.WRITE in permissions
+    if action.type.admin_only and not flask_login.current_user.is_admin:
+        may_edit = False
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
         check_current_user_is_not_readonly()
