@@ -1,7 +1,7 @@
 <!-- array start -->
 <div class="form-group row">
   <div class="col-md-3 control-label">
-    <strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title }}</span></strong>
+    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title }}</span></strong>{% endif %}
   </div>
 {% set is_required = False %}
 {% set minItems = schema.get('minItems', 0) %}
@@ -22,12 +22,12 @@
         {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
         {% for property_name in property_order %}
           {% if property_name in item_property_names %}
-          <th scope="col"><span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %}>{{ schema["items"].properties[property_name].title }}</span></th>
+          <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %}>{{ schema["items"].properties[property_name].title }}</span>{% endif %}</th>
           {% endif %}
         {% endfor %}
         {% for property_name in item_property_names %}
           {% if property_name not in property_order %}
-          <th scope="col"><span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %}>{{ schema["items"].properties[property_name].title }}</span></th>
+          <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %}>{{ schema["items"].properties[property_name].title }}</span>{% endif %}</th>
           {% endif %}
         {% endfor %}
         <th></th>
