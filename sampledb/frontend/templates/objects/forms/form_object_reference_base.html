@@ -6,7 +6,7 @@
   {% set selected_id = None %}
 {% endif %}
 <div class="form-group{% if id_prefix+'_oid' in errors %} has-error{% elif id_prefix+'_oid' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
-  <label class="control-label col-md-3 {% if is_required %}required-label{% endif %}">{{ schema.title }}</label>
+  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title }}</label>
   <div class="col-md-9">
       <select class="form-control selectpicker" name="{{ id_prefix }}_oid" data-live-search="true" {% if selected_action is none %}{% if selected_action_type is not none %}data-sampledb-valid-action-ids="{{ action_type_id_by_action_id.items() | selectattr(1, 'eq', selected_action_type) | map(attribute=0) | list | tojson }}"{% endif %}{% else %}data-sampledb-valid-action-ids="[{% if selected_action_type is not none and action_type_id_by_action_id[selected_action] != selected_action_type %}-1{% else %}{{ selected_action }}{% endif %}]"{% endif %} data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
       <option value="">&mdash;</option>

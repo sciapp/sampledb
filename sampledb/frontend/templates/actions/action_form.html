@@ -107,6 +107,9 @@
             {% endif %}
           {% endfor %}
         </select>
+        {% if action_form.type.name in action_form.errors %}
+          <div class="help-block">{{ action_form.errors[action_form.type.name] }}</div>
+        {% endif %}
       </div>
       <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}style="display: none"{% endif %}>
         <label for="input-instrument" class="control-label">Instrument</label>
