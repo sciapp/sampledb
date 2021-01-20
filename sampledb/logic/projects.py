@@ -295,7 +295,13 @@ def get_user_projects(user_id: int, include_groups: bool = False) -> typing.List
     return [get_project(project_id) for project_id in project_ids]
 
 
-def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_to_parent_project_ids: typing.Sequence[int] = ()) -> None:
+def invite_user_to_project(
+        project_id: int,
+        user_id: int,
+        inviter_id: int,
+        add_to_parent_project_ids: typing.Sequence[int] = (),
+        permissions: Permissions = Permissions.READ
+) -> None:
     """
     Sends an invitation mail for a project to a user.
 
@@ -304,6 +310,7 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
     :param inviter_id: the ID of who invited this user to the project
     :param add_to_parent_project_ids: list of IDs of parent projects to which
         the user should also be added
+    :param permissions: the permissions that the user should get
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -330,6 +337,7 @@ def invite_user_to_project(project_id: int, user_id: int, inviter_id: int, add_t
             'invitation_id': invitation.id,
             'user_id': user_id,
             'project_id': project_id,
+            'permissions': permissions.value,
             'other_project_ids': add_to_parent_project_ids
         },
         salt='invite_to_project',

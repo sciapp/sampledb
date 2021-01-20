@@ -38,3 +38,12 @@ class Permissions(enum.Enum):
             return members[name.lower()]
         except KeyError:
             raise ValueError('Invalid name')
+
+    @staticmethod
+    def from_value(value):
+        if value is None:
+            return Permissions.NONE
+        for member in Permissions:
+            if member.value == value:
+                return member
+        return Permissions.NONE

@@ -177,6 +177,19 @@
                 </select>
               </div>
             </div>
+            <div class="form-group">
+              <label for="inviteUserPermissions" class="col-sm-2 control-label">Permissions</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" name="{{ invite_user_form.permissions.name }}" id="inviteUserId" data-width="100%">
+                  <option value="1" selected="selected">READ</option>
+                  <option value="2">WRITE</option>
+                  <option value="3">GRANT</option>
+                </select>
+              </div>
+              <div class="help-block col-sm-10 col-sm-offset-2">
+                Permissions limit what a user can do, regarding the project itself as well as objects that the project has permissions for.<br />These can also be changed later on by using the <strong>Edit Permissions</strong> button.
+              </div>
+            </div>
             {% if invite_user_form.other_project_ids %}
             <strong>Invite user to parent projects:</strong>
             {% endif %}

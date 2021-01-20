@@ -417,7 +417,8 @@ def test_invite_user_to_project(flask_server, app):
             user.id: sampledb.logic.projects.Permissions.GRANT
         }
 
-        sampledb.logic.projects.invite_user_to_project(project_id, other_user.id, user.id)
+        permissions = sampledb.logic.projects.Permissions.WRITE
+        sampledb.logic.projects.invite_user_to_project(project_id, other_user.id, user.id, permissions=permissions)
 
         notifications = sampledb.logic.notifications.get_notifications(other_user.id)
         assert len(notifications) > 0
@@ -436,7 +437,7 @@ def test_invite_user_to_project(flask_server, app):
         invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
         r = session.get(invitation_url)
         assert r.status_code == 200
-        assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
+        assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)[other_user.id] == permissions
 
 
 def test_remove_user_from_project():
