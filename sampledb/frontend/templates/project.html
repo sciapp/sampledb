@@ -9,6 +9,9 @@
 
 {% block content %}
   <h3>Project Group #{{ project.id }}: {{ project.name }}</h3>
+  {% if object_id is not none %}
+  <p class="text-muted">This project group is linked to <a href="{{ url_for('.object', object_id=object_id) }}">{% if object_action %}{{ object_action.type.object_name }}{% else %}Object{% endif %} #{{ object_id }}{% if object is not none %}: {{ object.data.name.text }}{% endif %}</a>.</p>
+  {% endif %}
   <p>{{ project.description }}</p>
   {% if not config['DISABLE_SUBPROJECTS'] %}
   {% if parent_project_ids %}
@@ -113,6 +116,12 @@
   <a href="{{ url_for('.project_permissions', project_id=project.id) }}" class="btn btn-primary" >Edit Permissions</a>
   {% endif %}
   {% endif %}
+  {% if not current_user.is_readonly and not object_id and object_link_form %}
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#linkObjectModal" id="linkObjectButton" {% if not linkable_objects %}disabled=""{% endif %}>Link Object</button>
+  {% endif %}
+  {% if not current_user.is_readonly and object_id and object_link_form %}
+  <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#unlinkObjectModal">Unlink Object</button>
+  {% endif %}
   {% if leave_project_form %}
   <form method="post" style="display: inline" action="{{ url_for('.project', project_id=project.id) }}" id="leaveProjectForm">
     {{ leave_project_form.csrf_token() }}
@@ -123,6 +132,60 @@
   {% if delete_project_form %}
   <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteProjectModal">Delete Project Group</button>
   {% endif %}
+  {% endif %}
+
+  {% if not current_user.is_readonly and object_id and object_link_form %}
+  <div class="modal fade" id="unlinkObjectModal" tabindex="-1" role="dialog" aria-labelledby="unlinkObjectModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="unlinkObjectModalLabel">Unlink Object</h4>
+        </div>
+        <form method="post" action="{{ url_for('.unlink_object', project_id=project.id) }}" class="form-horizontal">
+          {{ object_link_form.csrf_token() }}
+          <input type="hidden" name="{{ object_link_form.object_id.name }}" value="{{ object_id }}">
+          <div class="modal-body">
+            Are you certain you want to unlink this project group from the object?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger" name="delete" value="delete">Unlink Object</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not current_user.is_readonly and not object_id and object_link_form %}
+  <div class="modal fade" id="linkObjectModal" tabindex="-1" role="dialog" aria-labelledby="linkObjectModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="linkObjectModalLabel">Link Object</h4>
+        </div>
+        <form method="post" action="{{ url_for('.link_object', project_id=project.id) }}" class="form-horizontal">
+          {{ object_link_form.csrf_token() }}
+          <div class="modal-body">
+            <p>
+            Select an object to link this project group to:
+            </p>
+            <select class="selectpicker" name="{{ object_link_form.object_id.name }}" data-live-search="true" data-width="100%" data-sampledb-remove="{% for object_id in already_linked_object_ids %}{{ object_id }},{% endfor %}" data-sampledb-valid-action-ids=",{% for action_id in linkable_action_ids %}{{ action_id }},{% endfor %}" data-sampledb-required-perm="3" data-sampledb-empty-disable="#linkObjectButton" data-sampledb-nonempty-enable="#linkObjectButton">
+              {% for object_id, object_name in linkable_objects %}
+                <option value="{{ object_id }}">{{ object_name }} (#{{ object_id }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" name="delete" value="delete">Link Object</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
   {% endif %}
 
   {% if edit_project_form %}
@@ -356,6 +419,9 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  {% if object_link_form and not object_id and not current_user.is_readonly and config['LOAD_OBJECTS_IN_BACKGROUND'] %}
+    <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+  {% endif %}
   {% if show_edit_form %}
   <script>
     $(document).ready(function() {

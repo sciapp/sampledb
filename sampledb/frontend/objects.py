@@ -993,6 +993,14 @@ def object(object_id):
             )
             return confirmation_url
 
+        linked_project = logic.projects.get_project_linked_to_object(object_id)
+
+        def get_project_if_it_exists(project_id):
+            try:
+                return get_project(project_id)
+            except logic.errors.ProjectDoesNotExistError:
+                return None
+
         return flask.render_template(
             'objects/view/base.html',
             object_type=object_type,
@@ -1048,6 +1056,8 @@ def object(object_id):
             build_object_location_assignment_confirmation_url=build_object_location_assignment_confirmation_url,
             user_may_assign_location=user_may_edit,
             location_form=location_form,
+            project=linked_project,
+            get_project=get_project_if_it_exists,
             get_action_type=get_action_type
         )
     check_current_user_is_not_readonly()

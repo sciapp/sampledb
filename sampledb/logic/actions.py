@@ -45,14 +45,55 @@ class ActionType(collections.namedtuple('ActionType', [
     'enable_publications',
     'enable_comments',
     'enable_activity_log',
-    'enable_related_objects'
+    'enable_related_objects',
+    'enable_project_link'
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
     """
 
-    def __new__(cls, id: int, name: str, description: str, object_name: str, object_name_plural: str, view_text: str, perform_text: str, admin_only: bool, show_on_frontpage: bool, show_in_navbar: bool, enable_labels: bool, enable_files: bool, enable_locations: bool, enable_publications: bool, enable_comments: bool, enable_activity_log: bool, enable_related_objects: bool):
-        self = super(ActionType, cls).__new__(cls, id, name, description, object_name, object_name_plural, view_text, perform_text, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects)
+    def __new__(
+            cls,
+            id: int,
+            name: str,
+            description: str,
+            object_name: str,
+            object_name_plural: str,
+            view_text: str,
+            perform_text: str,
+            admin_only: bool,
+            show_on_frontpage: bool,
+            show_in_navbar: bool,
+            enable_labels: bool,
+            enable_files: bool,
+            enable_locations: bool,
+            enable_publications: bool,
+            enable_comments: bool,
+            enable_activity_log: bool,
+            enable_related_objects: bool,
+            enable_project_link: bool
+    ):
+        self = super(ActionType, cls).__new__(
+            cls,
+            id,
+            name,
+            description,
+            object_name,
+            object_name_plural,
+            view_text,
+            perform_text,
+            admin_only,
+            show_on_frontpage,
+            show_in_navbar,
+            enable_labels,
+            enable_files,
+            enable_locations,
+            enable_publications,
+            enable_comments,
+            enable_activity_log,
+            enable_related_objects,
+            enable_project_link
+        )
         return self
 
     @classmethod
@@ -74,7 +115,8 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_publications=action_type.enable_publications,
             enable_comments=action_type.enable_comments,
             enable_activity_log=action_type.enable_activity_log,
-            enable_related_objects=action_type.enable_related_objects
+            enable_related_objects=action_type.enable_related_objects,
+            enable_project_link=action_type.enable_project_link
         )
 
     def __repr__(self):
@@ -124,7 +166,8 @@ def create_action_type(
         enable_publications: bool,
         enable_comments: bool,
         enable_activity_log: bool,
-        enable_related_objects: bool
+        enable_related_objects: bool,
+        enable_project_link: bool
 ) -> ActionType:
     """
     Create a new action type.
@@ -145,6 +188,7 @@ def create_action_type(
     :param enable_comments: whether comments should be enabled for actions of this type
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
+    :param enable_project_link: objects created with actions of this type can be linked to a project group
     :return: the created action type
     """
     action_type = models.ActionType(
@@ -163,7 +207,8 @@ def create_action_type(
         enable_publications=enable_publications,
         enable_comments=enable_comments,
         enable_activity_log=enable_activity_log,
-        enable_related_objects=enable_related_objects
+        enable_related_objects=enable_related_objects,
+        enable_project_link=enable_project_link
     )
     db.session.add(action_type)
     db.session.commit()
@@ -187,7 +232,8 @@ def update_action_type(
         enable_publications: bool,
         enable_comments: bool,
         enable_activity_log: bool,
-        enable_related_objects: bool
+        enable_related_objects: bool,
+        enable_project_link: bool
 ) -> ActionType:
     """
     Update an existing action type.
@@ -209,6 +255,7 @@ def update_action_type(
     :param enable_comments: whether comments should be enabled for actions of this type
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
+    :param enable_project_link: objects created with actions of this type can be linked to a project group
     :return: the created action type
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -232,6 +279,7 @@ def update_action_type(
     action_type.enable_comments = enable_comments
     action_type.enable_activity_log = enable_activity_log
     action_type.enable_related_objects = enable_related_objects
+    action_type.enable_project_link = enable_project_link
     db.session.add(action_type)
     db.session.commit()
     return ActionType.from_database(action_type)
