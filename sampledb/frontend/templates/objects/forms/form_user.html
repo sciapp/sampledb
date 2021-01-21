@@ -11,7 +11,7 @@
       <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
       {% endif %}
     {% else %}
-      {% if data is not none and "user_id" in data and data.user_id == user.id %}
+      {% if (data is not none and "user_id" in data and data.user_id == user.id) or (data is none and schema.default == "self" and user.id == current_user.id) %}
       <option value="{{ user.id }}" selected="selected">{{ user.name }} (#{{ user.id }})</option>
       {% else %}
       <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>

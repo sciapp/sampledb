@@ -804,6 +804,13 @@ $(function() {
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "user";
 
+      var has_default = $('#schema-editor-object__' + path.join('__') + '-user-default-checkbox').prop('checked');
+      if (has_default) {
+        property_schema["default"] = "self";
+      } else {
+        delete property_schema.default;
+      }
+
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
@@ -1031,6 +1038,15 @@ $(function() {
       units_group.find('.help-block').text("Please enter valid units");
       window.schema_editor_errors[path.join('__') + '__specific'] = true;
     }
+
+    var default_checkbox = node.find('.schema-editor-user-property-default-checkbox');
+    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-checkbox');
+    if (type === 'user' && 'default' in schema) {
+      default_checkbox.prop('checked', true);
+    } else {
+      default_checkbox.prop('checked', false);
+    }
+    default_checkbox.on('change', updateProperty.bind(path));
 
     return node;
   }

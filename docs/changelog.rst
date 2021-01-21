@@ -17,6 +17,7 @@ Currently in development.
 - Added configuration variables to allow only administrators to create groups or projects
 - Added asterisks to mark required fields when editing objects
 - Project permissions can be set when inviting a user
+- Allow default value "self" for user fields
 
 Version 0.16
 ------------

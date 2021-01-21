@@ -1926,6 +1926,25 @@ def test_validate_user_schema_with_unknown_property():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_user_schema_with_default():
+    schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'default': 'self'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_user_schema_with_invalid_default():
+    schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'default': 'other'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_schemas_with_export_bool():
     schema = {
         'title': 'Example Property',
