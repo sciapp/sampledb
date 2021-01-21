@@ -43,11 +43,14 @@ def project(project_id):
                 except logic.errors.UserDoesNotExistError:
                     pass
             return flask.abort(403)
-        other_project_ids = token_data.get('other_project_ids', [])
-        for notification in logic.notifications.get_notifications(user_id, unread_only=True):
-            if notification.type == logic.notifications.NotificationType.INVITED_TO_PROJECT:
-                if notification.data['project_id'] == project_id:
-                    logic.notifications.mark_notification_as_read(notification.id)
+        if not flask.current_app.config['DISABLE_SUBPROJECTS']:
+            other_project_ids = token_data.get('other_project_ids', [])
+            for notification in logic.notifications.get_notifications(user_id, unread_only=True):
+                if notification.type == logic.notifications.NotificationType.INVITED_TO_PROJECT:
+                    if notification.data['project_id'] == project_id:
+                        logic.notifications.mark_notification_as_read(notification.id)
+        else:
+            other_project_ids = []
         try:
             logic.projects.add_user_to_project(project_id, user_id, permissions, other_project_ids=other_project_ids)
         except logic.errors.UserAlreadyMemberOfProjectError:
@@ -298,26 +301,27 @@ def project(project_id):
             else:
                 flask.flash('The basic group was successfully added to the project group.', 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    if 'remove_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
-        if remove_subproject_form is not None and remove_subproject_form.validate_on_submit():
-            check_current_user_is_not_readonly()
-            child_project_id = remove_subproject_form.child_project_id.data
-            if child_project_id not in child_project_ids:
-                flask.flash('Project group #{} is not a child of this project group.'.format(int(child_project_id)), 'error')
-            else:
-                logic.projects.delete_subproject_relationship(project_id, child_project_id)
-                flask.flash('The child project group was successfully removed from this project group.', 'success')
-                return flask.redirect(flask.url_for('.project', project_id=project_id))
-    if 'add_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
-        if add_subproject_form is not None and add_subproject_form.validate_on_submit():
-            check_current_user_is_not_readonly()
-            child_project_id = add_subproject_form.child_project_id.data
-            if child_project_id not in addable_project_ids:
-                flask.flash('Project group #{} cannot become a child of this project group.'.format(int(child_project_id)), 'error')
-            else:
-                logic.projects.create_subproject_relationship(project_id, child_project_id, child_can_add_users_to_parent=add_subproject_form.child_can_add_users_to_parent.data)
-                flask.flash('The child project group was successfully added to this project group.', 'success')
-                return flask.redirect(flask.url_for('.project', project_id=project_id))
+    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
+        if 'remove_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
+            if remove_subproject_form is not None and remove_subproject_form.validate_on_submit():
+                check_current_user_is_not_readonly()
+                child_project_id = remove_subproject_form.child_project_id.data
+                if child_project_id not in child_project_ids:
+                    flask.flash('Project group #{} is not a child of this project group.'.format(int(child_project_id)), 'error')
+                else:
+                    logic.projects.delete_subproject_relationship(project_id, child_project_id)
+                    flask.flash('The child project group was successfully removed from this project group.', 'success')
+                    return flask.redirect(flask.url_for('.project', project_id=project_id))
+        if 'add_subproject' in flask.request.form and Permissions.GRANT in user_permissions:
+            if add_subproject_form is not None and add_subproject_form.validate_on_submit():
+                check_current_user_is_not_readonly()
+                child_project_id = add_subproject_form.child_project_id.data
+                if child_project_id not in addable_project_ids:
+                    flask.flash('Project group #{} cannot become a child of this project group.'.format(int(child_project_id)), 'error')
+                else:
+                    logic.projects.create_subproject_relationship(project_id, child_project_id, child_can_add_users_to_parent=add_subproject_form.child_can_add_users_to_parent.data)
+                    flask.flash('The child project group was successfully added to this project group.', 'success')
+                    return flask.redirect(flask.url_for('.project', project_id=project_id))
     return flask.render_template(
         'project.html',
         get_user=logic.users.get_user,

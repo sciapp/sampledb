@@ -10,6 +10,7 @@
 {% block content %}
   <h3>Project Group #{{ project.id }}: {{ project.name }}</h3>
   <p>{{ project.description }}</p>
+  {% if not config['DISABLE_SUBPROJECTS'] %}
   {% if parent_project_ids %}
     This project group is a part of
       {% if parent_project_ids | length > 2 %}
@@ -39,6 +40,7 @@
         {% endwith %}
       {% endfor %}
     </ul>
+  {% endif %}
   {% endif %}
   <h4>Members</h4>
   <ul>
@@ -93,11 +95,13 @@
   {% if edit_project_form %}
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProjectModal">Edit Project Group</button>
   {% endif %}
+  {% if not config['DISABLE_SUBPROJECTS'] %}
   {% if add_subproject_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSubprojectModal">Add Child Project Group</button>
   {% endif %}
   {% if remove_subproject_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#removeSubprojectModal">Remove Child Project Group</button>
+  {% endif %}
   {% endif %}
   {% if invite_user_form %}
   <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Invite User</button>
@@ -190,6 +194,7 @@
                 Permissions limit what a user can do, regarding the project itself as well as objects that the project group has permissions for.<br />These can also be changed later on by using the <strong>Edit Permissions</strong> button.
               </div>
             </div>
+            {% if not config['DISABLE_SUBPROJECTS'] %}
             {% if invite_user_form.other_project_ids %}
             <strong>Invite user to parent project groups:</strong>
             {% endif %}
@@ -206,6 +211,7 @@
               <label for="{{ other_project_id_form.add_user.id }}" class="col-sm-10 control-label" style="text-align: left">{{ parent_project.name }} (#{{ parent_project.id }})</label>
             </div>
             {% endfor %}
+            {% endif %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -249,6 +255,7 @@
   </div>
   {% endif %}
 
+  {% if not config['DISABLE_SUBPROJECTS'] %}
   {% if add_subproject_form %}
   <div class="modal fade" id="addSubprojectModal" tabindex="-1" role="dialog" aria-labelledby="addSubprojectModalLabel">
     <div class="modal-dialog" role="document">
@@ -319,6 +326,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
   {% endif %}
 
   {% if delete_project_form %}

@@ -18,6 +18,7 @@
     {% if project.permissions == Permissions.WRITE %}(Write){% endif %}
     {% if project.permissions == Permissions.GRANT %}(Grant){% endif %}
     </span>{% endif %}
+    {% if not config['DISABLE_SUBPROJECTS'] %}
       {% if loop.index < project_id_hierarchy_list | length %}
         {% if project_id_hierarchy_list[loop.index][0] > level %}
           {{ ('<ul>' * (project_id_hierarchy_list[loop.index][0] - level)) | safe }}
@@ -29,6 +30,7 @@
           </ul>
         {% endfor %}
       {% endif %}
+    {% endif %}
     </li>
     {% endwith %}
   {% endfor %}

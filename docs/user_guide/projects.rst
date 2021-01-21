@@ -12,7 +12,7 @@ A project group can contain :ref:`groups` as well as users, though it cannot con
 Project groups may be best suited for those who want to model their object permissions in |service_name| according to an organizational hierarchy. For a simpler approach, see :ref:`groups`.
 
 .. note::
-    Administrators can disable creation of project groups by regular users.
+    Administrators can disable creation of project groups by regular users. Administrators can also disable subproject support.
 
 .. note::
     Project groups were formerly known only as projects. The name was changed to distinguish them from objects containing information about research projects.
