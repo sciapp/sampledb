@@ -529,7 +529,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'default'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -542,3 +542,5 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('note must be str', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'default' in schema and schema['default'] != 'self':
+        raise ValidationError('default must be "self"', path)

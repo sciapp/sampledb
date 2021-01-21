@@ -774,6 +774,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
+    users.sort(key=lambda user: user.id)
     if object is None:
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
