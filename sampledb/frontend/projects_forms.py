@@ -5,7 +5,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SelectField, FieldList, FormField, BooleanField
-from wtforms.validators import Length, InputRequired
+from wtforms.validators import Length, InputRequired, NumberRange
 
 from ..logic.object_permissions import Permissions
 
@@ -46,6 +46,7 @@ class OtherProjectIdForm(FlaskForm):
 class InviteUserToProjectForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
     other_project_ids = FieldList(FormField(OtherProjectIdForm), min_entries=0)
+    permissions = IntegerField(validators=[InputRequired(), NumberRange(min=Permissions.READ.value, max=Permissions.GRANT.value)])
 
 
 class InviteGroupToProjectForm(FlaskForm):

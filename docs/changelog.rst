@@ -16,6 +16,7 @@ Currently in development.
 - Reimplemented PDF export
 - Added configuration variables to allow only administrators to create groups or projects
 - Added asterisks to mark required fields when editing objects
+- Project permissions can be set when inviting a user
 
 Version 0.16
 ------------

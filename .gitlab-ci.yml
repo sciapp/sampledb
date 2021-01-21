@@ -52,11 +52,10 @@ documentation:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip
+    - apt-get install -y git python3-pip xvfb chromium-browser
     # install dependencies
     - python3 -m pip install -r requirements.txt
     # generate documentation images using current version
-    - apt-get install -y xvfb chromium-browser
     - Xvfb :0 -ac -screen 0 1920x1080x24 &
     - export DISPLAY=:0
     - python3 docs/utils/generate_images.py

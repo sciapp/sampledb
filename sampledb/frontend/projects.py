@@ -30,6 +30,10 @@ def project(project_id):
                 return flask.abort(403)
         if token_data.get('project_id', None) != project_id:
             return flask.abort(403)
+        permissions = Permissions.from_value(token_data.get('permissions', Permissions.READ.value))
+        if permissions == Permissions.NONE:
+            flask.flash('Invalid permissions in project invitation token. Please request a new invitation.', 'error')
+            return flask.abort(403)
         user_id = token_data.get('user_id', None)
         if user_id != flask_login.current_user.id:
             if user_id is not None:
@@ -45,7 +49,7 @@ def project(project_id):
                 if notification.data['project_id'] == project_id:
                     logic.notifications.mark_notification_as_read(notification.id)
         try:
-            logic.projects.add_user_to_project(project_id, user_id, logic.object_permissions.Permissions.READ, other_project_ids=other_project_ids)
+            logic.projects.add_user_to_project(project_id, user_id, permissions, other_project_ids=other_project_ids)
         except logic.errors.UserAlreadyMemberOfProjectError:
             flask.flash('You are already a member of this project', 'error')
         except logic.errors.ProjectDoesNotExistError:
@@ -253,6 +257,10 @@ def project(project_id):
             if not any(user.id == invite_user_form.user_id.data for user in invitable_user_list):
                 flask.flash('You cannot add this user.', 'error')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
+            permissions = Permissions.from_value(invite_user_form.permissions.data)
+            if Permissions.READ not in permissions:
+                flask.flash('Please select read permissions (or higher) for the invitation.', 'error')
+                return flask.redirect(flask.url_for('.projects'))
             try:
                 other_project_ids = []
                 for other_project_id_form in invite_user_form.other_project_ids:
@@ -261,7 +269,7 @@ def project(project_id):
                             other_project_ids.append(int(other_project_id_form.project_id.data))
                     except (KeyError, ValueError):
                         pass
-                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, flask_login.current_user.id, other_project_ids)
+                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, flask_login.current_user.id, other_project_ids, permissions)
             except logic.errors.ProjectDoesNotExistError:
                 flask.flash('This project does not exist.', 'error')
                 return flask.redirect(flask.url_for('.projects'))

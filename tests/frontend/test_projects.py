@@ -192,7 +192,8 @@ def test_add_user(flask_server, user_session, user):
     r = user_session.post(url, {
         'add_user': 'add_user',
         'csrf_token': csrf_token,
-        'user_id': str(new_user.id)
+        'user_id': str(new_user.id),
+        'permissions': 1
     })
     assert r.status_code == 200
 
