@@ -10,11 +10,7 @@
     <option value="">&mdash;</option>
   {% for obj in referencable_objects %}
     {% if (action_type_id_by_action_id is none or selected_action_type is none or action_type_id_by_action_id[obj.action_id] == selected_action_type) and (selected_action is none or obj.action_id == selected_action) %}
-      {% if selected_id == obj.object_id | string %}
-        <option value="{{ obj.object_id }}" selected="selected">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</option>
-      {% else %}
-        <option value="{{ obj.object_id }}">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</option>
-      {% endif %}
+      <option value="{{ obj.object_id }}" {% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.data['name']['text'] }}"{% endif %}>{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</option>
     {% endif %}
   {% endfor %}
   </select>

@@ -18,6 +18,7 @@ Currently in development.
 - Added asterisks to mark required fields when editing objects
 - Project permissions can be set when inviting a user
 - Allow default value "self" for user fields
+- Allow searching for tags in dropdown object selection fields
 
 Version 0.16.1
 --------------
