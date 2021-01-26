@@ -79,7 +79,7 @@ Users can be limited to READ permissions, e.g. for former employees who should s
 Hidden users
 ------------
 
-Users can also be hidden from users lists, which may be useful in similar use cases as when marking a user as readonly. These users can still be seen as part of an object's history or as members of groups and projects, but they will not be shown in the central users list, when granting permissions, inviting a user to a group or project, etc.
+Users can also be hidden from users lists, which may be useful in similar use cases as when marking a user as readonly. These users can still be seen as part of an object's history or as members of basic and project groups, but they will not be shown in the central users list, when granting permissions, inviting a user to a group, etc.
 
 Deactivated users
 ------------------

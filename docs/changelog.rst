@@ -19,6 +19,7 @@ Currently in development.
 - Project permissions can be set when inviting a user
 - Allow default value "self" for user fields
 - Allow searching for tags in dropdown object selection fields
+- Renamed projects to project groups and groups to basic groups to avoid ambiguity
 
 Version 0.16.1
 --------------

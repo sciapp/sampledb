@@ -261,7 +261,7 @@ def test_view_project(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/{}'.format(project_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('h3').text == 'Project #{}: Example Project'.format(project_id)
+    assert document.find('h3').text == 'Project Group #{}: Example Project'.format(project_id)
 
 
 def test_remove_last_user_from_project_permissions(flask_server, user_session):
@@ -474,7 +474,7 @@ def test_fail_add_subproject(flask_server, user_session):
         add_subproject_dropdown['name']: str(parent_project_id)
     })
     assert r.status_code == 200
-    assert 'Project #{} cannot become a subproject of this project.'.format(int(parent_project_id)) in r.content.decode('utf-8')
+    assert 'Project group #{} cannot become a child of this project group.'.format(int(parent_project_id)) in r.content.decode('utf-8')
 
     assert sampledb.logic.projects.get_child_project_ids(parent_project_id) == []
 
@@ -522,7 +522,7 @@ def test_fail_remove_subproject(flask_server, user_session):
         remove_subproject_dropdown['name']: str(child_project_id)
     })
     assert r.status_code == 200
-    assert 'Project #{} is not a subproject of this project.'.format(int(child_project_id)) in r.content.decode('utf-8')
+    assert 'Project group #{} is not a child of this project group.'.format(int(child_project_id)) in r.content.decode('utf-8')
 
     assert sampledb.logic.projects.get_child_project_ids(parent_project_id) == [child_project_id2]
 
@@ -537,7 +537,7 @@ def test_view_subprojects(flask_server, user_session):
     document = BeautifulSoup(r.content, 'html.parser')
 
     for header in document.find_all('h4'):
-        if 'Subprojects' in header.text:
+        if 'Child Project Groups' in header.text:
             subprojects_header = header
             break
     else:

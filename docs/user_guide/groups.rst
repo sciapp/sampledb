@@ -1,34 +1,35 @@
 .. _groups:
 
-Groups
-======
+Basic Groups
+============
 
-Groups are one of the two ways for organizing :ref:`users` in |service_name|. For :ref:`Object Permissions <permissions>`, a group acts as a single entity with all members of the group sharing any permissions granted to it.
+Basic Groups are one of the two ways for organizing :ref:`users` in |service_name|. For :ref:`Object Permissions <permissions>`, a basic group acts as a single entity with all members of the group sharing any permissions granted to it.
 
-Users can be members of any number of groups, leave the groups they are in or invite other users. Any member of a group can remove other members or delete the group as a whole.
+Users can be members of any number of basic groups, leave the basic groups they are in or invite other users. Any member of a basic group can remove other members or delete the basic group as a whole.
 
-As all users in a group are equal, groups may be best suited for those who want to freely share objects with their colleagues without fine-grained permissions. For a more detailed or hierarchical approach, see :ref:`projects`.
+As all users in a basic group are equal, basic groups may be best suited for those who want to freely share objects with their colleagues without fine-grained permissions. For a more detailed or hierarchical approach, see :ref:`projects`.
 
 .. note::
-    Administrators can disable creation of groups by regular users.
+    Administrators can disable creation of basic groups by regular users.
 
-.. list-table:: Comparing Groups and Projects
+.. note::
+    Basic Groups were formerly known only as groups. The name was changed along with the renaming of :ref:`projects`.
+
+.. list-table:: Comparing Basic and Project Groups
    :header-rows: 1
 
    * - Feature
-     - Groups
-     - Projects
+     - Basic Groups
+     - Project Groups
    * - Members
      - Users
-     - Users and Groups
+     - Users and Basic Groups
    * - Hierarchy
      - Flat
-     - Nested, Projects can contain Subprojects
+     - Nested (Project Groups can have Child Project Groups)
    * - Object Permissions
-     - All members get the Object Permissions granted to the Group
-     - Each Project member has a permissions level (**Read**/**Write**/**Grant**) for the Project and will get Object Permissions granted to the Project up to that level
+     - All members get the Object Permissions granted to the Basic Group
+     - Each Project Group member has a permissions level (**Read**/**Write**/**Grant**) for the Project Group and will get Object Permissions granted to the Project Group up to that level
    * - Member Invitation
-     - Any Group member can invite new members
-     - Project members with **Grant** permissions can invite new members
-
-
+     - Any member of a Basic Group can invite new members
+     - Only members of a Project Group with **Grant** permissions can invite new members

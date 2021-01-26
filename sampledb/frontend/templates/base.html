@@ -67,9 +67,9 @@
               <li class="divider"></li>
               {% if project_id %}
                 {% if action_type %}
-                <li><a href="#" id="button-search-project-id">Search {{ action_type.object_name_plural.lower() }} from this project</a></li>
+                <li><a href="#" id="button-search-project-id">Search {{ action_type.object_name_plural.lower() }} from this project group</a></li>
                 {% else %}
-                <li><a href="#" id="button-search-project-id">Search objects from this project</a></li>
+                <li><a href="#" id="button-search-project-id">Search objects from this project group</a></li>
                 {% endif %}
               {% endif %}
               {% if action_id  %}
@@ -116,8 +116,8 @@
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">More <span class="caret"></span></a>
           <ul class="dropdown-menu">
             <li><a href="{{ url_for('frontend.users') }}">Users</a></li>
-            <li><a href="{{ url_for('frontend.projects') }}">Projects</a></li>
-            <li><a href="{{ url_for('frontend.groups') }}">Groups</a></li>
+            <li><a href="{{ url_for('frontend.groups') }}">Basic Groups</a></li>
+            <li><a href="{{ url_for('frontend.projects') }}">Project Groups</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">Locations</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">Tags</a></li>
             {% if current_user.is_admin %}
@@ -140,8 +140,8 @@
               <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
               <li><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}">Notifications {% if num_unread_notifications > 0 %}<span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span>{% endif %}</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Projects</a></li>
-              <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Groups</a></li>
+              <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Basic Groups</a></li>
+              <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Project Groups</a></li>
               <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">Your Actions</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.invitation_route')}}">Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %}</a></li>
@@ -234,9 +234,9 @@
        $('#input-search-action-id').attr('name', 'action_');
        $('#input-search-project-id').attr('name', 'project');
        if ($('#input-search-advanced')[0].checked) {
-         $('#input-search').attr('placeholder', 'Advanced Search (by project)...');
+         $('#input-search').attr('placeholder', 'Advanced Search (by project group)...');
        } else {
-         $('#input-search').attr('placeholder', 'Search (by project)...');
+         $('#input-search').attr('placeholder', 'Search (by project group)...');
        }
      });
      $('#button-search-action-type').on('click', function() {
