@@ -1194,7 +1194,8 @@ def referencable_objects():
             'id': x.object_id,
             'text': flask.escape('{} (#{})'.format(x.name_text, x.object_id)),
             'action_id': x.action_id,
-            'max_permission': x.max_permission
+            'max_permission': x.max_permission,
+            'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
         }
 
     return {'referencable_objects': [dictify(x) for x in referencable_objects]}

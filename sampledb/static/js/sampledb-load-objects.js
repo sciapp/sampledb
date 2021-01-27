@@ -44,7 +44,15 @@ $(function() {
           });
         $x.append(
           to_add.map(function (el) {
-              return '<option value="' + el.id + '">' + el.text + '</option>';
+              var data_tokens = "";
+              if (el.tags.length) {
+                data_tokens = 'data-tokens="';
+                for (var i = 0; i < el.tags.length; i++) {
+                  data_tokens += '#' + el.tags[i] + ' ';
+                }
+                data_tokens += el.text + '"';
+              }
+              return '<option value="' + el.id + '" '+ data_tokens + '>' + el.text + '</option>';
             }).join(""));
 
         $x.selectpicker('refresh').prop("disabled", false).selectpicker('refresh');

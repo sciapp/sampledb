@@ -192,6 +192,8 @@ def test_search_objects(flask_server, user):
 def test_objects_referencable(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    schema['properties']['tags'] = {'title': 'Tags', 'type': 'tags'}
+    schema['required'].append('tags')
     action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
@@ -203,7 +205,7 @@ def test_objects_referencable(flask_server, user):
         for name in names
     ]
     other_object = sampledb.logic.objects.create_object(
-        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+        data={'name': {'_type': 'text', 'text': 'Other Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}},
         user_id=user.id,
         action_id=action2.id
     )
@@ -226,10 +228,10 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 4
     assert data['referencable_objects'] == [
-        {'action_id': action2_id, 'id': other_object.object_id, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})'},
-        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})'},
-        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})'},
-        {'action_id': action1_id, 'id': objects[0].object_id, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})'}
+        {'action_id': action2_id, 'id': other_object.object_id, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b']},
+        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'tags': []}
     ]
 
     session = requests.session()
@@ -239,8 +241,8 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 2
     assert data['referencable_objects'] == [
-        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})'},
-        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})'}
+        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'tags': []}
     ]
 
 
