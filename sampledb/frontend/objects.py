@@ -1192,7 +1192,7 @@ def referencable_objects():
     def dictify(x):
         return {
             'id': x.object_id,
-            'text': '{} (#{})'.format(x.name_text, x.object_id),
+            'text': flask.escape('{} (#{})'.format(x.name_text, x.object_id)),
             'action_id': x.action_id,
             'max_permission': x.max_permission
         }

@@ -19,6 +19,13 @@ Currently in development.
 - Project permissions can be set when inviting a user
 - Allow default value "self" for user fields
 
+Version 0.16.1
+--------------
+
+Released on January 27th, 2021.
+
+- Fixed object name escaping when loading objects in the background
+
 Version 0.16
 ------------
 

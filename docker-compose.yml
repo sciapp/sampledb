@@ -6,7 +6,7 @@ version: '3'
 
 services:
   web:
-    image: sciapp/sampledb:0.16.0
+    image: sciapp/sampledb:0.16.1
     restart: always
     container_name: sampledb
     environment:
