@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.16.1
+--------------
+
+Released on January 27th, 2021.
+
+- Fixed object name escaping when loading objects in the background
+
 Version 0.16
 ------------
 
