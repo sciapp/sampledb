@@ -1,0 +1,5 @@
+{% if data and data.tags %}
+{% for tag in data.tags %}{% if loop.index0 %}, {% endif %}{{ tag }}{% endfor %}
+{% else %}
+  &mdash;
+{% endif %}

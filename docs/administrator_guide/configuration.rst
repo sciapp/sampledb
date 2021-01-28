@@ -169,9 +169,17 @@ Miscellaneous
      - The time limit for invitation links in seconds.
    * - SAMPLEDB_ONLY_ADMINS_CAN_MANAGE_LOCATIONS
      - If set, only administrators will be able to create and edit locations.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_GROUPS
+     - If set, only administrators will be able to create basic groups.
    * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_GROUPS
-     - If set, only administrators will be able to delete non-empty groups.
+     - If set, only administrators will be able to delete non-empty basic groups.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_PROJECTS
+     - If set, only administrators will be able to create project groups.
    * - SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND
      - If set, object selections will be loaded in the background using AJAX.
+   * - SAMPLEDB_DISABLE_USE_IN_MEASUREMENT
+     - If set, the "Use in Measurement" button will not be shown.
+   * - SAMPLEDB_DISABLE_SUBPROJECTS
+     - If set, project groups cannot have child project groups assigned to them.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

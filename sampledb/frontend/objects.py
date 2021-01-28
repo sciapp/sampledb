@@ -689,6 +689,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     print('object schema validation failed')
                     # TODO: handle error
                     flask.abort(400)
+                for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
+                    markdown_as_html = logic.markdown_to_html.markdown_to_safe_html(markdown)
+                    logic.markdown_images.mark_referenced_markdown_images_as_permanent(markdown_as_html)
                 if object is None:
                     if schema.get('batch', False) and num_objects_in_batch is not None:
                         if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
@@ -771,6 +774,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
+    users.sort(key=lambda user: user.id)
     if object is None:
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
@@ -998,7 +1002,8 @@ def object(object_id):
             object_location_assignments=get_object_location_assignments(object_id),
             build_object_location_assignment_confirmation_url=build_object_location_assignment_confirmation_url,
             user_may_assign_location=user_may_edit,
-            location_form=location_form
+            location_form=location_form,
+            get_action_type=get_action_type
         )
     check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
@@ -1187,9 +1192,10 @@ def referencable_objects():
     def dictify(x):
         return {
             'id': x.object_id,
-            'text': '{} (#{})'.format(x.name_text, x.object_id),
+            'text': flask.escape('{} (#{})'.format(x.name_text, x.object_id)),
             'action_id': x.action_id,
-            'max_permission': x.max_permission
+            'max_permission': x.max_permission,
+            'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
         }
 
     return {'referencable_objects': [dictify(x) for x in referencable_objects]}
@@ -1579,7 +1585,8 @@ def object_version(object_id, version_id):
         link_version_specific_rdf=True,
         restore_form=form,
         get_user=get_user,
-        user_may_grant=user_may_grant
+        user_may_grant=user_may_grant,
+        get_action_type=get_action_type
     )
 
 
@@ -1679,11 +1686,17 @@ def object_permissions(object_id):
         for project in all_projects
     }
 
-    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
-    project_id_hierarchy_list = [
-        (level, project_id, project_id in acceptable_project_ids)
-        for level, project_id in project_id_hierarchy_list
-    ]
+    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
+        project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
+        project_id_hierarchy_list = [
+            (level, project_id, project_id in acceptable_project_ids)
+            for level, project_id in project_id_hierarchy_list
+        ]
+    else:
+        project_id_hierarchy_list = [
+            (0, project.id, project.id in acceptable_project_ids)
+            for project in sorted(all_projects, key=lambda project: project.id)
+        ]
 
     return flask.render_template(
         'objects/object_permissions.html',

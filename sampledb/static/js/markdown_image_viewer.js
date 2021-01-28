@@ -1,5 +1,5 @@
 $(function() {
-  $('.action-user-content img, .instrument-user-content img').each(function(_, img) {
+  $('.action-user-content img, .instrument-user-content img, .object-user-content img').each(function(_, img) {
     $(img).click(function() {
       console.log(img);
       var preview = $('<span class="fullscreen-image-preview">\

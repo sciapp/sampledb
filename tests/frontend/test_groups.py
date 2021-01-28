@@ -98,7 +98,7 @@ def test_view_group(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('h3').text == 'Group #{}: Example Group'.format(group_id)
+    assert document.find('h3').text == 'Basic Group #{}: Example Group'.format(group_id)
 
 
 def test_create_group(flask_server, user_session):

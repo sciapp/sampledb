@@ -1,0 +1,4 @@
+<div class="{% if id_prefix+'_hidden' in errors %}has-error{% elif id_prefix+'_hidden' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+  <input type="checkbox" name="{{ id_prefix }}_value" {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data%}checked{% endif %}{% elif data is not none and "value" in data and data.value%}checked="checked"{% endif %}>
+</div>

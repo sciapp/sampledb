@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ service_name }} Export</title>
+  <style>
+        html {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 10pt;
+            line-height: 1.3;
+            hyphens:auto;
+        }
+        @page {
+            margin: 20mm 30mm 20mm 25mm;
+
+            @top-right {
+                content: element(header);
+            }
+
+            @bottom-center {
+                content: counter(page);
+                height: 1cm;
+                text-align: center;
+                width: 1cm;
+            }
+        }
+        article {
+            page-break-after: always;
+        }
+        header {
+            background-repeat: no-repeat;
+            background-size: 17mm 17mm;
+            background-position: center top;
+            position: running(header);
+            width: 17.5mm;
+            height:40mm;
+            margin-bottom:-61mm;
+            padding-top:17.5mm;
+            margin-right:-21mm;
+            hyphens: none;
+            text-align: center;
+            font-size: 8pt;
+            line-height: 1.2;
+        }
+        article > ul {
+            padding-left: 0;
+            list-style-type: none;
+        }
+        ul.object-property-list {
+            list-style-type: none;
+            padding-left: 0.5em;
+        }
+        article a {
+            hyphens: none;
+            color:black;
+            text-decoration: none;
+        }
+        .object-user-content {
+            border-left: 0.5px solid black;
+            padding: 10px;
+            margin: 1px;
+        }
+        .object-user-content img {
+            max-width:100%;
+            max-height: 10cm;
+        }
+        .object-user-content table {
+            border-collapse: collapse;
+            width:100%;
+        }
+        .object-user-content th, .object-user-content td {
+            padding: 5px;
+        }
+        .object-user-content tr:first-of-type th {
+            border-top: 2px solid black;
+            border-bottom: 1px solid black;
+        }
+        .object-user-content tr:last-of-type td {
+            border-bottom: 2px solid black;
+        }
+        .object-user-content.multiline {
+            white-space: pre-wrap;
+        }
+        .object-user-content .headerlink {
+            display: none;
+        }
+        .object-file-image {
+            max-width: 100%;
+            max-height:20cm;
+        }
+    </style>
+</head>
+<body>
+{% for object, action, activity_log_entries, location_entries, publications, comments, files, qrcode_url in objects %}
+  <article>
+  <header style="background-image: url({{ qrcode_url }})">#{{ object.object_id }} Exported&nbsp;on {{ export_date }}</header>
+  <h1>{{ action.type.object_name }} #{{ object.object_id }}: {{ object.data.name.text }}</h1>
+  <h2>Information</h2>
+  {% with data = object.data %}
+  {% with schema = object.schema %}
+    {% include "pdfexport/object.html" %}
+  {% endwith %}
+  {% endwith %}
+
+  {% if activity_log_entries %}
+  <h2>Activity Log</h2>
+  <ul>
+  {% for entry in activity_log_entries %}
+    <li style="text-indent: -11em; margin-left: 11em; hyphens: none">{{ entry | safe }}</li>
+  {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if location_entries %}
+  <h2>Locations</h2>
+  <ul>
+  {% for entry in location_entries %}
+    <li style="text-indent: -11em; margin-left: 11em;">
+      {{ entry.utc_datetime }} &mdash; <a href="{{ url_for('.user_profile', user_id=entry.assigning_user_id, _external=True) }}">{{ entry.assigning_user_name }} (#{{ entry.assigning_user_id }})</a>:
+    {% if entry.location_id %}
+      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name }} (#{{ entry.location_id }})</a>
+    {% endif %}
+    {% if entry.responsible_user_id %}
+      {% if entry.location_id %}/{% endif %}
+      <a href="{{ url_for('.user_profile', user_id=entry.responsible_user_id, _external=True) }}">{{ entry.responsible_user_name }} (#{{ entry.responsible_user_id }})</a>
+    {% endif %}
+    {% if entry.description %}
+      <div style="text-indent: 0">
+        Description:
+        <div class="object-user-content multiline">{{ entry.description }}</div>
+      </div>
+    {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if publications %}
+  <h2>Publications</h2>
+    <ul>
+    {% for publication in publications %}
+      <li style="text-indent: -11em; margin-left: 11em;">
+        <a href="https://dx.doi.org/{{ publication.doi }}">{{ publication.doi }}</a> &mdash; {{ publication.title }} {% if publication.object_name %}({{ publication.object_name }}){% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if comments %}
+  <h2>Comments</h2>
+    <ul>
+    {% for comment in comments %}
+      <li style="text-indent: -11em; margin-left: 11em;">
+        {{ comment.utc_datetime.strftime('%Y-%m-%d %H:%M') }} &mdash; <a href="{{ url_for('.user_profile', user_id=comment.user_id, _external=True) }}">{{ comment.author.name }} (#{{ comment.user_id }})</a>:
+        <div class="object-user-content multiline" style="text-indent: 0;">{{ comment.content }}</div>
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if files %}
+  <h2>Files</h2>
+    <ul>
+    {% for file in files %}
+      <li>{{ file.utc_datetime.strftime('%Y-%m-%d %H:%M') }} &mdash; <a href="{{ url_for('.user_profile', user_id=file.uploader.id, _external=True) }}">{{ file.uploader.name }} (#{{ file.uploader.id }})</a>: {% if file.is_hidden %}(hidden){% else %}{{ file.title }} ({{ file.id }}){% endif %}</li>
+    {% endfor %}
+    </ul>
+
+    {% for file in files %}
+      {% if not file.is_hidden and file.storage == 'local' %}
+        {% for file_extension in ['.png', '.jpg', '.jpeg'] %}
+          {% if file.original_file_name.endswith(file_extension) %}
+            <h3>File #{{ file.id }}: {{ file.title }}</h3>
+            <img src="./object_files/{{ object.id }}/{{ file.id }}" class="object-file-image"/>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  </article>
+{% endfor %}
+</body>
+</html>

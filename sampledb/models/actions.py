@@ -53,18 +53,34 @@ class Action(db.Model):
     schema = db.Column(db.JSON, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     user = db.relationship("User", backref="actions")
-    description_as_html = db.Column(db.String, nullable=True, default=None)
+    description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
     is_hidden = db.Column(db.Boolean, nullable=False, default=False)
+    short_description = db.Column(db.String, nullable=False, default='')
+    short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
 
-    def __init__(self, action_type_id: int, name: str, schema: dict, description: str = '', instrument_id: typing.Optional[int] = None, user_id: typing.Optional[int] = None, description_as_html: typing.Optional[str] = None, is_hidden: bool = False):
+    def __init__(
+            self,
+            action_type_id: int,
+            name: str,
+            schema: dict,
+            description: str = '',
+            instrument_id: typing.Optional[int] = None,
+            user_id: typing.Optional[int] = None,
+            description_is_markdown: bool = False,
+            is_hidden: bool = False,
+            short_description: str = '',
+            short_description_is_markdown: bool = False
+    ):
         self.type_id = action_type_id
         self.name = name
         self.description = description
         self.instrument_id = instrument_id
         self.schema = schema
         self.user_id = user_id
-        self.description_as_html = description_as_html
+        self.description_is_markdown = description_is_markdown
         self.is_hidden = is_hidden
+        self.short_description = short_description
+        self.short_description_is_markdown = short_description_is_markdown
 
     def __eq__(self, other):
         return (
@@ -73,7 +89,9 @@ class Action(db.Model):
             self.user_id == other.user_id and
             self.name == other.name and
             self.description == other.description and
-            self.description_as_html == other.description_as_html and
+            self.description_is_markdown == other.description_is_markdown and
+            self.short_description == other.short_description and
+            self.short_description_is_markdown == other.short_description_is_markdown and
             self.is_hidden == other.is_hidden and
             self.schema == other.schema
         )

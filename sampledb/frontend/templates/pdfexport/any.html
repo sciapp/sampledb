@@ -1,0 +1,27 @@
+{% if schema.type == 'object' %}
+  {% include "pdfexport/object.html" %}
+{% elif schema.type == 'array' %}
+    {% include "pdfexport/array.html" %}
+{% elif schema.type == 'tags' %}
+    {% include "pdfexport/tags.html" %}
+{% elif schema.type == 'hazards' %}
+    {% include "pdfexport/hazards.html" %}
+{% elif schema.type == 'user' %}
+    {% include "pdfexport/user.html" %}
+{% elif schema.type == 'text' %}
+    {% include "pdfexport/text.html" %}
+{% elif schema.type == 'datetime' %}
+    {% include "pdfexport/datetime.html" %}
+{% elif schema.type == 'bool' %}
+    {% include "pdfexport/bool.html" %}
+{% elif schema.type == 'quantity' %}
+    {% include "pdfexport/quantity.html" %}
+{% elif schema.type == 'sample' %}
+    {% include "pdfexport/object_reference.html" %}
+{% elif schema.type == 'measurement' %}
+    {% include "pdfexport/object_reference.html" %}
+{% elif schema.type == 'object_reference' %}
+    {% include "pdfexport/object_reference.html" %}
+{% else %}
+  Unable to support data of type: {{ schema.type }}
+{% endif %}

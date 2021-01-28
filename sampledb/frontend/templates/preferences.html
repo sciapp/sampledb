@@ -167,8 +167,8 @@
         {% set notification_types = {
               NotificationType.ANNOUNCEMENT: ("Announcements", False),
               NotificationType.ASSIGNED_AS_RESPONSIBLE_USER: ("Becoming responsible for an object", True),
-              NotificationType.INVITED_TO_GROUP: ("Being invited to a group", False),
-              NotificationType.INVITED_TO_PROJECT: ("Being invited to a project", False),
+              NotificationType.INVITED_TO_GROUP: ("Being invited to a basic group", False),
+              NotificationType.INVITED_TO_PROJECT: ("Being invited to a project group", False),
               NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST: ("Receiving object permission requests", False),
               NotificationType.INSTRUMENT_LOG_ENTRY_CREATED: ("Receiving a new instrument log entry", True),
               NotificationType.INSTRUMENT_LOG_ENTRY_EDITED: ("Receiving an edit to an instrument log", True),
@@ -249,35 +249,9 @@
         <td></td>
         <td></td>
       </tr>
-      {% if default_permissions_form.project_permissions | length > 0 %}
-      <tr>
-        <th scope="col" style="width: 40%">Projects</th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-      </tr>
-      {% endif %}
-      {% for project_permissions_form in default_permissions_form.project_permissions %}
-      {% set project_id = project_permissions_form.project_id.data | int %}
-      {% set project = get_project(project_id) %}
-        <tr>
-          <td>
-            <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
-            {{ project_permissions_form.csrf_token }}
-            <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
-          </td>
-          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-            <td class="text-center" style="vertical-align: middle">
-              <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-              <input type="radio" name="{{ project_permissions_form.permissions.name }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} />
-            </td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
       {% if default_permissions_form.group_permissions | length > 0 %}
       <tr>
-        <th scope="col" style="width: 40%">Groups</th>
+        <th scope="col" style="width: 40%">Basic Groups</th>
         <th scope="col" class="text-center"></th>
         <th scope="col" class="text-center"></th>
         <th scope="col" class="text-center"></th>
@@ -297,6 +271,32 @@
             <td class="text-center" style="vertical-align: middle">
               <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
               <input type="radio" name="{{ group_permissions_form.permissions.name }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} />
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      {% if default_permissions_form.project_permissions | length > 0 %}
+      <tr>
+        <th scope="col" style="width: 40%">Project Groups</th>
+        <th scope="col" class="text-center"></th>
+        <th scope="col" class="text-center"></th>
+        <th scope="col" class="text-center"></th>
+        <th scope="col" class="text-center"></th>
+      </tr>
+      {% endif %}
+      {% for project_permissions_form in default_permissions_form.project_permissions %}
+      {% set project_id = project_permissions_form.project_id.data | int %}
+      {% set project = get_project(project_id) %}
+        <tr>
+          <td>
+            <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
+            {{ project_permissions_form.csrf_token }}
+            <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
+          </td>
+          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+            <td class="text-center" style="vertical-align: middle">
+              <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+              <input type="radio" name="{{ project_permissions_form.permissions.name }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} />
             </td>
           {% endfor %}
         </tr>
@@ -374,13 +374,13 @@
     </form>
   {% endif %}
   {% if groups %}
-    <h3>Add Group</h3>
+    <h3>Add Basic Group</h3>
     <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
     {{ add_group_permissions_form.csrf_token }}
     <table class="table table-striped">
       <thead>
         <tr>
-          <th scope="col" style="width: 40%">Group</th>
+          <th scope="col" style="width: 40%">Basic Group</th>
           <th scope="col" class="text-center">None</th>
           <th scope="col" class="text-center">Read</th>
           <th scope="col" class="text-center">Write</th>
@@ -410,13 +410,13 @@
     </form>
   {% endif %}
   {% if projects %}
-    <h3>Add Project</h3>
+    <h3>Add Project Group</h3>
     <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
     {{ add_project_permissions_form.csrf_token }}
     <table class="table table-striped">
       <thead>
         <tr>
-          <th scope="col" style="width: 40%">Project</th>
+          <th scope="col" style="width: 40%">Project Group</th>
           <th scope="col" class="text-center">None</th>
           <th scope="col" class="text-center">Read</th>
           <th scope="col" class="text-center">Write</th>
@@ -510,7 +510,7 @@
     </div>
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-show-invitation-log-yes">
-        Show full invitation log for groups and projects
+        Show full invitation log for basic and project groups
       </label>
       <div class="radio col-md-4">
         <label>

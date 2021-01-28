@@ -26,7 +26,8 @@ from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.settings import get_user_settings
 from .users.forms import ToggleFavoriteActionForm
-from .utils import check_current_user_is_not_readonly, markdown_to_safe_html
+from .utils import check_current_user_is_not_readonly
+from ..logic.markdown_to_html import markdown_to_safe_html
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -41,6 +42,8 @@ class ActionForm(FlaskForm):
     is_user_specific = BooleanField(default=True)
     is_markdown = BooleanField(default=None)
     is_hidden = BooleanField(default=None)
+    short_description = StringField()
+    short_description_is_markdown = BooleanField(default=None)
 
     def validate_type(form, field):
         try:
@@ -52,7 +55,7 @@ class ActionForm(FlaskForm):
         except errors.ActionTypeDoesNotExistError:
             raise ValidationError("Unknown action type")
         if action_type.admin_only and not flask_login.current_user.is_admin:
-            raise ValidationError("Actions with this type can only be created by administrators")
+            raise ValidationError("Actions with this type can only be created or editted by administrators")
 
 
 @frontend.route('/actions/')
@@ -129,6 +132,8 @@ def action(action_id):
     if Permissions.READ not in permissions:
         return flask.abort(403)
     may_edit = Permissions.WRITE in permissions
+    if action.type.admin_only and not flask_login.current_user.is_admin:
+        may_edit = False
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
         check_current_user_is_not_readonly()
@@ -290,24 +295,32 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         if action_form.description.data is None:
             action_form.description.data = action.description
         if not action_form.is_submitted():
-            action_form.is_markdown.data = (action.description_as_html is not None)
+            action_form.is_markdown.data = action.description_is_markdown
             action_form.is_hidden.data = action.is_hidden
         if action_form.type.data is None:
             action_form.type.data = action.type.id
         if action_form.is_public.data is None:
             action_form.is_public.data = action_is_public(action.id)
+        if action_form.short_description.data is None:
+            action_form.short_description.data = action.short_description
+        if not action_form.is_submitted():
+            action_form.short_description_is_markdown.data = action.short_description_is_markdown
     elif previous_action is not None:
         if action_form.name.data is None:
             action_form.name.data = previous_action.name
         if action_form.description.data is None:
             action_form.description.data = previous_action.description
         if not action_form.is_submitted():
-            action_form.is_markdown.data = (previous_action.description_as_html is not None)
+            action_form.is_markdown.data = previous_action.description_is_markdown
             action_form.is_hidden.data = False
         if action_form.type.data is None:
             action_form.type.data = previous_action.type.id
         if action_form.is_public.data is None:
             action_form.is_public.data = action_is_public(previous_action.id)
+        if action_form.short_description.data is None:
+            action_form.short_description.data = previous_action.short_description
+        if not action_form.is_submitted():
+            action_form.short_description_is_markdown.data = previous_action.short_description_is_markdown
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -357,10 +370,13 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         name = action_form.name.data
         description = action_form.description.data
         if action_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(description)
+            description_as_html = markdown_to_safe_html(description, anchor_prefix='action-description')
             mark_referenced_markdown_images_as_permanent(description_as_html)
-        else:
-            description_as_html = None
+
+        short_description = action_form.short_description.data
+        if action_form.short_description_is_markdown.data:
+            short_description_as_html = markdown_to_safe_html(short_description, anchor_prefix='action-short-description')
+            mark_referenced_markdown_images_as_permanent(short_description_as_html)
 
         instrument_id = action_form.instrument.data
         is_public = action_form.is_public.data
@@ -383,8 +399,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 schema,
                 instrument_id,
                 user_id,
-                description_as_html=description_as_html,
-                is_hidden=is_hidden
+                description_is_markdown=action_form.is_markdown.data,
+                is_hidden=is_hidden,
+                short_description=short_description,
+                short_description_is_markdown=action_form.short_description_is_markdown.data
             )
             flask.flash('The action was created successfully.', 'success')
             if may_change_public and is_public:
@@ -395,8 +413,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 name,
                 description,
                 schema,
-                description_as_html=description_as_html,
-                is_hidden=is_hidden
+                description_is_markdown=action_form.is_markdown.data,
+                is_hidden=is_hidden,
+                short_description=short_description,
+                short_description_is_markdown=action_form.short_description_is_markdown.data
             )
             flask.flash('The action was updated successfully.', 'success')
             if may_change_public and is_public is not None:

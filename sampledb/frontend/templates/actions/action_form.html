@@ -47,6 +47,28 @@
     }
     $('#input-markdown').change(updateDescriptionMarkdown);
     updateDescriptionMarkdown();
+
+    function updateShortDescriptionMarkdown() {
+      if ($('#input-short-description-is-markdown').prop('checked')) {
+        window.mde_short_descrption = new InscrybMDE({
+          element: $("#input-short-description")[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+          showIcons: ["code", "table"],
+          minHeight: '100px',
+        });
+        setupImageDragAndDrop(window.mde_short_descrption);
+      } else {
+        if (window.mde_short_descrption) {
+          window.mde_short_descrption.toTextArea();
+          window.mde_short_descrption = null;
+        }
+      }
+    }
+    $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
+    updateShortDescriptionMarkdown();
   });
   </script>
 {% endblock %}
@@ -85,6 +107,9 @@
             {% endif %}
           {% endfor %}
         </select>
+        {% if action_form.type.name in action_form.errors %}
+          <div class="help-block">{{ action_form.errors[action_form.type.name] }}</div>
+        {% endif %}
       </div>
       <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}style="display: none"{% endif %}>
         <label for="input-instrument" class="control-label">Instrument</label>
@@ -95,11 +120,18 @@
         </select>
       </div>
       <div class="form-group {% if action_form.description.name in action_form.errors %}has-error{% endif %}" style="min-height: 395px;">
-        <label for="input-description" class="control-label">Description</label>
+        <label for="input-description" class="control-label">Description <span class="text-muted" style="font-weight: normal">shown on the action site</span></label>
         <label for="input-markdown" style="font-weight:400" class="pull-right">
           <input type="checkbox" id="input-markdown" name="{{ action_form.is_markdown.name }}" {% if action_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
         </label>
         <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" name="{{ action_form.description.name }}" placeholder="Description">{{ action_form.description.data or '' }}</textarea>
+      </div>
+      <div class="form-group {% if action_form.short_description.name in action_form.errors %}has-error{% endif %}" style="min-height: 195px;">
+        <label for="input-short-description" class="control-label">Short Description <span class="text-muted" style="font-weight: normal">shown in action lists</span></label>
+        <label for="input-short-description-is-markdown" style="font-weight:400" class="pull-right">
+          <input type="checkbox" id="input-short-description-is-markdown" name="{{ action_form.short_description_is_markdown.name }}" {% if action_form.short_description_is_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax
+        </label>
+        <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description" name="{{ action_form.short_description.name }}" placeholder="Short Description">{{ action_form.short_description.data or '' }}</textarea>
       </div>
       <div class="checkbox">
         <label for="input-is_hidden" style="font-weight:400">
@@ -196,6 +228,7 @@
           <select class="form-control schema-editor-generic-property-type-input">
             <option value="text">Text (Simple)</option>
             <option value="multiline">Text (Multiline)</option>
+            <option value="markdown">Text (Markdown)</option>
             <option value="choice">Text (Choice)</option>
             <option value="quantity">Quantity</option>
             <option value="bool">Boolean</option>
@@ -258,6 +291,13 @@
         </div>
       </div>
 
+      <div class="schema-editor-property-settings schema-editor-user-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-user-property-default-checkbox"></label><label class="control-label schema-editor-user-property-default-label">Default</label>
+          <input disabled="disabled" type="text" class="form-control schema-editor-user-property-default-input" placeholder="Default" value="Current user">
+        </div>
+      </div>
+
       <div class="schema-editor-property-settings schema-editor-multiline-property-settings">
         <div class="schema-editor-form-group">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-placeholder-checkbox"></label><label class="control-label schema-editor-multiline-property-placeholder-label">Placeholder</label>
@@ -275,6 +315,27 @@
         <div class="schema-editor-form-group">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-maxlength-checkbox"></label><label class="control-label schema-editor-multiline-property-maxlength-label">Maximum Length</label>
           <input type="text" class="form-control schema-editor-multiline-property-maxlength-input" placeholder="Maximum Length" value="">
+          <span class="help-block"></span>
+        </div>
+      </div>
+
+      <div class="schema-editor-property-settings schema-editor-markdown-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-placeholder-checkbox"></label><label class="control-label schema-editor-markdown-property-placeholder-label">Placeholder</label>
+          <input type="text" class="form-control schema-editor-markdown-property-placeholder-input" placeholder="Placeholder" value="">
+        </div>
+        <div class="schema-editor-form-group-wide">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-default-checkbox"></label><label class="control-label schema-editor-markdown-property-default-label">Default</label>
+          <textarea rows="1" class="form-control schema-editor-markdown-property-default-input" placeholder="Default"></textarea>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-minlength-checkbox"></label><label class="control-label schema-editor-markdown-property-minlength-label">Minimum Length</label>
+          <input type="text" class="form-control schema-editor-markdown-property-minlength-input" placeholder="Minimum Length" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-maxlength-checkbox"></label><label class="control-label schema-editor-markdown-property-maxlength-label">Maximum Length</label>
+          <input type="text" class="form-control schema-editor-markdown-property-maxlength-input" placeholder="Maximum Length" value="">
           <span class="help-block"></span>
         </div>
       </div>

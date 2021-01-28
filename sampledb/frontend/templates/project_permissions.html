@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Project #{{ project.id }}: {{ project.name }} — {{ service_name }}{% endblock %}
+{% block title %}Project Group #{{ project.id }}: {{ project.name }} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
@@ -21,7 +21,7 @@
         num_write_groups = $('.permissions_group_write:checked').length;
         num_grant_groups = $('.permissions_group_grant:checked').length;
         if (num_grant_users === 0 && (num_read_users + num_write_users + num_read_groups + num_write_groups + num_grant_groups) !== 0) {
-          $('#alert-no-grant-user').html('<div class="alert alert-danger alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> At least one user needs to have grant permissions for this project.</div>');
+          $('#alert-no-grant-user').html('<div class="alert alert-danger alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> At least one user needs to have grant permissions for this project group.</div>');
           return false;
         }
         if (num_read_users + num_write_users + num_grant_users + num_read_groups + num_write_groups + num_grant_groups === 0) {
@@ -38,7 +38,7 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Project #{{ project.id }}: {{ project.name }}</h3>
+  <h3>Project Group #{{ project.id }}: {{ project.name }}</h3>
   <h4>Permissions</h4>
   {% set user_may_edit = (form is not none) %}
   {% if user_may_edit %}
@@ -52,10 +52,10 @@
       {% if user_may_edit %}
         {% if form.group_permissions | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Groups</th>
+          <th scope="col" style="width: 40%">Basic Groups</th>
           <th scope="col" class="text-center">None</th>
-          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view this project's objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit this project and its objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view this project group's objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit this project group and its objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
           <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
         </tr>
         {% endif %}
@@ -86,8 +86,8 @@
             <th></th>
           {% else %}
           <th scope="col" class="text-center">None</th>
-          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view this project's objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit this project and its objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view this project group's objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit this project group and its objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
           <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
           {% endif %}
         </tr>
@@ -113,7 +113,7 @@
       {% else %}
         {% if group_permissions.items() | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Groups</th>
+          <th scope="col" style="width: 40%">Basic Groups</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -174,14 +174,14 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="deleteProjectModalLabel">Delete Project</h4>
+            <h4 class="modal-title" id="deleteProjectModalLabel">Delete Project Group</h4>
           </div>
           <div class="modal-body">
-            If you remove all users and groups from a project, it will be deleted.
+            If you remove all users and groups from a project group, it will be deleted.
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-danger" id="button-delete-project">Delete Project</button>
+            <button type="button" class="btn btn-danger" id="button-delete-project">Delete Project Group</button>
           </div>
         </div>
       </div>

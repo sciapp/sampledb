@@ -6,11 +6,10 @@
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
     {% endif %}
   <div class="col-md-9">
-  {% for option in schema['choices'] %}
-    {% if data is not none and "text" in data and data.text == option %}
-    {{ option }}
-    {% endif %}
-  {% endfor %}
-{#    <input type="text" class="form-control" name="{{ name }}" placeholder="{{ schema.title }}" {% if data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>#}
+  {% if data is not none and "text" in data %}
+    {{ data.text }}
+  {% else %}
+    &mdash;
+  {% endif %}
   </div>
 </div>

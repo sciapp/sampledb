@@ -1,0 +1,16 @@
+{% if data and data.hazards %}
+  {% for hazard in data.hazards %}{% if loop.index0 %}, {% endif %}{{
+      {
+        1: 'Explosive',
+        2: 'Flammable',
+        3: 'Oxidizing',
+        4: 'Compressed Gas',
+        5: 'Corrosive',
+        6: 'Toxic',
+        7: 'Harmful',
+        8: 'Health Hazard',
+        9: 'Environmental Hazard'
+      }.get(hazard, 'Unknown') }}{% endfor %}
+{% else %}
+  &mdash;
+{% endif %}
