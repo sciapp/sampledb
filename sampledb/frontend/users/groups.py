@@ -44,14 +44,14 @@ def groups():
                 try:
                     group_id = logic.groups.create_group(create_group_form.name.data, create_group_form.description.data, flask_login.current_user.id).id
                 except logic.errors.GroupAlreadyExistsError:
-                    create_group_form.name.errors.append('A group with this name already exists.')
+                    create_group_form.name.errors.append('A basic group with this name already exists.')
                 except logic.errors.InvalidGroupNameError:
-                    create_group_form.name.errors.append('This group name is invalid.')
+                    create_group_form.name.errors.append('This basic group name is invalid.')
                 else:
-                    flask.flash('The group has been created successfully.', 'success')
+                    flask.flash('The basic group has been created successfully.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
             else:
-                create_group_form.name.errors.append('Only administrators can create groups.')
+                create_group_form.name.errors.append('Only administrators can create basic groups.')
     return flask.render_template("groups.html", groups=groups, create_group_form=create_group_form, show_create_form=show_create_form)
 
 
@@ -63,7 +63,7 @@ def group(group_id):
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
         token_data = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
         if token_data is None:
-            flask.flash('Invalid group invitation token. Please request a new invitation.', 'error')
+            flask.flash('Invalid basic group invitation token. Please request a new invitation.', 'error')
             return flask.abort(403)
         if 'invitation_id' in token_data:
             if logic.groups.get_group_invitation(token_data['invitation_id']).accepted:
@@ -88,13 +88,13 @@ def group(group_id):
         try:
             logic.groups.add_user_to_group(group_id, user_id)
         except logic.errors.UserAlreadyMemberOfGroupError:
-            flask.flash('You are already a member of this group.', 'error')
+            flask.flash('You are already a member of this basic group.', 'error')
         except logic.errors.GroupDoesNotExistError:
             pass
     try:
         group_member_ids = logic.groups.get_group_member_ids(group_id)
     except logic.errors.GroupDoesNotExistError:
-        flask.flash('This group does not exist.', 'error')
+        flask.flash('This basic group does not exist.', 'error')
         return flask.abort(404)
     group_member_ids.sort(key=lambda user_id: logic.users.get_user(user_id).name.lower())
     user_is_member = flask_login.current_user.id in group_member_ids
@@ -123,14 +123,14 @@ def group(group_id):
                 try:
                     logic.groups.update_group(group_id, edit_group_form.name.data, edit_group_form.description.data)
                 except logic.errors.GroupDoesNotExistError:
-                    flask.flash('This group does not exist.', 'error')
+                    flask.flash('This basic group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
                 except logic.errors.GroupAlreadyExistsError:
-                    edit_group_form.name.errors.append('A group with this name already exists.')
+                    edit_group_form.name.errors.append('A basic group with this name already exists.')
                 except logic.errors.InvalidGroupNameError:
-                    edit_group_form.name.errors.append('This group name is invalid.')
+                    edit_group_form.name.errors.append('This basic group name is invalid.')
                 else:
-                    flask.flash('Group information updated successfully.', 'success')
+                    flask.flash('Basic group information updated successfully.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'add_user' in flask.request.form:
             check_current_user_is_not_readonly()
@@ -138,29 +138,29 @@ def group(group_id):
                 try:
                     logic.groups.invite_user_to_group(group_id, invite_user_form.user_id.data, flask_login.current_user.id)
                 except logic.errors.GroupDoesNotExistError:
-                    flask.flash('This group does not exist.', 'error')
+                    flask.flash('This basic group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
                 except logic.errors.UserDoesNotExistError:
                     flask.flash('This user does not exist.', 'error')
                 except logic.errors.UserAlreadyMemberOfGroupError:
-                    flask.flash('This user is already a member of this group', 'error')
+                    flask.flash('This user is already a member of this basic group', 'error')
                 else:
-                    flask.flash('The user was successfully invited to the group.', 'success')
+                    flask.flash('The user was successfully invited to the basic group.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'leave' in flask.request.form:
             if leave_group_form.validate_on_submit():
                 try:
                     logic.groups.remove_user_from_group(group_id, flask_login.current_user.id)
                 except logic.errors.GroupDoesNotExistError:
-                    flask.flash('This group does not exist.', 'error')
+                    flask.flash('This basic group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
                 except logic.errors.UserDoesNotExistError:
                     return flask.abort(500)
                 except logic.errors.UserNotMemberOfGroupError:
-                    flask.flash('You have already left the group.', 'error')
+                    flask.flash('You have already left the basic group.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
                 else:
-                    flask.flash('You have successfully left the group.', 'success')
+                    flask.flash('You have successfully left the basic group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
         elif 'delete' in flask.request.form and delete_group_form:
             check_current_user_is_not_readonly()
@@ -168,10 +168,10 @@ def group(group_id):
                 try:
                     logic.groups.delete_group(group_id)
                 except logic.errors.GroupDoesNotExistError:
-                    flask.flash('This group has already been deleted.', 'success')
+                    flask.flash('This basic group has already been deleted.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
                 else:
-                    flask.flash('You have successfully deleted the group.', 'success')
+                    flask.flash('You have successfully deleted the basic group.', 'success')
                     return flask.redirect(flask.url_for('.groups'))
         elif 'remove_member' in flask.request.form:
             check_current_user_is_not_readonly()
@@ -185,16 +185,16 @@ def group(group_id):
                 try:
                     logic.groups.remove_user_from_group(group_id, member_id)
                 except logic.errors.GroupDoesNotExistError:
-                    flask.flash('This group does not exist.', 'error')
+                    flask.flash('This basic group does not exist.', 'error')
                     return flask.redirect(flask.url_for('.groups'))
                 except logic.errors.UserDoesNotExistError:
                     flask.flash('This user does not exist.', 'error')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
                 except logic.errors.UserNotMemberOfGroupError:
-                    flask.flash('This user is not a member of this group.', 'success')
+                    flask.flash('This user is not a member of this basic group.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
                 else:
-                    flask.flash('This user has been removed from this group.', 'success')
+                    flask.flash('This user has been removed from this basic group.', 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
     else:
         if flask.request.method.lower() == 'post':

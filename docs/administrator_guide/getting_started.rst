@@ -108,7 +108,7 @@ Next Steps
 ----------
 
 - You might want to create :ref:`groups` or :ref:`projects` to model your existing team structures. While this can be useful, it is completely optional as users can set these up themselves.
-- You might want to create a basic hierarchy of :ref:`locations`. Like groups and projects, users can create these themselves so this is optional.
+- You might want to create a basic hierarchy of :ref:`locations`. Like groups, users can create these themselves so this is optional.
 - If you already have a JupyterHub installation or want to set up one, you might want to enable SampleDB :ref:`JupyterHub support <jupyterhub_support>`.
 - SampleDB is still under active development. When a new version is released, you should consider :ref`upgrading your SampleDB installation <upgrading>`.
 - If you have any questions about SampleDB or run into any issues setting up or running SampleDB, please `create an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.

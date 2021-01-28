@@ -83,9 +83,9 @@
 
   {% if objects or not search_notes %}
   {% if project_id %}
-    {% set object_suffix = " for <a href=\"{}\">Project #{}: {}</a>".format(url_for('.project', project_id=project_id), project_id, project.name | e) | safe %}
+    {% set object_suffix = " for <a href=\"{}\">Project Group #{}: {}</a>".format(url_for('.project', project_id=project_id), project_id, project.name | e) | safe %}
   {% elif group_id %}
-    {% set object_suffix = " for <a href=\"{}\">Group #{}: {}</a>".format(url_for('.group', group_id=group_id), group_id, group.name | e) | safe %}
+    {% set object_suffix = " for <a href=\"{}\">Basic Group #{}: {}</a>".format(url_for('.group', group_id=group_id), group_id, group.name | e) | safe %}
   {% elif action_id %}
     {% set object_suffix = " for <a href=\"{}\">Action #{}: {}</a>".format(url_for('.action', action_id=action_id), action_id, action.name | e) | safe %}
   {% elif location_id %}

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Projects — {{ service_name }}{% endblock %}
+{% block title %}Project Groups — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Projects</h1>
-  <p class="text-muted">A project is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project itself. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">Read more.</a></p>
+  <h1>Project Groups</h1>
+  <p class="text-muted">A project group is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project itself. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">Read more.</a></p>
   {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS']) %}
   <p>
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">Create Project</button>
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">Create Project Group</button>
   </p>
   {% endif %}
   <ul id="projects_list">
@@ -39,7 +39,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="createProjectModalLabel">Create Project</h4>
+          <h4 class="modal-title" id="createProjectModalLabel">Create Project Group</h4>
         </div>
         <form method="post" action="{{ request.url }}" class="form-horizontal">
           {{ create_project_form.csrf_token() }}
@@ -60,7 +60,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="create" value="create">Create Project</button>
+            <button type="submit" class="btn btn-primary" name="create" value="create">Create Project Group</button>
           </div>
         </form>
       </div>

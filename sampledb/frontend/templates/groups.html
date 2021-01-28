@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Groups — {{ service_name }}{% endblock %}
+{% block title %}Basic Groups — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Groups</h1>
-  <p class="text-muted">A group consists of equal users which share the object permissions granted to it. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/groups.html">Read more.</a></p>
+  <h1>Basic Groups</h1>
+  <p class="text-muted">A basic group consists of equal users which share the object permissions granted to it. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/groups.html">Read more.</a></p>
   {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_GROUPS']) %}
   <p>
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">Create Group</button>
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">Create Basic Group</button>
   </p>
   {% endif %}
   <ul id="groups_list">
@@ -21,7 +21,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="createGroupModalLabel">Create Group</h4>
+          <h4 class="modal-title" id="createGroupModalLabel">Create Basic Group</h4>
         </div>
         <form method="post" action="{{ request.url }}" class="form-horizontal">
           {{ create_group_form.csrf_token() }}
@@ -42,7 +42,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="create" value="create">Create Group</button>
+            <button type="submit" class="btn btn-primary" name="create" value="create">Create Basic Group</button>
           </div>
         </form>
       </div>
