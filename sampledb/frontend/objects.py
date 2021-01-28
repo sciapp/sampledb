@@ -1686,11 +1686,17 @@ def object_permissions(object_id):
         for project in all_projects
     }
 
-    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
-    project_id_hierarchy_list = [
-        (level, project_id, project_id in acceptable_project_ids)
-        for level, project_id in project_id_hierarchy_list
-    ]
+    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
+        project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
+        project_id_hierarchy_list = [
+            (level, project_id, project_id in acceptable_project_ids)
+            for level, project_id in project_id_hierarchy_list
+        ]
+    else:
+        project_id_hierarchy_list = [
+            (0, project.id, project.id in acceptable_project_ids)
+            for project in sorted(all_projects, key=lambda project: project.id)
+        ]
 
     return flask.render_template(
         'objects/object_permissions.html',

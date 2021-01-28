@@ -406,6 +406,8 @@ ONLY_ADMINS_CAN_CREATE_PROJECTS = False
 
 DISABLE_USE_IN_MEASUREMENT = False
 
+DISABLE_SUBPROJECTS = False
+
 LOAD_OBJECTS_IN_BACKGROUND = False
 
 # environment variables override these values

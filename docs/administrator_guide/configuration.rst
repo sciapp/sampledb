@@ -179,5 +179,7 @@ Miscellaneous
      - If set, object selections will be loaded in the background using AJAX.
    * - SAMPLEDB_DISABLE_USE_IN_MEASUREMENT
      - If set, the "Use in Measurement" button will not be shown.
+   * - SAMPLEDB_DISABLE_SUBPROJECTS
+     - If set, project groups cannot have child project groups assigned to them.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

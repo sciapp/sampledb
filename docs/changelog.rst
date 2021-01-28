@@ -20,6 +20,7 @@ Currently in development.
 - Allow default value "self" for user fields
 - Allow searching for tags in dropdown object selection fields
 - Renamed projects to project groups and groups to basic groups to avoid ambiguity
+- Allow disabling of subprojects / child project groups
 
 Version 0.16.1
 --------------
