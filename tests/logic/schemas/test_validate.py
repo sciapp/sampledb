@@ -332,6 +332,34 @@ def test_validate_quantity():
     validate(instance, schema)
 
 
+def test_validate_quantity_pure_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm'
+    }
+    instance = {
+        '_type': 'quantity',
+        'units': 'm',
+        'dimensionality': '[length]',
+        'magnitude': 3
+    }
+    validate(instance, schema)
+
+
+def test_validate_minimal_quantity():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm'
+    }
+    instance = {
+        '_type': 'quantity',
+        'magnitude': 3
+    }
+    validate(instance, schema)
+
+
 def test_validate_quantity_invalid():
     schema = {
         'title': 'Example',
@@ -351,8 +379,7 @@ def test_validate_quantity_missing_key():
     }
     instance = {
         '_type': 'quantity',
-        'units': 'm',
-        'magnitude_in_base_units': 1e-3
+        'dimensionality': '[length]',
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
@@ -375,20 +402,21 @@ def test_validate_quantity_invalid_key():
         validate(instance, schema)
 
 
-def test_validate_quantity_invalid_quantity_dimensionality_type():
-    schema = {
-        'title': 'Example',
-        'type': 'quantity',
-        'units': 'm'
-    }
-    instance = {
-        '_type': 'quantity',
-        'units': 'm',
-        'dimensionality': b'[length]',
-        'magnitude_in_base_units': 1e-3
-    }
-    with pytest.raises(ValidationError):
-        validate(instance, schema)
+# dimensionality is strictly tied to the given unit and its validity, so valid given dimensionality doesn't matter anymore, it will be automatically corrected
+#def test_validate_quantity_invalid_quantity_dimensionality_type():
+#    schema = {
+#        'title': 'Example',
+#        'type': 'quantity',
+#        'units': 'm'
+#    }
+#    instance = {
+#        '_type': 'quantity',
+#        'units': 'm',
+#        'dimensionality': b'[length]',
+#        'magnitude_in_base_units': 1e-3
+#    }
+#    with pytest.raises(ValidationError):
+#        validate(instance, schema)
 
 
 def test_validate_quantity_invalid_quantity_units_type():
