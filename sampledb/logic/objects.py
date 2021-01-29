@@ -25,7 +25,9 @@ def create_object(
         user_id: int,
         previous_object_id: typing.Optional[int] = None,
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        copy_permissions_object_id: typing.Optional[int] = None
+        copy_permissions_object_id: typing.Optional[int] = None,
+        permissions_for_group_id: typing.Optional[int] = None,
+        permissions_for_project_id: typing.Optional[int] = None
 ) -> Object:
     """
     Creates an object using the given action and its schema. This function
@@ -35,9 +37,14 @@ def create_object(
     :param data: the object's data, which must fit to the action's schema
     :param user_id: the ID of the user who created the object
     :param previous_object_id: the ID of the base object
-    :param schema: the object schema used for validation. If schema is None the action schema is used
+    :param schema: the object schema used for validation. If schema is None
+        the action schema is used
     :param copy_permissions_object_id: the ID of an existing object to copy
         the permissions from or None
+    :param permissions_for_group_id: the ID of an existing group to give
+        permissions to
+    :param permissions_for_project_id: the ID of an existing project to give
+        permissions to
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -54,11 +61,15 @@ def create_object(
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
     _send_user_references_notifications(object, user_id)
-    if copy_permissions_object_id is None:
-        object_permissions.set_initial_permissions(object)
-    else:
+    if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
         object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
+    elif permissions_for_group_id is not None:
+        object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, object_permissions.Permissions.GRANT)
+    elif permissions_for_project_id is not None:
+        object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, object_permissions.Permissions.GRANT)
+    else:
+        object_permissions.set_initial_permissions(object)
     tags.update_object_tag_usage(object)
     return object
 
@@ -67,7 +78,9 @@ def create_object_batch(
         action_id: int,
         data_sequence: typing.Sequence[dict],
         user_id: int,
-        copy_permissions_object_id: typing.Optional[int] = None
+        copy_permissions_object_id: typing.Optional[int] = None,
+        permissions_for_group_id: typing.Optional[int] = None,
+        permissions_for_project_id: typing.Optional[int] = None
 ) -> typing.Sequence[Object]:
     """
     Creates a batch of objects using the given action and its schema. This
@@ -81,6 +94,10 @@ def create_object_batch(
     :param user_id: the ID of the user who created the objects
     :param copy_permissions_object_id: the ID of an existing object to copy
         the permissions from or None
+    :param permissions_for_group_id: the ID of an existing group to give
+        permissions to
+    :param permissions_for_project_id: the ID of an existing project to give
+        permissions to
     :return: the created objects
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -106,11 +123,15 @@ def create_object_batch(
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
                 _send_user_references_notifications(object, user_id)
-                if copy_permissions_object_id is None:
-                    object_permissions.set_initial_permissions(object)
-                else:
+                if copy_permissions_object_id is not None:
                     object_permissions.copy_permissions(object.id, copy_permissions_object_id)
                     object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
+                elif permissions_for_group_id is not None:
+                    object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, object_permissions.Permissions.GRANT)
+                elif permissions_for_project_id is not None:
+                    object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, object_permissions.Permissions.GRANT)
+                else:
+                    object_permissions.set_initial_permissions(object)
                 tags.update_object_tag_usage(object)
     return objects
 

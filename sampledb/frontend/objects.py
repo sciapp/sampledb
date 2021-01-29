@@ -605,16 +605,40 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         create_log_entry_default = None
         may_create_log_entry = False
 
-    if object is None and 'copy_permissions_from_other_object' in flask.request.form and 'copy_permissions_object_id' in flask.request.form:
-        copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
-        try:
-            copy_permissions_object_id = int(copy_permissions_object_id)
-            if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+    permissions_for_group_id = None
+    permissions_for_project_id = None
+    copy_permissions_object_id = None
+    if object is None:
+        if flask.request.form.get('permissions_method') == 'copy_permissions' and flask.request.form.get('copy_permissions_object_id'):
+            copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
+            try:
+                copy_permissions_object_id = int(copy_permissions_object_id)
+                if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+                    flask.flash("Unable to copy permissions. Default permissions will be applied.", 'error')
+                    copy_permissions_object_id = None
+            except Exception:
+                flask.flash("Unable to copy permissions. Default permissions will be applied.", 'error')
                 copy_permissions_object_id = None
-        except Exception:
-            pass
-    else:
-        copy_permissions_object_id = None
+        elif flask.request.form.get('permissions_method') == 'permissions_for_group' and flask.request.form.get('permissions_for_group_group_id'):
+            permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
+            try:
+                permissions_for_group_id = int(permissions_for_group_id)
+                if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
+                    flask.flash("Unable to grant permissions to basic group. Default permissions will be applied.", 'error')
+                    permissions_for_group_id = None
+            except Exception:
+                flask.flash("Unable to grant permissions to basic group. Default permissions will be applied.", 'error')
+                permissions_for_group_id = None
+        elif flask.request.form.get('permissions_method') == 'permissions_for_project' and flask.request.form.get('permissions_for_project_project_id'):
+            permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
+            try:
+                permissions_for_project_id = int(permissions_for_project_id)
+                if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+                    flask.flash("Unable to grant permissions to project group. Default permissions will be applied.", 'error')
+                    permissions_for_project_id = None
+            except Exception:
+                flask.flash("Unable to grant permissions to project group. Default permissions will be applied.", 'error')
+                permissions_for_project_id = None
 
     if previous_object is not None:
         action_id = previous_object.action_id
@@ -705,7 +729,14 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                 data_sequence.append(deepcopy(object_data))
                         else:
                             data_sequence = [object_data] * num_objects_in_batch
-                        objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id, copy_permissions_object_id=copy_permissions_object_id)
+                        objects = create_object_batch(
+                            action_id=action.id,
+                            data_sequence=data_sequence,
+                            user_id=flask_login.current_user.id,
+                            copy_permissions_object_id=copy_permissions_object_id,
+                            permissions_for_group_id=permissions_for_group_id,
+                            permissions_for_project_id=permissions_for_project_id
+                        )
                         object_ids = [object.id for object in objects]
                         if category_ids is not None:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
@@ -722,7 +753,16 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                         flask.flash('The objects were created successfully.', 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
-                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema, copy_permissions_object_id=copy_permissions_object_id)
+                        object = create_object(
+                            action_id=action.id,
+                            data=object_data,
+                            user_id=flask_login.current_user.id,
+                            previous_object_id=previous_object_id,
+                            schema=previous_object_schema,
+                            copy_permissions_object_id=copy_permissions_object_id,
+                            permissions_for_group_id=permissions_for_group_id,
+                            permissions_for_project_id=permissions_for_project_id
+                        )
                         if category_ids is not None:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
                                 instrument_id=action.instrument.id,
@@ -782,6 +822,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                 permissions=Permissions.GRANT
             )
 
+        user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
+        user_projects = logic.projects.get_user_projects(flask_login.current_user.id, include_groups=True)
+
         return flask.render_template(
             'objects/forms/form_create.html',
             action_id=action_id,
@@ -794,6 +837,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             form=form,
             can_copy_permissions=True,
             existing_objects=existing_objects,
+            user_groups=user_groups,
+            user_projects=user_projects,
             referencable_objects=referencable_objects,
             action_type_id_by_action_id=action_type_id_by_action_id,
             ActionType=models.ActionType,
