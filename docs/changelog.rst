@@ -22,6 +22,7 @@ Currently in development.
 - Renamed projects to project groups and groups to basic groups to avoid ambiguity
 - Allow disabling of subprojects / child project groups
 - Allow giving basic or project groups initial permissions
+- Allow configuring the Help link
 
 Version 0.16.1
 --------------

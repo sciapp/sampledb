@@ -359,6 +359,7 @@ SERVICE_NAME = 'SampleDB'
 SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
 SERVICE_IMPRINT = None
 SERVICE_PRIVACY_POLICY = None
+SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
 
 # location for storing files
 # in this directory, per-action subdirectories will be created, containing
