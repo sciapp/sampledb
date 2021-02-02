@@ -80,6 +80,7 @@ class InstrumentLogEntryVersion(db.Model):
     version_id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
+    content_is_markdown = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     categories = db.relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
     log_entry = db.relationship(InstrumentLogEntry, backref='versions')
 
@@ -88,7 +89,8 @@ class InstrumentLogEntryVersion(db.Model):
             log_entry_id: int,
             version_id: int,
             content: str,
-            utc_datetime: typing.Optional[datetime.datetime] = None
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            content_is_markdown: bool = False
     ):
         self.log_entry_id = log_entry_id
         self.version_id = version_id
@@ -96,6 +98,7 @@ class InstrumentLogEntryVersion(db.Model):
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
+        self.content_is_markdown = content_is_markdown
 
     def __repr__(self):
         return '<{0}(log_entry_id={1.log_entry_id}, version_id={1.version_id},  utc_datetime={1.utc_datetime}, content="{1.content}")>'.format(type(self).__name__, self)
