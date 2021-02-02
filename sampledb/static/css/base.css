@@ -649,6 +649,7 @@ th:hover .search-helper {
 
 .object-user-content table td, .object-user-content table th,
 .instrument-user-content table td, .instrument-user-content table th,
+.instrument-user-content table td, .instrument-user-content table th,
 .action-user-content table td, .action-user-content table th {
     padding: 8px;
     line-height: 1.42857143;

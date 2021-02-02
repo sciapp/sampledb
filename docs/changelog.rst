@@ -13,6 +13,7 @@ Currently in development.
 - Allow linking to headers in Markdown content
 - Allow disabling of "Use in Measurement" button for samples
 - Added markdown support to object metadata
+- Added markdown support to instrumeng log
 - Reimplemented PDF export
 - Added configuration variables to allow only administrators to create groups or projects
 - Added asterisks to mark required fields when editing objects
