@@ -151,6 +151,7 @@ This example shows how Markdown can be used for instrument Notes.
     files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
     files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')
 
+    projects.link_project_and_object(project_id, instrument_object.object_id, instrument_responsible_user.id)
 
     with open('server_schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)

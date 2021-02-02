@@ -30,6 +30,8 @@ from .users import get_user
 from .security_tokens import generate_token
 from . import groups
 from . import errors
+from . import objects
+from . import object_log
 from .notifications import create_notification_for_being_invited_to_a_project
 
 
@@ -269,7 +271,11 @@ def get_project_member_group_ids_and_permissions(project_id: int) -> typing.Dict
     }
 
 
-def get_user_projects(user_id: int, include_groups: bool = False) -> typing.List[Project]:
+def get_user_projects(
+        user_id: int,
+        include_groups: bool = False,
+        min_permissions: Permissions = Permissions.NONE
+) -> typing.List[Project]:
     """
     Returns a list of the project IDs of all projects the user with the given
     user ID is a member of.
@@ -277,6 +283,8 @@ def get_user_projects(user_id: int, include_groups: bool = False) -> typing.List
     :param project_id: the ID of an existing project
     :param include_groups: whether or not groups membership should be
         considered as well
+    :param min_permissions: only return projects for which the user has at
+        least this permission level
     :return: the member ID list
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
@@ -285,13 +293,15 @@ def get_user_projects(user_id: int, include_groups: bool = False) -> typing.List
     user_permissions = projects.UserProjectPermissions.query.filter_by(user_id=user.id).all()
     project_ids = {
         user_permission.project_id for user_permission in user_permissions
+        if min_permissions in user_permission.permissions
     }
     if include_groups:
         user_groups = groups.get_user_groups(user_id)
         for group in user_groups:
             group_permissions = projects.GroupProjectPermissions.query.filter_by(group_id=group.id).all()
             for group_permission in group_permissions:
-                project_ids.add(group_permission.project_id)
+                if min_permissions in group_permission.permissions:
+                    project_ids.add(group_permission.project_id)
     return [get_project(project_id) for project_id in project_ids]
 
 
@@ -875,3 +885,136 @@ def get_project_id_hierarchy_list(project_ids: typing.List[int]) -> typing.List[
                 parent_project_queue.append((0, sorted(remaining_project_ids)[0]))
 
     return project_id_hierarchy_list
+
+
+def link_project_and_object(
+        project_id: int,
+        object_id: int,
+        user_id: int
+) -> None:
+    """
+    Link a project and an object.
+
+    This link is exclusive, as any project can be linked to at most one object
+    and vice versa.
+
+    If the project is deleted, this link will be removed automatically.
+
+    :param project_id: the ID of an existing project
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of the user creating this link
+    :raise errors.ProjectDoesNotExistError: if no project with the given ID
+        exists
+    :raise errors.ObjectDoesNotExistError: if no object with the given ID
+        exists
+    :raise errors.UserDoesNotExistError: if no user with the given ID exists
+    :raise errors.ProjectObjectLinkAlreadyExistsError: if another link exists
+        for either the project or the object
+    """
+    # make sure the object exists
+    objects.get_object(object_id)
+    # make sure the project exists
+    get_project(project_id)
+    # make sure the user exists
+    get_user(user_id)
+    if projects.ProjectObjectAssociation.query.filter(
+            db.or_(
+                projects.ProjectObjectAssociation.project_id == project_id,
+                projects.ProjectObjectAssociation.object_id == object_id
+            )
+    ).first() is not None:
+        raise errors.ProjectObjectLinkAlreadyExistsError()
+
+    db.session.add(projects.ProjectObjectAssociation(project_id=project_id, object_id=object_id))
+    db.session.commit()
+
+    object_log.link_project(user_id=user_id, object_id=object_id, project_id=project_id)
+
+
+def unlink_project_and_object(
+        project_id: int,
+        object_id: int,
+        user_id: int
+) -> None:
+    """
+    Remove a link between a project and an object.
+
+    :param project_id: the ID of an existing project
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of the user removing this link
+    :raise errors.ProjectDoesNotExistError: if no project with the given ID
+        exists
+    :raise errors.ObjectDoesNotExistError: if no object with the given ID
+        exists
+    :raise errors.UserDoesNotExistError: if no user with the given ID exists
+    :raise errors.ProjectObjectLinkDoesNotExistsError: if no link exists
+        between the project and the object
+    """
+    # make sure the user exists
+    get_user(user_id)
+    association = projects.ProjectObjectAssociation.query.filter_by(
+        project_id=project_id,
+        object_id=object_id
+    ).first()
+    if association is None:
+        # make sure the object exists
+        objects.get_object(object_id)
+        # make sure the project exists
+        get_project(project_id)
+        raise errors.ProjectObjectLinkDoesNotExistsError()
+    db.session.delete(association)
+    db.session.commit()
+
+    object_log.unlink_project(user_id=user_id, object_id=object_id, project_id=project_id)
+
+
+def get_project_linked_to_object(object_id: int) -> typing.Optional[Project]:
+    """
+    Return the project linked to a given object, or None.
+
+    :param object_id: the ID of an existing object
+    :return: the linked project or None
+    :raise errors.ObjectDoesNotExistError: if no object with the given ID
+        exists
+    """
+    association = projects.ProjectObjectAssociation.query.filter_by(
+        object_id=object_id
+    ).first()
+    if association is None:
+        # make sure the object exists
+        objects.get_object(object_id)
+        return None
+
+    return get_project(association.project_id)
+
+
+def get_object_linked_to_project(project_id: int) -> typing.Optional[objects.Object]:
+    """
+    Return the object linked to a given project, or None.
+
+    :param project_id: the ID of an existing project
+    :return: the linked object or None
+    :raise errors.ProjectDoesNotExistError: if no project with the given ID
+        exists
+    """
+    association = projects.ProjectObjectAssociation.query.filter_by(
+        project_id=project_id
+    ).first()
+    if association is None:
+        # make sure the project exists
+        get_project(project_id)
+        return None
+
+    return objects.get_object(association.object_id)
+
+
+def get_project_object_links() -> typing.List[typing.Tuple[int, int]]:
+    """
+    Return a list of all links between a project and an object.
+
+    :return: the list of project and object ID tuples
+    """
+    return [
+        (link.project_id, link.object_id)
+        for link in projects.ProjectObjectAssociation.query.all()
+    ]

@@ -53,6 +53,11 @@
       <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Modify who can read the information for this object, write it or grant permissions to other users."><i class="fa fa-lock" aria-hidden="true"></i> Edit Permissions</a>
     </div>
     {% endif %}
+    {% if project %}
+    <div class="form-group">
+      <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="View the Project Group linked to this {{ action.type.object_name }}."><i class="fa fa-users" aria-hidden="true"></i> View Project Group</a>
+    </div>
+    {% endif %}
     {% if user_may_use_as_template %}
     <div class="form-group">
       <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Create a new object based on the information for this object."><i class="fa fa-files-o" aria-hidden="true"></i> Use as Template</a>
@@ -859,6 +864,38 @@
               <a href="{{ object_log_entry.data['dataverse_url'] }}">View</a>
             {% endif %}
             </td>
+          {% elif object_log_entry.type == ObjectLogEntryType.LINK_PROJECT %}
+            {% with project = get_project(object_log_entry.data.project_id) %}
+            {% if project is not none %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> linked this object to <a href="{{ url_for('.project', project_id=project.id) }}"> {{ project.name }} (#{{ project.id }})</a>.</td>
+            <td class="text-right">
+              <a href="{{ url_for('.project', project_id=project.id) }}">View</a>
+            </td>
+            {% else %}
+            <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> linked this object to a project group.</td>
+            <td class="text-right">
+            </td>
+            {% endif %}
+            {% endwith %}
+          {% elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT %}
+            {% if object_log_entry.data.project_deleted %}
+              <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> deleted the project group this object was linked to.</td>
+              <td class="text-right">
+              </td>
+            {% else %}
+              {% with project = get_project(object_log_entry.data.project_id) %}
+              {% if project is not none %}
+              <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> removed the link of this object to <a href="{{ url_for('.project', project_id=project.id) }}">project group {{ project.name }} (#{{ project.id }})</a>.</td>
+              <td class="text-right">
+                <a href="{{ url_for('.project', project_id=project.id) }}">View</a>
+              </td>
+              {% else %}
+              <td><a href="{{ url_for('.user_profile', user_id=object_log_entry.user.id) }}">{{ object_log_entry.user.name }}</a> removed the link of this object to a project group.</td>
+              <td class="text-right">
+              </td>
+              {% endif %}
+              {% endwith %}
+            {% endif %}
           {% else %}
             <td>Unknown event</td><td></td>
           {% endif %}

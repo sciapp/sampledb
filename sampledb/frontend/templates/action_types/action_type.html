@@ -23,6 +23,7 @@
     <dt>Enable Comments</dt><dd>{% if action_type.enable_comments %}<i class="fa fa-check" aria-hidden="true"></i> Yes, comments are enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, comments are disabled for objects created with actions of this type{% endif %}</dd>
     <dt>Enable Activity Log</dt><dd>{% if action_type.enable_activity_log %}<i class="fa fa-check" aria-hidden="true"></i> Yes, the activity log is enabled for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, the activity log is disabled for objects created with actions of this type{% endif %}</dd>
     <dt>Enable Related Objects</dt><dd>{% if action_type.enable_related_objects %}<i class="fa fa-check" aria-hidden="true"></i> Yes, show related objects for objects created with actions of this type{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, do not show related objects for objects created with actions of this type{% endif %}</dd>
+    <dt>Enable Project Group Linking</dt><dd>{% if action_type.enable_project_link %}<i class="fa fa-check" aria-hidden="true"></i> Yes, objects created with actions of this type can be linked to a project group{% else %}<i class="fa fa-times" aria-hidden="true"></i> No, objects created with actions of this type cannot be linked to a project group{% endif %}</dd>
   </dl>
   <a href="{{ url_for('.actions', t=action_type.id) }}" class="btn btn-default">View Actions</a>
   {% if current_user.is_admin and not current_user.is_readonly %}

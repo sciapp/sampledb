@@ -23,6 +23,7 @@ Currently in development.
 - Allow disabling of subprojects / child project groups
 - Allow giving basic or project groups initial permissions
 - Allow configuring the Help link
+- Allow linking project groups to objects
 
 Version 0.16.1
 --------------

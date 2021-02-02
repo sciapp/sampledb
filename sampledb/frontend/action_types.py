@@ -69,6 +69,7 @@ class ActionTypeForm(FlaskForm):
     enable_comments = BooleanField()
     enable_activity_log = BooleanField()
     enable_related_objects = BooleanField()
+    enable_project_link = BooleanField()
 
 
 def show_action_type_form(type_id):
@@ -98,6 +99,7 @@ def show_action_type_form(type_id):
             action_type_form.enable_comments.data = action_type.enable_comments
             action_type_form.enable_activity_log.data = action_type.enable_activity_log
             action_type_form.enable_related_objects.data = action_type.enable_related_objects
+            action_type_form.enable_project_link.data = action_type.enable_project_link
 
     if action_type_form.validate_on_submit():
         if type_id is None:
@@ -117,8 +119,8 @@ def show_action_type_form(type_id):
                 enable_publications=action_type_form.enable_publications.data,
                 enable_comments=action_type_form.enable_comments.data,
                 enable_activity_log=action_type_form.enable_activity_log.data,
-                enable_related_objects=action_type_form.enable_related_objects.data
-
+                enable_related_objects=action_type_form.enable_related_objects.data,
+                enable_project_link=action_type_form.enable_project_link.data
             )
         else:
             action_type = logic.actions.update_action_type(
@@ -138,7 +140,8 @@ def show_action_type_form(type_id):
                 enable_publications=action_type_form.enable_publications.data,
                 enable_comments=action_type_form.enable_comments.data,
                 enable_activity_log=action_type_form.enable_activity_log.data,
-                enable_related_objects=action_type_form.enable_related_objects.data
+                enable_related_objects=action_type_form.enable_related_objects.data,
+                enable_project_link=action_type_form.enable_project_link.data
             )
         return flask.redirect(flask.url_for('.action_type', type_id=action_type.id))
 

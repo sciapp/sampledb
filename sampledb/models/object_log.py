@@ -27,6 +27,8 @@ class ObjectLogEntryType(enum.Enum):
     LINK_PUBLICATION = 10
     REFERENCE_OBJECT_IN_METADATA = 11
     EXPORT_TO_DATAVERSE = 12
+    LINK_PROJECT = 13
+    UNLINK_PROJECT = 14
 
 
 class ObjectLogEntry(db.Model):

@@ -156,6 +156,23 @@ def create_pdfexport(
                 elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE:
                     dataverse_url = jinja2.escape(object_log_entry.data['dataverse_url'])
                     text += f' exported this object to dataverse as <a href="{dataverse_url}">{dataverse_url}</a>.'
+                elif object_log_entry.type == ObjectLogEntryType.LINK_PROJECT:
+                    try:
+                        project = logic.projects.get_project(object_log_entry.data['project_id'])
+                        project_url = flask.url_for('.project', project_id=project.id)
+                        text += f' linked this object to <a href="{project_url}">project group {project.name} (#{project.id})</a>.'
+                    except logic.errors.ProjectDoesNotExistError:
+                        text += ' linked this object to a project group.'
+                elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT:
+                    if object_log_entry.data['project_deleted']:
+                        text += ' deleted the project group this object was linked to.'
+                    else:
+                        try:
+                            project = logic.projects.get_project(object_log_entry.data['project_id'])
+                            project_url = flask.url_for('.project', project_id=project.id)
+                            text += f' removed the link of this object to <a href="{project_url}">project group {project.name} (#{project.id})</a>.'
+                        except logic.errors.ProjectDoesNotExistError:
+                            text += ' removed the link of this object to a project group.'
                 else:
                     text += ' performed an unknown action.'
                 activity_log_entries.append(text)

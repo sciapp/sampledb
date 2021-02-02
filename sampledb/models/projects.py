@@ -65,3 +65,10 @@ class ProjectInvitation(db.Model):
     inviter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
     accepted = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class ProjectObjectAssociation(db.Model):
+    __tablename__ = 'project_object_association'
+
+    project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), primary_key=True)
+    object_id = db.Column(db.Integer, db.ForeignKey('objects_current.object_id', ondelete="CASCADE"), nullable=False, unique=True)
