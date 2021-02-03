@@ -25,6 +25,7 @@ Currently in development.
 - Allow giving basic or project groups initial permissions
 - Allow configuring the Help link
 - Allow linking project groups to objects
+- Fixed action ID filtering when loading objects in the background
 
 Version 0.16.1
 --------------
