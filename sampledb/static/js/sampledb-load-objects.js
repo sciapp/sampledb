@@ -25,7 +25,17 @@ $(function() {
       var referencable_objects = data.referencable_objects;
       to_load.each(function (x) {
         var $x = $(this);
-        var valid = $x.data('sampledbValidActionIds');
+        var action_ids = $x.data('sampledbValidActionIds');
+        if (typeof action_ids === 'string') {
+          action_ids = action_ids.split(",").filter(function(action_id) {
+            return action_id !== "";
+          });
+          action_ids = $.map(action_ids, function(action_id){
+             return +action_id;
+          });
+        } else {
+          action_ids = [action_ids];
+        }
         var required_perm = $x.data('sampledbRequiredPerm') || 1;
         var remove_ids = $x.data('sampledbRemove');
         if (typeof remove_ids === 'string') {
@@ -40,7 +50,7 @@ $(function() {
           .filter(function (el) {
             return el.max_permission >= required_perm && $.inArray(el.id, remove_ids) === -1;
           }).filter(function (el) {
-            return !valid || valid.includes(el.action_id);
+            return action_ids.length === 0 || $.inArray(el.action_id, action_ids) !== -1;
           });
         $x.append(
           to_add.map(function (el) {
