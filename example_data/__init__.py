@@ -130,10 +130,13 @@ This example shows how Markdown can be used for instrument Notes.
     with open('sampledb/schemas/ombe_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation", "This is an example action", schema, instrument.id)
+    sampledb.logic.action_permissions.set_action_public(instrument_action.id)
     independent_action = create_action(ActionType.SAMPLE_CREATION, "Alternative Process", "This is an example action", schema)
+    sampledb.logic.action_permissions.set_action_public(independent_action.id)
     with open('sampledb/schemas/ombe_measurement_batch.sampledb.json', 'r') as schema_file:
         batch_schema = json.load(schema_file)
-    create_action(ActionType.SAMPLE_CREATION, "Sample Creation (Batch)", "This is an example action", batch_schema, instrument.id)
+    action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation (Batch)", "This is an example action", batch_schema, instrument.id)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     sampledb.db.session.commit()
 
     with open('example_data/ombe-1.sampledb.json', 'r') as data_file:
@@ -164,9 +167,11 @@ This example shows how Markdown can be used for instrument Notes.
     with open('sampledb/schemas/xrr_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "XRR Measurement", "", schema, instrument.id)
+    sampledb.logic.action_permissions.set_action_public(instrument_action.id)
     with open('sampledb/schemas/searchable_quantity.json', 'r') as schema_file:
         schema = json.load(schema_file)
     action = create_action(ActionType.SAMPLE_CREATION, "Searchable Object", "", schema, None)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     independent_object = Objects.create_object(data={
         "name": {
             "_type": "text",
@@ -211,6 +216,7 @@ This example shows how Markdown can be used for instrument Notes.
     with open('server_schemas/squid_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+    sampledb.logic.action_permissions.set_action_public(instrument_action.id)
     sampledb.db.session.commit()
 
     instrument = create_instrument(name="Powder Diffractometer", description="Huber Imaging Plate Guinier Camera G670 at JCNS-2")
@@ -218,6 +224,7 @@ This example shows how Markdown can be used for instrument Notes.
     with open('server_schemas/powder_diffractometer_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+    sampledb.logic.action_permissions.set_action_public(instrument_action.id)
     sampledb.db.session.commit()
 
     instrument = create_instrument(name="GALAXI", description="Gallium Anode Low-Angle X-ray Instrument")
@@ -225,11 +232,13 @@ This example shows how Markdown can be used for instrument Notes.
     with open('server_schemas/galaxi_measurement.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
     instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+    sampledb.logic.action_permissions.set_action_public(instrument_action.id)
     sampledb.db.session.commit()
 
     with open('server_schemas/other_sample.sampledb.json', 'r') as schema_file:
         schema = json.load(schema_file)
-    create_action(ActionType.SAMPLE_CREATION, "Other Sample", "", schema, None)
+    action = create_action(ActionType.SAMPLE_CREATION, "Other Sample", "", schema, None)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     sampledb.db.session.commit()
 
     sample_action = sampledb.logic.actions.create_action(
@@ -252,6 +261,7 @@ This example shows how Markdown can be used for instrument Notes.
             'required': ['name']
         }
     )
+    sampledb.logic.action_permissions.set_action_public(sample_action.id)
     measurement_action = sampledb.logic.actions.create_action(
         action_type_id=ActionType.MEASUREMENT,
         name="measurement_action",
@@ -277,6 +287,7 @@ This example shows how Markdown can be used for instrument Notes.
             'required': ['name']
         }
     )
+    sampledb.logic.action_permissions.set_action_public(measurement_action.id)
     data = {
         'name': {
             '_type': 'text',

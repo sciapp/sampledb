@@ -26,6 +26,7 @@ Currently in development.
 - Allow configuring the Help link
 - Allow linking project groups to objects
 - Fixed action ID filtering when loading objects in the background
+- Added action permissions to user interface
 
 Version 0.16.1
 --------------

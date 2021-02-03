@@ -47,6 +47,7 @@ def actions(flask_server):
         sampledb.db.session.commit()
         # force attribute refresh
         assert action.id is not None
+        sampledb.logic.action_permissions.set_action_public(action.id)
     return actions
 
 

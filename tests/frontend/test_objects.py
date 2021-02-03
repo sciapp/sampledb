@@ -604,6 +604,7 @@ def test_edit_object_action_delete(flask_server, user):
 def test_new_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -638,6 +639,7 @@ def test_new_object(flask_server, user):
 def test_new_object_batch(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -659,6 +661,7 @@ def test_new_object_batch(flask_server, user):
 def test_new_object_batch_invalid_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -677,6 +680,7 @@ def test_new_object_batch_invalid_number(flask_server, user):
 def test_new_object_batch_float_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -695,6 +699,7 @@ def test_new_object_batch_float_number(flask_server, user):
 def test_new_object_batch_invalid_float_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -1067,6 +1072,7 @@ def test_create_object_similar_property_names(flask_server, user):
       "required": ["name", "name_2"]
     }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     assert len(sampledb.logic.objects.get_objects()) == 0
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1181,6 +1187,7 @@ def test_copy_object(flask_server, user):
       "required": ["name", "name2"]
     }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     name = 'Example1'
     object = sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}, 'name2': {'_type': 'text', 'text': name}},
