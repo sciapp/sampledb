@@ -17,33 +17,67 @@
     {% endif %}
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
-    {% if can_copy_permissions and (config['LOAD_OBJECTS_IN_BACKGROUND'] or existing_objects) %}
+    <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">Initial Permissions</strong>
     <div class="form-group clearfix" style="padding:0 0.75em">
-      <div class="col-md-9 col-md-offset-3">
-        <div class="input-group pull-right">
-          <span class="input-group-addon" style="width:20em; height: 34px; display: inline-block">
-            <label style="font-weight: 400">
-              <input type="checkbox" name="copy_permissions_from_other_object" {% if 'copy_permissions_from_other_object' in request.form or ('previous_object_id' in request.args and has_grant_for_previous_object and not 'action_submit' in request.form) %}checked="checked"{% endif %} id="copyPermissionsChkBox">
-              <div style="display: inline">
-                <i class="fa fa-spinner fa-spin copyPermissionsLoading" style="display: none;"></i>
-                <span class="sr-only copyPermissionsLoading" style="display: none;">Loading...</span>
-              </div>
-              Copy Permissions from other Objects
-            </label>
-          </span>
-          {% set selected_obj_id = request.form.get('copy_permissions_object_id') %}
-          {% if has_grant_for_previous_object and not 'action_submit' in request.form and request.args.get('previous_object_id') %}
-          {% set selected_obj_id = request.args.get('previous_object_id') %}
-          {% endif %}
-          <select id="copyPermissionsSelect" class="selectpicker" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox">
-            {% for object in existing_objects %}
-            <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.data['name']['text'] }} (#{{ object.id }})</option>
-            {% endfor %}
-          </select>
-        </div>
+      <div class="col-md-9 col-md-offset-3" style="padding-top: 12px">
+        <label style="font-weight: 400">
+          <input type="radio" name="permissions_method" value="default_permissions" {% if request.form.get('permissions_method') == 'default_permissions' or 'action_submit' not in request.form %}checked="checked"{% endif %} /> Use default permissions
+        </label>
       </div>
+      {% if user_groups %}
+      <div class="col-md-4 col-md-offset-3" style="padding-top: 12px">
+        <label style="font-weight: 400">
+          <input type="radio" name="permissions_method" value="permissions_for_group" {% if request.form.get('permissions_method') == 'permissions_for_group' %}checked="checked"{% endif %}/> Give permissions to basic group
+        </label>
+      </div>
+      {% set selected_group_id = request.form.get('permissions_for_group_group_id') %}
+      <div class="col-md-5 clearfix">
+        <select class="selectpicker pull-right" data-width="280px" name="permissions_for_group_group_id" data-live-search="true">
+          {% for group in user_groups %}
+          <option value="{{ group.id }}" {% if group.id | string == selected_group_id %}selected="selected"{% endif %}>{{ group.name }} (#{{ group.id }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if user_projects %}
+      <div class="col-md-4 col-md-offset-3" style="padding-top: 12px">
+        <label style="font-weight: 400">
+          <input type="radio" name="permissions_method" value="permissions_for_project" {% if request.form.get('permissions_method') == 'permissions_for_project' %}checked="checked"{% endif %} /> Give permissions to project group
+        </label>
+      </div>
+      {% set selected_project_id = request.form.get('permissions_for_project_project_id') %}
+      <div class="col-md-5 clearfix">
+        <select class="selectpicker pull-right" data-width="280px" name="permissions_for_project_project_id" data-live-search="true">
+          {% for project in user_projects %}
+          <option value="{{ project.id }}" {% if project.id | string == selected_project_id %}selected="selected"{% endif %}>{{ project.name }} (#{{ project.id }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if can_copy_permissions and (config['LOAD_OBJECTS_IN_BACKGROUND'] or existing_objects) %}
+      <div class="col-md-4 col-md-offset-3" style="padding-top: 12px">
+        <label style="font-weight: 400">
+          <input type="radio" name="permissions_method"  value="copy_permissions" {% if request.form.get('permissions_method') == 'copy_permissions' or ('previous_object_id' in request.args and has_grant_for_previous_object and not 'action_submit' in request.form) %}checked="checked"{% endif %} id="copyPermissionsChkBox">
+          <div style="display: inline">
+            <i class="fa fa-spinner fa-spin copyPermissionsLoading" style="display: none;"></i>
+            <span class="sr-only copyPermissionsLoading" style="display: none;">Loading...</span>
+          </div>
+          Copy Permissions from other object
+        </label>
+      </div>
+      <div class="col-md-5 clearfix">
+        {% set selected_obj_id = request.form.get('copy_permissions_object_id') %}
+        {% if has_grant_for_previous_object and not 'action_submit' in request.form and request.args.get('previous_object_id') %}
+        {% set selected_obj_id = request.args.get('previous_object_id') %}
+        {% endif %}
+        <select id="copyPermissionsSelect" class="selectpicker pull-right" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox">
+          {% for object in existing_objects %}
+          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.data['name']['text'] }} (#{{ object.id }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
     {% if may_create_log_entry%}
     <div class="form-group clearfix" style="padding:0 0.75em">
       <div class="col-md-9 col-md-offset-3">
@@ -80,3 +114,20 @@
     </div>
   </form>
 {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+  $(function() {
+    $('select[name="permissions_for_group_group_id"]').on('show.bs.select', function () {
+      $('input[name="permissions_method"][value="permissions_for_group"]').prop('checked', true);
+    });
+    $('select[name="permissions_for_project_project_id"]').on('show.bs.select', function () {
+      $('input[name="permissions_method"][value="permissions_for_project"]').prop('checked', true);
+    });
+    $('select[name="copy_permissions_object_id"]').on('show.bs.select', function () {
+      $('input[name="permissions_method"][value="copy_permissions"]').prop('checked', true);
+    });
+  });
+  </script>
+{% endblock%}

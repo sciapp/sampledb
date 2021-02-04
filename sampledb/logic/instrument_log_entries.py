@@ -72,7 +72,7 @@ class InstrumentLogEntry(
 class InstrumentLogEntryVersion(
     collections.namedtuple(
         'InstrumentLogEntryVersion',
-        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories']
+        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories', 'content_is_markdown']
     )
 ):
     """
@@ -85,10 +85,11 @@ class InstrumentLogEntryVersion(
             version_id: int,
             content: str,
             utc_datetime: datetime.datetime,
-            categories: typing.List['InstrumentLogCategory']
+            categories: typing.List['InstrumentLogCategory'],
+            content_is_markdown: bool = False
     ):
         self = super(InstrumentLogEntryVersion, cls).__new__(
-            cls, log_entry_id, version_id, content, utc_datetime, categories
+            cls, log_entry_id, version_id, content, utc_datetime, categories, content_is_markdown
         )
         return self
 
@@ -102,7 +103,8 @@ class InstrumentLogEntryVersion(
             categories=[
                 InstrumentLogCategory.from_database(category)
                 for category in sorted(instrument_log_entry_version.categories, key=lambda category: category.theme.value)
-            ]
+            ],
+            content_is_markdown=instrument_log_entry_version.content_is_markdown
         )
 
 
@@ -294,7 +296,8 @@ def create_instrument_log_entry(
         instrument_id: int,
         user_id: int,
         content: str,
-        category_ids: typing.Sequence[int] = ()
+        category_ids: typing.Sequence[int] = (),
+        content_is_markdown: bool = False
 ) -> InstrumentLogEntry:
     """
     Create a new instrument log entry and adds it to the user log.
@@ -303,6 +306,7 @@ def create_instrument_log_entry(
     :param user_id: the ID of an existing user
     :param content: the text content for the new log entry
     :param category_ids: the instrument-specific log category IDs
+    :param content_is_markdown: whether or not the content is Markdown
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -333,7 +337,8 @@ def create_instrument_log_entry(
     instrument_log_entry_version = instrument_log_entries.InstrumentLogEntryVersion(
         log_entry_id=instrument_log_entry.id,
         version_id=1,
-        content=content
+        content=content,
+        content_is_markdown=content_is_markdown
     )
     instrument_log_entry_version.categories = list(categories)
     db.session.add(instrument_log_entry_version)
@@ -355,7 +360,8 @@ def create_instrument_log_entry(
 def update_instrument_log_entry(
         log_entry_id: int,
         content: str,
-        category_ids: typing.Sequence[int] = ()
+        category_ids: typing.Sequence[int] = (),
+        content_is_markdown: bool = False
 ) -> InstrumentLogEntry:
     """
     Update an existing instrument log entry.
@@ -363,6 +369,7 @@ def update_instrument_log_entry(
     :param log_entry_id: the ID of an existing instrument log entry
     :param content: the text content for the new log entry
     :param category_ids: the instrument-specific log category IDs
+    :param content_is_markdown: whether or not the content is Markdown
     :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
         entry with the given ID exists
     :raise errors.InstrumentLogCategoryDoesNotExistError: when no log category
@@ -392,7 +399,8 @@ def update_instrument_log_entry(
     instrument_log_entry_version = instrument_log_entries.InstrumentLogEntryVersion(
         log_entry_id=instrument_log_entry.id,
         version_id=next_version_id,
-        content=content
+        content=content,
+        content_is_markdown=content_is_markdown
     )
     db.session.add(instrument_log_entry_version)
     instrument_log_entry_version.categories = list(categories)

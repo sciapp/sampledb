@@ -35,6 +35,7 @@ class ActionType(db.Model):
     enable_comments = db.Column(db.Boolean, nullable=False, default=True)
     enable_activity_log = db.Column(db.Boolean, nullable=False, default=True)
     enable_related_objects = db.Column(db.Boolean, nullable=False, default=True)
+    enable_project_link = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     def __repr__(self):
         return '<{0}(id={1.id!r}, name={1.name!r})>'.format(type(self).__name__, self)

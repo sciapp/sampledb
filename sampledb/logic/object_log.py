@@ -196,3 +196,26 @@ def export_to_dataverse(user_id: int, object_id: int, dataverse_url: str):
             'dataverse_url': dataverse_url
         }
     )
+
+
+def link_project(user_id: int, object_id: int, project_id: int):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.LINK_PROJECT,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'project_id': project_id
+        }
+    )
+
+
+def unlink_project(user_id: int, object_id: int, project_id: int, project_deleted: bool = False):
+    _store_new_log_entry(
+        type=ObjectLogEntryType.UNLINK_PROJECT,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'project_id': project_id,
+            'project_deleted': project_deleted
+        }
+    )

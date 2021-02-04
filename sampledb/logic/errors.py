@@ -228,3 +228,11 @@ class CommentDoesNotExistError(Exception):
 
 class DataverseNotReachableError(Exception):
     pass
+
+
+class ProjectObjectLinkDoesNotExistsError(Exception):
+    pass
+
+
+class ProjectObjectLinkAlreadyExistsError(Exception):
+    pass

@@ -129,7 +129,11 @@
               {% endfor %}
             </div>
             {% if log_entry.versions[-1].content %}
-            <pre class="comment">{{ log_entry.versions[-1].content }}</pre>
+              {% if log_entry.versions[-1].content_is_markdown %}
+                <div class="instrument-user-content" style="padding-left: 0; border: 0">{{ log_entry.versions[-1].content | markdown_to_safe_html(anchor_prefix='log-entry-' + (log_entry.id | string)) | safe  }}</div>
+              {% else %}
+                <pre class="comment">{{ log_entry.versions[-1].content }}</pre>
+              {% endif %}
             {% else %}
               &mdash;
             {% endif %}
@@ -140,7 +144,11 @@
                 <div class="instrument-log-version">
                   <hr />
                   {% if version.content %}
-                  <pre class="comment text-muted">{{ version.content }}</pre>
+                    {% if version.content_is_markdown %}
+                      <div class="instrument-user-content" style="padding-left: 0; border: 0">{{ version.content | markdown_to_safe_html(anchor_prefix='log-entry-' + (log_entry.id | string)) | safe  }}</div>
+                    {% else %}
+                      <pre class="comment">{{ version.content }}</pre>
+                    {% endif %}
                   {% else %}
                     &mdash;
                   {% endif %}
@@ -214,7 +222,8 @@
                   <input type="hidden" name="{{ instrument_log_entry_form.log_entry_id.name }}" value="{{ log_entry.id }}" />
                   <div class="form-group">
                     <label for="textarea-log-entry-text-{{ log_entry.id }}">Edit content</label>
-                    <textarea class="form-control" id="textarea-log-entry-text-{{ log_entry.id }}" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{{ log_entry.versions[-1].content or '' }}</textarea>
+                    <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-edit-content-is-markdown-{{ log_entry.id }}" name="{{ instrument_log_entry_form.content_is_markdown.name }}" {% if log_entry.versions[-1].content_is_markdown %}checked="checked"{% endif %}> Use Markdown</label>
+                    <textarea class="form-control" id="textarea-log-entry-text-{{ log_entry.id }}" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:171px; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{{ log_entry.versions[-1].content or '' }}</textarea>
                   </div>
                   <label for="input-file-upload-{{ log_entry.id }}">Add file attachments</label>
                  <div class="input-group" id="upload-area-{{ log_entry.id }}">
@@ -325,7 +334,8 @@
                 {{ instrument_log_entry_form.csrf_token }}
                 <div class="form-group {% if log_entry_text_missing %}has-error{% endif %}">
                   <label for="textarea-log-entry-text" class="control-label">Content</label>
-                  <textarea class="form-control" id="textarea-log-entry-text" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}"></textarea>
+                  <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-content-is-markdown" name="{{ instrument_log_entry_form.content_is_markdown.name }}"> Use Markdown</label>
+                  <textarea class="form-control" id="textarea-log-entry-text" rows="3" placeholder="Instrument Log Entry" style="resize: vertical; min-height: 171px; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}"></textarea>
                   {% if log_entry_text_missing %}
                     <span class="help-block">Please enter a text or add an attachment.</span>
                   {% endif %}
@@ -393,6 +403,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
@@ -405,6 +416,8 @@
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
     <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
   {% endif %}
+  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
   <script type="text/javascript">
     window.categoriesShown = {
       {% for category in instrument_log_categories %}
@@ -466,6 +479,30 @@
     $(function () {
       setup_instrument_log_filter_states();
       $('[data-toggle="popover"]').popover();
+
+      function updateNewLogEntryMarkdown() {
+        if ($('#input-content-is-markdown').prop('checked')) {
+          window.new_log_entry = new InscrybMDE({
+            element: $("#textarea-log-entry-text")[0],
+            indentWithTabs: false,
+            spellChecker: false,
+            status: false,
+            hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+            showIcons: ["code", "table"],
+            minHeight: '100px',
+          });
+          setupImageDragAndDrop(window.new_log_entry);
+        } else {
+          if (window.new_log_entry) {
+            window.new_log_entry.toTextArea();
+            window.new_log_entry = null;
+          }
+        }
+      }
+      $('#input-content-is-markdown').change(updateNewLogEntryMarkdown);
+      console.log($('#input-content-is-markdown'));
+      updateNewLogEntryMarkdown();
+
       {% if instrument_log_entries %}
       {% for log_entry in instrument_log_entries %}
         {% if not current_user.is_readonly and (current_user.id == log_entry.user_id) %}
@@ -491,6 +528,33 @@
         var upload_area = $('#upload-area-{{ log_entry.id }}')[0];
         upload_area.ondrop = dropHandler{{ log_entry.id }};
         upload_area.ondragover = dragOverHandler{{ log_entry.id }};
+
+        function updateLogEntryMarkdown_{{ log_entry.id }}() {
+          if ($('#input-edit-content-is-markdown-{{ log_entry.id }}').prop('checked')) {
+            if (window.log_entry_{{ log_entry.id }}) {
+              window.log_entry_{{ log_entry.id }}.toTextArea();
+            }
+            window.log_entry_{{ log_entry.id }} = new InscrybMDE({
+              element: $("#textarea-log-entry-text-{{ log_entry.id }}")[0],
+              indentWithTabs: false,
+              spellChecker: false,
+              status: false,
+              hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+              showIcons: ["code", "table"],
+              minHeight: '100px',
+            });
+            setupImageDragAndDrop(window.log_entry_{{ log_entry.id }});
+          } else {
+            if (window.log_entry_{{ log_entry.id }}) {
+              window.log_entry_{{ log_entry.id }}.toTextArea();
+              window.log_entry_{{ log_entry.id }} = null;
+            }
+          }
+        }
+        $('#input-edit-content-is-markdown-{{ log_entry.id }}').change(updateLogEntryMarkdown_{{ log_entry.id }});
+        $('#logEntryContentModal_{{ log_entry.id }}').on('shown.bs.modal', updateLogEntryMarkdown_{{ log_entry.id }});
+        updateLogEntryMarkdown_{{ log_entry.id }}();
+        $()
         {% endif %}
       {% endfor %}
       {% endif %}

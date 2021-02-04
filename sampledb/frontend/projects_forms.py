@@ -85,3 +85,7 @@ class AddSubprojectForm(FlaskForm):
 
 class RemoveSubprojectForm(FlaskForm):
     child_project_id = IntegerField(validators=[InputRequired()])
+
+
+class ObjectLinkForm(FlaskForm):
+    object_id = IntegerField(validators=[InputRequired()])

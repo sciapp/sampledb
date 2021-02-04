@@ -56,6 +56,7 @@ class SelectMultipleFieldFix(SelectMultipleField):
 
 class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
+    content_is_markdown = BooleanField()
     files = MultipleFileField()
     objects = SelectMultipleFieldFix(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
     categories = SelectMultipleField()
@@ -153,12 +154,16 @@ def instrument(instrument_id):
                     return flask.abort(400)
                 except InstrumentLogEntryDoesNotExistError:
                     return flask.abort(400)
+                if instrument_log_entry_form.content_is_markdown.data:
+                    log_entry_html = markdown_to_safe_html(instrument_log_entry_form.content.data)
+                    mark_referenced_markdown_images_as_permanent(log_entry_html)
                 update_instrument_log_entry(
                     log_entry_id=log_entry_id,
                     content=instrument_log_entry_form.content.data,
                     category_ids=[
                         int(category_id) for category_id in instrument_log_entry_form.categories.data
-                    ]
+                    ],
+                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:
@@ -214,13 +219,17 @@ def instrument(instrument_id):
                     continue
             log_entry_has_objects = bool(object_ids)
             if log_entry_content or log_entry_has_files or log_entry_has_objects:
+                if instrument_log_entry_form.content_is_markdown.data:
+                    log_entry_html = markdown_to_safe_html(instrument_log_entry_form.content.data)
+                    mark_referenced_markdown_images_as_permanent(log_entry_html)
                 log_entry = create_instrument_log_entry(
                     instrument_id=instrument_id,
                     user_id=flask_login.current_user.id,
                     content=instrument_log_entry_form.content.data,
                     category_ids=[
                         int(category_id) for category_id in instrument_log_entry_form.categories.data
-                    ]
+                    ],
+                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:

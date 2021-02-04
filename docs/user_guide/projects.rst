@@ -9,6 +9,8 @@ Users can be members of any number of project groups, leave the projects they ar
 
 A project group can contain :ref:`groups` as well as users, though it cannot contain other project groups. Instead, a parent-child relationship can be established between project groups, optionally allowing users with **GRANT** permissions in a child project group to invite other users to both the child and parent project groups.
 
+A project group may be linked to an object, which shows that the project group is meant for managing the permissions for that object or objects related to it.
+
 Project groups may be best suited for those who want to model their object permissions in |service_name| according to an organizational hierarchy. For a simpler approach, see :ref:`groups`.
 
 .. note::

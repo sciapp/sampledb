@@ -10,7 +10,7 @@ from . import frontend
 from .. import logic
 from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm, ObjectLinkForm
 from .utils import check_current_user_is_not_readonly
 
 
@@ -154,6 +154,7 @@ def project(project_id):
             include_expired_invitations=show_invitation_log
         )
 
+    object = logic.projects.get_object_linked_to_project(project_id)
     if 'leave' in flask.request.form and Permissions.READ in user_permissions:
         if leave_project_form.validate_on_submit():
             try:
@@ -171,10 +172,29 @@ def project(project_id):
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
             else:
                 flask.flash('You have successfully left the project group.', 'success')
+                # create object log entry if this caused the deletion of a project linked to an object
+                try:
+                    logic.projects.get_project(project_id)
+                except logic.errors.ProjectDoesNotExistError:
+                    if object is not None:
+                        logic.object_log.unlink_project(
+                            flask_login.current_user.id,
+                            object.id,
+                            project_id,
+                            project_deleted=True
+                        )
                 return flask.redirect(flask.url_for('.projects'))
     if 'delete' in flask.request.form and Permissions.GRANT in user_permissions:
         if delete_project_form.validate_on_submit():
             check_current_user_is_not_readonly()
+            # create object log entry if deleting a project linked to an object
+            if object is not None:
+                logic.object_log.unlink_project(
+                    flask_login.current_user.id,
+                    object.id,
+                    project_id,
+                    project_deleted=True
+                )
             try:
                 logic.projects.delete_project(project_id=project_id)
             except logic.errors.ProjectDoesNotExistError:
@@ -322,6 +342,32 @@ def project(project_id):
                     logic.projects.create_subproject_relationship(project_id, child_project_id, child_can_add_users_to_parent=add_subproject_form.child_can_add_users_to_parent.data)
                     flask.flash('The child project group was successfully added to this project group.', 'success')
                     return flask.redirect(flask.url_for('.project', project_id=project_id))
+    object_id = object.id if object is not None else None
+    object_action = None
+    object_link_form = None
+    linkable_objects = []
+    linkable_action_ids = []
+    already_linked_object_ids = []
+    if Permissions.GRANT in user_permissions and not flask_login.current_user.is_readonly:
+        object_link_form = ObjectLinkForm()
+        if object is None:
+            already_linked_object_ids = [link[1] for link in logic.projects.get_project_object_links()]
+            for action_type in logic.actions.get_action_types():
+                if action_type.enable_project_link:
+                    linkable_action_ids.extend([
+                        action.id
+                        for action in logic.actions.get_actions(action_type.id)
+                    ])
+                    if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
+                        for object_info in logic.object_permissions.get_object_info_with_permissions(user_id, Permissions.GRANT, action_type_id=action_type.id):
+                            if object_info.object_id not in already_linked_object_ids:
+                                linkable_objects.append((object_info.object_id, object_info.name_text))
+    if object is not None:
+        object_permissions = logic.object_permissions.get_user_object_permissions(object.object_id, flask_login.current_user.id)
+        if Permissions.READ in object_permissions:
+            object_action = logic.actions.get_action(object.action_id)
+        else:
+            object = None
     return flask.render_template(
         'project.html',
         get_user=logic.users.get_user,
@@ -334,6 +380,13 @@ def project(project_id):
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
         project_invitations=project_invitations,
         show_invitation_log=show_invitation_log,
+        object=object,
+        object_id=object_id,
+        object_link_form=object_link_form,
+        linkable_action_ids=linkable_action_ids,
+        already_linked_object_ids=already_linked_object_ids,
+        linkable_objects=linkable_objects,
+        object_action=object_action,
         leave_project_form=leave_project_form,
         delete_project_form=delete_project_form,
         remove_project_member_form=remove_project_member_form,
@@ -479,3 +532,60 @@ def update_project_permissions(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.redirect(flask.url_for('.projects'))
     return flask.redirect(flask.url_for('.project_permissions', project_id=project_id))
+
+
+@frontend.route('/projects/<int:project_id>/object_link', methods=['POST'])
+@flask_login.login_required
+def link_object(project_id):
+    check_current_user_is_not_readonly()
+    object_link_form = ObjectLinkForm()
+    if not object_link_form.validate_on_submit():
+        flask.flash("Missing or invalid object ID.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    object_id = object_link_form.object_id.data
+    try:
+        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, True):
+            flask.flash("You do not have GRANT permissions for this project group.", 'error')
+            return flask.redirect(flask.url_for('.project', project_id=project_id))
+        if Permissions.GRANT not in logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id):
+            flask.flash("You do not have GRANT permissions for this object.", 'error')
+            return flask.redirect(flask.url_for('.project', project_id=project_id))
+        logic.projects.link_project_and_object(project_id, object_id, flask_login.current_user.id)
+    except logic.errors.ProjectObjectLinkAlreadyExistsError:
+        flask.flash("Project group is already linked to an object or object is already linked to a project group.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    except logic.errors.ProjectDoesNotExistError:
+        flask.flash("Project group does not exist.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    except logic.errors.ObjectDoesNotExistError:
+        flask.flash("Object does not exist.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    flask.flash("Successfully linked the object to a project group.", 'success')
+    return flask.redirect(flask.url_for('.project', project_id=project_id))
+
+
+@frontend.route('/projects/<int:project_id>/object_unlink', methods=['POST'])
+@flask_login.login_required
+def unlink_object(project_id):
+    check_current_user_is_not_readonly()
+    object_link_form = ObjectLinkForm()
+    if not object_link_form.validate_on_submit():
+        flask.flash("Missing or invalid object ID.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    object_id = object_link_form.object_id.data
+    try:
+        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, True):
+            flask.flash("You do not have GRANT permissions for this project group.", 'error')
+            return flask.redirect(flask.url_for('.project', project_id=project_id))
+        logic.projects.unlink_project_and_object(project_id, object_id, flask_login.current_user.id)
+    except logic.errors.ProjectObjectLinkDoesNotExistsError:
+        flask.flash("No link exists between this object and project group.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    except logic.errors.ProjectDoesNotExistError:
+        flask.flash("Project group does not exist.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    except logic.errors.ObjectDoesNotExistError:
+        flask.flash("Object does not exist.", 'error')
+        return flask.redirect(flask.url_for('.project', project_id=project_id))
+    flask.flash("Successfully unlinked the object and project group.", 'success')
+    return flask.redirect(flask.url_for('.project', project_id=project_id))

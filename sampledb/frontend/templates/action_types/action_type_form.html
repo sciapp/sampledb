@@ -92,6 +92,11 @@
           <input type="checkbox" id="input-enable_related_objects" name="{{ action_type_form.enable_related_objects.name }}" {% if action_type_form.enable_related_objects.data %}checked="checked"{% endif %}> Show related objects for objects created with actions of this type
         </label>
       </div>
+      <div class="checkbox">
+        <label for="input-enable_project_link" style="font-weight:400">
+          <input type="checkbox" id="input-enable_project_link" name="{{ action_type_form.enable_project_link.name }}" {% if action_type_form.enable_project_link.data %}checked="checked"{% endif %}> Objects created with actions of this type can be linked to a project group
+        </label>
+      </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">

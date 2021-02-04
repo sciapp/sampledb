@@ -13,6 +13,7 @@ Currently in development.
 - Allow linking to headers in Markdown content
 - Allow disabling of "Use in Measurement" button for samples
 - Added markdown support to object metadata
+- Added markdown support to instrumeng log
 - Reimplemented PDF export
 - Added configuration variables to allow only administrators to create groups or projects
 - Added asterisks to mark required fields when editing objects
@@ -21,6 +22,10 @@ Currently in development.
 - Allow searching for tags in dropdown object selection fields
 - Renamed projects to project groups and groups to basic groups to avoid ambiguity
 - Allow disabling of subprojects / child project groups
+- Allow giving basic or project groups initial permissions
+- Allow configuring the Help link
+- Allow linking project groups to objects
+- Fixed action ID filtering when loading objects in the background
 
 Version 0.16.1
 --------------
