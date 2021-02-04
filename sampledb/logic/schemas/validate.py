@@ -315,12 +315,6 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
-
-    #required_keys can no longer be statically defined, since either magnitude OR magnitude_in_base_units has to be given
-    #missing_keys = required_keys - schema_keys
-    #if missing_keys:
-    #    raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
-
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
     if 'units' not in instance:
@@ -364,7 +358,9 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
         quantity_magnitude = quantity_magnitude_in_base_units
 
     # automatically add dimensionality and either magnitude oder magnitude_in_base_units, if they haven't been given yet
-    instance.update(quantity_magnitude.to_json())
+    for key, value in quantity_magnitude.to_json().items():
+        if key not in instance:
+            instance[key] = value
 
     if not isinstance(instance['dimensionality'], str):
         raise ValidationError('dimensionality must be str', path)
