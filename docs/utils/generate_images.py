@@ -437,6 +437,7 @@ try:
             schema=schema,
             instrument_id=instrument.id
         )
+        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
         data = {
             'name': {
                 '_type': 'text',
