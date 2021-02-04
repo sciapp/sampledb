@@ -6,6 +6,7 @@ Implementation of validate(instance, schema)
 import re
 import datetime
 import typing
+import math
 
 from ...logic import actions, objects, datatypes, users
 from ...models import ActionType
@@ -348,7 +349,7 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
             raise ValidationError('Unable to create quantity based on given magnitude_in_base_units', path)
 
     if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None \
-            and quantity_magnitude.magnitude != quantity_magnitude_in_base_units.magnitude:
+            and math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
         raise ValidationError(
             'magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', None)
     elif quantity_magnitude is None and quantity_magnitude_in_base_units is None:

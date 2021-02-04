@@ -217,9 +217,13 @@ class Quantity(object):
                 pint_units = ureg.Unit(units)
             except (pint.errors.UndefinedUnitError, AttributeError):
                 raise ValueError("Invalid units '{}'".format(units))
-        # convert magnitude back from base unit to desired unit
-        pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
-        magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
+
+        if 'magnitude' in obj:
+            magnitude = obj['magnitude']
+        else:
+            # convert magnitude back from base unit to desired unit
+            pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
+            magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
         quantity = cls(magnitude, units)
         if pint_units.dimensionless:
             assert obj['dimensionality'] == 'dimensionless'
