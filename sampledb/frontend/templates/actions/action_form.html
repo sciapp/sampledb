@@ -93,11 +93,13 @@
         </label>
       </div>
       {% endif %}
+      {% if may_change_public %}
       <div class="checkbox {% if action_form.description.name in action_form.errors %}has-error{% endif %}">
         <label for="input-public" style="font-weight:700">
-          <input type="checkbox" id="input-public" name="{{ action_form.is_public.name }}" {% if action_form.is_public.data %}checked="checked"{% endif %} {% if not may_change_public %}disabled="disabled"{% endif %}> Public
+          <input type="checkbox" id="input-public" name="{{ action_form.is_public.name }}" {% if action_form.is_public.data %}checked="checked"{% endif %}> Public
         </label>
       </div>
+      {% endif %}
       <div class="form-group {% if action_form.type.name in action_form.errors %}has-error{% endif %}">
         <label for="input-type" class="control-label">Type</label>
         <select class="selectpicker form-control" id="input-type" name="{{ action_form.type.name }}" {% if not may_change_type %}disabled="disabled"{% endif %}>

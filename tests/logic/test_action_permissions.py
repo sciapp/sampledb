@@ -108,11 +108,11 @@ def user(users):
 def test_public_actions(independent_action, user_action):
     # non-user actions will always
     action_id = independent_action.id
-    assert action_permissions.action_is_public(action_id)
+    assert not action_permissions.action_is_public(action_id)
     action_permissions.set_action_public(action_id)
     assert action_permissions.action_is_public(action_id)
     action_permissions.set_action_public(action_id, False)
-    assert action_permissions.action_is_public(action_id)
+    assert not action_permissions.action_is_public(action_id)
 
     action_id = user_action.id
     assert not action_permissions.action_is_public(action_id)
@@ -192,6 +192,8 @@ def test_get_user_public_action_permissions(user, user_action, independent_actio
     assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.READ
 
     action_id = independent_action.id
+    assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.NONE
+    action_permissions.set_action_public(action_id)
     assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.READ
 
 

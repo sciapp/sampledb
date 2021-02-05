@@ -26,12 +26,11 @@ def action_is_public(action_id: int) -> bool:
     :raise errors.ActionDoesNotExistError: if no action with the given action
         ID exists
     """
-    # ensure that the action can be found
-    action = actions.get_action(action_id)
-    # common actions are always public
-    if action.user_id is None:
-        return True
-    return PublicActions.query.filter_by(action_id=action_id).first() is not None
+    is_public = PublicActions.query.filter_by(action_id=action_id).first() is not None
+    if not is_public:
+        # ensure that the action can be found
+        actions.get_action(action_id)
+    return is_public
 
 
 def set_action_public(action_id: int, is_public: bool = True) -> None:

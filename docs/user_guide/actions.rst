@@ -17,7 +17,7 @@ The type of an Action describes the general kind of process it represents, such 
 Custom Actions
 --------------
 
-Users can create custom actions to represent their own processes or instruments that are not yet part of |service_name|. These actions can either be private, only usable by the users who created them, or public, usable by anyone.
+Users can create custom actions to represent their own processes or instruments that are not yet part of |service_name|. These actions can be private, only usable by the users who created them, or public, so all everyone can see and use them, or the user can grant permissions to specific users, basic groups or project groups.
 
 To create a custom action, users can either use an existing action as a template or write a :ref:`Schema <metadata>` from scratch.
 
