@@ -168,7 +168,7 @@ class Quantity(object):
         'additionalProperties': False
     }
 
-    def __init__(self, magnitude, units, already_in_base_units = False):
+    def __init__(self, magnitude, units, already_in_base_units=False):
         self.magnitude = float(magnitude)
         if units is None:
             self.units = None
