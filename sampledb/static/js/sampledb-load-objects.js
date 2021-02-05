@@ -33,6 +33,8 @@ $(function() {
           action_ids = $.map(action_ids, function(action_id){
              return +action_id;
           });
+        } else if (typeof action_ids === 'undefined') {
+          action_ids = [];
         } else {
           action_ids = [action_ids];
         }
@@ -42,6 +44,8 @@ $(function() {
           remove_ids = $.map(remove_ids.split(","), function(id){
              return +id;
           });
+        } else if (typeof remove_ids === 'undefined') {
+          remove_ids = [];
         } else {
           remove_ids = [remove_ids];
         }
