@@ -143,8 +143,8 @@ This example shows how Markdown can be used for instrument Notes.
         data = json.load(data_file)
     instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
     create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
-    data['multilayer'][0]['repetitions']['magnitude_in_base_units'] = 20000
-    data['multilayer'][1]['films'][0]['thickness']['magnitude_in_base_units'] = 1
+    #data['multilayer'][0]['repetitions']['magnitude_in_base_units'] = 20000
+    #data['multilayer'][1]['films'][0]['thickness']['magnitude_in_base_units'] = 1
     independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
     create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
     comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)

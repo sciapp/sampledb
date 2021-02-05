@@ -27,6 +27,7 @@ Currently in development.
 - Allow linking project groups to objects
 - Fixed action ID filtering when loading objects in the background
 - Added action permissions to user interface
+- Improved handling of quantities for the HTTP API
 
 Version 0.16.1
 --------------

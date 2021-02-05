@@ -72,6 +72,7 @@ def test_quantity_serialization_unitless():
     assert json.loads(s) == {
         '_type': 'quantity',
         'units': None,
+        'magnitude': 3.5,
         'magnitude_in_base_units': 3.5,
         'dimensionality': 'dimensionless'
     }
@@ -83,6 +84,7 @@ def test_quantity_serialization_units():
     assert json.loads(s) == {
         '_type': 'quantity',
         'units': 'meters',
+        'magnitude': 3.5,
         'magnitude_in_base_units': 3.5,
         'dimensionality': '[length]'
     }
@@ -94,6 +96,7 @@ def test_quantity_serialization_string():
     assert json.loads(s) == {
         '_type': 'quantity',
         'units': None,
+        'magnitude': 3.5,
         'magnitude_in_base_units': 3.5,
         'dimensionality': 'dimensionless'
     }
@@ -110,6 +113,19 @@ def test_quantity_serialization_units_pint():
     assert json.loads(s) == {
         '_type': 'quantity',
         'units': 'kilometer',
+        'magnitude': 3.5,
+        'magnitude_in_base_units': 3500,
+        'dimensionality': '[length]'
+    }
+
+
+def test_quantity_serialization_pass_base_units_pint():
+    # any unit recognized by pint can be used
+    s = json.dumps(datatypes.Quantity(3500, datatypes.ureg.Unit("kilometers"), True), cls=datatypes.JSONEncoder)
+    assert json.loads(s) == {
+        '_type': 'quantity',
+        'units': 'kilometer',
+        'magnitude': 3.5,
         'magnitude_in_base_units': 3500,
         'dimensionality': '[length]'
     }
@@ -138,6 +154,17 @@ def test_quantity_deserialization_non_base_units():
     quantity = json.loads(s, object_hook=datatypes.JSONEncoder.object_hook)
     assert quantity.units == 'kilometers'
     assert quantity.magnitude == 3.5
+    assert quantity.magnitude_in_base_units == 3500
+    assert quantity.pint_units == datatypes.ureg.Unit('kilometers')
+
+
+def test_quantity_deserialization_base_units():
+    # when using None as unit, it's a dimensionless quantity
+    s = json.dumps(datatypes.Quantity(3500, 'kilometers', True), cls=datatypes.JSONEncoder)
+    quantity = json.loads(s, object_hook=datatypes.JSONEncoder.object_hook)
+    assert quantity.units == 'kilometers'
+    assert quantity.magnitude == 3.5
+    assert quantity.magnitude_in_base_units == 3500
     assert quantity.pint_units == datatypes.ureg.Unit('kilometers')
 
 
