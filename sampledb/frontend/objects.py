@@ -35,6 +35,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
+from ..logic.notebook_templates import get_notebook_templates
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
@@ -963,23 +964,12 @@ def object(object_id):
         object_publications = logic.publications.get_publications_for_object(object_id=object.id)
         user_may_link_publication = Permissions.WRITE in user_permissions
 
-        notebook_templates = object.schema.get('notebookTemplates', [])
-        for notebook_template in notebook_templates:
-            for parameter, parameter_value in notebook_template['params'].items():
-                if parameter_value == 'object_id':
-                    notebook_template['params'][parameter] = object_id
-                elif isinstance(parameter_value, list):
-                    parameter_data = object.data
-                    for step in parameter_value:
-                        if isinstance(step, str) and isinstance(parameter_data, dict) and step in parameter_data:
-                            parameter_data = parameter_data[step]
-                        elif isinstance(step, int) and isinstance(parameter_data, list) and 0 <= step < len(parameter_data):
-                            parameter_data = parameter_data[step]
-                        else:
-                            parameter_data = None
-                    notebook_template['params'][parameter] = parameter_data
-                else:
-                    notebook_template['params'][parameter] = None
+        notebook_templates = get_notebook_templates(
+            object_id=object.id,
+            data=object.data,
+            schema=object.schema,
+            user_id=flask_login.current_user.id
+        )
 
         def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
             confirmation_url = flask.url_for(
