@@ -21,6 +21,7 @@ from . import ldap
 from . import locations
 from . import markdown_images
 from . import markdown_to_html
+from . import notebook_templates
 from . import notifications
 from . import objects
 from . import object_log
@@ -65,6 +66,7 @@ __all__ = [
     'locations',
     'markdown_images',
     'markdown_to_html',
+    'notebook_templates',
     'notifications',
     'objects',
     'object_log',
