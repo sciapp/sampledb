@@ -155,7 +155,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
             continue
         elif value['_type'] == 'user':
             try:
-                symbol = users.get_user(value['user_id'])
+                symbol = users.get_user(value['user_id']).name
             except errors.UserDoesNotExistError:
                 symbol = 'Unknown'
         elif value['_type'] in ('sample', 'measurement', 'object_reference'):
