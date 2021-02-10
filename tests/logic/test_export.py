@@ -44,7 +44,8 @@ def set_up_state(user: User):
         description='',
         instrument_id=None
     )
-    actions.create_action(
+    sampledb.logic.action_permissions.set_action_public(action.id)
+    action2 = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         name='Irrelevant Action',
         schema={
@@ -61,6 +62,7 @@ def set_up_state(user: User):
         description='',
         instrument_id=None
     )
+    sampledb.logic.action_permissions.set_action_public(action2.id)
     data = {'name': {'_type': 'text', 'text': 'Object'}}
     object = objects.create_object(user_id=user.id, action_id=action.id, data=data)
     def save_content(file): file.write("This is a test file.".encode('utf-8'))
@@ -101,15 +103,23 @@ def validate_data(data):
     del data['objects'][0]['files'][1]['utc_datetime']
     del data['instruments'][0]['instrument_log_entries'][0]['versions'][0]['utc_datetime']
 
-    assert data == {
+    user_id = sampledb.logic.users.get_users()[0].id
+    action_id = sampledb.logic.actions.get_actions(sampledb.models.ActionType.SAMPLE_CREATION)[0].id
+    object_id = sampledb.logic.objects.get_objects()[0].id
+    instrument_id = sampledb.logic.instruments.get_instruments()[0].id
+    instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
+    instrument_log_entry_file_id = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(instrument_log_entry_id)[0].id
+    instrument_log_category_id = sampledb.logic.instrument_log_entries.get_instrument_log_categories(instrument_id)[0].id
+
+    expected_data = {
         'objects': [
             {
-                'id': 1,
-                'action_id': 1,
+                'id': object_id,
+                'action_id': action_id,
                 'versions': [
                     {
                         'id': 0,
-                        'user_id': 1,
+                        'user_id': user_id,
                         'schema': {
                                 'type': 'object',
                                 'title': 'Example Object',
@@ -138,16 +148,16 @@ def validate_data(data):
                         'hidden': False,
                         'title': 'test.txt',
                         'description': None,
-                        'uploader_id': 1,
+                        'uploader_id': user_id,
                         'original_file_name': 'test.txt',
-                        'path': 'objects/1/files/0/test.txt'
+                        'path': f'objects/{object_id}/files/0/test.txt'
                     },
                     {
                         'id': 1,
                         'hidden': False,
                         'title': 'https://example.com',
                         'description': None,
-                        'uploader_id': 1,
+                        'uploader_id': user_id,
                         'url': 'https://example.com'
                     }
                 ]
@@ -155,34 +165,38 @@ def validate_data(data):
         ],
         'actions': [
             {
-                'id': 1,
+                'id': action_id,
                 'type': 'sample',
                 'name': 'Example Action',
                 'user_id': None,
                 'instrument_id': None,
                 'description': '',
-                'description_as_html': None
+                'description_is_markdown': False,
+                'short_description': '',
+                'short_description_is_markdown': False
             }
         ],
         'instruments': [
             {
-                'id': 1,
+                'id': instrument_id,
                 'name': 'Example Instrument',
                 'description': 'Example Instrument Description',
-                'description_as_html': None,
+                'description_is_markdown': False,
+                'short_description': '',
+                'short_description_is_markdown': False,
                 'instrument_scientist_ids': [],
                 'instrument_log_entries': [
                     {
-                        'id': 1,
-                        'author_id': 1,
+                        'id': instrument_log_entry_id,
+                        'author_id': user_id,
                         'versions': [
                             {
-                                'log_entry_id': 1,
+                                'log_entry_id': instrument_log_entry_id,
                                 'version_id': 1,
                                 'content': 'Example Log Entry Text',
                                 'categories': [
                                     {
-                                        'id': 1,
+                                        'id': instrument_log_category_id,
                                         'title': 'Category'
                                     }
                                 ]
@@ -191,12 +205,12 @@ def validate_data(data):
                         'file_attachments': [
                             {
                                 'file_name': 'example.txt',
-                                'path': 'instruments/1/log_entries/1/files/1/example.txt'
+                                'path': f'instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt'
                             }
                         ],
                         'object_attachments': [
                             {
-                                'object_id': 1
+                                'object_id': object_id
                             }
                         ]
                     }
@@ -205,7 +219,7 @@ def validate_data(data):
         ],
         'users': [
             {
-                'id': 1,
+                'id': user_id,
                 'name': 'Basic User',
                 'orcid_id': None,
                 'affiliation': None
@@ -213,12 +227,17 @@ def validate_data(data):
         ],
         'locations': []
     }
+    assert data == expected_data
 
 
 def test_zip_export(user, app, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 
     set_up_state(user)
+    object_id = sampledb.logic.objects.get_objects()[0].id
+    instrument_id = sampledb.logic.instruments.get_instruments()[0].id
+    instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
+    instrument_log_entry_file_id = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(instrument_log_entry_id)[0].id
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
@@ -230,18 +249,18 @@ def test_zip_export(user, app, tmpdir):
         assert set(zip_file.namelist()) == {
             'sampledb_export/README.txt',
             'sampledb_export/data.json',
-            'sampledb_export/1.rdf',
-            'sampledb_export/objects/1/files/0/test.txt',
-            'sampledb_export/instruments/1/log_entries/1/files/1/example.txt'
+            f'sampledb_export/{object_id}.rdf',
+            f'sampledb_export/objects/{object_id}/files/0/test.txt',
+            f'sampledb_export/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt'
         }
         with zip_file.open('sampledb_export/data.json') as data_file:
             data = json.load(data_file)
         validate_data(data)
 
-        with zip_file.open('sampledb_export/objects/1/files/0/test.txt') as text_file:
+        with zip_file.open(f'sampledb_export/objects/{object_id}/files/0/test.txt') as text_file:
             assert text_file.read().decode('utf-8') == "This is a test file."
 
-        with zip_file.open('sampledb_export/instruments/1/log_entries/1/files/1/example.txt') as text_file:
+        with zip_file.open(f'sampledb_export/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt') as text_file:
             assert text_file.read() == b'Example Content'
 
 
@@ -249,6 +268,10 @@ def test_tar_gz_export(user, app, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 
     set_up_state(user)
+    object_id = sampledb.logic.objects.get_objects()[0].id
+    instrument_id = sampledb.logic.instruments.get_instruments()[0].id
+    instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
+    instrument_log_entry_file_id = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(instrument_log_entry_id)[0].id
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
@@ -259,16 +282,16 @@ def test_tar_gz_export(user, app, tmpdir):
         assert set(tar_file.getnames()) == {
             'sampledb_export/README.txt',
             'sampledb_export/data.json',
-            'sampledb_export/1.rdf',
-            'sampledb_export/objects/1/files/0/test.txt',
-            'sampledb_export/instruments/1/log_entries/1/files/1/example.txt'
+            f'sampledb_export/{object_id}.rdf',
+            f'sampledb_export/objects/{object_id}/files/0/test.txt',
+            f'sampledb_export/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt'
         }
         with tar_file.extractfile('sampledb_export/data.json') as data_file:
              data = json.load(data_file)
         validate_data(data)
 
-        with tar_file.extractfile('sampledb_export/objects/1/files/0/test.txt') as text_file:
+        with tar_file.extractfile(f'sampledb_export/objects/{object_id}/files/0/test.txt') as text_file:
             assert text_file.read().decode('utf-8') == "This is a test file."
 
-        with tar_file.extractfile('sampledb_export/instruments/1/log_entries/1/files/1/example.txt') as text_file:
+        with tar_file.extractfile(f'sampledb_export/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt') as text_file:
             assert text_file.read() == b'Example Content'

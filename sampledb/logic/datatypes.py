@@ -154,6 +154,9 @@ class Quantity(object):
             'magnitude_in_base_units': {
                 'type': 'number'
             },
+            'magnitude': {
+                'type': 'number'
+            },
             'units': {
                 'anyOf': [
                     {'type': 'null'},
@@ -165,7 +168,7 @@ class Quantity(object):
         'additionalProperties': False
     }
 
-    def __init__(self, magnitude, units):
+    def __init__(self, magnitude, units, already_in_base_units=False):
         self.magnitude = float(magnitude)
         if units is None:
             self.units = None
@@ -181,7 +184,12 @@ class Quantity(object):
                     self.pint_units = ureg.Unit(self.units)
                 except (pint.errors.UndefinedUnitError, AttributeError):
                     raise ValueError("Invalid units '{}'".format(self.units))
-            self.magnitude_in_base_units = ureg.Quantity(self.magnitude, self.pint_units).to_base_units().magnitude
+            if already_in_base_units is False:
+                self.magnitude_in_base_units = ureg.Quantity(self.magnitude, self.pint_units).to_base_units().magnitude
+            else:
+                self.magnitude_in_base_units = self.magnitude
+                pint_base_units = ureg.Quantity(1, self.pint_units).to_base_units().units
+                self.magnitude = ureg.Quantity(self.magnitude_in_base_units, pint_base_units).to(self.pint_units).magnitude
         self.dimensionality = self.pint_units.dimensionality
 
     def __repr__(self):
@@ -192,6 +200,7 @@ class Quantity(object):
 
     def to_json(self):
         return {
+            'magnitude': self.magnitude,
             'magnitude_in_base_units': self.magnitude_in_base_units,
             'units': self.units,
             'dimensionality': str(self.dimensionality)
@@ -208,9 +217,13 @@ class Quantity(object):
                 pint_units = ureg.Unit(units)
             except (pint.errors.UndefinedUnitError, AttributeError):
                 raise ValueError("Invalid units '{}'".format(units))
-        # convert magnitude back from base unit to desired unit
-        pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
-        magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
+
+        if 'magnitude' in obj:
+            magnitude = obj['magnitude']
+        else:
+            # convert magnitude back from base unit to desired unit
+            pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
+            magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
         quantity = cls(magnitude, units)
         if pint_units.dimensionless:
             assert obj['dimensionality'] == 'dimensionless'

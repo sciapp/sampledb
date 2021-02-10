@@ -35,6 +35,7 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
+from ..logic.notebook_templates import get_notebook_templates
 from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode
@@ -605,16 +606,40 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         create_log_entry_default = None
         may_create_log_entry = False
 
-    if object is None and 'copy_permissions_from_other_object' in flask.request.form and 'copy_permissions_object_id' in flask.request.form:
-        copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
-        try:
-            copy_permissions_object_id = int(copy_permissions_object_id)
-            if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+    permissions_for_group_id = None
+    permissions_for_project_id = None
+    copy_permissions_object_id = None
+    if object is None:
+        if flask.request.form.get('permissions_method') == 'copy_permissions' and flask.request.form.get('copy_permissions_object_id'):
+            copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
+            try:
+                copy_permissions_object_id = int(copy_permissions_object_id)
+                if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+                    flask.flash("Unable to copy permissions. Default permissions will be applied.", 'error')
+                    copy_permissions_object_id = None
+            except Exception:
+                flask.flash("Unable to copy permissions. Default permissions will be applied.", 'error')
                 copy_permissions_object_id = None
-        except Exception:
-            pass
-    else:
-        copy_permissions_object_id = None
+        elif flask.request.form.get('permissions_method') == 'permissions_for_group' and flask.request.form.get('permissions_for_group_group_id'):
+            permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
+            try:
+                permissions_for_group_id = int(permissions_for_group_id)
+                if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
+                    flask.flash("Unable to grant permissions to basic group. Default permissions will be applied.", 'error')
+                    permissions_for_group_id = None
+            except Exception:
+                flask.flash("Unable to grant permissions to basic group. Default permissions will be applied.", 'error')
+                permissions_for_group_id = None
+        elif flask.request.form.get('permissions_method') == 'permissions_for_project' and flask.request.form.get('permissions_for_project_project_id'):
+            permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
+            try:
+                permissions_for_project_id = int(permissions_for_project_id)
+                if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+                    flask.flash("Unable to grant permissions to project group. Default permissions will be applied.", 'error')
+                    permissions_for_project_id = None
+            except Exception:
+                flask.flash("Unable to grant permissions to project group. Default permissions will be applied.", 'error')
+                permissions_for_project_id = None
 
     if previous_object is not None:
         action_id = previous_object.action_id
@@ -689,6 +714,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     print('object schema validation failed')
                     # TODO: handle error
                     flask.abort(400)
+                for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
+                    markdown_as_html = logic.markdown_to_html.markdown_to_safe_html(markdown)
+                    logic.markdown_images.mark_referenced_markdown_images_as_permanent(markdown_as_html)
                 if object is None:
                     if schema.get('batch', False) and num_objects_in_batch is not None:
                         if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
@@ -702,7 +730,14 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                 data_sequence.append(deepcopy(object_data))
                         else:
                             data_sequence = [object_data] * num_objects_in_batch
-                        objects = create_object_batch(action_id=action.id, data_sequence=data_sequence, user_id=flask_login.current_user.id, copy_permissions_object_id=copy_permissions_object_id)
+                        objects = create_object_batch(
+                            action_id=action.id,
+                            data_sequence=data_sequence,
+                            user_id=flask_login.current_user.id,
+                            copy_permissions_object_id=copy_permissions_object_id,
+                            permissions_for_group_id=permissions_for_group_id,
+                            permissions_for_project_id=permissions_for_project_id
+                        )
                         object_ids = [object.id for object in objects]
                         if category_ids is not None:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
@@ -719,7 +754,16 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                         flask.flash('The objects were created successfully.', 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
-                        object = create_object(action_id=action.id, data=object_data, user_id=flask_login.current_user.id, previous_object_id=previous_object_id, schema=previous_object_schema, copy_permissions_object_id=copy_permissions_object_id)
+                        object = create_object(
+                            action_id=action.id,
+                            data=object_data,
+                            user_id=flask_login.current_user.id,
+                            previous_object_id=previous_object_id,
+                            schema=previous_object_schema,
+                            copy_permissions_object_id=copy_permissions_object_id,
+                            permissions_for_group_id=permissions_for_group_id,
+                            permissions_for_project_id=permissions_for_project_id
+                        )
                         if category_ids is not None:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
                                 instrument_id=action.instrument.id,
@@ -771,12 +815,16 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
+    users.sort(key=lambda user: user.id)
     if object is None:
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.GRANT
             )
+
+        user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
+        user_projects = logic.projects.get_user_projects(flask_login.current_user.id, include_groups=True)
 
         return flask.render_template(
             'objects/forms/form_create.html',
@@ -790,6 +838,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             form=form,
             can_copy_permissions=True,
             existing_objects=existing_objects,
+            user_groups=user_groups,
+            user_projects=user_projects,
             referencable_objects=referencable_objects,
             action_type_id_by_action_id=action_type_id_by_action_id,
             ActionType=models.ActionType,
@@ -858,6 +908,14 @@ def object(object_id):
         object_type = action.type.object_name
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
 
+        dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
+        if dataverse_enabled:
+            dataverse_url = logic.dataverse_export.get_dataverse_url(object_id)
+            show_dataverse_export = user_may_grant and not dataverse_url
+        else:
+            dataverse_url = None
+            show_dataverse_export = False
+
         if user_may_edit:
             serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
             token = serializer.dumps([flask_login.current_user.id, object_id])
@@ -906,23 +964,12 @@ def object(object_id):
         object_publications = logic.publications.get_publications_for_object(object_id=object.id)
         user_may_link_publication = Permissions.WRITE in user_permissions
 
-        notebook_templates = object.schema.get('notebookTemplates', [])
-        for notebook_template in notebook_templates:
-            for parameter, parameter_value in notebook_template['params'].items():
-                if parameter_value == 'object_id':
-                    notebook_template['params'][parameter] = object_id
-                elif isinstance(parameter_value, list):
-                    parameter_data = object.data
-                    for step in parameter_value:
-                        if isinstance(step, str) and isinstance(parameter_data, dict) and step in parameter_data:
-                            parameter_data = parameter_data[step]
-                        elif isinstance(step, int) and isinstance(parameter_data, list) and 0 <= step < len(parameter_data):
-                            parameter_data = parameter_data[step]
-                        else:
-                            parameter_data = None
-                    notebook_template['params'][parameter] = parameter_data
-                else:
-                    notebook_template['params'][parameter] = None
+        notebook_templates = get_notebook_templates(
+            object_id=object.id,
+            data=object.data,
+            schema=object.schema,
+            user_id=flask_login.current_user.id
+        )
 
         def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
             confirmation_url = flask.url_for(
@@ -935,6 +982,14 @@ def object(object_id):
                 _external=True
             )
             return confirmation_url
+
+        linked_project = logic.projects.get_project_linked_to_object(object_id)
+
+        def get_project_if_it_exists(project_id):
+            try:
+                return get_project(project_id)
+            except logic.errors.ProjectDoesNotExistError:
+                return None
 
         return flask.render_template(
             'objects/view/base.html',
@@ -975,6 +1030,8 @@ def object(object_id):
             object_publications=object_publications,
             user_may_link_publication=user_may_link_publication,
             user_may_use_as_template=user_may_use_as_template,
+            show_dataverse_export=show_dataverse_export,
+            dataverse_url=dataverse_url,
             publication_form=publication_form,
             get_object=get_object,
             get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
@@ -988,7 +1045,10 @@ def object(object_id):
             object_location_assignments=get_object_location_assignments(object_id),
             build_object_location_assignment_confirmation_url=build_object_location_assignment_confirmation_url,
             user_may_assign_location=user_may_edit,
-            location_form=location_form
+            location_form=location_form,
+            project=linked_project,
+            get_project=get_project_if_it_exists,
+            get_action_type=get_action_type
         )
     check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
@@ -1179,7 +1239,8 @@ def referencable_objects():
             'id': x.object_id,
             'text': flask.escape('{} (#{})'.format(x.name_text, x.object_id)),
             'action_id': x.action_id,
-            'max_permission': x.max_permission
+            'max_permission': x.max_permission,
+            'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
         }
 
     return {'referencable_objects': [dictify(x) for x in referencable_objects]}
@@ -1569,7 +1630,8 @@ def object_version(object_id, version_id):
         link_version_specific_rdf=True,
         restore_form=form,
         get_user=get_user,
-        user_may_grant=user_may_grant
+        user_may_grant=user_may_grant,
+        get_action_type=get_action_type
     )
 
 
@@ -1669,11 +1731,17 @@ def object_permissions(object_id):
         for project in all_projects
     }
 
-    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
-    project_id_hierarchy_list = [
-        (level, project_id, project_id in acceptable_project_ids)
-        for level, project_id in project_id_hierarchy_list
-    ]
+    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
+        project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
+        project_id_hierarchy_list = [
+            (level, project_id, project_id in acceptable_project_ids)
+            for level, project_id in project_id_hierarchy_list
+        ]
+    else:
+        project_id_hierarchy_list = [
+            (0, project.id, project.id in acceptable_project_ids)
+            for project in sorted(all_projects, key=lambda project: project.id)
+        ]
 
     return flask.render_template(
         'objects/object_permissions.html',

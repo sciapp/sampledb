@@ -15,15 +15,19 @@ test:
   stage: test
   image: ubuntu:18.04
   services:
-    - postgres:11
+    - postgres:12
   script:
     - apt-get update
-    # set up Python 3.6
-    - apt-get install -y git python3-pip
+    # set up Python 3
+    - apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0
+    - for i in 0 1 2 3; do
+        psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
+      done
     # install dependencies
     - python3 -m pip install -r requirements.txt
+    - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
     # run tests and gather coverage data
-    - python3 -m pytest -x -s --cov=sampledb/ --junitxml=pytest.xml tests
+    - python3 -m pytest -x -s -n=4 --cov=sampledb/ --junitxml=pytest.xml tests
   artifacts:
     reports:
       junit: pytest.xml
@@ -33,7 +37,7 @@ analyze:
   image: ubuntu:18.04
   script:
     - apt-get update
-    # set up Python 3.6
+    # set up Python 3
     - apt-get install -y git python3-pip
     # install static analysis packages
     - python3 -m pip install pycodestyle pyflakes
@@ -47,7 +51,7 @@ documentation:
     - postgres:latest
   script:
     - apt-get update
-    # set up Python 3.6
+    # set up Python 3
     - apt-get install -y git python3-pip xvfb chromium-browser
     # install dependencies
     - python3 -m pip install -r requirements.txt

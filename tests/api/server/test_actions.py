@@ -50,6 +50,7 @@ def test_get_action(flask_server, auth):
             'required': ['name']
         }
     )
+    sampledb.logic.action_permissions.set_action_public(action.id)
     r = requests.get(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
@@ -95,6 +96,7 @@ def test_get_actions(flask_server, auth):
             'required': ['name']
         }
     )
+    sampledb.logic.action_permissions.set_action_public(action.id)
     r = requests.get(flask_server.base_url + 'api/v1/actions/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [

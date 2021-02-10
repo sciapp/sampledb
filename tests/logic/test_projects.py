@@ -417,7 +417,8 @@ def test_invite_user_to_project(flask_server, app):
             user.id: sampledb.logic.projects.Permissions.GRANT
         }
 
-        sampledb.logic.projects.invite_user_to_project(project_id, other_user.id, user.id)
+        permissions = sampledb.logic.projects.Permissions.WRITE
+        sampledb.logic.projects.invite_user_to_project(project_id, other_user.id, user.id, permissions=permissions)
 
         notifications = sampledb.logic.notifications.get_notifications(other_user.id)
         assert len(notifications) > 0
@@ -436,7 +437,7 @@ def test_invite_user_to_project(flask_server, app):
         invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
         r = session.get(invitation_url)
         assert r.status_code == 200
-        assert user.id in sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)
+        assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id=project.id)[other_user.id] == permissions
 
 
 def test_remove_user_from_project():
@@ -1538,3 +1539,88 @@ def test_project_id_hierarchy_list():
     ]) == [
         (0, project_id1), (1, project_id2), (2, project_id3), (1, project_id4), (2, project_id5), (1, project_id5)
     ]
+
+
+def test_project_object_link():
+    user = sampledb.models.User("Example User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    project_id1 = sampledb.logic.projects.create_project("Test Project 1", "", user.id).id
+    project_id2 = sampledb.logic.projects.create_project("Test Project 2", "", user.id).id
+
+    action_type = sampledb.models.ActionType.query.filter_by(id=sampledb.models.ActionType.SAMPLE_CREATION).first()
+    action_type.enable_project_link = True
+    sampledb.db.session.add(action_type)
+    sampledb.db.session.commit()
+
+    action = sampledb.logic.actions.create_action(
+        action_type_id=action_type.id,
+        name="Test Action",
+        description="",
+        schema={
+            "title": "Test Action",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    object1 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            "name": {
+                "_type": "text",
+                "text": "Object 1"
+            }
+        },
+        user_id=user.id
+    )
+    object2 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            "name": {
+                "_type": "text",
+                "text": "Object 2"
+            }
+        },
+        user_id=user.id
+    )
+    assert sampledb.logic.projects.get_object_linked_to_project(project_id1) is None
+    assert sampledb.logic.projects.get_project_linked_to_object(object1.id) is None
+    assert sampledb.logic.projects.get_project_object_links() == []
+
+    sampledb.logic.projects.link_project_and_object(project_id1, object1.id, user.id)
+    assert sampledb.logic.projects.get_object_linked_to_project(project_id1).id == object1.id
+    assert sampledb.logic.projects.get_project_linked_to_object(object1.id).id == project_id1
+    assert sampledb.logic.projects.get_project_object_links() == [(project_id1, object1.id)]
+
+    with pytest.raises(sampledb.logic.errors.ProjectObjectLinkAlreadyExistsError):
+        sampledb.logic.projects.link_project_and_object(project_id2, object1.id, user.id)
+    with pytest.raises(sampledb.logic.errors.ProjectObjectLinkAlreadyExistsError):
+        sampledb.logic.projects.link_project_and_object(project_id1, object2.id, user.id)
+    with pytest.raises(sampledb.logic.errors.ProjectObjectLinkAlreadyExistsError):
+        sampledb.logic.projects.link_project_and_object(project_id1, object1.id, user.id)
+    assert sampledb.logic.projects.get_object_linked_to_project(project_id1).id == object1.id
+    assert sampledb.logic.projects.get_project_linked_to_object(object1.id).id == project_id1
+    assert sampledb.logic.projects.get_project_object_links() == [(project_id1, object1.id)]
+
+    sampledb.logic.projects.link_project_and_object(project_id2, object2.id, user.id)
+    assert sampledb.logic.projects.get_object_linked_to_project(project_id2).id == object2.id
+    assert sampledb.logic.projects.get_project_linked_to_object(object2.id).id == project_id2
+    assert sampledb.logic.projects.get_project_object_links() == [(project_id1, object1.id), (project_id2, object2.id)]
+
+    with pytest.raises(sampledb.logic.errors.ProjectObjectLinkDoesNotExistsError):
+        sampledb.logic.projects.unlink_project_and_object(project_id1, object2.id, user.id)
+    with pytest.raises(sampledb.logic.errors.ProjectObjectLinkDoesNotExistsError):
+        sampledb.logic.projects.unlink_project_and_object(project_id2, object1.id, user.id)
+
+    sampledb.logic.projects.unlink_project_and_object(project_id1, object1.id, user.id)
+    assert sampledb.logic.projects.get_object_linked_to_project(project_id1) is None
+    assert sampledb.logic.projects.get_project_linked_to_object(object1.id) is None
+    assert sampledb.logic.projects.get_object_linked_to_project(project_id2).id == object2.id
+    assert sampledb.logic.projects.get_project_linked_to_object(object2.id).id == project_id2
+    assert sampledb.logic.projects.get_project_object_links() == [(project_id2, object2.id)]

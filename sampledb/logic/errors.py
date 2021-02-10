@@ -224,3 +224,15 @@ class ActionTypeDoesNotExistError(Exception):
 
 class CommentDoesNotExistError(Exception):
     pass
+
+
+class DataverseNotReachableError(Exception):
+    pass
+
+
+class ProjectObjectLinkDoesNotExistsError(Exception):
+    pass
+
+
+class ProjectObjectLinkAlreadyExistsError(Exception):
+    pass

@@ -86,6 +86,8 @@ Customization
      - A file, http or https URL for a PNG or JPEG logo to be included in object export PDF documents
    * - SAMPLEDB_PDFEXPORT_LOGO_ALIGNMENT
      - The alignment (left, center or right) of the logo, if SAMPLEDB_PDFEXPORT_LOGO_URL is set (default: right)
+   * - SAMPLEDB_HELP_URL
+     - The URL to use for the help link
 
 You can use these variables to customize how your SampleDB instance is called, described and which links are included in the footer. The logo at the given PDFEXPORT_LOGO_URL will be fetched when SampleDB is started and cached afterwards. To refresh the logo, you will need to restart SampleDB.
 
@@ -100,13 +102,32 @@ JupyterHub Support
    * - Variable Name
      - Description
    * - SAMPLEDB_JUPYTERHUB_NAME
-     - The name of your JupyterHub server
+     - The name of your JupyterHub server (default: ``JupyterHub``)
    * - SAMPLEDB_JUPYTERHUB_URL
      - The base URL of your JupyterHub server
    * - SAMPLEDB_JUPYTERHUB_TEMPLATES_URL
      - The URL of a Jupyter notebook templating server (default: SAMPLEDB_JUPYTERHUB_URL + ``/templates``, if SAMPLEDB_JUPYTERHUB_URL is set)
 
 For more information on JupyterHub support and Jupyter notebook templates, see :ref:`jupyterhub_support`.
+
+.. _dataverse_configuration:
+
+Dataverse Export
+----------------
+
+.. list-table:: Dataverse Export Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_DATAVERSE_NAME
+     - The name of the Dataverse server (default: ``Dataverse``)
+   * - SAMPLEDB_DATAVERSE_URL
+     - The base URL of the Dataverse server
+   * - SAMPLEDB_DATAVERSE_ROOT_IDS
+     - A comma seperated list of IDs of Dataverses, which objects may be exported to  (default: ``:root``)
+
+For more information on the Dataverse export, see :ref:`dataverse_export`.
 
 Administrator Account
 ---------------------
@@ -150,9 +171,17 @@ Miscellaneous
      - The time limit for invitation links in seconds.
    * - SAMPLEDB_ONLY_ADMINS_CAN_MANAGE_LOCATIONS
      - If set, only administrators will be able to create and edit locations.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_GROUPS
+     - If set, only administrators will be able to create basic groups.
    * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_GROUPS
-     - If set, only administrators will be able to delete non-empty groups.
+     - If set, only administrators will be able to delete non-empty basic groups.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_PROJECTS
+     - If set, only administrators will be able to create project groups.
    * - SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND
      - If set, object selections will be loaded in the background using AJAX.
+   * - SAMPLEDB_DISABLE_USE_IN_MEASUREMENT
+     - If set, the "Use in Measurement" button will not be shown.
+   * - SAMPLEDB_DISABLE_SUBPROJECTS
+     - If set, project groups cannot have child project groups assigned to them.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

@@ -10,7 +10,7 @@ import sampledb.logic
 @pytest.fixture
 def users():
     names = ['User 1', 'User 2']
-    users = [User(name=name, email="example@fz-juelich.de", type=UserType.PERSON) for name in names]
+    users = [User(name=name, email="example@example.org", type=UserType.PERSON) for name in names]
     confirmed = False
     for user in users:
         sampledb.db.session.add(user)
@@ -22,10 +22,9 @@ def users():
 
 
 def test_get_user(users):
-    user = users[0]
-    user = sampledb.logic.users.get_user(user.id)
-    assert 1 == user.id
-    assert 'example@fz-juelich.de' == user.email
+    user = sampledb.logic.users.get_user(users[0].id)
+    assert users[0].id == user.id
+    assert 'example@example.org' == user.email
 
 
 def test_get_user_failed():

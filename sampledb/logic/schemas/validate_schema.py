@@ -74,7 +74,7 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -83,6 +83,8 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
     missing_keys = required_keys - schema_keys
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if path != ['hazards']:
         raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
     if not isinstance(schema.get('note', ''), str):
@@ -125,8 +127,8 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
     if has_min_items and has_max_items:
         if schema['minItems'] > schema['maxItems']:
             raise ValidationError('minItems must be less than or equal to maxItems', path)
-    if 'style' in schema and schema['style'] not in ('table', 'list'):
-        raise ValidationError('style must be either "list" or "table"', path)
+    if 'style' in schema and schema['style'] not in ('table', 'horizontal_table', 'list'):
+        raise ValidationError('style must be one of "list", "table" and "horizontal_table"', path)
     validate_schema(schema['items'], path + ['[?]'])
     if 'default' in schema:
         validate(schema['default'], schema, path + ['(default)'])
@@ -140,7 +142,7 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default'}
+    valid_keys = {'type', 'title', 'default', 'dataverse_export'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -151,6 +153,8 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if 'default' in schema:
         validate({'_type': 'tags', 'tags': schema['default']}, schema, path + ['(default)'])
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if path != ['tags']:
         raise ValidationError('Tags must be a top-level entry named "tags"', path)
 
@@ -201,6 +205,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     if not path:
         if 'name' not in schema['properties'] or schema['properties']['name']['type'] != 'text':
             raise ValidationError('Schema must include a text property "name"', path)
+        if schema['properties']['name'].get('multiline') or schema['properties']['name'].get('markdown'):
+            raise ValidationError('Object name must not be multiline or markdown text', path)
         if 'required' not in schema or 'name' not in schema['required']:
             raise ValidationError('"name" must be a required property for the root object', path)
 
@@ -251,7 +257,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'note', 'placeholder'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -292,7 +298,18 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
             raise ValidationError('pattern is no valid regular expression', path)
     if 'multiline' in schema and not isinstance(schema['multiline'], bool):
         raise ValidationError('multiline must be bool', path)
-
+    if 'markdown' in schema and not isinstance(schema['markdown'], bool):
+        raise ValidationError('markdown must be bool', path)
+    if schema.get('markdown') and schema.get('multiline'):
+        raise ValidationError('text may not both be multiline and markdown', path)
+    if 'choices' in schema and schema.get('multiline'):
+        raise ValidationError('text may not both be multiline and have choices', path)
+    if 'choices' in schema and schema.get('markdown'):
+        raise ValidationError('text may not both be markdown and have choices', path)
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
+    if 'dataverse_export' in schema and not schema['dataverse_export'] and path == ['name']:
+        raise ValidationError('dataverse_export must be True for the object name', path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
 
@@ -305,7 +322,7 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -319,7 +336,8 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
                 datetime.datetime.strptime(schema['default'], '%Y-%m-%d %H:%M:%S')
             except ValueError:
                 raise ValidationError('invalid default value', path)
-
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
 
@@ -332,7 +350,7 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -340,7 +358,8 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema and not isinstance(schema['default'], bool):
         raise ValidationError('default must be bool', path)
-
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
 
@@ -353,7 +372,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -370,7 +389,8 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
         raise ValidationError('default must be float or int', path)
-
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
 
@@ -386,7 +406,7 @@ def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -395,6 +415,8 @@ def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
     missing_keys = required_keys - schema_keys
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
 
@@ -407,7 +429,7 @@ def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -416,6 +438,8 @@ def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
     missing_keys = required_keys - schema_keys
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
 
@@ -428,7 +452,7 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -443,6 +467,8 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
         raise ValidationError('action_type_id must be int or None', path)
     if 'action_id' in schema and not isinstance(schema['action_id'], (int, type(None))):
         raise ValidationError('action_id must be int or None', path)
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
 
 
 def _validate_notebook_templates(notebook_templates: typing.Any) -> None:
@@ -503,7 +529,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'default'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -514,3 +540,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if 'note' in schema and not isinstance(schema['note'], str):
         raise ValidationError('note must be str', path)
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
+    if 'default' in schema and schema['default'] != 'self':
+        raise ValidationError('default must be "self"', path)

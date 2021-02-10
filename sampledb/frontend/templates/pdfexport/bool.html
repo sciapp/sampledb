@@ -1,0 +1,9 @@
+{% if data %}
+  {% if data.value %}
+    &checkmark;
+  {% else %}
+    &times;
+  {% endif %}
+{% else %}
+  &mdash;
+{% endif %}

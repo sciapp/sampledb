@@ -78,7 +78,7 @@
         </tr>
         {% if form.project_permissions | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Projects</th>
+          <th scope="col" style="width: 40%">Project Groups</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -104,7 +104,7 @@
         {% endfor %}
         {% if form.group_permissions | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Groups</th>
+          <th scope="col" style="width: 40%">Basic Groups</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -167,34 +167,9 @@
           <td></td>
           <td></td>
         </tr>
-        {% if project_permissions.items() | length > 0 %}
-        <tr>
-          <th scope="col" style="width: 40%">Projects</th>
-          <th scope="col" class="text-center"></th>
-          <th scope="col" class="text-center"></th>
-          <th scope="col" class="text-center"></th>
-          <th scope="col" class="text-center"></th>
-        </tr>
-        {% endif %}
-        {% for project_id, permissions in project_permissions.items() %}
-          {% if project_id is not none %}
-            {% set project = get_project(project_id) %}
-            <tr>
-              <td style="vertical-align: middle">
-                <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
-              </td>
-              {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-                <td class="text-center" style="vertical-align: middle">
-                  <label for="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-                  <input type="radio" name="permissions_project_{{ project_id }}" id="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} disabled />
-                </td>
-              {% endfor %}
-            </tr>
-          {% endif %}
-        {% endfor %}
         {% if group_permissions.items() | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Groups</th>
+          <th scope="col" style="width: 40%">Basic Groups</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -212,6 +187,31 @@
                 <td class="text-center" style="vertical-align: middle">
                   <label for="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
                   <input type="radio" name="permissions_group_{{ group_id }}" id="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} disabled />
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+        {% if project_permissions.items() | length > 0 %}
+        <tr>
+          <th scope="col" style="width: 40%">Project Groups</th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        </tr>
+        {% endif %}
+        {% for project_id, permissions in project_permissions.items() %}
+          {% if project_id is not none %}
+            {% set project = get_project(project_id) %}
+            <tr>
+              <td style="vertical-align: middle">
+                <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
+              </td>
+              {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                <td class="text-center" style="vertical-align: middle">
+                  <label for="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_project_{{ project_id }}" id="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} disabled />
                 </td>
               {% endfor %}
             </tr>
@@ -288,13 +288,13 @@
       </form>
     {% endif %}
     {% if groups %}
-      <h3>Add Group</h3>
+      <h3>Add Basic Group</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_group_permissions_form.csrf_token }}
       <table class="table table-striped">
         <thead>
           <tr>
-            <th scope="col" style="width: 40%">Group</th>
+            <th scope="col" style="width: 40%">Basic Group</th>
             <th scope="col" class="text-center">None</th>
             <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
             <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
@@ -325,13 +325,13 @@
       </form>
     {% endif %}
     {% if projects_by_id %}
-      <h3>Add Project</h3>
+      <h3>Add Project Group</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_project_permissions_form.csrf_token }}
       <table class="table table-striped">
         <thead>
           <tr>
-            <th scope="col" style="width: 40%">Project</th>
+            <th scope="col" style="width: 40%">Project Group</th>
             <th scope="col" class="text-center">None</th>
             <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
             <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>

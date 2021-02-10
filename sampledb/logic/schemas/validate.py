@@ -6,6 +6,7 @@ Implementation of validate(instance, schema)
 import re
 import datetime
 import typing
+import math
 
 from ...logic import actions, objects, datatypes, users
 from ...models import ActionType
@@ -213,7 +214,9 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
     valid_keys = {'_type', 'text'}
-    required_keys = valid_keys
+    required_keys = set(valid_keys)
+    if schema.get('markdown', False):
+        valid_keys.add('is_markdown')
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -237,6 +240,8 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
     if 'pattern' in schema:
         if re.match(schema['pattern'], instance['text']) is None:
             raise ValidationError('The text must match the pattern: {}.'.format(schema['pattern']), path)
+    if 'is_markdown' in instance and not isinstance(instance['is_markdown'], bool):
+        raise ValidationError('is_markdown must be bool', path)
 
 
 def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> None:
@@ -306,36 +311,63 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units'}
-    required_keys = valid_keys
+    valid_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'}
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
-    missing_keys = required_keys - schema_keys
-    if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
+    if 'units' not in instance:
+        instance['units'] = schema['units']
     if not isinstance(instance['units'], str):
         raise ValidationError('units must be str', path)
     if not units_are_valid(instance['units']):
         raise ValidationError('Invalid/Unknown units', path)
-    if not isinstance(instance['magnitude_in_base_units'], float) and not isinstance(instance['magnitude_in_base_units'], int):
-        raise ValidationError('magnitude_in_base_units must be float or int', path)
-    try:
-        quantity = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'])
-    except Exception:
-        raise ValidationError('Unable to create quantity', path)
-    if not isinstance(instance['dimensionality'], str):
-        raise ValidationError('dimensionality must be str', path)
     try:
         schema_quantity = datatypes.Quantity(1.0, units=schema['units'])
     except Exception:
         raise ValidationError('Unable to create schema quantity', path)
-    if quantity.dimensionality != schema_quantity.dimensionality:
+
+    quantity_magnitude = None
+    quantity_magnitude_in_base_units = None
+    if 'magnitude' in instance:
+        if not isinstance(instance['magnitude'], float) and not isinstance(instance['magnitude'], int):
+            raise ValidationError('magnitude must be float or int', path)
+        try:
+            quantity_magnitude = datatypes.Quantity(instance['magnitude'], units=instance['units'],
+                                                    already_in_base_units=False)
+        except Exception:
+            raise ValidationError('Unable to create quantity based on given magnitude', path)
+    if 'magnitude_in_base_units' in instance:
+        if not isinstance(instance['magnitude_in_base_units'], float) and not isinstance(instance['magnitude_in_base_units'], int):
+            raise ValidationError('magnitude_in_base_units must be float or int', path)
+        try:
+            quantity_magnitude_in_base_units = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'],
+                                                                  already_in_base_units=True)
+        except Exception:
+            raise ValidationError('Unable to create quantity based on given magnitude_in_base_units', path)
+
+    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None \
+            and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
+        raise ValidationError(
+            'magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
+    elif quantity_magnitude is None and quantity_magnitude_in_base_units is None:
+        raise ValidationError(
+            'missing keys in schema: either magnitude or magnitude_in_base_units has to be given', None)
+    elif quantity_magnitude is None:
+        quantity_magnitude = quantity_magnitude_in_base_units
+
+    # automatically add dimensionality and either magnitude oder magnitude_in_base_units, if they haven't been given yet
+    for key, value in quantity_magnitude.to_json().items():
+        if key not in instance:
+            instance[key] = value
+
+    if not isinstance(instance['dimensionality'], str):
+        raise ValidationError('dimensionality must be str', path)
+    if quantity_magnitude.dimensionality != schema_quantity.dimensionality:
         raise ValidationError('Invalid units, expected units for dimensionality "{}"'.format(str(schema_quantity.dimensionality)), path)
-    if str(quantity.dimensionality) != instance['dimensionality']:
+    if str(quantity_magnitude.dimensionality) != instance['dimensionality']:
         raise ValidationError('Invalid dimensionality, expected "{}"'.format(str(schema_quantity.dimensionality)), path)
 
 

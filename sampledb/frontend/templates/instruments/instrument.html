@@ -7,9 +7,9 @@
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This instrument has been hidden from instrument lists.</p>
   {% endif %}
-  {% if instrument.description_as_html or instrument.description %}
+  {% if instrument.description %}
   <div class="instrument-user-content">
-  {% if instrument.description_as_html %}{{ instrument.description_as_html | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
+  {% if instrument.description_is_markdown %}{{ instrument.description | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ instrument.description }}</p>{% endif %}
   </div>
   {% endif %}
   {% include "instruments/instrument_scientists.html" %}
@@ -22,7 +22,11 @@
   {% for action in instrument.actions %}
     {% if not action.is_hidden or current_user.is_admin %}
     <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a></h3>
-    {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
+    {% if action.short_description %}
+    <div class="action-user-content">
+    {% if action.short_description_is_markdown %}{{ action.short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description }}</p>{% endif %}
+    </div>
+    {% endif %}
     <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
     {% if not current_user.is_readonly %}
     <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text }}</a>
@@ -35,9 +39,9 @@
       These notes are only visible to the instrument scientists.
       <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html#instrument-scientist-notes">Read more.</a>
     </p>
-    {% if instrument.notes_as_html or instrument.notes %}
+    {% if instrument.notes %}
       <div class="instrument-user-content">
-      {% if instrument.notes_as_html %}{{ instrument.notes_as_html | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
+      {% if instrument.notes_is_markdown %}{{ instrument.notes | markdown_to_safe_html(anchor_prefix='instrument-notes') | safe }}{% else %}<p>{{ instrument.notes }}</p>{% endif %}
       </div>
     {% else %}
       &mdash;
@@ -125,7 +129,11 @@
               {% endfor %}
             </div>
             {% if log_entry.versions[-1].content %}
-            <pre class="comment">{{ log_entry.versions[-1].content }}</pre>
+              {% if log_entry.versions[-1].content_is_markdown %}
+                <div class="instrument-user-content" style="padding-left: 0; border: 0">{{ log_entry.versions[-1].content | markdown_to_safe_html(anchor_prefix='log-entry-' + (log_entry.id | string)) | safe  }}</div>
+              {% else %}
+                <pre class="comment">{{ log_entry.versions[-1].content }}</pre>
+              {% endif %}
             {% else %}
               &mdash;
             {% endif %}
@@ -136,7 +144,11 @@
                 <div class="instrument-log-version">
                   <hr />
                   {% if version.content %}
-                  <pre class="comment text-muted">{{ version.content }}</pre>
+                    {% if version.content_is_markdown %}
+                      <div class="instrument-user-content" style="padding-left: 0; border: 0">{{ version.content | markdown_to_safe_html(anchor_prefix='log-entry-' + (log_entry.id | string)) | safe  }}</div>
+                    {% else %}
+                      <pre class="comment">{{ version.content }}</pre>
+                    {% endif %}
                   {% else %}
                     &mdash;
                   {% endif %}
@@ -210,7 +222,8 @@
                   <input type="hidden" name="{{ instrument_log_entry_form.log_entry_id.name }}" value="{{ log_entry.id }}" />
                   <div class="form-group">
                     <label for="textarea-log-entry-text-{{ log_entry.id }}">Edit content</label>
-                    <textarea class="form-control" id="textarea-log-entry-text-{{ log_entry.id }}" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{{ log_entry.versions[-1].content or '' }}</textarea>
+                    <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-edit-content-is-markdown-{{ log_entry.id }}" name="{{ instrument_log_entry_form.content_is_markdown.name }}" {% if log_entry.versions[-1].content_is_markdown %}checked="checked"{% endif %}> Use Markdown</label>
+                    <textarea class="form-control" id="textarea-log-entry-text-{{ log_entry.id }}" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:171px; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{{ log_entry.versions[-1].content or '' }}</textarea>
                   </div>
                   <label for="input-file-upload-{{ log_entry.id }}">Add file attachments</label>
                  <div class="input-group" id="upload-area-{{ log_entry.id }}">
@@ -321,7 +334,8 @@
                 {{ instrument_log_entry_form.csrf_token }}
                 <div class="form-group {% if log_entry_text_missing %}has-error{% endif %}">
                   <label for="textarea-log-entry-text" class="control-label">Content</label>
-                  <textarea class="form-control" id="textarea-log-entry-text" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:2.5em; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}"></textarea>
+                  <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-content-is-markdown" name="{{ instrument_log_entry_form.content_is_markdown.name }}"> Use Markdown</label>
+                  <textarea class="form-control" id="textarea-log-entry-text" rows="3" placeholder="Instrument Log Entry" style="resize: vertical; min-height: 171px; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}"></textarea>
                   {% if log_entry_text_missing %}
                     <span class="help-block">Please enter a text or add an attachment.</span>
                   {% endif %}
@@ -389,6 +403,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
@@ -401,6 +416,8 @@
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
     <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
   {% endif %}
+  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
   <script type="text/javascript">
     window.categoriesShown = {
       {% for category in instrument_log_categories %}
@@ -462,6 +479,30 @@
     $(function () {
       setup_instrument_log_filter_states();
       $('[data-toggle="popover"]').popover();
+
+      function updateNewLogEntryMarkdown() {
+        if ($('#input-content-is-markdown').prop('checked')) {
+          window.new_log_entry = new InscrybMDE({
+            element: $("#textarea-log-entry-text")[0],
+            indentWithTabs: false,
+            spellChecker: false,
+            status: false,
+            hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+            showIcons: ["code", "table"],
+            minHeight: '100px',
+          });
+          setupImageDragAndDrop(window.new_log_entry);
+        } else {
+          if (window.new_log_entry) {
+            window.new_log_entry.toTextArea();
+            window.new_log_entry = null;
+          }
+        }
+      }
+      $('#input-content-is-markdown').change(updateNewLogEntryMarkdown);
+      console.log($('#input-content-is-markdown'));
+      updateNewLogEntryMarkdown();
+
       {% if instrument_log_entries %}
       {% for log_entry in instrument_log_entries %}
         {% if not current_user.is_readonly and (current_user.id == log_entry.user_id) %}
@@ -487,6 +528,33 @@
         var upload_area = $('#upload-area-{{ log_entry.id }}')[0];
         upload_area.ondrop = dropHandler{{ log_entry.id }};
         upload_area.ondragover = dragOverHandler{{ log_entry.id }};
+
+        function updateLogEntryMarkdown_{{ log_entry.id }}() {
+          if ($('#input-edit-content-is-markdown-{{ log_entry.id }}').prop('checked')) {
+            if (window.log_entry_{{ log_entry.id }}) {
+              window.log_entry_{{ log_entry.id }}.toTextArea();
+            }
+            window.log_entry_{{ log_entry.id }} = new InscrybMDE({
+              element: $("#textarea-log-entry-text-{{ log_entry.id }}")[0],
+              indentWithTabs: false,
+              spellChecker: false,
+              status: false,
+              hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+              showIcons: ["code", "table"],
+              minHeight: '100px',
+            });
+            setupImageDragAndDrop(window.log_entry_{{ log_entry.id }});
+          } else {
+            if (window.log_entry_{{ log_entry.id }}) {
+              window.log_entry_{{ log_entry.id }}.toTextArea();
+              window.log_entry_{{ log_entry.id }} = null;
+            }
+          }
+        }
+        $('#input-edit-content-is-markdown-{{ log_entry.id }}').change(updateLogEntryMarkdown_{{ log_entry.id }});
+        $('#logEntryContentModal_{{ log_entry.id }}').on('shown.bs.modal', updateLogEntryMarkdown_{{ log_entry.id }});
+        updateLogEntryMarkdown_{{ log_entry.id }}();
+        $()
         {% endif %}
       {% endfor %}
       {% endif %}

@@ -98,7 +98,7 @@ def test_view_group(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('h3').text == 'Group #{}: Example Group'.format(group_id)
+    assert document.find('h3').text == 'Basic Group #{}: Example Group'.format(group_id)
 
 
 def test_create_group(flask_server, user_session):
@@ -210,7 +210,7 @@ def test_add_user(flask_server, user_session, user):
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 0
 
-    assert invitation_url.startswith(flask_server.base_url + 'groups/1')
+    assert invitation_url.startswith(f'{flask_server.base_url}groups/{group_id}')
     r = user_session.get(invitation_url)
     assert r.status_code == 403
     assert 'Please sign in as user &#34;{}&#34; to accept this invitation'.format(user.name) in r.content.decode('utf-8')

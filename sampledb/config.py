@@ -105,6 +105,15 @@ def check_config(
         )
         show_config_info = True
 
+    if 'DATAVERSE_URL' not in defined_config_keys:
+        print(
+            'Dataverse export will be disabled, because the configuration '
+            'value DATAVERSE_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
     admin_password_set = 'ADMIN_PASSWORD' in defined_config_keys
     admin_username_set = 'ADMIN_USERNAME' in defined_config_keys
     admin_email_set = 'ADMIN_EMAIL' in defined_config_keys
@@ -350,6 +359,7 @@ SERVICE_NAME = 'SampleDB'
 SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
 SERVICE_IMPRINT = None
 SERVICE_PRIVACY_POLICY = None
+SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
 
 # location for storing files
 # in this directory, per-action subdirectories will be created, containing
@@ -373,6 +383,11 @@ JUPYTERHUB_NAME = 'JupyterHub'
 JUPYTERHUB_URL = None
 JUPYTERHUB_TEMPLATES_URL = None
 
+# Dataverse settings
+DATAVERSE_NAME = 'Dataverse'
+DATAVERSE_URL = None
+DATAVERSE_ROOT_IDS = ':root'
+
 # PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
@@ -386,7 +401,13 @@ INVITATION_TIME_LIMIT = 7 * 24 * 60 * 60
 
 # other settings
 ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
+ONLY_ADMINS_CAN_CREATE_GROUPS = False
 ONLY_ADMINS_CAN_DELETE_GROUPS = False
+ONLY_ADMINS_CAN_CREATE_PROJECTS = False
+
+DISABLE_USE_IN_MEASUREMENT = False
+
+DISABLE_SUBPROJECTS = False
 
 LOAD_OBJECTS_IN_BACKGROUND = False
 

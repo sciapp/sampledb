@@ -192,6 +192,8 @@ def test_search_objects(flask_server, user):
 def test_objects_referencable(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
     action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    schema['properties']['tags'] = {'title': 'Tags', 'type': 'tags'}
+    schema['required'].append('tags')
     action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
     names = ['Example1', 'Example2', 'Example42']
     objects = [
@@ -202,11 +204,13 @@ def test_objects_referencable(flask_server, user):
         )
         for name in names
     ]
-    sampledb.logic.objects.create_object(
-        data={'name': {'_type': 'text', 'text': 'Other Object'}},
+    other_object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Other Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}},
         user_id=user.id,
         action_id=action2.id
     )
+    action1_id = action1.id
+    action2_id = action2.id
 
     with flask_server.app.app_context():
         new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
@@ -224,10 +228,10 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 4
     assert data['referencable_objects'] == [
-        {'action_id': 2, 'id': 4, 'max_permission': 3, 'text': 'Other Object (#4)'},
-        {'action_id': 1, 'id': 3, 'max_permission': 3, 'text': 'Example42 (#3)'},
-        {'action_id': 1, 'id': 2, 'max_permission': 3, 'text': 'Example2 (#2)'},
-        {'action_id': 1, 'id': 1, 'max_permission': 3, 'text': 'Example1 (#1)'}
+        {'action_id': action2_id, 'id': other_object.object_id, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b']},
+        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'tags': []}
     ]
 
     session = requests.session()
@@ -237,8 +241,8 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 2
     assert data['referencable_objects'] == [
-        {'action_id': 1, 'id': 3, 'max_permission': 3, 'text': 'Example42 (#3)'},
-        {'action_id': 1, 'id': 2, 'max_permission': 2, 'text': 'Example2 (#2)'}
+        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'tags': []}
     ]
 
 
@@ -600,6 +604,7 @@ def test_edit_object_action_delete(flask_server, user):
 def test_new_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -634,6 +639,7 @@ def test_new_object(flask_server, user):
 def test_new_object_batch(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -655,6 +661,7 @@ def test_new_object_batch(flask_server, user):
 def test_new_object_batch_invalid_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -673,6 +680,7 @@ def test_new_object_batch_invalid_number(flask_server, user):
 def test_new_object_batch_float_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -691,6 +699,7 @@ def test_new_object_batch_float_number(flask_server, user):
 def test_new_object_batch_invalid_float_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -1063,6 +1072,7 @@ def test_create_object_similar_property_names(flask_server, user):
       "required": ["name", "name_2"]
     }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     assert len(sampledb.logic.objects.get_objects()) == 0
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1177,6 +1187,7 @@ def test_copy_object(flask_server, user):
       "required": ["name", "name2"]
     }
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    sampledb.logic.action_permissions.set_action_public(action.id)
     name = 'Example1'
     object = sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}, 'name2': {'_type': 'text', 'text': name}},

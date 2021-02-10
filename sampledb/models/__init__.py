@@ -4,12 +4,14 @@
 """
 
 from . import authentication
+from . import dataverse_export
 from . import favorites
 from . import files
 from . import groups
 from . import instruments
 from . import instrument_log_entries
 from . import locations
+from . import markdown_to_html_cache
 from . import markdown_images
 from . import objects
 from . import object_permissions
@@ -22,12 +24,14 @@ from .action_permissions import UserActionPermissions, GroupActionPermissions, P
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType
 from .comments import Comment
+from .dataverse_export import DataverseExport
 from .favorites import FavoriteAction, FavoriteInstrument
 from .files import File
 from .groups import Group
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .locations import Location, ObjectLocationAssignment
+from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
@@ -45,12 +49,14 @@ from .user_log import UserLogEntry, UserLogEntryType
 __all__ = [
     'api_log',
     'authentication',
+    'dataverse_export',
     'favorites',
     'files',
     'groups',
     'instruments',
     'instrument_log_entries',
     'locations',
+    'markdown_to_html_cache',
     'markdown_images',
     'objects',
     'object_permissions',
@@ -67,6 +73,7 @@ __all__ = [
     'Authentication',
     'AuthenticationType',
     'Comment',
+    'DataverseExport',
     'FavoriteAction',
     'FavoriteInstrument',
     'File',
@@ -76,6 +83,7 @@ __all__ = [
     'InstrumentLogEntry',
     'Location',
     'ObjectLocationAssignment',
+    'MarkdownToHTMLCacheEntry',
     'MarkdownImage',
     'Notification',
     'NotificationType',

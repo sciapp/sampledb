@@ -366,8 +366,8 @@ Reading all users' permissions
         }
 
     :queryparam include_instrument_responsible_users: If given, permissions from being an instrument responsible user will be included (optional)
-    :queryparam include_groups: If given, permissions from group memberships will be included (optional)
-    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :queryparam include_groups: If given, permissions from basic group memberships will be included (optional)
+    :queryparam include_projects: If given, permissions from project group memberships will be included (optional)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object does not exist
@@ -399,8 +399,8 @@ Reading a user's permissions
         "grant"
 
     :queryparam include_instrument_responsible_users: If given, permissions from being an instrument responsible user will be included (optional)
-    :queryparam include_groups: If given, permissions from group memberships will be included (optional)
-    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :queryparam include_groups: If given, permissions from basic group memberships will be included (optional)
+    :queryparam include_projects: If given, permissions from project group memberships will be included (optional)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or user does not exist
@@ -439,12 +439,12 @@ Setting a user's permissions
     :statuscode 404: the object or user does not exist
 
 
-Reading all groups' permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reading all basic groups' permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/permissions/groups/
 
-    Get a mapping of group IDs to their permissions.
+    Get a mapping of basic group IDs to their permissions.
 
     **Example request**:
 
@@ -466,18 +466,18 @@ Reading all groups' permissions
             "4": "write"
         }
 
-    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :queryparam include_projects: If given, permissions from project group memberships will be included (optional)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object does not exist
 
 
-Reading a group's permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reading a basic group's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/permissions/groups/(int:group_id)
 
-    Get the permissions of a group for an object.
+    Get the permissions of a basic group for an object.
 
     **Example request**:
 
@@ -497,18 +497,18 @@ Reading a group's permissions
 
         "write"
 
-    :queryparam include_projects: If given, permissions from project memberships will be included (optional)
+    :queryparam include_projects: If given, permissions from project group memberships will be included (optional)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
-    :statuscode 404: the object or group does not exist
+    :statuscode 404: the object or basic group does not exist
 
 
-Setting a group's permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setting a basic group's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:put:: /api/v1/objects/(int:object_id)/permissions/groups/(int:group_id)
 
-    Set the permissions of a group for an object.
+    Set the permissions of a basic group for an object.
 
     **Example request**:
 
@@ -533,15 +533,15 @@ Setting a group's permissions
     :statuscode 200: no error
     :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
     :statuscode 403: the user does not have GRANT permissions for this object
-    :statuscode 404: the object or group does not exist
+    :statuscode 404: the object or basic group does not exist
 
 
-Reading all projects' permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reading all project groups' permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/permissions/projects/
 
-    Get a mapping of project IDs to their permissions.
+    Get a mapping of project group IDs to their permissions.
 
     **Example request**:
 
@@ -568,12 +568,12 @@ Reading all projects' permissions
     :statuscode 404: the object does not exist
 
 
-Reading a project's permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reading a project group's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/permissions/projects/(int:project_id)
 
-    Get the permissions of a project for an object.
+    Get the permissions of a project group for an object.
 
     **Example request**:
 
@@ -595,15 +595,15 @@ Reading a project's permissions
 
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
-    :statuscode 404: the object or project does not exist
+    :statuscode 404: the object or project group does not exist
 
 
-Setting a project's permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setting a project group's permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:put:: /api/v1/objects/(int:object_id)/permissions/projects/(int:project_id)
 
-    Set the permissions of a project for an object.
+    Set the permissions of a project group for an object.
 
     **Example request**:
 
@@ -628,7 +628,7 @@ Setting a project's permissions
     :statuscode 200: no error
     :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
     :statuscode 403: the user does not have GRANT permissions for this object
-    :statuscode 404: the object or project does not exist
+    :statuscode 404: the object or project group does not exist
 
 
 Instruments

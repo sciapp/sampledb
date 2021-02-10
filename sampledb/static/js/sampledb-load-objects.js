@@ -25,13 +25,41 @@ $(function() {
       var referencable_objects = data.referencable_objects;
       to_load.each(function (x) {
         var $x = $(this);
-        var valid = $x.data('sampledbValidActionIds');
+        var action_ids = $x.data('sampledbValidActionIds');
+        if (typeof action_ids === 'string') {
+          action_ids = action_ids.split(",").filter(function(action_id) {
+            return action_id !== "";
+          });
+          action_ids = $.map(action_ids, function(action_id){
+             return +action_id;
+          });
+        } else if (Array.isArray(action_ids)) {
+          action_ids = action_ids.filter(function(action_id) {
+            return action_id !== "";
+          });
+          action_ids = $.map(action_ids, function(action_id){
+             return +action_id;
+          });
+        } else if (typeof action_ids === 'undefined') {
+          action_ids = [];
+        } else {
+          action_ids = [action_ids];
+        }
         var required_perm = $x.data('sampledbRequiredPerm') || 1;
         var remove_ids = $x.data('sampledbRemove');
         if (typeof remove_ids === 'string') {
           remove_ids = $.map(remove_ids.split(","), function(id){
              return +id;
           });
+        } else if (Array.isArray(remove_ids)) {
+          remove_ids = remove_ids.filter(function(id) {
+            return id !== "";
+          });
+          remove_ids = $.map(remove_ids, function(id){
+             return +id;
+          });
+        } else if (typeof remove_ids === 'undefined') {
+          remove_ids = [];
         } else {
           remove_ids = [remove_ids];
         }
@@ -40,11 +68,19 @@ $(function() {
           .filter(function (el) {
             return el.max_permission >= required_perm && $.inArray(el.id, remove_ids) === -1;
           }).filter(function (el) {
-            return !valid || valid.includes(el.action_id);
+            return action_ids.length === 0 || $.inArray(el.action_id, action_ids) !== -1;
           });
         $x.append(
           to_add.map(function (el) {
-              return '<option value="' + el.id + '">' + el.text + '</option>';
+              var data_tokens = "";
+              if (el.tags.length) {
+                data_tokens = 'data-tokens="';
+                for (var i = 0; i < el.tags.length; i++) {
+                  data_tokens += '#' + el.tags[i] + ' ';
+                }
+                data_tokens += el.text + '"';
+              }
+              return '<option value="' + el.id + '" '+ data_tokens + '>' + el.text + '</option>';
             }).join(""));
 
         $x.selectpicker('refresh').prop("disabled", false).selectpicker('refresh');

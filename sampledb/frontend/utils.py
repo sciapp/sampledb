@@ -8,16 +8,15 @@ from io import BytesIO
 import os
 from urllib.parse import quote_plus
 
-import bleach
 import flask
 import flask_login
-import markdown
 import qrcode
 import qrcode.image.svg
 
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
+from ..logic.markdown_to_html import markdown_to_safe_html
 
 
 def jinja_filter(func):
@@ -51,13 +50,6 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
     if should_cache:
         qrcode_cache[url] = qrcode_url
     return qrcode_url
-
-
-def markdown_to_safe_html(markdown_text):
-    return markdown.markdown(
-        bleach.clean(markdown_text),
-        extensions=['tables']
-    )
 
 
 def has_preview(file):
@@ -98,3 +90,4 @@ _jinja_filters['is_image'] = is_image
 _jinja_filters['attachment_is_image'] = attachment_is_image
 _jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications
 _jinja_filters['urlencode'] = quote_plus
+_jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html

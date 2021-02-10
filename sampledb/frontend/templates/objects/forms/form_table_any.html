@@ -2,6 +2,8 @@
   {% include "objects/forms/form_table_select.html" %}
 {% elif schema['type'] == 'text' %}
   {% include "objects/forms/form_table_text.html" %}
+{% elif schema['type'] == 'bool' %}
+  {% include "objects/forms/form_table_bool.html" %}
 {% elif schema['type'] == 'datetime' %}
   {% include "objects/forms/form_table_datetime.html" %}
 {% elif schema['type'] == 'quantity' %}

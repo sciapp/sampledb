@@ -215,7 +215,7 @@ def test_download_zip_archive(flask_server, user, tmpdir):
     r = session.get(flask_server.base_url + 'objects/{}/files/'.format(object.id))
     assert r.status_code == 200
     assert r.headers['Content-Type'] == 'application/zip'
-    assert r.headers['Content-Disposition'] == 'attachment; filename=object_1_files.zip'
+    assert r.headers['Content-Disposition'] == f'attachment; filename=object_{object.id}_files.zip'
 
     zip_bytes = io.BytesIO(r.content)
     zip_file = zipfile.ZipFile(zip_bytes)
@@ -226,7 +226,7 @@ def test_download_zip_archive(flask_server, user, tmpdir):
     r = session.get(flask_server.base_url + 'objects/{}/files/'.format(object.id))
     assert r.status_code == 200
     assert r.headers['Content-Type'] == 'application/zip'
-    assert r.headers['Content-Disposition'] == 'attachment; filename=object_1_files.zip'
+    assert r.headers['Content-Disposition'] == f'attachment; filename=object_{object.id}_files.zip'
 
     zip_bytes = io.BytesIO(r.content)
     zip_file = zipfile.ZipFile(zip_bytes)

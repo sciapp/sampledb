@@ -159,6 +159,12 @@ def change_preferences(user, user_id):
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
         else:
             flask.flash("Failed to change the password.", 'error')
+    if 'delete_dataverse_api_token' in flask.request.form:
+        set_user_settings(flask_login.current_user.id, {
+            'DATAVERSE_API_TOKEN': ''
+        })
+        flask.flash('Successfully deleted your stored Dataverse API Token.', 'success')
+        return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
             if change_user_form.name.data != user.name:

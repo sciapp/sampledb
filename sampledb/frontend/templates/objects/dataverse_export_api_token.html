@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Export Data — {{ service_name }}{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+{% endblock %}
+
+{% block content %}
+  <h1>Export to Dataverse</h1>
+  <p>{{ service_name }} can export the metadata and files of this object to {{ config['DATAVERSE_NAME'] }}. It will create a draft dataset, which you can then review and publish. To be able to create this dataset for you, {{ service_name }} can use the Dataverse API using an API Token associated with your {{ config['DATAVERSE_NAME'] }} account. To learn more about API Tokens, see the <a href="https://guides.dataverse.org/en/latest/user/account.html#api-token">Dataverse User Guide</a>.</p>
+  <p>To access your API token, visit <a href="{{ config['DATAVERSE_URL'] }}/dataverseuser.xhtml?selectTab=apiTokenTab">{{ config['DATAVERSE_NAME'] }}</a>.</p>
+  <form method="post">
+    {{ dataverse_api_token_form.hidden_tag() }}
+    <div class="form-group{% if had_invalid_api_token %} has-error{% endif %}">
+      <label>API Token
+        <input type="text" autocomplete="off" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" class="form-control" required="required" style="width: 21em" name="{{ dataverse_api_token_form.api_token.name }}"/>
+      </label>
+      {% if had_invalid_api_token %}
+      <div class="help-block">The API token you entered was invalid.</div>
+      {% endif %}
+    </div>
+    <div class="form-group">
+    <label style="font-weight: normal">
+      <input type="checkbox" {% if dataverse_api_token_form.store_api_token.data %}checked="checked"{% endif %} name="{{ dataverse_api_token_form.store_api_token.name }}" /> Store this API token in {{ service_name }} <span data-toggle="tooltip" data-placement="top" title="You can delete a stored Dataverse API token at any time by editing your preferences."><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+    </label>
+    </div>
+    <div class="form-group">
+      <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default" style="width:8em">Cancel</a>
+      <input type="submit" value="Continue" class="btn btn-primary" style="width:8em">
+    </div>
+  </form>
+{% endblock %}

@@ -21,41 +21,48 @@ from . import users, errors
 def create_instrument(
         name: str,
         description: str,
-        description_as_html: typing.Optional[str] = None,
+        description_is_markdown: bool = False,
         users_can_create_log_entries: bool = False,
         users_can_view_log_entries: bool = False,
         notes: str = '',
-        notes_as_html: typing.Optional[str] = None,
+        notes_is_markdown: bool = False,
         create_log_entry_default: bool = False,
-        is_hidden: bool = False
+        is_hidden: bool = False,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> Instrument:
     """
     Creates a new instrument with the given name and description.
 
     :param name: the name of the instrument
     :param description: a (possibly empty) description of the instrument
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param users_can_create_log_entries: whether or not users can create log
         entries for this instrument
     :param users_can_view_log_entries: whether or not users can view the log
         entries for this instrument
     :param notes: the notes shown to instrument responsible users
-    :param notes_as_html: None or the notes as HTML
+    :param notes_is_markdown: whether the notes contain Markdown
     :param create_log_entry_default: the default for whether or not a log
         entry should be created during object creation by instrument scientists
     :param is_hidden: whether or not this instrument is hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :return: the new instrument
     """
     instrument = Instrument(
         name=name,
         description=description,
-        description_as_html=description_as_html,
+        description_is_markdown=description_is_markdown,
         users_can_create_log_entries=users_can_create_log_entries,
         users_can_view_log_entries=users_can_view_log_entries,
         notes=notes,
-        notes_as_html=notes_as_html,
+        notes_is_markdown=notes_is_markdown,
         create_log_entry_default=create_log_entry_default,
-        is_hidden=is_hidden
+        is_hidden=is_hidden,
+        short_description=short_description,
+        short_description_is_markdown=short_description_is_markdown
     )
     db.session.add(instrument)
     db.session.commit()
@@ -90,13 +97,15 @@ def update_instrument(
         instrument_id: int,
         name: str,
         description: str,
-        description_as_html: typing.Optional[str] = None,
+        description_is_markdown: bool = False,
         users_can_create_log_entries: bool = False,
         users_can_view_log_entries: bool = False,
         notes: str = '',
-        notes_as_html: typing.Optional[str] = None,
+        notes_is_markdown: bool = False,
         create_log_entry_default: bool = False,
-        is_hidden: typing.Optional[bool] = None
+        is_hidden: typing.Optional[bool] = None,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> None:
     """
     Updates the instrument name and description.
@@ -104,16 +113,19 @@ def update_instrument(
     :param instrument_id: the ID of an existing instrument
     :param name: the new name of the instrument
     :param description: the new (possibly empty) description of the instrument
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param users_can_create_log_entries: whether or not users can create log
         entries for this instrument
     :param users_can_view_log_entries: whether or not users can view the log
         entries for this instrument
     :param notes: the notes shown to instrument responsible users
-    :param notes_as_html: None or the notes as HTML
+    :param notes_is_markdown: whether the notes contain Markdown
     :param create_log_entry_default: the default for whether or not a log
         entry should be created during object creation by instrument scientists
     :param is_hidden: None or whether or not this instrument is hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
@@ -122,12 +134,14 @@ def update_instrument(
         raise errors.InstrumentDoesNotExistError()
     instrument.name = name
     instrument.description = description
-    instrument.description_as_html = description_as_html
+    instrument.description_is_markdown = description_is_markdown
     instrument.users_can_create_log_entries = users_can_create_log_entries
     instrument.users_can_view_log_entries = users_can_view_log_entries
     instrument.notes = notes
-    instrument.notes_as_html = notes_as_html
+    instrument.notes_is_markdown = notes_is_markdown
     instrument.create_log_entry_default = create_log_entry_default
+    instrument.short_description = short_description
+    instrument.short_description_is_markdown = short_description_is_markdown
     if is_hidden is not None:
         instrument.is_hidden = is_hidden
     db.session.add(instrument)

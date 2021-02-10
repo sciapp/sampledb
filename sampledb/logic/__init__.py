@@ -9,6 +9,7 @@ from . import api_log
 from . import authentication
 from . import comments
 from . import datatypes
+from . import dataverse_export
 from . import errors
 from . import export
 from . import favorites
@@ -19,6 +20,8 @@ from . import instrument_log_entries
 from . import ldap
 from . import locations
 from . import markdown_images
+from . import markdown_to_html
+from . import notebook_templates
 from . import notifications
 from . import objects
 from . import object_log
@@ -51,6 +54,7 @@ __all__ = [
     'authentication',
     'comments',
     'datatypes',
+    'dataverse_export',
     'errors',
     'export',
     'favorites',
@@ -61,6 +65,8 @@ __all__ = [
     'ldap',
     'locations',
     'markdown_images',
+    'markdown_to_html',
+    'notebook_templates',
     'notifications',
     'objects',
     'object_log',

@@ -25,7 +25,8 @@ from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_object_info_with_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly, markdown_to_safe_html, generate_qrcode
+from .utils import check_current_user_is_not_readonly, generate_qrcode
+from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
 
 
@@ -55,6 +56,7 @@ class SelectMultipleFieldFix(SelectMultipleField):
 
 class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
+    content_is_markdown = BooleanField()
     files = MultipleFileField()
     objects = SelectMultipleFieldFix(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
     categories = SelectMultipleField()
@@ -152,12 +154,16 @@ def instrument(instrument_id):
                     return flask.abort(400)
                 except InstrumentLogEntryDoesNotExistError:
                     return flask.abort(400)
+                if instrument_log_entry_form.content_is_markdown.data:
+                    log_entry_html = markdown_to_safe_html(instrument_log_entry_form.content.data)
+                    mark_referenced_markdown_images_as_permanent(log_entry_html)
                 update_instrument_log_entry(
                     log_entry_id=log_entry_id,
                     content=instrument_log_entry_form.content.data,
                     category_ids=[
                         int(category_id) for category_id in instrument_log_entry_form.categories.data
-                    ]
+                    ],
+                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:
@@ -213,13 +219,17 @@ def instrument(instrument_id):
                     continue
             log_entry_has_objects = bool(object_ids)
             if log_entry_content or log_entry_has_files or log_entry_has_objects:
+                if instrument_log_entry_form.content_is_markdown.data:
+                    log_entry_html = markdown_to_safe_html(instrument_log_entry_form.content.data)
+                    mark_referenced_markdown_images_as_permanent(log_entry_html)
                 log_entry = create_instrument_log_entry(
                     instrument_id=instrument_id,
                     user_id=flask_login.current_user.id,
                     content=instrument_log_entry_form.content.data,
                     category_ids=[
                         int(category_id) for category_id in instrument_log_entry_form.categories.data
-                    ]
+                    ],
+                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:
@@ -274,6 +284,8 @@ class InstrumentForm(FlaskForm):
     categories = StringField(validators=[DataRequired()])
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
+    short_description = StringField()
+    short_description_is_markdown = BooleanField(default=None)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -289,27 +301,29 @@ def new_instrument():
     ]
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(instrument_form.description.data)
+            description_as_html = markdown_to_safe_html(instrument_form.description.data, anchor_prefix='instrument-description')
             mark_referenced_markdown_images_as_permanent(description_as_html)
-        else:
-            description_as_html = None
+
+        if instrument_form.short_description_is_markdown.data:
+            short_description_as_html = markdown_to_safe_html(instrument_form.short_description.data, anchor_prefix='instrument-short-description')
+            mark_referenced_markdown_images_as_permanent(short_description_as_html)
 
         if instrument_form.notes_are_markdown.data:
-            notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+            notes_as_html = markdown_to_safe_html(instrument_form.notes.data, anchor_prefix='instrument-notes')
             mark_referenced_markdown_images_as_permanent(notes_as_html)
-        else:
-            notes_as_html = None
 
         instrument = create_instrument(
             instrument_form.name.data,
             instrument_form.description.data,
-            description_as_html=description_as_html,
+            description_is_markdown=instrument_form.is_markdown.data,
             notes=instrument_form.notes.data,
-            notes_as_html=notes_as_html,
+            notes_is_markdown=instrument_form.notes_are_markdown.data,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data
+            is_hidden=instrument_form.is_hidden.data,
+            short_description=instrument_form.short_description.data,
+            short_description_is_markdown=instrument_form.short_description_is_markdown.data
         )
         flask.flash('The instrument was created successfully.', 'success')
         instrument_responsible_user_ids = [
@@ -375,6 +389,7 @@ def edit_instrument(instrument_id):
     instrument_form = InstrumentForm()
     instrument_form.name.default = instrument.name
     instrument_form.description.default = instrument.description
+    instrument_form.short_description.default = instrument.short_description
     instrument_form.notes.default = instrument.notes
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user.name)
@@ -386,36 +401,39 @@ def edit_instrument(instrument_id):
     ]
 
     if not instrument_form.is_submitted():
-        instrument_form.is_markdown.data = (instrument.description_as_html is not None)
-        instrument_form.notes_are_markdown.data = (instrument.notes_as_html is not None)
+        instrument_form.is_markdown.data = instrument.description_is_markdown
+        instrument_form.short_description_is_markdown.data = instrument.short_description_is_markdown
+        instrument_form.notes_are_markdown.data = instrument.notes_is_markdown
         instrument_form.users_can_create_log_entries.data = instrument.users_can_create_log_entries
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
         instrument_form.is_hidden.data = instrument.is_hidden
     if instrument_form.validate_on_submit():
         if instrument_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(instrument_form.description.data)
+            description_as_html = markdown_to_safe_html(instrument_form.description.data, anchor_prefix='instrument-description')
             mark_referenced_markdown_images_as_permanent(description_as_html)
-        else:
-            description_as_html = None
+
+        if instrument_form.short_description_is_markdown.data:
+            short_description_as_html = markdown_to_safe_html(instrument_form.short_description.data, anchor_prefix='instrument-short-description')
+            mark_referenced_markdown_images_as_permanent(short_description_as_html)
 
         if instrument_form.notes_are_markdown.data:
-            notes_as_html = markdown_to_safe_html(instrument_form.notes.data)
+            notes_as_html = markdown_to_safe_html(instrument_form.notes.data, anchor_prefix='instrument-notes')
             mark_referenced_markdown_images_as_permanent(notes_as_html)
-        else:
-            notes_as_html = None
 
         update_instrument(
             instrument.id,
             instrument_form.name.data,
             instrument_form.description.data,
-            description_as_html=description_as_html,
+            description_is_markdown=instrument_form.is_markdown.data,
             notes=instrument_form.notes.data,
-            notes_as_html=notes_as_html,
+            notes_is_markdown=instrument_form.notes_are_markdown.data,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data
+            is_hidden=instrument_form.is_hidden.data,
+            short_description=instrument_form.short_description.data,
+            short_description_is_markdown=instrument_form.short_description_is_markdown.data
         )
         flask.flash('The instrument was updated successfully.', 'success')
         instrument_responsible_user_ids = [

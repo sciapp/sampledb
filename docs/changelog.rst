@@ -1,6 +1,34 @@
 Changelog
 =========
 
+Version 0.17
+------------
+
+Released on February 10th, 2021.
+
+- Added Dataverse export using the EngMeta "Process Metadata" block
+- Added short descriptions to actions and instruments
+- Added array style "horizontal_table"
+- Improved handling of optional text input
+- Allow linking to headers in Markdown content
+- Allow disabling of "Use in Measurement" button for samples
+- Added markdown support to object metadata
+- Added markdown support to instrument log
+- Reimplemented PDF export
+- Added configuration variables to allow only administrators to create groups or projects
+- Added asterisks to mark required fields when editing objects
+- Project permissions can be set when inviting a user
+- Allow default value "self" for user fields
+- Allow searching for tags in dropdown object selection fields
+- Renamed projects to project groups and groups to basic groups to avoid ambiguity
+- Allow disabling of subprojects / child project groups
+- Allow giving basic or project groups initial permissions
+- Allow configuring the Help link
+- Allow linking project groups to objects
+- Fixed action ID filtering when loading objects in the background
+- Added action permissions to user interface
+- Improved handling of quantities for the HTTP API
+
 Version 0.16.1
 --------------
 

@@ -1,13 +1,13 @@
 <div class="form-group{% if id_prefix+'_text' in errors %} has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
-  <label class="control-label col-md-3">{{ schema.title }}</label>
+  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title }}</label>
   <div class="col-md-9">
   <select class="form-control selectpicker" name="{{ id_prefix }}_text">
   {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') or 'default' in schema %}
     {% if not is_required %}
-      <option value="">&ndash;</option>
+      <option value="">&mdash;</option>
     {% endif %}
   {% else %}
-  <option selected="selected" value="">&ndash;</option>
+  <option selected="selected" value="">&mdash;</option>
   {% endif %}
   {% for option in schema.choices %}
     {% if id_prefix+'_text' in form_data %}

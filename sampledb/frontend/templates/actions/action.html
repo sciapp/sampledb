@@ -18,9 +18,9 @@
   {% if action.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This action has been hidden from action lists.</p>
   {% endif %}
-  {% if action.description_as_html or action.description %}
+  {% if action.description %}
   <div class="action-user-content">
-  {% if action.description_as_html %}{{ action.description_as_html | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
+  {% if action.description_is_markdown %}{{ action.description | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
   </div>
   {% endif %}
   {% with instrument = action.instrument %}
@@ -33,6 +33,9 @@
   {% if not current_user.is_readonly %}
   {% if may_edit %}
     <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action.">Edit Action</a>
+  {% endif %}
+  {% if may_grant %}
+    <a href="{{ url_for('.action_permissions', action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Edit the permissions for this action.">Edit Permissions</a>
   {% endif %}
   {% if not action.type.admin_only or current_user.is_admin %}
   <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Create a new custom action based on the settings for this action.">Use as Template</a>

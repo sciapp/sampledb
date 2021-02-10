@@ -45,14 +45,55 @@ class ActionType(collections.namedtuple('ActionType', [
     'enable_publications',
     'enable_comments',
     'enable_activity_log',
-    'enable_related_objects'
+    'enable_related_objects',
+    'enable_project_link'
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
     """
 
-    def __new__(cls, id: int, name: str, description: str, object_name: str, object_name_plural: str, view_text: str, perform_text: str, admin_only: bool, show_on_frontpage: bool, show_in_navbar: bool, enable_labels: bool, enable_files: bool, enable_locations: bool, enable_publications: bool, enable_comments: bool, enable_activity_log: bool, enable_related_objects: bool):
-        self = super(ActionType, cls).__new__(cls, id, name, description, object_name, object_name_plural, view_text, perform_text, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects)
+    def __new__(
+            cls,
+            id: int,
+            name: str,
+            description: str,
+            object_name: str,
+            object_name_plural: str,
+            view_text: str,
+            perform_text: str,
+            admin_only: bool,
+            show_on_frontpage: bool,
+            show_in_navbar: bool,
+            enable_labels: bool,
+            enable_files: bool,
+            enable_locations: bool,
+            enable_publications: bool,
+            enable_comments: bool,
+            enable_activity_log: bool,
+            enable_related_objects: bool,
+            enable_project_link: bool
+    ):
+        self = super(ActionType, cls).__new__(
+            cls,
+            id,
+            name,
+            description,
+            object_name,
+            object_name_plural,
+            view_text,
+            perform_text,
+            admin_only,
+            show_on_frontpage,
+            show_in_navbar,
+            enable_labels,
+            enable_files,
+            enable_locations,
+            enable_publications,
+            enable_comments,
+            enable_activity_log,
+            enable_related_objects,
+            enable_project_link
+        )
         return self
 
     @classmethod
@@ -74,7 +115,8 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_publications=action_type.enable_publications,
             enable_comments=action_type.enable_comments,
             enable_activity_log=action_type.enable_activity_log,
-            enable_related_objects=action_type.enable_related_objects
+            enable_related_objects=action_type.enable_related_objects,
+            enable_project_link=action_type.enable_project_link
         )
 
     def __repr__(self):
@@ -124,7 +166,8 @@ def create_action_type(
         enable_publications: bool,
         enable_comments: bool,
         enable_activity_log: bool,
-        enable_related_objects: bool
+        enable_related_objects: bool,
+        enable_project_link: bool
 ) -> ActionType:
     """
     Create a new action type.
@@ -145,6 +188,7 @@ def create_action_type(
     :param enable_comments: whether comments should be enabled for actions of this type
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
+    :param enable_project_link: objects created with actions of this type can be linked to a project group
     :return: the created action type
     """
     action_type = models.ActionType(
@@ -163,7 +207,8 @@ def create_action_type(
         enable_publications=enable_publications,
         enable_comments=enable_comments,
         enable_activity_log=enable_activity_log,
-        enable_related_objects=enable_related_objects
+        enable_related_objects=enable_related_objects,
+        enable_project_link=enable_project_link
     )
     db.session.add(action_type)
     db.session.commit()
@@ -187,7 +232,8 @@ def update_action_type(
         enable_publications: bool,
         enable_comments: bool,
         enable_activity_log: bool,
-        enable_related_objects: bool
+        enable_related_objects: bool,
+        enable_project_link: bool
 ) -> ActionType:
     """
     Update an existing action type.
@@ -209,6 +255,7 @@ def update_action_type(
     :param enable_comments: whether comments should be enabled for actions of this type
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
+    :param enable_project_link: objects created with actions of this type can be linked to a project group
     :return: the created action type
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -232,6 +279,7 @@ def update_action_type(
     action_type.enable_comments = enable_comments
     action_type.enable_activity_log = enable_activity_log
     action_type.enable_related_objects = enable_related_objects
+    action_type.enable_project_link = enable_project_link
     db.session.add(action_type)
     db.session.commit()
     return ActionType.from_database(action_type)
@@ -244,8 +292,10 @@ def create_action(
         schema: dict,
         instrument_id: typing.Optional[int] = None,
         user_id: typing.Optional[int] = None,
-        description_as_html: typing.Optional[str] = None,
-        is_hidden: bool = False
+        description_is_markdown: bool = False,
+        is_hidden: bool = False,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> Action:
     """
     Creates a new action with the given type, name, description and schema. If
@@ -258,8 +308,11 @@ def create_action(
     :param schema: the schema for objects created using this action
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param is_hidden: None or whether or not the action should be hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -284,11 +337,13 @@ def create_action(
         action_type_id=action_type_id,
         name=name,
         description=description,
-        description_as_html=description_as_html,
+        description_is_markdown=description_is_markdown,
         is_hidden=is_hidden,
         schema=schema,
         instrument_id=instrument_id,
-        user_id=user_id
+        user_id=user_id,
+        short_description=short_description,
+        short_description_is_markdown=short_description_is_markdown
     )
     db.session.add(action)
     db.session.commit()
@@ -333,8 +388,10 @@ def update_action(
         name: str,
         description: str,
         schema: dict,
-        description_as_html: typing.Optional[str] = None,
-        is_hidden: typing.Optional[bool] = None
+        description_is_markdown: bool = False,
+        is_hidden: typing.Optional[bool] = None,
+        short_description: str = '',
+        short_description_is_markdown: bool = False
 ) -> None:
     """
     Updates the action with the given action ID, setting its name, description and schema.
@@ -343,8 +400,11 @@ def update_action(
     :param name: the new name of the action
     :param description: the new (possibly empty) description of the action
     :param schema: the new schema for objects created using this action
-    :param description_as_html: None or the description as HTML
+    :param description_is_markdown: whether the description contains Markdown
     :param is_hidden: None or whether or not the action should be hidden
+    :param short_description: the new (possibly empty) short description
+    :param short_description_is_markdown: whether the short description
+        contains Markdown
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -355,8 +415,10 @@ def update_action(
         raise errors.ActionDoesNotExistError()
     action.name = name
     action.description = description
-    action.description_as_html = description_as_html
+    action.description_is_markdown = description_is_markdown
     action.schema = schema
+    action.short_description = short_description
+    action.short_description_is_markdown = short_description_is_markdown
     if is_hidden is not None:
         action.is_hidden = is_hidden
     db.session.add(action)
