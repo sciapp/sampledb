@@ -4,7 +4,7 @@ Changelog
 Version 0.17
 ------------
 
-Currently in development.
+Released on February 10th, 2021.
 
 - Added Dataverse export using the EngMeta "Process Metadata" block
 - Added short descriptions to actions and instruments
@@ -13,7 +13,7 @@ Currently in development.
 - Allow linking to headers in Markdown content
 - Allow disabling of "Use in Measurement" button for samples
 - Added markdown support to object metadata
-- Added markdown support to instrumeng log
+- Added markdown support to instrument log
 - Reimplemented PDF export
 - Added configuration variables to allow only administrators to create groups or projects
 - Added asterisks to mark required fields when editing objects
