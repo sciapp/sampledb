@@ -33,6 +33,13 @@ $(function() {
           action_ids = $.map(action_ids, function(action_id){
              return +action_id;
           });
+        } else if (Array.isArray(action_ids)) {
+          action_ids = action_ids.filter(function(action_id) {
+            return action_id !== "";
+          });
+          action_ids = $.map(action_ids, function(action_id){
+             return +action_id;
+          });
         } else if (typeof action_ids === 'undefined') {
           action_ids = [];
         } else {
@@ -42,6 +49,13 @@ $(function() {
         var remove_ids = $x.data('sampledbRemove');
         if (typeof remove_ids === 'string') {
           remove_ids = $.map(remove_ids.split(","), function(id){
+             return +id;
+          });
+        } else if (Array.isArray(remove_ids)) {
+          remove_ids = remove_ids.filter(function(id) {
+            return id !== "";
+          });
+          remove_ids = $.map(remove_ids, function(id){
              return +id;
           });
         } else if (typeof remove_ids === 'undefined') {
