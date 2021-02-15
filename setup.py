@@ -34,7 +34,7 @@ setup(
         'Framework :: Flask',
         'Topic :: Scientific/Engineering',
     ],
-    packages=find_packages(exclude=['tests', 'tests.*', 'example_data']),
+    packages=find_packages(exclude=['tests', 'tests.*']),
     install_requires=requirements,
     package_data={
         'sampledb': [

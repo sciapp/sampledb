@@ -117,6 +117,7 @@ def test_too_many_files(user: User, object: Object, tmpdir):
     with pytest.raises(errors.TooManyFilesForObjectError):
         files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
+    files.MAX_NUM_FILES = 10000
 
 
 def test_get_file(user: User, object: Object, tmpdir):
