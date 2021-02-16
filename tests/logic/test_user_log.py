@@ -13,7 +13,7 @@ import sampledb.models
 def user1():
     user = sampledb.models.User(
         name="User",
-        email="example1@fz-juelich.de",
+        email="example1@example.com",
         type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
@@ -24,7 +24,7 @@ def user1():
 def user2():
     user = sampledb.models.User(
         name="User",
-        email="example2@fz-juelich.de",
+        email="example2@example.com",
         type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
@@ -55,7 +55,7 @@ def action():
 
 def test_get_user_log_entries(user1, user2, action):
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id)) == 0
-    sampledb.logic.user_log.invite_user(user1.id, "example@fz-juelich.de")
+    sampledb.logic.user_log.invite_user(user1.id, "example@example.com")
     sampledb.logic.user_log.create_object(user1.id, 42)
     sampledb.logic.user_log.create_batch(user1.id, [42, 21])
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id)) == 3

@@ -19,14 +19,14 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 @pytest.fixture
 def user():
-    user = User(name="User", email="example@fz-juelich.de", type=UserType.PERSON)
+    user = User(name="User", email="example@example.com", type=UserType.PERSON)
     db.session.add(user)
     db.session.commit()
     return user
 
 @pytest.fixture
 def user2():
-    user = User(name="User 2", email="example@fz-juelich.de", type=UserType.PERSON)
+    user = User(name="User 2", email="example@example.com", type=UserType.PERSON)
     db.session.add(user)
     db.session.commit()
     return user

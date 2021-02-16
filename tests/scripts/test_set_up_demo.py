@@ -18,7 +18,7 @@ def test_set_up_demo(capsys, tmpdir):
 
 def test_set_up_demo_one_user_exists(capsys, tmpdir):
     config.FILE_STORAGE_PATH = tmpdir
-    users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON)
+    users.create_user("username", "example@example.com", users.UserType.PERSON)
 
     scripts.main([scripts.__file__, 'set_up_demo'])
     assert 'Success' in capsys.readouterr()[0]
@@ -27,8 +27,8 @@ def test_set_up_demo_one_user_exists(capsys, tmpdir):
 
 def test_set_up_demo_two_users_exist(capsys, tmpdir):
     config.FILE_STORAGE_PATH = tmpdir
-    users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON)
-    users.create_user("username", "example2@fz-juelich.de", users.UserType.PERSON)
+    users.create_user("username", "example@example.com", users.UserType.PERSON)
+    users.create_user("username", "example2@example.com", users.UserType.PERSON)
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'set_up_demo'])

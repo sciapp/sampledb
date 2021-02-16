@@ -13,7 +13,7 @@ from sampledb.logic import locations, objects, actions, user_log, errors, object
 @pytest.fixture
 def user(app):
     with app.app_context():
-        user = User(name='User', email="example@fz-juelich.de", type=UserType.PERSON)
+        user = User(name='User', email="example@example.com", type=UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         assert user.id is not None
@@ -222,7 +222,7 @@ def test_object_ids_for_location(user: User, action: Action):
 
 
 def test_object_responsibility_confirmation(user: User, object: Object, app):
-    other_user = User(name='Other User', email="example@fz-juelich.de", type=UserType.PERSON)
+    other_user = User(name='Other User', email="example@example.com", type=UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
     server_name = app.config['SERVER_NAME']

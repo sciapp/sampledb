@@ -14,8 +14,8 @@ import sampledb.models
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123')
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'example@example.com', 'abc.123')
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -26,7 +26,7 @@ def user(flask_server):
 @pytest.fixture
 def user_without_authentication(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example1@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example1@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh
@@ -57,7 +57,7 @@ def test_recovery_email_send_no_authentication_method_exists(flask_server, user_
     #  send recovery email
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'email': 'example1@fz-juelich.de',
+            'email': 'example1@example.com',
             'csrf_token': csrf_token
         })
     assert r.status_code == 200
@@ -81,7 +81,7 @@ def test_new_password_send(flask_server, user):
     #  send recovery email
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'email': 'example@fz-juelich.de',
+            'email': 'example@example.com',
             'csrf_token': csrf_token
         })
     assert r.status_code == 200
@@ -110,5 +110,5 @@ def test_new_password_send(flask_server, user):
     })
     assert r.status_code == 200
     with flask_server.app.app_context():
-        assert sampledb.logic.authentication.login('example@fz-juelich.de', 'test')
+        assert sampledb.logic.authentication.login('example@example.com', 'test')
 

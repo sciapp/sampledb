@@ -13,7 +13,7 @@ import sampledb.models
 def user():
     user = sampledb.models.User(
         name="User",
-        email="example@fz-juelich.de",
+        email="example@example.com",
         type=sampledb.models.UserType.PERSON)
     db.session.add(user)
     db.session.commit()

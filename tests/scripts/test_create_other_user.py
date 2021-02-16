@@ -11,7 +11,7 @@ import sampledb.__main__ as scripts
 def test_create_other_user(capsys):
     assert len(users.get_users()) == 0
     name = 'username'
-    email = 'example@fz-juelich.de'
+    email = 'example@example.com'
 
     scripts.main([scripts.__file__, 'create_other_user', name, email])
     output = capsys.readouterr()[0]

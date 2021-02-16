@@ -21,7 +21,7 @@ def instrument(flask_server):
 def users(flask_server):
     with flask_server.app.app_context():
         users = [
-            sampledb.models.User(name=name, email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+            sampledb.models.User(name=name, email="example@example.com", type=sampledb.models.UserType.PERSON)
             for name in ("Other User", "Instrument Scientist")
         ]
         for user in users:

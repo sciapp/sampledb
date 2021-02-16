@@ -10,7 +10,7 @@ import sampledb.__main__ as scripts
 
 
 def test_set_readonly_yes(capsys):
-    user_id = users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON).id
+    user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
 
     scripts.main([scripts.__file__, 'set_user_readonly', str(user_id), 'yes'])
     assert 'Success' in capsys.readouterr()[0]
@@ -19,7 +19,7 @@ def test_set_readonly_yes(capsys):
 
 
 def test_set_readonly_no(capsys):
-    user_id = users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON).id
+    user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
     user = users.get_user(user_id)
     user.is_readonly = True
     db.session.add(user)
@@ -32,7 +32,7 @@ def test_set_readonly_no(capsys):
 
 
 def test_set_readonly_yes_no_change(capsys):
-    user_id = users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON).id
+    user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
     user = users.get_user(user_id)
     user.is_readonly = True
     db.session.add(user)
@@ -45,7 +45,7 @@ def test_set_readonly_yes_no_change(capsys):
 
 
 def test_set_readonly_no_no_change(capsys):
-    user_id = users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON).id
+    user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
 
     scripts.main([scripts.__file__, 'set_user_readonly', str(user_id), 'no'])
     assert 'Success' in capsys.readouterr()[0]
@@ -54,7 +54,7 @@ def test_set_readonly_no_no_change(capsys):
 
 
 def test_set_readonly_missing_arguments(capsys):
-    user_id = users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON).id
+    user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'set_user_readonly', str(user_id)])
@@ -72,7 +72,7 @@ def test_set_readonly_invalid_user_id(capsys):
 
 
 def test_set_readonly_invalid_argument(capsys):
-    user_id = users.create_user("username", "example@fz-juelich.de", users.UserType.PERSON).id
+    user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
 
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'set_user_readonly', str(user_id), 'maybe'])

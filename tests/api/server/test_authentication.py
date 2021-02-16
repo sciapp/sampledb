@@ -20,17 +20,17 @@ def test_authentication_ldap(flask_server):
 
 def test_authentication_email(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
-        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'password')
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'example@example.com', 'password')
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
     assert r.status_code == 401
-    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('example@fz-juelich.de', 'password'))
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=('example@example.com', 'password'))
     assert r.status_code == 200
 
 
 def test_authentication_other(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
     assert r.status_code == 401
@@ -40,7 +40,7 @@ def test_authentication_other(flask_server):
 
 def test_authentication_token(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         api_token = secrets.token_hex(32)
         sampledb.logic.authentication.add_api_token(user.id, api_token, 'Demo API Token')
     r = requests.get(flask_server.base_url + 'api/v1/objects/')
@@ -51,7 +51,7 @@ def test_authentication_token(flask_server):
 
 def test_authentication_inactive_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
         user_id = user.id
     r = requests.get(flask_server.base_url + 'api/v1/objects/')

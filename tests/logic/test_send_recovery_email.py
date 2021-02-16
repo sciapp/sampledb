@@ -11,7 +11,7 @@ from sampledb.logic.authentication import add_email_authentication
 @pytest.fixture
 def user_without_authentication(app):
     with app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh
@@ -22,10 +22,10 @@ def user_without_authentication(app):
 @pytest.fixture
 def user(app):
     with app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
+        add_email_authentication(user.id, 'example@example.com', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -36,10 +36,10 @@ def user(app):
 @pytest.fixture
 def user2(app):
     with app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        add_email_authentication(user.id, 'example2@fz-juelich.de', 'abc.123', True)
+        add_email_authentication(user.id, 'example2@example.com', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -108,7 +108,7 @@ def test_send_recovery_email_for_email_authentication(app, user):
             sampledb.logic.utils.send_recovery_email(user.email)
 
         assert len(outbox) == 1
-        assert 'example@fz-juelich.de' in outbox[0].recipients
+        assert 'example@example.com' in outbox[0].recipients
         message = outbox[0].html
         assert 'SampleDB Account Recovery' in message
         assert 'click here' in message
@@ -127,7 +127,7 @@ def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, us
             sampledb.logic.utils.send_recovery_email(user.email)
 
         assert len(outbox) == 1
-        assert 'example@fz-juelich.de' in outbox[0].recipients
+        assert 'example@example.com' in outbox[0].recipients
         message = outbox[0].html
         assert 'SampleDB Account Recovery' in message
         assert 'click here' in message

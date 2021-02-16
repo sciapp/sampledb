@@ -13,7 +13,7 @@ from sampledb.logic import files, objects, actions, errors
 
 @pytest.fixture
 def user():
-    user = User(name='User', email="example@fz-juelich.de", type=UserType.PERSON)
+    user = User(name='User', email="example@example.com", type=UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     return user

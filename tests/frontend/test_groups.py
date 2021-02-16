@@ -17,7 +17,7 @@ from sampledb.logic.authentication import add_email_authentication
 
 @pytest.fixture
 def user_session(flask_server):
-    user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     session = requests.session()
@@ -28,10 +28,10 @@ def user_session(flask_server):
 
 @pytest.fixture
 def user(flask_server):
-    user = sampledb.models.User(name="Basic User2", email="example2@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    user = sampledb.models.User(name="Basic User2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
+    add_email_authentication(user.id, 'example@example.com', 'abc.123', True)
     # force attribute refresh
     assert user.id is not None
     # Check if authentication-method add to db
@@ -41,7 +41,7 @@ def user(flask_server):
 
 
 def test_list_groups(flask_server, user_session):
-    other_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    other_user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
 
@@ -63,7 +63,7 @@ def test_list_groups(flask_server, user_session):
 
 
 def test_list_user_groups(flask_server, user_session):
-    other_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    other_user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
 
@@ -252,7 +252,7 @@ def test_delete_group(flask_server, user_session):
 def test_remove_member_from_group(flask_server, user_session):
     group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 
-    other_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    other_user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
 
