@@ -11,15 +11,15 @@ import sampledb.logic
 @pytest.fixture
 def users():
     names = ['User 1', 'User 2']
-    users = [User(name=name, email="example@fz-juelich.de", type=UserType.PERSON) for name in names]
+    users = [User(name=name, email="example@example.com", type=UserType.PERSON) for name in names]
     password = 'test123'
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     log = {
-        'login': 'example@fz-juelich.de',
+        'login': 'example@example.com',
         'bcrypt_hash': pw_hash
     }
     log1 = {
-        'login': 'example1@fz-juelich.de',
+        'login': 'example1@example.com',
         'bcrypt_hash': pw_hash
     }
     confirmed = False
@@ -37,7 +37,7 @@ def users():
         sampledb.db.session.commit()
         assert Authentication.id is not None
 
-    user = User(name='Experiment 1', email="example@fz-juelich.de", type=UserType.OTHER)
+    user = User(name='Experiment 1', email="example@example.com", type=UserType.OTHER)
     users.append(user)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
@@ -51,7 +51,7 @@ def users():
     sampledb.db.session.add(auth)
     sampledb.db.session.commit()
 
-    user = User(name='Mustermann', email="mustermann@fz-juelich.de", type=UserType.PERSON)
+    user = User(name='Mustermann', email="example2@example.com", type=UserType.PERSON)
     users.append(user)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
@@ -61,11 +61,11 @@ def users():
 
 def test_validate_user_db(users):
     # user is not confirmed
-    user = sampledb.logic.authentication.login('example@fz-juelich.de', 'test123')
+    user = sampledb.logic.authentication.login('example@example.com', 'test123')
     assert not user
 
     # user has no authentication method
-    user = sampledb.logic.authentication.login('mustermann@fz-juelich.de', 'test123')
+    user = sampledb.logic.authentication.login('example2@example.com', 'test123')
     assert not user
 
     # user is correct

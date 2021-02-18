@@ -27,7 +27,7 @@ def test_update_instrument():
 
 
 def test_instrument_responsible_users():
-    user = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
+    user = User(name="Testuser", email="example@example.com", type=UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     instrument = instruments.create_instrument(name="Example Instrument", description="")
@@ -63,8 +63,8 @@ def test_update_missing_instrument():
 
 
 def test_set_instrument_responsible_users():
-    user1 = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
-    user2 = User(name="Testuser", email="example@fz-juelich.de", type=UserType.PERSON)
+    user1 = User(name="Testuser", email="example@example.com", type=UserType.PERSON)
+    user2 = User(name="Testuser", email="example@example.com", type=UserType.PERSON)
     sampledb.db.session.add(user1)
     sampledb.db.session.add(user2)
     sampledb.db.session.commit()

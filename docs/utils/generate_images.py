@@ -378,7 +378,7 @@ try:
     with app.app_context():
         user = sampledb.models.User(
             name="Example User",
-            email="example@fz-juelich.de",
+            email="example@example.com",
             type=sampledb.models.UserType.PERSON
         )
         sampledb.db.session.add(user)
@@ -387,7 +387,7 @@ try:
 
         other_user = sampledb.models.User(
             name="Other User",
-            email="example@fz-juelich.de",
+            email="example@example.com",
             type=sampledb.models.UserType.PERSON
         )
         sampledb.db.session.add(other_user)

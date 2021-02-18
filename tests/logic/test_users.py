@@ -8,7 +8,7 @@ from sampledb import db
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh
@@ -18,13 +18,13 @@ def user(flask_server):
 def test_get_users_by_name():
     user1 = sampledb.models.User(
         name="User",
-        email="example@fz-juelich.de",
+        email="example@example.com",
         type=sampledb.models.UserType.PERSON)
     db.session.add(user1)
     db.session.commit()
     user2 = sampledb.models.User(
         name="User",
-        email="example@fz-juelich.de",
+        email="example@example.com",
         type=sampledb.models.UserType.PERSON)
     db.session.add(user2)
     db.session.commit()
@@ -47,13 +47,13 @@ def test_get_users_by_name():
 def test_get_users_exclude_hidden():
     user1 = sampledb.models.User(
         name="User",
-        email="example@fz-juelich.de",
+        email="example@example.com",
         type=sampledb.models.UserType.PERSON)
     db.session.add(user1)
     db.session.commit()
     user2 = sampledb.models.User(
         name="User",
-        email="example@fz-juelich.de",
+        email="example@example.com",
         type=sampledb.models.UserType.PERSON)
     db.session.add(user2)
     db.session.commit()

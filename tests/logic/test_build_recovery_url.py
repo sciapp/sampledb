@@ -11,15 +11,15 @@ import sampledb.logic
 @pytest.fixture
 def users(app):
     names = ['User 1', 'User 2']
-    users = [User(name=name, email="example@fz-juelich.de", type=UserType.PERSON) for name in names]
+    users = [User(name=name, email="example@example.com", type=UserType.PERSON) for name in names]
     password = 'test123'
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     log = {
-        'login': 'example@fz-juelich.de',
+        'login': 'example@example.com',
         'bcrypt_hash': pw_hash
     }
     log1 = {
-        'login': 'example1@fz-juelich.de',
+        'login': 'example1@example.com',
         'bcrypt_hash': pw_hash
     }
     confirmed = False

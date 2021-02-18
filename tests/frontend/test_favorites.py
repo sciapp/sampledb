@@ -15,7 +15,7 @@ import sampledb.logic
 
 @pytest.fixture
 def user_session(flask_server):
-    user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     session = requests.session()

@@ -15,7 +15,7 @@ from sampledb.logic import actions, comments, objects, rdf
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="user@example.org", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="user@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh
@@ -26,7 +26,7 @@ def user(flask_server):
 @pytest.fixture
 def other_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Other User", email="user@example.org", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Other User", email="user@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh

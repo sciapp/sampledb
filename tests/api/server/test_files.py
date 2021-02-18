@@ -15,7 +15,7 @@ import sampledb.models
 @pytest.fixture
 def auth_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
         assert user.id is not None
     return ('username', 'password'), user

@@ -21,7 +21,7 @@ def instrument():
 @pytest.fixture
 def users():
     users = [
-        User(name, 'example@fz-juelich.de', UserType.PERSON)
+        User(name, 'example@example.com', UserType.PERSON)
         for name in ['User 1', 'User 2', 'User 3']
     ]
     for user in users:

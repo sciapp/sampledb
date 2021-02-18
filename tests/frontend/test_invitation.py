@@ -14,10 +14,10 @@ from sampledb.logic.security_tokens import generate_token
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        sampledb.logic.authentication.add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
+        sampledb.logic.authentication.add_email_authentication(user.id, 'example@example.com', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -167,7 +167,7 @@ def test_registration(flask_server):
 def test_send_registration_with_wrong_invitation_email(flask_server):
     session = requests.session()
     # generate token
-    token = generate_token('www@fz-juelich.de', salt='invitation',
+    token = generate_token('example@example.com', salt='invitation',
                            secret_key=flask_server.app.config['SECRET_KEY'])
     data = {'token': token}
     url = flask_server.base_url + 'users/invitation'
@@ -184,7 +184,7 @@ def test_send_registration_with_wrong_invitation_email(flask_server):
 
     # Submit registration, invitation email changed in form registration
     r = session.post(url, {
-        'email': 'wwwx@fz-juelich.de',
+        'email': 'example2@example.com',
         'name': 'Testu',
         'password': 'test',
         'password2': 'test',
@@ -200,7 +200,7 @@ def test_send_registration_with_email_already_exists_in_authentication_method(fl
     session = requests.session()
 
     # generate token
-    token = generate_token('example@fz-juelich.de', salt='invitation',
+    token = generate_token('example@example.com', salt='invitation',
                            secret_key=flask_server.app.config['SECRET_KEY'])
     data = {'token': token}
     url = flask_server.base_url + 'users/invitation'
@@ -217,7 +217,7 @@ def test_send_registration_with_email_already_exists_in_authentication_method(fl
 
     # Submit registration, invitation email changed in form registration
     r = session.post(url, {
-        'email': 'example@fz-juelich.de',
+        'email': 'example@example.com',
         'name': 'Test',
         'password': 'test',
         'password2': 'test',

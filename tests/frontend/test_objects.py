@@ -22,7 +22,7 @@ OBJECTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tes
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         # force attribute refresh
@@ -214,7 +214,7 @@ def test_objects_referencable(flask_server, user):
     action2_id = action2.id
 
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name='New User', email='example@example.com', type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -274,7 +274,7 @@ def test_get_object_no_permissions(flask_server, user):
 
     session = requests.session()
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name='New User', email='example@example.com', type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -301,7 +301,7 @@ def test_request_object_permissions(flask_server, user):
 
     session = requests.session()
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name='New User', email='example@example.com', type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -364,7 +364,7 @@ def test_get_object_edit_form_read_permissions(flask_server, user):
     )
     session = requests.session()
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name='New User', email='example@example.com', type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -401,7 +401,7 @@ def test_get_object_version_no_permissions(flask_server, user):
 
     session = requests.session()
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name='New User', email='example@fz-juelich.de', type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name='New User', email='example@example.com', type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -934,7 +934,7 @@ def test_object_permissions_add_user(flask_server, user):
     csrf_token = BeautifulSoup(r.content, 'html.parser').findAll('input', {'name': 'csrf_token'})[1]['value']
 
     with flask_server.app.app_context():
-        user2 = sampledb.models.User(name="New User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user2 = sampledb.models.User(name="New User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user2)
         sampledb.db.session.commit()
         # force attribute refresh
