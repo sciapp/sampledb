@@ -1,0 +1,69 @@
+{
+  "title": "Measurement Information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Measurement Name",
+      "type": "text",
+      "default": "XRR-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^XRR-[0-9]+$"
+    },
+    "sample": {
+      "title": "Sample",
+      "type": "sample"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "slitWidth": {
+      "title": "Slit Width",
+      "type": "quantity",
+      "units": "mm"
+    },
+    "type": {
+      "title": "Measurement Type",
+      "type": "text",
+      "choices": [
+        "Rocking-Curve-Scan",
+        "ω-2θ-Scan",
+        "Z-Scan",
+        "χ-Scan"
+      ]
+    },
+    "minRange": {
+      "title": "Min. Range",
+      "type": "quantity",
+      "units": "1"
+    },
+    "maxRange": {
+      "title": "Max. Range",
+      "type": "quantity",
+      "units": "1"
+    },
+    "stepSize": {
+      "title": "Step Size",
+      "type": "quantity",
+      "units": "1"
+    },
+    "stepTime": {
+      "title": "Step Time",
+      "type": "quantity",
+      "units": "s"
+    },
+    "temperature": {
+      "title": "Temperature",
+      "type": "quantity",
+      "units": "degC",
+      "default": 293.15
+    }
+  },
+  "propertyOrder": ["name", "sample", "created", "slitWidth", "type", "minRange", "maxRange", "stepSize", "stepTime", "temperature"],
+  "required": ["name", "sample", "created", "type"],
+  "displayProperties": [
+    "sample",
+    "type"
+  ]
+}

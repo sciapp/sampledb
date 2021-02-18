@@ -1,0 +1,150 @@
+{
+  "title": "Sample Information",
+  "type": "object",
+  "batch": true,
+  "batch_name_format": "-{:03d}",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "default": "OMBE-",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^OMBE-[0-9]+-[0-9]+$"
+    },
+    "created": {
+      "title": "Creation Datetime",
+      "type": "datetime"
+    },
+    "substrate": {
+      "title": "Substrate",
+      "type": "text",
+      "minLength": 1
+    },
+    "checkbox": {
+      "title": "Checkbox",
+      "type": "bool"
+    },
+    "dropdown": {
+      "title": "Dropdown",
+      "type": "text",
+      "choices": ["Option A", "Option B", "Option C"]
+    },
+    "multilayer": {
+      "title": "Multilayers",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "title": "Multilayer",
+        "type": "object",
+        "properties": {
+          "repetitions": {
+            "title": "Film Layer Repetitions",
+            "type": "quantity",
+            "units": "1",
+            "default": 1
+          },
+          "films": {
+            "title": "Films",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "title": "Film",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "title": "Film Name",
+                  "type": "text",
+                  "minLength": 1
+                },
+                "thickness": {
+                  "title": "Film Thickness",
+                  "type": "quantity",
+                  "units": "Å"
+                },
+                "oxygen_flow": {
+                  "title": "Oxygen Flow",
+                  "type": "quantity",
+                  "units": "sccm"
+                },
+                "substrate_temperature": {
+                  "title": "Substrate Temperature",
+                  "type": "quantity",
+                  "units": "degC"
+                },
+                "elements": {
+                  "title": "Elements",
+                  "type": "array",
+                  "style": "table",
+                  "minItems": 1,
+                  "items": {
+                    "title": "Element",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "title": "Element Name",
+                        "type": "text",
+                        "minLength": 1
+                      },
+                      "frequency_change": {
+                        "title": "Frequency Change",
+                        "type": "quantity",
+                        "units": "Hz / s"
+                      },
+                      "rate": {
+                        "title": "Rate",
+                        "type": "quantity",
+                        "units": "Å / s"
+                      },
+                      "fraction": {
+                        "title": "Fraction",
+                        "type": "quantity",
+                        "units": "1"
+                      }
+                    },
+                    "propertyOrder": [
+                      "name",
+                      "frequency_change",
+                      "fraction",
+                      "rate"
+                    ]
+                  }
+                }
+              },
+              "propertyOrder": [
+                "name",
+                "thickness",
+                "oxygen_flow",
+                "substrate_temperature",
+                "elements"
+              ]
+            }
+          }
+        },
+        "propertyOrder": [
+          "repetitions",
+          "films"
+        ]
+      }
+    }
+  },
+  "propertyOrder": [
+    "name",
+    "created",
+    "checkbox",
+    "dropdown",
+    "substrate",
+    "multilayer"
+  ],
+  "required": [
+    "name",
+    "created",
+    "checkbox",
+    "substrate",
+    "dropdown",
+    "multilayer"
+  ],
+  "displayProperties": [
+    "substrate"
+  ]
+}

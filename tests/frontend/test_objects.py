@@ -15,7 +15,8 @@ import sampledb.models
 import sampledb.logic
 
 
-SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(sampledb.__file__), 'schemas'))
+SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas'))
+OBJECTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'objects'))
 
 
 @pytest.fixture
@@ -426,7 +427,7 @@ def test_get_object_versions(flask_server, user):
 
 def test_edit_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,
@@ -483,7 +484,7 @@ def test_edit_object(flask_server, user):
 
 def test_edit_object_action_add(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,
@@ -504,7 +505,7 @@ def test_edit_object_action_add(flask_server, user):
 
 def test_edit_object_previous_actions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,
@@ -529,7 +530,7 @@ def test_edit_object_previous_actions(flask_server, user):
 
 def test_edit_object_previous_actions_invalid_key(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,
@@ -552,7 +553,7 @@ def test_edit_object_previous_actions_invalid_key(flask_server, user):
 
 def test_edit_object_previous_actions_invalid_action(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,
@@ -575,7 +576,7 @@ def test_edit_object_previous_actions_invalid_action(flask_server, user):
 
 def test_edit_object_action_delete(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,
@@ -1034,7 +1035,7 @@ def test_object_permissions_add_group(flask_server, user):
 
 def test_edit_object_invalid_data(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(os.path.dirname(sampledb.__file__), '..', 'example_data', 'ombe-1.sampledb.json'), encoding="utf-8"))
+    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
     object = sampledb.logic.objects.create_object(
         data=object_data,

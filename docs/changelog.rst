@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.18
+------------
+
+Currently in development.
+
+- Moved example_data functionality to set_up_data script
+
 Version 0.17
 ------------
 

@@ -17,7 +17,7 @@ def instrument():
 
 @pytest.fixture
 def actions(instrument):
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     with open(schema_file_name) as schema_file:
         schema = json.load(schema_file)
     return [
