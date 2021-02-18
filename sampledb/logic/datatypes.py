@@ -296,3 +296,35 @@ class Text(object):
     @classmethod
     def from_json(cls, obj):
         return cls(obj['text'])
+
+@JSONEncoder.serializable_type('plotly_chart')
+class Plotly_chart(object):
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': ['plotly_chart']
+            },
+            'plotly_chart_json_string': {
+                'type': 'string'
+            }
+        },
+        'required': ['_type', 'plotly_chart_json_string'],
+        'additionalProperties': False
+    }
+
+    def __init__(self, plotly_chart_json_string):
+        self.plotly_chart_json_string = plotly_chart_json_string
+
+    def __repr__(self):
+        return '<{0}(text="{1.text}")>'.format(type(self).__name__, self)
+
+    def __eq__(self, other):
+        return self.plotly_chart_json_string == other.plotly_chart_json_string
+
+    def to_json(self):
+        return {'plotly_chart_json_string': self.plotly_chart_json_string}
+
+    @classmethod
+    def from_json(cls, obj):
+        return cls(obj['plotly_chart'])

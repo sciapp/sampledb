@@ -55,6 +55,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'user':
         return parse_user_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'plotly_chart':
+        return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
@@ -355,6 +357,21 @@ def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
         'user_id': user_id
     }
     schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=False):
+    plotly_chart_json_string = form_data.get(id_prefix + '__plotly_chart', [None])[0]
+
+    if plotly_chart_json_string is None and not required:
+        return None
+    data = {
+        '_type': 'plotly_chart',
+        'plotly_chart_json_string': str(plotly_chart_json_string)
+    }
+    schemas.validate(data, schema)
+
     return data
 
 

@@ -1,0 +1,18 @@
+<div class="row" style="padding-right:0.75em">
+ {% if data.plotly_chart_json_string %}
+  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' +data.plotly_chart_json_string + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+    {% else %}
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+    {% endif %}</label>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
+    <div class="col-md-9">
+         {% if data.plotly_chart_json_string %}
+            <a id="plot_info_link_{{ schema.title }}" onclick="plotlyPlot({{ data.plotly_chart_json_string }}, '{{ schema.title }}')">more info</a>
+         {% else %}
+         {% endif %}
+    </div>
+    <div class="col-md-9" id="plotly_plot_div_{{ schema.title }}" style="display:none"></div>
+</div>

@@ -47,6 +47,8 @@ def generate_placeholder(schema: dict, path: typing.Optional[typing.List[str]] =
         return _generate_hazards_placeholder(schema, path)
     elif schema['type'] == 'user':
         return _generate_user_placeholder(schema, path)
+    elif schema['type'] == 'plotly_chart':
+        return _generate_plotly_chart_placeholder(schema, path)
     else:
         raise SchemaError('invalid type', path)
 
@@ -237,5 +239,15 @@ def _generate_user_placeholder(schema: dict, path: typing.List[str]) -> None:
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: None, as there can be no default user
+    """
+    return None
+
+def _generate_plotly_chart_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
+    """
+    Generates a placeholder plotly_chart object based on an object schema.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :return: the generated object or None, if there is no default text
     """
     return None
