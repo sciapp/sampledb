@@ -6,7 +6,8 @@
     {% else %}
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% endif %}</label>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
     <div class="col-md-9">
          {% if data.plotly_chart_json_string %}

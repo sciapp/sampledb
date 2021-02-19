@@ -10,7 +10,10 @@ function plotlyPlot(json_string, div_id) {
     if(/display:none/.test(plot_div.attr('style'))) {
         plot_div.attr('style', 'height:40vh')
         plot_info_link.html('less info')
-        plot(json_string, 'plotly_plot_div_' + div_id);
+        if(plot_info_link.attr("isPlotted") != "true") {
+            plot(json_string, 'plotly_plot_div_' + div_id);
+            plot_info_link.attr("isPlotted", "true");
+        }
     } else {
         plot_div.attr('style', 'display:none');
         plot_info_link.html('more info')
