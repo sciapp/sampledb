@@ -1,5 +1,5 @@
 <div>
-<script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
+<div><script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
             {{ schema.title }}
          {% if data.plotly_chart_json_string %}
@@ -8,4 +8,5 @@
              -
          {% endif %}
 </div>
-    <div class="col-md-9" id="plotly_plot_div_{{ schema.title }}" style="display:none"></div>
+    <div id="plotly_plot_div_{{ schema.title }}" style="display:none"></div>
+</div>
