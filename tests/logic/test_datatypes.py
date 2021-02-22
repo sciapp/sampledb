@@ -332,6 +332,7 @@ def test_boolean_invalid_data():
 
 def test_text_serialization():
     s = json.dumps(datatypes.Text("Test"), cls=datatypes.JSONEncoder)
+    l = json.loads(s)
     assert json.loads(s) == {
         '_type': 'text',
         'text': 'Test'
@@ -372,3 +373,46 @@ def test_text_invalid_data():
     raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
     with pytest.raises(jsonschema.exceptions.ValidationError):
         jsonschema.validate(raw_data, schema)
+
+
+def test_plotly_chart_serialization():
+    s = json.dumps(datatypes.Plotly_chart("Test"), cls=datatypes.JSONEncoder)
+    assert json.loads(s) == {
+        'plotly_chart_json_string': 'Test',
+        '_type': 'plotly_chart'
+    }
+
+def test_plotly_chart_deserialization():
+    s = json.dumps(datatypes.Plotly_chart("Test"), cls=datatypes.JSONEncoder)
+    t = json.loads(s, object_hook=datatypes.JSONEncoder.object_hook)
+    assert t.plotly_chart_json_string == "Test"
+
+
+def test_plotly_chart_equals():
+    assert datatypes.Plotly_chart("Test1") == datatypes.Plotly_chart("Test1")
+    assert datatypes.Plotly_chart("Test1") != datatypes.Plotly_chart("Test2")
+
+
+def test_plotly_chart_valid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Plotly_chart.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.Plotly_chart("Test")}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
+
+def test_plotly_chart_invalid_data():
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Plotly_chart.JSON_SCHEMA
+        }
+    }
+    data = {'test': "invalid Data"}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        jsonschema.validate(raw_data, schema)
+

@@ -1998,3 +1998,21 @@ def test_schema_with_name_export():
         validate_schema(schema)
     schema['properties']['name']['dataverse_export'] = True
     validate_schema(schema)
+
+
+def test_validate_plotly_chart_schema():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_plotly_chart_schema_invalid_key():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart',
+        'invalid Key': 'test'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))

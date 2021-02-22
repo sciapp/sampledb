@@ -312,3 +312,11 @@ def test_generate_user_object():
     }
     placeholder_object = generate_placeholder(object_schema)
     assert placeholder_object is None
+
+def test_generate_plotly_chart_object():
+    object_schema = {
+        'title': 'Plot',
+        'type': 'plotly_chart'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None

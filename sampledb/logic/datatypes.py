@@ -297,6 +297,8 @@ class Text(object):
     def from_json(cls, obj):
         return cls(obj['text'])
 
+
+
 @JSONEncoder.serializable_type('plotly_chart')
 class Plotly_chart(object):
     JSON_SCHEMA = {
@@ -327,4 +329,4 @@ class Plotly_chart(object):
 
     @classmethod
     def from_json(cls, obj):
-        return cls(obj['plotly_chart'])
+        return cls(obj['plotly_chart_json_string'])
