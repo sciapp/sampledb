@@ -1,6 +1,5 @@
 <div class="form-group row" style="padding-right:0.75em">
-  <label class="control-label col-md-3">{{ schema.title }}</label>
-  <div class="col-md-9">
+    <div class="col-md-9">
     <textarea readonly type="text" class="form-control" name="{{ id_prefix }}_plotly_chart">{% if data is not none and "plotly_chart_json_string" in data %}{{ data.plotly_chart_json_string }}{% endif %}</textarea>
-</div>
+    </div>
 </div>

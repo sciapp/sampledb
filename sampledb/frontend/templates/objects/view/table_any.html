@@ -16,6 +16,8 @@
   {% include "objects/view/table_object_reference.html" %}
 {% elif schema['type'] == 'bool' %}
   {% include "objects/view/table_bool.html" %}
+{% elif schema['type'] == 'plotly_chart' %}
+  {% include "objects/view/table_plotly_chart" %}
 {% else %}
   &hellip;
 {% endif %}
