@@ -40,3 +40,7 @@ function plot(json_string, div_id) {
         Plotly.plot(div_id, {data: [json_string[json_string_key_list[i]]], layout: layout });
     }
 }
+
+function hash(json_string) {
+
+}

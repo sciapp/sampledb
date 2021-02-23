@@ -11,9 +11,9 @@
     <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
     <div class="col-md-9">
          {% if data.plotly_chart_json_string %}
-            <a id="plot_info_link_{{ schema.title }}" onclick="plotlyPlot({{ data.plotly_chart_json_string }}, '{{ schema.title }}')">more info</a>
+            <a id="plot_info_link_{{ data.plotly_chart_json_string | urlencode | count }}" onclick="plotlyPlot({{ data.plotly_chart_json_string }}, '{{ data.plotly_chart_json_string | urlencode | count }}')">more info</a>
          {% else %}
          {% endif %}
     </div>
-    <div class="col-md-9" id="plotly_plot_div_{{ schema.title }}" style="display:none"></div>
+    <div class="col-md-9" id="plotly_plot_div_{{ data.plotly_chart_json_string | urlencode | count }}" style="display:none"></div>
 </div>

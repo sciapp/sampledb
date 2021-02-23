@@ -1,0 +1,13 @@
+  <div>
+    <div id="plotly_plot_div_{{ schema.title }}" style="display:none"></div>
+
+    <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
+      {{ schema.title }}
+      {% if data.plotly_chart_json_string %}
+        Export JSON to get data
+      {% else %}
+         -
+      {% endif %}
+</div>
+</div>
