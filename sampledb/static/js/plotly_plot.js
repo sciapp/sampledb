@@ -29,7 +29,7 @@ function plotlyPlot(json_string, div_id) {
  */
 function plot(json_string, div_id) {
     var json_string_key_list = Object.keys(json_string);
-    Plotly.newPlot(div_id);
+    Plotly.newPlot(div_id, {data: []});
     var layout = {layout: {barmode: 'stack'}};
     if(json_string_key_list.includes("layout")) {
         layout = json_string["layout"];
