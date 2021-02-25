@@ -80,6 +80,7 @@
       {% include "pending_invitations.html" %}
     {% endwith %}
   {% endif %}
+  <div class="button-row">
   {% if show_objects_link %}
     <div class="btn-group">
       <a href="{{ url_for('.objects', project=project.id) }}" class="btn btn-default">View Objects</a>
@@ -133,6 +134,7 @@
   <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteProjectModal">Delete Project Group</button>
   {% endif %}
   {% endif %}
+  </div>
 
   {% if not current_user.is_readonly and object_id and object_link_form %}
   <div class="modal fade" id="unlinkObjectModal" tabindex="-1" role="dialog" aria-labelledby="unlinkObjectModalLabel">

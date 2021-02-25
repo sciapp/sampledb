@@ -890,3 +890,15 @@ label.required-label:before {
     width:15px;
     text-align: left;
 }
+
+.button-row > button,
+.button-row > a,
+.button-row > .btn-group,
+.button-row > form > button {
+    margin-bottom: 4px;
+    min-width:220px
+}
+
+.button-row > .btn-group > a {
+    min-width: 195px;
+}

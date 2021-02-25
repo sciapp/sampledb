@@ -7,6 +7,7 @@ Version 0.18
 Currently in development.
 
 - Moved example_data functionality to set_up_data script
+- Improved user interface
 
 Version 0.17
 ------------
