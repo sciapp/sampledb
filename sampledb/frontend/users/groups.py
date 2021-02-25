@@ -52,7 +52,7 @@ def groups():
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
             else:
                 create_group_form.name.errors.append('Only administrators can create basic groups.')
-    return flask.render_template("groups.html", groups=groups, create_group_form=create_group_form, show_create_form=show_create_form)
+    return flask.render_template("groups/groups.html", groups=groups, create_group_form=create_group_form, show_create_form=show_create_form)
 
 
 @frontend.route('/groups/<int:group_id>', methods=['GET', 'POST'])
@@ -216,7 +216,7 @@ def group(group_id):
         )
 
     return flask.render_template(
-        'group.html',
+        'groups/group.html',
         group=group,
         group_member_ids=group_member_ids,
         get_users=logic.users.get_users,
