@@ -307,26 +307,34 @@ class Plotly_chart(object):
             '_type': {
                 'enum': ['plotly_chart']
             },
-            'plotly_chart_json_string': {
+            'data_json': {
+                'type': 'string'
+            },
+            'layout_json': {
+                'type': 'string'
+            },
+            'plot_title': {
                 'type': 'string'
             }
         },
-        'required': ['_type', 'plotly_chart_json_string'],
+        'required': ['_type', 'data_json'],
         'additionalProperties': False
     }
 
-    def __init__(self, plotly_chart_json_string):
-        self.plotly_chart_json_string = plotly_chart_json_string
+    def __init__(self, data_json, layout_json="", plot_title=""):
+        self.data_json = data_json
+        self.layout_json = layout_json
+        self.plot_title = plot_title
 
     def __repr__(self):
         return '<{0}(text="{1.text}")>'.format(type(self).__name__, self)
 
     def __eq__(self, other):
-        return self.plotly_chart_json_string == other.plotly_chart_json_string
+        return self.data_json == other.data_json
 
     def to_json(self):
-        return {'plotly_chart_json_string': self.plotly_chart_json_string}
+        return {'data_json': self.data_json, 'layout_json': self.layout_json, 'plot_title': self.plot_title}
 
     @classmethod
     def from_json(cls, obj):
-        return cls(obj['plotly_chart_json_string'])
+        return cls(obj['data_json'], obj['layout_json'], obj['plot_title'])

@@ -515,9 +515,9 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'plotly_chart_json_string'}
-    required_keys = valid_keys
-    schema_keys = set(instance.keys())
+    valid_keys = {'_type', 'data_json', 'layout_json', 'plot_title'}
+    required_keys = ['_type', 'data_json']
+    schema_keys = instance.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
@@ -526,5 +526,11 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if instance['_type'] != 'plotly_chart':
         raise ValidationError('expected _type "plotly_chart"', path)
-    if not isinstance(instance['plotly_chart_json_string'], str):
-        raise ValidationError('plotly_chart_json_string must be str', path)
+    if not isinstance(instance['data_json'], str):
+        raise ValidationError('data_json must be str', path)
+    if 'layout_json' in instance and not isinstance(instance['layout_json'], str):
+        print("b")
+        raise ValidationError('layout_json must be str', path)
+    if 'plot_title' in instance and not isinstance(instance['plot_title'], str):
+        raise ValidationError('layout_json must be str', path)
+    # TODO Validate data_json with plotly

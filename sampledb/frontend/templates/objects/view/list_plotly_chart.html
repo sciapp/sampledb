@@ -1,12 +1,19 @@
 <div>
 <div><script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
+        {% if data.plot_title %}
+            {{ data.plot_title }}
+        {% else %}
             {{ schema.title }}
-         {% if data.plotly_chart_json_string %}
-            <a id="plot_info_link_{{ data.plotly_chart_json_string | urlencode | count}}" onclick="plotlyPlot({{ data.plotly_chart_json_string }}, '{{ data.plotly_chart_json_string | urlencode | count }}')">more info</a>
+        {% endif %}
+
+         {% if data.data_json and data.layout_json %}
+            <a id="plot_info_link_{{ data.data_json | hash }}" onclick="plotlyPlot({{ data.data_json }}, '{{ data.data_json | hash }}', {{ data.layout_json }})">more info</a>
+         {% elif data.data_json %}
+             <a id="plot_info_link_{{ data.data_json | hash }}" onclick="plotlyPlot({{ data.data_json }}, '{{ data.data_json | hash }}')">more info</a>
          {% else %}
-             -
          {% endif %}
+
 </div>
-    <div id="plotly_plot_div_{{ data.plotly_chart_json_string | urlencode | count }}" style="display:none"></div>
+    <div id="plotly_plot_div_{{ data.data_json | hash }}" style="display:none"></div>
 </div>

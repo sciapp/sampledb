@@ -98,3 +98,4 @@ Werkzeug==1.0.1
 WTForms==2.3.3
 zc.lockfile==2.0
 zipp==3.4.1
+plotly==4.14.3

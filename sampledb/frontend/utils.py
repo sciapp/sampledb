@@ -83,6 +83,9 @@ def check_current_user_is_not_readonly():
     if flask_login.current_user.is_readonly:
         raise UserIsReadonlyError()
 
+def generate_jinja_hash(object):
+    return hash(object)
+
 
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
@@ -91,3 +94,4 @@ _jinja_filters['attachment_is_image'] = attachment_is_image
 _jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications
 _jinja_filters['urlencode'] = quote_plus
 _jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html
+_jinja_filters['hash'] = generate_jinja_hash

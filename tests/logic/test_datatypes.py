@@ -376,20 +376,24 @@ def test_text_invalid_data():
 
 
 def test_plotly_chart_serialization():
-    s = json.dumps(datatypes.Plotly_chart("Test"), cls=datatypes.JSONEncoder)
+    s = json.dumps(datatypes.Plotly_chart("data_json", "layout_json", "plot_title"), cls=datatypes.JSONEncoder)
     assert json.loads(s) == {
-        'plotly_chart_json_string': 'Test',
+        'data_json': 'data_json',
+        'layout_json': 'layout_json',
+        'plot_title': 'plot_title',
         '_type': 'plotly_chart'
     }
 
 def test_plotly_chart_deserialization():
-    s = json.dumps(datatypes.Plotly_chart("Test"), cls=datatypes.JSONEncoder)
+    s = json.dumps(datatypes.Plotly_chart("data_json", "layout_json", "plot_title"), cls=datatypes.JSONEncoder)
     t = json.loads(s, object_hook=datatypes.JSONEncoder.object_hook)
-    assert t.plotly_chart_json_string == "Test"
+    assert t.data_json == "data_json"
+    assert t.layout_json == "layout_json"
+    assert t.plot_title == "plot_title"
 
 
 def test_plotly_chart_equals():
-    assert datatypes.Plotly_chart("Test1") == datatypes.Plotly_chart("Test1")
+    assert datatypes.Plotly_chart("data_json", "layout_json", "plot_title") == datatypes.Plotly_chart("data_json")
     assert datatypes.Plotly_chart("Test1") != datatypes.Plotly_chart("Test2")
 
 

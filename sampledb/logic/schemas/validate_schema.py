@@ -555,8 +555,8 @@ def _validate_plotly_chart_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'plotly_chart_json_string'}
-    schema_keys = set(schema.keys())
+    valid_keys = {'type', 'title', 'data_json', 'layout_json', 'plot_title'}
+    schema_keys = schema.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
