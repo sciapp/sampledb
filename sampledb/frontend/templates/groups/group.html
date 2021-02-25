@@ -27,6 +27,7 @@
     {% endwith %}
   {% endfor %}
   </ul>
+  <div class="button-row">
   {% if show_objects_link %}
     <div class="btn-group">
       <a href="{{ url_for('.objects', group=group.id) }}" class="btn btn-default">View Objects</a>
@@ -68,6 +69,7 @@
   {% if delete_group_form %}
   <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteGroupModal">Delete Basic Group</button>
   {% endif %}
+  </div>
 
   {% if edit_group_form %}
   <div class="modal fade" id="editGroupModal" tabindex="-1" role="dialog" aria-labelledby="editGroupModalLabel">

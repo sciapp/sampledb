@@ -2,6 +2,7 @@
 
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![DOI](https://zenodo.org/badge/221237572.svg)](https://zenodo.org/badge/latestdoi/221237572)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.02107/status.svg)](https://doi.org/10.21105/joss.02107)
 
 SampleDB is a web-based sample and measurement metadata database.
 
