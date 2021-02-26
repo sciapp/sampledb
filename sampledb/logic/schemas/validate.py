@@ -7,6 +7,8 @@ import re
 import datetime
 import typing
 import math
+import demjson
+import plotly
 
 from ...logic import actions, objects, datatypes, users
 from ...models import ActionType
@@ -533,4 +535,9 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
         raise ValidationError('layout_json must be str', path)
     if 'plot_title' in instance and not isinstance(instance['plot_title'], str):
         raise ValidationError('layout_json must be str', path)
-    # TODO Validate data_json with plotly
+    plot_dict = demjson.decode(instance['data_json'])
+    for plot in plot_dict.keys():
+        try:
+            plotly.io.from_json(demjson.encode(plot_dict[plot]))
+        except ValueError:
+            raise ValidationError('The data_json must be valid. Look up which schema is supported by plotly ', path)
