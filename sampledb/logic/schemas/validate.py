@@ -506,6 +506,7 @@ def _validate_object_reference(instance: dict, schema: dict, path: typing.List[s
         if action.type_id != schema['action_type_id']:
             raise ValidationError('object has wrong action type', path)
 
+
 def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
@@ -517,8 +518,8 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'data_json', 'layout_json', 'plot_title'}
-    required_keys = ['_type', 'data_json']
+    valid_keys = {'_type', 'plotly'}
+    required_keys = ['_type', 'plotly']
     schema_keys = instance.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -528,16 +529,19 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if instance['_type'] != 'plotly_chart':
         raise ValidationError('expected _type "plotly_chart"', path)
-    if not isinstance(instance['data_json'], str):
-        raise ValidationError('data_json must be str', path)
-    if 'layout_json' in instance and not isinstance(instance['layout_json'], str):
-        print("b")
-        raise ValidationError('layout_json must be str', path)
-    if 'plot_title' in instance and not isinstance(instance['plot_title'], str):
-        raise ValidationError('layout_json must be str', path)
-    plot_dict = demjson.decode(instance['data_json'])
-    for plot in plot_dict.keys():
-        try:
-            plotly.io.from_json(demjson.encode(plot_dict[plot]))
-        except ValueError:
-            raise ValidationError('The data_json must be valid. Look up which schema is supported by plotly ', path)
+    if isinstance(instance['plotly'], str):
+        if len(instance['plotly']) > 0:
+            try:
+                instance['plotly'] = demjson.decode(instance['plotly'])
+            except demjson.JSONDecodeError:
+                raise ValidationError('plotly data must be valid JSON', path)
+        else:
+            instance['plotly'] = {}
+    if not isinstance(instance['plotly'], dict):
+        raise ValidationError('plotly must be a dict', path)
+
+    try:
+        plotly.io.from_json(demjson.encode(instance['plotly']), 'Figure', False)
+    except ValueError:
+        print(instance['plotly'])
+        raise ValidationError('The plotly data must be valid. Look up which schema is supported by plotly ', path)

@@ -1,7 +1,3 @@
-<div class="form-group" style="padding-right:0.75em">
-    <div class="col-md-9">
-        <textarea readonly type="text" class="form-control" name="{{ id_prefix }}_plotly_chart_data_json" placeholder="data_json">{% if data is not none and "data_json" in data %}{{ data.data_json }}{% endif %}</textarea>
-        <textarea type="text" class="form-control" name="{{ id_prefix }}_plotly_chart_layout_json" placeholder="layout_json">{% if data is not none and "layout_json" in data %}{{ data.layout_json }}{% endif %}</textarea>
-        <textarea type="text" class="form-control" name="{{ id_prefix }}_plotly_chart_plot_title" placeholder="plot_title">{% if data is not none and "plot_title" in data %}{{ data.plot_title }}{% endif %}</textarea>
-    </div>
+<div class="{% if id_prefix+'_plotly' in errors %}has-error{% elif id_prefix+'_plotly' in form_data %}has-success{% endif %}" style="padding-right:0.75em;">
+    <textarea readonly="readonly" type="text" rows="1" class="form-control" name="{{ id_prefix }}_plotly" placeholder="">{% if id_prefix+'_plotly' in form_data %}{{ form_data[id_prefix+'_plotly'] }}{% elif data is not none and "plotly" in data %}{{ data.plotly | tojson }}{% endif %}</textarea>
 </div>

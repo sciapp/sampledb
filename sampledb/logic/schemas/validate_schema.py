@@ -547,6 +547,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
     if 'default' in schema and schema['default'] != 'self':
         raise ValidationError('default must be "self"', path)
 
+
 def _validate_plotly_chart_schema(schema: dict, path: typing.List[str]) -> None:
     """
     Validates the given plotly_chart object schema and raises a ValidationError if it is invalid.
@@ -555,7 +556,7 @@ def _validate_plotly_chart_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'data_json', 'layout_json', 'plot_title'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export'}
     schema_keys = schema.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:

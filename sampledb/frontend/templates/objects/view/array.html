@@ -247,7 +247,7 @@
   {% if data %}
     <ul style="padding-left: 1.25em">
     {% for item in data %}
-      {% set name = "item" %}
+      {% set name = name ~ "_" ~ loop.index0 %}
       {% set schema = schema['items'] %}
       {% set data = item %}
       {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
@@ -264,7 +264,7 @@
 <div style="padding-left:2.5em;">
   {% if data is not none %}
     {% for item in data %}
-      {% set name = "item" %}
+      {% set name = name ~ "_" ~ loop.index0 %}
       {% set schema = schema['items'] %}
       {% set data = item %}
       {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}

@@ -1,21 +1,11 @@
 <div class="row" style="padding-right:0.75em">
- {% if data.data_json %}
-  <label class="col-md-3" style="text-align: right">
-     {{ schema.title }}
-    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' +data.data_json + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-    {% else %}
-    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-    {% endif %}</label>
+  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+  </label>
 
-    <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/plotly_plot.js') }}"></script>
-    <div class="col-md-9">
-         {% if data.data_json and data.layout_json %}
-             <a id="plot_info_link_{{ data.data_json | hash }}" onclick="plotlyPlot({{ data.data_json }}, '{{ data.data_json | hash }}', {{ data.layout_json }})">more info</a>
-         {% elif data.data_json %}
-             <a id="plot_info_link_{{ data.data_json | hash }}" onclick="plotlyPlot({{ data.data_json }}, '{{ data.data_json | hash }}')">more info</a>
-         {% else %}
-         {% endif %}
-    </div>
-    <div class="col-md-9" id="plotly_plot_div_{{ data.data_json | hash }}" style="display:none"></div>
+    <div class="col-md-9" id="plotly_plot_div_{{ name }}"></div>
 </div>
+<script type="text/javascript">
+$( document ).ready(function() {
+    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
+});
+</script>

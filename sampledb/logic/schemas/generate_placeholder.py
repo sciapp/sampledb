@@ -242,6 +242,7 @@ def _generate_user_placeholder(schema: dict, path: typing.List[str]) -> None:
     """
     return None
 
+
 def _generate_plotly_chart_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
     """
     Generates a placeholder plotly_chart object based on an object schema.

@@ -362,24 +362,17 @@ def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
 
 @form_data_parser
 def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=False):
-    plotly_chart_data_json = form_data.get(id_prefix + '__plotly_chart_data_json', [None])[0]
-    if plotly_chart_data_json is None and not required:
-        plotly_chart_data_json = ""
-    plotly_chart_layout_json = form_data.get(id_prefix + '__plotly_chart_layout_json', [None])[0]
-    if plotly_chart_layout_json is None and not required:
-        plotly_chart_layout_json = ""
-    plotly_chart_plot_title = form_data.get(id_prefix + '__plotly_chart_plot_title', [None])[0]
-    if plotly_chart_plot_title is None and not required:
-        plotly_chart_plot_title = ""
+    plotly_chart_data = form_data.get(id_prefix + '__plotly', [None])[0]
+    if plotly_chart_data is None and not required:
+        plotly_chart_data = {}
     data = {
         '_type': 'plotly_chart',
-        'data_json': plotly_chart_data_json,
-        'layout_json': plotly_chart_layout_json,
-        'plot_title': plotly_chart_plot_title
+        'plotly': plotly_chart_data
     }
     schemas.validate(data, schema)
 
     return data
+
 
 def parse_form_data(form_data, schema):
     id_prefix = 'object'
