@@ -1756,23 +1756,19 @@ def test_validate_plotly_chart():
     }
     instance = {
         '_type': 'plotly_chart',
-        'data_json': str({"plot0": {'name': 'test', 'type': 'scatter', 'x': [1,2,3], 'y': [1,2,3]}}),
-        'layout_json': str({}),
-        'plot_title': 'test_title'
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]}
     }
     validate(instance, schema)
 
 
-def test_validate_plotly_chart_invalid_data_josn():
+def test_validate_plotly_chart_invalid_data():
     schema = {
         'title': 'Example',
         'type': 'plotly_chart'
     }
     instance = {
         '_type': 'plotly_chart',
-         'data_json': str({"plot0": {'name': 'test', 'type': 'invalid_type', 'x': [1, 2, 3], 'y': [1, 2, 3]}}),
-        'layout_json': str({}),
-        'plot_title': 'test_title'
+        'plotly': {"data": [{"name": "test", "type": "invalid_type", "x": [1,2,3], "y": [1,2,3]}]}
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
@@ -1797,9 +1793,7 @@ def test_validate_plotly_chart_invalid_key():
     }
     instance = {
         '_type': 'plotly_chart',
-        'data_json': str({"plot0": {'name': 'test', 'type': 'scatter', 'x': [1,2,3], 'y': [1,2,3]}}),
-        'layout_json': str({}),
-        'plot_title': 'test_title',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]},
         'meta': ''
     }
     with pytest.raises(ValidationError):
@@ -1813,9 +1807,7 @@ def test_validate_plotly_chart_invalid_type():
     }
     instance = {
         '_type': 'text',
-        'data_json': str({"plot0": {'name': 'test', 'type': 'scatter', 'x': [1, 2, 3], 'y': [1, 2, 3]}}),
-        'layout_json': str({}),
-        'plot_title': 'test_title'
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]}
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)

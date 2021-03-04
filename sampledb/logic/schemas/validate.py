@@ -543,5 +543,4 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
     try:
         plotly.io.from_json(demjson.encode(instance['plotly']), 'Figure', False)
     except ValueError:
-        print(instance['plotly'])
         raise ValidationError('The plotly data must be valid. Look up which schema is supported by plotly ', path)
