@@ -1,9 +1,12 @@
 function sdbtoggle(id) {
-    $( '#'+id ).toggle();
-    if ($( '#'+id ).is(":hidden")) {
-        $( '#'+id ).html().replaceAll("hide", "show");
+    plot_div = '#plotly_plot_div_'+id;
+    toggle_link = '#plotly_info_link_'+id;
+    $( plot_div ).toggle();
+    content = $( toggle_link ).html();
+    if ($( plot_div ).is(":hidden")) {
+        $( toggle_link ).html(content.replace("hide", "show"));
     }
     else {
-        $( '#'+id ).html().replaceAll("show", "hide");
+        $( toggle_link ).html(content.replace("show", "hide"));
     }
 }

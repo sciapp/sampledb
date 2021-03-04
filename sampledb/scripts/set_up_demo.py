@@ -375,7 +375,7 @@ def main(arguments):
                 "plotly": example_data
             }
         }
-        plotly_object = sampledb.logic.objects.create_object(plotly_action.id, data, user.id)
+        plotly_object = sampledb.logic.objects.create_object(plotly_action.id, data, basic_user.id)
         sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
 
         with open(os.path.join(schema_directory, 'plotly_array.json'), 'r', encoding='utf-8') as schema_file:
@@ -406,7 +406,7 @@ def main(arguments):
                     "plotly": example_data3
                 }]
         }
-        plotly_object = sampledb.logic.objects.create_object(plotly_array_action.id, data, user.id)
+        plotly_object = sampledb.logic.objects.create_object(plotly_array_action.id, data, basic_user.id)
         sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
         sampledb.db.session.commit()
 

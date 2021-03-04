@@ -6,7 +6,7 @@
             {{ schema.title }} #{{ loop.index1 }}
         {% endif %}
 
-        <a id="plot_info_link_{{ name }}" onclick="sdbtoggle( 'plotly_plot_div_{{ name }}' )">[show plot]</a>
+        <a id="plotly_info_link_{{ name }}" onclick="sdbtoggle( '{{ name }}' )">[show plot]</a>
     </div>
     <div id="plotly_plot_div_{{ name }}" style="display:none"></div>
 </div>
