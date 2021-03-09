@@ -5,12 +5,12 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 
-import simplejson
+import demjson
 
 
 class SQLAlchemyExt(SQLAlchemy):
     def apply_driver_hacks(self, app, info, options):
-        options['json_serializer'] = simplejson.dumps
+        options['json_serializer'] = demjson.encode
 
 
 login_manager = LoginManager()
