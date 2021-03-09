@@ -1,20 +1,18 @@
-{% set plotly = namespace() %}
-{% if plotly.counter is not defined %}
-    {% set plotly.counter = 1 %}
-{% endif %}
 <div>
     <div>
-        {% if data.plotly.layout.title.text %}
-            {{ data.plotly.layout.title.text }}
+        {% if 'plotly' in data and 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
+            {{ data.plotly.layout.title.text|striptags }}
         {% else %}
-            {{ schema.title }}
+            {{ schema.title }} #{{ loop.index1 }}
         {% endif %}
 
-        <a id="plot_info_link_{{ plotly.counter }}" onclick="$( '#plotly_plot_div_{{ plotly.counter }}' ).toggle()">more info</a>
+        <a id="plotly_info_link_{{ name }}" onclick="sdbtoggle( '{{ name }}' )">[show plot]</a>
     </div>
-    <div id="plotly_plot_div_{{ plotly.counter }}" style="display:none"></div>
+    <div id="plotly_plot_div_{{ name }}" style="display:none"></div>
 </div>
+
 <script type="text/javascript">
-  Plotly.newPlot('plotly_plot_div_{{ plotly.counter }}', {{ data.plotly|tojson|safe }});
+$( document ).ready(function() {
+    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
+});
 </script>
-{% set plotly.counter = plotly.counter + 1 %}

@@ -133,7 +133,7 @@
     <tr>
     {% for field in item %}
       <td>
-          {% set name = "field_".format(loop.index0) %}
+          {% set name = name ~ "_" ~ loop.index0 %}
           {% set schema = schema["items"]["items"] %}
           {% set data = field %}
           {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
