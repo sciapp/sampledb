@@ -9,14 +9,27 @@
     "plotlist": {
       "title": "Plot List",
       "type": "array",
-      "style": "list",
       "minItems": 1,
+      "maxItems": 50,
+      "style": "table",
       "items": {
-        "title": "listitem",
-        "type": "plotly_chart"
+        "title": "pp list",
+        "type": "object",
+        "properties": {
+          "plotitem": {
+            "title": "listitem",
+            "type": "plotly_chart"
+          },
+          "textitem": {
+            "title": "Textitem",
+            "type": "text"
+          }
+        },
+        "required": ["plotitem"]
       }
     }
   },
+
   "propertyOrder": ["name", "plotlist"],
   "required": ["name"]
 }

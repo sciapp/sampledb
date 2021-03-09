@@ -388,23 +388,60 @@ def main(arguments):
         with open(os.path.join(objects_directory, 'plotly-example-data3.sampledb.json'), 'r', encoding='utf-8') as data_file:
             example_data3 = json.load(data_file, parse_float=decimal.Decimal)
 
+#        data = {
+#            "name": {
+#                "_type": "text",
+#                "text": "Plotly Array Example"
+#            },
+#            "plotlist": [{
+#                "_type": "plotly_chart",
+#                "plotly": example_data
+#            },
+#                {
+#                    "_type": "plotly_chart",
+#                    "plotly": example_data2
+#                },
+#                {
+#                    "_type": "plotly_chart",
+#                    "plotly": example_data3
+#                }]
+#        }
+
         data = {
             "name": {
                 "_type": "text",
                 "text": "Plotly Array Example"
             },
-            "plotlist": [{
+            "plotlist": [ { "plotitem": {
                 "_type": "plotly_chart",
                 "plotly": example_data
             },
-                {
-                    "_type": "plotly_chart",
-                    "plotly": example_data2
-                },
-                {
-                    "_type": "plotly_chart",
-                    "plotly": example_data3
-                }]
+                "textitem": {
+                    "_type": "text",
+                    "text": "asdkjasdkadkasjdaskjdaskd"
+                }
+            },
+            {"plotitem": {
+                "_type": "plotly_chart",
+                "plotly": example_data2
+            },
+                "textitem": {
+                    "_type": "text",
+                    "text": "asdkjasdkadkasjdaskjdaskd"
+                }
+
+            },
+            {"plotitem": {
+                "_type": "plotly_chart",
+                "plotly": example_data3
+            },
+                "textitem": {
+                    "_type": "text",
+                    "text": "asdkjasdkadkasjdaskjdaskd"
+                }
+
+            }
+            ]
         }
         plotly_object = sampledb.logic.objects.create_object(plotly_array_action.id, data, basic_user.id)
         sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
