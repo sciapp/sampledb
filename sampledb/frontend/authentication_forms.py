@@ -5,6 +5,7 @@
 
 import re
 
+import flask
 from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, Length, Email, ValidationError
@@ -30,6 +31,12 @@ class ChangeUserForm(FlaskForm):
 
     def __init_(self, name=None, email=None):
         super(ChangeUserForm, self).__init__()
+
+    def validate_name(self, field):
+        if flask.current_app.config['ENFORCE_SPLIT_NAMES']:
+            name = field.data
+            if ', ' not in name[1:-1]:
+                raise ValidationError("Please enter your name as: surname, given names.")
 
     def validate_orcid(self, field):
         orcid = field.data

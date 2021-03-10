@@ -411,6 +411,8 @@ DISABLE_SUBPROJECTS = False
 
 LOAD_OBJECTS_IN_BACKGROUND = False
 
+ENFORCE_SPLIT_NAMES = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
