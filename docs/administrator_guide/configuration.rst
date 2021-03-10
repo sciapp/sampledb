@@ -183,5 +183,7 @@ Miscellaneous
      - If set, the "Use in Measurement" button will not be shown.
    * - SAMPLEDB_DISABLE_SUBPROJECTS
      - If set, project groups cannot have child project groups assigned to them.
+   * - SAMPLEDB_ENFORCE_SPLIT_NAMES
+     - If set, force names to be entered as "surname, given names". **Note:** this will prevent users with a mononym from setting their name correctly!
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

@@ -7,6 +7,7 @@ Version 0.18
 Currently in development.
 
 - Moved example_data functionality to set_up_data script
+- Allow administrators to enforce user names to be given as surname, given names
 - Improved user interface
 
 Version 0.17
