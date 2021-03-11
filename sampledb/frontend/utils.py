@@ -12,6 +12,8 @@ import flask
 import flask_login
 import qrcode
 import qrcode.image.svg
+import plotly
+import json
 
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
@@ -87,6 +89,17 @@ def generate_jinja_hash(object):
     return hash(object)
 
 
+def plotly_base64_image_from_json(object):
+    try:
+        fig_plot = plotly.io.from_json(json.dumps(object))
+    except ValueError:
+        return
+    image_stream = BytesIO()
+    fig_plot.write_image(image_stream)
+    image_stream.seek(0)
+    return 'data:image/png;base64,{}'.format(base64.b64encode(image_stream.read()).decode('utf-8'))
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -95,3 +108,4 @@ _jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications
 _jinja_filters['urlencode'] = quote_plus
 _jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html
 _jinja_filters['hash'] = generate_jinja_hash
+_jinja_filters['plot'] = plotly_base64_image_from_json
