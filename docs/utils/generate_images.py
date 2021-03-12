@@ -151,7 +151,7 @@ def comments(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Comments' in heading.text:
             break
     else:
@@ -171,7 +171,7 @@ def activity_log(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Activity Log' in heading.text:
             break
     else:
@@ -193,7 +193,7 @@ def locations(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Location' in heading.text:
             break
     else:
@@ -229,7 +229,7 @@ def files(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Files' in heading.text:
             break
     else:
