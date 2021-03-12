@@ -6,13 +6,26 @@
             {{ schema.title }} #{{ loop.index1 }}
         {% endif %}
 
-        <a id="plotly_info_link_{{ name }}_{{ entry_index }}" onclick="sdbtoggle( '{{ name }}_{{ entry_index }}' )">[show plot]</a>
+        <Button id="plotly_info_button_"{{ name }} type="button" class="btn btn-link" data-toggle="modal" data-target="#plotly_modal_{{ name }}">[show plot]</Button>
     </div>
-    <div id="plotly_plot_div_{{ name }}_{{ entry_index }}" style="display:none"></div>
+    <div class="modal fade bd-example-modal-lg" id="plotly_modal_{{ name }}" tabindex="-1" aria-labelledby="{{ data.plotly.layout.title.text }}" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="plotly_moda_title_{{ name }}">{{ data.plotly.layout.title.text }}</h5>
+                    <Button type="button" class="close" data-dismiss="modal" aria-label="close">
+                        <span aria-hidden="true">&times;</span>
+                    </Button>
+                </div>
+                <div class="modal-body" style="display: flex; justify-content: center">
+                    <div id="plotly_plot_div_{{ name }}"></div></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript">
 $( document ).ready(function() {
-    Plotly.newPlot('plotly_plot_div_{{ name }}_{{ entry_index }}', {{ data.plotly|tojson|safe }});
+    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
 });
 </script>

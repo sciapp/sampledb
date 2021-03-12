@@ -7,8 +7,8 @@
         {% endif %}
 
         <a id="plotly_info_link_{{ name }}" onclick="sdbtoggle( '{{ name }}' )">[show plot]</a>
+        <div id="plotly_plot_div_{{ name }}" style="display: none"></div>
     </div>
-    <div id="plotly_plot_div_{{ name }}" style="display:none"></div>
 </div>
 
 <script type="text/javascript">
@@ -16,3 +16,4 @@ $( document ).ready(function() {
     Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
 });
 </script>
+
