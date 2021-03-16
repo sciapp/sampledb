@@ -66,6 +66,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     text = form_data.get(id_prefix + '__text', [None])[0]
     if not text and not required:
         return None
+    if text is None:
+        text = ""
     data = {
         '_type': 'text',
         'text': str(text)
@@ -296,7 +298,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
                 items.append(None)
             else:
                 item_id_prefix = id_prefix + '__{}'.format(i)
-                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors))
+                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, True))
         if None in items:
             # use a placeholder if form_data had no (valid) information on an
             # item, otherwise items would not be a valid array and the form
