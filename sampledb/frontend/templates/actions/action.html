@@ -4,13 +4,14 @@
 
 {% block content %}
   <h1>
+    Action #{{ action.id }}:
     {% if action.user is not none %}
     <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
     {% endif %}
     {% if action.instrument is not none %}
     <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash;
     {% endif %}
-    <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
+    {{ action.name }}
   </h1>
   {% if action.user_id is not none %}
   <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} This custom action is {% if not is_public %}not {% endif %}public.</p>

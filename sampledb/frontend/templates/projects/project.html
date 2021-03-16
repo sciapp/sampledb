@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Project Group #{{ project.id }}: {{ project.name }}</h3>
+  <h1>Project Group #{{ project.id }}: {{ project.name }}</h1>
   {% if object_id is not none %}
   <p class="text-muted">This project group is linked to <a href="{{ url_for('.object', object_id=object_id) }}">{% if object_action %}{{ object_action.type.object_name }}{% else %}Object{% endif %} #{{ object_id }}{% if object is not none %}: {{ object.data.name.text }}{% endif %}</a>.</p>
   {% endif %}
@@ -35,7 +35,7 @@
       {% endif %}
   {% endif %}
   {% if child_project_ids %}
-    <h4>Child Project Groups</h4>
+    <h2>Child Project Groups</h2>
     <ul>
       {% for project_id in child_project_ids %}
         {% with project = get_project(project_id) %}
@@ -45,7 +45,7 @@
     </ul>
   {% endif %}
   {% endif %}
-  <h4>Members</h4>
+  <h2>Members</h2>
   <ul>
     {% for user_id in project_member_user_ids_and_permissions %}
       {% with user = get_user(user_id) %}

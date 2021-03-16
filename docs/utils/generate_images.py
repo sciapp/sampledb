@@ -24,6 +24,8 @@ import sampledb.config
 import sampledb.logic
 import tests.conftest
 
+DEVICE_PIXEL_RATIO = int(os.environ.get('DEVICE_PIXEL_RATIO', '1'))
+
 
 def scroll_to(driver, x, y):
     driver.execute_script("window.scrollTo({}, {})".format(x, y))
@@ -106,9 +108,13 @@ def default_permissions(base_url, driver):
             break
     else:
         assert False
+    for next_heading in driver.find_elements_by_tag_name('h2'):
+        if 'Other Settings' in next_heading.text:
+            break
+    else:
+        assert False
     scroll_to(driver, 0, heading.location['y'])
-    footer = driver.find_elements_by_tag_name('footer')[-1]
-    resize_for_screenshot(driver, width, footer.location['y'] - heading.location['y'])
+    resize_for_screenshot(driver, width, next_heading.location['y'] - heading.location['y'])
     driver.get_screenshot_as_file('docs/static/img/generated/default_permissions.png')
 
 
@@ -151,7 +157,7 @@ def comments(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Comments' in heading.text:
             break
     else:
@@ -171,14 +177,14 @@ def activity_log(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Activity Log' in heading.text:
             break
     else:
         assert False
     y_offset = scroll_to(driver, 0, heading.location['y'])
     activity_log = driver.find_element_by_id('activity_log')
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, activity_log.location['y'] + activity_log.rect['height']) - y_offset))
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log_dontblock.png', (0, heading.location['y'] - y_offset, width, min(activity_log.location['y'] - y_offset + activity_log.rect['height'], max_height)))
 
 
 def locations(base_url, driver, object):
@@ -193,7 +199,7 @@ def locations(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Location' in heading.text:
             break
     else:
@@ -229,7 +235,7 @@ def files(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h4'):
+    for heading in driver.find_elements_by_tag_name('h2'):
         if 'Files' in heading.text:
             break
     else:
@@ -269,7 +275,7 @@ def labels(base_url, driver, object):
     max_height = 1000
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
-    driver.get(base_url + 'objects/{}/label'.format(object.id))
+    driver.get(base_url + 'objects/{}/label#toolbar=0'.format(object.id))
 
     # Wait for PDF preview to be visible
     time.sleep(10)
@@ -359,14 +365,15 @@ def schema_editor(base_url, driver):
 
     driver.get(base_url + 'actions/new/')
     form = driver.find_element_by_id('schema-editor')
-
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'], width, min(form.location['y'] + max_height, form.location['y'] + form.rect['height'])))
+    y_offset = scroll_to(driver, 0, form.location['y'])
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
-    image = image.crop(box)
+    if box:
+        image = image.crop([c * DEVICE_PIXEL_RATIO for c in box])
     image.save(file_name)
 
 

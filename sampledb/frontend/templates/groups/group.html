@@ -8,9 +8,9 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Basic Group #{{ group.id }}: {{ group.name }}</h3>
+  <h1>Basic Group #{{ group.id }}: {{ group.name }}</h1>
   <p>{{ group.description }}</p>
-  <h4>Members</h4>
+  <h2>Members</h2>
   <ul>
     {% for user_id in group_member_ids %}
     {% with user = get_user(user_id) %}

@@ -4,6 +4,7 @@
 
 {% block content %}
   <h1>
+    Location #{{ location.id }}:
     {% for ancestor_id, ancestor_name in ancestors %}
       <a href="{{ url_for('.location', location_id=ancestor_id) }}">{{ ancestor_name }}</a> /
     {% endfor %}

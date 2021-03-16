@@ -261,7 +261,7 @@ def test_view_project(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/{}'.format(project_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('h3').text == 'Project Group #{}: Example Project'.format(project_id)
+    assert document.find('h1').text == 'Project Group #{}: Example Project'.format(project_id)
 
 
 def test_remove_last_user_from_project_permissions(flask_server, user_session):
@@ -536,7 +536,7 @@ def test_view_subprojects(flask_server, user_session):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
 
-    for header in document.find_all('h4'):
+    for header in document.find_all('h2'):
         if 'Child Project Groups' in header.text:
             subprojects_header = header
             break
