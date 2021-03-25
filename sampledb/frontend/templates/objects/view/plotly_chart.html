@@ -1,11 +1,29 @@
 <div class="row" style="padding-right:0.75em">
+
   <label class="col-md-3" style="text-align: right">{{ schema.title }}
+
+      {% if 'plotly' in data and 'layout' in data.plotly %}
+        <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + data.plotly.layout.title.text|striptags + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+      {% else %}
+        <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+      {% endif %}
+
   </label>
 
-    <div class="col-md-9" id="plotly_plot_div_{{ name }}"></div>
+        {% if 'plotly' in data and 'layout' in data.plotly %}
+
+            <div class="col-md-9">
+                <div class="col-md-9" id="plotly_plot_div_{{ name }}"></div>
+            </div>
+
+            <script type="text/javascript">
+                $( document ).ready(function() {
+                    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
+                });
+            </script>
+
+        {% endif %}
+
 </div>
-<script type="text/javascript">
-$( document ).ready(function() {
-    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
-});
-</script>
+
+

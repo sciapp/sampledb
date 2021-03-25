@@ -3,17 +3,21 @@
         {% if 'plotly' in data and 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
             {{ data.plotly.layout.title.text|striptags }}
         {% else %}
-            {{ schema.title }} #{{ loop.index1 }}
+            {{ schema.title }} {{ loop.index1 }}
         {% endif %}
 
-        <a id="plotly_info_link_{{ name }}" onclick="sdbtoggle( '{{ name }}' )">[show plot]</a>
-        <div id="plotly_plot_div_{{ name }}" style="display: none"></div>
-    </div>
-</div>
+        {% if 'plotly' in data and 'layout' in data.plotly %}
+            <a id="plotly_info_link_{{ name }}" onclick="sdbtoggle( '{{ name }}' )">[show plot]</a>
+            <div id="plotly_plot_div_{{ name }}" style="display: none"></div>
 
-<script type="text/javascript">
-$( document ).ready(function() {
-    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
-});
-</script>
+            <script type="text/javascript">
+                $( document ).ready(function() {
+                    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
+                });
+            </script>
+        {% endif %}
+
+    </div>
+
+</div>
 
