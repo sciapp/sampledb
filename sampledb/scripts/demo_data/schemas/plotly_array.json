@@ -9,23 +9,11 @@
     "plotlist": {
       "title": "Plot List",
       "type": "array",
+      "style": "list",
       "minItems": 1,
-      "maxItems": 50,
-      "style": "table",
       "items": {
-        "title": "pp list",
-        "type": "object",
-        "properties": {
-          "plotitem": {
-            "title": "listitem",
-            "type": "plotly_chart"
-          },
-          "textitem": {
-            "title": "Textitem",
-            "type": "text"
-          }
-        },
-        "required": ["plotitem"]
+        "title": "listitem",
+        "type": "plotly_chart"
       }
     }
   },
