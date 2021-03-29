@@ -363,7 +363,7 @@ def main(arguments):
 
         with open(os.path.join(objects_directory, 'plotly-example-data1.sampledb.json'), 'r',
                       encoding='utf-8') as data_file:
-            example_data = json.load(data_file, parse_float=decimal.Decimal)
+            example_data = json.load(data_file)
 
         data = {
             "name": {
@@ -384,9 +384,9 @@ def main(arguments):
         sampledb.logic.action_permissions.set_action_public(plotly_array_action.id)
 
         with open(os.path.join(objects_directory, 'plotly-example-data2.sampledb.json'), 'r', encoding='utf-8') as data_file:
-            example_data2 = json.load(data_file, parse_float=decimal.Decimal)
+            example_data2 = json.load(data_file)
         with open(os.path.join(objects_directory, 'plotly-example-data3.sampledb.json'), 'r', encoding='utf-8') as data_file:
-            example_data3 = json.load(data_file, parse_float=decimal.Decimal)
+            example_data3 = json.load(data_file)
 
         data = {
             "name": {

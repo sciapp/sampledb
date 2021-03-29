@@ -95,9 +95,9 @@ def plotly_base64_image_from_json(object):
     except ValueError:
         return
     image_stream = BytesIO()
-    fig_plot.write_image(image_stream)
+    fig_plot.write_image(image_stream, "svg")
     image_stream.seek(0)
-    return 'data:image/png;base64,{}'.format(base64.b64encode(image_stream.read()).decode('utf-8'))
+    return 'data:image/svg+xml;base64,{}'.format(base64.b64encode(image_stream.read()).decode('utf-8'))
 
 
 _jinja_filters['prettify_units'] = prettify_units

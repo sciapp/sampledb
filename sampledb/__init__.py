@@ -5,19 +5,11 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 
-import demjson
-
-
-class SQLAlchemyExt(SQLAlchemy):
-    def apply_driver_hacks(self, app, info, options):
-        options['json_serializer'] = demjson.encode
-
-
 login_manager = LoginManager()
 login_manager.session_protection = 'basic'
 
 mail = Mail()
-db = SQLAlchemyExt()
+db = SQLAlchemy()
 
 import sampledb.frontend
 import sampledb.api
