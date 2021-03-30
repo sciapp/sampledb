@@ -22,17 +22,11 @@
             </div>
 
             <script type="text/javascript">
-                $( document ).ready(function() {
-                    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
-                });
+                window.plotly_charts.push(['plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }}]);
             </script>
 
         {% else %}
             {{ schema.title }} #{{ loop.index1 }}
         {% endif %}
-
     </div>
-
 </div>
-
-

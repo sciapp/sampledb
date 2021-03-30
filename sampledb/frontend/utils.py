@@ -85,6 +85,7 @@ def check_current_user_is_not_readonly():
     if flask_login.current_user.is_readonly:
         raise UserIsReadonlyError()
 
+
 def generate_jinja_hash(object):
     return hash(object)
 

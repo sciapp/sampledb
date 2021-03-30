@@ -8,7 +8,6 @@ Usage: python -m sampledb set_up_demo
 import json
 import os
 import sys
-import decimal
 
 
 import sampledb
@@ -361,8 +360,7 @@ def main(arguments):
         plotly_action = create_action(ActionType.SAMPLE_CREATION, "Plotly Example Action", "", schema, None)
         sampledb.logic.action_permissions.set_action_public(plotly_action.id)
 
-        with open(os.path.join(objects_directory, 'plotly-example-data1.sampledb.json'), 'r',
-                      encoding='utf-8') as data_file:
+        with open(os.path.join(objects_directory, 'plotly-example-data1.sampledb.json'), 'r', encoding='utf-8') as data_file:
             example_data = json.load(data_file)
 
         data = {

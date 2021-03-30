@@ -530,7 +530,6 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
     if instance['_type'] != 'plotly_chart':
         raise ValidationError('expected _type "plotly_chart"', path)
     if isinstance(instance['plotly'], str):
-        print('PLOTLY is STRING')
         if len(instance['plotly']) > 0:
             try:
                 instance['plotly'] = json.loads(instance['plotly'])

@@ -11,13 +11,8 @@
             <div id="plotly_plot_div_{{ name }}" style="display: none"></div>
 
             <script type="text/javascript">
-                $( document ).ready(function() {
-                    Plotly.newPlot('plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }});
-                });
+                window.plotly_charts.push(['plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }}]);
             </script>
         {% endif %}
-
     </div>
-
 </div>
-

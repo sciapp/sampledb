@@ -296,4 +296,3 @@ class Text(object):
     @classmethod
     def from_json(cls, obj):
         return cls(obj['text'])
-
