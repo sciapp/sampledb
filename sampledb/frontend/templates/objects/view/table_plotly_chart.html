@@ -1,28 +1,29 @@
+{% set plot_counter.value = plot_counter.value + 1 %}
 <div>
     <div>
 
         {% if 'plotly' in data and 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
             {{ data.plotly.layout.title.text|striptags }}
 
-            <Button id="plotly_info_button_"{{ name }} type="button" class="btn btn-link" data-toggle="modal" data-target="#plotly_modal_{{ name }}">[show plot]</Button>
+            <Button id="plotly_info_button_{{ name }}_{{ plot_counter.value }}" type="button" class="btn btn-link" data-toggle="modal" data-target="#plotly_modal_{{ name }}_{{ plot_counter.value }}">[show plot]</Button>
 
-            <div class="modal fade bd-example-modal-lg" id="plotly_modal_{{ name }}" tabindex="-1" aria-labelledby="{{ data.plotly.layout.title.text }}" role="dialog" aria-hidden="true">
+            <div class="modal fade bd-example-modal-lg" id="plotly_modal_{{ name }}_{{ plot_counter.value }}" tabindex="-1" aria-labelledby="{{ data.plotly.layout.title.text }}" role="dialog" aria-hidden="true">
                 <div class="modal-dialog modal-lg" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="plotly_moda_title_{{ name }}">{{ data.plotly.layout.title.text }}</h5>
+                            <h5 class="modal-title" id="plotly_modal_title_{{ name }}_{{ plot_counter.value }}">{{ data.plotly.layout.title.text }}</h5>
                             <Button type="button" class="close" data-dismiss="modal" aria-label="close">
                                 <span aria-hidden="true">&times;</span>
                             </Button>
                         </div>
                         <div class="modal-body" style="display: flex; justify-content: center">
-                            <div id="plotly_plot_div_{{ name }}"></div></div>
+                            <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}"></div></div>
                     </div>
                 </div>
             </div>
 
             <script type="text/javascript">
-                window.plotly_charts.push(['plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }}]);
+                window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
             </script>
 
         {% else %}

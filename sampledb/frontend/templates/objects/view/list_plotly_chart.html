@@ -1,3 +1,4 @@
+{% set plot_counter.value = plot_counter.value + 1 %}
 <div>
     <div>
         {% if 'plotly' in data and 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
@@ -7,11 +8,11 @@
         {% endif %}
 
         {% if 'plotly' in data and 'layout' in data.plotly %}
-            <a id="plotly_info_link_{{ name }}" onclick="sdbtoggle( '{{ name }}' )">[show plot]</a>
-            <div id="plotly_plot_div_{{ name }}" style="display: none"></div>
+            <a id="plotly_info_link_{{ name }}_{{ plot_counter.value }}" onclick="sdbtoggle( '{{ name }}_{{ plot_counter.value }}' )">[show plot]</a>
+            <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}" style="display: none"></div>
 
             <script type="text/javascript">
-                window.plotly_charts.push(['plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }}]);
+                window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
             </script>
         {% endif %}
     </div>

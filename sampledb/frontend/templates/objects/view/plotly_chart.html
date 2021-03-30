@@ -1,3 +1,4 @@
+{% set plot_counter.value = plot_counter.value + 1 %}
 <div class="row" style="padding-right:0.75em">
   <label class="col-md-3" style="text-align: right">{{ schema.title }}
 
@@ -10,10 +11,10 @@
   </label>
 {% if 'plotly' in data and 'layout' in data.plotly %}
   <div class="col-md-9">
-    <div id="plotly_plot_div_{{ name }}"></div>
+    <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}"></div>
   </div>
   <script type="text/javascript">
-    window.plotly_charts.push(['plotly_plot_div_{{ name }}', {{ data.plotly|tojson|safe }}]);
+    window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
   </script>
 {% endif %}
 </div>
