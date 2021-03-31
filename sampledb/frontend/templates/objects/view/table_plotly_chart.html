@@ -1,8 +1,9 @@
 {% if 'plotly' in data %}
 {% set plot_counter.value = plot_counter.value + 1 %}
+{% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
 <div>
-{% if 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
-  {{ data.plotly.layout.title.text|striptags }}
+{% if plotly_chart_title %}
+  {{ plotly_chart_title }}
 {% else %}
   {{ schema.title }} #{{ loop.index }}
 {% endif %}
@@ -13,8 +14,8 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="plotly_modal_title_{{ name }}_{{ plot_counter.value }}">
                       <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                      {% if 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
-                        {{ data.plotly.layout.title.text|striptags }}
+                      {% if plotly_chart_title %}
+                        {{ plotly_chart_title }}
                       {% else %}
                         {{ schema.title }} #{{ loop.index }}
                       {% endif %}

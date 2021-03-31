@@ -1,10 +1,11 @@
 {% if 'plotly' in data %}
 {% set plot_counter.value = plot_counter.value + 1 %}
+{% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
 <div>
-{% if 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
-  {{ data.plotly.layout.title.text | striptags }}
+{% if plotly_chart_title %}
+  {{ plotly_chart_title }}
 {% else %}
-  {{ schema.title }}# {{ loop.index1 }}
+  {{ schema.title }}# {{ loop.index }}
 {% endif %}
 
 {% if 'layout' in data.plotly %}

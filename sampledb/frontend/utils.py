@@ -101,6 +101,19 @@ def plotly_base64_image_from_json(object):
     return 'data:image/svg+xml;base64,{}'.format(base64.b64encode(image_stream.read()).decode('utf-8'))
 
 
+def plotly_chart_get_title(plotly_object):
+    layout = plotly_object.get('layout')
+    if isinstance(layout, dict):
+        title = layout.get('title')
+        if isinstance(title, str):
+            return title
+        if isinstance(title, dict):
+            text = title.get('text')
+            if isinstance(text, str):
+                return text
+    return ""
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -110,3 +123,4 @@ _jinja_filters['urlencode'] = quote_plus
 _jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html
 _jinja_filters['hash'] = generate_jinja_hash
 _jinja_filters['plot'] = plotly_base64_image_from_json
+_jinja_filters['plotly_chart_get_title'] = plotly_chart_get_title
