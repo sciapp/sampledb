@@ -157,16 +157,28 @@ def boolean_false(db_obj):
 def text_equals(db_obj, text):
     if isinstance(text, datatypes.Text):
         text = text.text
-    return db.and_(
-        db_obj['_type'].astext == 'text',
-        db_obj['text'].astext == text
+    return db.or_(
+        db.and_(
+            db_obj['_type'].astext == 'text',
+            db_obj['text'].astext == text
+        ),
+        db.and_(
+            db_obj['_type'].astext == 'plotly_chart',
+            db_obj['plotly']['layout']['title']['text'].astext == text
+        )
     )
 
 
 def text_contains(db_obj, text):
-    return db.and_(
-        db_obj['_type'].astext == 'text',
-        db_obj['text'].astext.like('%' + text + '%')
+    return db.or_(
+        db.and_(
+            db_obj['_type'].astext == 'text',
+            db_obj['text'].astext.like('%' + text + '%')
+        ),
+        db.and_(
+            db_obj['_type'].astext == 'plotly_chart',
+            db_obj['plotly']['layout']['title']['text'].astext.like('%' + text + '%')
+        )
     )
 
 

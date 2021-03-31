@@ -355,6 +355,61 @@ def main(arguments):
         measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
         sampledb.logic.object_permissions.set_object_public(measurement.id, True)
 
+        with open(os.path.join(schema_directory, 'plotly.json'), 'r', encoding='utf-8') as schema_file:
+            schema = json.load(schema_file)
+        plotly_action = create_action(ActionType.SAMPLE_CREATION, "Plotly Example Action", "", schema, None)
+        sampledb.logic.action_permissions.set_action_public(plotly_action.id)
+
+        with open(os.path.join(objects_directory, 'plotly-example-data1.sampledb.json'), 'r', encoding='utf-8') as data_file:
+            example_data = json.load(data_file)
+
+        data = {
+            "name": {
+                "_type": "text",
+                "text": "Plotly Example Data #1"
+            },
+            "plot1": {
+                "_type": "plotly_chart",
+                "plotly": example_data
+            }
+        }
+        plotly_object = sampledb.logic.objects.create_object(plotly_action.id, data, basic_user.id)
+        sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
+
+        with open(os.path.join(schema_directory, 'plotly_array.json'), 'r', encoding='utf-8') as schema_file:
+            schema = json.load(schema_file)
+        plotly_array_action = create_action(ActionType.SAMPLE_CREATION, "Plotly Array Example Action", "", schema, None)
+        sampledb.logic.action_permissions.set_action_public(plotly_array_action.id)
+
+        with open(os.path.join(objects_directory, 'plotly-example-data2.sampledb.json'), 'r', encoding='utf-8') as data_file:
+            example_data2 = json.load(data_file)
+        with open(os.path.join(objects_directory, 'plotly-example-data3.sampledb.json'), 'r', encoding='utf-8') as data_file:
+            example_data3 = json.load(data_file)
+
+        data = {
+            "name": {
+                "_type": "text",
+                "text": "Plotly Array Example"
+            },
+            "plotlist": [
+                {
+                    "_type": "plotly_chart",
+                    "plotly": example_data
+                },
+                {
+                    "_type": "plotly_chart",
+                    "plotly": example_data2
+                },
+                {
+                    "_type": "plotly_chart",
+                    "plotly": example_data3
+                }
+            ]
+        }
+        plotly_object = sampledb.logic.objects.create_object(plotly_array_action.id, data, basic_user.id)
+        sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
+        sampledb.db.session.commit()
+
         campus = sampledb.logic.locations.create_location("Campus", "Max Mustermann Campus", None, instrument_responsible_user.id)
         building_a = sampledb.logic.locations.create_location("Building A", "Building A on Max Mustermann Campus", campus.id, instrument_responsible_user.id)
         room_42a = sampledb.logic.locations.create_location("Room 42a", "Building A, Room 42a", building_a.id, instrument_responsible_user.id)

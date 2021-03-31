@@ -44,6 +44,7 @@ jaraco.functools==3.2.1
 jaraco.text==3.5.0
 Jinja2==2.11.3
 jsonschema==3.2.0
+kaleido==0.2.1
 ldap3==2.9
 lxml==4.6.2
 Markdown==3.3.4
@@ -52,8 +53,10 @@ more-itertools==8.7.0
 packaging==20.9
 Pillow==8.1.2
 Pint==0.16.1
+plotly==4.14.3
 pluggy==0.13.1
 portend==2.7.1
+psutil==5.8.0
 psycopg2-binary==2.8.6
 py==1.10.0
 pyasn1==0.4.8

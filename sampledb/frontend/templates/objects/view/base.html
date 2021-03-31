@@ -15,6 +15,8 @@
 {% endblock %}
 
 {% block content %}
+  {# counter for plotly_chart_plots #}
+  {% set plot_counter = namespace(value=0) %}
 
   {% if is_archived %}
   <div class="alert alert-info alert-dismissible" role="alert">
@@ -23,6 +25,9 @@
   </div>
   {% endif %}
 
+  <script>
+  window.plotly_charts = [];
+  </script>
   <h1>{{ action.type.object_name }} #{{ object_id }}: {{ data['name']['text'] }}</h1>
 
   <h2>Information</h2>
@@ -1402,5 +1407,11 @@
     updateLabelsForm();
     {% endif %}
     {% endif %}
+
+    $( document ).ready(function() {
+      $(plotly_charts).each(function(index, element) {
+        Plotly.newPlot(element[0], element[1]);
+      });
+    });
   </script>
 {% endblock %}

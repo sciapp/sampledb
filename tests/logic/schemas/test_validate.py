@@ -1747,3 +1747,68 @@ def test_validate_user_invalid_user_id():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_plotly_chart():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]}
+    }
+    validate(instance, schema)
+
+
+def test_validate_plotly_chart_invalid_data():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart',
+        'plotly': {"data": [{"name": "test", "type": "invalid_type", "x": [1,2,3], "y": [1,2,3]}]}
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_plotly_chart_missing_key():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_plotly_chart_invalid_key():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]},
+        'meta': ''
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_plotly_chart_invalid_type():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'text',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]}
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+

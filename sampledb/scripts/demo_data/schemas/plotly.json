@@ -1,0 +1,16 @@
+{
+  "title": "Plotly Example Object",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Object Name",
+      "type": "text"
+    },
+    "plot1": {
+      "title": "Example Plot 1",
+      "type": "plotly_chart"
+    }
+  },
+  "propertyOrder": ["name", "plot1"],
+  "required": ["name"]
+}

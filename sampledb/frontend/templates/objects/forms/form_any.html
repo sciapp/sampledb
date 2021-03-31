@@ -24,6 +24,8 @@
   {% include "objects/forms/form_hazards.html" %}
 {% elif schema.type == 'user' %}
   {% include "objects/forms/form_user.html" %}
+{% elif schema.type == 'plotly_chart' %}
+  {% include "objects/forms/form_plotly_chart.html" %}
 {% else %}
   {{ name }}{{ schema.type }}{{ schema['type'] }}
 {% endif %}
