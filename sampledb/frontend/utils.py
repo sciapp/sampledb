@@ -114,6 +114,10 @@ def plotly_chart_get_title(plotly_object):
     return ""
 
 
+def to_json_no_extra_escapes(json_object, indent=None):
+    return json.dumps(json_object, indent=indent)
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -124,3 +128,4 @@ _jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html
 _jinja_filters['hash'] = generate_jinja_hash
 _jinja_filters['plot'] = plotly_base64_image_from_json
 _jinja_filters['plotly_chart_get_title'] = plotly_chart_get_title
+_jinja_filters['to_json_no_extra_escapes'] = to_json_no_extra_escapes
