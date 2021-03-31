@@ -6,6 +6,7 @@
 
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, SelectField, SelectMultipleField
 from wtforms.validators import InputRequired
@@ -109,7 +110,7 @@ def dataverse_export(object_id):
         if enabled
     ]
     if not dataverse_export_form.dataverse.choices:
-        flask.flash('No suitable Dataverses available for export.', 'error')
+        flask.flash(_('No suitable Dataverses available for export.'), 'error')
 
     dataverse_export_form.files.choices = [
         (str(file.id), file.data['original_file_name'])

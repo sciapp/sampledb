@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Account Recovery — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Account Recovery') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
 {% if not current_user.is_authenticated %}
   <div class="jumbotron">
-    <h2>Account Recovery Email sent to {{email}}</h2>
-    <p>If you have an account with this email address, you will receive an email in the next 30 minutes. Please follow the instructions to regain access to your account.<p>
-    <p>If this email does not arrive within 30 minutes, please check your junk mail folder and <a href="mailto:{{ contact_email }}?subject=Account Recovery for {{ email }}">contact an administator</a>.</p>
+    <h2>{{ _('Account Recovery Email sent to %(email)s', email=email) }}</h2>
+    <p>{{ _('If you have an account with this email address, you will receive an email in the next 30 minutes. Please follow the instructions to regain access to your account.') }}<p>
+    <p>{{ _('If this email does not arrive within 30 minutes, please check your junk mail folder and <a href="mailto:%(contact_email)s?subject=Account Recovery for %(email)s">contact an administator</a>.', contact_email=contact_email, email=email) }}</p>
   </div>
 {% endif %}
 {% endblock %}

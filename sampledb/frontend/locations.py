@@ -3,24 +3,28 @@
 
 """
 
+import typing
+import json
+
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField
-from wtforms.validators import Length
-import typing
+from wtforms.validators import DataRequired
 
 from . import frontend
 from ..logic import errors
 from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility
+from ..logic.languages import Language, get_language, get_languages, get_language_by_lang_code
 from ..logic.security_tokens import verify_token
 from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read
 from .utils import check_current_user_is_not_readonly
+from ..logic.utils import get_translated_text
 
 
 class LocationForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
+    translations = StringField(validators=[DataRequired()])
     parent_location = SelectField()
 
 
@@ -30,7 +34,8 @@ def locations():
     locations_map, locations_tree = get_locations_tree()
     return flask.render_template(
         'locations/locations.html',
-        locations_map=locations_map, locations_tree=locations_tree,
+        locations_map=locations_map,
+        locations_tree=locations_tree,
         sort_location_ids_by_name=_sort_location_ids_by_name
     )
 
@@ -45,7 +50,7 @@ def location(location_id):
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
         if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
-            flask.flash('Only administrators can edit locations.', 'error')
+            flask.flash(_('Only administrators can edit locations.'), 'error')
             return flask.abort(403)
         check_current_user_is_not_readonly()
         return _show_location_form(location, None)
@@ -60,8 +65,10 @@ def location(location_id):
     locations_tree = locations_tree[location_id]
     return flask.render_template(
         'locations/location.html',
-        locations_map=locations_map, locations_tree=locations_tree,
-        location=location, ancestors=ancestors,
+        locations_map=locations_map,
+        locations_tree=locations_tree,
+        location=location,
+        ancestors=ancestors,
         sort_location_ids_by_name=_sort_location_ids_by_name
     )
 
@@ -70,7 +77,7 @@ def location(location_id):
 @flask_login.login_required
 def new_location():
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
-        flask.flash('Only administrators can create locations.', 'error')
+        flask.flash(_('Only administrators can create locations.'), 'error')
         return flask.abort(403)
     check_current_user_is_not_readonly()
     parent_location = None
@@ -84,7 +91,7 @@ def new_location():
         try:
             parent_location = get_location(parent_location_id)
         except errors.LocationDoesNotExistError:
-            flask.flash('The requested parent location does not exist.', 'error')
+            flask.flash(_('The requested parent location does not exist.'), 'error')
     return _show_location_form(None, parent_location)
 
 
@@ -93,25 +100,25 @@ def new_location():
 def accept_responsibility_for_object():
     token = flask.request.args.get('t', None)
     if token is None:
-        flask.flash('The confirmation token is missing.', 'error')
+        flask.flash(_('The confirmation token is missing.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     object_location_assignment_id = verify_token(token, salt='confirm_responsibility', secret_key=flask.current_app.config['SECRET_KEY'], expiration=None)
     if object_location_assignment_id is None:
-        flask.flash('The confirmation token is invalid.', 'error')
+        flask.flash(_('The confirmation token is invalid.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     try:
         object_location_assignment = get_object_location_assignment(object_location_assignment_id)
     except errors.ObjectLocationAssignmentDoesNotExistError:
-        flask.flash('This responsibility assignment does not exist.', 'error')
+        flask.flash(_('This responsibility assignment does not exist.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     if object_location_assignment.responsible_user_id != flask_login.current_user.id:
-        flask.flash('This responsibility assignment belongs to another user.', 'error')
+        flask.flash(_('This responsibility assignment belongs to another user.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     if object_location_assignment.confirmed:
-        flask.flash('This responsibility assignment has already been confirmed.', 'success')
+        flask.flash(_('This responsibility assignment has already been confirmed.'), 'success')
     else:
         confirm_object_responsibility(object_location_assignment_id)
-        flask.flash('You have successfully confirmed this responsibility assignment.', 'success')
+        flask.flash(_('You have successfully confirmed this responsibility assignment.'), 'success')
         mark_notification_for_being_assigned_as_responsible_user_as_read(
             user_id=flask_login.current_user.id,
             object_location_assignment_id=object_location_assignment_id
@@ -121,17 +128,22 @@ def accept_responsibility_for_object():
 
 def _sort_location_ids_by_name(location_ids: typing.Iterable[int], location_map: typing.Dict[int, Location]) -> typing.List[int]:
     location_ids = list(location_ids)
-    location_ids.sort(key=lambda location_id: location_map[location_id].name)
+    location_ids.sort(key=lambda location_id: get_translated_text(location_map[location_id].name))
     return location_ids
 
 
 def _show_location_form(location: typing.Optional[Location], parent_location: typing.Optional[Location]):
+    english = get_language(Language.ENGLISH)
+    name_language_ids = []
+    description_language_ids = []
+    location_translations = []
     if location is not None:
         submit_text = "Save"
     elif parent_location is not None:
         submit_text = "Create"
     else:
         submit_text = "Create"
+
     locations_map, locations_tree = get_locations_tree()
     invalid_location_ids = []
     if location is not None:
@@ -159,7 +171,7 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         for location_id in locations_map
         if location_id not in invalid_location_ids
     ]
-    if location_form.parent_location.data is None or location_form.parent_location.data == str(None):
+    if not location_form.is_submitted():
         if location is not None and location.parent_location_id:
             location_form.parent_location.data = str(location.parent_location_id)
         elif parent_location is not None:
@@ -172,31 +184,88 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         form_is_valid = True
 
     if location is not None:
-        if location_form.name.data is None:
-            location_form.name.data = location.name
-        if location_form.description.data is None:
-            location_form.description.data = location.description
+        name_language_ids = []
+        description_language_ids = []
+        for language_code, name in location.name.items():
+            language = get_language_by_lang_code(language_code)
+            if not language.enabled_for_input:
+                continue
+            name_language_ids.append(language.id)
+            location_translations.append({
+                'language_id': language.id,
+                'lang_name': get_translated_text(language.names),
+                'name': name,
+                'description': ''
+            })
+
+        for language_code, description in location.description.items():
+            language = get_language_by_lang_code(language_code)
+            if not language.enabled_for_input:
+                continue
+            description_language_ids.append(language.id)
+            for translation in location_translations:
+                if language.id == translation['language_id']:
+                    translation['description'] = description
+                    break
+            else:
+                location_translations.append({
+                    'language_id': language.id,
+                    'lang_name': get_translated_text(language.names),
+                    'name': '',
+                    'description': description
+                })
 
     if form_is_valid:
-        name = location_form.name.data
-        description = location_form.description.data
-        parent_location_id = location_form.parent_location.data
         try:
-            parent_location_id = int(parent_location_id)
-        except ValueError:
-            parent_location_id = None
-        if parent_location_id < 0:
-            parent_location_id = None
-        if location is None:
-            location = create_location(name, description, parent_location_id, flask_login.current_user.id)
-            flask.flash('The location was created successfully.', 'success')
+            translations = json.loads(location_form.translations.data)
+            if not translations:
+                raise ValueError(_('Please enter at least an english name.'))
+            names = {}
+            descriptions = {}
+            for translation in translations:
+                name = translation['name'].strip()
+                description = translation['description'].strip()
+                language_id = int(translation['language_id'])
+                if language_id == Language.ENGLISH:
+                    if name == '':
+                        raise ValueError(_('Please enter at least an english name.'))
+                elif name == '' and description == '':
+                    continue
+                language = get_language(language_id)
+                if language.enabled_for_input:
+                    names[language.lang_code] = name
+                    descriptions[language.lang_code] = description
+                else:
+                    location_form.translations.errors.append(_('One of these languages is not supported.'))
+        except errors.LanguageDoesNotExistError:
+            location_form.translations.errors.append(_('One of these languages is not supported.'))
+        except Exception as e:
+            location_form.translations.errors.append(str(e))
+        parent_location_id = location_form.parent_location.data
 
-        else:
-            update_location(location.id, name, description, parent_location_id, flask_login.current_user.id)
-            flask.flash('The location was updated successfully.', 'success')
-        return flask.redirect(flask.url_for('.location', location_id=location.id))
+        if len(location_form.translations.errors) == 0:
+            try:
+                parent_location_id = int(parent_location_id)
+            except ValueError:
+                parent_location_id = None
+            if parent_location_id < 0:
+                parent_location_id = None
+            if location is None:
+                location = create_location(names, descriptions, parent_location_id, flask_login.current_user.id)
+                flask.flash(_('The location was created successfully.'), 'success')
+            else:
+                update_location(location.id, names, descriptions, parent_location_id, flask_login.current_user.id)
+                flask.flash(_('The location was updated successfully.'), 'success')
+            return flask.redirect(flask.url_for('.location', location_id=location.id))
+    if english.id not in description_language_ids:
+        description_language_ids.append(english.id)
     return flask.render_template(
         'locations/location_form.html',
         location_form=location_form,
-        submit_text=submit_text
+        submit_text=submit_text,
+        ENGLISH=english,
+        languages=get_languages(only_enabled_for_input=True),
+        translations=location_translations,
+        name_language_ids=name_language_ids,
+        description_language_ids=description_language_ids
     )

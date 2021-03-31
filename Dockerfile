@@ -5,7 +5,7 @@ LABEL maintainer="f.rhiem@fz-juelich.de"
 # Install required system packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y curl python3.7-venv python3.7-distutils libpangocairo-1.0-0 && \
+    apt-get install -y curl python3.7-venv python3.7-distutils libpangocairo-1.0-0 gettext && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user

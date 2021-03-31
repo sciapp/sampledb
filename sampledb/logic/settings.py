@@ -28,7 +28,11 @@ DEFAULT_SETTINGS = {
     "SHOW_INVITATION_LOG": False,
     "INSTRUMENT_LOG_ORDER_ASCENDING": True,
     "INSTRUMENT_LOG_ORDER_ATTRIBUTE": "datetime",
-    "DATAVERSE_API_TOKEN": ""
+    "DATAVERSE_API_TOKEN": "",
+    "AUTO_LC": True,
+    "TIMEZONE": "UTC",
+    "AUTO_TZ": True,
+    "LOCALE": "en"
 }
 
 

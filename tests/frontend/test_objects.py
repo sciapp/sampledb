@@ -32,7 +32,16 @@ def user(flask_server):
 
 def test_get_objects(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     names = ['Example1', 'Example2', 'Example42']
     objects = [
         sampledb.logic.objects.create_object(
@@ -54,8 +63,26 @@ def test_get_objects(flask_server, user):
 
 def test_get_objects_by_action_id(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action1 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action1.id,
+        name='Example Action 1',
+        description=''
+    )
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action2.id,
+        name='Example Action 2',
+        description=''
+    )
     names = ['Example1', 'Example2', 'Example42']
     objects = [
         sampledb.logic.objects.create_object(
@@ -82,7 +109,16 @@ def test_get_objects_by_action_id(flask_server, user):
 
 def test_get_objects_by_project_id(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     names = ['Example1', 'Example2']
     objects = [
         sampledb.logic.objects.create_object(
@@ -111,8 +147,26 @@ def test_get_objects_by_project_id(flask_server, user):
 
 def test_get_objects_by_action_type(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
-    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action1 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action1.id,
+        name='Example Action 1',
+        description=''
+    )
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action2.id,
+        name='Example Action 2',
+        description=''
+    )
     names = ['Example1', 'Example2', 'Example42']
     objects = [
         sampledb.logic.objects.create_object(
@@ -139,8 +193,26 @@ def test_get_objects_by_action_type(flask_server, user):
 
 def test_get_objects_by_action_id_and_type(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
-    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
+    action1 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action1.id,
+        name='Example Action 1',
+        description=''
+    )
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action2.id,
+        name='Example Action 2',
+        description=''
+    )
     names = ['Example1', 'Example2', 'Example42']
     objects = [
         sampledb.logic.objects.create_object(
@@ -167,7 +239,16 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
 
 def test_search_objects(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     names = ['Example1', 'Example2', 'Example12']
     objects = [
         sampledb.logic.objects.create_object(
@@ -192,10 +273,16 @@ def test_search_objects(flask_server, user):
 
 def test_objects_referencable(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action1 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     schema['properties']['tags'] = {'title': 'Tags', 'type': 'tags'}
     schema['required'].append('tags')
-    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.MEASUREMENT, 'Example Action', '', schema)
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema=schema
+    )
     names = ['Example1', 'Example2', 'Example42']
     objects = [
         sampledb.logic.objects.create_object(
@@ -249,7 +336,16 @@ def test_objects_referencable(flask_server, user):
 
 def test_get_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -265,7 +361,10 @@ def test_get_object(flask_server, user):
 
 def test_get_object_no_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -292,7 +391,10 @@ def test_get_object_no_permissions(flask_server, user):
 
 def test_request_object_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -320,7 +422,10 @@ def test_request_object_permissions(flask_server, user):
 
 def test_request_object_permissions_with_enough_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -340,7 +445,16 @@ def test_request_object_permissions_with_enough_permissions(flask_server, user):
 
 def test_get_object_edit_form(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -356,7 +470,16 @@ def test_get_object_edit_form(flask_server, user):
 
 def test_get_object_edit_form_read_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -376,7 +499,16 @@ def test_get_object_edit_form_read_permissions(flask_server, user):
 
 def test_get_object_version(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -392,7 +524,10 @@ def test_get_object_version(flask_server, user):
 
 def test_get_object_version_no_permissions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -412,7 +547,10 @@ def test_get_object_version_no_permissions(flask_server, user):
 
 def test_get_object_versions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example'}},
         user_id=user.id,
@@ -428,7 +566,16 @@ def test_get_object_versions(flask_server, user):
 def test_edit_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -485,7 +632,16 @@ def test_edit_object(flask_server, user):
 def test_edit_object_action_add(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -506,7 +662,16 @@ def test_edit_object_action_add(flask_server, user):
 def test_edit_object_previous_actions(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -531,7 +696,16 @@ def test_edit_object_previous_actions(flask_server, user):
 def test_edit_object_previous_actions_invalid_key(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -554,7 +728,16 @@ def test_edit_object_previous_actions_invalid_key(flask_server, user):
 def test_edit_object_previous_actions_invalid_action(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -577,7 +760,16 @@ def test_edit_object_previous_actions_invalid_action(flask_server, user):
 def test_edit_object_action_delete(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -604,7 +796,16 @@ def test_edit_object_action_delete(flask_server, user):
 
 def test_new_object(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -639,7 +840,16 @@ def test_new_object(flask_server, user):
 
 def test_new_object_batch(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -661,7 +871,10 @@ def test_new_object_batch(flask_server, user):
 
 def test_new_object_batch_invalid_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -680,7 +893,16 @@ def test_new_object_batch_invalid_number(flask_server, user):
 
 def test_new_object_batch_float_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -699,7 +921,10 @@ def test_new_object_batch_float_number(flask_server, user):
 
 def test_new_object_batch_invalid_float_number(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement_batch.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -728,7 +953,16 @@ def test_restore_object_version(flask_server, user):
         },
         'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.logic.objects.create_object(
         data=data,
@@ -763,7 +997,10 @@ def test_restore_object_version_invalid_data(flask_server, user):
         },
         'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.logic.objects.create_object(
         data=data,
@@ -803,7 +1040,9 @@ def test_restore_object_version_invalid_data(flask_server, user):
 
 
 def test_update_object_permissions(flask_server, user):
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', {
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {
@@ -814,6 +1053,12 @@ def test_update_object_permissions(flask_server, user):
         },
         'required': ['name']
     })
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.logic.objects.create_object(
         data=data,
@@ -903,7 +1148,9 @@ def test_update_object_permissions(flask_server, user):
 
 
 def test_object_permissions_add_user(flask_server, user):
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', {
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {
@@ -914,6 +1161,12 @@ def test_object_permissions_add_user(flask_server, user):
         },
         'required': ['name']
     })
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.logic.objects.create_object(
         data=data,
@@ -974,7 +1227,9 @@ def test_object_permissions_add_user(flask_server, user):
 
 
 def test_object_permissions_add_group(flask_server, user):
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', {
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
         'title': 'Example Object',
         'type': 'object',
         'properties': {
@@ -985,6 +1240,12 @@ def test_object_permissions_add_group(flask_server, user):
         },
         'required': ['name']
     })
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
     object = sampledb.logic.objects.create_object(
         data=data,
@@ -1036,7 +1297,16 @@ def test_object_permissions_add_group(flask_server, user):
 def test_edit_object_invalid_data(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data=object_data,
         user_id=user.id,
@@ -1072,7 +1342,16 @@ def test_create_object_similar_property_names(flask_server, user):
       "propertyOrder": ["name", "name_2"],
       "required": ["name", "name_2"]
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     assert len(sampledb.logic.objects.get_objects()) == 0
     session = requests.session()
@@ -1097,11 +1376,15 @@ def test_create_object_similar_property_names(flask_server, user):
     assert sampledb.logic.objects.get_objects()[0].data == {
         "name": {
             "_type": "text",
-            "text": "Test"
+            "text": {
+                'en': "Test"
+            }
         },
         "name_2": {
             "_type": "text",
-            "text": "Test-2"
+            "text": {
+                'en': "Test-2"
+            }
         }
     }
 
@@ -1123,7 +1406,16 @@ def test_edit_object_similar_property_names(flask_server, user):
       "propertyOrder": ["name", "name_2"],
       "required": ["name", "name_2"]
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={
             "name": {
@@ -1161,11 +1453,15 @@ def test_edit_object_similar_property_names(flask_server, user):
     assert sampledb.logic.objects.get_object(object.id).data == {
         "name": {
             "_type": "text",
-            "text": "Test"
+            "text": {
+                'en': "Test"
+            }
         },
         "name_2": {
             "_type": "text",
-            "text": "Test-2"
+            "text": {
+                'en': "Test-2"
+            }
         }
     }
 
@@ -1187,7 +1483,16 @@ def test_copy_object(flask_server, user):
       "propertyOrder": ["name", "name2"],
       "required": ["name", "name2"]
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     sampledb.logic.action_permissions.set_action_public(action.id)
     name = 'Example1'
     object = sampledb.logic.objects.create_object(
@@ -1196,7 +1501,10 @@ def test_copy_object(flask_server, user):
             action_id=action.id
         )
     schema["properties"]["name2"]["type"] = "bool"
-    sampledb.logic.actions.update_action(action.id, 'New Example Action', '', schema)
+    sampledb.logic.actions.update_action(
+        action_id=action.id,
+        schema=schema
+    )
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'previous_object_id': object.id})
@@ -1206,9 +1514,9 @@ def test_copy_object(flask_server, user):
         assert len(sampledb.logic.user_log.get_user_log_entries(user.id)) == 1
     document = BeautifulSoup(r.content, 'html.parser')
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    object_name = document.find('input', {'name': 'object__name2__text'})['value']
+    object_name = document.find('input', {'name': 'object__name2__text_en'})['value']
     assert object_name == name
-    form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object__name__text': name, 'object__name2__text': name}
+    form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object__name__text_en': name, 'object__name2__text_en': name}
     r = session.post(flask_server.base_url + 'objects/new', params={'action_id': object.action_id, 'previous_object_id': object.id}, data=form_data)
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 2
@@ -1267,7 +1575,16 @@ def test_edit_empty_nested_array(flask_server, user):
         "propertyOrder": ["name", "nested_array"],
         "displayProperties": []
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={"name": {"text": "Test", "_type": "text"}},
         user_id=user.id,
@@ -1315,7 +1632,16 @@ def test_edit_nested_array(flask_server, user):
         "propertyOrder": ["name", "nested_array"],
         "displayProperties": []
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={"name": {"text": "Test", "_type": "text"}},
         user_id=user.id,
@@ -1348,7 +1674,13 @@ def test_edit_nested_array(flask_server, user):
 
 def test_new_object_with_instrument_log_entry(flask_server, user):
     with flask_server.app.app_context():
-        instrument = sampledb.logic.instruments.create_instrument('Test Instrument', '')
+        instrument = sampledb.logic.instruments.create_instrument()
+        sampledb.logic.instrument_translations.set_instrument_translation(
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            instrument_id=instrument.id,
+            name="Example Instrument",
+            description="This is an example instrument"
+        )
         sampledb.logic.instruments.add_instrument_responsible_user(instrument.id, user.id)
         category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
             instrument.id,
@@ -1358,7 +1690,17 @@ def test_new_object_with_instrument_log_entry(flask_server, user):
         assert instrument.id is not None
         assert category.id is not None
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema, instrument.id)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema,
+        instrument_id=instrument.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})

@@ -12,7 +12,7 @@ import datetime
 import typing
 
 from .. import db
-from . import user_log, object_log, objects, users, errors
+from . import user_log, object_log, objects, users, errors, languages
 from .notifications import create_notification_for_being_assigned_as_responsible_user
 from ..models import locations
 
@@ -22,7 +22,7 @@ class Location(collections.namedtuple('Location', ['id', 'name', 'description', 
     This class provides an immutable wrapper around models.locations.Location.
     """
 
-    def __new__(cls, id: int, name: str, description: str, parent_location_id: typing.Optional[int] = None):
+    def __new__(cls, id: int, name: dict, description: dict, parent_location_id: typing.Optional[int] = None):
         self = super(Location, cls).__new__(cls, id, name, description, parent_location_id)
         return self
 
@@ -41,7 +41,7 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
 
-    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: datetime.datetime, responsible_user_id: int, confirmed: bool):
+    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: dict, utc_datetime: datetime.datetime, responsible_user_id: int, confirmed: bool):
         self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed)
         return self
 
@@ -59,12 +59,13 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
         )
 
 
-def create_location(name: str, description: str, parent_location_id: typing.Optional[int], user_id: int) -> Location:
+def create_location(name: typing.Union[str, dict], description: typing.Union[str, dict], parent_location_id: typing.Optional[int], user_id: int) -> Location:
     """
     Create a new location.
 
-    :param name: the name for the new location
-    :param description: the description for the new location
+    :param name: the names for the new location in a dict. Keys are the language codes and values are the names.
+    :param description: the descriptions for the new location.
+        Keys are the language code and values are the descriptions.
     :param parent_location_id: the optional parent location ID for the new location
     :param user_id: the ID of an existing user
     :return: the created location
@@ -73,6 +74,35 @@ def create_location(name: str, description: str, parent_location_id: typing.Opti
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
+    if isinstance(name, str):
+        name = {
+            'en': name
+        }
+    if isinstance(description, str):
+        description = {
+            'en': description
+        }
+
+    allowed_language_codes = {
+        language.lang_code
+        for language in languages.get_languages(only_enabled_for_input=True)
+    }
+
+    for language_code, name_text in list(name.items()):
+        if language_code not in allowed_language_codes:
+            raise errors.LanguageDoesNotExistError()
+        if not name_text:
+            del name[language_code]
+
+    for language_code, description_text in list(description.items()):
+        if language_code not in allowed_language_codes:
+            raise errors.LanguageDoesNotExistError()
+        if not description_text:
+            del description[language_code]
+
+    if 'en' not in name:
+        raise errors.MissingEnglishTranslationError()
+
     # ensure the user exists
     users.get_user(user_id)
     if parent_location_id is not None:
@@ -89,22 +119,47 @@ def create_location(name: str, description: str, parent_location_id: typing.Opti
     return Location.from_database(location)
 
 
-def update_location(location_id: int, name: str, description: str, parent_location_id: typing.Optional[int], user_id: int) -> None:
+def update_location(location_id: int, name: dict, description: dict, parent_location_id: typing.Optional[int], user_id: int) -> None:
     """
     Update a location's information.
 
     :param location_id: the ID of the location to update
-    :param name: the name for the location
-    :param description: the description for the location
+    :param name: the new names for the location in a dict. Keys are the language codes and the values the new names
+    :param description: the descriptions for the location.
+        Keys are the language code and the values the new descriptions.
     :param parent_location_id: the optional parent location id for the location
     :param user_id: the ID of an existing user
     :raise errors.LocationDoesNotExistError: when no location with the given
         location ID or parent location ID exists
-    :raise errors.CyclicLocationError: when location ID is an ancestor of parent
-        location ID
+    :raise errors.CyclicLocationError: when location ID is an ancestor of
+        parent location ID
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
+    :raise errors.MissingEnglishTranslationError: if no english name is given
+    :raise errors.LanguageDoesNotExistError: if an unknown language code is
+        used
     """
+
+    allowed_language_codes = {
+        language.lang_code
+        for language in languages.get_languages(only_enabled_for_input=True)
+    }
+
+    for language_code, name_text in list(name.items()):
+        if language_code not in allowed_language_codes:
+            raise errors.LanguageDoesNotExistError()
+        if not name_text:
+            del name[language_code]
+
+    for language_code, description_text in list(description.items()):
+        if language_code not in allowed_language_codes:
+            raise errors.LanguageDoesNotExistError()
+        if not description_text:
+            del description[language_code]
+
+    if 'en' not in name:
+        raise errors.MissingEnglishTranslationError()
+
     # ensure the user exists
     users.get_user(user_id)
     location = locations.Location.query.filter_by(id=location_id).first()
@@ -191,7 +246,7 @@ def _get_location_ancestors(location_id: int) -> typing.List[int]:
     return ancestor_location_ids[1:]
 
 
-def assign_location_to_object(object_id: int, location_id: typing.Optional[int], responsible_user_id: typing.Optional[int], user_id: int, description: str) -> None:
+def assign_location_to_object(object_id: int, location_id: typing.Optional[int], responsible_user_id: typing.Optional[int], user_id: int, description: typing.Union[str, dict]) -> None:
     """
     Assign a location to an object.
 
@@ -199,7 +254,8 @@ def assign_location_to_object(object_id: int, location_id: typing.Optional[int],
     :param location_id: the ID of an existing location
     :param responsible_user_id: the ID of an existing user
     :param user_id: the ID of an existing user
-    :param description: a description of where the object was stored
+    :param description: a description of where the object was stored in a dict.
+        The keys are the lang codes and the values are the descriptions.
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.LocationDoesNotExistError: when no location with the given
@@ -207,6 +263,10 @@ def assign_location_to_object(object_id: int, location_id: typing.Optional[int],
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         or responsible user ID exists
     """
+    if isinstance(description, str):
+        description = {
+            'en': description
+        }
     # ensure the object exists
     objects.get_object(object_id)
     if location_id is not None:

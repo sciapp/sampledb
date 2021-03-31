@@ -4,6 +4,7 @@
 """
 
 import flask
+from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
 from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired, ValidationError
@@ -28,13 +29,15 @@ class RequestPasswordResetForm(FlaskForm):
 
 
 class RegistrationForm(FlaskForm):
-    email = StringField('Contact Email', validators=[InputRequired("Please enter the contact email."),
-                                                     Email("Please enter your contact email.")])
+    email = StringField('Contact Email', validators=[
+        InputRequired(message=_("Please enter your contact email.")),
+        Email(message=_("Please enter your contact email."))
+    ])
     name = StringField('Name', validators=[InputRequired()])
     password = PasswordField('New Password', validators=[
         InputRequired(),
         Length(min=3),
-        EqualTo('password2', message='Passwords must match')
+        EqualTo('password2', message=_('Passwords must match'))
     ])
     password2 = PasswordField('Confirm password', validators=[InputRequired()])
     submit = SubmitField('Register')
@@ -43,7 +46,7 @@ class RegistrationForm(FlaskForm):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES']:
             name = field.data
             if ', ' not in name[1:-1]:
-                raise ValidationError("Please enter your name as: surname, given names.")
+                raise ValidationError(_("Please enter your name as: surname, given names."))
 
 
 class PasswordForm(FlaskForm):

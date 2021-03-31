@@ -48,15 +48,49 @@ def objects(engine):
     return objects
 
 
-def test_text_equals(objects):
+@pytest.fixture
+def languages(engine):
+    sampledb.models.Language.__table__.create(bind=engine)
+    connection = engine.connect()
+    query = db.text('''
+        INSERT INTO languages
+        (id, lang_code, names, datetime_format_datetime, datetime_format_moment, enabled_for_input)
+        VALUES
+        (:language_id, :lang_code, '{}', '', '', true)
+    ''')
+    connection.execute(query, {
+        'language_id': sampledb.models.Language.ENGLISH,
+        'lang_code': 'en'
+    })
+    connection.execute(query, {
+        'language_id': sampledb.models.Language.GERMAN,
+        'lang_code': 'de'
+    })
+
+
+def test_text_equals(objects, languages):
     objects.create_object(action_id=0, data={'t': datatypes.Text("Beispiel")}, schema={}, user_id=0)
     object1 = objects.create_object(action_id=0, data={'t': datatypes.Text("Example")}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.text_equals(data['t'], 'Example'))
 
 
-def test_text_contains(objects):
+def test_text_equals_multiple_languages(objects, languages):
+    objects.create_object(action_id=0, data={'t': datatypes.Text("Beispiel")}, schema={}, user_id=0)
+    object1 = objects.create_object(action_id=0, data={'t': datatypes.Text({'en': "Example", 'de': "Beispiel"})}, schema={}, user_id=0)
+    assert len(objects.get_current_objects(lambda data: where_filters.text_equals(data['t'], 'Beispiel'))) == 2
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.text_equals(data['t'], 'Example'))
+
+
+def test_text_contains(objects, languages):
     objects.create_object(action_id=0, data={'t': datatypes.Text("Beispiel")}, schema={}, user_id=0)
     object1 = objects.create_object(action_id=0, data={'t': datatypes.Text("Example")}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.text_contains(data['t'], 'amp'))
+
+
+def test_text_contains_multiple_languages(objects, languages):
+    objects.create_object(action_id=0, data={'t': datatypes.Text("Beispiel")}, schema={}, user_id=0)
+    object1 = objects.create_object(action_id=0, data={'t': datatypes.Text({'en': "Example", 'de': "Beispiel"})}, schema={}, user_id=0)
+    assert len(objects.get_current_objects(lambda data: where_filters.text_contains(data['t'], 'spiel'))) == 2
     assert [object1] == objects.get_current_objects(lambda data: where_filters.text_contains(data['t'], 'amp'))
 
 

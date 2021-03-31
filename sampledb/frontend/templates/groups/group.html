@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Basic Group #{{ group.id }}: {{ group.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Basic Group') }} #{{ group.id }}: {{ group.name | get_translated_text }} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
@@ -8,9 +8,13 @@
 {% endblock %}
 
 {% block content %}
-  <h1>Basic Group #{{ group.id }}: {{ group.name }}</h1>
-  <p>{{ group.description }}</p>
-  <h2>Members</h2>
+  {% set allowed_language_ids = [] %}
+  {% for language in languages %}
+    {{ allowed_language_ids.append(language.id) or '' }}
+  {% endfor %}
+  <h1>{{ _('Basic Group') }} #{{ group.id }}: {{ group.name | get_translated_text }}</h1>
+  <p>{{ group.description | get_translated_text }}</p>
+  <h2>{{ _('Members') }}</h2>
   <ul>
     {% for user_id in group_member_ids %}
     {% with user = get_user(user_id) %}
@@ -19,7 +23,7 @@
         {% if remove_group_member_form and user_id != current_user.id %}
         <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.group', group_id=group.id) }}" id="removeGroupMember{{ user_id }}Form">
           {{ remove_group_member_form.csrf_token() }}
-          <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">Remove</button>
+          <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">{{ _('Remove') }}</button>
         </form>
         {% endif %}
         {% endif %}
@@ -30,15 +34,15 @@
   <div class="button-row">
   {% if show_objects_link %}
     <div class="btn-group">
-      <a href="{{ url_for('.objects', group=group.id) }}" class="btn btn-default">View Objects</a>
+      <a href="{{ url_for('.objects', group=group.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>
       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <span class="caret"></span>
-        <span class="sr-only">Toggle Dropdown</span>
+        <span class="sr-only">{{ _('Toggle Dropdown') }}</span>
       </button>
       <ul class="dropdown-menu">
-        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='READ') }}">… with <b>READ</b> permissions</a></li>
-        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='WRITE') }}">… with <b>WRITE</b> permissions</a></li>
-        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='GRANT') }}">… with <b>GRANT</b> permissions</a></li>
+        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='READ') }}">{{ _('… with <b>READ</b> permissions') }}</a></li>
+        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='WRITE') }}">{{ _('… with <b>WRITE</b> permissions') }}</a></li>
+        <li><a href="{{ url_for('.objects', group=group.id, group_permissions='GRANT') }}">{{ _('… with <b>GRANT</b> permissions') }}</a></li>
       </ul>
     </div>
   {% endif %}
@@ -53,21 +57,21 @@
   {% endif %}
   {% if not current_user.is_readonly %}
   {% if edit_group_form %}
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editGroupModal">Edit Basic Group</button>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editGroupModal">{{ _('Edit Basic Group') }}</button>
   {% endif %}
   {% if invite_user_form %}
-  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">Invite User</button>
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#inviteUserModal">{{ _('Invite User') }}</button>
   {% endif %}
   {% endif %}
   {% if leave_group_form %}
   <form method="post" style="display: inline" action="{{ url_for('.group', group_id=group.id) }}" id="leaveGroupForm">
     {{ leave_group_form.csrf_token() }}
-    <button type="submit" class="btn btn-danger" name="leave" value="leave">Leave Basic Group</button>
+    <button type="submit" class="btn btn-danger" name="leave" value="leave">{{ _('Leave Basic Group') }}</button>
   </form>
   {% endif %}
   {% if not current_user.is_readonly %}
   {% if delete_group_form %}
-  <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteGroupModal">Delete Basic Group</button>
+  <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteGroupModal">{{ _('Delete Basic Group') }}</button>
   {% endif %}
   </div>
 
@@ -77,28 +81,82 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="editGroupModalLabel">Edit Basic Group</h4>
+          <h4 class="modal-title" id="editGroupModalLabel">{{ _('Edit Basic Group') }}</h4>
         </div>
-        <form method="post" action="{{ url_for('.group', group_id=group.id) }}" class="form-horizontal">
+
+        <div class="hidden" id="name-template">
+          <div class="input-group" data-language-id="">
+            <input type="text" class="form-control" id="input-name-" placeholder="{{ _('Name') }}" data-name="input-name" value="" data-translation-attribute="name" data-empty-text="{{ _('Please enter a group name.') }}" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter group name (at most 100 characters).') }}">
+            <span class="input-group-addon language-addon" data-name="language" style="margin-right: 5px"></span>
+          </div>
+          <span class="help-block"></span>
+        </div>
+
+        <div class="hidden" id="description-template">
+          <div class="input-group" data-language-id="" style="padding-bottom: 10px">
+            <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+            <span class="input-group-addon language-addon" data-name="language" style="margin-right: 5px"></span>
+          </div>
+          <span class="help-block"></span>
+        </div>
+        <form method="post" action="{{ url_for('.group', group_id=group.id) }}">
           {{ edit_group_form.csrf_token() }}
           <div class="modal-body">
-            <div class="form-group {% if edit_group_form.name.errors %}has-error{% endif %}">
-              <label for="editGroupName" class="col-sm-2 control-label">Name</label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control" id="editGroupName" name="{{ edit_group_form.name.name }}" placeholder="Name" value="{{ edit_group_form.name.data }}">
-                {% for error_message in edit_group_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              <div class="form-group" data-name="input-names">
+                  <div class="form-group row" style="padding-right: 10px; margin-bottom: 0;">
+                      <label for="select-language-name" class="control-label col-sm-8" style="margin-top: 5px">{{ _("Name") }}</label>
+                      <select class="selectpicker btn-xs select-language col-sm-4 {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-name">
+                          {% for language in languages %}
+                              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected"{% endif %} {% if language.id in name_language_ids %} selected="selected" {% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                  {% for translation in translations %}
+                  {% if translation.language_id in allowed_language_ids %}
+                      {% if translation['name'] != '' %}
+                          <div class="{% if allowed_language_ids | length > 1 %}input-group{% endif %} {% if edit_group_form.translations.errors and translation.language_id == ENGLISH.id %}has-error{% endif %}" data-language-id="{{ translation.language_id }}">
+                            <input type="text" class="form-control" id="input-name-{{ translation.language_id}}" placeholder="{{ _('Name') }}" data-name="input-name" value="{{ translation.name }}" data-translation-attribute="name" data-empty-text="{{ _('Please enter a group name.') }}" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter group name (at most 100 characters).') }}">
+                            {% if allowed_language_ids | length > 1 %}
+                              <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
+                            {% endif %}
+                          </div>
+                          <span class="help-block"></span>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                  {% for error_message in edit_group_form.translations.errors %}<span class="help-block" style="color: red">{{ error_message }}</span>{% endfor %}
               </div>
-            </div>
-            <div class="form-group">
-              <label for="editGroupDescription" class="col-sm-2 control-label">Description</label>
-              <div class="col-sm-10">
-                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="editGroupDescription" name="{{ edit_group_form.description.name }}" placeholder="Description">{{ edit_group_form.description.data }}</textarea>
+
+            <div class="form-group" data-name="input-descriptions" style="padding-top: 10px">
+                  <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+                    <label for="select-language-description" class="control-label col-sm-8" style="margin-top: 5px">{{ _("Description") }}</label>
+                    <select class="selectpicker btn-xs select-language col-sm-4 {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-description">
+                      {% for language in languages %}
+                        <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected"{% endif %} {% if language.id in description_language_ids %} selected="selected" {% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                {% for translation in translations %}
+                  {% if translation.language_id in allowed_language_ids %}
+                  {% if translation['description'] != '' or translation.language_id == ENGLISH.id  %}
+                    <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language_id }}" style="margin-bottom: 10px">
+                      <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="input-description-{{ translation.language_id }}" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description">{{ translation.description }}</textarea>
+                      {% if allowed_language_ids | length > 1 %}
+                        <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
+                      {% endif %}
+                    </div>
+                    <span class="help-block"></span>
+                  {% endif %}
+                  {% endif %}
+               {% endfor %}
               </div>
-            </div>
           </div>
+          <input type="hidden" id="input-translations" name="{{ edit_group_form.translations.name }}" value="">
+
+
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="edit" value="edit">Save Changes</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="edit" value="edit">{{ _('Save') }}</button>
           </div>
         </form>
       </div>
@@ -112,13 +170,13 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="inviteUserModalLabel">Invite User</h4>
+          <h4 class="modal-title" id="inviteUserModalLabel">{{ _('Invite User') }}</h4>
         </div>
         <form method="post" action="{{ url_for('.group', group_id=group.id) }}" class="form-horizontal">
           {{ invite_user_form.csrf_token() }}
           <div class="modal-body">
             <div class="form-group">
-              <label for="inviteUserId" class="col-sm-2 control-label">User</label>
+              <label for="inviteUserId" class="col-sm-2 control-label">{{ _('User') }}</label>
               <div class="col-sm-10">
                 <select class="selectpicker" name="{{ invite_user_form.user_id.name }}" id="inviteUserId" data-width="100%" data-live-search="true">
                 {% for user in get_users(exclude_hidden=True) | sort(attribute='name') %}
@@ -131,30 +189,31 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="add_user" value="add_user">Invite User</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="add_user" value="add_user">{{ _('Invite User') }}</button>
           </div>
         </form>
       </div>
     </div>
   </div>
   {% endif %}
+
   {% if delete_group_form %}
   <div class="modal fade" id="deleteGroupModal" tabindex="-1" role="dialog" aria-labelledby="deleteGroupModalLabel">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="deleteGroupModalLabel">Delete Basic Group</h4>
+          <h4 class="modal-title" id="deleteGroupModalLabel">{{ _('Delete Basic Group') }}</h4>
         </div>
         <form method="post" action="{{ url_for('.group', group_id=group.id) }}" id="deleteGroupForm" class="form-horizontal">
           {{ delete_group_form.csrf_token() }}
           <div class="modal-body">
-            Are you certain you want to delete this basic group?
+            {{ _('Are you certain you want to delete this basic group?') }}
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger" name="delete" value="delete">Delete Basic Group</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-danger" name="delete" value="delete">{{ _('Delete Basic Group') }}</button>
           </div>
         </form>
       </div>
@@ -167,6 +226,45 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script>
+
+window.translations = {{ translations | tojson }};
+
+window.languages = [
+  {% for lang in languages %}
+      {
+          'id': '{{ lang.id }}',
+          'name': '{{ lang.names | get_translated_text }}',
+          'lang_code': '{{ lang.lang_code }}'
+      },
+  {% endfor %}
+]
+
+$(function (){
+  updateTranslationJSON();
+  $('#select-language-name').selectpicker('val', [{% for id in name_language_ids %} '{{ id }}', {% endfor %}]);
+  $('#select-language-description').selectpicker('val', [{% for id in description_language_ids %} '{{ id }}', {% endfor %}]);
+
+  $('#select-language-name').on('change', function () {
+    updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
+  }).change();
+  $('#select-language-description').on('change', function () {
+    updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description']);
+  }).change();
+
+  $('[data-name="input-names"] [data-language-id], [data-name="input-descriptions"] [data-language-id]').each(function() {
+    setTranslationHandler(this);
+  });
+
+  $('form').on('submit', function() {
+    $('input').change();
+    $('textarea').change();
+    updateTranslationJSON();
+    return $(this).find('.has-error').length === 0;
+  })
+});
+</script>
   {% if show_edit_form %}
   <script>
     $(document).ready(function() {

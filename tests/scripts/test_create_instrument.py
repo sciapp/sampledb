@@ -4,7 +4,7 @@
 """
 
 import pytest
-from sampledb.logic import instruments
+from sampledb.logic import instruments, instrument_translations, languages
 import sampledb.__main__ as scripts
 
 
@@ -18,8 +18,12 @@ def test_create_instrument(capsys):
 
     assert len(instruments.get_instruments()) == 1
     instrument = instruments.get_instruments()[0]
-    assert instrument.name == name
-    assert instrument.description == description
+    instrument = instrument_translations.get_instrument_with_translation_in_language(
+        instrument_id=instrument.id,
+        language_id=languages.Language.ENGLISH
+    )
+    assert instrument.translation.name == name
+    assert instrument.translation.description == description
     assert len(instrument.responsible_users) == 0
 
 
@@ -36,7 +40,13 @@ def test_create_instrument_missing_arguments(capsys):
 def test_create_existing_instrument(capsys):
     name = 'Example Instrument'
     description = 'Example Instrument Description'
-    instruments.create_instrument(name, description)
+    instrument = instruments.create_instrument()
+    instrument_translations.set_instrument_translation(
+        language_id=languages.Language.ENGLISH,
+        instrument_id=instrument.id,
+        name=name,
+        description=description
+    )
     assert len(instruments.get_instruments()) == 1
 
     with pytest.raises(SystemExit) as exc_info:

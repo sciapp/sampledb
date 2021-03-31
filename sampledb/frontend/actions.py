@@ -10,19 +10,25 @@ import flask
 import flask_login
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, SelectField, IntegerField, FieldList, FormField
-from wtforms.validators import InputRequired, Length, ValidationError
+from wtforms.validators import InputRequired, ValidationError, DataRequired
 import pygments
 import pygments.lexers.data
 import pygments.formatters
 
 from . import frontend
 from .. import models
-from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
 from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions, get_sorted_actions_for_user
+from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
+from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
+from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
+    get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
+
+from ..logic.languages import get_languages, get_language, Language
 from ..logic.favorites import get_user_favorite_action_ids
-from ..logic.instruments import get_instrument, get_user_instruments
+from ..logic.instruments import get_user_instruments
+from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
-from ..logic import errors, users
+from ..logic import errors, users, languages
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.settings import get_user_settings
 from ..logic.users import get_users, get_user
@@ -31,13 +37,12 @@ from ..logic.projects import get_projects, get_project, get_project_id_hierarchy
 from .users.forms import ToggleFavoriteActionForm
 from .utils import check_current_user_is_not_readonly
 from ..logic.markdown_to_html import markdown_to_safe_html
+from flask_babel import _
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 class ActionForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
     type = IntegerField()
     instrument = SelectField()
     schema = StringField(validators=[InputRequired()])
@@ -45,20 +50,20 @@ class ActionForm(FlaskForm):
     is_user_specific = BooleanField(default=True)
     is_markdown = BooleanField(default=None)
     is_hidden = BooleanField(default=None)
-    short_description = StringField()
     short_description_is_markdown = BooleanField(default=None)
+    translations = StringField(validators=[DataRequired()])
 
     def validate_type(form, field):
         try:
             action_type_id = int(field.data)
         except ValueError:
-            raise ValidationError("Invalid action type")
+            raise ValidationError(_("Invalid action type"))
         try:
             action_type = get_action_type(action_type_id)
         except errors.ActionTypeDoesNotExistError:
-            raise ValidationError("Unknown action type")
+            raise ValidationError(_("Unknown action type"))
         if action_type.admin_only and not flask_login.current_user.is_admin:
-            raise ValidationError("Actions with this type can only be created or editted by administrators")
+            raise ValidationError(_("Actions with this type can only be created or edited by administrators"))
 
 
 class ActionUserPermissionsForm(FlaskForm):
@@ -106,6 +111,8 @@ class ActionPermissionsForm(FlaskForm):
 def actions():
     action_type_id = flask.request.args.get('t', None)
     action_type = None
+    user_language_id = languages.get_user_language(flask_login.current_user).id
+
     if action_type_id is not None:
         try:
             action_type_id = int(action_type_id)
@@ -117,7 +124,10 @@ def actions():
                 'simulations': models.ActionType.SIMULATION
             }.get(action_type_id, None)
         try:
-            action_type = get_action_type(action_type_id)
+            action_type = get_action_type_with_translation_in_language(
+                action_type_id=action_type_id,
+                language_id=user_language_id
+            )
         except errors.ActionTypeDoesNotExistError:
             # fall back to all objects
             action_type_id = None
@@ -127,13 +137,13 @@ def actions():
             user_id = int(user_id)
         except ValueError:
             user_id = None
-            flask.flash('Invalid user ID.', 'error')
+            flask.flash(_('Invalid user ID.'), 'error')
     if user_id is not None:
         try:
             users.get_user(user_id)
         except errors.UserDoesNotExistError:
             user_id = None
-            flask.flash('Invalid user ID.', 'error')
+            flask.flash(_('Invalid user ID.'), 'error')
     actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id,
         action_type_id=action_type_id,
@@ -147,7 +157,7 @@ def actions():
         action_type=action_type,
         action_permissions=action_permissions, Permissions=Permissions,
         user_favorite_action_ids=user_favorite_action_ids,
-        toggle_favorite_action_form=toggle_favorite_action_form
+        toggle_favorite_action_form=toggle_favorite_action_form,
     )
 
 
@@ -162,6 +172,11 @@ def action(action_id):
     if Permissions.READ not in permissions:
         return flask.abort(403)
     may_edit = Permissions.WRITE in permissions
+
+    translations = get_action_translations_for_action(action.id, use_fallback=True)
+
+    user_language_id = languages.get_user_language(flask_login.current_user).id
+
     if action.type.admin_only and not flask_login.current_user.is_admin:
         may_edit = False
     may_grant = Permissions.GRANT in permissions
@@ -171,12 +186,23 @@ def action(action_id):
         if not may_edit:
             return flask.abort(403)
         return show_action_form(action)
+
+    title = translations[0].name
+
+    single_translation = get_action_translation_for_action_in_language(action_id, language_id=user_language_id, use_fallback=True)
+    if action.instrument_id:
+        instrument_translation = get_instrument_translation_for_instrument_in_language(action.instrument_id, user_language_id, use_fallback=True)
+        setattr(single_translation, 'instrument_translation', instrument_translation)
+    action_type_translation = get_action_type_translation_for_action_type_in_language(action.type_id, user_language_id, use_fallback=True)
+    setattr(single_translation, 'action_type_translation', action_type_translation)
     return flask.render_template(
         'actions/action.html',
         action=action,
+        title=title,
         may_edit=may_edit,
         may_grant=may_grant,
-        is_public=action_is_public(action_id)
+        is_public=action_is_public(action_id),
+        single_translation=single_translation
     )
 
 
@@ -203,13 +229,13 @@ def new_action():
             if Permissions.READ in permissions:
                 previous_action = get_action(previous_action_id)
             else:
-                flask.flash('Insufficient permissions to use the requested previous action.', 'error')
+                flask.flash(_('Insufficient permissions to use the requested action as a template.'), 'error')
                 previous_action = None
         except errors.ActionDoesNotExistError:
-            flask.flash('The requested previous action does not exist.', 'error')
+            flask.flash(_('The requested action does not exist.'), 'error')
         else:
             if previous_action.type.admin_only and not flask_login.current_user.is_admin:
-                flask.flash('Only administrators can create actions of this type.', 'error')
+                flask.flash(_('Only administrators can create actions of this type.'), 'error')
                 return flask.redirect(flask.url_for('.action', action_id=previous_action_id))
     return show_action_form(None, previous_action, action_type_id)
 
@@ -263,10 +289,23 @@ def _get_lines_for_path(schema: dict, path: typing.List[str]) -> typing.Optional
 
 
 def show_action_form(action: typing.Optional[Action] = None, previous_action: typing.Optional[Action] = None, action_type_id: typing.Optional[int] = None):
+    user_language_id = languages.get_user_language(flask_login.current_user).id
+    action_translations = []
+    load_translations = False
+
+    allowed_language_ids = [
+        language.id
+        for language in get_languages(only_enabled_for_input=True)
+    ]
+
     if action is not None:
+        action_translations = get_action_translations_for_action(action.id, use_fallback=True)
+        load_translations = True
         schema_json = json.dumps(action.schema, indent=2)
         submit_text = "Save"
     elif previous_action is not None:
+        action_translations = get_action_translations_for_action(previous_action.id, use_fallback=True)
+        load_translations = True
         schema_json = json.dumps(previous_action.schema, indent=2)
         submit_text = "Create"
     else:
@@ -288,22 +327,37 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     pygments_output = None
     error_message = None
     action_form = ActionForm()
+
+    sample_action_type = get_action_type_with_translation_in_language(
+        action_type_id=models.ActionType.SAMPLE_CREATION,
+        language_id=user_language_id
+    )
+    measurement_action_type = get_action_type_with_translation_in_language(
+        action_type_id=models.ActionType.MEASUREMENT,
+        language_id=user_language_id
+    )
+    english = get_language(Language.ENGLISH)
+    action_language_ids = [translation.language_id for translation in action_translations]
+    action_translations = {
+        action_translation.language_id: action_translation
+        for action_translation in action_translations
+    }
+
+    use_schema_editor = get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]
     if action is not None:
         if action.instrument_id:
             action_form.instrument.choices = [
-                (str(action.instrument_id), get_instrument(action.instrument_id).name)
+                (str(action.instrument_id), get_instrument_translation_for_instrument_in_language(action.instrument_id, user_language_id, use_fallback=True).name)
             ]
             action_form.instrument.data = str(action.instrument_id)
         else:
             action_form.instrument.choices = [('-1', '-')]
             action_form.instrument.data = str(-1)
         action_form.type.data = action.type.id
-        if action_form.name.data is None:
-            action_form.is_public.data = None
     else:
         user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
         action_form.instrument.choices = [('-1', '-')] + [
-            (str(instrument_id), get_instrument(instrument_id).name)
+            (str(instrument_id), get_instrument_translation_for_instrument_in_language(instrument_id, user_language_id, use_fallback=True).name)
             for instrument_id in user_instrument_ids
         ]
         if action_form.instrument.data is None or action_form.instrument.data == str(None):
@@ -321,38 +375,19 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     else:
         action_type_id = None
 
-    if action is not None:
-        if action_form.name.data is None:
-            action_form.name.data = action.name
-        if action_form.description.data is None:
-            action_form.description.data = action.description
-        if not action_form.is_submitted():
-            action_form.is_markdown.data = action.description_is_markdown
+    if not action_form.is_submitted():
+        if action is not None:
             action_form.is_hidden.data = action.is_hidden
-        if action_form.type.data is None:
-            action_form.type.data = action.type.id
-        if action_form.is_public.data is None:
-            action_form.is_public.data = action_is_public(action.id)
-        if action_form.short_description.data is None:
-            action_form.short_description.data = action.short_description
-        if not action_form.is_submitted():
+            action_form.is_markdown.data = action.description_is_markdown
             action_form.short_description_is_markdown.data = action.short_description_is_markdown
-    elif previous_action is not None:
-        if action_form.name.data is None:
-            action_form.name.data = previous_action.name
-        if action_form.description.data is None:
-            action_form.description.data = previous_action.description
-        if not action_form.is_submitted():
-            action_form.is_markdown.data = previous_action.description_is_markdown
+            action_form.type.data = action.type.id
+            action_form.is_public.data = action_is_public(action.id)
+        elif previous_action is not None:
             action_form.is_hidden.data = False
-        if action_form.type.data is None:
-            action_form.type.data = previous_action.type.id
-        if action_form.is_public.data is None:
-            action_form.is_public.data = action_is_public(previous_action.id)
-        if action_form.short_description.data is None:
-            action_form.short_description.data = previous_action.short_description
-        if not action_form.is_submitted():
+            action_form.is_markdown.data = previous_action.description_is_markdown
             action_form.short_description_is_markdown.data = previous_action.short_description_is_markdown
+            action_form.type.data = previous_action.type.id
+            action_form.is_public.data = action_is_public(previous_action.id)
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -399,20 +434,87 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines))
         pygments_output = pygments.highlight(schema_json, lexer, formatter)
     if schema is not None and error_message is None and form_is_valid:
-        name = action_form.name.data
-        description = action_form.description.data
-        if action_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(description, anchor_prefix='action-description')
-            mark_referenced_markdown_images_as_permanent(description_as_html)
+        # First block for validation
+        try:
+            translation_data = json.loads(action_form.translations.data)
+        except Exception:
+            flask.flash(_("Something went wrong"), 'error')
+            return flask.render_template(
+                'actions/action_form.html',
+                action_form=action_form,
+                action_translations=action_translations,
+                action_language_ids=action_language_ids,
+                action_types_with_translations=get_action_types_with_translations_in_language(user_language_id),
+                pygments_output=pygments_output,
+                error_message=error_message,
+                schema_json=schema_json,
+                submit_text=submit_text,
+                sample_action_type=sample_action_type,
+                measurement_action_type=measurement_action_type,
+                use_schema_editor=use_schema_editor,
+                may_change_type=action is None,
+                may_change_instrument=action is None,
+                may_set_user_specific=may_set_user_specific,
+                may_change_public=may_change_public,
+                languages=get_languages(only_enabled_for_input=True),
+                load_translations=load_translations,
+                ENGLISH=english
+            )
+        else:
+            translation_keys = {'language_id', 'name', 'description', 'short_description'}
 
-        short_description = action_form.short_description.data
-        if action_form.short_description_is_markdown.data:
-            short_description_as_html = markdown_to_safe_html(short_description, anchor_prefix='action-short-description')
-            mark_referenced_markdown_images_as_permanent(short_description_as_html)
+            if not isinstance(translation_data, list):
+                translation_data = ()
+
+            for translation in translation_data:
+                if not isinstance(translation, dict):
+                    continue
+                if set(translation.keys()) != translation_keys:
+                    continue
+
+                language_id = int(translation['language_id'])
+                name = translation['name'].strip()
+                description = translation['description'].strip()
+                short_description = translation['short_description'].strip()
+
+                if language_id == Language.ENGLISH:
+                    error = False
+                    if not isinstance(name, str) or not isinstance(description, str) \
+                            or not isinstance(short_description, str):
+                        flask.flash(_('Please input a name.'))
+                        error = True
+                    if len(name) < 1 or len(name) > 100:
+                        error = True
+                        flask.flash(_('Please input a name with a length between 1 and 100.'))
+                    if error:
+                        return flask.render_template(
+                            'actions/action_form.html',
+                            action_form=action_form,
+                            action_translations=action_translations,
+                            action_language_ids=action_language_ids,
+                            action_types_with_translations=get_action_types_with_translations_in_language(user_language_id),
+                            pygments_output=pygments_output,
+                            error_message=error_message,
+                            schema_json=schema_json,
+                            submit_text=submit_text,
+                            sample_action_type=sample_action_type,
+                            measurement_action_type=measurement_action_type,
+                            use_schema_editor=use_schema_editor,
+                            may_change_type=action is None,
+                            may_change_instrument=action is None,
+                            may_set_user_specific=may_set_user_specific,
+                            may_change_public=may_change_public,
+                            languages=get_languages(only_enabled_for_input=True),
+                            load_translations=load_translations,
+                            ENGLISH=english
+                        )
 
         instrument_id = action_form.instrument.data
         is_public = action_form.is_public.data
         is_hidden = action_form.is_hidden.data
+        is_markdown = action_form.is_markdown.data
+        short_description_is_markdown = action_form.short_description_is_markdown.data
+
         try:
             instrument_id = int(instrument_id)
         except ValueError:
@@ -425,41 +527,72 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             else:
                 user_id = None
             action = create_action(
-                action_type_id,
-                name,
-                description,
-                schema,
-                instrument_id,
-                user_id,
-                description_is_markdown=action_form.is_markdown.data,
+                action_type_id=action_type_id,
+                schema=schema,
+                instrument_id=instrument_id,
+                user_id=user_id,
                 is_hidden=is_hidden,
-                short_description=short_description,
-                short_description_is_markdown=action_form.short_description_is_markdown.data
+                description_is_markdown=is_markdown,
+                short_description_is_markdown=short_description_is_markdown
             )
-            flask.flash('The action was created successfully.', 'success')
             if may_change_public and is_public:
                 set_action_public(action.id, True)
         else:
             update_action(
-                action.id,
-                name,
-                description,
-                schema,
-                description_is_markdown=action_form.is_markdown.data,
+                action_id=action.id,
+                schema=schema,
                 is_hidden=is_hidden,
-                short_description=short_description,
-                short_description_is_markdown=action_form.short_description_is_markdown.data
+                description_is_markdown=is_markdown,
+                short_description_is_markdown=short_description_is_markdown
             )
-            flask.flash('The action was updated successfully.', 'success')
+
+        # After validation
+        valid_translations = set()
+        for translation in translation_data:
+            if not isinstance(translation, dict):
+                continue
+            if set(translation.keys()) != translation_keys:
+                continue
+
+            language_id = int(translation['language_id'])
+            name = translation['name'].strip()
+            description = translation['description'].strip()
+            short_description = translation['short_description'].strip()
+
+            if language_id not in allowed_language_ids:
+                continue
+
+            if is_markdown:
+                description_as_html = markdown_to_safe_html(description, anchor_prefix="instrument-description")
+                mark_referenced_markdown_images_as_permanent(description_as_html)
+            if short_description_is_markdown:
+                short_description_as_html = markdown_to_safe_html(short_description,
+                                                                  anchor_prefix="instrument-short-description")
+                mark_referenced_markdown_images_as_permanent(short_description_as_html)
+
+            new_translation = set_action_translation(
+                language_id=language_id,
+                action_id=action.id,
+                name=name,
+                description=description,
+                short_description=short_description)
+            valid_translations.add((new_translation.language_id, new_translation.action_id))
+
+        for existing_translations in get_action_translations_for_action(action.id):
+            if (existing_translations.language_id, existing_translations.action_id) not in valid_translations:
+                delete_action_translation(
+                    language_id=existing_translations.language_id,
+                    action_id=existing_translations.action_id
+                )
+
+        flask.flash(_('The action was updated successfully.'), 'success')
         return flask.redirect(flask.url_for('.action', action_id=action.id))
-
-    sample_action_type = get_action_type(models.ActionType.SAMPLE_CREATION)
-    measurement_action_type = get_action_type(models.ActionType.MEASUREMENT)
-
-    use_schema_editor = get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]
     return flask.render_template(
         'actions/action_form.html',
         action_form=action_form,
+        action_translations=action_translations,
+        action_language_ids=action_language_ids,
+        action_types_with_translations=get_action_types_with_translations_in_language(user_language_id),
         pygments_output=pygments_output,
         error_message=error_message,
         schema_json=schema_json,
@@ -470,7 +603,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         may_change_type=action is None,
         may_change_instrument=action is None,
         may_set_user_specific=may_set_user_specific,
-        may_change_public=may_change_public
+        may_change_public=may_change_public,
+        languages=get_languages(only_enabled_for_input=True),
+        load_translations=load_translations,
+        ENGLISH=english
     )
 
 
@@ -559,34 +695,34 @@ def action_permissions(action_id):
 
     if flask.request.method.lower() == 'post':
         if not user_may_edit:
-            flask.flash('You need GRANT permissions to edit the permissions for this action.', 'error')
+            flask.flash(_('You need GRANT permissions to edit the permissions for this action.'), 'error')
             return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
         if 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
             user_id = add_user_permissions_form.user_id.data
             permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
             if permissions == Permissions.NONE or user_id in user_permissions:
-                flask.flash('Failed to update action permissions.', 'error')
+                flask.flash(_('Failed to update action permissions.'), 'error')
                 return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
             set_user_action_permissions(action.id, user_id, permissions)
-            flask.flash('Successfully updated action permissions.', 'success')
+            flask.flash(_('Successfully updated action permissions.'), 'success')
             return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
         if 'add_group_permissions' in flask.request.form and add_group_permissions_form.validate_on_submit():
             group_id = add_group_permissions_form.group_id.data
             permissions = Permissions.from_name(add_group_permissions_form.permissions.data)
             if permissions == Permissions.NONE or group_id in group_permissions:
-                flask.flash('Failed to update action permissions.', 'error')
+                flask.flash(_('Failed to update action permissions.'), 'error')
                 return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
             set_group_action_permissions(action.id, group_id, permissions)
-            flask.flash('Successfully updated action permissions.', 'success')
+            flask.flash(_('Successfully updated action permissions.'), 'success')
             return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
         if 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
             project_id = add_project_permissions_form.project_id.data
             permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
             if permissions == Permissions.NONE or project_id in project_permissions:
-                flask.flash('Failed to update action permissions.', 'error')
+                flask.flash(_('Failed to update action permissions.'), 'error')
                 return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
             set_project_action_permissions(action.id, project_id, permissions)
-            flask.flash('Successfully updated action permissions.', 'success')
+            flask.flash(_('Successfully updated action permissions.'), 'success')
             return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
         if 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
             set_action_public(action_id, permissions_form.public_permissions.data == 'read')
@@ -626,9 +762,9 @@ def action_permissions(action_id):
                     project_id=project_id,
                     permissions=permissions
                 )
-            flask.flash("Successfully updated action permissions.", 'success')
+            flask.flash(_("Successfully updated action permissions."), 'success')
             return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-        flask.flash('Failed to update action permissions.', 'error')
+        flask.flash(_('Failed to update action permissions.'), 'error')
         return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
 
     return flask.render_template(

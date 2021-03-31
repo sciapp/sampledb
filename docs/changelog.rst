@@ -4,11 +4,13 @@ Changelog
 Version 0.19
 ------------
 
-Currently in development
+Currently in development.
 
 - Allow filtering instrument log entries by author
 - Allow sorting instrument log entries by author
 - Added event datetime for instrument log entries
+- Added internationalization features
+- Added german localization
 - Improved user interface
 
 Version 0.18

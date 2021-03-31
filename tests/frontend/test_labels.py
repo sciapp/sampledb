@@ -26,7 +26,6 @@ def user_session(flask_server):
 def action(flask_server):
     action = sampledb.models.Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='ExampleAction',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -38,11 +37,16 @@ def action(flask_server):
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
     )
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     # force attribute refresh
     assert action.id is not None
     return action

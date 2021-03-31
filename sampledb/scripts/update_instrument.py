@@ -7,8 +7,10 @@ Usage: python -m sampledb update_instrument <instrument_id> <name> <description>
 
 import sys
 from .. import create_app
-from ..logic.instruments import update_instrument, get_instrument
+from ..logic.instruments import get_instrument
+from ..logic.instrument_translations import set_instrument_translation
 from ..logic.errors import InstrumentDoesNotExistError
+from ..logic.languages import Language
 
 
 def main(arguments):
@@ -28,5 +30,10 @@ def main(arguments):
         except InstrumentDoesNotExistError:
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)
-        update_instrument(instrument_id, name, description)
+        set_instrument_translation(
+            language_id=Language.ENGLISH,
+            instrument_id=instrument_id,
+            name=name,
+            description=description
+        )
         print("Success: the instrument has been updated in SampleDB")

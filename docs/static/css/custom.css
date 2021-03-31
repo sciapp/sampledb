@@ -73,14 +73,14 @@
 a.reference.image-reference:hover {
     border-bottom: none;
 }
-div.figure > p.caption {
+figcaption {
     text-align: center;
     font-style: italic;
 }
 div.body h1, div.body h2, div.body h3, div.body h4, div.body h5, div.body h6 {
     font-weight: 700;
 }
-.figure {
+figure {
     text-align: center;
 }
 

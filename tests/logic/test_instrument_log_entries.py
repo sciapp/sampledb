@@ -13,7 +13,7 @@ from sampledb.logic import instruments, instrument_log_entries, errors
 @pytest.fixture
 def instrument(flask_server):
     with flask_server.app.app_context():
-        instrument = instruments.create_instrument(name="Example Instrument", description="")
+        instrument = instruments.create_instrument()
         # force attribute refresh
         assert instrument.id is not None
     return instrument

@@ -12,6 +12,7 @@ import re
 from ..errors import ValidationError
 from .utils import units_are_valid
 from .validate import validate
+from ..languages import get_languages
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -34,8 +35,11 @@ def validate_schema(schema: dict, path: typing.Optional[typing.List[str]] = None
         raise ValidationError('invalid schema (type must be str)', path)
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
-    if not isinstance(schema['title'], str):
+    if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
         raise ValidationError('invalid schema (title must be str)', path)
+    if isinstance(schema['title'], dict):
+        # TODO: Validate dict?
+        pass
     if path == [] and schema['type'] != 'object':
         raise ValidationError('invalid schema (root must be an object)', path)
     if schema['type'] == 'array':
@@ -259,14 +263,51 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'languages'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
 
-    if 'default' in schema and not isinstance(schema['default'], str):
-        raise ValidationError('default must be str', path)
+    if 'languages' in schema:
+        if schema['languages'] != 'all':
+            existing_language_codes = {
+                language.lang_code
+                for language in get_languages()
+            }
+            if not isinstance(schema['languages'], list):
+                raise ValidationError('languages must be a list of known language codes or "all"', path)
+            for language in schema['languages']:
+                if not isinstance(language, str) or language not in existing_language_codes:
+                    raise ValidationError('languages must be a list of known language codes or "all"', path)
+            allowed_language_codes = schema['languages']
+        else:
+            allowed_language_codes = {
+                language.lang_code
+                for language in get_languages()
+            }
+    else:
+        allowed_language_codes = {'en'}
+    if 'default' in schema and not isinstance(schema['default'], str) and not isinstance(schema['default'], dict):
+        raise ValidationError('default must be str or dict', path)
+    if 'default' in schema and isinstance(schema['default'], dict):
+        for lang_code in schema['default'].keys():
+            if lang_code not in allowed_language_codes:
+                raise ValidationError('default must only contain allowed languages', path)
+        for default_text in schema['default'].values():
+            if not isinstance(default_text, str):
+                raise ValidationError('default must only contain text', path)
+    if 'placeholder' in schema and 'choices' in schema:
+        raise ValidationError('placeholder cannot be used together with choices', path)
+    if 'placeholder' in schema and not isinstance(schema['placeholder'], str) and not isinstance(schema['placeholder'], dict):
+        raise ValidationError('placeholder must be str or dict', path)
+    if 'placeholder' in schema and isinstance(schema['placeholder'], dict):
+        for lang_code in schema['placeholder'].keys():
+            if lang_code not in allowed_language_codes:
+                raise ValidationError('placeholder must only contain allowed languages', path)
+        for placeholder_text in schema['placeholder'].values():
+            if not isinstance(placeholder_text, str):
+                raise ValidationError('placeholder must only contain text', path)
     if 'minLength' in schema and (not isinstance(schema['minLength'], int) or isinstance(schema['minLength'], bool)):
         raise ValidationError('minLength must be int', path)
     if 'maxLength' in schema and (not isinstance(schema['maxLength'], int) or isinstance(schema['maxLength'], bool)):
@@ -287,10 +328,6 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
                 raise ValidationError('choice must be str', path + [str(i)])
             if choice.isspace():
                 raise ValidationError('choice must contain more than whitespace', path + [str(i)])
-    if 'placeholder' in schema and 'choices' in schema:
-        raise ValidationError('placeholder cannot be used together with choices', path)
-    if 'placeholder' in schema and not isinstance(schema['placeholder'], str):
-        raise ValidationError('placeholder must be str', path)
     if 'pattern' in schema and not isinstance(schema['pattern'], str):
         raise ValidationError('pattern must be str', path)
     if 'pattern' in schema:
@@ -312,7 +349,8 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('dataverse_export must be True or False', path)
     if 'dataverse_export' in schema and not schema['dataverse_export'] and path == ['name']:
         raise ValidationError('dataverse_export must be True for the object name', path)
-    if 'note' in schema and not isinstance(schema['note'], str):
+    if 'note' in schema and not isinstance(schema['note'], str) and not isinstance(schema['note'], dict):
+        # TODO validate dict
         raise ValidationError('note must be str', path)
 
 

@@ -30,7 +30,6 @@ def user(flask_server):
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -42,8 +41,13 @@ def action():
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
     )
     # force attribute refresh
     assert action.id is not None

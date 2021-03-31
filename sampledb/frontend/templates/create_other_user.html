@@ -1,33 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Create Bot User — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Create Bot User')}} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <form method="post">
   {{ create_other_user_form.hidden_tag() }}
     <div class="col-md-12">
       <div class="form-group {% if create_other_user_form.name.name in create_other_user_form.errors %}has-error{% endif %}">
-        <label for="input-name" class="control-label">Name</label>
-         <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ create_other_user_form.name.name }}" value="{{ create_other_user_form.name.data or '' }}">
+        <label for="input-name" class="control-label">{{ _('Name') }}</label>
+         <input type="text" class="form-control" id="input-name" placeholder="{{ _('Name') }}" name="{{ create_other_user_form.name.name }}" value="{{ create_other_user_form.name.data or '' }}">
         {% if create_other_user_form.name.name in create_other_user_form.errors %}<span class="help-block">{{ create_other_user_form.errors[create_other_user_form.name.name] | join(' ') }}</span>{% endif %}
       </div>
       <div class="form-group {% if create_other_user_form.email.name in create_other_user_form.errors %}has-error{% endif %}">
-        <label for="input-email" class="control-label">Email</label>
-        <input type="text" class="form-control" id="input-email" placeholder="Email" name="{{ create_other_user_form.email.name }}" value="{{ create_other_user_form.email.data or '' }}">
-        {% if create_other_user_form.email.name in create_other_user_form.errors %}<span class="help-block">Please enter a valid email address.</span>{% endif %}
+        <label for="input-email" class="control-label">{{ _('Email') }}</label>
+        <input type="text" class="form-control" id="input-email" placeholder="{{ _('Email') }}" name="{{ create_other_user_form.email.name }}" value="{{ create_other_user_form.email.data or '' }}">
+        {% if create_other_user_form.email.name in create_other_user_form.errors %}<span class="help-block">{{ _('Please enter a valid email address.') }}</span>{% endif %}
       </div>
       <div class="form-group {% if create_other_user_form.password.name in create_other_user_form.errors %}has-error{% endif %}">
-        <label for="input-password" class="control-label">Password</label>
-        <input type="password" class="form-control" id="input-password" placeholder="Password" name="{{ create_other_user_form.password.name }}" value="{{ create_other_user_form.password.data or '' }}">
-        {% if create_other_user_form.password.name in create_other_user_form.errors %}<span class="help-block">Please enter a password with at least 3 characters.</span>{% endif %}
+        <label for="input-password" class="control-label">{{ _('Password') }}</label>
+        <input type="password" class="form-control" id="input-password" placeholder="{{ _('Password') }}" name="{{ create_other_user_form.password.name }}" value="{{ create_other_user_form.password.data or '' }}">
+        {% if create_other_user_form.password.name in create_other_user_form.errors %}<span class="help-block">{{ _('Please enter a password with at least 3 characters.')}}</span>{% endif %}
       </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
-        <a href="{{ url_for('.users') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+        <a href="{{ url_for('.users') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
       </div>
       <div class="col-md-3">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">Create Bot User</button>
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ _('Create Bot User')}}</button>
       </div>
     </div>
   </form>

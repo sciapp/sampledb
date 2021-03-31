@@ -34,8 +34,6 @@ def user(auth_user):
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -78,8 +76,8 @@ def test_get_location(flask_server, auth, user):
     )
     sampledb.logic.locations.update_location(
         location_id=location.id,
-        name="Example Location",
-        description="This is an example location",
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
         parent_location_id=parent_location.id,
         user_id=user.id
     )

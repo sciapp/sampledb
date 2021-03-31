@@ -1,8 +1,8 @@
 {% if data %}
   {% if schema.units == "1" %}
-    {{ '%g'| format(data.magnitude_in_base_units) }}
+    {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number}}
   {% else %}
-    {{ '%g'| format((data | to_datatype).magnitude) }}&nbsp;{{ (data | to_datatype).units | prettify_units }}
+    {{ '%g'| format((data | to_datatype).magnitude) |babel_format_number }}&nbsp;{{ (data | to_datatype).units | prettify_units }}
   {% endif %}
 {% else %}
   &mdash;

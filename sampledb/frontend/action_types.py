@@ -5,9 +5,11 @@
 
 import flask
 import flask_login
+import json
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField, BooleanField
-from wtforms.validators import InputRequired
+from wtforms.validators import DataRequired
+from flask_babel import _
 
 from . import frontend
 from .. import logic
@@ -21,9 +23,12 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def action_types():
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
+
+    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
+    action_types_with_translations = logic.action_type_translations.get_action_types_with_translations_in_language(user_language_id)
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=logic.actions.get_action_types()
+        action_types=action_types_with_translations,
     )
 
 
@@ -34,13 +39,24 @@ def action_type(type_id):
         return flask.abort(403)
     if flask.request.args.get('mode') == 'edit':
         return show_action_type_form(type_id)
+
     try:
-        action_type = logic.actions.get_action_type(type_id)
+        action_type = logic.action_type_translations.get_action_type_with_translation_in_language(
+            action_type_id=type_id,
+            language_id=logic.languages.get_user_language(flask_login.current_user).id
+        )
     except logic.errors.ActionTypeDoesNotExistError:
         return flask.abort(404)
+
+    try:
+        translations = logic.action_type_translations.get_action_type_translations_for_action_type(action_type.id)
+    except logic.errors.ActionTypeTranslationDoesNotExistError:
+        return flask.abort(404)
+
     return flask.render_template(
         'action_types/action_type.html',
-        action_type=action_type
+        action_type=action_type,
+        translations=translations,
     )
 
 
@@ -53,12 +69,8 @@ def new_action_type():
 
 
 class ActionTypeForm(FlaskForm):
-    name = StringField(validators=[InputRequired()])
-    description = StringField()
-    object_name = StringField(validators=[InputRequired()])
-    object_name_plural = StringField(validators=[InputRequired()])
-    view_text = StringField(validators=[InputRequired()])
-    perform_text = StringField(validators=[InputRequired()])
+    translations = StringField(validators=[DataRequired()])
+
     admin_only = BooleanField()
     show_on_frontpage = BooleanField()
     show_in_navbar = BooleanField()
@@ -74,8 +86,31 @@ class ActionTypeForm(FlaskForm):
 
 def show_action_type_form(type_id):
     check_current_user_is_not_readonly()
-
+    action_type_translations = []
+    action_type_language_ids = []
     action_type_form = ActionTypeForm()
+
+    english = logic.languages.get_language(logic.languages.Language.ENGLISH)
+
+    def validate_string(string):
+        try:
+            if len(string) > 0 and len(string) < 100:
+                return True
+            else:
+                return False
+        except Exception:
+            return False
+
+    def validate_strings(strings):
+        try:
+            result = [validate_string(string) for string in strings]
+            for temp in result:
+                if temp is False:
+                    return False
+        except Exception:
+            return False
+
+        return True
 
     if type_id is not None:
         try:
@@ -83,12 +118,8 @@ def show_action_type_form(type_id):
         except logic.errors.ActionTypeDoesNotExistError:
             return flask.abort(404)
         if 'action_submit' not in flask.request.form:
-            action_type_form.name.data = action_type.name
-            action_type_form.description.data = action_type.description
-            action_type_form.object_name.data = action_type.object_name
-            action_type_form.object_name_plural.data = action_type.object_name_plural
-            action_type_form.view_text.data = action_type.view_text
-            action_type_form.perform_text.data = action_type.perform_text
+            action_type_translations = logic.action_type_translations.get_action_type_translations_for_action_type(action_type.id)
+            action_type_language_ids = [translation.language_id for translation in action_type_translations]
             action_type_form.admin_only.data = action_type.admin_only
             action_type_form.show_on_frontpage.data = action_type.show_on_frontpage
             action_type_form.show_in_navbar.data = action_type.show_in_navbar
@@ -103,34 +134,82 @@ def show_action_type_form(type_id):
 
     if action_type_form.validate_on_submit():
         if type_id is None:
-            action_type = logic.actions.create_action_type(
-                name=action_type_form.name.data.strip(),
-                description=action_type_form.description.data.strip(),
-                object_name=action_type_form.object_name.data.strip(),
-                object_name_plural=action_type_form.object_name_plural.data.strip(),
-                view_text=action_type_form.view_text.data.strip(),
-                perform_text=action_type_form.perform_text.data.strip(),
-                admin_only=action_type_form.admin_only.data,
-                show_on_frontpage=action_type_form.show_on_frontpage.data,
-                show_in_navbar=action_type_form.show_in_navbar.data,
-                enable_labels=action_type_form.enable_labels.data,
-                enable_files=action_type_form.enable_files.data,
-                enable_locations=action_type_form.enable_locations.data,
-                enable_publications=action_type_form.enable_publications.data,
-                enable_comments=action_type_form.enable_comments.data,
-                enable_activity_log=action_type_form.enable_activity_log.data,
-                enable_related_objects=action_type_form.enable_related_objects.data,
-                enable_project_link=action_type_form.enable_project_link.data
-            )
+
+            try:
+                translation_data = json.loads(action_type_form.translations.data)
+            except Exception:
+                pass
+            else:
+                translation_keys = {'language_id', 'name', 'description',
+                                    'object_name', 'object_name_plural', 'view_text', 'perform_text'}
+                if not isinstance(translation_data, list):
+                    translation_data = ()
+                for translation in translation_data:
+                    if not isinstance(translation, dict):
+                        flask.flash(_('Please fill out the form.'), 'error')
+                        return show_action_type_form(type_id)
+
+                    if set(translation.keys()) != translation_keys:
+                        flask.flash(_('Please fill out the form.'), 'error')
+                        return show_action_type_form(type_id)
+
+                    language_id = int(translation['language_id'])
+                    name = translation['name'].strip()
+                    description = translation['description'].strip()
+                    object_name = translation['object_name'].strip()
+                    object_name_plural = translation['object_name_plural'].strip()
+                    view_text = translation['view_text'].strip()
+                    perform_text = translation['perform_text'].strip()
+
+                    if not validate_strings([name, object_name, object_name_plural, view_text, perform_text]):
+                        flask.flash(_('The fields for name, object name (singular and plural), view text and perform text are required.'))
+                        return flask.render_template(
+                            'action_types/action_type_form.html',
+                            action_type_form=action_type_form,
+                            action_type_translations=action_type_translations,
+                            languages=logic.languages.get_languages(),
+                            ENGLISH=english,
+                            submit_text=_('Create') if type_id is None else _('Save')
+                        )
+
+                action_type = logic.actions.create_action_type(
+                    admin_only=action_type_form.admin_only.data,
+                    show_on_frontpage=action_type_form.show_on_frontpage.data,
+                    show_in_navbar=action_type_form.show_in_navbar.data,
+                    enable_labels=action_type_form.enable_labels.data,
+                    enable_files=action_type_form.enable_files.data,
+                    enable_locations=action_type_form.enable_locations.data,
+                    enable_publications=action_type_form.enable_publications.data,
+                    enable_comments=action_type_form.enable_comments.data,
+                    enable_activity_log=action_type_form.enable_activity_log.data,
+                    enable_related_objects=action_type_form.enable_related_objects.data,
+                    enable_project_link=action_type_form.enable_project_link.data
+                )
+
+                for translation in translation_data:
+
+                    language_id = int(translation['language_id'])
+                    name = translation['name'].strip()
+                    description = translation['description'].strip()
+                    object_name = translation['object_name'].strip()
+                    object_name_plural = translation['object_name_plural'].strip()
+                    view_text = translation['view_text'].strip()
+                    perform_text = translation['perform_text'].strip()
+
+                    logic.action_type_translations.set_action_type_translation(
+                        action_type_id=action_type.id,
+                        language_id=language_id,
+                        name=name,
+                        description=description,
+                        object_name=object_name,
+                        object_name_plural=object_name_plural,
+                        view_text=view_text,
+                        perform_text=perform_text
+                    )
+
         else:
             action_type = logic.actions.update_action_type(
                 action_type_id=type_id,
-                name=action_type_form.name.data,
-                description=action_type_form.description.data,
-                object_name=action_type_form.object_name.data,
-                object_name_plural=action_type_form.object_name_plural.data,
-                view_text=action_type_form.view_text.data,
-                perform_text=action_type_form.perform_text.data,
                 admin_only=action_type_form.admin_only.data,
                 show_on_frontpage=action_type_form.show_on_frontpage.data,
                 show_in_navbar=action_type_form.show_in_navbar.data,
@@ -143,10 +222,70 @@ def show_action_type_form(type_id):
                 enable_related_objects=action_type_form.enable_related_objects.data,
                 enable_project_link=action_type_form.enable_project_link.data
             )
+
+            try:
+                translation_data = json.loads(action_type_form.translations.data)
+            except Exception:
+                pass
+            else:
+                translation_keys = {'language_id', 'name', 'description',
+                                    'object_name', 'object_name_plural', 'view_text', 'perform_text'}
+                if not isinstance(translation_data, list):
+                    translation_data = ()
+
+                valid_translations = set()
+                for translation in translation_data:
+                    if not isinstance(translation, dict):
+                        continue
+                    if set(translation.keys()) != translation_keys:
+                        continue
+
+                    language_id = int(translation['language_id'])
+                    name = translation['name'].strip()
+                    description = translation['description'].strip()
+                    object_name = translation['object_name'].strip()
+                    object_name_plural = translation['object_name_plural'].strip()
+                    view_text = translation['view_text'].strip()
+                    perform_text = translation['perform_text'].strip()
+
+                    if not validate_strings([name, object_name, object_name_plural, view_text, perform_text]):
+                        flask.flash(_('The fields for name, object name (singular and plural), view text and perform text are required.'))
+                        return flask.render_template(
+                            'action_types/action_type_form.html',
+                            action_type_form=action_type_form,
+                            action_type_translations=action_type_translations,
+                            action_type_language_ids=action_type_language_ids,
+                            languages=logic.languages.get_languages(),
+                            ENGLISH=english,
+                            submit_text=_('Create') if type_id is None else _('Save')
+                        )
+
+                    translation = logic.action_type_translations.set_action_type_translation(
+                        action_type_id=action_type.id,
+                        language_id=language_id,
+                        name=name,
+                        description=description,
+                        object_name=object_name,
+                        object_name_plural=object_name_plural,
+                        view_text=view_text,
+                        perform_text=perform_text)
+                    valid_translations.add((translation.language_id, translation.action_type_id))
+                # delete translations:
+                for existing_translation in logic.action_type_translations.get_action_type_translations_for_action_type(action_type.id):
+                    if (existing_translation.language_id, existing_translation.action_type_id) not in valid_translations:
+                        logic.action_type_translations.delete_action_type_translation(
+                            language_id=existing_translation.language_id,
+                            action_type_id=existing_translation.action_type_id
+                        )
+
         return flask.redirect(flask.url_for('.action_type', type_id=action_type.id))
 
     return flask.render_template(
         'action_types/action_type_form.html',
         action_type_form=action_type_form,
-        submit_text='Create' if type_id is None else 'Save'
+        action_type_translations=action_type_translations,
+        action_type_language_ids=action_type_language_ids,
+        languages=logic.languages.get_languages(),
+        ENGLISH=english,
+        submit_text=_('Create') if type_id is None else _('Save')
     )

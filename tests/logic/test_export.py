@@ -29,7 +29,6 @@ def user(flask_server):
 def set_up_state(user: User):
     action = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -41,13 +40,17 @@ def set_up_state(user: User):
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        name='Example Action',
+        description=''
     )
     sampledb.logic.action_permissions.set_action_public(action.id)
     action2 = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Irrelevant Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -59,8 +62,13 @@ def set_up_state(user: User):
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action2.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        name='Irrelevant Action',
+        description=''
     )
     sampledb.logic.action_permissions.set_action_public(action2.id)
     data = {'name': {'_type': 'text', 'text': 'Object'}}
@@ -70,9 +78,13 @@ def set_up_state(user: User):
     files.create_url_file(object.id, user.id, "https://example.com")
 
     instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="Example Instrument Description",
         users_can_view_log_entries=True
+    )
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        instrument_id=instrument.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        name='Example Instrument',
+        description='Example Instrument Description'
     )
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
         instrument_id=instrument.id,

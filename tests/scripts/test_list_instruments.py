@@ -4,27 +4,41 @@
 """
 
 import pytest
-from sampledb.logic.instruments import create_instrument, get_instruments
+from sampledb.logic.instruments import create_instrument
+from sampledb.logic.instrument_translations import set_instrument_translation, get_instruments_with_translation_in_language
+from sampledb.logic.languages import Language
 import sampledb.__main__ as scripts
 
 
 @pytest.fixture
 def instruments():
     return [
-        create_instrument(name, 'Example Instrument Description')
-        for name in ['Instrument 1', 'Instrument 2']
+        create_instrument()
+        for _ in range(3)
     ]
 
 
-def test_list_instruments(instruments, capsys):
+@pytest.fixture
+def instrument_translations(instruments):
+    return [
+        set_instrument_translation(
+            language_id=Language.ENGLISH,
+            instrument_id=instrument.id,
+            name=f"Instrument {i}",
+            description="This is an example instrument"
+        )
+        for i, instrument in enumerate(instruments, start=1)
+    ]
+
+
+def test_list_instruments(instrument_translations, capsys):
     scripts.main([scripts.__file__, 'list_instruments'])
     output = capsys.readouterr()[0]
-    instruments = get_instruments()
-    for instrument in get_instruments():
-        assert '- #{0}: {1}'.format(instrument.id, instrument.name) in output
+    for instrument in get_instruments_with_translation_in_language(Language.ENGLISH):
+        assert '- #{0}: {1}'.format(instrument.id, instrument.translation.name) in output
 
 
-def test_list_instruments_arguments(instruments, capsys):
+def test_list_instruments_arguments(instrument_translations, capsys):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'list_instruments', 1])
     assert exc_info.value != 0

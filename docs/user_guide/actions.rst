@@ -38,7 +38,6 @@ A schema specifies what metadata should be recorded when performing an action. T
 To edit simple schemas, users can use the graphical schema editor. To access more advanced features like arrays, users can instead edit the schema directly in a text-based editor by setting the *Use Schema Editor* setting to *No* in their preferences.
 
 .. figure:: ../static/img/generated/schema_editor.png
-    :scale: 50 %
     :alt: Editing an action using the schema editor
 
     Editing an action using the schema editor

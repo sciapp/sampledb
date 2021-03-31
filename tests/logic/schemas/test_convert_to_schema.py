@@ -253,8 +253,6 @@ def create_object_of_type(action_type_id):
     )
     action = sampledb.logic.actions.create_action(
         action_type_id=action_type_id,
-        name='Example Action',
-        description='',
         schema={
             'type': 'object',
             'title': 'Object Information',

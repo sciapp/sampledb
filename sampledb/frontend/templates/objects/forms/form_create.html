@@ -1,15 +1,15 @@
 {% extends "objects/forms/form_base.html" %}
 
-{% block title %}New Object — {{ service_name }}{% endblock %}
+{% block title %}{{ _('New Object') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <form class="form-horizontal" method="post" action="{% if previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
     {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
     {% if 'batch' in schema and schema['batch'] %}
-    <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">Batch Information</strong>
+    <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ _('Batch Information') }}</strong>
     <div class="form-group row{% if 'input_num_batch_objects' in errors %} has-error{% elif 'input_num_batch_objects' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
-      <label class="control-label col-md-3 required-label">Number of Objects in Batch</label>
+      <label class="control-label col-md-3 required-label">{{ _('Number of Objects in Batch') }}</label>
       <div class="col-md-9">
         <input type="number" min="1" max="100" step="1" value="{% if 'input_num_batch_objects' in form_data %}{{ form_data['input_num_batch_objects'] }}{% else %}1{% endif %}" class="form-control" name="input_num_batch_objects" />
       </div>
@@ -17,24 +17,24 @@
     {% endif %}
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
-    <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">Initial Permissions</strong>
+    <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ _('Initial Permissions') }}</strong>
     <div class="form-group clearfix" style="padding:0 0.75em">
       <div class="col-md-9 col-md-offset-3" style="padding-top: 12px">
         <label style="font-weight: 400">
-          <input type="radio" name="permissions_method" value="default_permissions" {% if request.form.get('permissions_method') == 'default_permissions' or 'action_submit' not in request.form %}checked="checked"{% endif %} /> Use default permissions
+          <input type="radio" name="permissions_method" value="default_permissions" {% if request.form.get('permissions_method') == 'default_permissions' or 'action_submit' not in request.form %}checked="checked"{% endif %} /> {{ _('Use default permissions') }}
         </label>
       </div>
       {% if user_groups %}
       <div class="col-md-4 col-md-offset-3" style="padding-top: 12px">
         <label style="font-weight: 400">
-          <input type="radio" name="permissions_method" value="permissions_for_group" {% if request.form.get('permissions_method') == 'permissions_for_group' %}checked="checked"{% endif %}/> Give permissions to basic group
+          <input type="radio" name="permissions_method" value="permissions_for_group" {% if request.form.get('permissions_method') == 'permissions_for_group' %}checked="checked"{% endif %}/> {{ _('Give permissions to basic group') }}
         </label>
       </div>
       {% set selected_group_id = request.form.get('permissions_for_group_group_id') %}
       <div class="col-md-5 clearfix">
-        <select class="selectpicker pull-right" data-width="280px" name="permissions_for_group_group_id" data-live-search="true">
+        <select class="selectpicker pull-right" data-width="280px" name="permissions_for_group_group_id" data-live-search="true" data-none-selected-text="{{ _("No group selected") }}">
           {% for group in user_groups %}
-          <option value="{{ group.id }}" {% if group.id | string == selected_group_id %}selected="selected"{% endif %}>{{ group.name }} (#{{ group.id }})</option>
+          <option value="{{ group.id }}" {% if group.id | string == selected_group_id %}selected="selected"{% endif %}>{{ group.name | get_translated_text }} (#{{ group.id }})</option>
           {% endfor %}
         </select>
       </div>
@@ -42,14 +42,14 @@
       {% if user_projects %}
       <div class="col-md-4 col-md-offset-3" style="padding-top: 12px">
         <label style="font-weight: 400">
-          <input type="radio" name="permissions_method" value="permissions_for_project" {% if request.form.get('permissions_method') == 'permissions_for_project' %}checked="checked"{% endif %} /> Give permissions to project group
+          <input type="radio" name="permissions_method" value="permissions_for_project" {% if request.form.get('permissions_method') == 'permissions_for_project' %}checked="checked"{% endif %} /> {{ _('Give permissions to project group') }}
         </label>
       </div>
       {% set selected_project_id = request.form.get('permissions_for_project_project_id') %}
       <div class="col-md-5 clearfix">
-        <select class="selectpicker pull-right" data-width="280px" name="permissions_for_project_project_id" data-live-search="true">
+        <select class="selectpicker pull-right" data-width="280px" name="permissions_for_project_project_id" data-live-search="true" data-none-selected-text="{{ _("No project selected") }}">
           {% for project in user_projects %}
-          <option value="{{ project.id }}" {% if project.id | string == selected_project_id %}selected="selected"{% endif %}>{{ project.name }} (#{{ project.id }})</option>
+          <option value="{{ project.id }}" {% if project.id | string == selected_project_id %}selected="selected"{% endif %}>{{ project.name | get_translated_text}} (#{{ project.id }})</option>
           {% endfor %}
         </select>
       </div>
@@ -60,9 +60,9 @@
           <input type="radio" name="permissions_method"  value="copy_permissions" {% if request.form.get('permissions_method') == 'copy_permissions' or ('previous_object_id' in request.args and has_grant_for_previous_object and not 'action_submit' in request.form) %}checked="checked"{% endif %} id="copyPermissionsChkBox">
           <div style="display: inline">
             <i class="fa fa-spinner fa-spin copyPermissionsLoading" style="display: none;"></i>
-            <span class="sr-only copyPermissionsLoading" style="display: none;">Loading...</span>
+            <span class="sr-only copyPermissionsLoading" style="display: none;">{{ _('Loading...') }}</span>
           </div>
-          Copy Permissions from other object
+          {{ _('Copy Permissions from other object') }}
         </label>
       </div>
       <div class="col-md-5 clearfix">
@@ -70,9 +70,9 @@
         {% if has_grant_for_previous_object and not 'action_submit' in request.form and request.args.get('previous_object_id') %}
         {% set selected_obj_id = request.args.get('previous_object_id') %}
         {% endif %}
-        <select id="copyPermissionsSelect" class="selectpicker pull-right" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox">
+        <select id="copyPermissionsSelect" class="selectpicker pull-right" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" data-none-selected-text="{{ _("No object selected") }}">
           {% for object in existing_objects %}
-          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.data['name']['text'] }} (#{{ object.id }})</option>
+          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.data['name']['text'] | get_translated_text }} (#{{ object.id }})</option>
           {% endfor %}
         </select>
       </div>
@@ -86,10 +86,10 @@
           <span class="input-group-addon" style="width:20em; height: 34px; display: inline-block">
             <label style="font-weight: 400">
               <input type="checkbox" name="create_instrument_log_entry" {% if 'create_instrument_log_entry' in request.form or (create_log_entry_default and not 'action_submit' in request.form) %}checked="checked"{% endif %}>
-              Create Instrument Log Entry
+              {{ _('Create Instrument Log Entry') }}
             </label>
           </span>
-          <select class="selectpicker" multiple="multiple" data-width="280px" name="instrument_log_categories">
+          <select class="selectpicker" multiple="multiple" data-width="280px" name="instrument_log_categories" data-none-selected-text="{{ _("No category selected") }}">
             {% for category in instrument_log_categories %}
             <option value="{{ category.id }}" {% if category.id | string in request.form.getlist('instrument_log_categories') %}selected="selected"{% endif %}>{{ category.title }}</option>
             {% endfor %}
@@ -98,7 +98,7 @@
           <span class="input-group-addon" style="width:20em; border: 1px solid #ccc; border-radius: 4px">
             <label style="font-weight: 400">
               <input type="checkbox" name="create_instrument_log_entry" {% if 'create_instrument_log_entry' in request.form or (create_log_entry_default and not 'action_submit' in request.form) %}checked="checked"{% endif %}>
-              Create Instrument Log Entry
+              {{ _('Create Instrument Log Entry') }}
             </label>
           </span>
         {% endif %}
@@ -107,9 +107,9 @@
     </div>
     {% endif %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
-      <div class="col-md-3 text-muted">* required</div>
+      <div class="col-md-3 text-muted">* {{ _('required') }}</div>
       <div class="col-md-9">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">Save</button>
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ _('Save') }}</button>
       </div>
     </div>
   </form>
@@ -119,6 +119,13 @@
   {{ super() }}
   <script>
   $(function() {
+    $('form').on('submit', function() {
+      $('input').change();
+      $('textarea').change();
+
+      return ($('[data-name="help-block-pattern"]').length === 0);
+    });
+
     $('select[name="permissions_for_group_group_id"]').on('show.bs.select', function () {
       $('input[name="permissions_method"][value="permissions_for_group"]').prop('checked', true);
     });

@@ -4,7 +4,8 @@
   "properties": {
     "name": {
       "title": "Object Name",
-      "type": "text"
+      "type": "text",
+      "languages": "all"
     },
     "tags": {
       "title": "Tags",

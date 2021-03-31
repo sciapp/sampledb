@@ -236,3 +236,31 @@ class ProjectObjectLinkDoesNotExistsError(Exception):
 
 class ProjectObjectLinkAlreadyExistsError(Exception):
     pass
+
+
+class LanguageDoesNotExistError(Exception):
+    pass
+
+
+class ActionTranslationDoesNotExistError(Exception):
+    pass
+
+
+class ActionTypeTranslationDoesNotExistError(Exception):
+    pass
+
+
+class InstrumentTranslationDoesNotExistError(Exception):
+    pass
+
+
+class MissingEnglishTranslationError(Exception):
+    pass
+
+
+class InvalidNumberError(Exception):
+    pass
+
+
+class LanguageAlreadyExistsError(Exception):
+    pass

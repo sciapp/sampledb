@@ -29,6 +29,7 @@ body > footer {
     background-color: #f8f8f8;
     border-top: 1px solid #e7e7e7;
     padding-top:0.75em;
+    margin-top:1em;
 }
 
 #form-signin {
@@ -89,9 +90,6 @@ body > footer {
 }
 .instrument-scientists li:after {
     content: ', ';
-}
-.instrument-scientists li:nth-last-child(2):after {
-    content: ' and ';
 }
 .instrument-scientists li:last-child:after {
     content: '';
@@ -351,7 +349,7 @@ th:hover .search-helper {
 .object-button-bar > div > div > button,
 .object-button-bar > div > button,
 .object-button-bar > div > form > button {
-    width:14em;
+    width:15em;
 }
 .related-objects {
 }
@@ -579,9 +577,6 @@ th:hover .search-helper {
 }
 .file-attachment-list li:last-child:after, .object-attachment-list li:last-child:after {
     content: '.';
-}
-.file-attachment-list li:nth-last-child(2):after, .object-attachment-list li:nth-last-child(2):after {
-    content: ' and ';
 }
 .file-attachment-list li:last-child:first-child:after, .object-attachment-list li:last-child:first-child:after {
     content: '';
@@ -818,13 +813,6 @@ span.instrument-log-show-edit {
     margin-bottom: 5px;
 }
 
-label.instrument-log-show-versions:before {
-    content: 'Show ';
-}
-input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versions:before {
-    content: 'Hide ';
-}
-
 .instrument-log-edit-form {
     display: none;
 }
@@ -906,4 +894,43 @@ label.required-label:before {
 #input-schema, .plotly-chart-editor {
     font-size: 13px;
     font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+
+.language-addon{
+    min-width: 100px
+}
+
+.language-addon-with-delete{
+    min-width: 90px;
+    border-left: 0;
+}
+
+.language-addon-delete-button{
+    min-width: 31px;
+}
+
+.CodeMirror-gutters {
+    border-right: 1px solid #ccc !important;
+}
+
+.CodeMirror {
+    border: 1px solid #ccc !important;
+}
+
+.input-group .CodeMirror {
+    border-bottom-right-radius: 0 !important;
+}
+
+.editor-toolbar {
+    border-top: 1px solid #ccc !important;
+    border-left: 1px solid #ccc !important;
+    border-right: 1px solid #ccc !important;
+}
+
+.input-group .editor-toolbar {
+    border-top-right-radius: 0 !important
+}
+
+.bootstrap-select.select-language> .dropdown-toggle.bs-placeholder{
+  color: #333 !important;
 }

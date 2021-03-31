@@ -15,7 +15,7 @@ import sampledb.__main__ as scripts
 
 @pytest.fixture
 def instrument():
-    instrument = instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    instrument = instruments.create_instrument()
     assert instrument.id is not None
     db.session.expunge(instrument)
     return instrument
@@ -32,8 +32,6 @@ def action(instrument, schema_file_name):
         schema = json.load(schema_file)
     action = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
-        description='Example Action Description',
         schema=schema,
         instrument_id=instrument.id
     )
@@ -57,10 +55,10 @@ def test_export_action_schema_missing_arguments(action, capsys):
     assert 'Usage' in capsys.readouterr()[0]
 
 
-def test_export_action_schema_invalid_action_id(action, capsys):
+def test_export_action_schema_invalid_action_id(capsys):
     with tempfile.NamedTemporaryFile('r') as schema_file:
         with pytest.raises(SystemExit) as exc_info:
-            scripts.main([scripts.__file__, 'export_action_schema', action.name, schema_file.name])
+            scripts.main([scripts.__file__, 'export_action_schema', "action", schema_file.name])
         assert exc_info.value != 0
         assert schema_file.read() == ''
     assert 'Error: action_id must be an integer' in capsys.readouterr()[1]

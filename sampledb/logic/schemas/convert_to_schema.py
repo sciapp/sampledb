@@ -4,6 +4,9 @@ Implementation of convert_to_schema(data, previous_schema, new_schema)
 """
 
 import typing
+
+from flask_babel import _
+
 from .generate_placeholder import generate_placeholder
 from .utils import get_dimensionality_for_units
 from ...models import ActionType
@@ -84,7 +87,7 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
                     if new_schema['type'] == 'measurement' and action_type_id == ActionType.MEASUREMENT:
                         return data, []
     if previous_schema['type'] != new_schema['type']:
-        return generate_placeholder(new_schema), ["Unable to convert property '{}' from type '{}' to type '{}'.".format(new_schema['title'], previous_schema['type'], new_schema['type'])]
+        return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' from type '%(type1)s' to type '%(type2)s'.", title=new_schema['title'], type1=previous_schema['type'], type2=new_schema['type'])]
     if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user', 'plotly_chart'):
         return data, []
     if new_schema['type'] == 'object_reference':
@@ -126,7 +129,7 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
         new_dimensionality = get_dimensionality_for_units(new_schema['units'])
         if new_dimensionality == previous_dimensionality:
             return data, []
-        return generate_placeholder(new_schema), ["Unable to convert quantity '{}' to different dimensionality: {} -> {}".format(new_schema['title'], previous_dimensionality, new_dimensionality)]
+        return generate_placeholder(new_schema), [_("Unable to convert quantity '%(title)s' to different dimensionality: %(dimensionality1)s -> %(dimensionality2)s", title=new_schema['title'], dimensionality1=previous_dimensionality, dimensionality2=new_dimensionality)]
     if new_schema['type'] == 'object':
         upgrade_warnings = []
         new_data = generate_placeholder(new_schema)
@@ -149,4 +152,4 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
                 if upgrade_warning not in upgrade_warnings:
                     upgrade_warnings.append(upgrade_warning)
         return new_data, upgrade_warnings
-    return generate_placeholder(new_schema), ["Unable to convert property '{}' of type '{}'.".format(new_schema['title'], new_schema['type'])]
+    return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' of type '%(type)s'.", title=new_schema['title'], type=new_schema['type'])]

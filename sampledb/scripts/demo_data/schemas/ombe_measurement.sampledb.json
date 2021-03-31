@@ -3,7 +3,7 @@
   "type": "object",
   "properties": {
     "name": {
-      "title": "Sample Name",
+      "title": {"en": "Sample Name"},
       "type": "text",
       "default": "OMBE-",
       "minLength": 1,
@@ -11,26 +11,26 @@
       "pattern": "^OMBE-[0-9]+$"
     },
     "created": {
-      "title": "Creation Datetime",
+      "title": {"en": "Creation Datetime"},
       "type": "datetime"
     },
     "substrate": {
-      "title": "Substrate",
+      "title": {"en": "Substrate"},
       "type": "text",
       "minLength": 1,
       "dataverse_export": true
     },
     "checkbox": {
-      "title": "Checkbox",
+      "title": {"en": "Checkbox"},
       "type": "bool"
     },
     "dropdown": {
-      "title": "Dropdown",
+      "title": {"en": "Dropdown"},
       "type": "text",
       "choices": ["Option A", "Option B", "Option C"]
     },
     "multilayer": {
-      "title": "Multilayers",
+      "title": {"en": "Multilayers"},
       "type": "array",
       "minItems": 1,
       "items": {

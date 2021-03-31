@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Account is read only — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Account is read only') }} — {{ service_name }}{% endblock %}
 
 {% block readonly_alert %}{% endblock %}
 
 {% block content %}
-  <h1>Account is read only</h1>
-  <p>Your account has been marked as <strong>read only</strong>. If you think this was done erroneously, please <a href="mailto:{{ contact_email }}?subject={{ service_name }}">contact an administrator</a>.</p>
+  <h1>{{ _('Account is read only') }}</h1>
+  <p>{{ _('Your account has been marked as <strong>read only</strong>. If you think this was done erroneously, please <a href="mailto:%(contact_email)s?subject=%(service_name)s">contact an administrator</a>.', contact_email=contact_email, service_name=service_name) }}</p>
 {% endblock %}

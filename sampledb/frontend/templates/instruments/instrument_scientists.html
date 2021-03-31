@@ -1,6 +1,6 @@
 {% if instrument is not none and instrument.responsible_users %}
 <div class="instrument-scientists">
-  <h3>Instrument Scientists:</h3>
+  <h3>{{ _("Instrument Scientists:") }}</h3>
   <ul>
   {% for user in instrument.responsible_users %}
     {% if not user.is_hidden %}

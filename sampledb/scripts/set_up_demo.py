@@ -12,8 +12,10 @@ import sys
 
 import sampledb
 from .. import create_app
-from sampledb.models import Objects, UserType, ActionType
+from sampledb.models import Objects, UserType, ActionType, Language
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
+from sampledb.logic.instrument_translations import set_instrument_translation
+from sampledb.logic.action_translations import set_action_translation
 from sampledb.logic.actions import create_action
 from sampledb.logic.object_log import create_object
 from ..logic import groups, object_permissions, projects, comments, files
@@ -47,31 +49,62 @@ def main(arguments):
         api_user = sampledb.logic.users.create_user(name="API User", email="api@example.com", type=UserType.OTHER)
         sampledb.logic.authentication.add_other_authentication(api_user.id, 'api', 'password')
 
-        group_id = groups.create_group("Example Group", "This is an example group for testing purposes.", instrument_responsible_user.id).id
+        # enable german for input
+        german = sampledb.logic.languages.get_language(sampledb.models.Language.GERMAN)
+        sampledb.logic.languages.update_language(
+            language_id=german.id,
+            names=german.names,
+            lang_code=german.lang_code,
+            datetime_format_datetime=german.datetime_format_datetime,
+            datetime_format_moment=german.datetime_format_moment,
+            enabled_for_input=True
+        )
 
-        project_id = projects.create_project("Example Project", "This is an example project", instrument_responsible_user.id).id
-        project_id2 = projects.create_project("Example Project 2", "This is another example project", instrument_responsible_user.id).id
-        projects.create_subproject_relationship(parent_project_id=project_id, child_project_id=project_id2, child_can_add_users_to_parent=True)
+        group_id = groups.create_group({"en": "Example Group", "de": "Beispielgruppe"},
+                                       {"en": "This is an example group for testing purposes.", "de": "Dies ist eine Beispielgruppe für Testzwecke"},
+                                       instrument_responsible_user.id).id
+
+        project_id = projects.create_project({"en": "Example Project", "de": "Beispielprojekt"},
+                                             {"en": "This is an example project",
+                                              "de": "Dies ist ein Beispielprojekt"}, instrument_responsible_user.id).id
+
+        project_id2 = projects.create_project({"en": "Example Project 2", "de": "Beispielprojekt 2"}, {"en": "This is another example project", "de": "Dies ist ein weiteres Beispielprojekt"},
+                                              instrument_responsible_user.id).id
+        projects.create_subproject_relationship(parent_project_id=project_id, child_project_id=project_id2,
+                                                child_can_add_users_to_parent=True)
 
         markdown_notes = """# Header
-    This example shows how Markdown can be used for instrument Notes.
+This example shows how Markdown can be used for instrument Notes.
 
-    ## Subheader
+## Subheader
 
-    *italics* **bold**
+*italics* **bold**
 
 
-    | A | B | C |
-    |--:|:-:|---|
-    | Example | 100˚C | 5µm |
-    | Data | 110˚C | 6µm |
+| A | B | C |
+|--:|:-:|---|
+| Example | 100˚C | 5µm |
+| Data | 110˚C | 6µm |
             """
         instrument = create_instrument(
-            name="OMBE I",
-            description="This is an example instrument.",
             users_can_create_log_entries=True,
-            notes=markdown_notes,
             notes_is_markdown=True
+        )
+        set_instrument_translation(
+            language_id=sampledb.models.Language.ENGLISH,
+            instrument_id=instrument.id,
+            name="OMBE I",
+            description="This is an example instrument",
+            short_description="This is the short description",
+            notes=markdown_notes,
+        )
+        set_instrument_translation(
+            language_id=sampledb.models.Language.GERMAN,
+            instrument_id=instrument.id,
+            name="OMBE I",
+            description="Dies ist ein Beispiel Instrument",
+            short_description="Dies ist die kurze Beschreibung",
+            notes=markdown_notes,
         )
         add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
         log_category_error = sampledb.logic.instrument_log_entries.create_instrument_log_category(
@@ -133,13 +166,31 @@ def main(arguments):
 
         with open(os.path.join(schema_directory, 'ombe_measurement.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        instrument_action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation", "This is an example action", schema, instrument.id)
+        instrument_action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema,
+            instrument_id=instrument.id
+        )
+
+        set_action_translation(Language.ENGLISH, instrument_action.id, "Sample Creation", "This is an example action")
+
         sampledb.logic.action_permissions.set_action_public(instrument_action.id)
-        independent_action = create_action(ActionType.SAMPLE_CREATION, "Alternative Process", "This is an example action", schema)
+        independent_action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, independent_action.id, "Alternative Process", "This is an example action")
+
         sampledb.logic.action_permissions.set_action_public(independent_action.id)
         with open(os.path.join(schema_directory, 'ombe_measurement_batch.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             batch_schema = json.load(schema_file)
-        action = create_action(ActionType.SAMPLE_CREATION, "Sample Creation (Batch)", "This is an example action", batch_schema, instrument.id)
+        action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=batch_schema,
+            instrument_id=instrument.id
+        )
+        set_action_translation(Language.ENGLISH, action.id, "Sample Creation (Batch)", "This is an example action")
+
         sampledb.logic.action_permissions.set_action_public(action.id)
         sampledb.db.session.commit()
 
@@ -160,24 +211,41 @@ def main(arguments):
 
         with open(os.path.join(schema_directory, 'ombe_measurement_updated.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        sampledb.logic.actions.update_action(instrument_action.id, "Updated Sample Creation", "", schema)
+        sampledb.logic.actions.update_action(
+            action_id=instrument_action.id,
+            schema=schema
+        )
+        sampledb.logic.action_translations.set_action_translation(Language.ENGLISH, instrument_action.id, "Updated Sample Creation", "", "")
 
         object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
 
-        instrument = create_instrument(name="XRR", description="X-Ray Reflectometry")
+        instrument = create_instrument()
+        set_instrument_translation(Language.ENGLISH, instrument.id, name="XRR", description="X-Ray Reflectometry")
+
         add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
         with open(os.path.join(schema_directory, 'xrr_measurement.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        instrument_action = create_action(ActionType.MEASUREMENT, "XRR Measurement", "", schema, instrument.id)
+        instrument_action = create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema=schema,
+            instrument_id=instrument.id
+        )
+        set_action_translation(Language.ENGLISH, instrument_action.id, "XRR Measurement", "", )
+
         sampledb.logic.action_permissions.set_action_public(instrument_action.id)
         with open(os.path.join(schema_directory, 'searchable_quantity.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        action = create_action(ActionType.SAMPLE_CREATION, "Searchable Object", "", schema, None)
+        action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, action.id, "Searchable Object", "")
+
         sampledb.logic.action_permissions.set_action_public(action.id)
         independent_object = Objects.create_object(data={
             "name": {
                 "_type": "text",
-                "text": "TEST-1"
+                "text": {"en": "TEST-1", "de": "TEST-1"}
             },
             "tags": {
                 "_type": "tags",
@@ -196,7 +264,7 @@ def main(arguments):
         independent_object = Objects.create_object(data={
             "name": {
                 "_type": "text",
-                "text": "TEST-2"
+                "text": {'en': "TEST-2"}
             },
             "tags": {
                 "_type": "tags",
@@ -213,87 +281,111 @@ def main(arguments):
         object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
         sampledb.db.session.commit()
 
-        instrument = create_instrument(name="MPMS SQUID", description="MPMS SQUID Magnetometer JCNS-2")
+        instrument = create_instrument()
+        set_instrument_translation(Language.ENGLISH, instrument.id, name="MPMS SQUID", description="MPMS SQUID Magnetometer JCNS-2")
+
         add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
         with open(os.path.join(schema_directory, 'squid_measurement.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+        instrument_action = create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema=schema,
+            instrument_id=instrument.id
+        )
+        set_action_translation(Language.ENGLISH, instrument_action.id, "Perform Measurement", "")
         sampledb.logic.action_permissions.set_action_public(instrument_action.id)
         sampledb.db.session.commit()
 
-        instrument = create_instrument(name="Powder Diffractometer", description="Huber Imaging Plate Guinier Camera G670 at JCNS-2")
+        instrument = create_instrument()
+        set_instrument_translation(Language.ENGLISH, instrument.id, name="Powder Diffractometer", description="Huber Imaging Plate Guinier Camera G670 at JCNS-2")
         add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
         with open(os.path.join(schema_directory, 'powder_diffractometer_measurement.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+        instrument_action = create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema=schema,
+            instrument_id=instrument.id
+        )
+        set_action_translation(Language.ENGLISH, instrument_action.id, "Perform Measurement", "")
         sampledb.logic.action_permissions.set_action_public(instrument_action.id)
         sampledb.db.session.commit()
 
-        instrument = create_instrument(name="GALAXI", description="Gallium Anode Low-Angle X-ray Instrument")
+        instrument = create_instrument()
+        set_instrument_translation(Language.ENGLISH, instrument.id, name="GALAXI", description="Gallium Anode Low-Angle X-ray Instrument")
         add_instrument_responsible_user(instrument.id, instrument_responsible_user.id)
         with open(os.path.join(schema_directory, 'galaxi_measurement.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        instrument_action = create_action(ActionType.MEASUREMENT, "Perform Measurement", "", schema, instrument.id)
+        instrument_action = create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema=schema,
+            instrument_id=instrument.id
+        )
+        set_action_translation(Language.ENGLISH, instrument_action.id, "Perform Measurement", "")
         sampledb.logic.action_permissions.set_action_public(instrument_action.id)
         sampledb.db.session.commit()
 
         with open(os.path.join(schema_directory, 'other_sample.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        action = create_action(ActionType.SAMPLE_CREATION, "Other Sample", "", schema, None)
+        action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, action.id, "Other Sample", "", )
         sampledb.logic.action_permissions.set_action_public(action.id)
         sampledb.db.session.commit()
 
         sample_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.SAMPLE_CREATION,
-            name="sample_action",
-            description="",
             schema={
                 'title': 'Example Object',
                 'type': 'object',
                 'properties': {
                     'name': {
-                        'title': 'Object Name',
-                        'type': 'text'
+                        'title': {'en': 'Object Name', 'de': 'Objektname'},
+                        'type': 'text',
+                        'languages': 'all'
                     },
                     'sample': {
-                        'title': 'Sample',
+                        'title': {'en': 'Sample', 'de': 'Probe'},
                         'type': 'sample'
                     }
                 },
                 'required': ['name']
             }
         )
+        set_action_translation(Language.ENGLISH, sample_action.id, name="sample_action", description="")
         sampledb.logic.action_permissions.set_action_public(sample_action.id)
         measurement_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.MEASUREMENT,
-            name="measurement_action",
-            description="",
             schema={
                 'title': 'Example Object',
                 'type': 'object',
                 'properties': {
                     'name': {
                         'title': 'Object Name',
-                        'type': 'text'
+                        'type': 'text',
+                        'languages': ['en', 'de']
                     },
                     'sample': {
                         'title': 'Sample',
                         'type': 'sample'
                     },
                     'comment': {
-                        'title': 'Comment',
+                        'title': {'en': 'Comment', 'de': 'Kommentar'},
                         'type': 'text',
-                        'markdown': True
+                        'markdown': True,
+                        'languages': "all"
                     }
                 },
                 'required': ['name']
             }
         )
+        set_action_translation(Language.ENGLISH, measurement_action.id, name="measurement_action", description="")
         sampledb.logic.action_permissions.set_action_public(measurement_action.id)
         data = {
             'name': {
                 '_type': 'text',
-                'text': 'Object 1'
+                'text': {'en': 'Object 1', 'de': 'Objekt 1'}
             }
         }
         object = sampledb.logic.objects.create_object(sample_action.id, data, basic_user.id)
@@ -301,7 +393,7 @@ def main(arguments):
         data = {
             'name': {
                 '_type': 'text',
-                'text': 'Object 2'
+                'text': {'en': 'Object 2', 'de': 'Objekt 2'}
             },
             'sample': {
                 '_type': 'sample',
@@ -313,7 +405,7 @@ def main(arguments):
         data = {
             'name': {
                 '_type': 'text',
-                'text': 'Object 1'
+                'text': {'en': 'Object 1', 'de': 'Objekt 1'}
             },
             'sample': {
                 '_type': 'sample',
@@ -324,7 +416,7 @@ def main(arguments):
         data = {
             'name': {
                 '_type': 'text',
-                'text': 'Measurement'
+                'text': {"en": 'Measurement', 'de': 'Messung'}
             },
             'sample': {
                 '_type': 'sample',
@@ -332,7 +424,7 @@ def main(arguments):
             },
             'comment': {
                 '_type': 'text',
-                'text': 'This is a test.\nThis **is** a *second* line.\n\nThis line follows an empty line.',
+                'text': {'en': 'This is a test.\nThis **is** a *second* line.\n\nThis line follows an empty line.'},
                 'is_markdown': True
             }
         }
@@ -341,7 +433,7 @@ def main(arguments):
         data = {
             'name': {
                 '_type': 'text',
-                'text': 'Measurement 2'
+                'text': {'en': 'Measurement 2', 'de': 'Messung 2'}
             },
             'sample': {
                 '_type': 'sample',
@@ -349,7 +441,7 @@ def main(arguments):
             },
             'comment': {
                 '_type': 'text',
-                'text': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'
+                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'}
             }
         }
         measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
@@ -357,7 +449,12 @@ def main(arguments):
 
         with open(os.path.join(schema_directory, 'plotly.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        plotly_action = create_action(ActionType.SAMPLE_CREATION, "Plotly Example Action", "", schema, None)
+        plotly_action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema,
+            instrument_id=instrument.id
+        )
+        set_action_translation(Language.ENGLISH, plotly_action.id, name="Plotly Example Action", description="")
         sampledb.logic.action_permissions.set_action_public(plotly_action.id)
 
         with open(os.path.join(objects_directory, 'plotly-example-data1.sampledb.json'), 'r', encoding='utf-8') as data_file:
@@ -378,7 +475,11 @@ def main(arguments):
 
         with open(os.path.join(schema_directory, 'plotly_array.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
-        plotly_array_action = create_action(ActionType.SAMPLE_CREATION, "Plotly Array Example Action", "", schema, None)
+        plotly_array_action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, plotly_array_action.id, name="Plotly Array Example Action", description="")
         sampledb.logic.action_permissions.set_action_public(plotly_array_action.id)
 
         with open(os.path.join(objects_directory, 'plotly-example-data2.sampledb.json'), 'r', encoding='utf-8') as data_file:
@@ -410,12 +511,12 @@ def main(arguments):
         sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
         sampledb.db.session.commit()
 
-        campus = sampledb.logic.locations.create_location("Campus", "Max Mustermann Campus", None, instrument_responsible_user.id)
-        building_a = sampledb.logic.locations.create_location("Building A", "Building A on Max Mustermann Campus", campus.id, instrument_responsible_user.id)
-        room_42a = sampledb.logic.locations.create_location("Room 42a", "Building A, Room 42a", building_a.id, instrument_responsible_user.id)
-        room_42b = sampledb.logic.locations.create_location("Room 42b", "Building A, Room 42b", building_a.id, instrument_responsible_user.id)
-        sampledb.logic.locations.assign_location_to_object(measurement.id, room_42a.id, None, instrument_responsible_user.id, "Temporarily stored on table\n\nSome other text")
-        sampledb.logic.locations.assign_location_to_object(measurement.id, room_42b.id, instrument_responsible_user.id, basic_user.id, "Stored in shelf K")
+        campus = sampledb.logic.locations.create_location({"en": "Campus"}, {"en": "Max Mustermann Campus"}, None, instrument_responsible_user.id)
+        building_a = sampledb.logic.locations.create_location({"en": "Building A", "de": "Gebäude A"}, {"en": "Building A on Max Mustermann Campus", "de": "Gebäude A auf dem Max Mustermann Campus"}, campus.id, instrument_responsible_user.id)
+        room_42a = sampledb.logic.locations.create_location({"en": "Room 42a", "de": "Raum 42a"}, {"en": "Building A, Room 42a", "de": "Gebäude A, Raum 42a"}, building_a.id, instrument_responsible_user.id)
+        room_42b = sampledb.logic.locations.create_location({"en": "Room 42b", "de": "Raum 42b"}, {"en": "Building A, Room 42b", "de": "Gebäude A, Raum 42b"}, building_a.id, instrument_responsible_user.id)
+        sampledb.logic.locations.assign_location_to_object(measurement.id, room_42a.id, None, instrument_responsible_user.id, {"en": "Temporarily stored on table\n\nSome other text", "de": "Temporär auf einem Tisch gelagert \n\n Irgendein anderer Text"})
+        sampledb.logic.locations.assign_location_to_object(measurement.id, room_42b.id, instrument_responsible_user.id, basic_user.id, {"en": "Stored in shelf K", "de": "In Regal K gelagert"})
         sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo.")
         sampledb.logic.object_permissions.set_user_object_permissions(independent_object.id, instrument_responsible_user.id, sampledb.models.Permissions.GRANT)
         sampledb.logic.notifications.create_notification_for_having_received_an_objects_permissions_request(instrument_responsible_user.id, independent_object.id, admin.id)

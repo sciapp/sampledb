@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Actions — {{ service_name }}{% endblock %}
+{% block title %} {{ _('Actions') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>{% if action_type %}{{ action_type.name }} {% endif %}Actions</h1>
-  <p class="text-muted">{% if action_type and action_type.description %}{{ action_type.description }}{% else %}Actions represent processes like creating a sample, performing a measurement or running a simulation.{% endif %} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">Read more.</a></p>
+  <h1>{% if action_type %}{{ _('%(action_type)s Actions', action_type=action_type.translation.name) }} {% else %}{{ _('Actions') }}{% endif %}</h1>
+  <p class="text-muted">{% if action_type and action_type.translation.description %}{{ action_type.translation.description }}{% else %}{{ _('Actions represent processes like creating a sample or performing a measurement.') }}{% endif %} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">{{ _("Read more.") }}</a></p>
   {% if current_user.is_admin and not current_user.is_readonly %}
     {% if action_type %}
-    <a href="{{ url_for('.new_action', action_type_id=action_type.id) }}" class="btn btn-default">Create Action</a>
+    <a href="{{ url_for('.new_action', action_type_id=action_type.id) }}" class="btn btn-default">{{ _("Create Action") }} </a>
     {% else %}
-    <a href="{{ url_for('.new_action') }}" class="btn btn-default">Create Action</a>
+    <a href="{{ url_for('.new_action') }}" class="btn btn-default">{{ _("Create Action") }}</a>
     {% endif %}
   {% endif %}
   {% for action in actions %}
@@ -21,27 +21,36 @@
         <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
         {% endif %}
         {% if action.instrument is not none %}
-        <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash;
+            {% if action.instrument.translation.english_name %}
+             <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.english_name }}">{{ action.instrument.translation.english_name }}</a> &mdash;
+            {% else %}
+             <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.name }}">{{ action.instrument.translation.name }}</a> &mdash;
+            {% endif %}
         {% endif %}
-        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name }}">{{ action.name }}</a>
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.translation.name }}">{{ action.translation.name }}</a>
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>
     {% if action.is_hidden %}
-    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This action has been hidden from action lists.</p>
+    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _("This action has been hidden from action lists.") }} </p>
     {% endif %}
-    {% if action.short_description %}
+
+    {% if action.translation.english_short_description %}
     <div class="action-user-content">
-    {% if action.short_description_is_markdown %}{{ action.short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description }}</p>{% endif %}
+    {% if action.short_description_is_markdown %}{{ action.translation.english_short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.translation.english_short_description }}</p>{% endif %}
+    </div>
+  {% elif action.translation.short_description %}
+    <div class="action-user-content">
+    {% if action.short_description_is_markdown %}{{ action.translation.short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.translation.short_description }}</p>{% endif %}
     </div>
     {% endif %}
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_scientists.html" %}
     {% endwith %}
     <p>
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
+      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.translation.view_text }}</a>
       {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.perform_text }}</a>
+      <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.translation.perform_text }}</a>
       {% endif %}
     </p>
   {% endfor %}

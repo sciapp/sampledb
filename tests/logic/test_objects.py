@@ -36,8 +36,6 @@ def user2():
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -135,8 +133,6 @@ def test_get_objects_action_filter(user, action) -> None:
     action1 = action
     action2 = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -305,8 +301,6 @@ def test_restore_object_version_invalid_data(user, action) -> None:
 def test_measurement_referencing_sample(flask_server, user) -> None:
     sample_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Sample Action',
-        description='',
         schema={
             'title': 'Sample',
             'type': 'object',
@@ -320,8 +314,6 @@ def test_measurement_referencing_sample(flask_server, user) -> None:
         })
     measurement_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
-        name='Measurement Action',
-        description='',
         schema={
             'title': 'Measurement',
             'type': 'object',

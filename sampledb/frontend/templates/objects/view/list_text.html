@@ -1,10 +1,10 @@
 {% if data is not none and data.text %}
 {% if schema.markdown and data.is_markdown  %}
-<span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;" class="object-user-content">{{ data.text | markdown_to_safe_html | safe }}</span>
+<span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;" class="object-user-content">{{ (data.text | get_translated_text(metadata_language)) | markdown_to_safe_html | safe }}</span>
 {% elif 'multiline' in schema and schema['multiline']  %}
-<span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text }}</span>
+<span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</span>
 {% else %}
-{{ data.text }}
+{{ data.text | get_translated_text }}
 {% endif %}
 {% else %}
   &mdash;

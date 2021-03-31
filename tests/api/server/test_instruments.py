@@ -34,7 +34,10 @@ def test_get_instrument(flask_server, auth, user):
     r = requests.get(flask_server.base_url + 'api/v1/instruments/1', auth=auth)
     assert r.status_code == 404
 
-    instrument = sampledb.logic.instruments.create_instrument(
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument.id,
         name="Example Instrument",
         description="This is an example instrument"
     )
@@ -65,9 +68,12 @@ def test_get_instruments(flask_server, auth):
     assert r.status_code == 200
     assert r.json() == []
 
-    instrument = sampledb.logic.instruments.create_instrument(
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument.id,
         name="Example Instrument",
-        description="This is an example instrument",
+        description="This is an example instrument"
     )
     r = requests.get(flask_server.base_url + 'api/v1/instruments/', auth=auth)
     assert r.status_code == 200

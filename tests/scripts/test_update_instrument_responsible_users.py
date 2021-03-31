@@ -12,7 +12,7 @@ import sampledb.__main__ as scripts
 
 @pytest.fixture
 def instrument():
-    instrument = instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    instrument = instruments.create_instrument()
     assert instrument.id is not None
     db.session.expunge(instrument)
     return instrument

@@ -1,5 +1,5 @@
 {% if data %}
-  {{ data.utc_datetime }}
+  {{ data.utc_datetime | babel_format_datetime }}
 {% else %}
   &mdash;
 {% endif %}

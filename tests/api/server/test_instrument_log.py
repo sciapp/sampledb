@@ -38,7 +38,10 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
         'message': "instrument 1 does not exist"
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument.id,
         name="Example Instrument",
         description="This is an example instrument"
     )
@@ -50,8 +53,6 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -127,10 +128,7 @@ def test_get_instrument_log_entry(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
@@ -139,8 +137,6 @@ def test_get_instrument_log_entry(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -174,8 +170,6 @@ def test_get_instrument_log_entry(flask_server, auth, user):
     }
 
     instrument2 = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument 2",
-        description="This is an example instrument",
         users_can_view_log_entries=True
     )
 
@@ -193,10 +187,7 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
 
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/1/file_attachments/', auth=auth)
     assert r.status_code == 403
@@ -206,8 +197,6 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -248,8 +237,6 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
     ]
 
     other_instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument 2",
-        description="This is an example instrument",
         users_can_view_log_entries=True
     )
 
@@ -267,10 +254,7 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
 
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/1/file_attachments/1', auth=auth)
     assert r.status_code == 403
@@ -280,8 +264,6 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -322,8 +304,6 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
     }
 
     other_instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument 2",
-        description="This is an example instrument",
         users_can_view_log_entries=True
     )
 
@@ -354,10 +334,7 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
 
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/1/object_attachments/', auth=auth)
     assert r.status_code == 403
@@ -367,8 +344,6 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -391,8 +366,6 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
 
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="Example Action",
-        description="",
         schema={
             'title': "Sample Information",
             'type': 'object',
@@ -435,8 +408,6 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     ]
 
     other_instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument 2",
-        description="This is an example instrument",
         users_can_view_log_entries=True
     )
 
@@ -454,10 +425,7 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
 
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/1/object_attachments/1', auth=auth)
     assert r.status_code == 403
@@ -467,8 +435,6 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -493,8 +459,6 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
 
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="Example Action",
-        description="",
         schema={
             'title': "Sample Information",
             'type': 'object',
@@ -535,8 +499,6 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     }
 
     other_instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument 2",
-        description="This is an example instrument",
         users_can_view_log_entries=True
     )
 
@@ -583,10 +545,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
 
     r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 403
@@ -596,8 +555,6 @@ def test_create_instrument_log_entry(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_create_log_entries=True
     )
 
@@ -622,8 +579,6 @@ def test_create_instrument_log_entry(flask_server, auth, user):
 
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="Example Action",
-        description="",
         schema={
             'title': "Sample Information",
             'type': 'object',
@@ -851,10 +806,7 @@ def test_instrument_log_categories(flask_server, auth, user, app):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_categories/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
@@ -863,8 +815,6 @@ def test_instrument_log_categories(flask_server, auth, user, app):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 
@@ -895,10 +845,7 @@ def test_instrument_log_category(flask_server, auth, user):
         'message': 'instrument 1 does not exist'
     }
 
-    instrument = sampledb.logic.instruments.create_instrument(
-        name="Example Instrument",
-        description="This is an example instrument"
-    )
+    instrument = sampledb.logic.instruments.create_instrument()
 
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_categories/1', auth=auth)
     assert r.status_code == 403
@@ -908,8 +855,6 @@ def test_instrument_log_category(flask_server, auth, user):
 
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
-        name=instrument.name,
-        description=instrument.description,
         users_can_view_log_entries=True
     )
 

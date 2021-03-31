@@ -864,17 +864,20 @@ def test_validate_sample():
         'type': 'sample'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -896,17 +899,20 @@ def test_validate_sample_invalid_type():
         'type': 'sample'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -926,17 +932,20 @@ def test_validate_sample_unexpected_keys():
         'type': 'sample'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -972,17 +981,20 @@ def test_validate_sample_wrong_type():
         'type': 'sample'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1005,17 +1017,20 @@ def test_validate_sample_wrong_object_id_type():
         'type': 'sample'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1051,17 +1066,20 @@ def test_validate_measurement():
         'type': 'measurement'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
-      "title": "Measurement Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Measurement Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1083,17 +1101,20 @@ def test_validate_measurement_invalid_type():
         'type': 'measurement'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
-      "title": "Measurement Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Measurement Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1113,17 +1134,20 @@ def test_validate_measurement_unexpected_keys():
         'type': 'measurement'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
-      "title": "Measurement Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Measurement Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1159,17 +1183,20 @@ def test_validate_measurement_wrong_type():
         'type': 'measurement'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
-      "title": "Measurement Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Measurement Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1192,17 +1219,20 @@ def test_validate_measurement_wrong_object_id_type():
         'type': 'measurement'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
-      "title": "Measurement Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Measurement Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1238,17 +1268,20 @@ def test_validate_object_reference():
         'type': 'object_reference'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1274,17 +1307,20 @@ def test_validate_object_reference_invalid_type():
         'type': 'object_reference'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1304,17 +1340,20 @@ def test_validate_object_reference_unexpected_keys():
         'type': 'object_reference'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
         }
-      },
-      'required': ['name']
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1350,17 +1389,20 @@ def test_validate_object_reference_wrong_type():
         'type': 'object_reference'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1383,17 +1425,20 @@ def test_validate_object_reference_wrong_object_id_type():
         'type': 'object_reference'
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1430,17 +1475,20 @@ def test_validate_object_reference_wrong_action_type():
         'action_type_id': sampledb.models.ActionType.MEASUREMENT
     }
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)
@@ -1459,17 +1507,20 @@ def test_validate_object_reference_wrong_action():
     from sampledb.models.users import User, UserType
     from sampledb.models.actions import Action
     user = User("User", "example@example.com", UserType.OTHER)
-    action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
-      "title": "Sample Information",
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Sample Name",
-          "type": "text"
+    action = Action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
         }
-      },
-      "required": ["name"]
-    })
+    )
 
     sampledb.db.session.add(user)
     sampledb.db.session.add(action)

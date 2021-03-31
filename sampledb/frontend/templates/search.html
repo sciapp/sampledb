@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Search — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Search') }} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
@@ -15,46 +15,46 @@
 {% endblock %}
 
 {% block content %}
-  <h1>Search</h1>
+  <h1>{{ _('Search') }}</h1>
     <p class="text-muted">
-      For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.
+      {{ _('For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.') }}
     </p>
   <form action="{{ url_for('frontend.objects') }}" method="get" id="form-search-standalone">
     <div class="form-group row">
       <div class="col-md-6">
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="Search..." name="q" id="search-field">
+          <input type="text" class="form-control" placeholder="{{ _('Search...') }}" name="q" id="search-field">
           <span class="input-group-btn">
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="caret"></span>
-              <span class="sr-only">Toggle Dropdown</span>
+              <span class="sr-only">{{ _('Toggle Dropdown') }}</span>
             </button>
             <ul class="dropdown-menu">
-              <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> Advanced Search</label></a></li>
+              <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> {{ _('Advanced Search') }}</label></a></li>
             </ul>
           </span>
         </div>
       </div>
     </div>
     <div class="form-group row">
-      <label style="font-weight: normal" class="col-md-2">Only search for</label>
+      <label style="font-weight: normal" class="col-md-2">{{ _('Only search for') }}</label>
       <div class="col-md-4">
         <select name="t" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
           {% for action_type in action_types %}
-            <option value="{{ action_type.id }}">{{ action_type.object_name_plural }}</option>
+            <option value="{{ action_type.id }}">{{ action_type.translation.object_name_plural }}</option>
           {% endfor %}
         </select>
       </div>
     </div>
     <div class="form-group row">
-      <label style="font-weight: normal" class="col-md-2">Created with</label>
+      <label style="font-weight: normal" class="col-md-2">{{ _('Created with') }}</label>
       <div class="col-md-4">
         <select name="action" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
           {% for action in actions %}
             {% if not action.is_hidden %}
-              <option value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.name }} &mdash; {% endif %}{{ action.name }}</option>
+              <option value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.translation.name }} &mdash; {% endif %}{{ action.translation.name }}</option>
             {% endif %}
           {% endfor %}
         </select>
@@ -62,13 +62,13 @@
     </div>
     <div class="form-group row">
       <div class="col-md-offset-4 col-md-2">
-        <button class="btn btn-default" type="button" style="width: 100%" id="button-use-builder">Build Search Query</button>
+        <button class="btn btn-default" type="button" style="width: 100%" id="button-use-builder">{{ _('Build Search Query') }}</button>
       </div>
     </div>
     <div id="advanced-search-builder" style="display: none">
-      <h3>Search Query Builder</h3>
+      <h3>{{ _('Search Query Builder') }}</h3>
       <div>
-        <p class="text-muted">You can use this tool to define conditions which the objects you search for should meet.</p>
+        <p class="text-muted">{{ _('You can use this tool to define conditions which the objects you search for should meet.')}}</p>
       </div>
       <div class="advanced-search-condition" style="border-left: 1px solid #eee; padding-left: 10px; margin-left: -10px; display: none" id="advanced-search-condition-template">
         <div class="form-group row">
@@ -77,33 +77,33 @@
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-md-2" style="font-weight: normal">Property</label>
+          <label class="col-md-2" style="font-weight: normal">{{ _('Property') }}</label>
           <div class="col-md-4">
-            <input type="text" class="typeahead form-control input-condition-property" placeholder="Property Name" autocomplete="off"/>
+            <input type="text" class="typeahead form-control input-condition-property" placeholder="{{ _('Property') }}" autocomplete="off"/>
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-md-2" style="font-weight: normal">Condition</label>
+          <label class="col-md-2" style="font-weight: normal">{{ _('Condition') }}</label>
           <div class="col-md-4">
             <select data-width="100%" autocomplete="off" class="input-condition-operator">
-              <option value="1" data-type="text" data-show-field="text" data-operator="==">is equal to text</option>
-              <option value="2" data-type="text" data-show-field="text"  data-operator="in" data-reverse-operator="on">contains text</option>
-              <option value="3" data-type="text" data-show-field="text" data-operator="==" data-negate-condition="on">is not equal to text</option>
-              <option value="4" data-type="text" data-show-field="text"  data-operator="in" data-reverse-operator="on" data-negate-condition="on">does not contain text</option>
-              <option value="5" data-type="datetime" data-show-field="datetime" data-operator="==">is date equal to</option>
-              <option value="6" data-type="datetime" data-show-field="datetime" data-operator=">">is date after</option>
-              <option value="7" data-type="datetime" data-show-field="datetime" data-operator="<">is date before</option>
-              <option value="8" data-type="bool" data-operator="== true">is true</option>
-              <option value="9" data-type="bool" data-operator="== false">is false</option>
-              <option value="10" data-type="quantity" data-show-field="quantity" data-operator="==">is equal to quantity</option>
-              <option value="11" data-type="quantity" data-show-field="quantity" data-operator=">">is quantity greater than</option>
-              <option value="12" data-type="quantity" data-show-field="quantity" data-operator="<">is quantity less than</option>
-              <option value="13" data-type="quantity" data-show-field="quantity" data-operator="!=">is not equal to quantity</option>
+              <option value="1" data-type="text" data-show-field="text" data-operator="==">{{ _('is equal to text') }}</option>
+              <option value="2" data-type="text" data-show-field="text"  data-operator="in" data-reverse-operator="on">{{ _('contains text') }}</option>
+              <option value="3" data-type="text" data-show-field="text" data-operator="==" data-negate-condition="on">{{ _('is not equal to text') }}</option>
+              <option value="4" data-type="text" data-show-field="text"  data-operator="in" data-reverse-operator="on" data-negate-condition="on">{{ _('does not contain text') }}</option>
+              <option value="5" data-type="datetime" data-show-field="datetime" data-operator="==">{{ _('is date equal to') }}</option>
+              <option value="6" data-type="datetime" data-show-field="datetime" data-operator=">">{{ _('is date after') }}</option>
+              <option value="7" data-type="datetime" data-show-field="datetime" data-operator="<">{{ _('is date before') }}</option>
+              <option value="8" data-type="bool" data-operator="== true">{{ _('is true') }}</option>
+              <option value="9" data-type="bool" data-operator="== false">{{ _('is false') }}</option>
+              <option value="10" data-type="quantity" data-show-field="quantity" data-operator="==">{{ _('is equal to quantity') }}</option>
+              <option value="11" data-type="quantity" data-show-field="quantity" data-operator=">">{{ _('is quantity greater than') }}</option>
+              <option value="12" data-type="quantity" data-show-field="quantity" data-operator="<">{{ _('is quantity less than') }}</option>
+              <option value="13" data-type="quantity" data-show-field="quantity" data-operator="!=">{{ _('is not equal to quantity') }}</option>
             </select>
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-md-2" style="font-weight: normal">Date</label>
+          <label class="col-md-2" style="font-weight: normal">{{ _('Date') }}</label>
           <div class="col-md-4">
             <div class="input-group date" data-datetime="{{ datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }}">
               <input type="text" class="form-control input-condition-field input-condition-datetime" autocomplete="off"/>
@@ -114,13 +114,13 @@
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-md-2" style="font-weight: normal">Text</label>
+          <label class="col-md-2" style="font-weight: normal">{{ _('Text') }}</label>
           <div class="col-md-4">
           <input type="text" class="form-control input-condition-field input-condition-text" value="" autocomplete="off" />
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-md-2" style="font-weight: normal">Quantity</label>
+          <label class="col-md-2" style="font-weight: normal">{{ _('Quantity') }}</label>
           <div class="col-md-4">
           <input type="text" class="form-control input-condition-field input-condition-quantity" value="" autocomplete="off" />
           </div>
@@ -136,26 +136,26 @@
           <div class="radio">
             <label>
               <input type="radio" name="c" id="advanced-search-join-and" value="and" checked="checked">
-              Object must meet all conditions (and)
+              {{ _('Object must meet all conditions (and)') }}
             </label>
           </div>
           <div class="radio">
             <label>
               <input type="radio" name="c" id="advanced-search-join-or" value="or">
-              Object must meet only one condition (or)
+              {{ _('Object must meet only one condition (or)') }}
             </label>
           </div>
         </div>
       </div>
       <div class="form-group row">
         <div class="col-md-offset-4 col-md-2">
-          <button class="btn btn-default" type="button" style="width: 100%;" id="button-add-condition">Add Condition</button>
+          <button class="btn btn-default" type="button" style="width: 100%;" id="button-add-condition">{{ _('Add Condition') }}</button>
         </div>
       </div>
     </div>
     <div class="form-group row">
       <div class="col-md-offset-4 col-md-2">
-        <button class="btn btn-primary" type="submit" style="width: 100%">Search</button>
+        <button class="btn btn-primary" type="submit" style="width: 100%">{{ _('Search') }}</button>
       </div>
     </div>
   </form>
@@ -179,9 +179,9 @@
     var advanced_search_toggle = search_form.find('input[name=advanced]');
     function handle_advanced_search_toggle() {
       if ($(this).prop('checked')) {
-        search_input.attr('placeholder', 'Advanced Search...')
+        search_input.attr('placeholder', '{{ _('Advanced Search…') }}');
       } else {
-        search_input.attr('placeholder', 'Search...')
+        search_input.attr('placeholder', '{{ _('Search…') }}');
       }
     }
     advanced_search_toggle.on('change', handle_advanced_search_toggle);
@@ -379,6 +379,7 @@
       $('#advanced-search-builder').show();
       $('[name="advanced"]').prop('checked', 'checked');
       $('#button-use-builder').closest('.form-group').hide();
+      $('#input-search-advanced').change();
     });
 
     window.conditions = [];

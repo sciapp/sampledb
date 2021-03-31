@@ -18,6 +18,8 @@ def run(db):
     """).fetchall()
     if ('short_description',) in column_names:
         return False
+    if ('name',) not in column_names:
+        return False
 
     # Perform migration
     db.session.execute("""

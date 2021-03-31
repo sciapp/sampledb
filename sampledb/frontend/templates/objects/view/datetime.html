@@ -1,5 +1,5 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
     {% if data is not none %}
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == ' + data.utc_datetime.split()[0], advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% else %}
@@ -7,6 +7,6 @@
     {% endif %}
   </label>
   <div class="col-md-9">
-    {{ data.utc_datetime }}
+    {{ data.utc_datetime | babel_format_datetime }}
   </div>
 </div>

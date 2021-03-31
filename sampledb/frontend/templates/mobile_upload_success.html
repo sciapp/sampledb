@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>File Upload — {{ service_name }}</title>
+  <title>{{ _('Mobile File Upload') }} — {{ service_name }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
 </head>
 <body>
   <div class="container">
-    <h1>Mobile File Upload</h1>
-    <p>You have successfully uploaded a file to {{ service_name }}.</p>
+    <h1>{{ _('Mobile File Upload') }}</h1>
+    <p>{{ _('You have successfully uploaded a file to %(service_name)s.', service_name=service_name) }}</p>
   </div>
 </body>
 </html>

@@ -11,3 +11,8 @@ docs/static/img/generated
 version.txt
 pgdata/
 files/
+env/
+*.mo
+sampledb/messages.pot
+sampledb/translations/*/LC_MESSAGES/messages.po
+pytest.xml

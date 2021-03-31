@@ -1,109 +1,344 @@
 {% extends "base.html" %}
 
-{% block title %}Action Type — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Action Type') }} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}"/>
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+
+  <script>
+    window.translations = [
+      {% for translation in action_type_translations %}
+        {
+            'language_id': "{{ translation.language_id }}",
+            'name': "{{ translation.name }}",
+            'description': "{{ translation.description }}",
+            'object_name': "{{ translation.object_name }}",
+            'object_name_plural': "{{ translation.object_name_plural }}",
+            'view_text': "{{ translation.view_text }}",
+            'perform_text': "{{ translation.perform_text }}",
+        },
+      {% endfor %}
+    ];
+
+    window.languages = [
+      {% for lang in languages %}
+        {
+            'id': '{{ lang.id }}',
+            'name': '{{ lang.names | get_translated_text }}',
+            'lang_code': '{{ lang.lang_code }}'
+        },
+      {% endfor %}
+    ]
+    $(function () {
+
+      updateTranslationJSON();
+
+      $('#select-languages').on('change', function () {
+        let existing_languages = []
+        $.each(window.translations, function (key, value) {
+          existing_languages.push(value.language_id)
+        })
+        let selected = ["{{ ENGLISH.id }}",]
+        selected = selected.concat($(this).val())
+        let remove_languages = existing_languages.filter(n => !selected.includes(n))
+        let add_languages = selected.filter(n => !existing_languages.includes(n))
+
+        for (const del_language of remove_languages){
+          window.translations = window.translations.filter(function (translation) {
+            return translation.language_id.toString() !==  del_language;
+          });
+          $('[data-language-id="' + del_language + '"]').each(function () {
+            $(this).next('.help-block').remove();
+            $(this).remove();
+          });
+        }
+
+        const attributes = [
+            ['name', 'names'],
+            ['description', 'descriptions'],
+            ['object-name-singular', 'object-names-singular'],
+            ['object-name-plural', 'object-names-plural'],
+            ['view-text', 'view-texts'],
+            ['perform-text', 'perform-texts'],
+        ];
+        for (const new_language of add_languages) {
+          let lang_name = window.languages.find(lang => lang.id.toString() === new_language).name;
+
+          for (let i = 0; i < attributes.length; i++) {
+            let attribute = attributes[i][0];
+            let attribute_group = attributes[i][1];
+            let form_group = $('.form-group[data-name="input-' + attribute_group + '"]');
+            $($('#' + attribute + '-template').html()).insertAfter(form_group.children().last());
+            let input_group = form_group.children('.input-group').last()
+            $(input_group).children('input').attr('id', 'input-' + attribute + '-' + new_language.toString())
+            $(input_group).children('.input-group-addon[data-name="language"]').text(lang_name)
+            $(input_group).attr('data-language-id', new_language);
+            setTranslationHandler(input_group);
+          }
+
+          // add new object to translations if no object exists with the language_id
+          window.translations.push({
+             'language_id': new_language.toString(),
+             'name': '',
+             'description': '',
+             'object_name': '',
+             'object_name_plural': '',
+             'view_text': '',
+             'perform_text': '',
+          });
+          }
+      });
+
+      {% if submit_text !=  _('Save') %}
+        $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}']);
+      {% endif %}
+      $('.selectpicker').change();
+      $('.form-group[data-name="input-names"] .input-group[data-language-id], .form-group[data-name="input-descriptions"] .input-group[data-language-id], .form-group[data-name="input-object-names-singular"] .input-group[data-language-id], .form-group[data-name="input-object-names-plural"] .input-group[data-language-id], .form-group[data-name="input-view-texts"] .input-group[data-language-id], .form-group[data-name="input-perform-texts"] .input-group[data-language-id]').each(function(_, element) {
+        setTranslationHandler(element);
+      });
+
+      {% if submit_text == _('Create') %} $('#button-new-translation').click(); {% endif %}
+
+      $('form').on('submit', function () {
+        $('input').change();
+        return $(this).find('.has-error').length === 0;
+      })
+    });
+
+  </script>
 {% endblock %}
 
 {% block content %}
   <form method="post">
-  {{ action_type_form.hidden_tag() }}
+    {{ action_type_form.hidden_tag() }}
     <div class="col-md-12">
-      <div class="form-group {% if action_type_form.name.name in action_type_form.errors %}has-error{% endif %}">
-        <label for="input-name" class="control-label">Name</label>
-         <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ action_type_form.name.name }}" value="{{ action_type_form.name.data or '' }}">
+
+      <div class="hidden" id="name-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-name" placeholder="{{ _("Name") }}" data-name="input-name" data-translation-attribute="name" data-empty-text="{{ _("Please enter a name.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter name (at most 100 characters).") }}" data-required-in-all-languages="1">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" id="" data-name="name"></span>
       </div>
-      <div class="form-group {% if action_type_form.description.name in action_type_form.errors %}has-error{% endif %}">
-        <label for="input-description" class="control-label">Description</label>
-         <input type="text" class="form-control" id="input-description" placeholder="Description" name="{{ action_type_form.description.name }}" value="{{ action_type_form.description.data or '' }}">
+
+      <div class="hidden" id="description-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-description" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" id="" data-name="description"></span>
       </div>
-      <div class="form-group {% if action_type_form.object_name.name in action_type_form.errors %}has-error{% endif %}">
-        <label for="input-object_name" class="control-label">Object Name (Singular)</label>
-         <input type="text" class="form-control" id="input-object_name" placeholder="Object Name (Singular)" name="{{ action_type_form.object_name.name }}" value="{{ action_type_form.object_name.data or '' }}">
+
+      <div class="hidden" id="object-name-singular-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-object-name-singular" placeholder="{{ _("Object Name (singular)") }}" data-name="input-object-name-singular" data-translation-attribute="object_name" data-empty-text="{{ _("Please enter an object name (singular).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (singular) (at most 100 characters).") }}" data-required-in-all-languages="1">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" id="" data-name="object-name-singular"></span>
       </div>
-      <div class="form-group {% if action_type_form.object_name_plural.name in action_type_form.errors %}has-error{% endif %}">
-        <label for="input-object_name_plural" class="control-label">Object Name (Plural)</label>
-         <input type="text" class="form-control" id="input-object_name_plural" placeholder="Object Name (Plural)" name="{{ action_type_form.object_name_plural.name }}" value="{{ action_type_form.object_name_plural.data or '' }}">
+
+      <div class="hidden" id="object-name-plural-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-object-name-plural" placeholder="{{ _("Object Name (plural)") }}" data-name="input-object-name-plural" data-translation-attribute="object_name_plural" data-empty-text="{{ _("Please enter an object name (plural).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (plural) (at most 100 characters).") }}" data-required-in-all-languages="1">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" id="" data-name="object-name-plural"></span>
       </div>
-      <div class="form-group {% if action_type_form.view_text.name in action_type_form.errors %}has-error{% endif %}">
-        <label for="input-view_text" class="control-label">View Text</label>
-         <input type="text" class="form-control" id="input-view_text" placeholder="View Text" name="{{ action_type_form.view_text.name }}" value="{{ action_type_form.view_text.data or '' }}">
+
+      <div class="hidden" id="view-text-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-view-text" placeholder="{{ _("View text") }}" data-name="input-view-text" data-translation-attribute="view_text" data-empty-text="{{ _("Please enter a view text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter view text (at most 100 characters).") }}" data-required-in-all-languages="1">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" id="" data-name="view-text"></span>
       </div>
-      <div class="form-group {% if action_type_form.perform_text.name in action_type_form.errors %}has-error{% endif %}">
-        <label for="input-perform_text" class="control-label">Perform Text</label>
-         <input type="text" class="form-control" id="input-perform_text" placeholder="Perform Text" name="{{ action_type_form.perform_text.name }}" value="{{ action_type_form.perform_text.data or '' }}">
+
+      <div class="hidden" id="perform-text-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-perform-text" placeholder="{{ _("Perform Text") }}" data-name="input-perform-text" data-translation-attribute="perform_text" data-empty-text="{{ _("Please enter a perform text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter perform text (at most 100 characters).") }}" data-required-in-all-languages="1">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" id="" data-name="perform-text"></span>
       </div>
+
+      <div class="form-group row" style="padding-right: 10px">
+        <label for="select-languages" class="control-label col-md-10">{{ _("Languages") }}</label>
+        <select class="selectpicker btn-xs select-language col-md-2" data-style="btn-default btn-xs" multiple="multiple" id="select-languages">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected" {% endif %} {% if language.id in action_type_language_ids %} selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <input type="hidden" id="input-translations" name="{{ action_type_form.translations.name }}" value="">
+
+      <div class="form-group" data-name="input-names">
+        <div class="form-group" style="margin-bottom: 0">
+            <label for="input-name" class="control-label">{{ _('Name') }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in action_type_translations %}
+          <div class="input-group" data-language-id="{{ translation.language.id }}">
+            <input type="text" class="form-control" id="input-name-{{ translation.language.id }}" placeholder="{{ _('Name') }}" data-name="input-name" value="{{ translation.name }}" data-translation-attribute="name" data-empty-text="{{ _("Please enter a name.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter name (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+          </div>
+          <span class="help-block" data-name="name" id="help-block-name-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-descriptions">
+          <div class="form-group" style="margin-bottom: 0">
+              <label for="input-description" class="control-label">{{ _("Description") }}</label>
+          </div>
+          <div class="input-group" hidden="hidden"></div>
+          {% for translation in action_type_translations %}
+              <div class="input-group" data-language-id="{{ translation.language.id }}">
+                <input type="text" class="form-control" id="input-description-{{ translation.language.id }}" placeholder="{{ _('Description') }}" data-name="input-description" value="{{ translation.description }}" data-translation-attribute="description">
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              </div>
+              <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+          {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-object-names-singular">
+          <div class="form-group" style="margin-bottom: 0">
+              <label for="input-object-name-singular" class="control-label">{{ _("Object Name (singular)") }}</label>
+          </div>
+          <div class="input-group" hidden="hidden"></div>
+          {% for translation in action_type_translations %}
+              <div class="input-group" data-language-id="{{ translation.language.id }}">
+                <input type="text" class="form-control" id="input-object-name-singular-{{ translation.language.id }}" placeholder="{{ _('Object Name (singular)') }}" data-name="input-object-name-singular" value="{{ translation.object_name }}" data-translation-attribute="object_name" data-empty-text="{{ _("Please enter an object name (singular).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (singular) (at most 100 characters).") }}">
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              </div>
+              <span class="help-block" data-name="name" id="help-block-object-name-singular-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+          {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-object-names-plural">
+          <div class="form-group" style="margin-bottom: 0">
+              <label for="input-object-name-plural" class="control-label">{{ _("Object Name (plural)") }}</label>
+          </div>
+          <div class="input-group" hidden="hidden"></div>
+          {% for translation in action_type_translations %}
+              <div class="input-group" data-language-id="{{ translation.language.id }}">
+                <input type="text" class="form-control" id="input-object-name-plural-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-object-name-plural" value="{{ translation.object_name_plural }}" data-translation-attribute="object_name_plural" data-empty-text="{{ _("Please enter an object name (plural).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (plural) (at most 100 characters).") }}">
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              </div>
+              <span class="help-block" data-name="name" id="help-block-object-name-plural-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+          {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-view-texts">
+          <div class="form-group" style="margin-bottom: 0">
+              <label for="input-view-text" class="control-label">{{ _("View Text") }}</label>
+          </div>
+          <div class="input-group" hidden="hidden"></div>
+          {% for translation in action_type_translations %}
+              <div class="input-group" data-language-id="{{ translation.language.id }}">
+                <input type="text" class="form-control" id="input-view-text-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-view-text" value="{{ translation.view_text }}" data-translation-attribute="view_text" data-empty-text="{{ _("Please enter a view text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter view text (at most 100 characters).") }}">
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              </div>
+              <span class="help-block" data-name="name" id="help-block-view-text-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+          {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-perform-texts">
+          <div class="form-group" style="margin-bottom: 0">
+              <label for="input-perform-text" class="control-label">{{ _("Perform Text") }}</label>
+          </div>
+          <div class="input-group" hidden="hidden"></div>
+          {% for translation in action_type_translations %}
+              <div class="input-group" data-language-id="{{ translation.language.id }}">
+                <input type="text" class="form-control" id="input-perform-text-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-perform-text" value="{{ translation.perform_text }}" data-translation-attribute="perform_text" data-empty-text="{{ _("Please enter a perform text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter perform text (at most 100 characters).") }}">
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              </div>
+              <span class="help-block" data-name="name" id="help-block-perform-text-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+          {% endfor %}
+      </div>
+
       <div class="checkbox">
         <label for="input-admin_only" style="font-weight:400">
-          <input type="checkbox" id="input-admin_only" name="{{ action_type_form.admin_only.name }}" {% if action_type_form.admin_only.data %}checked="checked"{% endif %}> Only administrators can create actions of this type
+          <input type="checkbox" id="input-admin_only" name="{{ action_type_form.admin_only.name }}"
+                 {% if action_type_form.admin_only.data %}checked="checked"{% endif %}> {{ _('Only administrators can create actions of this type') }}
         </label>
       </div>
-      <div class="checkbox">
-        <label for="input-show_on_frontpage" style="font-weight:400">
-          <input type="checkbox" id="input-show_on_frontpage" name="{{ action_type_form.show_on_frontpage.name }}" {% if action_type_form.show_on_frontpage.data %}checked="checked"{% endif %}> Show this action type on the frontpage
-        </label>
+        <div class="checkbox">
+          <label for="input-show_on_frontpage" style="font-weight:400">
+            <input type="checkbox" id="input-show_on_frontpage"
+                   name="{{ action_type_form.show_on_frontpage.name }}"
+                   {% if action_type_form.show_on_frontpage.data %}checked="checked"{% endif %}> {{ _('Show this action type on the frontpage') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-show_in_navbar" style="font-weight:400">
+            <input type="checkbox" id="input-show_in_navbar" name="{{ action_type_form.show_in_navbar.name }}"
+                   {% if action_type_form.show_in_navbar.data %}checked="checked"{% endif %}> {{ _('Show actions of this type in the navbar') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_labels" style="font-weight:400">
+            <input type="checkbox" id="input-enable_labels" name="{{ action_type_form.enable_labels.name }}"
+                   {% if action_type_form.enable_labels.data %}checked="checked"{% endif %}> {{ _('Enable labels for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_files" style="font-weight:400">
+            <input type="checkbox" id="input-enable_files" name="{{ action_type_form.enable_files.name }}"
+                   {% if action_type_form.enable_files.data %}checked="checked"{% endif %}> {{ _('Enable files for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_locations" style="font-weight:400">
+            <input type="checkbox" id="input-enable_locations"
+                   name="{{ action_type_form.enable_locations.name }}"
+                   {% if action_type_form.enable_locations.data %}checked="checked"{% endif %}> {{ _('Enable locations and responsible users for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_publications" style="font-weight:400">
+            <input type="checkbox" id="input-enable_publications"
+                   name="{{ action_type_form.enable_publications.name }}"
+                   {% if action_type_form.enable_publications.data %}checked="checked"{% endif %}> {{ _('Enable publications for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_comments" style="font-weight:400">
+            <input type="checkbox" id="input-enable_comments" name="{{ action_type_form.enable_comments.name }}"
+                   {% if action_type_form.enable_comments.data %}checked="checked"{% endif %}> {{ _('Enable comments for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_activity_log" style="font-weight:400">
+            <input type="checkbox" id="input-enable_activity_log"
+                   name="{{ action_type_form.enable_activity_log.name }}"
+                   {% if action_type_form.enable_activity_log.data %}checked="checked"{% endif %}> {{ _('Enable the activity log for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_related_objects" style="font-weight:400">
+            <input type="checkbox" id="input-enable_related_objects"
+                   name="{{ action_type_form.enable_related_objects.name }}"
+                   {% if action_type_form.enable_related_objects.data %}checked="checked"{% endif %}> {{ _('Show related objects for objects created with actions of this type') }}
+          </label>
+        </div>
       </div>
-      <div class="checkbox">
-        <label for="input-show_in_navbar" style="font-weight:400">
-          <input type="checkbox" id="input-show_in_navbar" name="{{ action_type_form.show_in_navbar.name }}" {% if action_type_form.show_in_navbar.data %}checked="checked"{% endif %}> Show actions of this type in the navbar
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_labels" style="font-weight:400">
-          <input type="checkbox" id="input-enable_labels" name="{{ action_type_form.enable_labels.name }}" {% if action_type_form.enable_labels.data %}checked="checked"{% endif %}> Enable labels for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_files" style="font-weight:400">
-          <input type="checkbox" id="input-enable_files" name="{{ action_type_form.enable_files.name }}" {% if action_type_form.enable_files.data %}checked="checked"{% endif %}> Enable files for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_locations" style="font-weight:400">
-          <input type="checkbox" id="input-enable_locations" name="{{ action_type_form.enable_locations.name }}" {% if action_type_form.enable_locations.data %}checked="checked"{% endif %}> Enable locations and responsible users for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_publications" style="font-weight:400">
-          <input type="checkbox" id="input-enable_publications" name="{{ action_type_form.enable_publications.name }}" {% if action_type_form.enable_publications.data %}checked="checked"{% endif %}> Enable publications for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_comments" style="font-weight:400">
-          <input type="checkbox" id="input-enable_comments" name="{{ action_type_form.enable_comments.name }}" {% if action_type_form.enable_comments.data %}checked="checked"{% endif %}> Enable comments for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_activity_log" style="font-weight:400">
-          <input type="checkbox" id="input-enable_activity_log" name="{{ action_type_form.enable_activity_log.name }}" {% if action_type_form.enable_activity_log.data %}checked="checked"{% endif %}> Enable the activity log for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_related_objects" style="font-weight:400">
-          <input type="checkbox" id="input-enable_related_objects" name="{{ action_type_form.enable_related_objects.name }}" {% if action_type_form.enable_related_objects.data %}checked="checked"{% endif %}> Show related objects for objects created with actions of this type
-        </label>
-      </div>
-      <div class="checkbox">
-        <label for="input-enable_project_link" style="font-weight:400">
-          <input type="checkbox" id="input-enable_project_link" name="{{ action_type_form.enable_project_link.name }}" {% if action_type_form.enable_project_link.data %}checked="checked"{% endif %}> Objects created with actions of this type can be linked to a project group
-        </label>
-      </div>
-    </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
-        <a href="{{ url_for('.action_types') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+        <a href="{{ url_for('.action_types') }}" class="btn btn-default pull-right"
+           style="width:20em">Cancel</a>
       </div>
       <div class="col-md-3">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right"
+                style="width:20em">{{ submit_text }}</button>
       </div>
     </div>
   </form>

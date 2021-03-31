@@ -3,6 +3,7 @@
 
 """
 
+from . import build_translations
 from . import create_instrument
 from . import update_instrument
 from . import list_instruments
@@ -22,6 +23,7 @@ from . import run
 script_modules = {
     module.__name__.split('.')[-1]: module
     for module in (
+        build_translations,
         create_instrument,
         update_instrument,
         list_instruments,

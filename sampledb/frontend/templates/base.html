@@ -31,7 +31,7 @@
   <div class="container-fluid">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
+        <span class="sr-only">{{ _('Toggle Navigation') }}</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -43,7 +43,7 @@
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       {% if not current_user.is_authenticated %}
       <ul class="nav navbar-nav">
-        <li><a href="{{ config["SAMPLEDB_HELP_URL"] }}">Help</a></li>
+        <li><a href="{{ config["SAMPLEDB_HELP_URL"] }}">{{ _('Help') }}</a></li>
       </ul>
       {% else %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left" id="nav-search">
@@ -57,80 +57,81 @@
           <input type="hidden" name="t" value="{{ action_type.id }}" id="input-search-action-type" />
         {% endif %}
         <div class="input-group">
-          <input type="text" id="input-search" class="form-control" placeholder="Search..." name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
+          <input type="text" id="input-search" class="form-control" placeholder="{{ _('Search…') }}" name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
-            <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+            <button class="btn btn-default" type="submit"><span class="sr-only">{{ _('Search') }}</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="caret"></span>
-              <span class="sr-only">Toggle Dropdown</span>
+              <span class="sr-only">{{ _('Toggle Dropdown') }}</span>
             </button>
             <ul class="dropdown-menu">
-              <li><a><label id="button-search-advanced" style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" id="input-search-advanced" name="advanced" style="margin-right: 2px;" {% if must_use_advanced_search %}checked="checked"{% endif %}> Advanced Search</label></a></li>
-              <li><a href="{{ url_for("frontend.search", _anchor='{"v": [0]}') }}">Build Search Query</a></li>
+              <li><a><label id="button-search-advanced" style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" id="input-search-advanced" name="advanced" style="margin-right: 2px;" {% if must_use_advanced_search %}checked="checked"{% endif %}> {{ _('Advanced Search') }}</label></a></li>
+              <li><a href="{{ url_for("frontend.search", _anchor='{"v": [0]}') }}">{{ _('Build Search Query') }}</a></li>
             {% if action_type or project_id %}
               <li class="divider"></li>
               {% if project_id %}
                 {% if action_type %}
-                <li><a href="#" id="button-search-project-id">Search {{ action_type.object_name_plural.lower() }} from this project group</a></li>
+                <li><a href="#" id="button-search-project-id">{{ _('Search %(objects)s from this project group', objects=action_type.translation.object_name_plural) }}</a></li>
                 {% else %}
-                <li><a href="#" id="button-search-project-id">Search objects from this project group</a></li>
+                <li><a href="#" id="button-search-project-id">{{ _('Search objects from this project group') }}</a></li>
                 {% endif %}
               {% endif %}
               {% if action_id  %}
                 {% if action_type %}
-                <li><a href="#" id="button-search-action-id">Search {{ action_type.object_name_plural.lower() }} from this action</a></li>
+                <li><a href="#" id="button-search-action-id">{{ _('Search %(objects)s from this action', objects=action_type.translation.object_name_plural) }}</a></li>
                 {% else %}
-                <li><a href="#" id="button-search-action-id">Search objects from this action</a></li>
+                <li><a href="#" id="button-search-action-id">{{ _('Search objects from this action') }}</a></li>
                 {% endif %}
               {% endif %}
               {% if action_type %}
-              <li><a href="#" id="button-search-action-type">Search all {{ action_type.object_name_plural.lower() }}</a></li>
+              <li><a href="#" id="button-search-action-type">{{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural)}}</a></li>
               {% endif %}
-              <li><a href="#" id="button-search-all">Search all objects</a></li>
+              <li><a href="#" id="button-search-all">{{ _('Search all objects') }}</a></li>
             {% endif %}
             </ul>
           </span>
         </div>
       </form>
       <ul class="nav navbar-nav">
-        <li><a href="{{ url_for('frontend.instruments') }}">Instruments</a></li>
+        <li><a href="{{ url_for('frontend.instruments') }}">{{ _('Instruments') }}</a></li>
         <li class="dropdown">
-          <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">Actions</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
+          <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            {% for action_type in get_action_types() %}
+            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
               {% if action_type.show_in_navbar %}
-              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name }}</a></li>
+              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
               {% endif %}
             {% endfor %}
           </ul>
         </li>
         <li class="dropdown">
-          <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">Objects</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
+          <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">{{ _('Objects') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            {% for action_type in get_action_types() %}
+            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
               {% if action_type.show_in_navbar %}
-              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.object_name_plural }}</a></li>
+              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.translation.object_name_plural }}</a></li>
               {% endif %}
             {% endfor %}
             <li role="separator" class="divider nav-search-link"></li>
-            <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">Search</a></li>
+            <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">{{ _('Search') }}</a></li>
           </ul>
         </li>
         <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">More <span class="caret"></span></a>
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ _('More') }} <span class="caret"></span></a>
           <ul class="dropdown-menu">
-            <li><a href="{{ url_for('frontend.users') }}">Users</a></li>
-            <li><a href="{{ url_for('frontend.groups') }}">Basic Groups</a></li>
-            <li><a href="{{ url_for('frontend.projects') }}">Project Groups</a></li>
-            <li><a href="{{ url_for('frontend.locations') }}">Locations</a></li>
-            <li><a href="{{ url_for('frontend.tags') }}">Tags</a></li>
+            <li><a href="{{ url_for('frontend.users') }}">{{  _('Users') }}</a></li>
+            <li><a href="{{ url_for('frontend.groups') }}">{{ _('Basic Groups') }}</a></li>
+            <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
+            <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
+            <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
             {% if current_user.is_admin %}
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.action_types') }}">Action Types</a></li>
+              <li><a href="{{ url_for('frontend.action_types') }}">{{ _('Action Types') }}</a></li>
+              <li><a href="{{ url_for('frontend.languages') }}">{{ _('Languages') }}</a></li>
             {% endif %}
           </ul>
         </li>
-        <li><a href="{{ config["SAMPLEDB_HELP_URL"] }}">Help</a></li>
+        <li><a href="{{ config["SAMPLEDB_HELP_URL"] }}">{{ _('Help') }}</a></li>
       </ul>
       {% endif %}
       {% block navbar_userarea %}
@@ -141,23 +142,23 @@
             <ul class="dropdown-menu">
               <li><a href="{{ url_for('frontend.user_profile', user_id=current_user.id) }}"><strong>{{ current_user.name }} (#{{ current_user.id }})</strong></a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">Preferences</a></li>
-              <li><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}">Notifications {% if num_unread_notifications > 0 %}<span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span>{% endif %}</a></li>
+              <li><a href="{{ url_for('frontend.user_preferences', user_id=current_user.id) }}">{{ _('Preferences') }}</a></li>
+              <li><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}">{{ _('Notifications') }} {% if num_unread_notifications > 0 %}<span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span>{% endif %}</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">Your Basic Groups</a></li>
-              <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">Your Project Groups</a></li>
-              <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">Your Actions</a></li>
+              <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">{{ _('Your Basic Groups') }}</a></li>
+              <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">{{ _('Your Project Groups') }}</a></li>
+              <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">{{ _('Your Actions') }}</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.invitation_route')}}">Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %}</a></li>
+              <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('frontend.export', user_id=current_user.id) }}">Export Data</a></li>
+              <li><a href="{{ url_for('frontend.export', user_id=current_user.id) }}">{{ _('Export Data') }}</a></li>
               <li role="separator" class="divider"></li>
-              <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">Sign out</button></form></li>
+              <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">{{ _('Sign out') }}</button></form></li>
             </ul>
           </li>
           {% if num_unread_notifications > 0 %}<li class="nav-item-new-notifications"><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a></li>{% endif %}
           {% else %}
-          <li><a href="{{ url_for('frontend.sign_in') }}">Sign in</a></li>
+          <li><a href="{{ url_for('frontend.sign_in') }}">{{ _('Sign in') }}</a></li>
           {% endif %}
       </ul>
       {% endblock %}
@@ -165,131 +166,155 @@
   </div>
 </nav>
 <div id="main" class="container">
-  <noscript>
-    <div class="alert alert-danger" role="alert">
-      <strong>Warning:</strong> This service requires JavaScript for some features. Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> and reload the page.
-    </div>
-  </noscript>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      {% if category == "error" %}
-        {% set alert_class="alert-danger" %}
-      {% elif category == "warning" %}
-        {% set alert_class="alert-warning" %}
-      {% elif category == "success" %}
-        {% set alert_class="alert-success" %}
-      {% else %}
-        {% set alert_class="alert-info" %}
-      {% endif %}
-      <div class="alert {{ alert_class }} alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        {{ message }}
-      </div>
-    {% endfor %}
-  {% endwith %}
-  {% block readonly_alert %}
-  {% if current_user.is_readonly %}
-  <div class="alert alert-info">
-    <p><strong>Note:</strong> Your account has been marked as read only. If you think this was done erroneously, please <a href="mailto:{{ contact_email }}?subject={{ service_name }}">contact an administrator</a>.</p>
-  </div>
-  {% endif %}
-  {% endblock %}
- {% block content %}{% endblock %}
+    <noscript>
+        <div class="alert alert-danger" role="alert">
+            <strong>{{ _('Warning:') }}</strong> {{ _('This service requires JavaScript. Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> and reload the page.') }}
+        </div>
+    </noscript>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            {% if category == "error" %}
+                {% set alert_class="alert-danger" %}
+            {% elif category == "warning" %}
+                {% set alert_class="alert-warning" %}
+            {% elif category == "success" %}
+                {% set alert_class="alert-success" %}
+            {% else %}
+                {% set alert_class="alert-info" %}
+            {% endif %}
+            <div class="alert {{ alert_class }} alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span>
+                </button>
+              {% if message == 'Please log in to access this page.' %}
+                {{ _('Please log in to access this page.') }}
+              {% else %}
+                {{ message }}
+              {% endif %}
+            </div>
+        {% endfor %}
+    {% endwith %}
+    {% block readonly_alert %}
+        {% if current_user.is_readonly %}
+            <div class="alert alert-info">
+                <p><strong>{{ _('Note:') }}</strong> {{ _('Your account has been marked as read only. If you think this was done erroneously, please') }} <a href="mailto:{{ contact_email }}?subject={{ service_name }}"> {{ _('contact an administrator') }}</a>.</p>
+            </div>
+        {% endif %}
+    {% endblock %}
+    {% block content %}{% endblock %}
 </div>
 <footer>
   <div class="container">
-    <p class="text-center text-muted">{{ service_name }} is a service by the <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> team &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">Citation Guide</a>{% if service_imprint %} &bullet; <a href="{{ service_imprint }}">Imprint</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">Privacy Policy</a>{% endif %}</p>
+    <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_imprint %} &bullet; <a href="{{ service_imprint }}">{{ _('Imprint') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}</p>
   </div>
 </footer>
  {% block scripts %}
   <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
-   <script>
-   $(function() {
-     $(".navbar-nav > .dropdown").hover(function(){
+  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/moment-timezone.min.js') }}"></script>
+
+  <script>
+
+    $('[data-toggle="tooltip"]').tooltip();
+    {% if current_user.is_authenticated %}
+      {% with user_settings = get_user_settings() %}
+        {% if user_settings['AUTO_TZ'] %}
+          const tz = moment.tz.guess(true);
+          if (tz !== "{{ user_settings['TIMEZONE'] }}") {
+            $.post('{{ url_for('frontend.set_timezone') }}', {
+              "timezone": tz,
+              "csrf_token": "{{ TimezoneForm().csrf_token.current_token }}"
+            });
+          }
+        {% endif %}
+      {% endwith %}
+    {% endif %}
+
+    $(function() {
+
+      $(".navbar-nav > .dropdown").hover(function(){
         var dropdown_menu = $(this).children(".dropdown-menu");
         if(dropdown_menu.is(":visible")){
-            dropdown_menu.parent().toggleClass("open");
+          dropdown_menu.parent().toggleClass("open");
         }
-    });
+      });
 
-     $('#button-search-all').on('click', function() {
-       $('#input-search-action-type').attr('name', 't_');
-       $('#input-search-action-id').attr('name', 'action_');
-       $('#input-search-project-id').attr('name', 'project_');
-       if ($('#input-search-advanced')[0].checked) {
-         $('#input-search').attr('placeholder', 'Advanced Search...');
-       } else {
-         $('#input-search').attr('placeholder', 'Search...');
-       }
-     });
-     $('#button-search-action-id').on('click', function() {
-       $('#input-search-action-type').attr('name', 't');
-       $('#input-search-action-id').attr('name', 'action');
-       $('#input-search-project-id').attr('name', 'project_');
-       if ($('#input-search-advanced')[0].checked) {
-         $('#input-search').attr('placeholder', 'Advanced Search (by action)...');
-       } else {
-         $('#input-search').attr('placeholder', 'Search (by action)...');
-       }
-     });
-     $('#button-search-project-id').on('click', function() {
-       $('#input-search-action-type').attr('name', 't');
-       $('#input-search-action-id').attr('name', 'action_');
-       $('#input-search-project-id').attr('name', 'project');
-       if ($('#input-search-advanced')[0].checked) {
-         $('#input-search').attr('placeholder', 'Advanced Search (by project group)...');
-       } else {
-         $('#input-search').attr('placeholder', 'Search (by project group)...');
-       }
-     });
-     $('#button-search-action-type').on('click', function() {
-       $('#input-search-action-type').attr('name', 't');
-       $('#input-search-action-id').attr('name', 'action_');
-       $('#input-search-project-id').attr('name', 'project_');
-       if ($('#input-search-advanced')[0].checked) {
-         $('#input-search').attr('placeholder', 'Advanced Search (by type)...');
-       } else {
-         $('#input-search').attr('placeholder', 'Search (by type)...');
-       }
-     });
-     $('#input-search-advanced').on('change', function() {
-       var current_placeholder = $('#input-search').attr('placeholder');
-       if ($('#input-search-advanced')[0].checked) {
-         if (!current_placeholder.startsWith('Advanced ')) {
-          $('#input-search').attr('placeholder', 'Advanced '+current_placeholder);
-         }
-       } else {
-         if (current_placeholder.startsWith('Advanced ')) {
-           $('#input-search').attr('placeholder', current_placeholder.substring('Advanced '.length, current_placeholder.length));
-         }
-       }
-     });
-     /* don't limit search by default*/
-     $('#input-search-action-type').attr('name', 't_');
-     $('#input-search-action-id').attr('name', 'action_');
-     $('#input-search-project-id').attr('name', 'project_');
-     var search_advanced = $('#input-search-advanced');
-     if (search_advanced.length > 0 && search_advanced[0].checked) {
-       $('#input-search').attr('placeholder', 'Advanced Search...');
-     } else {
-       $('#input-search').attr('placeholder', 'Search...');
-     }
-    $('.fullscreen-image-preview').on('click', function(e) {
-      $(this).hide();
-    });
-    $('.fullscreen-image-preview img').on('click', function(e) {
-      e.stopPropagation();
-    });
-    $('.download-fullscreen-image-preview').on('click', function(e) {
-      e.stopPropagation();
-    });
-    $('.show-fullscreen-image-preview').on('click', function(e) {
-      $(this).next('.fullscreen-image-preview').css('display', 'flex');
-    });
+      $('#button-search-all').on('click', function () {
+        $('#input-search-action-type').attr('name', 't_');
+        $('#input-search-action-id').attr('name', 'action_');
+        $('#input-search-project-id').attr('name', 'project_');
+        if ($('#input-search-advanced')[0].checked) {
+          $('#input-search').attr('placeholder', '{{ _('Advanced Search…') }}');
+        } else {
+          $('#input-search').attr('placeholder', '{{ _('Search…') }}');
+        }
+      });
+      $('#button-search-action-id').on('click', function () {
+        $('#input-search-action-type').attr('name', 't');
+        $('#input-search-action-id').attr('name', 'action');
+        $('#input-search-project-id').attr('name', 'project_');
+        if ($('#input-search-advanced')[0].checked) {
+          $('#input-search').attr('placeholder', '{{ _('Advanced Search (by action)…') }}');
+        } else {
+          $('#input-search').attr('placeholder', '{{ _('Search (by action)…') }}');
+        }
+      });
+      $('#button-search-project-id').on('click', function () {
+        $('#input-search-action-type').attr('name', 't');
+        $('#input-search-action-id').attr('name', 'action_');
+        $('#input-search-project-id').attr('name', 'project');
+        if ($('#input-search-advanced')[0].checked) {
+          $('#input-search').attr('placeholder', '{{ _('Advanced Search (by project group)…') }}');
+        } else {
+          $('#input-search').attr('placeholder', '{{ _('Search (by project group)…') }}');
+        }
+      });
+      $('#button-search-action-type').on('click', function () {
+        $('#input-search-action-type').attr('name', 't');
+        $('#input-search-action-id').attr('name', 'action_');
+        $('#input-search-project-id').attr('name', 'project_');
+        if ($('#input-search-advanced')[0].checked) {
+          $('#input-search').attr('placeholder', '{{ _('Advanced Search (by type)…') }}');
+        } else {
+          $('#input-search').attr('placeholder', '{{ _('Search (by type)…') }}');
+        }
+      });
+      $('#input-search-advanced').on('change', function () {
+        var current_placeholder = $('#input-search').attr('placeholder');
+        if ($('#input-search-advanced')[0].checked) {
+          if (!current_placeholder.startsWith('{{ _('Advanced ') }}')) {
+            $('#input-search').attr('placeholder', '{{ _('Advanced ') }}' + current_placeholder);
+          }
+        } else {
+          if (current_placeholder.startsWith('{{ _('Advanced ') }}')) {
+            $('#input-search').attr('placeholder', current_placeholder.substring('{{ _('Advanced ') }}'.length, current_placeholder.length));
+          }
+        }
+      });
+      /* don't limit search by default*/
+      $('#input-search-action-type').attr('name', 't_');
+      $('#input-search-action-id').attr('name', 'action_');
+      $('#input-search-project-id').attr('name', 'project_');
+      var search_advanced = $('#input-search-advanced');
+      if (search_advanced.length > 0 && search_advanced[0].checked) {
+        $('#input-search').attr('placeholder', '{{ _('Advanced Search…') }}');
+      } else {
+        $('#input-search').attr('placeholder', '{{ _('Search…') }}');
+      }
+      $('.fullscreen-image-preview').on('click', function (e) {
+        $(this).hide();
+      });
+      $('.fullscreen-image-preview img').on('click', function (e) {
+        e.stopPropagation();
+      });
+      $('.download-fullscreen-image-preview').on('click', function (e) {
+        e.stopPropagation();
+      });
+      $('.show-fullscreen-image-preview').on('click', function (e) {
+        $(this).next('.fullscreen-image-preview').css('display', 'flex');
+      });
    });
-   </script>
+  </script>
   {% endblock %}
 </body>
 </html>

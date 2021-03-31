@@ -7,7 +7,7 @@ import pytest
 
 import sampledb
 import sampledb.logic
-from sampledb.logic import action_permissions, groups
+from sampledb.logic import action_permissions, groups, action_translations, languages, instrument_translations
 from sampledb.models import User, UserType, Action, Instrument, Permissions, UserActionPermissions
 
 
@@ -30,17 +30,21 @@ def users():
 def independent_action():
     action = Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Action',
             'type': 'action',
             'properties': {}
         },
-        description='',
         instrument_id=None
     )
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description='',
+    )
     # force attribute refresh
     assert action.id is not None
     return action
@@ -50,18 +54,22 @@ def independent_action():
 def user_action(users):
     action = Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Action',
             'type': 'action',
             'properties': {}
         },
-        description='',
         instrument_id=None,
         user_id=users[1].id
     )
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description='',
+    )
     # force attribute refresh
     assert action.id is not None
     return action
@@ -69,12 +77,15 @@ def user_action(users):
 
 @pytest.fixture
 def instrument():
-    instrument = Instrument(
-        name='Example Action',
-        description=''
-    )
+    instrument = Instrument()
     sampledb.db.session.add(instrument)
     sampledb.db.session.commit()
+    instrument_translations.set_instrument_translation(
+        language_id=languages.Language.ENGLISH,
+        instrument_id=instrument.id,
+        name='Example Instrument',
+        description=''
+    )
     # force attribute refresh
     assert instrument.id is not None
     return instrument
@@ -84,17 +95,21 @@ def instrument():
 def instrument_action(instrument):
     action = Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Action',
             'type': 'action',
             'properties': {}
         },
-        description='',
         instrument_id=instrument.id
     )
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description='',
+    )
     # force attribute refresh
     assert action.id is not None
     return action
