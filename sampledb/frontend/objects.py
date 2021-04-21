@@ -1216,7 +1216,8 @@ def search():
     )
     return flask.render_template(
         'search.html',
-        actions=actions
+        actions=actions,
+        datetime=datetime
     )
 
 

@@ -5,6 +5,7 @@
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
 {% endblock %}
 
 {% block content %}
@@ -13,47 +14,155 @@
       For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.
     </p>
   <form action="{{ url_for('frontend.objects') }}" method="get" id="form-search-standalone">
-    <div class="input-group">
-      <input type="text" class="form-control" placeholder="Search..." name="q">
-      <span class="input-group-btn">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <span class="caret"></span>
-          <span class="sr-only">Toggle Dropdown</span>
-        </button>
-        <ul class="dropdown-menu">
-          <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> Advanced Search</label></a></li>
-        </ul>
-      </span>
+    <div class="form-group row">
+      <div class="col-md-6">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search..." name="q" id="search-field">
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="caret"></span>
+              <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> Advanced Search</label></a></li>
+            </ul>
+          </span>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label style="width:150px; font-weight: normal">Only search for:</label><select name="t" class="selectpicker" data-width="250px">
-        <option value="" selected="selected">&mdash;</option>
-        {% for action_type in get_action_types() %}
-          <option value="{{ action_type.id }}">{{ action_type.object_name_plural }}</option>
-        {% endfor %}
-      </select>
+    <div class="form-group row">
+      <label style="font-weight: normal" class="col-md-2">Only search for:</label>
+      <div class="col-md-4">
+        <select name="t" class="selectpicker" data-width="100%">
+          <option value="" selected="selected">&mdash;</option>
+          {% for action_type in get_action_types() %}
+            <option value="{{ action_type.id }}">{{ action_type.object_name_plural }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
-    <div class="form-group">
-      <label style="width:150px; font-weight: normal">Created with:</label><select name="action" class="selectpicker" data-width="250px">
-        <option value="" selected="selected">&mdash;</option>
-        {% for action in actions %}
-          {% if not action.is_hidden %}
-            <option value="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.name }} &mdash; {% endif %}{{ action.name }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
+    <div class="form-group row">
+      <label style="font-weight: normal" class="col-md-2">Created with:</label>
+      <div class="col-md-4">
+        <select name="action" class="selectpicker" data-width="100%">
+          <option value="" selected="selected">&mdash;</option>
+          {% for action in actions %}
+            {% if not action.is_hidden %}
+              <option value="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.name }} &mdash; {% endif %}{{ action.name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
     </div>
-    <button class="btn btn-default" type="submit">Search</button>
+    <div class="form-group row">
+      <div class="col-md-offset-4 col-md-2">
+        <button class="btn btn-default" type="button" style="width: 100%" id="button-use-builder">Build Search Query</button>
+      </div>
+    </div>
+    <div id="advanced-search-builder" style="display: none">
+      <h3>Search Query Builder</h3>
+      <div>
+        <p class="text-muted">You can use this tool to define conditions which the objects you search for should meet.</p>
+      </div>
+      <div class="advanced-search-condition" style="border-left: 1px solid #eee; padding-left: 10px; margin-left: -10px; display: none" id="advanced-search-condition-template">
+        <div class="form-group row">
+          <div class="col-md-offset-2 col-md-4">
+            <button type="button" class="close pull-right"><i class="fa fa-times"></i></button>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Property</label>
+          <div class="col-md-4">
+            <input type="text" class="form-control input-condition-property" placeholder="Property Name" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Condition</label>
+          <div class="col-md-4">
+            <select data-width="100%" autocomplete="off">
+              <option value="property_equals_text" data-show-field="text" data-operator="==">is equal to text</option>
+              <option value="property_contains_text" data-show-field="text"  data-operator="in" data-reverse-operator="on">contains text</option>
+              <option value="property_equals_text" data-show-field="text" data-operator="==" data-negate-condition="on">is not equal to text</option>
+              <option value="property_contains_text" data-show-field="text"  data-operator="in" data-reverse-operator="on" data-negate-condition="on">does not contain text</option>
+              <option value="property_is_datetime_greater_than" data-show-field="datetime" data-operator=">">is date after</option>
+              <option value="property_is_datetime_less_than" data-show-field="datetime" data-operator="<">is date before</option>
+              <option value="property_is_true" data-operator="is true">is true</option>
+              <option value="property_is_false" data-operator="is false">is false</option>
+              <option value="property_equals_quantity" data-show-field="quantity" data-operator="==">is equal to quantity</option>
+              <option value="property_is_quantity_greater_than" data-show-field="quantity" data-operator=">">is quantity greater than</option>
+              <option value="property_is_quantity_less_than" data-show-field="quantity" data-operator="<">is quantity less than</option>
+              <option value="property_equals_quantity" data-show-field="quantity" data-operator="!=">is not equal to quantity</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Date</label>
+          <div class="col-md-4">
+            <div class="input-group date" data-datetime="{{ datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }}">
+              <input type="text" class="form-control input-condition-field input-condition-datetime" autocomplete="off"/>
+              <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Text</label>
+          <div class="col-md-4">
+          <input type="text" class="form-control input-condition-field input-condition-text" value="" autocomplete="off" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Quantity</label>
+          <div class="col-md-4">
+          <input type="text" class="form-control input-condition-field input-condition-quantity" value="" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group row advanced-search-separator" style="display: none">
+        <div class="col-md-6">
+          <hr style="margin: 0"/>
+        </div>
+      </div>
+      <div class="form-group row" style="display: none">
+        <div class="col-md-offset-2 col-md-4">
+          <div class="radio">
+            <label>
+              <input type="radio" name="c" id="advanced-search-join-and" value="and" checked="checked">
+              Object must meet all conditions (and)
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="c" id="advanced-search-join-or" value="or">
+              Object must meet only one condition (or)
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group row">
+        <div class="col-md-offset-4 col-md-2">
+          <button class="btn btn-default" type="button" style="width: 100%;" id="button-add-condition">Add Condition</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <div class="col-md-offset-4 col-md-2">
+        <button class="btn btn-primary" type="submit" style="width: 100%">Search</button>
+      </div>
+    </div>
   </form>
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
   <script>
   $(function () {
     var search_form = $('#form-search-standalone');
-    var search_input = search_form.find('input[type=text]');
+    var search_input = search_form.find('#search-field');
     var advanced_search_toggle = search_form.find('input[name=advanced]');
     function handle_advanced_search_toggle() {
       if ($(this).prop('checked')) {
@@ -81,6 +190,123 @@
       }
       action_select.selectpicker('refresh');
     });
+
+    function updateCondition(condition) {
+      var property_name = condition.find('.input-condition-property').val();
+      if (!property_name) {
+        condition.find('.input-condition-property').closest('.form-group').addClass('has-error');
+      } else {
+        condition.find('.input-condition-property').closest('.form-group').removeClass('has-error');
+      }
+      var selected_condition = condition.find('option:selected');
+      var operator = selected_condition.data('operator');
+      var field_name = selected_condition.data('showField');
+      var reverse_operator = selected_condition.data('reverseOperator');
+      var negate_condition = selected_condition.data('negateCondition');
+      var search_query = "";
+      condition.find('.input-condition-field').closest('.form-group').hide();
+      if (operator) {
+        if (field_name) {
+          var operand_field = condition.find('.input-condition-' + field_name);
+          operand_field.closest('.form-group').show();
+          var operand = operand_field.val();
+          if (!operand && (field_name === "quantity" || field_name === "datetime")) {
+            operand_field.closest('.form-group').addClass('has-error');
+          } else {
+            operand_field.closest('.form-group').removeClass('has-error');
+          }
+          if (field_name === "text") {
+            operand = JSON.stringify(operand);
+          }
+          if (reverse_operator) {
+            search_query = operand + " " + operator + " " + property_name;
+          } else {
+            search_query = property_name + " " + operator + " " + operand;
+          }
+        } else {
+          if (reverse_operator) {
+            search_query = operator + " " + property_name;
+          } else {
+            search_query = property_name + " " + operator;
+          }
+        }
+        if (negate_condition) {
+          search_query = "!("+ search_query + ")";
+        }
+      } else {
+        search_query = property_name;
+      }
+      return search_query;
+    }
+
+    function updateConditions() {
+      var subqueries = [];
+      $('.advanced-search-condition').each(function(_, element) {
+        var condition = $(element);
+        if (!condition.attr('id')) {
+          subqueries.push(updateCondition(condition));
+        }
+      });
+      var search_query = "";
+      if (subqueries.length === 1) {
+        search_query = subqueries[0];
+      } else if (subqueries.length > 1) {
+        var joining_operator = $('[name="c"]:checked').val();
+        for (var i = 0; i < subqueries.length; i++) {
+          if (i > 0) {
+            search_query = search_query + " " + joining_operator + " ";
+          }
+          search_query = search_query + "(" + subqueries[i] + ")";
+        }
+      }
+      $('#search-field').val(search_query);
+
+      if ($('.advanced-search-condition').length > 2) {
+        $('#advanced-search-join-and').closest('.form-group').show();
+      } else {
+        $('#advanced-search-join-and').closest('.form-group').hide();
+      }
+    }
+
+    $('[name="c"]').change(function() {
+      updateConditions();
+    });
+
+    function addCondition() {
+      var separator = $('.advanced-search-separator:last');
+      var condition_template = $('#advanced-search-condition-template');
+      condition_template.after(condition_template.clone());
+      condition_template.before(separator.clone());
+      $('.advanced-search-separator:not(:first):not(:last)').show();
+      condition_template.removeAttr('id');
+      condition_template.show();
+      condition_template.find('select').selectpicker();
+      condition_template.find('.input-group.date').each(function() {
+        $(this).datetimepicker({
+          format: 'YYYY-MM-DD',
+            date: $(this).attr('data-datetime'),
+        });
+      });
+      updateConditions();
+
+      condition_template.find('select, input').change(function() {
+        updateConditions();
+      });
+
+      condition_template.find('.close').click(function() {
+        condition_template.remove();
+        updateConditions();
+      });
+    }
+
+    $('#button-use-builder').click(function () {
+      addCondition();
+      $('#advanced-search-builder').show();
+      $('[name="advanced"]').prop('checked', 'checked');
+      $('#button-use-builder').closest('.form-group').hide();
+    });
+
+    $('#button-add-condition').click(addCondition);
   });
   </script>
 {% endblock %}
