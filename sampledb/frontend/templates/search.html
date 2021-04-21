@@ -2,13 +2,20 @@
 
 {% block title %}Search — {{ service_name }}{% endblock %}
 
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
 {% block content %}
   <h1>Search</h1>
+    <p class="text-muted">
+      For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.
+    </p>
   <form action="{{ url_for('frontend.objects') }}" method="get" id="form-search-standalone">
     <div class="input-group">
       <input type="text" class="form-control" placeholder="Search..." name="q">
       <span class="input-group-btn">
-        <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <span class="caret"></span>
           <span class="sr-only">Toggle Dropdown</span>
@@ -18,14 +25,31 @@
         </ul>
       </span>
     </div>
-    <p class="text-muted">
-      For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.
-    </p>
+    <div class="form-group">
+      <label style="width:150px; font-weight: normal">Only search for:</label><select name="t" class="selectpicker" data-width="250px">
+        <option value="" selected="selected">&mdash;</option>
+        {% for action_type in get_action_types() %}
+          <option value="{{ action_type.id }}">{{ action_type.object_name_plural }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label style="width:150px; font-weight: normal">Created with:</label><select name="action" class="selectpicker" data-width="250px">
+        <option value="" selected="selected">&mdash;</option>
+        {% for action in actions %}
+          {% if not action.is_hidden %}
+            <option value="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.name }} &mdash; {% endif %}{{ action.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-default" type="submit">Search</button>
   </form>
 {% endblock %}
 
 {% block scripts %}
-{{ super() }}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script>
   $(function () {
     var search_form = $('#form-search-standalone');
@@ -40,6 +64,23 @@
     }
     advanced_search_toggle.on('change', handle_advanced_search_toggle);
     handle_advanced_search_toggle.bind(advanced_search_toggle)();
+
+    var action_select = $('select[name="action"]');
+    var action_type_select = $('select[name="t"]');
+    action_select.change(function() {
+      if (action_select.selectpicker('val')) {
+        var selected_action_type_id = action_select.find('option:selected').data('actionTypeId');
+        action_type_select.selectpicker('val', selected_action_type_id);
+      }
+    });
+    action_type_select.change(function() {
+      action_select.find('option').show();
+      if (action_type_select.selectpicker('val')) {
+        action_select.selectpicker('val', '');
+        action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"]').hide();
+      }
+      action_select.selectpicker('refresh');
+    });
   });
   </script>
 {% endblock %}

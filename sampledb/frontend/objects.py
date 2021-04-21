@@ -21,7 +21,7 @@ from .. import logic
 from .. import models
 from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
-from ..logic.action_permissions import get_user_action_permissions
+from ..logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.users import get_user, get_users, get_users_by_name
@@ -1211,7 +1211,13 @@ def post_object_comments(object_id):
 @frontend.route('/objects/search/')
 @flask_login.login_required
 def search():
-    return flask.render_template('search.html')
+    actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
+    return flask.render_template(
+        'search.html',
+        actions=actions
+    )
 
 
 @frontend.route('/objects/referencable')
