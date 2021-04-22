@@ -277,6 +277,7 @@
       var condition_template = $('#advanced-search-condition-template');
       condition_template.after(condition_template.clone());
       condition_template.before(separator.clone());
+      $('#advanced-search-builder .advanced-search-separator + .advanced-search-separator').remove();
       $('.advanced-search-separator:not(:first):not(:last)').show();
       condition_template.removeAttr('id');
       condition_template.show();
@@ -295,6 +296,7 @@
 
       condition_template.find('.close').click(function() {
         condition_template.remove();
+        $('#advanced-search-builder .advanced-search-separator + .advanced-search-separator').remove();
         updateConditions();
       });
     }
