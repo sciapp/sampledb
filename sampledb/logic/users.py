@@ -47,16 +47,20 @@ def get_user(user_id: int) -> User:
     return user
 
 
-def get_users(exclude_hidden: bool = False) -> typing.List[User]:
+def get_users(exclude_hidden: bool = False, order_by: typing.Optional[db.Column] = User.name) -> typing.List[User]:
     """
     Returns all users.
 
     :param exclude_hidden: whether or not to exclude hidden users
+    :param order_by: Column to order the users by, or None
     :return: the list of users
     """
+    user_query = User.query
     if exclude_hidden:
-        return User.query.filter_by(is_hidden=False).all()
-    return User.query.all()
+        user_query = user_query.filter_by(is_hidden=False)
+    if order_by is not None:
+        user_query = user_query.order_by(order_by)
+    return user_query.all()
 
 
 def get_administrators() -> typing.List[User]:
