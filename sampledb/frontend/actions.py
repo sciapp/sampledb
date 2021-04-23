@@ -17,8 +17,8 @@ import pygments.formatters
 
 from . import frontend
 from .. import models
-from ..logic.actions import Action, create_action, get_action, get_actions, update_action, get_action_type
-from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions
+from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
+from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions, get_sorted_actions_for_user
 from ..logic.favorites import get_user_favorite_action_ids
 from ..logic.instruments import get_instrument, get_user_instruments
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
@@ -134,25 +134,12 @@ def actions():
         except errors.UserDoesNotExistError:
             user_id = None
             flask.flash('Invalid user ID.', 'error')
-    actions = []
-    action_permissions = {}
-    for action in get_actions(action_type_id=action_type_id):
-        if user_id is not None and action.user_id != user_id:
-            continue
-        if action.is_hidden and not flask_login.current_user.is_admin and user_id != flask_login.current_user.id:
-            continue
-        permissions = get_user_action_permissions(user_id=flask_login.current_user.id, action_id=action.id)
-        if Permissions.READ in permissions:
-            actions.append(action)
-            action_permissions[action.id] = permissions
+    actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id,
+        action_type_id=action_type_id,
+        owner_id=user_id,
+    )
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
-    # Sort by: favorite / not favorite, instrument name (independent actions first), action name
-    actions.sort(key=lambda action: (
-        0 if action.id in user_favorite_action_ids else 1,
-        action.user.name.lower() if action.user else '',
-        action.instrument.name.lower() if action.instrument else '',
-        action.name.lower()
-    ))
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
         'actions/actions.html',
