@@ -1218,7 +1218,11 @@ def search():
         'search.html',
         actions=actions,
         datetime=datetime
-    )
+    ), 200, {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    }
 
 
 @frontend.route('/objects/referencable')

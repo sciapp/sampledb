@@ -79,19 +79,20 @@
         <div class="form-group row">
           <label class="col-md-2" style="font-weight: normal">Condition</label>
           <div class="col-md-4">
-            <select data-width="100%" autocomplete="off">
-              <option value="property_equals_text" data-show-field="text" data-operator="==">is equal to text</option>
-              <option value="property_contains_text" data-show-field="text"  data-operator="in" data-reverse-operator="on">contains text</option>
-              <option value="property_equals_text" data-show-field="text" data-operator="==" data-negate-condition="on">is not equal to text</option>
-              <option value="property_contains_text" data-show-field="text"  data-operator="in" data-reverse-operator="on" data-negate-condition="on">does not contain text</option>
-              <option value="property_is_datetime_greater_than" data-show-field="datetime" data-operator=">">is date after</option>
-              <option value="property_is_datetime_less_than" data-show-field="datetime" data-operator="<">is date before</option>
-              <option value="property_is_true" data-operator="is true">is true</option>
-              <option value="property_is_false" data-operator="is false">is false</option>
-              <option value="property_equals_quantity" data-show-field="quantity" data-operator="==">is equal to quantity</option>
-              <option value="property_is_quantity_greater_than" data-show-field="quantity" data-operator=">">is quantity greater than</option>
-              <option value="property_is_quantity_less_than" data-show-field="quantity" data-operator="<">is quantity less than</option>
-              <option value="property_equals_quantity" data-show-field="quantity" data-operator="!=">is not equal to quantity</option>
+            <select data-width="100%" autocomplete="off" class="input-condition-operator">
+              <option value="1" data-show-field="text" data-operator="==">is equal to text</option>
+              <option value="2" data-show-field="text"  data-operator="in" data-reverse-operator="on">contains text</option>
+              <option value="3" data-show-field="text" data-operator="==" data-negate-condition="on">is not equal to text</option>
+              <option value="4" data-show-field="text"  data-operator="in" data-reverse-operator="on" data-negate-condition="on">does not contain text</option>
+              <option value="5" data-show-field="datetime" data-operator="==">is date equal to</option>
+              <option value="6" data-show-field="datetime" data-operator=">">is date after</option>
+              <option value="7" data-show-field="datetime" data-operator="<">is date before</option>
+              <option value="8" data-operator="== true">is true</option>
+              <option value="9" data-operator="== false">is false</option>
+              <option value="10" data-show-field="quantity" data-operator="==">is equal to quantity</option>
+              <option value="11" data-show-field="quantity" data-operator=">">is quantity greater than</option>
+              <option value="12" data-show-field="quantity" data-operator="<">is quantity less than</option>
+              <option value="13" data-show-field="quantity" data-operator="!=">is not equal to quantity</option>
             </select>
           </div>
         </div>
@@ -203,11 +204,16 @@
       var field_name = selected_condition.data('showField');
       var reverse_operator = selected_condition.data('reverseOperator');
       var negate_condition = selected_condition.data('negateCondition');
+      var state = {
+        'n': property_name,
+        'c': selected_condition.attr('value')
+      };
       var search_query = "";
       condition.find('.input-condition-field').closest('.form-group').hide();
       if (operator) {
         if (field_name) {
           var operand_field = condition.find('.input-condition-' + field_name);
+          state['f'] = operand_field.val();
           operand_field.closest('.form-group').show();
           var operand = operand_field.val();
           if (!operand && (field_name === "quantity" || field_name === "datetime")) {
@@ -236,15 +242,18 @@
       } else {
         search_query = property_name;
       }
-      return search_query;
+      return [search_query, state];
     }
 
     function updateConditions() {
+      window.conditions = [];
       var subqueries = [];
       $('.advanced-search-condition').each(function(_, element) {
         var condition = $(element);
         if (!condition.attr('id')) {
-          subqueries.push(updateCondition(condition));
+          var condition_state = updateCondition(condition);
+          subqueries.push(condition_state[0]);
+          window.conditions.push(condition_state[1]);
         }
       });
       var search_query = "";
@@ -266,6 +275,8 @@
       } else {
         $('#advanced-search-join-and').closest('.form-group').hide();
       }
+
+      updateHistory();
     }
 
     $('[name="c"]').change(function() {
@@ -287,6 +298,9 @@
           format: 'YYYY-MM-DD',
             date: $(this).attr('data-datetime'),
         });
+        $(this).on('dp.change', function() {
+          updateConditions();
+        });
       });
       updateConditions();
 
@@ -299,6 +313,7 @@
         $('#advanced-search-builder .advanced-search-separator + .advanced-search-separator').remove();
         updateConditions();
       });
+      return condition_template;
     }
 
     $('#button-use-builder').click(function () {
@@ -308,6 +323,49 @@
       $('#button-use-builder').closest('.form-group').hide();
     });
 
+    window.conditions = [];
+    function updateHistory() {
+      var query_state = {
+        'q': $('#search-field').val(),
+        'action': $('[name="action"]').val(),
+        't': $('[name="t"]').val(),
+        'c': $('[name="c"]:checked').val(),
+        'v': window.conditions
+      }
+      window.history.replaceState({}, '', '#' + encodeURIComponent(JSON.stringify(query_state)));
+    }
+    $('[name="t"], [name="action"], #search-field').change(function() {
+      updateHistory();
+    });
+
+    var query_state = window.location.hash.substr(1);
+    if (query_state) {
+      query_state = JSON.parse(decodeURIComponent(query_state));
+      $('#search-field').val(query_state['q']);
+      $('[name="action"]').selectpicker('val', query_state['action']);
+      $('[name="t"]').selectpicker('val', query_state['t']);
+      if (query_state['v'].length > 0) {
+        for (var i = 0; i < query_state['v'].length; i++) {
+          var condition = addCondition();
+          condition.find('.input-condition-property').val(query_state['v'][i]['n']);
+          condition.find('.input-condition-operator').selectpicker('val', query_state['v'][i]['c']);
+          var selected_condition = condition.find('option:selected');
+          var field_name = selected_condition.data('showField');
+          if (field_name) {
+            condition.find('.input-condition-' + field_name).val(query_state['v'][i]['f']);
+          }
+        }
+        $('#advanced-search-builder').show();
+        $('[name="advanced"]').prop('checked', 'checked');
+        $('#button-use-builder').closest('.form-group').hide();
+      }
+      if (query_state['c'] === 'or') {
+        $("#advanced-search-builder [name='c'][value='or']").prop("checked", "checked");
+      } else {
+        $("#advanced-search-builder [name='c'][value='and']").prop("checked", "checked");
+      }
+      updateConditions();
+    }
     $('#button-add-condition').click(addCondition);
   });
   </script>
