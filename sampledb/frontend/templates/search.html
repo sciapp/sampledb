@@ -41,7 +41,7 @@
       <div class="col-md-4">
         <select name="t" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
-          {% for action_type in get_action_types() %}
+          {% for action_type in action_types %}
             <option value="{{ action_type.id }}">{{ action_type.object_name_plural }}</option>
           {% endfor %}
         </select>

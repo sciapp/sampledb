@@ -1214,9 +1214,12 @@ def search():
     actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
+    action_types = get_action_types()
     search_paths = {}
     search_paths_by_action = {}
     search_paths_by_action_type = {}
+    for action_type in action_types:
+        search_paths_by_action_type[action_type.id] = {}
     for action in actions:
         search_paths_by_action[action.id] = {}
         if action.type_id not in search_paths_by_action_type:
@@ -1244,6 +1247,7 @@ def search():
         search_paths_by_action=search_paths_by_action,
         search_paths_by_action_type=search_paths_by_action_type,
         actions=actions,
+        action_types=action_types,
         datetime=datetime
     ), 200, {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
