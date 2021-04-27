@@ -368,6 +368,7 @@ Reading all users' permissions
     :queryparam include_instrument_responsible_users: If given, permissions from being an instrument responsible user will be included (optional)
     :queryparam include_groups: If given, permissions from basic group memberships will be included (optional)
     :queryparam include_projects: If given, permissions from project group memberships will be included (optional)
+    :queryparam include_admins: If given, permissions from being an administrator will be included (optional)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object does not exist
@@ -401,6 +402,7 @@ Reading a user's permissions
     :queryparam include_instrument_responsible_users: If given, permissions from being an instrument responsible user will be included (optional)
     :queryparam include_groups: If given, permissions from basic group memberships will be included (optional)
     :queryparam include_projects: If given, permissions from project group memberships will be included (optional)
+    :queryparam include_admins: If given, permissions from being an administrator will be included (optional)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or user does not exist

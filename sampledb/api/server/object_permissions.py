@@ -18,11 +18,13 @@ class UserObjectPermissions(Resource):
         include_instrument_responsible_users = 'include_instrument_responsible_users' in flask.request.args
         include_groups = 'include_groups' in flask.request.args
         include_projects = 'include_projects' in flask.request.args
+        include_admins = 'include_admins' in flask.request.args
         permissions = object_permissions.get_object_permissions_for_users(
             object_id=object_id,
             include_instrument_responsible_users=include_instrument_responsible_users,
             include_groups=include_groups,
-            include_projects=include_projects
+            include_projects=include_projects,
+            include_admin_permissions=include_admins
         ).get(user_id, Permissions.NONE)
         if permissions == Permissions.NONE:
             try:
@@ -62,11 +64,13 @@ class UsersObjectPermissions(Resource):
         include_instrument_responsible_users = 'include_instrument_responsible_users' in flask.request.args
         include_groups = 'include_groups' in flask.request.args
         include_projects = 'include_projects' in flask.request.args
+        include_admins = 'include_admins' in flask.request.args
         permissions = object_permissions.get_object_permissions_for_users(
             object_id=object_id,
             include_instrument_responsible_users=include_instrument_responsible_users,
             include_groups=include_groups,
-            include_projects=include_projects
+            include_projects=include_projects,
+            include_admin_permissions=include_admins
         )
         return {
             user_id: permissions.name.lower()
