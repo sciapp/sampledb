@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="form-group row">
-      <label style="font-weight: normal" class="col-md-2">Only search for:</label>
+      <label style="font-weight: normal" class="col-md-2">Only search for</label>
       <div class="col-md-4">
         <select name="t" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
@@ -48,7 +48,7 @@
       </div>
     </div>
     <div class="form-group row">
-      <label style="font-weight: normal" class="col-md-2">Created with:</label>
+      <label style="font-weight: normal" class="col-md-2">Created with</label>
       <div class="col-md-4">
         <select name="action" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
@@ -206,6 +206,9 @@
 
     function updateCondition(condition, search_paths) {
       var property_name = condition.find('.input-condition-property:visible').val();
+      if (typeof property_name === "undefined") {
+        property_name = "";
+      }
       if (!property_name) {
         condition.find('.input-condition-property').closest('.form-group').addClass('has-error');
       } else {

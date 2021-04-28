@@ -66,6 +66,7 @@
             </button>
             <ul class="dropdown-menu">
               <li><a><label id="button-search-advanced" style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" id="input-search-advanced" name="advanced" style="margin-right: 2px;" {% if must_use_advanced_search %}checked="checked"{% endif %}> Advanced Search</label></a></li>
+              <li><a href="{{ url_for("frontend.search", _anchor='{"v": [0]}') }}">Build Search Query</a></li>
             {% if action_type or project_id %}
               <li class="divider"></li>
               {% if project_id %}

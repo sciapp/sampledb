@@ -902,3 +902,7 @@ label.required-label:before {
 .button-row > .btn-group > a {
     min-width: 195px;
 }
+
+#advanced-search-builder .twitter-typeahead {
+    width: 100%;
+}
