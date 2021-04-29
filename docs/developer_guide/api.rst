@@ -145,6 +145,8 @@ Reading an object version
             "object_id": 1,
             "version_id": 0,
             "action_id": 0,
+            "user_id": 1,
+            "utc_datetime": "2021-04-29 12:34:56",
             "schema": {
                 "title": "Object Information",
                 "type": "object",
@@ -166,6 +168,8 @@ Reading an object version
     :>json number object_id: the object's ID
     :>json number version_id: the object version's ID
     :>json number action_id: the action's ID
+    :>json number user_id: the ID of the user who created this version
+    :>json string utc_datetime: the time and date when this version was created in UTC
     :>json object schema: the object's schema
     :>json object data: the object's data
     :statuscode 200: no error

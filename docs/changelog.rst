@@ -10,6 +10,7 @@ Currently in development.
 - Allow administrators to enforce user names to be given as surname, given names
 - Added plotly_chart data type
 - Improved search page
+- Improved object version HTTP API
 - Improved user interface
 
 Version 0.17
