@@ -32,6 +32,8 @@ class ObjectVersion(Resource):
             'object_id': object.object_id,
             'version_id': object.version_id,
             'action_id': object.action_id,
+            'user_id': object.user_id,
+            'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'schema': object.schema,
             'data': object.data
         }
