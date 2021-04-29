@@ -56,6 +56,7 @@ def test_get_action(flask_server, auth):
     assert r.json() == {
         'action_id': action.id,
         'instrument_id': None,
+        'user_id': None,
         'type': 'sample',
         'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
         'name': "Example Action",
@@ -75,13 +76,14 @@ def test_get_action(flask_server, auth):
     }
 
 
-def test_get_actions(flask_server, auth):
+def test_get_actions(flask_server, auth, auth_user):
     r = requests.get(flask_server.base_url + 'api/v1/actions/', auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        user_id=auth_user[1].id,
         name="Example Action",
         description="This is an example action",
         schema={
@@ -103,6 +105,7 @@ def test_get_actions(flask_server, auth):
         {
             'action_id': action.id,
             'instrument_id': None,
+            'user_id': auth_user[1].id,
             'type': 'sample',
             'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
             'name': "Example Action",

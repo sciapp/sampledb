@@ -1125,6 +1125,7 @@ Reading a list of all actions
             {
                 "action_id": 1,
                 "instrument_id": null,
+                "user_id": null,
                 "type": "sample",
                 "type_id": -99,
                 "name": "Example Sample Creation",
@@ -1145,6 +1146,7 @@ Reading a list of all actions
             {
                 "action_id": 2,
                 "instrument_id": 1,
+                "user_id": null,
                 "type": "measurement",
                 "type_id": -98,
                 "name": "Example Measurement",
@@ -1193,6 +1195,7 @@ Reading an action
         {
             "action_id": 1,
             "instrument_id": null,
+            "user_id": null,
             "type": "sample",
             "type_id": -99,
             "name": "Example Sample Creation",
@@ -1212,13 +1215,14 @@ Reading an action
         }
 
     :>json number action_id: the action's ID
-    :>json number instrument_id: the actions's instrument's ID or null
+    :>json number instrument_id: the action's instrument's ID or null
+    :>json number user_id: the action's user ID, if it is a user-specific action, or null
     :>json string type: the action's type ("sample", "measurement", "simulation" or "custom")
     :>json number type_id: the ID of the action's type
-    :>json string name: the actions's name
-    :>json string description: the actions's description
+    :>json string name: the action's name
+    :>json string description: the action's description
     :>json bool is_hidden: whether or not the action is hidden
-    :>json object schema: the actions's schema
+    :>json object schema: the action's schema
     :statuscode 200: no error
     :statuscode 404: the action does not exist
 
