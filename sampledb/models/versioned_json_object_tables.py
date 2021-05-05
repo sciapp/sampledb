@@ -191,35 +191,34 @@ class VersionedJSONSerializableObjectTables(object):
             self._schema_validator(schema)
         if self._data_validator:
             self._data_validator(data, schema)
-        with connection.begin() as transaction:
-            # Copy current version to previous versions
-            if connection.execute(
-                self._previous_table
-                .insert()
-                .from_select(
-                    ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime'],
-                    self._current_table
-                    .select()
-                    .where(self._current_table.c.object_id == db.bindparam('oid'))
-                ),
-                [{'oid': object_id}]
-            ).rowcount != 1:
-                return None
-            # Update current version to new version
-            connection.execute(
+
+        # Copy current version to previous versions
+        if connection.execute(
+            self._previous_table
+            .insert()
+            .from_select(
+                ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime'],
                 self._current_table
-                .update()
+                .select()
                 .where(self._current_table.c.object_id == db.bindparam('oid'))
-                .values(
-                    version_id=self._current_table.c.version_id + 1,
-                    data=data,
-                    schema=schema,
-                    user_id=user_id,
-                    utc_datetime=utc_datetime
-                ),
-                [{'oid': object_id}]
-            )
-            transaction.commit()
+            ),
+            [{'oid': object_id}]
+        ).rowcount != 1:
+            return None
+        # Update current version to new version
+        connection.execute(
+            self._current_table
+            .update()
+            .where(self._current_table.c.object_id == db.bindparam('oid'))
+            .values(
+                version_id=self._current_table.c.version_id + 1,
+                data=data,
+                schema=schema,
+                user_id=user_id,
+                utc_datetime=utc_datetime
+            ),
+            [{'oid': object_id}]
+        )
         return self.get_current_object(object_id, connection=connection)
 
     def get_current_object(self, object_id, connection=None):
