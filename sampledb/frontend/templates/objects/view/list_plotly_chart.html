@@ -1,0 +1,22 @@
+{% if 'plotly' in data %}
+{% set plot_counter.value = plot_counter.value + 1 %}
+{% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
+<div>
+{% if plotly_chart_title %}
+  {{ plotly_chart_title }}
+{% else %}
+  {{ schema.title }}# {{ loop.index }}
+{% endif %}
+
+{% if 'layout' in data.plotly %}
+  <a id="plotly_info_link_{{ name }}_{{ plot_counter.value }}" onclick="sdbtoggle( '{{ name }}_{{ plot_counter.value }}' )">[show plot]</a>
+  <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}" style="display: none"></div>
+
+  <script type="text/javascript">
+      window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
+  </script>
+{% endif %}
+</div>
+{% else %}
+  &mdash;
+{% endif %}

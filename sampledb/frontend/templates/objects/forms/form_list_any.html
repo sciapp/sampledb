@@ -16,6 +16,8 @@
   {% include "objects/forms/form_list_quantity.html" %}
 {% elif schema.type == 'user' %}
   {% include "objects/forms/form_list_user.html" %}
+{% elif schema.type == 'plotly_chart' %}
+    {% include "objects/forms/form_list_plotly_chart.html" %}
 {% else %}
   {{ name }}{{ schema.type }}{{ schema['type'] }}
 {% endif %}

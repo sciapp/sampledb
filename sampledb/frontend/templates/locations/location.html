@@ -4,19 +4,14 @@
 
 {% block content %}
   <h1>
+    Location #{{ location.id }}:
     {% for ancestor_id, ancestor_name in ancestors %}
       <a href="{{ url_for('.location', location_id=ancestor_id) }}">{{ ancestor_name }}</a> /
     {% endfor %}
     {{ location.name }}
   </h1>
-  <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description }}</pre>
-  <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">View Objects</a>
-  {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
-  <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">Edit Location</a>
-  <a href="{{ url_for('.new_location', parent_location_id=location.id) }}" class="btn btn-default">Create Sub-Location</a>
-  {% endif %}
   {% if locations_tree %}
-    <h2>Sub-Locations</h2>
+    <h4>Sub-Locations</h4>
     <ul>
     {% set location_ids_sorted_by_name = sort_location_ids_by_name(locations_tree.keys(), locations_map) %}
     {% for location_id in location_ids_sorted_by_name %}
@@ -24,4 +19,13 @@
     {% endfor %}
     </ul>
   {% endif %}
+  <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description }}</pre>
+
+  <div class="button-row">
+  <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">View Objects</a>
+  {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
+  <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">Edit Location</a>
+  <a href="{{ url_for('.new_location', parent_location_id=location.id) }}" class="btn btn-default">Create Sub-Location</a>
+  {% endif %}
+  </div>
 {% endblock %}

@@ -19,6 +19,7 @@ def action_to_json(action):
     return {
         'action_id': action.id,
         'instrument_id': action.instrument_id,
+        'user_id': action.user_id,
         'type': {
             ActionType.SAMPLE_CREATION: 'sample',
             ActionType.MEASUREMENT: 'measurement',

@@ -55,6 +55,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'user':
         return parse_user_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'plotly_chart':
+        return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
@@ -66,6 +68,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     text = form_data.get(id_prefix + '__text', [None])[0]
     if not text and not required:
         return None
+    if text is None:
+        text = ""
     data = {
         '_type': 'text',
         'text': str(text)
@@ -296,7 +300,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
                 items.append(None)
             else:
                 item_id_prefix = id_prefix + '__{}'.format(i)
-                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors))
+                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, True))
         if None in items:
             # use a placeholder if form_data had no (valid) information on an
             # item, otherwise items would not be a valid array and the form
@@ -353,6 +357,20 @@ def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
         'user_id': user_id
     }
     schemas.validate(data, schema)
+    return data
+
+
+@form_data_parser
+def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=False):
+    plotly_chart_data = form_data.get(id_prefix + '__plotly', [None])[0]
+    if plotly_chart_data is None and not required:
+        plotly_chart_data = {}
+    data = {
+        '_type': 'plotly_chart',
+        'plotly': plotly_chart_data
+    }
+    schemas.validate(data, schema)
+
     return data
 
 

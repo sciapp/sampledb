@@ -85,7 +85,7 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
                         return data, []
     if previous_schema['type'] != new_schema['type']:
         return generate_placeholder(new_schema), ["Unable to convert property '{}' from type '{}' to type '{}'.".format(new_schema['title'], previous_schema['type'], new_schema['type'])]
-    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user'):
+    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user', 'plotly_chart'):
         return data, []
     if new_schema['type'] == 'object_reference':
         referenced_object = None

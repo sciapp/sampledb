@@ -88,7 +88,7 @@ def test_get_actions():
 
 
 def test_create_user_action():
-    user = users.User(name="Testuser", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    user = users.User(name="Testuser", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     assert len(actions.get_actions()) == 0

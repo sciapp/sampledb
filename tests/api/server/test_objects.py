@@ -15,7 +15,7 @@ import sampledb.models
 @pytest.fixture
 def auth_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
         assert user.id is not None
     return ('username', 'password'), user
@@ -24,7 +24,7 @@ def auth_user(flask_server):
 @pytest.fixture
 def other_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Other User", email="other@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         assert user.id is not None
@@ -99,6 +99,8 @@ def test_get_object_version(flask_server, auth, user, action):
         "object_id": object.object_id,
         "version_id": object.version_id,
         "action_id": object.action_id,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
         "data": object.data
     }

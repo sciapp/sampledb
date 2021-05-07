@@ -66,7 +66,7 @@ def test_simple_params():
 def test_params_with_reference():
     user = sampledb.models.User(
         name="User",
-        email="example@example.org",
+        email="example@example.com",
         type=sampledb.models.UserType.PERSON
     )
     sampledb.db.session.add(user)

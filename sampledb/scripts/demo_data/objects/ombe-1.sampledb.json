@@ -1,0 +1,248 @@
+{
+  "name": {
+    "_type": "text",
+    "text": "OMBE-1"
+  },
+  "created": {
+    "_type": "datetime",
+    "utc_datetime": "2017-02-24 11:56:00"
+  },
+  "substrate": {
+    "_type": "text",
+    "text": "GaAs"
+  },
+  "checkbox": {
+    "_type": "bool",
+    "value": false
+  },
+  "dropdown": {
+    "_type": "text",
+    "text": "Option B"
+  },
+  "multilayer": [{
+      "repetitions": {
+        "_type": "quantity",
+        "dimensionality": "dimensionless",
+        "magnitude_in_base_units": 1,
+        "units": "1"
+      },
+      "films": [
+          {
+              "name": {
+                "_type": "text",
+                "text": "Seed Layer"
+              },
+              "thickness": {
+                "_type": "quantity",
+                "dimensionality": "[length]",
+                "magnitude_in_base_units": 0.0000000005,
+                "units": "Å"
+              },
+              "oxygen_flow": {
+                "_type": "quantity",
+                "dimensionality": "[length] ** 3 / [time]",
+                "magnitude_in_base_units": 0,
+                "units": "sccm"
+              },
+              "substrate_temperature": {
+                "_type": "quantity",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 403.15,
+                "units": "degC"
+              },
+              "elements": [
+                  {
+                    "name": {
+                      "_type":"text",
+                      "text": "Fe"
+                    },
+                    "rate": {
+                      "_type": "quantity",
+                      "dimensionality": "[length] / [time]",
+                      "magnitude_in_base_units": 0.00000000001,
+                      "units": "Å/s"
+                    }
+                  }
+              ]
+          }
+      ]
+  }, {
+      "repetitions": {
+        "_type": "quantity",
+        "dimensionality": "dimensionless",
+        "magnitude_in_base_units": 1,
+        "units": "1"
+      },
+      "films": [
+          {
+              "name": {
+                "_type": "text",
+                "text": "Buffer Layer"
+              },
+              "thickness": {
+                "_type": "quantity",
+                "dimensionality": "[length]",
+                "magnitude_in_base_units": 0.00000015,
+                "units": "Å"
+              },
+              "oxygen_flow": {
+                "_type": "quantity",
+                "dimensionality": "[length] ** 3 / [time]",
+                "magnitude_in_base_units": 0,
+                "units": "sccm"
+              },
+              "substrate_temperature": {
+                "_type": "quantity",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 403.15,
+                "units": "degC"
+              },
+              "elements": [
+                  {
+                    "name": {
+                      "_type":"text",
+                      "text": "Ag"
+                    },
+                    "rate": {
+                      "_type": "quantity",
+                      "dimensionality": "[length] / [time]",
+                      "magnitude_in_base_units": 0.0000000001,
+                      "units": "Å/s"
+                    }
+                  }
+              ]
+          }
+      ]
+  }, {
+      "repetitions": {
+        "_type": "quantity",
+        "dimensionality": "dimensionless",
+        "magnitude_in_base_units": 10,
+        "units": "1"
+      },
+      "films": [
+          {
+              "name": {
+                "_type":"text",
+                "text": "Pd"
+              },
+              "thickness": {
+                "_type": "quantity",
+                "dimensionality": "[length]",
+                "magnitude_in_base_units": 0.000000015,
+                "units": "Å"
+              },
+              "oxygen_flow": {
+                "_type": "quantity",
+                "dimensionality": "[length] ** 3 / [time]",
+                "magnitude_in_base_units": 0,
+                "units": "sccm"
+              },
+              "substrate_temperature": {
+                "_type": "quantity",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 373.15,
+                "units": "degC"
+              },
+              "elements": [
+                  {
+                    "name": {
+                      "_type":"text",
+                      "text": "Pd"
+                    },
+                    "rate": {
+                      "_type": "quantity",
+                      "dimensionality": "[length] / [time]",
+                      "magnitude_in_base_units": 0.000000000001,
+                      "units": "Å/s"
+                    }
+                  }
+              ]
+          }, {
+              "name": {
+                "_type":"text",
+                "text": "Fe"
+              },
+              "thickness": {
+                "_type": "quantity",
+                "dimensionality": "[length]",
+                "magnitude_in_base_units": 0.000000001,
+                "units": "Å"
+              },
+              "oxygen_flow": {
+                "_type": "quantity",
+                "dimensionality": "[length] ** 3 / [time]",
+                "magnitude_in_base_units": 0,
+                "units": "sccm"
+              },
+              "substrate_temperature": {
+                "_type": "quantity",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 403.15,
+                "units": "degC"
+              },
+              "elements": [
+                  {
+                    "name": {
+                      "_type":"text",
+                      "text": "Fe"
+                    },
+                    "rate": {
+                      "_type": "quantity",
+                      "dimensionality": "[length] / [time]",
+                      "magnitude_in_base_units": 0.000000000005,
+                      "units": "Å/s"
+                    }
+                  }
+              ]
+          }
+      ]
+  }, {
+      "repetitions": {
+        "_type": "quantity",
+        "dimensionality": "dimensionless",
+        "magnitude_in_base_units": 1,
+        "units": "1"
+      },
+      "films": [
+          {
+              "name": {
+                "_type": "text",
+                "text": "Pd Layer"
+              },
+              "thickness": {
+                "_type": "quantity",
+                "dimensionality": "[length]",
+                "magnitude_in_base_units": 0.000000015,
+                "units": "Å"
+              },
+              "oxygen_flow": {
+                "_type": "quantity",
+                "dimensionality": "[length] ** 3 / [time]",
+                "magnitude_in_base_units": 0,
+                "units": "sccm"
+              },
+              "substrate_temperature": {
+                "_type": "quantity",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 373.15,
+                "units": "degC"
+              },
+              "elements": [
+                  {
+                    "name": {
+                      "_type":"text",
+                      "text": "Pd"
+                    },
+                    "rate": {
+                      "_type": "quantity",
+                      "dimensionality": "[length] / [time]",
+                      "magnitude_in_base_units": 0.00000000001,
+                      "units": "Å/s"
+                    }
+                  }
+              ]
+          }
+      ]
+  }]
+}

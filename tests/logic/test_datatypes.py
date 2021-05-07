@@ -332,6 +332,7 @@ def test_boolean_invalid_data():
 
 def test_text_serialization():
     s = json.dumps(datatypes.Text("Test"), cls=datatypes.JSONEncoder)
+    l = json.loads(s)
     assert json.loads(s) == {
         '_type': 'text',
         'text': 'Test'
@@ -372,3 +373,4 @@ def test_text_invalid_data():
     raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
     with pytest.raises(jsonschema.exceptions.ValidationError):
         jsonschema.validate(raw_data, schema)
+

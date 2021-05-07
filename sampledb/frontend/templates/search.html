@@ -2,34 +2,180 @@
 
 {% block title %}Search — {{ service_name }}{% endblock %}
 
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
+  <style>
+  #advanced-search-builder .tt-menu {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  </style>
+{% endblock %}
+
 {% block content %}
   <h1>Search</h1>
-  <form action="{{ url_for('frontend.objects') }}" method="get" id="form-search-standalone">
-    <div class="input-group">
-      <input type="text" class="form-control" placeholder="Search..." name="q">
-      <span class="input-group-btn">
-        <button class="btn btn-default" type="submit"><span class="sr-only">Search</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <span class="caret"></span>
-          <span class="sr-only">Toggle Dropdown</span>
-        </button>
-        <ul class="dropdown-menu">
-          <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> Advanced Search</label></a></li>
-        </ul>
-      </span>
-    </div>
     <p class="text-muted">
       For information on the search function, see the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#search">User Guide</a>.
     </p>
+  <form action="{{ url_for('frontend.objects') }}" method="get" id="form-search-standalone">
+    <div class="form-group row">
+      <div class="col-md-6">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search..." name="q" id="search-field">
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="caret"></span>
+              <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a><label style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" name="advanced" style="margin-right: 2px;"> Advanced Search</label></a></li>
+            </ul>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label style="font-weight: normal" class="col-md-2">Only search for</label>
+      <div class="col-md-4">
+        <select name="t" class="selectpicker" data-width="100%">
+          <option value="" selected="selected">&mdash;</option>
+          {% for action_type in action_types %}
+            <option value="{{ action_type.id }}">{{ action_type.object_name_plural }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label style="font-weight: normal" class="col-md-2">Created with</label>
+      <div class="col-md-4">
+        <select name="action" class="selectpicker" data-width="100%">
+          <option value="" selected="selected">&mdash;</option>
+          {% for action in actions %}
+            {% if not action.is_hidden %}
+              <option value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.name }} &mdash; {% endif %}{{ action.name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group row">
+      <div class="col-md-offset-4 col-md-2">
+        <button class="btn btn-default" type="button" style="width: 100%" id="button-use-builder">Build Search Query</button>
+      </div>
+    </div>
+    <div id="advanced-search-builder" style="display: none">
+      <h3>Search Query Builder</h3>
+      <div>
+        <p class="text-muted">You can use this tool to define conditions which the objects you search for should meet.</p>
+      </div>
+      <div class="advanced-search-condition" style="border-left: 1px solid #eee; padding-left: 10px; margin-left: -10px; display: none" id="advanced-search-condition-template">
+        <div class="form-group row">
+          <div class="col-md-offset-2 col-md-4">
+            <button type="button" class="close pull-right"><i class="fa fa-times"></i></button>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Property</label>
+          <div class="col-md-4">
+            <input type="text" class="typeahead form-control input-condition-property" placeholder="Property Name" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Condition</label>
+          <div class="col-md-4">
+            <select data-width="100%" autocomplete="off" class="input-condition-operator">
+              <option value="1" data-type="text" data-show-field="text" data-operator="==">is equal to text</option>
+              <option value="2" data-type="text" data-show-field="text"  data-operator="in" data-reverse-operator="on">contains text</option>
+              <option value="3" data-type="text" data-show-field="text" data-operator="==" data-negate-condition="on">is not equal to text</option>
+              <option value="4" data-type="text" data-show-field="text"  data-operator="in" data-reverse-operator="on" data-negate-condition="on">does not contain text</option>
+              <option value="5" data-type="datetime" data-show-field="datetime" data-operator="==">is date equal to</option>
+              <option value="6" data-type="datetime" data-show-field="datetime" data-operator=">">is date after</option>
+              <option value="7" data-type="datetime" data-show-field="datetime" data-operator="<">is date before</option>
+              <option value="8" data-type="bool" data-operator="== true">is true</option>
+              <option value="9" data-type="bool" data-operator="== false">is false</option>
+              <option value="10" data-type="quantity" data-show-field="quantity" data-operator="==">is equal to quantity</option>
+              <option value="11" data-type="quantity" data-show-field="quantity" data-operator=">">is quantity greater than</option>
+              <option value="12" data-type="quantity" data-show-field="quantity" data-operator="<">is quantity less than</option>
+              <option value="13" data-type="quantity" data-show-field="quantity" data-operator="!=">is not equal to quantity</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Date</label>
+          <div class="col-md-4">
+            <div class="input-group date" data-datetime="{{ datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }}">
+              <input type="text" class="form-control input-condition-field input-condition-datetime" autocomplete="off"/>
+              <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Text</label>
+          <div class="col-md-4">
+          <input type="text" class="form-control input-condition-field input-condition-text" value="" autocomplete="off" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">Quantity</label>
+          <div class="col-md-4">
+          <input type="text" class="form-control input-condition-field input-condition-quantity" value="" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group row advanced-search-separator" style="display: none">
+        <div class="col-md-6">
+          <hr style="margin: 0"/>
+        </div>
+      </div>
+      <div class="form-group row" style="display: none">
+        <div class="col-md-offset-2 col-md-4">
+          <div class="radio">
+            <label>
+              <input type="radio" name="c" id="advanced-search-join-and" value="and" checked="checked">
+              Object must meet all conditions (and)
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="c" id="advanced-search-join-or" value="or">
+              Object must meet only one condition (or)
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group row">
+        <div class="col-md-offset-4 col-md-2">
+          <button class="btn btn-default" type="button" style="width: 100%;" id="button-add-condition">Add Condition</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <div class="col-md-offset-4 col-md-2">
+        <button class="btn btn-primary" type="submit" style="width: 100%">Search</button>
+      </div>
+    </div>
   </form>
 {% endblock %}
 
 {% block scripts %}
-{{ super() }}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
   <script>
   $(function () {
+
+    window.search_paths = {{ search_paths | tojson }};
+    window.search_paths_by_action = {{ search_paths_by_action | tojson }};
+    window.search_paths_by_action_type = {{ search_paths_by_action_type | tojson }};
+
     var search_form = $('#form-search-standalone');
-    var search_input = search_form.find('input[type=text]');
+    var search_input = search_form.find('#search-field');
     var advanced_search_toggle = search_form.find('input[name=advanced]');
     function handle_advanced_search_toggle() {
       if ($(this).prop('checked')) {
@@ -40,6 +186,273 @@
     }
     advanced_search_toggle.on('change', handle_advanced_search_toggle);
     handle_advanced_search_toggle.bind(advanced_search_toggle)();
+
+    var action_select = $('select[name="action"]');
+    var action_type_select = $('select[name="t"]');
+    action_select.change(function() {
+      if (action_select.selectpicker('val')) {
+        var selected_action_type_id = action_select.find('option:selected').data('actionTypeId');
+        action_type_select.selectpicker('val', selected_action_type_id);
+      }
+    });
+    action_type_select.change(function() {
+      action_select.find('option').show();
+      if (action_type_select.selectpicker('val')) {
+        action_select.selectpicker('val', '');
+        action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"]').hide();
+      }
+      action_select.selectpicker('refresh');
+    });
+
+    function updateCondition(condition, search_paths) {
+      var property_name = condition.find('.input-condition-property:visible').val();
+      if (typeof property_name === "undefined") {
+        property_name = "";
+      }
+      if (!property_name) {
+        condition.find('.input-condition-property').closest('.form-group').addClass('has-error');
+      } else {
+        condition.find('.input-condition-property').closest('.form-group').removeClass('has-error');
+      }
+      condition.find('option').show();
+      var selectpicker = condition.find('.input-condition-operator');
+      if (property_name in search_paths) {
+        var valid_options = [];
+        var property_types = search_paths[property_name];
+        condition.find('option').each(function(_, option) {
+          option = $(option);
+          if (property_types.includes(option.data('type'))) {
+            valid_options.push(option.val());
+          } else {
+            option.hide();
+          }
+        });
+        if (!valid_options.includes(selectpicker.selectpicker('val'))) {
+          selectpicker.selectpicker('val', valid_options[0]);
+        }
+      }
+      selectpicker.selectpicker('refresh');
+      var selected_condition = condition.find('option:selected');
+      var operator = selected_condition.data('operator');
+      var field_name = selected_condition.data('showField');
+      var reverse_operator = selected_condition.data('reverseOperator');
+      var negate_condition = selected_condition.data('negateCondition');
+      var state = {
+        'n': property_name,
+        'c': selected_condition.attr('value')
+      };
+      var search_query = "";
+      condition.find('.input-condition-field').closest('.form-group').hide();
+      if (operator) {
+        if (field_name) {
+          var operand_field = condition.find('.input-condition-' + field_name);
+          state['f'] = operand_field.val();
+          operand_field.closest('.form-group').show();
+          var operand = operand_field.val();
+          if (!operand && (field_name === "quantity" || field_name === "datetime")) {
+            operand_field.closest('.form-group').addClass('has-error');
+          } else {
+            operand_field.closest('.form-group').removeClass('has-error');
+          }
+          if (field_name === "text") {
+            operand = JSON.stringify(operand);
+          }
+          if (reverse_operator) {
+            search_query = operand + " " + operator + " " + property_name;
+          } else {
+            search_query = property_name + " " + operator + " " + operand;
+          }
+        } else {
+          if (reverse_operator) {
+            search_query = operator + " " + property_name;
+          } else {
+            search_query = property_name + " " + operator;
+          }
+        }
+        if (negate_condition) {
+          search_query = "!("+ search_query + ")";
+        }
+      } else {
+        search_query = property_name;
+      }
+      return [search_query, state];
+    }
+
+    function updateConditions() {
+      var search_paths = getCurrentSearchPaths();
+      window.conditions = [];
+      var subqueries = [];
+      $('.advanced-search-condition').each(function(_, element) {
+        var condition = $(element);
+        if (!condition.attr('id')) {
+          var condition_state = updateCondition(condition, search_paths);
+          subqueries.push(condition_state[0]);
+          window.conditions.push(condition_state[1]);
+        }
+      });
+      var search_query = "";
+      if (subqueries.length === 1) {
+        search_query = subqueries[0];
+      } else if (subqueries.length > 1) {
+        var joining_operator = $('[name="c"]:checked').val();
+        for (var i = 0; i < subqueries.length; i++) {
+          if (i > 0) {
+            search_query = search_query + " " + joining_operator + " ";
+          }
+          search_query = search_query + "(" + subqueries[i] + ")";
+        }
+      }
+      $('#search-field').val(search_query);
+
+      if ($('.advanced-search-condition').length > 2) {
+        $('#advanced-search-join-and').closest('.form-group').show();
+      } else {
+        $('#advanced-search-join-and').closest('.form-group').hide();
+      }
+
+      updateHistory();
+    }
+
+    $('[name="c"]').change(function() {
+      updateConditions();
+    });
+
+    function addCondition() {
+      var separator = $('.advanced-search-separator:last');
+      var condition_template = $('#advanced-search-condition-template');
+      condition_template.after(condition_template.clone());
+      condition_template.before(separator.clone());
+      $('#advanced-search-builder .advanced-search-separator + .advanced-search-separator').remove();
+      $('.advanced-search-separator:not(:first):not(:last)').show();
+      condition_template.removeAttr('id');
+      condition_template.show();
+      condition_template.find('select').selectpicker();
+      condition_template.find('.input-group.date').each(function() {
+        $(this).datetimepicker({
+          format: 'YYYY-MM-DD',
+            date: $(this).attr('data-datetime'),
+        });
+        $(this).on('dp.change', function() {
+          updateConditions();
+        });
+      });
+
+      condition_template.find('.input-condition-property').keydown(function(event){
+        if(event.keyCode === 13) {
+          event.preventDefault();
+          return false;
+        }
+      });
+
+      var ta = condition_template.find('.input-condition-property').typeahead({
+        hint: true,
+        highlight: true,
+        minLength: 0,
+      }, {
+        name: 'search_paths',
+        limit: 10000,
+        source: substringMatcher()
+      });
+      updateConditions();
+
+      ta.on('typeahead:change', function() {
+        updateConditions();
+      });
+      ta.on('typeahead:select', function() {
+        updateConditions();
+      });
+
+      condition_template.find('select, input').change(function() {
+        updateConditions();
+      });
+
+      condition_template.find('.close').click(function() {
+        condition_template.remove();
+        $('#advanced-search-builder .advanced-search-separator + .advanced-search-separator').remove();
+        updateConditions();
+      });
+      return condition_template;
+    }
+
+    $('#button-use-builder').click(function () {
+      addCondition();
+      $('#advanced-search-builder').show();
+      $('[name="advanced"]').prop('checked', 'checked');
+      $('#button-use-builder').closest('.form-group').hide();
+    });
+
+    window.conditions = [];
+    function updateHistory() {
+      var query_state = {
+        'q': $('#search-field').val(),
+        'action': $('[name="action"]').val(),
+        't': $('[name="t"]').val(),
+        'c': $('[name="c"]:checked').val(),
+        'v': window.conditions
+      }
+      window.history.replaceState({}, '', '#' + encodeURIComponent(JSON.stringify(query_state)));
+    }
+    $('[name="t"], [name="action"], #search-field').change(function() {
+      updateHistory();
+    });
+
+    var query_state = window.location.hash.substr(1);
+    if (query_state) {
+      query_state = JSON.parse(decodeURIComponent(query_state));
+      $('#search-field').val(query_state['q']);
+      $('[name="action"]').selectpicker('val', query_state['action']);
+      $('[name="t"]').selectpicker('val', query_state['t']);
+      if (query_state['v'].length > 0) {
+        for (var i = 0; i < query_state['v'].length; i++) {
+          var condition = addCondition();
+          condition.find('.input-condition-property').val(query_state['v'][i]['n']);
+          condition.find('.input-condition-operator').selectpicker('val', query_state['v'][i]['c']);
+          var selected_condition = condition.find('option:selected');
+          var field_name = selected_condition.data('showField');
+          if (field_name) {
+            condition.find('.input-condition-' + field_name).val(query_state['v'][i]['f']);
+          }
+        }
+        $('#advanced-search-builder').show();
+        $('[name="advanced"]').prop('checked', 'checked');
+        $('#button-use-builder').closest('.form-group').hide();
+      }
+      if (query_state['c'] === 'or') {
+        $("#advanced-search-builder [name='c'][value='or']").prop("checked", "checked");
+      } else {
+        $("#advanced-search-builder [name='c'][value='and']").prop("checked", "checked");
+      }
+      updateConditions();
+    }
+    $('#button-add-condition').click(addCondition);
+
+    function getCurrentSearchPaths() {
+      var action_select = $('select[name="action"]');
+      if (action_select.selectpicker('val')) {
+        var selected_action_id = action_select.find('option:selected').data('actionId');
+        return search_paths_by_action[selected_action_id];
+      }
+      var action_type_select = $('select[name="t"]');
+      if (action_type_select.selectpicker('val')) {
+        var selected_action_type_id = action_type_select.selectpicker('val');
+        return search_paths_by_action_type[selected_action_type_id];
+      }
+      return search_paths;
+    }
+    function substringMatcher() {
+      return function findMatches(q, cb) {
+        var search_paths = getCurrentSearchPaths();
+        var strs = Object.keys(search_paths);
+        var matches = [];
+        var substrRegex = new RegExp(q, 'i');
+        $.each(strs, function(i, str) {
+          if (substrRegex.test(str)) {
+            matches.push(str);
+          }
+        });
+        cb(matches);
+      };
+    }
   });
   </script>
 {% endblock %}

@@ -1,0 +1,6 @@
+<div class="form-group row{% if id_prefix+'_plotly' in errors %} has-error{% elif id_prefix+'_plotly' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
+  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title }}</label>
+  <div class="col-md-9">
+    <textarea type="text" class="form-control" name="{{ id_prefix }}_plotly" rows="5" placeholder="">{% if id_prefix+'_plotly' in form_data %}{{ form_data[id_prefix+'_plotly'] }}{% elif data is not none and "plotly" in data %}{{ data.plotly | to_json_no_extra_escapes(indent=2) }}{% endif %}</textarea>
+  </div>
+</div>

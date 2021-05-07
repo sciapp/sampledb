@@ -8,9 +8,9 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Basic Group #{{ group.id }}: {{ group.name }}</h3>
+  <h1>Basic Group #{{ group.id }}: {{ group.name }}</h1>
   <p>{{ group.description }}</p>
-  <h4>Members</h4>
+  <h2>Members</h2>
   <ul>
     {% for user_id in group_member_ids %}
     {% with user = get_user(user_id) %}
@@ -27,6 +27,7 @@
     {% endwith %}
   {% endfor %}
   </ul>
+  <div class="button-row">
   {% if show_objects_link %}
     <div class="btn-group">
       <a href="{{ url_for('.objects', group=group.id) }}" class="btn btn-default">View Objects</a>
@@ -68,6 +69,7 @@
   {% if delete_group_form %}
   <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteGroupModal">Delete Basic Group</button>
   {% endif %}
+  </div>
 
   {% if edit_group_form %}
   <div class="modal fade" id="editGroupModal" tabindex="-1" role="dialog" aria-labelledby="editGroupModalLabel">

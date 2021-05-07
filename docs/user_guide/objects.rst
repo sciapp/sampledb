@@ -103,7 +103,7 @@ Activity Log
 
 The activity log shows a timeline of the object's life cycle, containing events like its creation, file uploads and when it was used for another object.
 
-.. figure:: ../static/img/generated/activity_log.png
+.. figure:: ../static/img/generated/activity_log_dontblock.png
     :scale: 50 %
     :alt: Activity Log
 

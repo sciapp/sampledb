@@ -7,6 +7,7 @@ import typing
 from .. import db
 from . import errors
 from . import actions
+from . import favorites
 from . import groups
 from . import users
 from . import projects
@@ -328,3 +329,47 @@ def get_actions_with_permissions(user_id: int, permissions: Permissions, action_
         if permissions in get_user_action_permissions(user_id=user_id, action_id=action.id):
             actions_with_permissions.append(action)
     return actions_with_permissions
+
+
+def get_sorted_actions_for_user(
+        user_id: int,
+        action_type_id: typing.Optional[int] = None,
+        owner_id: typing.Optional[int] = None,
+        include_hidden_actions: bool = False
+) -> typing.List[Action]:
+    """
+    Get sorted actions for a user, optionally filtered by type and owning user.
+
+    The actions are sorted by:
+    - favorite / not favorite
+    - instrument name (independent actions first)
+    - action name
+
+    :param user_id: the ID of the user to return actions for
+    :param action_type_id: the ID of the actions' type, or None
+    :param owner_id: the ID of the actions' owner, or None
+    :param include_hidden_actions: whether hidden actions should be included
+    :return: the sorted list of actions
+    :raise errors.UserDoesNotExistError: if no user with the given user ID
+        exists
+    """
+    user = users.get_user(user_id)
+    visible_actions = []
+    action_permissions = {}
+    for action in actions.get_actions(action_type_id=action_type_id):
+        if owner_id is not None and action.user_id != owner_id:
+            continue
+        if not include_hidden_actions and action.is_hidden and not user.is_admin and owner_id != user_id:
+            continue
+        permissions = get_user_action_permissions(user_id=user_id, action_id=action.id)
+        if Permissions.READ in permissions:
+            visible_actions.append(action)
+            action_permissions[action.id] = permissions
+    user_favorite_action_ids = favorites.get_user_favorite_action_ids(user_id)
+    visible_actions.sort(key=lambda action: (
+        0 if action.id in user_favorite_action_ids else 1,
+        action.user.name.lower() if action.user else '',
+        action.instrument.name.lower() if action.instrument else '',
+        action.name.lower()
+    ))
+    return visible_actions

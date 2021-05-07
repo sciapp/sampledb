@@ -23,7 +23,7 @@ def test_create_sample_action(instrument, capsys):
     action_type = 'sample'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     assert len(actions.get_actions()) == 0
 
     scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
@@ -41,7 +41,7 @@ def test_create_measurement_action(instrument, capsys):
     action_type = 'measurement'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     assert len(actions.get_actions()) == 0
 
     scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
@@ -59,7 +59,7 @@ def test_create_action_with_action_type_id(instrument, capsys):
     action_type = '-98'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     assert len(actions.get_actions()) == 0
 
     scripts.main([scripts.__file__, 'create_action', str(instrument.id), action_type, name, description, schema_file_name])
@@ -87,7 +87,7 @@ def test_create_action_invalid_instrument_id(instrument, capsys):
     action_type = 'sample'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
@@ -101,7 +101,7 @@ def test_create_action_missing_instrument(capsys):
     action_type = 'sample'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
@@ -115,7 +115,7 @@ def test_create_action_invalid_type(instrument, capsys):
     action_type = 'sample_creation'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'minimal.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas', 'minimal.json'))
     assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
@@ -129,7 +129,7 @@ def test_create_action_invalid_schema(instrument, capsys):
     action_type = 'sample'
     name = 'Example Action'
     description = 'Example Action Description'
-    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'sampledb', 'schemas', 'action.json'))
+    schema_file_name = os.path.abspath(os.path.join(os.path.dirname(sampledb.__file__), 'schemas', 'action.json'))
     assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:

@@ -1,0 +1,16 @@
+<div>
+    <div id="plotly_plot_div_{{ schema.title }}" style="display:none"></div>
+        {% if 'plotly' in data and 'layout' in data.plotly and 'title' in data.plotly.layout and 'text' in data.plotly.layout.title %}
+            {{ data.plotly.layout.title.text|striptags }}
+        {% else %}
+            {{ schema.title }}
+        {% endif %}
+
+      {% if data %}
+          <div>
+            <img src="{{ data.plotly | plot }}"  style="margin: 0.5em; width: 130mm">
+          </div>
+      {% else %}
+         -
+      {% endif %}
+</div>

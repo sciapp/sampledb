@@ -15,7 +15,7 @@ from sampledb.logic.authentication import add_email_authentication
 
 @pytest.fixture
 def user_session(flask_server):
-    user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     session = requests.session()
@@ -26,10 +26,10 @@ def user_session(flask_server):
 
 @pytest.fixture
 def user(flask_server):
-    user = sampledb.models.User(name="Basic User2", email="example2@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    user = sampledb.models.User(name="Basic User2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
+    add_email_authentication(user.id, 'example@example.com', 'abc.123', True)
     # force attribute refresh
     assert user.id is not None
     # Check if authentication-method add to db
@@ -39,7 +39,7 @@ def user(flask_server):
 
 
 def test_list_projects(flask_server, user_session):
-    other_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    other_user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
 
@@ -61,7 +61,7 @@ def test_list_projects(flask_server, user_session):
 
 
 def test_list_user_projects(flask_server, user_session):
-    other_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    other_user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
 
@@ -261,7 +261,7 @@ def test_view_project(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/{}'.format(project_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    assert document.find('h3').text == 'Project Group #{}: Example Project'.format(project_id)
+    assert document.find('h1').text == 'Project Group #{}: Example Project'.format(project_id)
 
 
 def test_remove_last_user_from_project_permissions(flask_server, user_session):
@@ -536,7 +536,7 @@ def test_view_subprojects(flask_server, user_session):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
 
-    for header in document.find_all('h4'):
+    for header in document.find_all('h2'):
         if 'Child Project Groups' in header.text:
             subprojects_header = header
             break
@@ -552,7 +552,7 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
-        inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+        inviting_user = sampledb.models.User("Inviting User", "example@example.com", sampledb.models.UserType.PERSON)
         sampledb.db.session.add(inviting_user)
         sampledb.db.session.commit()
         parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
@@ -583,7 +583,7 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
 
 
 def test_add_user_to_parent_project_already_a_member(user):
-    inviting_user = sampledb.models.User("Inviting User", "example@fz-juelich.de", sampledb.models.UserType.PERSON)
+    inviting_user = sampledb.models.User("Inviting User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(inviting_user)
     sampledb.db.session.commit()
     parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
@@ -620,7 +620,7 @@ def test_delete_project(flask_server, user_session):
 def test_remove_member_from_project(flask_server, user_session):
     project_id = sampledb.logic.projects.create_project("Example Project", "", user_session.user_id).id
 
-    other_user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+    other_user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(other_user)
     sampledb.db.session.commit()
 

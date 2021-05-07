@@ -3,9 +3,10 @@
 
 """
 
+import flask
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
-from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired
+from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired, ValidationError
 
 
 class SigninForm(FlaskForm):
@@ -37,6 +38,12 @@ class RegistrationForm(FlaskForm):
     ])
     password2 = PasswordField('Confirm password', validators=[InputRequired()])
     submit = SubmitField('Register')
+
+    def validate_name(self, field):
+        if flask.current_app.config['ENFORCE_SPLIT_NAMES']:
+            name = field.data
+            if ', ' not in name[1:-1]:
+                raise ValidationError("Please enter your name as: surname, given names.")
 
 
 class PasswordForm(FlaskForm):

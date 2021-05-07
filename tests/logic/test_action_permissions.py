@@ -17,7 +17,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @pytest.fixture
 def users():
     names = ['User 1', 'User 2']
-    users = [User(name=name, email="example@fz-juelich.de", type=UserType.PERSON) for name in names]
+    users = [User(name=name, email="example@example.com", type=UserType.PERSON) for name in names]
     for user in users:
         sampledb.db.session.add(user)
         sampledb.db.session.commit()

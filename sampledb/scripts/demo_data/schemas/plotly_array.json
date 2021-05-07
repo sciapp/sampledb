@@ -1,0 +1,23 @@
+{
+  "title": "Plotly Array Example Object",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Object Name",
+      "type": "text"
+    },
+    "plotlist": {
+      "title": "Plot List",
+      "type": "array",
+      "style": "list",
+      "minItems": 1,
+      "items": {
+        "title": "listitem",
+        "type": "plotly_chart"
+      }
+    }
+  },
+
+  "propertyOrder": ["name", "plotlist"],
+  "required": ["name"]
+}

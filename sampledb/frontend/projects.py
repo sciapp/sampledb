@@ -369,7 +369,7 @@ def project(project_id):
         else:
             object = None
     return flask.render_template(
-        'project.html',
+        'projects/project.html',
         get_user=logic.users.get_user,
         get_group=logic.groups.get_group,
         get_project=logic.projects.get_project,
@@ -456,7 +456,7 @@ def projects():
     project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(projects_by_id))
 
     return flask.render_template(
-        "projects.html",
+        "projects/projects.html",
         create_project_form=create_project_form,
         show_create_form=show_create_form,
         Permissions=logic.projects.Permissions,
@@ -489,7 +489,7 @@ def project_permissions(project_id):
         edit_user_permissions_form = ProjectPermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
     else:
         edit_user_permissions_form = None
-    return flask.render_template('project_permissions.html', project=project, user_permissions=user_permissions, group_permissions=group_permissions, project_permissions=project_permissions, get_user=logic.users.get_user, get_group=logic.groups.get_group, Permissions=Permissions, form=edit_user_permissions_form)
+    return flask.render_template('projects/project_permissions.html', project=project, user_permissions=user_permissions, group_permissions=group_permissions, project_permissions=project_permissions, get_user=logic.users.get_user, get_group=logic.groups.get_group, Permissions=Permissions, form=edit_user_permissions_form)
 
 
 @frontend.route('/projects/<int:project_id>/permissions', methods=['POST'])

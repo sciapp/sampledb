@@ -863,7 +863,7 @@ def test_validate_sample():
         'title': 'Example',
         'type': 'sample'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -895,7 +895,7 @@ def test_validate_sample_invalid_type():
         'title': 'Example',
         'type': 'sample'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -925,7 +925,7 @@ def test_validate_sample_unexpected_keys():
         'title': 'Example',
         'type': 'sample'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -971,7 +971,7 @@ def test_validate_sample_wrong_type():
         'title': 'Example',
         'type': 'sample'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1004,7 +1004,7 @@ def test_validate_sample_wrong_object_id_type():
         'title': 'Example',
         'type': 'sample'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1050,7 +1050,7 @@ def test_validate_measurement():
         'title': 'Example',
         'type': 'measurement'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
@@ -1082,7 +1082,7 @@ def test_validate_measurement_invalid_type():
         'title': 'Example',
         'type': 'measurement'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
@@ -1112,7 +1112,7 @@ def test_validate_measurement_unexpected_keys():
         'title': 'Example',
         'type': 'measurement'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
@@ -1158,7 +1158,7 @@ def test_validate_measurement_wrong_type():
         'title': 'Example',
         'type': 'measurement'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
@@ -1191,7 +1191,7 @@ def test_validate_measurement_wrong_object_id_type():
         'title': 'Example',
         'type': 'measurement'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.MEASUREMENT, "Example Action", schema={
       "title": "Measurement Information",
       "type": "object",
@@ -1237,7 +1237,7 @@ def test_validate_object_reference():
         'title': 'Example',
         'type': 'object_reference'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1273,7 +1273,7 @@ def test_validate_object_reference_invalid_type():
         'title': 'Example',
         'type': 'object_reference'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1303,7 +1303,7 @@ def test_validate_object_reference_unexpected_keys():
         'title': 'Example',
         'type': 'object_reference'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1349,7 +1349,7 @@ def test_validate_object_reference_wrong_type():
         'title': 'Example',
         'type': 'object_reference'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1382,7 +1382,7 @@ def test_validate_object_reference_wrong_object_id_type():
         'title': 'Example',
         'type': 'object_reference'
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1429,7 +1429,7 @@ def test_validate_object_reference_wrong_action_type():
         'type': 'object_reference',
         'action_type_id': sampledb.models.ActionType.MEASUREMENT
     }
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1458,7 +1458,7 @@ def test_validate_object_reference_wrong_action_type():
 def test_validate_object_reference_wrong_action():
     from sampledb.models.users import User, UserType
     from sampledb.models.actions import Action
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     action = Action(sampledb.models.ActionType.SAMPLE_CREATION, "Example Action", schema={
       "title": "Sample Information",
       "type": "object",
@@ -1671,7 +1671,7 @@ def test_validate_hazards_duplicate_hazards():
 
 def test_validate_user():
     from sampledb.models.users import User, UserType
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
@@ -1689,7 +1689,7 @@ def test_validate_user():
 
 def test_validate_user_unexpected_keys():
     from sampledb.models.users import User, UserType
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
@@ -1720,7 +1720,7 @@ def test_validate_user_missing_keys():
 
 def test_validate_user_wrong_type():
     from sampledb.models.users import User, UserType
-    user = User("User", "example@fz-juelich.de", UserType.OTHER)
+    user = User("User", "example@example.com", UserType.OTHER)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
 
@@ -1747,3 +1747,68 @@ def test_validate_user_invalid_user_id():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_plotly_chart():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]}
+    }
+    validate(instance, schema)
+
+
+def test_validate_plotly_chart_invalid_data():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart',
+        'plotly': {"data": [{"name": "test", "type": "invalid_type", "x": [1,2,3], "y": [1,2,3]}]}
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_plotly_chart_missing_key():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart'
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_plotly_chart_invalid_key():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'plotly_chart',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]},
+        'meta': ''
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_plotly_chart_invalid_type():
+    schema = {
+        'title': 'Example',
+        'type': 'plotly_chart'
+    }
+    instance = {
+        '_type': 'text',
+        'plotly': {"data": [{"name": "test", "type": "scatter", "x": [1,2,3], "y": [1,2,3]}]}
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+

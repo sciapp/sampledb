@@ -15,6 +15,8 @@
 {% endblock %}
 
 {% block content %}
+  {# counter for plotly_chart_plots #}
+  {% set plot_counter = namespace(value=0) %}
 
   {% if is_archived %}
   <div class="alert alert-info alert-dismissible" role="alert">
@@ -23,9 +25,12 @@
   </div>
   {% endif %}
 
-  <h3>{{ action.type.object_name }} #{{ object_id }}: {{ data['name']['text'] }}</h3>
+  <script>
+  window.plotly_charts = [];
+  </script>
+  <h1>{{ action.type.object_name }} #{{ object_id }}: {{ data['name']['text'] }}</h1>
 
-  <h4>Information</h4>
+  <h2>Information</h2>
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">Instrument <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
     <div class="col-md-9">{% if instrument is not none %}<a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name }}</a>{% else %}&mdash;{% endif %}</div>
@@ -150,7 +155,7 @@
 
   {% if not is_archived %}
     {% if action.type.enable_files %}
-    <h4>Files</h4>
+    <h2>Files</h2>
     {% if files %}
     <table class="table" id="file_table">
       <thead>
@@ -583,7 +588,7 @@
   {% endif %}
 
   {% if not is_archived and action.type.enable_locations %}
-  <h4 id="locations">Location</h4>
+  <h2 id="locations">Location</h2>
   {% if object_location_assignments %}
     <table class="table">
     <thead>
@@ -650,7 +655,7 @@
   {% endif %}
 
   {% if not is_archived and action.type.enable_publications %}
-  <h4 id="publications">Publications</h4>
+  <h2 id="publications">Publications</h2>
   {% if object_publications %}
     <table class="table">
     <thead>
@@ -707,7 +712,7 @@
 
   {% if not is_archived %}
   {% if action.type.enable_comments %}
-    <h4>Comments</h4>
+    <h2>Comments</h2>
     {% if comments %}
       {% for comment in comments %}
         <div class="well" id="comment-{{ comment.id }}">
@@ -734,7 +739,7 @@
 
   {% if not is_archived and action.type.enable_activity_log %}
   {% if object_log_entries %}
-    <h4>Activity Log</h4>
+    <h2>Activity Log</h2>
     <table class="table" id="activity_log">
       <thead>
         <tr>
@@ -908,7 +913,7 @@
 
   {% if related_objects_tree %}
   {% if not is_archived and action.type.enable_related_objects %}
-    <h4>Related Objects</h4>
+    <h2>Related Objects</h2>
 
     <div class="related-objects">
       {% set in_export_data_model = False %}
@@ -1402,5 +1407,11 @@
     updateLabelsForm();
     {% endif %}
     {% endif %}
+
+    $( document ).ready(function() {
+      $(plotly_charts).each(function(index, element) {
+        Plotly.newPlot(element[0], element[1]);
+      });
+    });
   </script>
 {% endblock %}

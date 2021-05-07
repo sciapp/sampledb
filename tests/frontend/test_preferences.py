@@ -17,10 +17,10 @@ from sampledb.logic import object_permissions, groups, projects
 @pytest.fixture
 def user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.models.User(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.models.User(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
-        add_email_authentication(user.id, 'example@fz-juelich.de', 'abc.123', True)
+        add_email_authentication(user.id, 'example@example.com', 'abc.123', True)
         # force attribute refresh
         assert user.id is not None
         # Check if authentication-method add to db
@@ -82,7 +82,7 @@ def test_user_preferences_change_name(flask_server, user):
     assert r.status_code == 200
 
     with flask_server.app.app_context():
-        user = sampledb.models.users.User.query.filter_by(email="example@fz-juelich.de").one()
+        user = sampledb.models.users.User.query.filter_by(email="example@example.com").one()
 
     assert user.name == "Basic User"
 
@@ -94,14 +94,14 @@ def test_user_preferences_change_name(flask_server, user):
     # Submit the missing information and complete the registration
     r = session.post(url, {
         'name': 'Testaccount',
-        'email': 'example@fz-juelich.de',
+        'email': 'example@example.com',
         'csrf_token': csrf_token,
         'change': 'Change'
     })
     # check, if name was changed
     assert r.status_code == 200
     with flask_server.app.app_context():
-        user = sampledb.models.users.User.query.filter_by(email="example@fz-juelich.de").first()
+        user = sampledb.models.users.User.query.filter_by(email="example@example.com").first()
 
     assert user is not None
     assert user.name == "Testaccount"
@@ -533,7 +533,7 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     #  add valid email authentication-method
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
-            'login': 'example@fz-juelich.de',
+            'login': 'example@example.com',
             'password': 'abc.123',
             'authentication_method': 'E',
             'csrf_token': csrf_token,
@@ -663,7 +663,7 @@ def test_edit_default_public_permissions(flask_server, user):
 
 def test_edit_default_user_permissions(flask_server, user):
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name="New User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name="New User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -774,7 +774,7 @@ def test_edit_default_project_permissions(flask_server, user):
 
 def test_add_default_user_permissions(flask_server, user):
     with flask_server.app.app_context():
-        new_user = sampledb.models.User(name="New User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        new_user = sampledb.models.User(name="New User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
@@ -868,7 +868,7 @@ def test_user_preferences_change_password(flask_server, user):
     assert r.status_code == 200
 
     with flask_server.app.app_context():
-        user = sampledb.models.users.User.query.filter_by(email="example@fz-juelich.de").one()
+        user = sampledb.models.users.User.query.filter_by(email="example@example.com").one()
 
     assert user.name == "Basic User"
 
@@ -918,7 +918,7 @@ def test_user_preferences_change_password(flask_server, user):
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
     # submit the form
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
-        'username': 'example@fz-juelich.de',
+        'username': 'example@example.com',
         'password': 'xxxx',
         'remember_me': False,
         'csrf_token': csrf_token

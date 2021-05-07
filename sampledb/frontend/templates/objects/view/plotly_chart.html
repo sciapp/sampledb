@@ -1,0 +1,23 @@
+{% if 'plotly' in data %}
+{% set plot_counter.value = plot_counter.value + 1 %}
+{% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
+<div class="row" style="padding-right:0.75em">
+  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+  {% if plotly_chart_title %}
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + plotly_chart_title + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+  {% else %}
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+  {% endif %}
+  </label>
+{% if 'layout' in data.plotly %}
+  <div class="col-md-9">
+    <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}"></div>
+  </div>
+  <script type="text/javascript">
+    window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
+  </script>
+{% endif %}
+</div>
+{% else %}
+  &mdash;
+{% endif %}

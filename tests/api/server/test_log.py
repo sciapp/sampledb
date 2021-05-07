@@ -15,7 +15,7 @@ import sampledb.models
 @pytest.fixture
 def auth_user(flask_server):
     with flask_server.app.app_context():
-        user = sampledb.logic.users.create_user(name="Basic User", email="example@fz-juelich.de", type=sampledb.models.UserType.PERSON)
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
         api_token = secrets.token_hex(32)
         sampledb.logic.authentication.add_api_token(user.id, api_token, 'Demo API Token')
     return {'Authorization': 'Bearer ' + api_token}, user

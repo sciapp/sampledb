@@ -13,7 +13,7 @@ import sampledb.models
 def user():
     user = sampledb.models.User(
         name="User",
-        email="example1@fz-juelich.de",
+        email="example1@example.com",
         type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
@@ -99,7 +99,7 @@ def test_send_notification(app, user):
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
 
     assert len(outbox) == 1
-    assert 'example1@fz-juelich.de' in outbox[0].recipients
+    assert 'example1@example.com' in outbox[0].recipients
     message = outbox[0].html
     assert 'SampleDB Notification' in message
     assert 'This is a test message' in message
