@@ -2,7 +2,7 @@ alabaster==0.7.12
 aniso8601==9.0.1
 apipkg==1.5
 atomicwrites==1.4.0
-attrs==20.3.0
+attrs==21.1.0
 Babel==2.9.1
 backports.functools-lru-cache==1.6.4
 bcrypt==3.2.0
@@ -75,7 +75,7 @@ reportlab==3.5.67
 requests==2.25.1
 requests-mock==1.9.2
 selenium==3.141.0
-six==1.15.0
+six==1.16.0
 snowballstemmer==2.1.0
 soupsieve==2.2.1
 Sphinx==3.5.4
@@ -87,7 +87,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 sphinxcontrib-websupport==1.2.4
-SQLAlchemy==1.4.13
+SQLAlchemy==1.4.14
 tempora==4.0.2
 tinycss2==1.1.0
 toml==0.10.2
