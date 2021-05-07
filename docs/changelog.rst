@@ -4,7 +4,7 @@ Changelog
 Version 0.18
 ------------
 
-Currently in development.
+Released on May 7th, 2021.
 
 - Moved example_data functionality to set_up_data script
 - Allow administrators to enforce user names to be given as surname, given names
