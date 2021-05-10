@@ -907,7 +907,7 @@ label.required-label:before {
     width: 100%;
 }
 
-#input-schema {
+#input-schema, .plotly-chart-editor {
     font-size: 13px;
     font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 }
