@@ -906,3 +906,8 @@ label.required-label:before {
 #advanced-search-builder .twitter-typeahead {
     width: 100%;
 }
+
+#input-schema {
+    font-size: 13px;
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
