@@ -161,13 +161,9 @@
         {% endif %}
       {% endif %}
     </div>
-    <div class="form-group row clearfix" style="padding-right:0.75em">
-      <div class="col-md-3 col-md-offset-6">
-        <a href="{{ url_for('.actions') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
-      </div>
-      <div class="col-md-3">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
-      </div>
+    <div class="form-group col-md-12" style="display: flex; justify-content: flex-end">
+        <a href="{{ url_for('.actions') }}" class="btn btn-default" style="width:20em">Cancel</a>
+        <button type="submit" name="action_submit" class="btn btn-primary" style="width:20em; margin-left: 0.5em">{{ submit_text }}</button>
     </div>
   </form>
 
