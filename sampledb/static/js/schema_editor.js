@@ -314,6 +314,8 @@ $(function() {
       return null;
     } else if (schema['type'] === 'user') {
       type = "user";
+    } else if (schema['type'] === 'plotly_chart') {
+      type = "plotly_chart";
     } else {
       window.schema_editor_missing_type_support = true;
       return null;
@@ -350,6 +352,8 @@ $(function() {
         updateQuantityProperty(path, real_path);
       } else if (type === "datetime") {
         updateDatetimeProperty(path, real_path);
+      } else if (type === "plotly_chart") {
+        updatePlotlyChartProperty(path, real_path);
       }
       globallyValidateSchema();
     }
@@ -772,7 +776,16 @@ $(function() {
       if (has_default) {
         property_schema['default'] = default_value;
       }
-      console.log(default_value);
+
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
+    }
+
+    function updatePlotlyChartProperty(path, real_path) {
+      var has_error = false;
+      updateGenericProperty(path, real_path);
+      var schema = JSON.parse(input_schema.text());
+      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      property_schema["type"] = "plotly_chart";
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }

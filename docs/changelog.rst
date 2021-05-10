@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.19
+------------
+
+Currently in development
+
+- Improved user interface
+
 Version 0.18
 ------------
 
