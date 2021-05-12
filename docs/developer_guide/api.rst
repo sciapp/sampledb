@@ -1346,7 +1346,9 @@ Reading a list of all users
         [
             {
                 "user_id": 1,
-                "name": "Example User"
+                "name": "Example User",
+                "orcid": null,
+                "affiliation": null
             }
         ]
 
@@ -1378,11 +1380,16 @@ Reading a user
 
         {
             "user_id": 1,
-            "name": "Example User"
+            "name": "Example User",
+            "orcid": null,
+            "affiliation": null
         }
 
     :>json number user_id: the user's ID
     :>json string name: the user's name
+    :>json string orcid: the user's ORCid ID (optional)
+    :>json string affiliation: the user's affiliation (optional)
+    :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
     :statuscode 404: the user does not exist
 
@@ -1412,11 +1419,16 @@ Reading the current user
 
         {
             "user_id": 1,
-            "name": "Example User"
+            "name": "Example User",
+            "orcid": null,
+            "affiliation": null
         }
 
     :>json number user_id: the user's ID
     :>json string name: the user's name
+    :>json string orcid: the user's ORCid ID (optional)
+    :>json string affiliation: the user's affiliation (optional)
+    :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
 
 
