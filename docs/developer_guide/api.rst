@@ -168,7 +168,9 @@ Reading an object version
     :>json number object_id: the object's ID
     :>json number version_id: the object version's ID
     :>json number action_id: the action's ID
+    :>json object action: the action (if the parameter embed_action is set to a non-empty value)
     :>json number user_id: the ID of the user who created this version
+    :>json object user: the user (if the parameter embed_user is set to a non-empty value)
     :>json string utc_datetime: the time and date when this version was created in UTC
     :>json object schema: the object's schema
     :>json object data: the object's data
