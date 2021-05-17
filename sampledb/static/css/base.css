@@ -808,10 +808,6 @@ th:hover .search-helper {
     cursor: initial;
 }
 
-#input-instrument-log-filter-date {
-    width: 7em;
-}
-
 label.instrument-log-show-versions,
 span.instrument-log-show-edit {
     font-size: 0.8em;

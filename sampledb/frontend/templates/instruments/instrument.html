@@ -110,6 +110,15 @@
                       <span class='glyphicon glyphicon-calendar'></span>
                   </span>
               </div>
+              <hr />
+              <div class='form-group'>
+              <select class='selectpicker' id='input-instrument-log-filter-user' data-width='100%'>
+              <option value='' selected='selected'>All users</option>
+              {% for user in instrument_log_users %}
+                <option value='{{ user.id }}'>{{ user.name }} (#{{ user.id }})</option>
+              {% endfor %}
+              </select>
+              </div>
               <script>
                 setup_instrument_log_filter_states();
               </script>
@@ -122,7 +131,7 @@
         {% for log_entry in instrument_log_entries %}
           <div>
           <input type="checkbox" id="instrument-log-show-versions-{{ log_entry.id }}" class="instrument-log-show-versions"/>
-          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.versions[0].utc_datetime.strftime("%Y-%m") }}" style="position: relative">
+          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.versions[0].utc_datetime.strftime("%Y-%m") }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }}" style="position: relative">
             <div class="instrument-log-categories">
               {% for category in log_entry.versions[-1].categories %}
                   <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
@@ -426,6 +435,7 @@
       'none': true
     };
     window.filterDate = null;
+    window.filterUser = null;
     function setup_instrument_log_filter_states() {
       {% for category in instrument_log_categories %}
       $('#instrument_log_filter_{{ category.id }}').prop('checked', window.categoriesShown['{{ category.id }}']);
@@ -447,32 +457,49 @@
             datetimepicker.data("DateTimePicker").toggle();
           });
         });
+        var selectpicker = $('#input-instrument-log-filter-user');
+        selectpicker.selectpicker('val', window.filterUser);
+        selectpicker.on('changed.bs.select', function() {
+            update_instrument_log_filter_states();
+        });
     }
     function update_instrument_log_filter_states() {
       var filter_date = $('#input-instrument-log-filter-date').val();
       if (filter_date === "") {
         window.filterDate = null;
       } else {
-        window.filterDate = filter_date
+        window.filterDate = filter_date;
+      }
+      var filter_user = $('#input-instrument-log-filter-user').val();
+      if (filter_user === "") {
+        window.filterUser = null;
+      } else {
+        window.filterUser = filter_user;
       }
       $('.instrument-log-entry').hide();
       {% for category in instrument_log_categories %}
         window.categoriesShown['{{ category.id }}'] = $('#instrument_log_filter_{{ category.id }}').prop('checked');
         if (window.categoriesShown['{{ category.id }}']) {
+          let filter_selector = 'div[data-instrument-log-category-{{ category.id }}="yes"]';
           if (filter_date !== "") {
-            $('div[data-instrument-log-category-{{ category.id }}="yes"][data-instrument-log-date='+filter_date+']').show();
-          } else {
-            $('div[data-instrument-log-category-{{ category.id }}="yes"]').show();
+            filter_selector = filter_selector + '[data-instrument-log-date='+filter_date+']';
           }
+          if (filter_user !== "") {
+            filter_selector = filter_selector + '[data-instrument-log-user-id='+filter_user+']';
+          }
+          $(filter_selector).show();
         }
       {% endfor %}
       window.categoriesShown['none'] = $('#instrument_log_filter_none').prop('checked');
       if (window.categoriesShown['none']) {
+        let filter_selector = 'div[data-instrument-log-category-none="yes"]';
         if (filter_date !== "") {
-          $('div[data-instrument-log-category-none="yes"][data-instrument-log-date='+filter_date+']').show();
-        } else {
-          $('div[data-instrument-log-category-none="yes"]').show();
+          filter_selector = filter_selector + '[data-instrument-log-date='+filter_date+']';
         }
+        if (filter_user !== "") {
+          filter_selector = filter_selector + '[data-instrument-log-user-id='+filter_user+']';
+        }
+        $(filter_selector).show();
       }
       $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
     }

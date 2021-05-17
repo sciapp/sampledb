@@ -119,8 +119,18 @@ def instrument(instrument_id):
             object_info.object_id: object_info.name_text
             for object_info in attached_object_infos
         }
+        instrument_log_user_ids = {
+            log_entry.user_id
+            for log_entry in instrument_log_entries
+        }
+        instrument_log_users = [
+            get_user(user_id)
+            for user_id in instrument_log_user_ids
+        ]
+        instrument_log_users.sort(key=lambda user: (user.name, user.id))
     else:
         instrument_log_entries = None
+        instrument_log_users = []
         attached_object_names = {}
     if is_instrument_responsible_user or instrument.users_can_create_log_entries:
         serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='instrument-log-mobile-upload')
@@ -260,6 +270,7 @@ def instrument(instrument_id):
         'instruments/instrument.html',
         instrument=instrument,
         instrument_log_entries=instrument_log_entries,
+        instrument_log_users=instrument_log_users,
         instrument_log_categories=instrument_log_categories,
         attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
