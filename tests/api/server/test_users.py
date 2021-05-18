@@ -43,6 +43,18 @@ def test_get_user(flask_server, auth, user):
         'affiliation': None
     }
 
+    sampledb.logic.users.set_user_administrator(user.id, True)
+
+    r = requests.get(flask_server.base_url + 'api/v1/users/{}'.format(user.id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == {
+        'user_id': user.id,
+        'name': "Basic User",
+        'orcid': None,
+        'affiliation': None,
+        'email': user.email
+    }
+
 
 def test_get_current_user(flask_server, auth, user):
     r = requests.get(flask_server.base_url + 'api/v1/users/me', auth=auth)

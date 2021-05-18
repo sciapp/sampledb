@@ -107,6 +107,61 @@ def test_get_object_version(flask_server, auth, user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1/versions/1', auth=auth)
     assert r.status_code == 404
 
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_user=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "user": {
+            'user_id': user.id,
+            'name': user.name,
+            'orcid': None,
+            'affiliation': None
+        },
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "action": None,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
+
+    sampledb.logic.action_permissions.set_action_public(action_id=object.action_id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "action": {
+            'action_id': action.id,
+            'instrument_id': None,
+            'user_id': None,
+            'type': 'sample',
+            'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
+            'name': action.name,
+            'description': action.description,
+            'is_hidden': action.is_hidden,
+            'schema': action.schema
+        },
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
+
 
 def test_get_object(flask_server, auth, user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)

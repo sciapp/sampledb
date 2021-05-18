@@ -168,7 +168,9 @@ Reading an object version
     :>json number object_id: the object's ID
     :>json number version_id: the object version's ID
     :>json number action_id: the action's ID
+    :>json object action: the action (if the parameter embed_action is set to a non-empty value)
     :>json number user_id: the ID of the user who created this version
+    :>json object user: the user (if the parameter embed_user is set to a non-empty value)
     :>json string utc_datetime: the time and date when this version was created in UTC
     :>json object schema: the object's schema
     :>json object data: the object's data
@@ -1346,7 +1348,9 @@ Reading a list of all users
         [
             {
                 "user_id": 1,
-                "name": "Example User"
+                "name": "Example User",
+                "orcid": null,
+                "affiliation": null
             }
         ]
 
@@ -1378,11 +1382,16 @@ Reading a user
 
         {
             "user_id": 1,
-            "name": "Example User"
+            "name": "Example User",
+            "orcid": null,
+            "affiliation": null
         }
 
     :>json number user_id: the user's ID
     :>json string name: the user's name
+    :>json string orcid: the user's ORCid ID (optional)
+    :>json string affiliation: the user's affiliation (optional)
+    :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
     :statuscode 404: the user does not exist
 
@@ -1412,11 +1421,16 @@ Reading the current user
 
         {
             "user_id": 1,
-            "name": "Example User"
+            "name": "Example User",
+            "orcid": null,
+            "affiliation": null
         }
 
     :>json number user_id: the user's ID
     :>json string name: the user's name
+    :>json string orcid: the user's ORCid ID (optional)
+    :>json string affiliation: the user's affiliation (optional)
+    :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
 
 
