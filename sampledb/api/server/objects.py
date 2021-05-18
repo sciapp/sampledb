@@ -10,6 +10,7 @@ from flask_restful import Resource
 
 from ...api.server.authentication import multi_auth, object_permissions_required, Permissions
 from ...logic.actions import get_action, get_action_type
+from ...logic.action_permissions import get_user_action_permissions
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
@@ -42,11 +43,13 @@ class ObjectVersion(Resource):
         }
         embed_action = bool(flask.request.args.get('embed_action'))
         if embed_action:
+            object_version_json['action'] = None
             try:
-                action = actions.get_action(object.action_id)
-                object_version_json['action'] = action_to_json(action)
+                if Permissions.READ in get_user_action_permissions(action_id=object.action_id, user_id=flask.g.user.id):
+                    action = actions.get_action(object.action_id)
+                    object_version_json['action'] = action_to_json(action)
             except errors.ActionDoesNotExistError:
-                object_version_json['action'] = None
+                pass
         embed_user = bool(flask.request.args.get('embed_user'))
         if embed_user:
             try:

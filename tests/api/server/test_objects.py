@@ -131,6 +131,20 @@ def test_get_object_version(flask_server, auth, user, action):
         "object_id": object.object_id,
         "version_id": object.version_id,
         "action_id": object.action_id,
+        "action": None,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
+
+    sampledb.logic.action_permissions.set_action_public(action_id=object.action_id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
         "action": {
             'action_id': action.id,
             'instrument_id': None,
