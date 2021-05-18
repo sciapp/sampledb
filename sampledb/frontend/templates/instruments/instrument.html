@@ -86,17 +86,18 @@
           {% endif %}
           </div>
           <div class="text-right col-md-6">
-          <button type="button" class="btn btn-sm btn-primary" style="height:32px" id="button-switch-instrument-log-order">
+          <button type="button" class="btn btn-sm btn-primary button-switch-instrument-log-order" style="height:32px" id="button-switch-instrument-log-order-date">
             Sort by date
-            {% if instrument_log_order_ascending %}
-            <i class="fa fa-sort-asc"></i>
-            {% else %}
-            <i class="fa fa-sort-desc"></i>
-            {% endif %}
+            <i class="fa {% if instrument_log_order_ascending %}fa-sort-asc{% else %}fa-sort-desc{% endif %}" style="{% if instrument_log_order_attribute != "datetime" %}visibility: hidden{% endif %}"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-primary button-switch-instrument-log-order" style="height:32px" id="button-switch-instrument-log-order-user-name">
+            Sort by author
+            <i class="fa {% if instrument_log_order_ascending %}fa-sort-asc{% else %}fa-sort-desc{% endif %}" style="{% if instrument_log_order_attribute != "username" %}visibility: hidden{% endif %}"></i>
           </button>
           <form class="hidden" id="form-instrument-log-order">
             {{ instrument_log_order_form.hidden_tag() }}
             <input type="checkbox" name="{{ instrument_log_order_form.ascending.name }}" />
+            <input type="text" name="{{ instrument_log_order_form.attribute.name }}" />
           </form>
           <button type="button" class="btn btn-sm btn-primary" style="height:32px" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
             {% for category in instrument_log_categories %}
@@ -131,7 +132,7 @@
         {% for log_entry in instrument_log_entries %}
           <div>
           <input type="checkbox" id="instrument-log-show-versions-{{ log_entry.id }}" class="instrument-log-show-versions"/>
-          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.versions[0].utc_datetime.strftime("%Y-%m") }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }}" style="position: relative">
+          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.versions[0].utc_datetime.strftime("%Y-%m") }}" data-instrument-log-datetime="{{ log_entry.versions[0].utc_datetime.isoformat() }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }}" style="position: relative">
             <div class="instrument-log-categories">
               {% for category in log_entry.versions[-1].categories %}
                   <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
@@ -527,7 +528,6 @@
         }
       }
       $('#input-content-is-markdown').change(updateNewLogEntryMarkdown);
-      console.log($('#input-content-is-markdown'));
       updateNewLogEntryMarkdown();
 
       {% if instrument_log_entries %}
@@ -609,21 +609,45 @@
       upload_area.ondrop = dropHandler;
       upload_area.ondragover = dragOverHandler;
       {% endif %}
-      var log_order_button = $('#button-switch-instrument-log-order');
-      log_order_button.on('click', function () {
-        log_order_button.find('i').toggleClass('fa-sort-asc').toggleClass('fa-sort-desc');
-        var c = $('#instrument-log-container');
-        c.children().each(function (i, e) {
-          c.prepend(e);
-        });
-        var form = $('#form-instrument-log-order');
+
+      function applySortOrder(log_order_button, attribute) {
+        var log_order_button_indicator = log_order_button.find('i');
+        if (log_order_button_indicator.css('visibility') === 'hidden') {
+          $('.button-switch-instrument-log-order i').css('visibility', 'hidden');
+          log_order_button_indicator.css('visibility', 'visible');
+        } else {
+          log_order_button_indicator.toggleClass('fa-sort-asc').toggleClass('fa-sort-desc');
+        }
+
         var ascending = (log_order_button.find('i.fa-sort-asc').length !== 0);
+
+        var container = $('#instrument-log-container');
+        container.children().sort(function(a, b) {
+          a_datetime = $(a).find('.instrument-log-entry').data('instrumentLog' + attribute);
+          b_datetime = $(b).find('.instrument-log-entry').data('instrumentLog' + attribute);
+          if (ascending) {
+            return a_datetime > b_datetime;
+          } else {
+            return a_datetime < b_datetime;
+          }
+        }).appendTo(container);
+
+        var form = $('#form-instrument-log-order');
         form.find('input[type="checkbox"]').prop('checked', ascending);
+        form.find('input[type="text"]').val(attribute.toLowerCase());
         $.ajax({
           type: "POST",
           url: {{ url_for('.set_instrument_log_order') | tojson }},
           data: form.serialize()
         });
+      }
+      var log_order_button_date = $('#button-switch-instrument-log-order-date');
+      log_order_button_date.on('click', function () {
+        applySortOrder(log_order_button_date, "Datetime");
+      });
+      var log_order_button_user_name = $('#button-switch-instrument-log-order-user-name');
+      log_order_button_user_name.on('click', function () {
+        applySortOrder(log_order_button_user_name, "UserName");
       });
 
       {% set log_entry_text_missing = [] %}

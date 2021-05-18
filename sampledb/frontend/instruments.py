@@ -67,6 +67,11 @@ class InstrumentLogEntryForm(FlaskForm):
 
 class InstrumentLogOrderForm(FlaskForm):
     ascending = BooleanField()
+    attribute = StringField(validators=[DataRequired()])
+
+    def validate_attribute(form, field):
+        if field.data not in ('datetime', 'username'):
+            raise ValidationError("invalid log order attribute")
 
 
 @frontend.route('/instruments/')
@@ -263,9 +268,14 @@ def instrument(instrument_id):
         else:
             flask.flash('You cannot create a log entry for this instrument.', 'error')
             return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
-    instrument_log_order_ascending = get_user_settings(flask_login.current_user.id)["INSTRUMENT_LOG_ORDER_ASCENDING"]
-    if instrument_log_entries is not None and not instrument_log_order_ascending:
-        instrument_log_entries.reverse()
+    user_settings = get_user_settings(flask_login.current_user.id)
+    instrument_log_order_ascending = user_settings['INSTRUMENT_LOG_ORDER_ASCENDING']
+    instrument_log_order_attribute = user_settings['INSTRUMENT_LOG_ORDER_ATTRIBUTE']
+    if instrument_log_entries is not None:
+        if instrument_log_order_attribute == 'datetime' and not instrument_log_order_ascending:
+            instrument_log_entries.reverse()
+        elif instrument_log_order_attribute == 'username':
+            instrument_log_entries.sort(key=lambda entry: (entry.author.name, entry.author.id), reverse=not instrument_log_order_ascending)
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
@@ -279,6 +289,7 @@ def instrument(instrument_id):
         mobile_upload_url=mobile_upload_url,
         mobile_upload_qrcode=mobile_upload_qrcode,
         instrument_log_order_ascending=instrument_log_order_ascending,
+        instrument_log_order_attribute=instrument_log_order_attribute,
         ActionType=ActionType
     )
 
@@ -624,7 +635,9 @@ def set_instrument_log_order():
     if not form.validate_on_submit():
         return flask.abort(400)
     ascending = form.ascending.data
+    attribute = form.attribute.data
     set_user_settings(flask_login.current_user.id, {
-        'INSTRUMENT_LOG_ORDER_ASCENDING': ascending
+        'INSTRUMENT_LOG_ORDER_ASCENDING': ascending,
+        'INSTRUMENT_LOG_ORDER_ATTRIBUTE': attribute
     })
     return "", 200
