@@ -6,6 +6,7 @@ Version 0.19
 
 Currently in development
 
+- Allow filtering instrument log entries by author
 - Improved user interface
 
 Version 0.18
