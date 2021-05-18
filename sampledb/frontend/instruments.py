@@ -10,7 +10,7 @@ import itsdangerous
 import flask
 import flask_login
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField
+from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField, DateTimeField
 from wtforms.validators import Length, DataRequired, ValidationError
 
 from . import frontend
@@ -63,6 +63,8 @@ class InstrumentLogEntryForm(FlaskForm):
     log_entry_id = IntegerField()
     existing_files = MultipleIntegerField()
     existing_objects = MultipleIntegerField()
+    has_event_utc_datetime = BooleanField()
+    event_utc_datetime = DateTimeField()
 
 
 class InstrumentLogOrderForm(FlaskForm):
@@ -172,13 +174,18 @@ def instrument(instrument_id):
                 if instrument_log_entry_form.content_is_markdown.data:
                     log_entry_html = markdown_to_safe_html(instrument_log_entry_form.content.data)
                     mark_referenced_markdown_images_as_permanent(log_entry_html)
+                if instrument_log_entry_form.has_event_utc_datetime.data:
+                    event_utc_datetime = instrument_log_entry_form.event_utc_datetime.data
+                else:
+                    event_utc_datetime = None
                 update_instrument_log_entry(
                     log_entry_id=log_entry_id,
                     content=instrument_log_entry_form.content.data,
                     category_ids=[
                         int(category_id) for category_id in instrument_log_entry_form.categories.data
                     ],
-                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data
+                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data,
+                    event_utc_datetime=event_utc_datetime
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:
@@ -237,6 +244,10 @@ def instrument(instrument_id):
                 if instrument_log_entry_form.content_is_markdown.data:
                     log_entry_html = markdown_to_safe_html(instrument_log_entry_form.content.data)
                     mark_referenced_markdown_images_as_permanent(log_entry_html)
+                if instrument_log_entry_form.has_event_utc_datetime.data:
+                    event_utc_datetime = instrument_log_entry_form.event_utc_datetime.data
+                else:
+                    event_utc_datetime = None
                 log_entry = create_instrument_log_entry(
                     instrument_id=instrument_id,
                     user_id=flask_login.current_user.id,
@@ -244,7 +255,8 @@ def instrument(instrument_id):
                     category_ids=[
                         int(category_id) for category_id in instrument_log_entry_form.categories.data
                     ],
-                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data
+                    content_is_markdown=instrument_log_entry_form.content_is_markdown.data,
+                    event_utc_datetime=event_utc_datetime
                 )
                 for file_storage in instrument_log_entry_form.files.data:
                     if file_storage.filename:
@@ -272,10 +284,16 @@ def instrument(instrument_id):
     instrument_log_order_ascending = user_settings['INSTRUMENT_LOG_ORDER_ASCENDING']
     instrument_log_order_attribute = user_settings['INSTRUMENT_LOG_ORDER_ATTRIBUTE']
     if instrument_log_entries is not None:
-        if instrument_log_order_attribute == 'datetime' and not instrument_log_order_ascending:
-            instrument_log_entries.reverse()
+        if instrument_log_order_attribute == 'datetime':
+            instrument_log_entries.sort(
+                key=lambda entry: entry.versions[-1].event_utc_datetime or entry.versions[0].utc_datetime,
+                reverse=not instrument_log_order_ascending
+            )
         elif instrument_log_order_attribute == 'username':
-            instrument_log_entries.sort(key=lambda entry: (entry.author.name, entry.author.id), reverse=not instrument_log_order_ascending)
+            instrument_log_entries.sort(
+                key=lambda entry: (entry.author.name, entry.author.id),
+                reverse=not instrument_log_order_ascending
+            )
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,

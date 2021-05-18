@@ -132,12 +132,15 @@
         {% for log_entry in instrument_log_entries %}
           <div>
           <input type="checkbox" id="instrument-log-show-versions-{{ log_entry.id }}" class="instrument-log-show-versions"/>
-          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ log_entry.versions[0].utc_datetime.strftime("%Y-%m") }}" data-instrument-log-datetime="{{ log_entry.versions[0].utc_datetime.isoformat() }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }}" style="position: relative">
+          <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ (log_entry.versions[-1].event_utc_datetime or log_entry.versions[0].utc_datetime).strftime("%Y-%m") }}" data-instrument-log-datetime="{{ (log_entry.versions[-1].event_utc_datetime or log_entry.versions[0].utc_datetime).isoformat() }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }}" style="position: relative">
             <div class="instrument-log-categories">
               {% for category in log_entry.versions[-1].categories %}
                   <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
               {% endfor %}
             </div>
+            {% if log_entry.versions[-1].event_utc_datetime %}
+              <div class="text-right"><span data-toggle="tooltip" data-placement="bottom" title="This log entry refers to an event that occurred at this date and time."><i class="fa fa-calendar" aria-hidden="true" ></i> {{ log_entry.versions[-1].event_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</span></div>
+            {% endif %}
             {% if log_entry.versions[-1].content %}
               {% if log_entry.versions[-1].content_is_markdown %}
                 <div class="instrument-user-content" style="padding-left: 0; border: 0">{{ log_entry.versions[-1].content | markdown_to_safe_html(anchor_prefix='log-entry-' + (log_entry.id | string)) | safe  }}</div>
@@ -147,12 +150,15 @@
             {% else %}
               &mdash;
             {% endif %}
-            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {% if log_entry.versions | length > 1 %}{{ log_entry.versions[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }} &ndash; {{ log_entry.versions[-1].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}{{ log_entry.versions[-1].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}</div>
+            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=log_entry.author.id) }}">{{ log_entry.author.name }}</a>, {% if log_entry.versions | length > 1 %}<span data-toggle="tooltip" data-placement="bottom" title="This log entry was originally written at this date and time.">{{ log_entry.versions[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</span> &ndash; <span data-toggle="tooltip" data-placement="bottom" title="This log entry was last edited at this date and time.">{{ log_entry.versions[-1].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</span>{% else %}<span data-toggle="tooltip" data-placement="bottom" title="This log entry was written at this date and time.">{{ log_entry.versions[-1].utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</span>{% endif %}</div>
             {% if log_entry.versions[:-1] %}
               <div class="text-right"><label for="instrument-log-show-versions-{{ log_entry.id }}" class="instrument-log-show-versions">previous versions</label>{% if log_entry.user_id == current_user.id and not current_user.is_readonly %}&nbsp;/&nbsp;<span class="instrument-log-show-edit" data-toggle="modal" data-target="#logEntryContentModal_{{ log_entry.id }}">Edit log entry</span>{% endif %}</div>
               {% for version in log_entry.versions[:-1] | reverse %}
                 <div class="instrument-log-version">
                   <hr />
+                  {% if version.event_utc_datetime %}
+                  <div class="text-right"><i class="fa fa-calendar" aria-hidden="true"></i> {{ version.event_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                  {% endif %}
                   {% if version.content %}
                     {% if version.content_is_markdown %}
                       <div class="instrument-user-content" style="padding-left: 0; border: 0">{{ version.content | markdown_to_safe_html(anchor_prefix='log-entry-' + (log_entry.id | string)) | safe  }}</div>
@@ -235,6 +241,16 @@
                     <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-edit-content-is-markdown-{{ log_entry.id }}" name="{{ instrument_log_entry_form.content_is_markdown.name }}" {% if log_entry.versions[-1].content_is_markdown %}checked="checked"{% endif %}> Use Markdown</label>
                     <textarea class="form-control" id="textarea-log-entry-text-{{ log_entry.id }}" rows="3" placeholder="Instrument Log Entry" style="resize:vertical; min-height:171px; margin-bottom: 10px;" name="{{ instrument_log_entry_form.content.name }}">{{ log_entry.versions[-1].content or '' }}</textarea>
                   </div>
+                <div class="form-group">
+                  <label for="textarea-log-entry-event_utc_datetime-{{ log_entry.id }}">Set event datetime</label>
+                  <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-has-event-datetime-{{ log_entry.id }}" name="{{ instrument_log_entry_form.has_event_utc_datetime.name }}" {% if log_entry.versions[-1].event_utc_datetime %}checked="checked"{% endif %}> Has event datetime</label>
+                  <div class="input-group log_entry_date_picker">
+                    <input type="text" class="form-control" id="textarea-log-entry-event_utc_datetime-{{ log_entry.id }}" disabled="disabled" name="{{ instrument_log_entry_form.event_utc_datetime.name }}" value="{% if log_entry.versions[-1].event_utc_datetime %}{{ log_entry.versions[-1].event_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}">
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
+                </div>
                   <label for="input-file-upload-{{ log_entry.id }}">Add file attachments</label>
                  <div class="input-group" id="upload-area-{{ log_entry.id }}">
                     <span class="input-group-addon"><i class="fa fa-file"></i></span>
@@ -349,6 +365,16 @@
                   {% if log_entry_text_missing %}
                     <span class="help-block">Please enter a text or add an attachment.</span>
                   {% endif %}
+                </div>
+                <div class="form-group">
+                  <label for="textarea-log-entry-event_utc_datetime">Set event datetime</label>
+                  <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-has-event-datetime" name="{{ instrument_log_entry_form.has_event_utc_datetime.name }}"> Has event datetime</label>
+                  <div class="input-group log_entry_date_picker">
+                    <input type="text" class="form-control" id="textarea-log-entry-event_utc_datetime" disabled="disabled" name="{{ instrument_log_entry_form.event_utc_datetime.name }}" {% if instrument_log_entry_form.event_utc_datetime.data %}value="{{ instrument_log_entry_form.event_utc_datetime.data.strftime(instrument_log_entry_form.event_utc_datetime.format) }}"{% endif %}>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                  </div>
                 </div>
                 <label for="input-file-upload">Add file attachments</label>
                 <div class="input-group" id="upload-area">
@@ -656,9 +682,52 @@
           {{ log_entry_text_missing.append(True) or '' }}
         {% endif %}
       {% endfor %}
+
+      $('.log_entry_date_picker').each(function() {
+        var datetimepicker = $(this);
+        var textbox = datetimepicker.find('input[type="text"]');
+        var checkbox = datetimepicker.parent().find('input[type="checkbox"]');
+        if (textbox.val()) {
+          checkbox.prop('checked', true);
+          textbox.prop('disabled', false);
+        }
+        datetimepicker.datetimepicker({
+          format: 'YYYY-MM-DD HH:mm:ss',
+          showClear: true,
+          showClose: true,
+          showTodayButton: true
+        });
+        checkbox.on('change', function() {
+          var checked = checkbox.prop('checked');
+          textbox.prop('disabled', !checked);
+          if (checked) {
+            datetimepicker.data("DateTimePicker").show();
+          } else {
+            datetimepicker.data("DateTimePicker").hide();
+            textbox.val('');
+          }
+        });
+        datetimepicker.on('dp.change', function() {
+          if (textbox.val() === "") {
+            checkbox.prop('checked', false);
+            textbox.prop('disabled', true);
+            datetimepicker.data("DateTimePicker").hide();
+          }
+        });
+        textbox.on('change', function() {
+          if (textbox.val() === "") {
+            checkbox.prop('checked', false);
+            textbox.prop('disabled', true);
+            datetimepicker.data("DateTimePicker").hide();
+          }
+        });
+      });
+
       {% if log_entry_text_missing %}
       $('#newLogEntryModal').modal({'show': true});
       {% endif %}
+
+      $('[data-toggle="tooltip"]').tooltip();
     });
   </script>
 {% endblock %}
