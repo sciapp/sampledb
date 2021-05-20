@@ -8,6 +8,7 @@ Currently in development
 
 - Allow filtering instrument log entries by author
 - Allow sorting instrument log entries by author
+- Added event datetime for instrument log entries
 - Improved user interface
 
 Version 0.18

@@ -72,7 +72,7 @@ class InstrumentLogEntry(
 class InstrumentLogEntryVersion(
     collections.namedtuple(
         'InstrumentLogEntryVersion',
-        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories', 'content_is_markdown']
+        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories', 'content_is_markdown', 'event_utc_datetime']
     )
 ):
     """
@@ -86,10 +86,11 @@ class InstrumentLogEntryVersion(
             content: str,
             utc_datetime: datetime.datetime,
             categories: typing.List['InstrumentLogCategory'],
-            content_is_markdown: bool = False
+            content_is_markdown: bool = False,
+            event_utc_datetime: typing.Optional[datetime.datetime] = None
     ):
         self = super(InstrumentLogEntryVersion, cls).__new__(
-            cls, log_entry_id, version_id, content, utc_datetime, categories, content_is_markdown
+            cls, log_entry_id, version_id, content, utc_datetime, categories, content_is_markdown, event_utc_datetime
         )
         return self
 
@@ -104,7 +105,8 @@ class InstrumentLogEntryVersion(
                 InstrumentLogCategory.from_database(category)
                 for category in sorted(instrument_log_entry_version.categories, key=lambda category: category.theme.value)
             ],
-            content_is_markdown=instrument_log_entry_version.content_is_markdown
+            content_is_markdown=instrument_log_entry_version.content_is_markdown,
+            event_utc_datetime=instrument_log_entry_version.event_utc_datetime
         )
 
 
@@ -297,7 +299,8 @@ def create_instrument_log_entry(
         user_id: int,
         content: str,
         category_ids: typing.Sequence[int] = (),
-        content_is_markdown: bool = False
+        content_is_markdown: bool = False,
+        event_utc_datetime: typing.Optional[datetime.datetime] = None
 ) -> InstrumentLogEntry:
     """
     Create a new instrument log entry and adds it to the user log.
@@ -307,6 +310,7 @@ def create_instrument_log_entry(
     :param content: the text content for the new log entry
     :param category_ids: the instrument-specific log category IDs
     :param content_is_markdown: whether or not the content is Markdown
+    :param event_utc_datetime: the datetime when the logged event occurred
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -338,7 +342,8 @@ def create_instrument_log_entry(
         log_entry_id=instrument_log_entry.id,
         version_id=1,
         content=content,
-        content_is_markdown=content_is_markdown
+        content_is_markdown=content_is_markdown,
+        event_utc_datetime=event_utc_datetime
     )
     instrument_log_entry_version.categories = list(categories)
     db.session.add(instrument_log_entry_version)
@@ -361,7 +366,8 @@ def update_instrument_log_entry(
         log_entry_id: int,
         content: str,
         category_ids: typing.Sequence[int] = (),
-        content_is_markdown: bool = False
+        content_is_markdown: bool = False,
+        event_utc_datetime: typing.Optional[datetime.datetime] = None
 ) -> InstrumentLogEntry:
     """
     Update an existing instrument log entry.
@@ -370,6 +376,7 @@ def update_instrument_log_entry(
     :param content: the text content for the new log entry
     :param category_ids: the instrument-specific log category IDs
     :param content_is_markdown: whether or not the content is Markdown
+    :param event_utc_datetime: the datetime when the logged event occurred
     :raise errors.InstrumentLogEntryDoesNotExistError: when no instrument log
         entry with the given ID exists
     :raise errors.InstrumentLogCategoryDoesNotExistError: when no log category
@@ -400,7 +407,8 @@ def update_instrument_log_entry(
         log_entry_id=instrument_log_entry.id,
         version_id=next_version_id,
         content=content,
-        content_is_markdown=content_is_markdown
+        content_is_markdown=content_is_markdown,
+        event_utc_datetime=event_utc_datetime
     )
     db.session.add(instrument_log_entry_version)
     instrument_log_entry_version.categories = list(categories)
