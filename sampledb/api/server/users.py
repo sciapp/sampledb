@@ -17,7 +17,8 @@ def user_to_json(user: users.User):
         'user_id': user.id,
         'name': user.name,
         'orcid': user.orcid if user.orcid else None,
-        'affiliation': user.affiliation if user.affiliation else None
+        'affiliation': user.affiliation if user.affiliation else None,
+        'role': user.role if user.role else None
     }
     if flask.g.user.is_admin:
         user_json['email'] = user.email

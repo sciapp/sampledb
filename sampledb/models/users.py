@@ -27,6 +27,7 @@ class User(db.Model, flask_login.UserMixin):
     orcid = db.Column(db.String, nullable=True)
     affiliation = db.Column(db.String, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    role = db.Column(db.String, nullable=True)
 
     def __init__(self, name, email, type):
         self.name = name

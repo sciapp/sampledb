@@ -49,6 +49,15 @@
           {% endif %}
         </div>
     </div>
+    <div class="form-group {% if change_user_form.role.errors %} has-error{% endif %}">
+        <label for="input-role" class="col-sm-4 control-label">{{ _('Role') }}</label>
+        <div class="col-sm-8">
+          <input class="form-control" type="text" id="input-role" name="{{change_user_form.role.name}}" value="{{ change_user_form.role.data or ""}}" placeholder="{{ _('Role') }}">
+          {% if change_user_form.role.errors %}
+            <span class="help-block">{{ _('Please enter your role or leave this field blank.') }}</span>
+          {% endif %}
+        </div>
+    </div>
     <div class="form-group">
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">{{ _('Save') }}</button>
     </div>

@@ -127,6 +127,8 @@ def change_preferences(user, user_id):
             change_user_form.orcid.data = user.orcid
         if change_user_form.affiliation.data is None or change_user_form.affiliation.data == "":
             change_user_form.affiliation.data = user.affiliation
+        if change_user_form.role.data is None or change_user_form.role.data == "":
+            change_user_form.role.data = user.role
 
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
         if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
@@ -190,7 +192,7 @@ def change_preferences(user, user_id):
                     salt='edit_profile'
                 )
                 flask.flash(_("Please see your email to confirm this change."), 'success')
-            if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation:
+            if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation or change_user_form.role.data != user.role:
                 if change_user_form.orcid.data and change_user_form.orcid.data.strip():
                     orcid = change_user_form.orcid.data.strip()
                 else:
@@ -199,20 +201,37 @@ def change_preferences(user, user_id):
                     affiliation = change_user_form.affiliation.data.strip()
                 else:
                     affiliation = None
+                if change_user_form.role.data and change_user_form.role.data.strip():
+                    role = change_user_form.role.data.strip()
+                else:
+                    role = None
                 change_orcid = (user.orcid != orcid and (orcid is not None or user.orcid is not None))
                 change_affiliation = (user.affiliation != affiliation and (affiliation is not None or user.affiliation is not None))
-                if change_orcid or change_affiliation:
+                change_role = (user.role != role and (role is not None or user.role is not None))
+                if change_orcid or change_affiliation or change_role:
                     user.orcid = orcid
                     user.affiliation = affiliation
+                    user.role = role
                     db.session.add(user)
                     db.session.commit()
                     user_log.edit_user_preferences(user_id=user_id)
-                    if change_orcid and not change_affiliation:
-                        flask.flash(_("Successfully updated your ORCID iD."), 'success')
-                    elif not change_orcid and change_affiliation:
-                        flask.flash(_("Successfully updated your affiliation."), 'success')
+                    if change_role:
+                        if not change_orcid and not change_affiliation:
+                            flask.flash(_("Successfully updated your role."), 'success')
+                        elif change_orcid and not change_affiliation:
+                            flask.flash(_("Successfully updated your ORCID iD and role."), 'success')
+                        elif not change_orcid and change_affiliation:
+                            flask.flash(_("Successfully updated your affiliation and role."), 'success')
+                        else:
+                            flask.flash(_("Successfully updated your ORCID iD, affiliation and role."), 'success')
                     else:
-                        flask.flash(_("Successfully updated your ORCID iD and affiliation."), 'success')
+                        if change_orcid and not change_affiliation:
+                            flask.flash(_("Successfully updated your ORCID iD."), 'success')
+                        elif not change_orcid and change_affiliation:
+                            flask.flash(_("Successfully updated your affiliation."), 'success')
+                        else:
+                            flask.flash(_("Successfully updated your ORCID iD and affiliation."), 'success')
+
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
         authentication_method_id = authentication_method_form.id.data
