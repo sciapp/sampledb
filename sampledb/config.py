@@ -417,6 +417,7 @@ LOAD_OBJECTS_IN_BACKGROUND = False
 ENFORCE_SPLIT_NAMES = False
 
 BUILD_TRANSLATIONS = True
+PYBABEL_PATH = 'pybabel'
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

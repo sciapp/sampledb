@@ -116,7 +116,7 @@ def setup_jinja_environment(app):
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
 
 
-def build_translations():
+def build_translations(pybabel_path):
     translations_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), 'translations'))
     # merge extracted and manual message catalogs
     for translation_directory in os.listdir(translations_directory):
@@ -134,7 +134,7 @@ def build_translations():
                 merged_message_catalog.write(extracted_message_catalog)
                 merged_message_catalog.write(manual_message_catalog)
     # compile messages
-    subprocess.run(["pybabel", "compile", "-d", translations_directory], check=True)
+    subprocess.run([pybabel_path, "compile", "-d", translations_directory], check=True)
 
 
 def create_app():
@@ -162,6 +162,6 @@ def create_app():
     setup_admin_account_from_config(app)
     setup_jinja_environment(app)
     if app.config['BUILD_TRANSLATIONS']:
-        build_translations()
+        build_translations(app.config['PYBABEL_PATH'])
 
     return app
