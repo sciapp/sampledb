@@ -17,5 +17,5 @@ def main(arguments):
     if arguments:
         print(__doc__)
         exit(1)
-    sampledb.build_translations()
+    sampledb.build_translations(sampledb.config.PYBABEL_PATH)
     print("Success: the translations have been built")
