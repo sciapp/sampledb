@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sign In — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Sign In') }} — {{ service_name }}{% endblock %}
 
 {# hide user area in navbar #}
 {% block navbar_userarea %}
@@ -10,28 +10,28 @@
 {% endblock %}
 
 {% block content %}
-  <h1 class="text-center">Sign in to {{ service_name }}</h1>
+  <h1 class="text-center">{{ _('Sign in to %(service_name)s', service_name=service_name) }}</h1>
   {% if is_for_refresh %}
-  <div class="help-block text-center">To ensure the security of your account information, please sign in again.</div>
+  <div class="help-block text-center">{{ _('To ensure the security of your account information, please sign in again.') }}</div>
   {% else %}
   <div class="help-block text-center">
     {% if is_ldap_configured %}
-    If you have an LDAP account, you can use your LDAP username to sign in. Otherwise, if you do not have a {{ service_name }} account yet, please ask another user for an invitation.
+    {{ _('If you have an LDAP account, you can use your LDAP username to sign in. Otherwise, if you do not have a %(service_name)s account yet, please ask another user for an invitation.', service_name=service_name) }}
     {% else %}
-    If you do not have a {{ service_name }} account yet, please ask another user for an invitation.
+    {{ _('If you do not have a %(service_name)s account yet, please ask another user for an invitation.', service_name=service_name) }}
     {% endif %}
   </div>
   {% endif %}
   <form class="form-horizontal" method="post" id="form-signin">
     {{ form.csrf_token() }}
     <div class="form-group{% if has_errors %} has-error{% endif %}">
-      <label for="input-username" class="col-sm-4 control-label">Username / Email</label>
+      <label for="input-username" class="col-sm-4 control-label">{{ _('Username / Email') }}</label>
       <div class="col-sm-8">
         <input type="text" class="form-control" id="input-username" name="username" placeholder="Username / Email">
       </div>
     </div>
     <div class="form-group{% if has_errors %} has-error{% endif %}">
-      <label for="input-password" class="col-sm-4 control-label">Password</label>
+      <label for="input-password" class="col-sm-4 control-label">{{ _('Password') }}</label>
       <div class="col-sm-8">
         <input type="password" class="form-control" id="input-password" name="password" placeholder="Password">
       </div>
@@ -41,20 +41,20 @@
       <div class="col-sm-offset-4 col-sm-4">
         <div class="checkbox">
           <label>
-            <input type="checkbox" id="input-rememberme" name="remember_me"> Remember me
+            <input type="checkbox" id="input-rememberme" name="remember_me"> {{ _('Remember me')}}
           </label>
         </div>
       </div>
       <div class="col-sm-4">
         <div id="link-request-password-reset">
-          <a href="{{ url_for('frontend.user_me_preferences')}}" {% if not has_errors %}style="color:#cccccc;"{% endif %}>Forgot your password? </a>
+          <a href="{{ url_for('frontend.user_me_preferences')}}" {% if not has_errors %}style="color:#cccccc;"{% endif %}>{{ _('Forgot your password?')}} </a>
         </div>
       </div>
     </div>
     {% endif %}
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-8">
-        <button type="submit" class="btn btn-primary">Sign in</button>
+        <button type="submit" class="btn btn-primary">{{ _('Sign in') }}</button>
       </div>
     </div>
   </form>

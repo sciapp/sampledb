@@ -1,12 +1,10 @@
 function sdbtoggle(id) {
-    plot_div = '#plotly_plot_div_'+id;
-    toggle_link = '#plotly_info_link_'+id;
-    $( plot_div ).toggle();
-    content = $( toggle_link ).html();
-    if ($( plot_div ).is(":hidden")) {
-        $( toggle_link ).html(content.replace("hide", "show"));
-    }
-    else {
-        $( toggle_link ).html(content.replace("show", "hide"));
+    var plot_div = $('#plotly_plot_div_'  +id);
+    var toggle_link = $('#plotly_info_link_' + id);
+    plot_div.toggle();
+    if (plot_div.is(":hidden")) {
+        toggle_link.text(toggle_link.data('showText'));
+    } else {
+        toggle_link.text(toggle_link.data('hideText'));
     }
 }

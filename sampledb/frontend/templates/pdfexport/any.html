@@ -25,5 +25,5 @@
 {% elif schema.type == 'plotly_chart' %}
     {% include "pdfexport/plotly_chart.html" %}
 {% else %}
-  Unable to support data of type: {{ schema.type }}
+  {{ _('Unable to export data of type:') }} {{ schema.type }}
 {% endif %}

@@ -1,5 +1,5 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right">{{ schema.title }} <a href="{{ url_for('.objects', q='#' + data.tags | join(' and #'), advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }} <a href="{{ url_for('.objects', q='#' + data.tags | join(' and #'), advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
   <div class="col-md-9">
     {% for tag in data.tags %}
     <a href="{{ url_for('.objects', q='#'+tag, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>

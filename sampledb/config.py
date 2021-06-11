@@ -356,7 +356,10 @@ CONTACT_EMAIL = None
 
 # branding and legal info
 SERVICE_NAME = 'SampleDB'
-SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
+SERVICE_DESCRIPTION = {
+    'en': SERVICE_NAME + ' is a database for sample and measurement metadata developed at PGI and JCNS.',
+    'de': SERVICE_NAME + ' ist eine Datenbank für Proben- und Messungsmetadaten entwickelt am PGI und JCNS.'
+}
 SERVICE_IMPRINT = None
 SERVICE_PRIVACY_POLICY = None
 SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
@@ -412,6 +415,8 @@ DISABLE_SUBPROJECTS = False
 LOAD_OBJECTS_IN_BACKGROUND = False
 
 ENFORCE_SPLIT_NAMES = False
+
+BUILD_TRANSLATIONS = True
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

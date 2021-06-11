@@ -38,7 +38,16 @@ def test_get_file_list(flask_server, user, tmpdir):
             }
         }, 'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
         user_id=user.id,
@@ -77,7 +86,10 @@ def test_get_file(flask_server, user, tmpdir):
             }
         }, 'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
         user_id=user.id,
@@ -106,7 +118,16 @@ def test_upload_files(flask_server, user, tmpdir):
             }
         }, 'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
         user_id=user.id,
@@ -163,7 +184,16 @@ def test_update_file_information(flask_server, user, tmpdir):
             }
         }, 'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
         user_id=user.id,
@@ -203,7 +233,10 @@ def test_download_zip_archive(flask_server, user, tmpdir):
             }
         }, 'required': ['name']
     }
-    action = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'Example Action', '', schema)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
     object = sampledb.logic.objects.create_object(
         data={'name': {'_type': 'text', 'text': 'Example Object'}},
         user_id=user.id,

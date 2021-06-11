@@ -1,8 +1,8 @@
 {% set location = locations_map[location_id] %}
 {% set locations_tree = locations_tree[location_id] %}
 <li>
-<a href="{{ url_for('.location', location_id=location.id) }}">{{ location.name }}</a>
-<pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description }}</pre>
+<a href="{{ url_for('.location', location_id=location.id) }}">{{ location.name | get_translated_text }}</a>
+<pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description | get_translated_text }}</pre>
 {% if locations_tree %}
   <ul>
   {% set location_ids_sorted_by_name = sort_location_ids_by_name(locations_tree.keys(), locations_map) %}

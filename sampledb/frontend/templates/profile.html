@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}User #{{ user.id }}: {{ user.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('User') }} #{{ user.id }}: {{ user.name }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-<h1>User Profile</h1>
+<h1>{{ _('User Profile') }}</h1>
 <dl class="dl-horizontal">
-  <dt>User ID</dt>
+  <dt>{{ _('ID') }}</dt>
   <dd>#{{ user.id }}</dd>
-  <dt>Name</dt>
+  <dt>{{ _('Name') }}</dt>
   <dd>{{ user.name }}
-    {% if user.type.name.lower() == 'other' %}<span class="label label-default" data-toggle="tooltip" data-placement="top" title="Bot users are meant for the automation of object creation and other tasks.">bot</span>{% endif %}
-    {% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Accounts marked as read only are unable to create or change entries in {{ service_name }}.">read only</span>{% endif %}
-    {% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Accounts marked as hidden will not be shown in user lists.">hidden</span>{% endif %}
-    {% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Deactivated accounts cannot be used until they are activated again.">deactivated</span>{% endif %}
+    {% if user.type.name.lower() == 'other' %}<span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Bot users are meant for the automation of object creation and other tasks.') }}">{{ _('bot') }}</span>{% endif %}
+    {% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as read only are unable to create or change entries in %(service_name)s.', service_name=service_name) }}">{{ _('read only') }}</span>{% endif %}
+    {% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as hidden will not be shown in user lists.') }}">{{ _('hidden') }}</span>{% endif %}
+    {% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Deactivated accounts cannot be used until they are activated again.') }}">{{ _('deactivated') }}</span>{% endif %}
   </dd>
   <dt>ORCID iD</dt>
   <dd>
@@ -22,7 +22,7 @@
       &mdash;
     {% endif %}
   </dd>
-  <dt>Affiliation</dt>
+  <dt>{{ _('Affiliation') }}</dt>
   <dd>
     {% if user.affiliation %}
       {{ user.affiliation }}
@@ -30,21 +30,19 @@
       &mdash;
     {% endif %}
   </dd>
-  <dt>Objects</dt>
-  <dd><a href="{{ url_for('.objects', user=user.id) }}">View</a></dd>
 </dl>
   <div class="btn-group">
-    <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">View Objects</a>
+    <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>
     <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <span class="caret"></span>
-      <span class="sr-only">Toggle Dropdown</span>
+      <span class="sr-only">{{ _('Toggle Dropdown') }}</span>
     </button>
     <ul class="dropdown-menu">
-      <li><a href="{{ url_for('.objects', user=user.id) }}">… with activity by this user</a></li>
+      <li><a href="{{ url_for('.objects', user=user.id) }}">{{ _('… with activity by this user') }}</a></li>
       <li role="separator" class="divider"></li>
-      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='READ') }}">… with <b>READ</b> permissions</a></li>
-      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='WRITE') }}">… with <b>WRITE</b> permissions</a></li>
-      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='GRANT') }}">… with <b>GRANT</b> permissions</a></li>
+      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='READ') }}">{{ _('… with <b>READ</b> permissions') }}</a></li>
+      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='WRITE') }}">{{ _('… with <b>WRITE</b> permissions') }}</a></li>
+      <li><a href="{{ url_for('.objects', user=user.id, user_permissions='GRANT') }}">{{ _('… with <b>GRANT</b> permissions') }}</a></li>
     </ul>
   </div>
   {% if user_read_only_form %}
@@ -53,7 +51,7 @@
     <input type="hidden" value="toggle_read_only" name="{{ user_read_only_form.action.name }}" />
     <input type="checkbox" {% if user_read_only_form.should_be_read_only.default %}checked="checked"{% endif %} name="{{ user_read_only_form.should_be_read_only.name }}" style="display: none"/>
     <button type="submit" class="btn btn-default" style="width: 12em">
-      {% if user_read_only_form.should_be_read_only.default %}Mark{% else %}Unmark{% endif %} as read only
+      {% if user_read_only_form.should_be_read_only.default %}{{ _('Mark as read only')}}{% else %}{{ _('Unmark as read only')}}{% endif %}
     </button>
   </form>
   {% endif %}
@@ -63,7 +61,7 @@
     <input type="hidden" value="toggle_hidden" name="{{ user_hidden_form.action.name }}" />
     <input type="checkbox" {% if user_hidden_form.should_be_hidden.default %}checked="checked"{% endif %} name="{{ user_hidden_form.should_be_hidden.name }}" style="display: none"/>
     <button type="submit" class="btn btn-default" style="width: 12em">
-      {% if user_hidden_form.should_be_hidden.default %}Mark{% else %}Unmark{% endif %} as hidden
+      {% if user_hidden_form.should_be_hidden.default %}{{ _('Mark as hidden')}}{% else %}{{ _('Unmark as hidden')}}{% endif %}
     </button>
   </form>
   {% endif %}
@@ -73,7 +71,7 @@
     <input type="hidden" value="toggle_active" name="{{ user_active_form.action.name }}" />
     <input type="checkbox" {% if user_active_form.should_be_active.default %}checked="checked"{% endif %} name="{{ user_active_form.should_be_active.name }}" style="display: none"/>
     <button type="submit" class="btn btn-default" style="width: 12em">
-      {% if user_active_form.should_be_active.default %}Activate{% else %}Deactivate{% endif %} account
+      {% if user_active_form.should_be_active.default %}{{ _('Activate') }}{% else %}{{ _('Deactivate') }}{% endif %}
     </button>
   </form>
   {% endif %}

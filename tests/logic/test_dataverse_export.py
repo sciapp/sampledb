@@ -26,7 +26,6 @@ def user(flask_server):
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -63,7 +62,6 @@ def action():
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
     )
     return action

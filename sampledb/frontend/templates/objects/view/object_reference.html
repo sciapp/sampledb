@@ -1,10 +1,10 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title }}</label>
+  <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}</label>
   <div class="col-md-9">
   {% if data is not none and "object_id" in data %}
     {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
       {% if not (obj is none) %}
-        <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] }} (#{{ obj.object_id }})</a>
+        <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] | get_translated_text(metadata_language) }} (#{{ obj.object_id }})</a>
       {% else %}
         <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
       {% endif %}

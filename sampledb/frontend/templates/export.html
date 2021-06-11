@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Export Data — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Export Data') }} — {{ service_name }}{% endblock %}
 
 
 {% block stylesheets %}
@@ -14,13 +14,15 @@
 {% endblock %}
 
 {% block content %}
-  <h1 class="text-center">Export Data</h1>
+  <h1 class="text-center">{{ _('Export Data') }}</h1>
   <div class="container" style="max-width:600px">
-  <p class="text-center help-block">{{ service_name }} can export the data for all objects you have <strong>READ</strong> permissions for, either as a PDF document or as an archive containing a machine-readable JSON file with all relevant information and the files uploaded for these objects.</p>
+  <p class="text-center help-block">{{ _('%(service_name)s can export the data for all objects you have
+      <strong>READ</strong> permissions for, either as a PDF document or as an archive containing a machine-readable JSON
+      file with all relevant information and the files uploaded for these objects.', service_name=service_name) }}</p>
   <form class="form-horizontal" method="post" id="form-export">
     {{ create_export_form.csrf_token() }}
     <div class="form-group{% if create_export_form.file_extension.errors %} has-error{% endif %}">
-      <label for="select-format" class="col-sm-3 control-label">Export Format</label>
+      <label for="select-format" class="col-sm-3 control-label">{{ _('Export Format')}}</label>
       <div class="col-sm-9">
         <select id="select-format" name="{{ create_export_form.file_extension.name }}" class="selectpicker" data-width="100%">
           {% for choice in create_export_form.file_extension.choices %}
@@ -30,7 +32,7 @@
       </div>
     </div>
     <div class="text-center">
-      <button type="submit" class="btn btn-primary">Export Data</button>
+      <button type="submit" class="btn btn-primary">{{ _('Export Data')}}</button>
     </div>
   </form>
   </div>

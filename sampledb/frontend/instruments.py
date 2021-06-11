@@ -3,19 +3,26 @@
 
 """
 
+import datetime
 import json
 import os
 
 import itsdangerous
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField, DateTimeField
-from wtforms.validators import Length, DataRequired, ValidationError
+import pytz
+from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField
+from wtforms.validators import DataRequired, ValidationError
 
 from . import frontend
-from ..logic.instruments import get_instruments, get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
+from ..logic.action_translations import get_action_translation_for_action_in_language
+from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language
+from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
+from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language, get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation, get_instruments_with_translation_in_language
+from ..logic.languages import get_languages, get_language, Language, get_user_language
 from ..logic.actions import ActionType
 from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
@@ -26,9 +33,9 @@ from ..logic.object_permissions import Permissions, get_object_info_with_permiss
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, generate_qrcode
+from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
-
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -64,7 +71,22 @@ class InstrumentLogEntryForm(FlaskForm):
     existing_files = MultipleIntegerField()
     existing_objects = MultipleIntegerField()
     has_event_utc_datetime = BooleanField()
-    event_utc_datetime = DateTimeField()
+    event_utc_datetime = StringField()
+
+    def validate_event_utc_datetime(form, field):
+        if field.data:
+            try:
+                settings = get_user_settings(flask_login.current_user.id)
+                language = get_user_language(flask_login.current_user)
+                parsed_datetime = datetime.datetime.strptime(field.data, language.datetime_format_datetime)
+                # convert datetime to utc
+                local_datetime = pytz.timezone(settings['TIMEZONE']).localize(parsed_datetime)
+                utc_datetime = local_datetime.astimezone(pytz.utc)
+                field.data = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            except Exception:
+                raise ValidationError("Invalid datetime")
+        else:
+            field.data = None
 
 
 class InstrumentLogOrderForm(FlaskForm):
@@ -79,17 +101,19 @@ class InstrumentLogOrderForm(FlaskForm):
 @frontend.route('/instruments/')
 @flask_login.login_required
 def instruments():
-    all_instruments = get_instruments()
+    user_language_id = get_user_language(flask_login.current_user).id
+    all_instruments = get_instruments_with_translation_in_language(user_language_id)
     instruments = []
     for instrument in all_instruments:
         if instrument.is_hidden and not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
             continue
         instruments.append(instrument)
     user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
+
     # Sort by: favorite / not favorite, instrument name
     instruments.sort(key=lambda instrument: (
         0 if instrument.id in user_favorite_instrument_ids else 1,
-        instrument.name.lower()
+        instrument.translation.name.lower()
     ))
     toggle_favorite_instrument_form = ToggleFavoriteInstrumentForm()
     return flask.render_template(
@@ -107,10 +131,17 @@ def instrument(instrument_id):
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
         return flask.abort(404)
+    user_language = get_user_language(flask_login.current_user)
+    user_language_id = user_language.id
+
+    instrument_translations = get_instrument_translations_for_instrument(instrument_id=instrument.id)
+    single_instrument_translation = get_instrument_translation_for_instrument_in_language(instrument_id, user_language_id, use_fallback=True)
+
     is_instrument_responsible_user = any(
         responsible_user.id == flask_login.current_user.id
         for responsible_user in instrument.responsible_users
     )
+
     if is_instrument_responsible_user or instrument.users_can_view_log_entries:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
         attached_object_ids = set()
@@ -123,7 +154,7 @@ def instrument(instrument_id):
             object_ids=list(attached_object_ids)
         )
         attached_object_names = {
-            object_info.object_id: object_info.name_text
+            object_info.object_id: get_translated_text(object_info.name_json)
             for object_info in attached_object_infos
         }
         instrument_log_user_ids = {
@@ -152,7 +183,7 @@ def instrument(instrument_id):
         instrument_log_entry_form.objects.choices = []
     else:
         instrument_log_entry_form.objects.choices = [
-            (str(object_info.object_id), "{} (#{})".format(object_info.name_text, object_info.object_id))
+            (str(object_info.object_id), "{} (#{})".format(get_translated_text(object_info.name_json), object_info.object_id))
             for object_info in get_object_info_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
         ]
     instrument_log_categories = get_instrument_log_categories(instrument_id)
@@ -160,6 +191,8 @@ def instrument(instrument_id):
         (str(category.id), category.title)
         for category in instrument_log_categories
     ]
+    instrument_log_entry_form.event_utc_datetime.format = user_language.datetime_format_datetime
+    instrument_log_entry_form.event_utc_datetime.format_moment = user_language.datetime_format_moment
     if instrument_log_entry_form.validate_on_submit():
         check_current_user_is_not_readonly()
         if 'action_edit_content' in flask.request.form:
@@ -224,7 +257,7 @@ def instrument(instrument_id):
                                 hide_instrument_log_object_attachment(object_attachment_id)
                         except InstrumentLogObjectAttachmentDoesNotExistError:
                             continue
-                flask.flash('You have successfully updated the instrument log entry.', 'success')
+                flask.flash(_('You have successfully updated the instrument log entry.'), 'success')
                 return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
             else:
                 return flask.abort(400)
@@ -268,18 +301,20 @@ def instrument(instrument_id):
                         create_instrument_log_object_attachment(log_entry.id, int(object_id))
                     except ObjectDoesNotExistError:
                         continue
-                flask.flash('You have created a new instrument log entry.', 'success')
+                flask.flash(_('You have created a new instrument log entry.'), 'success')
                 return flask.redirect(flask.url_for(
                     '.instrument',
                     instrument_id=instrument_id,
                     _anchor=f'log_entry-{log_entry.id}'
                 ))
             else:
-                flask.flash('Please enter a log entry text, upload a file or select an object to create a log entry.', 'error')
+                flask.flash(_('Please enter a log entry text, upload a file or select an object to create a log entry.'), 'error')
                 return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
         else:
-            flask.flash('You cannot create a log entry for this instrument.', 'error')
+            flask.flash(_('You cannot create a log entry for this instrument.'), 'error')
             return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    elif instrument_log_entry_form.event_utc_datetime.errors:
+        flask.flash(_("Please enter a valid event datetime."), 'error')
     user_settings = get_user_settings(flask_login.current_user.id)
     instrument_log_order_ascending = user_settings['INSTRUMENT_LOG_ORDER_ASCENDING']
     instrument_log_order_attribute = user_settings['INSTRUMENT_LOG_ORDER_ATTRIBUTE']
@@ -294,9 +329,19 @@ def instrument(instrument_id):
                 key=lambda entry: (entry.author.name, entry.author.id),
                 reverse=not instrument_log_order_ascending
             )
+
+    action_translations = {
+        action.id: get_action_translation_for_action_in_language(
+            action_id=action.id,
+            language_id=user_language_id,
+            use_fallback=True
+        )
+        for action in instrument.actions
+    }
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
+        instrument_translations=instrument_translations,
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
         instrument_log_categories=instrument_log_categories,
@@ -308,24 +353,24 @@ def instrument(instrument_id):
         mobile_upload_qrcode=mobile_upload_qrcode,
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
+        action_translations=action_translations,
+        single_instrument_translation=single_instrument_translation,
+        get_action_type_translation_for_action_type_in_language=get_action_type_translation_for_action_type_in_language,
         ActionType=ActionType
     )
 
 
 class InstrumentForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
     instrument_responsible_users = SelectMultipleField()
-    is_markdown = BooleanField(default=None)
-    notes = StringField()
-    notes_are_markdown = BooleanField(default=None)
+    is_markdown = BooleanField(default=False)
+    short_description_is_markdown = BooleanField(default=False)
+    notes_is_markdown = BooleanField(default=False)
+    translations = StringField(validators=[DataRequired()])
+    categories = StringField(validators=[DataRequired()])
     users_can_create_log_entries = BooleanField(default=False)
     users_can_view_log_entries = BooleanField(default=False)
-    categories = StringField(validators=[DataRequired()])
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
-    short_description = StringField()
-    short_description_is_markdown = BooleanField(default=None)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -334,43 +379,105 @@ def new_instrument():
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     check_current_user_is_not_readonly()
+
+    allowed_language_ids = [
+        language.id
+        for language in get_languages(only_enabled_for_input=True)
+    ]
+
     instrument_form = InstrumentForm()
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user.name)
         for user in get_users()
     ]
     if instrument_form.validate_on_submit():
-        if instrument_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(instrument_form.description.data, anchor_prefix='instrument-description')
-            mark_referenced_markdown_images_as_permanent(description_as_html)
 
-        if instrument_form.short_description_is_markdown.data:
-            short_description_as_html = markdown_to_safe_html(instrument_form.short_description.data, anchor_prefix='instrument-short-description')
-            mark_referenced_markdown_images_as_permanent(short_description_as_html)
+        try:
+            translation_data = json.loads(instrument_form.translations.data)
+        except Exception:
+            pass
+        else:
+            translation_keys = {'id', 'language_id', 'name', 'description',
+                                'short_description', 'notes'}
+            if not isinstance(translation_data, list):
+                translation_data = ()
+            for translation in translation_data:
+                if not isinstance(translation, dict):
+                    continue
+                if set(translation.keys()) != translation_keys:
+                    continue
 
-        if instrument_form.notes_are_markdown.data:
-            notes_as_html = markdown_to_safe_html(instrument_form.notes.data, anchor_prefix='instrument-notes')
-            mark_referenced_markdown_images_as_permanent(notes_as_html)
+                language_id = int(translation['language_id'])
+                name = translation['name'].strip()
 
-        instrument = create_instrument(
-            instrument_form.name.data,
-            instrument_form.description.data,
-            description_is_markdown=instrument_form.is_markdown.data,
-            notes=instrument_form.notes.data,
-            notes_is_markdown=instrument_form.notes_are_markdown.data,
-            users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
-            users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
-            create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data,
-            short_description=instrument_form.short_description.data,
-            short_description_is_markdown=instrument_form.short_description_is_markdown.data
-        )
-        flask.flash('The instrument was created successfully.', 'success')
+                if language_id == Language.ENGLISH:
+                    try:
+                        if len(name) < 1 or len(name) > 100:
+                            flask.flash(_('Please enter an instrument name.'), 'error')
+                            return flask.render_template('instruments/instrument_form.html',
+                                                         submit_text='Create Instrument',
+                                                         instrument_log_category_themes=sorted(
+                                                             InstrumentLogCategoryTheme, key=lambda t: t.value),
+                                                         ENGLISH=get_language(Language.ENGLISH),
+                                                         languages=get_languages(only_enabled_for_input=True),
+                                                         instrument_form=instrument_form
+                                                         )
+                    except Exception:
+                        flask.flash(_('Please enter an instrument name.'), 'error')
+                        return flask.render_template('instruments/instrument_form.html',
+                                                     submit_text='Create Instrument',
+                                                     instrument_log_category_themes=sorted(
+                                                         InstrumentLogCategoryTheme, key=lambda t: t.value),
+                                                     ENGLISH=get_language(Language.ENGLISH),
+                                                     languages=get_languages(only_enabled_for_input=True),
+                                                     instrument_form=instrument_form
+                                                     )
+            instrument = create_instrument(
+                description_is_markdown=instrument_form.is_markdown.data,
+                notes_is_markdown=instrument_form.notes_is_markdown.data,
+                short_description_is_markdown=instrument_form.short_description_is_markdown.data,
+                users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
+                users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
+                create_log_entry_default=instrument_form.create_log_entry_default.data,
+                is_hidden=instrument_form.is_hidden.data,
+            )
+
+            for translation in translation_data:
+                language_id = translation['language_id']
+                name = translation['name'].strip()
+                description = translation['description'].strip()
+                short_description = translation['short_description'].strip()
+                notes = translation['notes'].strip()
+
+                if language_id not in map(str, allowed_language_ids):
+                    continue
+
+                if instrument_form.is_markdown.data:
+                    description_as_html = markdown_to_safe_html(description, anchor_prefix="instrument-description")
+                    mark_referenced_markdown_images_as_permanent(description_as_html)
+                if instrument_form.notes_is_markdown.data:
+                    notes_as_html = markdown_to_safe_html(notes, anchor_prefix="instrument-notes")
+                    mark_referenced_markdown_images_as_permanent(notes_as_html)
+                if instrument_form.short_description_is_markdown.data:
+                    short_description_as_html = markdown_to_safe_html(short_description, anchor_prefix="instrument-short-description")
+                    mark_referenced_markdown_images_as_permanent(short_description_as_html)
+
+                set_instrument_translation(
+                    instrument_id=instrument.id,
+                    language_id=language_id,
+                    name=name,
+                    description=description,
+                    short_description=short_description,
+                    notes=notes
+                )
+
+        flask.flash(_('The instrument was created successfully.'), 'success')
         instrument_responsible_user_ids = [
             int(user_id)
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+
         try:
             category_data = json.loads(instrument_form.categories.data)
         except Exception:
@@ -412,7 +519,10 @@ def new_instrument():
         'instruments/instrument_form.html',
         submit_text='Create Instrument',
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
-        instrument_form=instrument_form
+        ENGLISH=get_language(Language.ENGLISH),
+        languages=get_languages(only_enabled_for_input=True),
+        instrument_form=instrument_form,
+        instrument_translations={}
     )
 
 
@@ -426,11 +536,14 @@ def edit_instrument(instrument_id):
     check_current_user_is_not_readonly()
     if not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
         return flask.abort(403)
+
+    allowed_language_ids = [
+        language.id
+        for language in get_languages(only_enabled_for_input=True)
+    ]
+
     instrument_form = InstrumentForm()
-    instrument_form.name.default = instrument.name
-    instrument_form.description.default = instrument.description
-    instrument_form.short_description.default = instrument.short_description
-    instrument_form.notes.default = instrument.notes
+
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user.name)
         for user in get_users()
@@ -443,44 +556,120 @@ def edit_instrument(instrument_id):
     if not instrument_form.is_submitted():
         instrument_form.is_markdown.data = instrument.description_is_markdown
         instrument_form.short_description_is_markdown.data = instrument.short_description_is_markdown
-        instrument_form.notes_are_markdown.data = instrument.notes_is_markdown
+        instrument_form.notes_is_markdown.data = instrument.notes_is_markdown
         instrument_form.users_can_create_log_entries.data = instrument.users_can_create_log_entries
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
         instrument_form.is_hidden.data = instrument.is_hidden
     if instrument_form.validate_on_submit():
-        if instrument_form.is_markdown.data:
-            description_as_html = markdown_to_safe_html(instrument_form.description.data, anchor_prefix='instrument-description')
-            mark_referenced_markdown_images_as_permanent(description_as_html)
-
-        if instrument_form.short_description_is_markdown.data:
-            short_description_as_html = markdown_to_safe_html(instrument_form.short_description.data, anchor_prefix='instrument-short-description')
-            mark_referenced_markdown_images_as_permanent(short_description_as_html)
-
-        if instrument_form.notes_are_markdown.data:
-            notes_as_html = markdown_to_safe_html(instrument_form.notes.data, anchor_prefix='instrument-notes')
-            mark_referenced_markdown_images_as_permanent(notes_as_html)
 
         update_instrument(
-            instrument.id,
-            instrument_form.name.data,
-            instrument_form.description.data,
+            instrument_id=instrument.id,
             description_is_markdown=instrument_form.is_markdown.data,
-            notes=instrument_form.notes.data,
-            notes_is_markdown=instrument_form.notes_are_markdown.data,
+            short_description_is_markdown=instrument_form.short_description_is_markdown.data,
+            notes_is_markdown=instrument_form.notes_is_markdown.data,
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data,
-            short_description=instrument_form.short_description.data,
-            short_description_is_markdown=instrument_form.short_description_is_markdown.data
+            is_hidden=instrument_form.is_hidden.data
         )
-        flask.flash('The instrument was updated successfully.', 'success')
         instrument_responsible_user_ids = [
             int(user_id)
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+
+        # translations
+        try:
+            translation_data = json.loads(instrument_form.translations.data)
+        except Exception:
+            pass
+        else:
+            translation_keys = {'language_id', 'name', 'description',
+                                'short_description', 'notes'}
+
+            if not isinstance(translation_data, list):
+                translation_data = ()
+
+            valid_translations = set()
+            for translation in translation_data:
+                if not isinstance(translation, dict):
+                    continue
+                if set(translation.keys()) != translation_keys:
+                    continue
+                language_id = int(translation['language_id'])
+                name = translation['name'].strip()
+                description = translation['description'].strip()
+                short_description = translation['short_description']
+                notes = translation['notes'].strip()
+
+                if language_id not in allowed_language_ids:
+                    continue
+
+                if language_id == Language.ENGLISH:
+                    error = False
+                    if not isinstance(name, str) or not isinstance(description, str)\
+                            or not isinstance(short_description, str) or not isinstance(notes, str):
+                        error = True
+                    if len(name) < 1 or len(name) > 100:
+                        error = True
+                    if error:
+                        flask.flash(_('Please enter an english instrument name.'), 'error')
+                        instrument_translations = get_instrument_translations_for_instrument(instrument.id)
+                        instrument_language_ids = [
+                            translation.language_id
+                            for translation in instrument_translations
+
+                        ]
+                        instrument_translations = {
+                            instrument_translation.language_id: instrument_translation
+                            for instrument_translation in instrument_translations
+                        }
+                        ENGLISH = get_language(Language.ENGLISH)
+                        return flask.render_template(
+                            'instruments/instrument_form.html',
+                            submit_text='Update Instrument',
+                            instrument_log_category_themes=sorted(InstrumentLogCategoryTheme,
+                                                                  key=lambda t: t.value),
+                            instrument_translations=instrument_translations,
+                            instrument_language_ids=instrument_language_ids,
+                            ENGLISH=ENGLISH,
+                            instrument_log_categories=get_instrument_log_categories(instrument.id),
+                            languages=get_languages(only_enabled_for_input=True),
+                            instrument_form=instrument_form
+                        )
+
+                if len(name + description + short_description + notes) == 0:
+                    continue
+
+                if instrument_form.is_markdown.data:
+                    description_as_html = markdown_to_safe_html(description, anchor_prefix='instrument-description')
+                    mark_referenced_markdown_images_as_permanent(description_as_html)
+
+                if instrument_form.short_description_is_markdown.data:
+                    short_description_as_html = markdown_to_safe_html(short_description, anchor_prefix='instrument-short-description')
+                    mark_referenced_markdown_images_as_permanent(short_description_as_html)
+                if instrument_form.notes_is_markdown.data:
+                    notes_as_html = markdown_to_safe_html(notes, anchor_prefix='instrument-notes')
+                    mark_referenced_markdown_images_as_permanent(notes_as_html)
+
+                new_translation = set_instrument_translation(
+                    instrument_id=instrument.id,
+                    language_id=language_id,
+                    name=name,
+                    description=description,
+                    notes=notes,
+                    short_description=short_description,
+                )
+                valid_translations.add((new_translation.instrument_id, new_translation.language_id))
+
+            for translation in get_instrument_translations_for_instrument(instrument_id):
+                if (translation.instrument_id, translation.language_id) not in valid_translations:
+                    delete_instrument_translation(
+                        instrument_id=translation.instrument_id,
+                        language_id=translation.language_id
+                    )
+
         try:
             category_data = json.loads(instrument_form.categories.data)
         except Exception:
@@ -533,12 +722,25 @@ def edit_instrument(instrument_id):
             for category in get_instrument_log_categories(instrument_id):
                 if category.id not in valid_category_ids:
                     delete_instrument_log_category(category.id)
+        flask.flash(_('The instrument was updated successfully.'), 'success')
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
+
+    instrument_translations = get_instrument_translations_for_instrument(instrument.id)
+    instrument_language_ids = [translation.language_id for translation in instrument_translations]
+    instrument_translations = {
+        instrument_translation.language_id: instrument_translation
+        for instrument_translation in instrument_translations
+    }
+    english = get_language(Language.ENGLISH)
     return flask.render_template(
         'instruments/instrument_form.html',
-        submit_text='Update Instrument',
+        submit_text=_('Update Instrument'),
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
+        instrument_translations=instrument_translations,
+        instrument_language_ids=instrument_language_ids,
+        ENGLISH=english,
         instrument_log_categories=get_instrument_log_categories(instrument.id),
+        languages=get_languages(only_enabled_for_input=True),
         instrument_form=instrument_form
     )
 

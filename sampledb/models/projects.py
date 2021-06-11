@@ -7,14 +7,15 @@ from .. import db
 from .object_permissions import Permissions
 from .groups import Group
 from .users import User
+import sqlalchemy.dialects.postgresql as postgresql
 
 
 class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
-    description = db.Column(db.String, nullable=False, default='')
+    name = db.Column(postgresql.JSON, nullable=False)
+    description = db.Column(postgresql.JSON, nullable=False)
 
 
 class UserProjectPermissions(db.Model):

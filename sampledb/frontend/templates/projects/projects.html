@@ -1,22 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}Project Groups — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Project Groups') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Project Groups</h1>
-  <p class="text-muted">A project group is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project itself. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">Read more.</a></p>
+  {% set allowed_language_ids = [] %}
+  {% for language in languages %}
+    {{ allowed_language_ids.append(language.id) or '' }}
+  {% endfor %}
+  <h1>{{ _('Project Groups') }}</h1>
+  <p class="text-muted">{{ _('A project group is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project group itself.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">{{ _('Read more.') }}</a></p>
   {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS']) %}
   <p>
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">Create Project Group</button>
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">{{ _('Create Project Group') }}</button>
   </p>
   {% endif %}
   <ul id="projects_list">
   {% for level, project_id in project_id_hierarchy_list %}
     {% with project = projects_by_id[project_id] %}
-    <li><a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name }}</a>{% if project.permissions != Permissions.NONE %} <span class="label label-default">Member
-    {% if project.permissions == Permissions.READ %}(Read){% endif %}
-    {% if project.permissions == Permissions.WRITE %}(Write){% endif %}
-    {% if project.permissions == Permissions.GRANT %}(Grant){% endif %}
+    <li><a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name | get_translated_text }}</a>{% if project.permissions != Permissions.NONE %} <span class="label label-default">{{ _('Member') }}
+    {% if project.permissions == Permissions.READ %}({{ _('Read') }}){% endif %}
+    {% if project.permissions == Permissions.WRITE %}({{ _('Write') }}){% endif %}
+    {% if project.permissions == Permissions.GRANT %}({{ _('Grant') }}){% endif %}
     </span>{% endif %}
     {% if not config['DISABLE_SUBPROJECTS'] %}
       {% if loop.index < project_id_hierarchy_list | length %}
@@ -41,28 +45,71 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="createProjectModalLabel">Create Project Group</h4>
+          <h4 class="modal-title" id="createProjectModalLabel">{{ _('Create Project Group') }}</h4>
         </div>
-        <form method="post" action="{{ request.url }}" class="form-horizontal">
+
+        <div class="hidden" id="name-template">
+          <div class="input-group" data-language-id="">
+            <input type="text" class="form-control" id="input-name-" placeholder="{{ _('Name') }}" data-name="input-name" value="" data-translation-attribute="name" data-empty-text="{{ _('Please enter a group name.') }}" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter group name (at most 100 characters).') }}">
+            <span class="input-group-addon language-addon" data-name="language" style="margin-right: 5px"></span>
+          </div>
+          <span class="help-block"></span>
+        </div>
+
+        <div class="hidden" id="description-template">
+          <div class="input-group" data-language-id="">
+            <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+            <span class="input-group-addon language-addon" data-name="language" style="margin-right: 5px"></span>
+          </div>
+          <span class="help-block"></span>
+        </div>
+
+        <form method="post" action="{{ request.url }}">
           {{ create_project_form.csrf_token() }}
           <div class="modal-body">
-            <div class="form-group {% if create_project_form.name.errors %}has-error{% endif %}">
-              <label for="createProjectName" class="col-sm-2 control-label">Name</label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control" id="createProjectName" name="{{ create_project_form.name.name }}" placeholder="Name" value="{{ create_project_form.name.data }}">
-                {% for error_message in create_project_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+            <div class="form-group" data-name="input-names">
+              <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+                <label for="select-language-name" class="control-label col-sm-8" style="margin-top: 5px">{{ _("Name") }}</label>
+                <select class="selectpicker btn-xs select-language col-sm-4 {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-name">
+                  {% for language in languages %}
+                    <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="{% if allowed_language_ids | length > 1 %}input-group{% endif %} {% if create_project_form.translations.errors %}has-error{% endif %}" data-language-id="{{ ENGLISH.id }}">
+                    <input type="text" class="form-control" id="input-name-{{ ENGLISH.id}}" placeholder="{{ _('Name') }}" data-name="input-name" value="" data-translation-attribute="name" data-empty-text="{{ _('Please enter a group name.') }}" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter group name (at most 100 characters).') }}">
+                    {% if allowed_language_ids | length > 1 %}
+                      <span class="input-group-addon language-addon" data-name="language">{{ ENGLISH.names | get_translated_text }}</span>
+                    {% endif %}
+                </div>
+                <span class="help-block" style="margin-bottom: -5px"></span>
+                {% for error_message in create_project_form.translations.errors %}<span class="help-block" style="color: red">{{ error_message }}</span>{% endfor %}
               </div>
             </div>
-            <div class="form-group">
-              <label for="createProjectDescription" class="col-sm-2 control-label">Description</label>
-              <div class="col-sm-10">
-                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="createProjectDescription" name="{{ create_project_form.description.name }}" placeholder="Description">{{ create_project_form.description.data }}</textarea>
+            <div class="form-group" data-name="input-descriptions" style="padding-top: 10px">
+              <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+                <label for="select-language-description" class="control-label col-sm-8" style="margin-top: 5px">{{ _("Description") }}</label>
+                  <select class="selectpicker btn-xs select-language col-sm-4 {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-description">
+                    {% for language in languages %}
+                      <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+                    {% endfor %}
+                  </select>
+              </div>
+
+              <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-name="description" data-language-id="{{ ENGLISH.id }}" style="margin-bottom: 10px">
+                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="input-description-{{ ENGLISH.id }}" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+                {% if allowed_language_ids | length > 1 %}
+                  <span class="input-group-addon language-addon" data-name="language">{{ ENGLISH.names | get_translated_text }}</span>
+                {% endif %}
               </div>
             </div>
           </div>
+          <input type="hidden" id="input-translations" name="{{ create_project_form.translations.name }}" value="">
+
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="create" value="create">Create Project Group</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="create" value="create">{{ _('Create Project Group') }}</button>
           </div>
         </form>
       </div>
@@ -71,17 +118,70 @@
   {% endif %}
 {% endblock %}
 
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+{% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  {% if show_create_form %}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
   <script>
-    $(document).ready(function() {
-      var create_modal = $('#createProjectModal');
-      create_modal.removeClass('fade');
-      create_modal.modal('show');
-      create_modal.addClass('fade');
+  window.translations = [];
+
+  window.languages = [
+    {% for lang in languages %}
+        {
+            'id': '{{ lang.id }}',
+            'name': '{{ lang.names | get_translated_text }}',
+            'lang_code': '{{ lang.lang_code }}'
+        },
+    {% endfor %}
+  ];
+
+  $(function (){
+    updateTranslationJSON();
+
+    $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}'])
+
+    $('#select-language-name').on('change', function () {
+      updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
+    }).change();
+
+    $('#select-language-description').on('change', function () {
+      updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description']);
+    }).change();
+
+    $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id]').each(function () {
+      setTranslationHandler(this);
     });
+
+    $('form').on('submit', function() {
+      $('input').change();
+      $('textarea').change();
+      window.translations = $.map(window.translations, function(translation, index){
+        if (translation.name  === '' && translation.description === '' && translation.language_id !== {{ ENGLISH.id }}){
+          return null;
+        }
+        return translation;
+      });
+      updateTranslationJSON();
+      return $(this).find('.has-error').length === 0;
+    })
+ });
   </script>
+  {% if show_create_form %}
+<script>
+$(document).ready(function() {
+    var create_modal = $('#createProjectModal');
+    create_modal.removeClass('fade');
+    create_modal.modal('show');
+    create_modal.addClass('fade');
+
+});
+</script>
   {% endif %}
 {% endblock %}

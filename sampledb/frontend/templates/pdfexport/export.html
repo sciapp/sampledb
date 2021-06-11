@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{ service_name }} Export</title>
+  <title>{{ service_name }} {{ _('Export') }}</title>
   <style>
         html {
             font-family: 'Helvetica', sans-serif;
@@ -93,9 +93,9 @@
 <body>
 {% for object, action, activity_log_entries, location_entries, publications, comments, files, qrcode_url in objects %}
   <article>
-  <header style="background-image: url({{ qrcode_url }})">#{{ object.object_id }} Exported&nbsp;on {{ export_date }}</header>
-  <h1>{{ action.type.object_name }} #{{ object.object_id }}: {{ object.data.name.text }}</h1>
-  <h2>Information</h2>
+  <header style="background-image: url({{ qrcode_url }})">#{{ object.object_id }} {{ _('Exported&nbsp;on %(export_date)s', export_date=export_date | babel_format_date) }}</header>
+  <h1>{{ get_object_type_name(action) }} #{{ object.object_id }}: {{ object.data.name.text | get_translated_text }}</h1>
+  <h2>{{ _('Information') }}</h2>
   {% with data = object.data %}
   {% with schema = object.schema %}
     {% include "pdfexport/object.html" %}
@@ -103,7 +103,7 @@
   {% endwith %}
 
   {% if activity_log_entries %}
-  <h2>Activity Log</h2>
+  <h2>{{ _('Activity Log') }}</h2>
   <ul>
   {% for entry in activity_log_entries %}
     <li style="text-indent: -11em; margin-left: 11em; hyphens: none">{{ entry | safe }}</li>
@@ -112,13 +112,13 @@
   {% endif %}
 
   {% if location_entries %}
-  <h2>Locations</h2>
+  <h2>{{ _('Locations') }}</h2>
   <ul>
   {% for entry in location_entries %}
     <li style="text-indent: -11em; margin-left: 11em;">
-      {{ entry.utc_datetime }} &mdash; <a href="{{ url_for('.user_profile', user_id=entry.assigning_user_id, _external=True) }}">{{ entry.assigning_user_name }} (#{{ entry.assigning_user_id }})</a>:
+      {{ entry.utc_datetime | babel_format_datetime }} &mdash; <a href="{{ url_for('.user_profile', user_id=entry.assigning_user_id, _external=True) }}">{{ entry.assigning_user_name }} (#{{ entry.assigning_user_id }})</a>:
     {% if entry.location_id %}
-      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name }} (#{{ entry.location_id }})</a>
+      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name | get_translated_text }} (#{{ entry.location_id }})</a>
     {% endif %}
     {% if entry.responsible_user_id %}
       {% if entry.location_id %}/{% endif %}
@@ -126,8 +126,8 @@
     {% endif %}
     {% if entry.description %}
       <div style="text-indent: 0">
-        Description:
-        <div class="object-user-content multiline">{{ entry.description }}</div>
+        {{ _('Description') }}:
+        <div class="object-user-content multiline">{{ entry.description | get_translated_text }}</div>
       </div>
     {% endif %}
     </li>
@@ -136,7 +136,7 @@
   {% endif %}
 
   {% if publications %}
-  <h2>Publications</h2>
+  <h2>{{ _('Publications') }}</h2>
     <ul>
     {% for publication in publications %}
       <li style="text-indent: -11em; margin-left: 11em;">
@@ -147,11 +147,11 @@
   {% endif %}
 
   {% if comments %}
-  <h2>Comments</h2>
+  <h2>{{ _('Comments') }}</h2>
     <ul>
     {% for comment in comments %}
       <li style="text-indent: -11em; margin-left: 11em;">
-        {{ comment.utc_datetime.strftime('%Y-%m-%d %H:%M') }} &mdash; <a href="{{ url_for('.user_profile', user_id=comment.user_id, _external=True) }}">{{ comment.author.name }} (#{{ comment.user_id }})</a>:
+        {{ comment.utc_datetime | babel_format_datetime }} &mdash; <a href="{{ url_for('.user_profile', user_id=comment.user_id, _external=True) }}">{{ comment.author.name }} (#{{ comment.user_id }})</a>:
         <div class="object-user-content multiline" style="text-indent: 0;">{{ comment.content }}</div>
       </li>
     {% endfor %}
@@ -159,10 +159,10 @@
   {% endif %}
 
   {% if files %}
-  <h2>Files</h2>
+  <h2>{{ _('Files') }}</h2>
     <ul>
     {% for file in files %}
-      <li>{{ file.utc_datetime.strftime('%Y-%m-%d %H:%M') }} &mdash; <a href="{{ url_for('.user_profile', user_id=file.uploader.id, _external=True) }}">{{ file.uploader.name }} (#{{ file.uploader.id }})</a>: {% if file.is_hidden %}(hidden){% else %}{{ file.title }} ({{ file.id }}){% endif %}</li>
+      <li>{{ file.utc_datetime | babel_format_datetime }} &mdash; <a href="{{ url_for('.user_profile', user_id=file.uploader.id, _external=True) }}">{{ file.uploader.name }} (#{{ file.uploader.id }})</a>: {% if file.is_hidden %}({{ _('hidden') }}){% else %}{{ file.title }} ({{ file.id }}){% endif %}</li>
     {% endfor %}
     </ul>
 
@@ -170,7 +170,7 @@
       {% if not file.is_hidden and file.storage == 'local' %}
         {% for file_extension in ['.png', '.jpg', '.jpeg'] %}
           {% if file.original_file_name.endswith(file_extension) %}
-            <h3>File #{{ file.id }}: {{ file.title }}</h3>
+            <h3>{{ _('File') }} #{{ file.id }}: {{ file.title }}</h3>
             <img src="./object_files/{{ object.id }}/{{ file.id }}" class="object-file-image"/>
           {% endif %}
         {% endfor %}

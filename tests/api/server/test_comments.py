@@ -34,8 +34,6 @@ def user(auth_user):
 def object(user):
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',

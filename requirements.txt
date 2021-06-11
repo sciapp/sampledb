@@ -2,7 +2,7 @@ alabaster==0.7.12
 aniso8601==9.0.1
 apipkg==1.5
 atomicwrites==1.4.0
-attrs==21.1.0
+attrs==21.2.0
 Babel==2.9.1
 backports.functools-lru-cache==1.6.4
 bcrypt==3.2.0
@@ -22,10 +22,11 @@ coverage==5.5
 cssselect2==0.4.1
 defusedxml==0.7.1
 dnspython==2.1.0
-docutils==0.16
+docutils==0.17.1
 email-validator==1.1.2
 execnet==1.8.0
 Flask==1.1.2
+Flask-Babel==2.0.0
 Flask-HTTPAuth==4.3.0
 Flask-Login==0.5.0
 Flask-Mail==0.9.1
@@ -78,7 +79,7 @@ selenium==3.141.0
 six==1.16.0
 snowballstemmer==2.1.0
 soupsieve==2.2.1
-Sphinx==3.5.4
+Sphinx==4.0.1
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==1.0.3
@@ -87,7 +88,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 sphinxcontrib-websupport==1.2.4
-SQLAlchemy==1.4.14
+SQLAlchemy==1.4.15
 tempora==4.0.2
 tinycss2==1.1.0
 toml==0.10.2

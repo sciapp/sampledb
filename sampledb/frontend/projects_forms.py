@@ -5,19 +5,17 @@
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SelectField, FieldList, FormField, BooleanField
-from wtforms.validators import Length, InputRequired, NumberRange
+from wtforms.validators import InputRequired, NumberRange, DataRequired
 
 from ..logic.object_permissions import Permissions
 
 
 class CreateProjectForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
+    translations = StringField(validators=[DataRequired()])
 
 
 class EditProjectForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
+    translations = StringField(validators=[DataRequired()])
 
 
 class LeaveProjectForm(FlaskForm):

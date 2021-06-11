@@ -14,6 +14,7 @@ import operator
 import json
 import sqlalchemy as db
 from . import datatypes
+from . import languages
 
 EPSILON = 1e-7
 
@@ -160,7 +161,21 @@ def text_equals(db_obj, text):
     return db.or_(
         db.and_(
             db_obj['_type'].astext == 'text',
-            db_obj['text'].astext == text
+            db.or_(
+                db.and_(
+                    db_obj['text']['en'].astext == db.null(),
+                    db_obj['text'].astext == text,
+                ),
+                db.and_(
+                    db_obj['text']['en'].astext != db.null(),
+                    db.or_(
+                        *[
+                            db_obj['text'][language.lang_code].astext == text
+                            for language in languages.get_languages()
+                        ]
+                    )
+                )
+            )
         ),
         db.and_(
             db_obj['_type'].astext == 'plotly_chart',
@@ -170,10 +185,26 @@ def text_equals(db_obj, text):
 
 
 def text_contains(db_obj, text):
+    if isinstance(text, datatypes.Text):
+        text = text.text
     return db.or_(
         db.and_(
             db_obj['_type'].astext == 'text',
-            db_obj['text'].astext.like('%' + text + '%')
+            db.or_(
+                db.and_(
+                    db_obj['text']['en'].astext == db.null(),
+                    db_obj['text'].astext.like('%' + text + '%')
+                ),
+                db.and_(
+                    db_obj['text']['en'].astext != db.null(),
+                    db.or_(
+                        *[
+                            db_obj['text'][language.lang_code].astext.like('%' + text + '%')
+                            for language in languages.get_languages()
+                        ]
+                    )
+                )
+            )
         ),
         db.and_(
             db_obj['_type'].astext == 'plotly_chart',

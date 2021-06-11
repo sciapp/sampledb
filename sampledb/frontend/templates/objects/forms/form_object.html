@@ -1,5 +1,5 @@
 <!-- object start -->
-<strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title }}</strong>
+<strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title | get_translated_text }}</strong>
 <div style="">
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}

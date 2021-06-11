@@ -1,15 +1,21 @@
-
 import flask
+from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
+import os
+import subprocess
+from bs4 import BeautifulSoup
+import json
 
 login_manager = LoginManager()
 login_manager.session_protection = 'basic'
 
 mail = Mail()
 db = SQLAlchemy()
+babel = Babel()
+
 
 import sampledb.frontend
 import sampledb.api
@@ -17,6 +23,34 @@ import sampledb.logic
 import sampledb.models
 import sampledb.models.migrations
 import sampledb.config
+
+
+@babel.localeselector
+def set_locale():
+    request_locale = sampledb.logic.locale.guess_request_locale()
+
+    if not current_user or not current_user.is_authenticated:
+        return request_locale
+
+    auto_lc = sampledb.logic.settings.get_user_settings(current_user.id)['AUTO_LC']
+    if auto_lc:
+        return request_locale
+
+    stored_locale = sampledb.logic.settings.get_user_settings(current_user.id)['LOCALE']
+    if stored_locale in sampledb.logic.locale.SUPPORTED_LOCALES:
+        return stored_locale
+
+    return request_locale
+
+
+@babel.timezoneselector
+def set_timezone():
+    if current_user.is_authenticated:
+        settings = sampledb.logic.settings.get_user_settings(current_user.id)
+        if settings['AUTO_TZ']:
+            return flask.request.args.get('timezone', settings['TIMEZONE'])
+        return settings['TIMEZONE']
+    return flask.request.args.get('timezone', None)
 
 
 def setup_database(app):
@@ -55,6 +89,9 @@ def setup_jinja_environment(app):
     else:
         jupyterhub_templates_url = None
 
+    app.jinja_env.add_extension('jinja2.ext.loopcontrols')
+    app.jinja_env.policies['json.dumps_kwargs'] = {'ensure_ascii': False}
+
     app.jinja_env.globals.update(
         export_file_formats=sampledb.logic.export.FILE_FORMATS,
         jupyterhub_name=app.config['JUPYTERHUB_NAME'],
@@ -67,9 +104,37 @@ def setup_jinja_environment(app):
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
         get_action_types=sampledb.logic.actions.get_action_types,
-        contact_email=app.config['CONTACT_EMAIL']
+        get_action_types_with_translations_in_language=sampledb.logic.action_type_translations.get_action_types_with_translations_in_language,
+        get_translated_text=sampledb.logic.utils.get_translated_text,
+        BeautifulSoup=BeautifulSoup,
+        json=json,
+        contact_email=app.config['CONTACT_EMAIL'],
+        get_user_settings=lambda: sampledb.logic.settings.get_user_settings(current_user.id),
+        TimezoneForm=sampledb.frontend.timezone.TimezoneForm,
+        get_user_language=sampledb.logic.languages.get_user_language,
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
+
+
+def build_translations():
+    translations_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), 'translations'))
+    # merge extracted and manual message catalogs
+    for translation_directory in os.listdir(translations_directory):
+        translation_directory = os.path.join(translations_directory, translation_directory)
+        extracted_message_catalog_path = os.path.join(translation_directory, 'LC_MESSAGES', 'extracted_messages.po')
+        manual_message_catalog_path = os.path.join(translation_directory, 'LC_MESSAGES', 'manual_messages.po')
+        merged_message_catalog_path = os.path.join(translation_directory, 'LC_MESSAGES', 'messages.po')
+        if os.path.isfile(extracted_message_catalog_path) and os.path.isfile(manual_message_catalog_path):
+            # manually merge instead of using msgcat to avoid duplicate headers
+            with open(extracted_message_catalog_path, 'r', encoding='utf-8') as extracted_message_catalog:
+                extracted_message_catalog = extracted_message_catalog.read()
+            with open(manual_message_catalog_path, 'r', encoding='utf-8') as manual_message_catalog:
+                manual_message_catalog = manual_message_catalog.read()
+            with open(merged_message_catalog_path, 'w', encoding='utf-8') as merged_message_catalog:
+                merged_message_catalog.write(extracted_message_catalog)
+                merged_message_catalog.write(manual_message_catalog)
+    # compile messages
+    subprocess.run(["pybabel", "compile", "-d", translations_directory], check=True)
 
 
 def create_app():
@@ -84,6 +149,7 @@ def create_app():
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
+    babel.init_app(app)
     sampledb.api.server.api.init_app(app)
 
     app.register_blueprint(sampledb.frontend.frontend)
@@ -95,5 +161,7 @@ def create_app():
     setup_database(app)
     setup_admin_account_from_config(app)
     setup_jinja_environment(app)
+    if app.config['BUILD_TRANSLATIONS']:
+        build_translations()
 
     return app

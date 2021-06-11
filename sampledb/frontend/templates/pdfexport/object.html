@@ -4,7 +4,7 @@
     {% if property_name not in schema['propertyOrder'] %}
       {% with schema = schema['properties'][property_name] %}
       {% with data = data[property_name] %}
-        <li>{{ schema.title }}: {% include "pdfexport/any.html" %}</li>
+        <li>{{ schema.title | get_translated_text }}: {% include "pdfexport/any.html" %}</li>
       {% endwith %}
       {% endwith %}
     {% endif %}
@@ -13,7 +13,7 @@
   {% for property_name in schema['propertyOrder'] %}
       {% with schema = schema['properties'][property_name] %}
       {% with data = data[property_name] %}
-        <li>{{ schema.title }}: {% include "pdfexport/any.html" %}</li>
+        <li>{{ schema.title | get_translated_text }}: {% include "pdfexport/any.html" %}</li>
       {% endwith %}
       {% endwith %}
   {% endfor %}
@@ -21,7 +21,7 @@
     {% if property_name not in schema['propertyOrder'] %}
       {% with schema = schema['properties'][property_name] %}
       {% with data = data[property_name] %}
-        <li>{{ schema.title }}: {% include "pdfexport/any.html" %}</li>
+        <li>{{ schema.title | get_translated_text }}: {% include "pdfexport/any.html" %}</li>
       {% endwith %}
       {% endwith %}
     {% endif %}

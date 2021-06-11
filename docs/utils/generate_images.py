@@ -189,10 +189,10 @@ def activity_log(base_url, driver, object):
 
 def locations(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    fzj = sampledb.logic.locations.create_location("FZJ", "", None, user.id)
-    b048 = sampledb.logic.locations.create_location("Building 04.8", "", fzj.id, user.id)
-    r139b = sampledb.logic.locations.create_location("Room 139b", "", b048.id, user.id)
-    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, None, user.id, "Shelf C")
+    fzj = sampledb.logic.locations.create_location({"en": "FZJ"}, {"en": ""}, None, user.id)
+    b048 = sampledb.logic.locations.create_location({"en": "Building 04.8"}, {"en": ""}, fzj.id, user.id)
+    r139b = sampledb.logic.locations.create_location({"en": "Room 139b"}, {"en": ""}, b048.id, user.id)
+    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, None, user.id, {"en": "Shelf C"})
 
     width = 1280
     max_height = 1000
@@ -369,6 +369,32 @@ def schema_editor(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
+def translations(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    for language in sampledb.logic.languages.get_languages():
+        if not language.enabled_for_input:
+            sampledb.logic.languages.update_language(
+                language_id=language.id,
+                names=language.names,
+                lang_code=language.lang_code,
+                datetime_format_datetime=language.datetime_format_datetime,
+                datetime_format_moment=language.datetime_format_moment,
+                enabled_for_input=True
+            )
+
+    driver.get(base_url + 'actions/new/')
+    driver.execute_script("""
+    $('[data-name="input-names"] .selectpicker').selectpicker('val', ['-99', '-98']);
+    $('[data-name="input-names"] .selectpicker').change();
+    """)
+    form = driver.find_element_by_css_selector('[data-name="input-names"]')
+    y_offset = scroll_to(driver, 0, form.location['y'])
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/translations.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -402,21 +428,22 @@ try:
         assert other_user.id is not None
 
         group = sampledb.logic.groups.create_group(
-            name="Example Group",
-            description="An example group for the documentation",
+            name={"en": "Example Group"},
+            description={"en": "An example group for the documentation"},
             initial_user_id=user.id
         )
 
         project = sampledb.logic.projects.create_project(
-            name="Example Project",
-            description="An example project for the documentation",
+            name={"en": "Example Project"},
+            description={"en": "An example project for the documentation"},
             initial_user_id=user.id
         )
 
-        instrument = sampledb.logic.instruments.create_instrument(
-            name="Example Instrument",
-            description="This is an example instrument for the documentation."
-        )
+        instrument = sampledb.logic.instruments.create_instrument()
+        sampledb.logic.instrument_translations.set_instrument_translation(sampledb.models.Language.ENGLISH,
+                                                                          instrument.id,
+                                                                          name="Example Instrument",
+                                                                          description="This is an example instrument for the documentation.")
         schema = {
             'title': "Sample Information",
             'type': 'object',
@@ -439,10 +466,15 @@ try:
         }
         instrument_action = sampledb.logic.actions.create_action(
             action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-            name="Sample Creation",
-            description="This is an example action",
             schema=schema,
             instrument_id=instrument.id
+        )
+
+        sampledb.logic.action_translations.set_action_translation(
+            sampledb.models.Language.ENGLISH,
+            instrument_action.id,
+            name="Sample Creation",
+            description="This is an example action"
         )
         sampledb.logic.action_permissions.set_action_public(instrument_action.id)
         data = {
@@ -491,5 +523,6 @@ try:
                 locations(flask_server.base_url, driver, object)
                 schema_editor(flask_server.base_url, driver)
                 unread_notification_icon(flask_server.base_url, driver)
+                translations(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

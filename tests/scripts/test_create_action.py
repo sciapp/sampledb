@@ -7,13 +7,13 @@ import os
 import pytest
 import sampledb
 from sampledb import db
-from sampledb.logic import instruments, actions
+from sampledb.logic import instruments, actions, languages, action_translations
 import sampledb.__main__ as scripts
 
 
 @pytest.fixture
 def instrument():
-    instrument = instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    instrument = instruments.create_instrument()
     assert instrument.id is not None
     db.session.expunge(instrument)
     return instrument
@@ -31,10 +31,14 @@ def test_create_sample_action(instrument, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.instrument_id == instrument.id
     assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_create_measurement_action(instrument, capsys):
@@ -49,10 +53,14 @@ def test_create_measurement_action(instrument, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.instrument_id == instrument.id
     assert action.type_id == sampledb.models.ActionType.MEASUREMENT
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_create_action_with_action_type_id(instrument, capsys):
@@ -67,10 +75,14 @@ def test_create_action_with_action_type_id(instrument, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.instrument_id == instrument.id
     assert action.type_id == sampledb.models.ActionType.MEASUREMENT
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_create_action_missing_arguments(instrument, capsys):
@@ -83,7 +95,7 @@ def test_create_action_missing_arguments(instrument, capsys):
     assert len(actions.get_actions()) == 0
 
 
-def test_create_action_invalid_instrument_id(instrument, capsys):
+def test_create_action_invalid_instrument_id(capsys):
     action_type = 'sample'
     name = 'Example Action'
     description = 'Example Action Description'
@@ -91,7 +103,7 @@ def test_create_action_invalid_instrument_id(instrument, capsys):
     assert len(actions.get_actions()) == 0
 
     with pytest.raises(SystemExit) as exc_info:
-        scripts.main([scripts.__file__, 'create_action', instrument.name, action_type, name, description, schema_file_name])
+        scripts.main([scripts.__file__, 'create_action', "instrument", action_type, name, description, schema_file_name])
     assert exc_info.value != 0
     assert 'Error: instrument_id must be an integer' in capsys.readouterr()[1]
     assert len(actions.get_actions()) == 0

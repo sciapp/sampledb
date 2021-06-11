@@ -1,25 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %} — {{ service_name }}{% endblock %}
+{% block title %}{% if is_ldap_configured %}{{ _('Invite a Guest')}}{% else %}{{ _('Invite another User') }}{% endif %} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1 class="text-center">Invite {% if is_ldap_configured %}a Guest{% else %}another User{% endif %}</h1>
+  <h1 class="text-center">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</h1>
   <div class="container" style="max-width:600px">
-  <p class="text-center">To invite {% if is_ldap_configured %}a guest{% else %}another user{% endif %} to {{ service_name }}, please submit their email address using the form below. They will then receive an email which can be used to complete the registration process.</p>
+  <p class="text-center">{{ _('To invite %(user)s to %(service_name)s, please submit their email address using the form below. They will then receive an email which can be used to complete the registration process.', service_name=service_name, user=(_('a guest') if is_ldap_configured else _('another user'))) }}</p>
   <form class="form-horizontal" method="post" id="form-invitation">
     {{ invitation_form.csrf_token() }}
     <div class="form-group{% if invitation_form.email.errors or has_error %} has-error{% endif %}">
-      <label for="input-email" class="col-sm-2 control-label">Email</label>
+      <label for="input-email" class="col-sm-2 control-label">{{ _('Email') }}</label>
       <div class="col-sm-8">
-        <input class=form-control type="text" id="input-email" name="email" placeholder="Email">
-        {% if has_success%}
-          <span class='help-block'>The invitation to {{invitation_form.email.data}} has been sent.</span>
+        <input class=form-control type="text" id="input-email" name="email" placeholder="{{ _('Email') }}">
+        {% if has_success %}
+          <span class='help-block'>{{ _('The invitation to %(email)s has been sent.', email=invitation_form.email.data)}}</span>
         {% endif %}
-        {% if has_error%}
-          <span class='help-block'>Please enter a valid email address.</span>
+        {% if has_error %}
+          <span class='help-block'>{{ _('Please enter a valid email address.')}}</span>
         {% endif %}
       </div>
-        <button type="submit" class="btn btn-primary col-sm-2">Invite</button>
+      <button type="submit" class="btn btn-primary col-sm-2">{{ _('Invite') }}</button>
     </div>
   </form>
   </div>

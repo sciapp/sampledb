@@ -8,12 +8,15 @@ import datetime
 import typing
 import math
 import json
-import plotly
 
-from ...logic import actions, objects, datatypes, users
+import plotly
+from flask_babel import _
+
+from ...logic import actions, objects, datatypes, users, languages
 from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
 from .utils import units_are_valid
+from ..utils import get_translated_text
 
 
 def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Optional[typing.List[str]] = None) -> None:
@@ -230,20 +233,56 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if instance['_type'] != 'text':
         raise ValidationError('expected _type "text"', path)
-    if not isinstance(instance['text'], str):
-        raise ValidationError('text must be str', path)
+    if not isinstance(instance['text'], str) and not isinstance(instance['text'], dict):
+        raise ValidationError('text must be str or a dictionary', path)
     choices = schema.get('choices', None)
     if choices and instance['text'] not in choices:
-        raise ValidationError('The text must be one of {}.'.format(choices), path)
+        raise ValidationError(_('The text must be one of %(choices)s.', choices=choices), path)
     min_length = schema.get('minLength', 0)
     max_length = schema.get('maxLength', None)
-    if len(instance['text']) < min_length:
-        raise ValidationError('The text must be at least {} characters long.'.format(min_length), path)
-    if max_length is not None and len(instance['text']) > max_length:
-        raise ValidationError('The text must be at most {} characters long.'.format(max_length), path)
+
+    if isinstance(instance['text'], str):
+        if len(instance['text']) < min_length:
+            raise ValidationError(_('The text must be at least %(min_length)s characters long.', min_length=min_length), path)
+        if max_length is not None and len(instance['text']) > max_length:
+            raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
+    else:
+        all_languages = languages.get_languages()
+        language_names = {
+            language.lang_code: get_translated_text(language.names)
+            for language in all_languages
+        }
+        if 'languages' in schema:
+            if schema['languages'] == 'all':
+                allowed_language_codes = {
+                    language.lang_code
+                    for language in all_languages
+                    if language.enabled_for_input
+                }
+            else:
+                allowed_language_codes = {
+                    language.lang_code
+                    for language in all_languages
+                    if language.enabled_for_input and language.lang_code in schema['languages']
+                }
+        else:
+            allowed_language_codes = {'en'}
+        for text in instance['text'].values():
+            if len(text) < min_length:
+                raise ValidationError(_('The text must be at least %(min_length)s characters long.', min_length=min_length), path)
+            if max_length is not None and len(text) > max_length:
+                raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
+        for lang in instance['text'].keys():
+            if lang not in allowed_language_codes:
+                raise ValidationError(_('The language "%(lang_code)s" is not allowed for this field.', lang_code=language_names.get(lang, lang)), path)
     if 'pattern' in schema:
-        if re.match(schema['pattern'], instance['text']) is None:
-            raise ValidationError('The text must match the pattern: {}.'.format(schema['pattern']), path)
+        if isinstance(instance['text'], dict):
+            for text in instance['text'].values():
+                if re.match(schema['pattern'], text) is None:
+                    raise ValidationError(_('Input must match: %(pattern)s', pattern=schema['pattern']), path)
+        else:
+            if re.match(schema['pattern'], instance['text']) is None:
+                raise ValidationError(_('Input must match: %(pattern)s', pattern=schema['pattern']), path)
     if 'is_markdown' in instance and not isinstance(instance['is_markdown'], bool):
         raise ValidationError('is_markdown must be bool', path)
 
@@ -275,7 +314,7 @@ def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> 
     try:
         datetime.datetime.strptime(instance['utc_datetime'], '%Y-%m-%d %H:%M:%S')
     except ValueError:
-        raise ValidationError('Please enter the date and time in the format: YYYY-MM-DD HH:MM:SS.', path)
+        raise ValidationError(_('Please enter the date and time in the format: %(datetime_format)s', datetime_format='YYYY-MM-DD HH:MM:SS'), path)
 
 
 def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None:
@@ -335,6 +374,7 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
 
     quantity_magnitude = None
     quantity_magnitude_in_base_units = None
+
     if 'magnitude' in instance:
         if not isinstance(instance['magnitude'], float) and not isinstance(instance['magnitude'], int):
             raise ValidationError('magnitude must be float or int', path)
@@ -534,13 +574,13 @@ def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str])
             try:
                 instance['plotly'] = json.loads(instance['plotly'])
             except json.JSONDecodeError:
-                raise ValidationError('plotly data must be valid JSON', path)
+                raise ValidationError(_('plotly data must be valid JSON'), path)
         else:
             instance['plotly'] = {}
     if not isinstance(instance['plotly'], dict):
-        raise ValidationError('plotly must be a dict', path)
+        raise ValidationError(_('plotly must be a dict'), path)
 
     try:
         plotly.io.from_json(json.dumps(instance['plotly']), 'Figure', False)
     except ValueError:
-        raise ValidationError('The plotly data must be valid. Look up which schema is supported by plotly ', path)
+        raise ValidationError(_('The plotly data must be valid. Look up which schema is supported by plotly.'), path)

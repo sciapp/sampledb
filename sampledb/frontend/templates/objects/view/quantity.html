@@ -1,5 +1,5 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
     {% if data is not none %}
       {% if schema['units'] == "1" %}
       <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format(data.magnitude_in_base_units), advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
@@ -12,11 +12,11 @@
   </label>
   {% if schema['units'] == "1" %}
     <div class="col-md-9">
-      {% if data is not none %}{{ '%g'| format(data.magnitude_in_base_units) }}{% endif %}
+      {% if data is not none %}{{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
     </div>
   {% else %}
     <div class="col-md-9">
-      {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) }} {{ (data | to_datatype).units | prettify_units }}{% endif %}
+      {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number}} {{ (data | to_datatype).units | prettify_units }}{% endif %}
     </div>
   {% endif %}
 </div>

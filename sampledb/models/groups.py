@@ -4,6 +4,8 @@
 """
 
 from .. import db
+import sqlalchemy.dialects.postgresql as postgresql
+
 
 association_table = db.Table(
     'user_group_memberships',
@@ -17,8 +19,8 @@ class Group(db.Model):
     __tablename__ = 'groups'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
-    description = db.Column(db.String, nullable=False, default='')
+    name = db.Column(postgresql.JSON, nullable=False)
+    description = db.Column(postgresql.JSON, nullable=False)
     members = db.relationship("User", secondary=association_table, backref="groups")
 
 

@@ -5,6 +5,7 @@
 
 import flask
 import flask_login
+from flask_babel import _, lazy_gettext, refresh
 
 from .. import frontend
 from ...logic.authentication import login
@@ -21,7 +22,7 @@ def load_user(user_id):
         return None
     user = get_user(user_id)
     if not user.is_active:
-        flask.flash('Your user account has been deactivated. Please contact an administrator.', 'error')
+        flask.flash(_('Your user account has been deactivated. Please contact an administrator.'), 'error')
         return None
     return user
 
@@ -71,7 +72,7 @@ def _sign_in_impl(is_for_refresh):
         user = login(username, password)
         if user and not user.is_active:
             flask_login.logout_user()
-            flask.flash('Your user account has been deactivated. Please contact an administrator.', 'error')
+            flask.flash(_('Your user account has been deactivated. Please contact an administrator.'), 'error')
             return flask.redirect(flask.url_for('frontend.sign_in'))
         if is_for_refresh:
             if user and user == flask_login.current_user:
@@ -81,12 +82,15 @@ def _sign_in_impl(is_for_refresh):
             if user:
                 remember_me = form.remember_me.data
                 flask_login.login_user(user, remember=remember_me)
+                refresh()
                 if user.is_admin and password == 'password':
                     flask.flash(
-                        'You are using the default admin password from the '
-                        'SampleDB documentation. Please change your password '
-                        'before making this SampleDB instance available to '
-                        'other users.',
+                        lazy_gettext(
+                            'You are using the default admin password from the '
+                            'SampleDB documentation. Please change your password '
+                            'before making this SampleDB instance available to '
+                            'other users.'
+                        ),
                         'warning'
                     )
                 return _redirect_to_next_url()

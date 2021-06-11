@@ -73,8 +73,6 @@ def test_params_with_reference():
     sampledb.db.session.commit()
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="Example Action",
-        description="",
         schema={
             "title": "Example Schema",
             "type": "object",

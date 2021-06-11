@@ -6,6 +6,7 @@
 from http import HTTPStatus
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField
 from wtforms import validators
@@ -48,27 +49,27 @@ def user_profile(user_id):
         if user_read_only_form.validate_on_submit():
             users.set_user_readonly(user.id, user_read_only_form.should_be_read_only.data)
             if user_read_only_form.should_be_read_only.data:
-                flask.flash('The user has been marked as read only.', 'success')
+                flask.flash(_('The user has been marked as read only.'), 'success')
             else:
-                flask.flash('The user has been unmarked as read only.', 'success')
+                flask.flash(_('The user has been unmarked as read only.'), 'success')
             return flask.redirect(flask.url_for('.user_profile', user_id=user.id))
         user_hidden_form = UserHiddenForm()
         user_hidden_form.should_be_hidden.default = not user.is_hidden
         if user_hidden_form.validate_on_submit():
             users.set_user_hidden(user.id, user_hidden_form.should_be_hidden.data)
             if user_hidden_form.should_be_hidden.data:
-                flask.flash('The user has been marked as hidden.', 'success')
+                flask.flash(_('The user has been marked as hidden.'), 'success')
             else:
-                flask.flash('The user has been unmarked as hidden.', 'success')
+                flask.flash(_('The user has been unmarked as hidden.'), 'success')
             return flask.redirect(flask.url_for('.user_profile', user_id=user.id))
         user_active_form = UserActiveForm()
         user_active_form.should_be_active.default = not user.is_active
         if user_active_form.validate_on_submit():
             users.set_user_active(user.id, user_active_form.should_be_active.data)
             if user_active_form.should_be_active.data:
-                flask.flash('The user has been activated.', 'success')
+                flask.flash(_('The user has been activated.'), 'success')
             else:
-                flask.flash('The user has been deactivated.', 'success')
+                flask.flash(_('The user has been deactivated.'), 'success')
             return flask.redirect(flask.url_for('.user_profile', user_id=user.id))
     elif flask.request.method.lower() == 'post':
         return flask.abort(HTTPStatus.METHOD_NOT_ALLOWED)

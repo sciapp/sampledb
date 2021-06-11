@@ -6,17 +6,15 @@
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField
-from wtforms.validators import InputRequired, Length
+from wtforms.validators import InputRequired, Length, DataRequired
 
 
 class EditGroupForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
+    translations = StringField(validators=[DataRequired()])
 
 
 class CreateGroupForm(FlaskForm):
-    name = StringField(validators=[Length(min=1, max=100)])
-    description = StringField()
+    translations = StringField(validators=[DataRequired()])
 
 
 class LeaveGroupForm(FlaskForm):

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Sign Out — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Sign Out') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1 class="text-center">Are you sure you want to sign out?</h1>
+  <h1 class="text-center">{{ _('Are you sure you want to sign out?') }}</h1>
   <form class="text-center" action="{{ url_for('.sign_out') }}" method="post">
     {{ signout_form().csrf_token() }}
-    <button type="submit" class="btn btn-danger" style="width:15em;">Sign out</button>
-    <a href="{{ url_for('.index') }}" class="btn btn-default" style="width:15em;">Cancel</a>
+    <button type="submit" class="btn btn-primary" style="width:15em;">{{ _('Sign out') }}</button>
+    <a href="{{ url_for('.index') }}" class="btn btn-default" style="width:15em;">{{ _('Cancel') }}</a>
   </form>
 {% endblock %}

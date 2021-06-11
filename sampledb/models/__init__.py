@@ -10,6 +10,7 @@ from . import files
 from . import groups
 from . import instruments
 from . import instrument_log_entries
+from . import instrument_translation
 from . import locations
 from . import markdown_to_html_cache
 from . import markdown_images
@@ -20,6 +21,7 @@ from . import settings
 from . import users
 
 from .actions import Action, ActionType
+from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType
@@ -30,6 +32,8 @@ from .files import File
 from .groups import Group
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
+from .instrument_translation import InstrumentTranslation
+from .languages import Language
 from .locations import Location, ObjectLocationAssignment
 from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
@@ -55,6 +59,7 @@ __all__ = [
     'groups',
     'instruments',
     'instrument_log_entries',
+    'instrument_translation',
     'locations',
     'markdown_to_html_cache',
     'markdown_images',
@@ -65,6 +70,8 @@ __all__ = [
     'users',
     'Action',
     'ActionType',
+    'ActionTranslation',
+    'ActionTypeTranslation',
     'UserActionPermissions',
     'GroupActionPermissions',
     'ProjectActionPermissions',
@@ -80,7 +87,9 @@ __all__ = [
     'Group',
     'HTTPMethod',
     'Instrument',
+    'InstrumentTranslation',
     'InstrumentLogEntry',
+    'Language',
     'Location',
     'ObjectLocationAssignment',
     'MarkdownToHTMLCacheEntry',

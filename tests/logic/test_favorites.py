@@ -7,7 +7,7 @@ import pytest
 
 import sampledb
 import sampledb.logic
-from sampledb.logic import favorites
+from sampledb.logic import favorites, action_translations, languages, instrument_translations
 from sampledb.models import Action, Instrument, User, UserType
 
 
@@ -27,17 +27,21 @@ def users():
 def independent_action():
     action = Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
             'properties': {}
         },
-        description='',
         instrument_id=None
     )
     sampledb.db.session.add(action)
     sampledb.db.session.commit()
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description='',
+    )
     # force attribute refresh
     assert action.id is not None
     return action
@@ -45,9 +49,15 @@ def independent_action():
 
 @pytest.fixture
 def instrument():
-    instrument = Instrument('Instrument')
+    instrument = Instrument()
     sampledb.db.session.add(instrument)
     sampledb.db.session.commit()
+    instrument_translations.set_instrument_translation(
+        language_id=languages.Language.ENGLISH,
+        instrument_id=instrument.id,
+        name='Example Instrument',
+        description=''
+    )
     # force attribute refresh
     assert instrument.id is not None
     return instrument

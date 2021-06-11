@@ -37,7 +37,6 @@ def other_user(flask_server):
 def test_generate_rdf(flask_server, user, other_user):
     action = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -49,7 +48,6 @@ def test_generate_rdf(flask_server, user, other_user):
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
     )
     data = {'name': {'_type': 'text', 'text': 'Example Object'}}

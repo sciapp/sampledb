@@ -36,8 +36,6 @@ def test_get_action(flask_server, auth):
 
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="Example Action",
-        description="This is an example action",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -49,6 +47,12 @@ def test_get_action(flask_server, auth):
             },
             'required': ['name']
         }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name="Example Action",
+        description="This is an example action",
     )
     sampledb.logic.action_permissions.set_action_public(action.id)
     r = requests.get(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
@@ -84,8 +88,6 @@ def test_get_actions(flask_server, auth, auth_user):
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         user_id=auth_user[1].id,
-        name="Example Action",
-        description="This is an example action",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -97,6 +99,12 @@ def test_get_actions(flask_server, auth, auth_user):
             },
             'required': ['name']
         }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name="Example Action",
+        description="This is an example action",
     )
     sampledb.logic.action_permissions.set_action_public(action.id)
     r = requests.get(flask_server.base_url + 'api/v1/actions/', auth=auth)

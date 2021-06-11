@@ -47,7 +47,11 @@ $(function() {
     var title_label = node.find('.schema-editor-root-object-title-label');
     var title_input = node.find('.schema-editor-root-object-title-input');
     if ('title' in schema) {
-      title_input.val(schema['title']);
+      if (typeof schema['title'] === 'string') {
+        title_input.val(schema['title']);
+      } else {
+        title_input.val(schema['title']['en']);
+      }
     } else {
       title_input.val("");
     }
@@ -59,7 +63,7 @@ $(function() {
       var title_help = title_group.find('.help-block');
       var title = title_input.val();
       if (title === "") {
-        title_help.text("Please enter a title.");
+        title_help.text(window.schema_editor_translations['enter_title']);
         title_group.addClass("has-error");
       } else {
         title_help.text("");
@@ -240,19 +244,19 @@ $(function() {
     help_parent.removeClass("has-error");
     var has_error = false;
     if (!('properties' in schema)) {
-      help_block.text("Objects must have at least one property.");
+      help_block.text(window.schema_editor_translations['objects_need_one_property']);
       help_parent.addClass("has-error");
       has_error = true;
     } else if (!('name' in schema['properties'])) {
-      help_block.html("Objects must have a property 'name' as a <i>Text (Simple)</i> property.");
+      help_block.html(window.schema_editor_translations['object_must_have_name_text']);
       help_parent.addClass("has-error");
       has_error = true;
     } else if (!('type' in schema['properties']['name']) || schema['properties']['name']['type'] !== "text" || ('multiline' in schema['properties']['name'] && schema['properties']['name']['multiline']) || ('markdown' in schema['properties']['name'] && schema['properties']['name']['markdown']) || 'choices' in schema['properties']['name']) {
-      help_block.html("Object name must be a <i>Text (Simple)</i> property.");
+      help_block.html(window.schema_editor_translations['object_name_must_be_text']);
       help_parent.addClass("has-error");
       has_error = true;
     } else if (!('required' in schema) || !schema['required'].includes('name')) {
-      help_block.html("Object name must be required.");
+      help_block.html(window.schema_editor_translations['object_name_must_be_required']);
       help_parent.addClass("has-error");
       has_error = true;
     }
@@ -449,7 +453,11 @@ $(function() {
     title_input.attr('id', 'schema-editor-object__' + path.join('__') + '-title-input');
     title_label.attr('for', title_input.attr('id'));
     if ('title' in schema) {
-      title_input.val(schema['title']);
+      if (typeof schema['title'] === 'string') {
+        title_input.val(schema['title']);
+      } else {
+        title_input.val(schema['title']['en']);
+      }
     } else {
       title_input.val("");
     }
@@ -490,7 +498,7 @@ $(function() {
 
       if (has_minlength) {
         if (isNaN(minlength)) {
-          minlength_help.text("Please enter a number.");
+          minlength_help.text(window.schema_editor_translations['enter_number']);
           minlength_group.addClass("has-error");
           has_error = true;
         } else {
@@ -500,7 +508,7 @@ $(function() {
             minlength_help.text("");
             minlength_group.removeClass("has-error");
           } else {
-            minlength_help.text("Please enter a number greater than or equal to zero.");
+            minlength_help.text(window.schema_editor_translations['enter_nonnegative_number']);
             minlength_group.addClass("has-error");
             has_error = true;
           }
@@ -519,7 +527,7 @@ $(function() {
 
       if (has_maxlength) {
         if (isNaN(maxlength)) {
-          maxlength_help.text("Please enter a number.");
+          maxlength_help.text(window.schema_editor_translations['enter_number']);
           maxlength_group.addClass("has-error");
           has_error = true;
         } else {
@@ -529,7 +537,7 @@ $(function() {
             maxlength_help.text("");
             maxlength_group.removeClass("has-error");
           } else {
-            maxlength_help.text("Please enter a number greater than or equal to zero.");
+            maxlength_help.text(window.schema_editor_translations['enter_nonnegative_number']);
             maxlength_group.addClass("has-error");
             has_error = true;
           }
@@ -540,9 +548,9 @@ $(function() {
         maxlength_group.removeClass("has-error");
       }
       if ('minLength' in property_schema && 'maxLength' in property_schema && property_schema['minLength'] > property_schema['maxLength']) {
-        minlength_help.text("Please enter a number less than or equal to the maximum length.");
+        minlength_help.text(window.schema_editor_translations['enter_at_most_max_length']);
         minlength_group.addClass("has-error");
-        maxlength_help.text("Please enter a number greater than or equal to the minimum length.");
+        maxlength_help.text(window.schema_editor_translations['enter_at_least_min_length']);
         maxlength_group.addClass("has-error");
         has_error = true;
       }
@@ -558,22 +566,22 @@ $(function() {
       var name_help = name_group.find('.help-block');
       if (name !== real_path[real_path.length - 1] && name in schema['properties']) {
         name = real_path[real_path.length - 1];
-        name_help.text("Name must be unique.");
+        name_help.text(window.schema_editor_translations['name_must_be_unique']);
         name_group.addClass("has-error");
         has_error = true;
       } else if (name === "hazards" || name === "tags") {
         name = real_path[real_path.length - 1];
-        name_help.text("Name must not be 'hazards' or 'tags'.");
+        name_help.text(window.schema_editor_translations['name_must_not_be_hazards_or_tags']);
         name_group.addClass("has-error");
         has_error = true;
       } else if (!RegExp('^[A-Za-z].*$').test(name)) {
         name = real_path[real_path.length - 1];
-        name_help.text("Name must begin with a character.");
+        name_help.text(window.schema_editor_translations['name_must_begin_with_character']);
         name_group.addClass("has-error");
         has_error = true;
       } else if (!RegExp('^.*[A-Za-z0-9]$').test(name)) {
         name = real_path[real_path.length - 1];
-        name_help.text("Name must end with a character or a number.");
+        name_help.text(window.schema_editor_translations['name_must_end_with_character_or_number']);
         name_group.addClass("has-error");
         has_error = true;
       } else if (RegExp('^[A-Za-z0-9_]*$').test(name) && !RegExp('^[A-Za-z0-9]*__[A-Za-z0-9_]*$').test(name)) {
@@ -581,7 +589,7 @@ $(function() {
         name_group.removeClass("has-error");
       } else {
         name = real_path[real_path.length - 1];
-        name_help.text("Name must only contain characters, numbers and individual underscores.");
+        name_help.text(window.schema_editor_translations['name_must_contain_valid_chars']);
         name_group.addClass("has-error");
         has_error = true;
       }
@@ -590,11 +598,11 @@ $(function() {
       var title_help = title_group.find('.help-block');
       var title = title_input.val();
       if (title === "") {
-        title_help.text("Title must not be empty.");
+        title_help.text(window.schema_editor_translations['title_must_not_be_empty']);
         title_group.addClass("has-error");
         has_error = true;
       } else if (RegExp('^\\s*$').test(title)) {
-        title_help.text("Title must not be whitespace only.");
+        title_help.text(window.schema_editor_translations['title_must_not_be_whitespace']);
         title_group.addClass("has-error");
         has_error = true;
       } else {
@@ -721,7 +729,7 @@ $(function() {
       }
       choices = non_empty_choices;
       if (choices.length === 0) {
-        choices_help.text("Choices must not be empty.");
+        choices_help.text(window.schema_editor_translations['choices_must_not_be_empty']);
         choices_group.addClass("has-error");
         has_error = true;
       } else {
@@ -864,7 +872,7 @@ $(function() {
         units_help.text("");
         units_group.removeClass("has-error");
       } else {
-        units_help.text("Please enter units or 1.");
+        units_help.text(window.schema_editor_translations['enter_units']);
         units_group.addClass("has-error");
         has_error = true;
       }
@@ -877,7 +885,7 @@ $(function() {
 
       if (has_default) {
         if (isNaN(default_value) || default_value === null || default_value === "") {
-          default_help.text("Please enter the default magnitude (in base units) as a number.");
+          default_help.text(window.schema_editor_translations['enter_default_magnitude']);
           default_group.addClass("has-error");
           has_error = true;
         } else {
@@ -1048,7 +1056,7 @@ $(function() {
     if (window.schema_editor_error_message !== null && window.schema_editor_error_message === ("invalid units (at " + path[0] + ")")) {
       var units_group = units_input.parent();
       units_group.addClass("has-error");
-      units_group.find('.help-block').text("Please enter valid units");
+      units_group.find('.help-block').text(window.schema_editor_translations['enter_valid_units']);
       window.schema_editor_errors[path.join('__') + '__specific'] = true;
     }
 

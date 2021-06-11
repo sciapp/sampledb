@@ -18,12 +18,10 @@ As the project models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
 
-from sqlalchemy.exc import IntegrityError
 import collections
 import datetime
 import typing
 import flask
-
 from .. import db
 from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .users import get_user
@@ -33,6 +31,7 @@ from . import errors
 from . import objects
 from . import object_log
 from .notifications import create_notification_for_being_invited_to_a_project
+from .languages import get_language_by_lang_code, Language
 
 
 # project names are limited to this (semi-arbitrary) length
@@ -44,7 +43,7 @@ class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
     This class provides an immutable wrapper around models.projects.Project.
     """
 
-    def __new__(cls, id: int, name: str, description: str):
+    def __new__(cls, id: int, name: dict, description: dict):
         self = super(Project, cls).__new__(cls, id, name, description)
         return self
 
@@ -79,13 +78,14 @@ class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'proj
         return datetime.datetime.utcnow() >= expiration_datetime
 
 
-def create_project(name: str, description: str, initial_user_id: int) -> Project:
+def create_project(name: typing.Union[str, dict], description: typing.Union[str, dict], initial_user_id: int) -> Project:
     """
     Creates a new project with the given name and description and adds an
     initial user to it.
 
-    :param name: the unique name of the project
-    :param description: a (possibly empty) description for the project
+    :param name: the unique names of the project in a dict. Keys are lang codes and values names.
+    :param description: (possibly empty) descriptions for the project in a dict.
+        Keys are lang codes and values are descriptions
     :param initial_user_id: the user ID of the initial project member
     :return: the newly created project
     :raise errors.InvalidProjectNameError: when the project name is empty or more
@@ -94,56 +94,107 @@ def create_project(name: str, description: str, initial_user_id: int) -> Project
         user ID exists
     :raise errors.ProjectAlreadyExistsError: when another project with the given
         name already exists
+    :raise errors.LanguageDoesNotExistError: when there is no language for the given lang codes
     """
-    if not 1 <= len(name) <= MAX_PROJECT_NAME_LENGTH:
+    if isinstance(name, str):
+        name = {
+            'en': name
+        }
+    if isinstance(description, str):
+        description = {
+            'en': description
+        }
+    try:
+        for language_code, name_text in list(name.items()):
+            language = get_language_by_lang_code(language_code)
+            if not 1 <= len(name_text) <= MAX_PROJECT_NAME_LENGTH:
+                if language.id == Language.ENGLISH:
+                    raise errors.InvalidProjectNameError()
+                else:
+                    del name[language_code]
+            existing_project = projects.Project.query.filter(
+                projects.Project.name[language_code].astext.cast(db.Unicode) == name_text
+            ).first()
+            if existing_project is not None:
+                raise errors.ProjectAlreadyExistsError()
+    except errors.LanguageDoesNotExistError:
+        raise errors.LanguageDoesNotExistError("There is no language for the given lang code")
+    except errors.InvalidProjectNameError:
         raise errors.InvalidProjectNameError()
+    except errors.ProjectAlreadyExistsError:
+        raise errors.ProjectAlreadyExistsError()
+    if 'en' not in name:
+        raise errors.MissingEnglishTranslationError()
+    if not name['en']:
+        raise errors.InvalidProjectNameError()
+
+    for item in list(description.items()):
+        if item[1] == '':
+            del description[item[0]]
+
     user = get_user(initial_user_id)
     project = projects.Project(name=name, description=description)
     db.session.add(project)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        existing_project = projects.Project.query.filter_by(name=name).first()
-        if existing_project is not None:
-            raise errors.ProjectAlreadyExistsError()
-        raise
+
+    db.session.commit()
     user_project_permissions = projects.UserProjectPermissions(project_id=project.id, user_id=user.id, permissions=Permissions.GRANT)
     db.session.add(user_project_permissions)
     db.session.commit()
     return Project.from_database(project)
 
 
-def update_project(project_id: int, name: str, description: str = '') -> None:
+def update_project(project_id: int, name: dict, description: dict) -> None:
     """
     Updates the project's name and description.
 
     :param project_id: the ID of an existing project
-    :param name: the new unique project name
-    :param description: the new project description
+    :param name: the new unique project names in a dict. Keys are lang codes and values are names.
+    :param description: the new project descriptions in a dict. Keys are lang codes and values are descriptions.
     :raise errors.InvalidProjectNameError: when the project name is empty or more
         than MAX_PROJECT_NAME_LENGTH characters long
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     :raise errors.ProjectAlreadyExistsError: when another project with the given
         name already exists
+    :raise errors.LanguageDoesNotExistError: when there is no language for the given lang codes.
     """
-    if not 1 <= len(name) <= MAX_PROJECT_NAME_LENGTH:
+    try:
+        for language_code, name_text in list(name.items()):
+            language = get_language_by_lang_code(language_code)
+            if not 1 <= len(name_text) <= MAX_PROJECT_NAME_LENGTH:
+                if language.id != Language.ENGLISH and not name_text:
+                    del name[language_code]
+                else:
+                    raise errors.InvalidProjectNameError()
+            existing_project = projects.Project.query.filter(
+                projects.Project.name[language_code].astext.cast(db.Unicode) == name_text
+            ).first()
+            if existing_project is not None and existing_project.id != project_id:
+                raise errors.ProjectAlreadyExistsError()
+
+    except errors.LanguageDoesNotExistError:
+        raise errors.LanguageDoesNotExistError("There is no language for the given lang code")
+    except errors.InvalidProjectNameError:
         raise errors.InvalidProjectNameError()
+    except errors.ProjectAlreadyExistsError:
+        raise errors.ProjectAlreadyExistsError()
+    except Exception as e:
+        raise e
+    if 'en' not in name:
+        raise errors.MissingEnglishTranslationError()
+
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
+
+    for item in list(description.items()):
+        if item[1] == '':
+            del description[item[0]]
+
     project.name = name
     project.description = description
     db.session.add(project)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        existing_project = projects.Project.query.filter_by(name=name).first()
-        if existing_project is not None:
-            raise errors.ProjectAlreadyExistsError()
-        raise
+    db.session.commit()
 
 
 def delete_project(project_id: int) -> None:

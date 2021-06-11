@@ -3,6 +3,7 @@
 
 """
 
+import json
 import requests
 import pytest
 from bs4 import BeautifulSoup
@@ -113,8 +114,14 @@ def test_create_project(flask_server, user_session):
     r = user_session.post(flask_server.base_url + 'projects/', data={
         'create': 'create',
         'csrf_token': csrf_token,
-        'name': 'Example Project',
-        'description': 'Example Description'
+        'translations': json.dumps([
+            {
+                "language_id": -99,
+                "lang_name": "English",
+                "name": "Example Project",
+                "description": "Example Description"
+            }
+        ])
     }, allow_redirects=False)
     assert r.status_code == 302
     # Force reloading of objects
@@ -123,8 +130,8 @@ def test_create_project(flask_server, user_session):
     projects = sampledb.logic.projects.get_user_projects(user_session.user_id)
     assert len(projects) == 1
     project = projects[0]
-    assert project.name == 'Example Project'
-    assert project.description == 'Example Description'
+    assert project.name == {'en': 'Example Project'}
+    assert project.description == {'en': 'Example Description'}
 
     assert r.headers['Location'] == flask_server.base_url + 'projects/{}'.format(project.id)
 
@@ -161,16 +168,22 @@ def test_edit_project(flask_server, user_session):
     r = user_session.post(flask_server.base_url + 'projects/{}'.format(project_id), data={
         'edit': 'edit',
         'csrf_token': csrf_token,
-        'name': 'Test Project',
-        'description': 'Test Description'
+        'translations': json.dumps([
+            {
+                "language_id": -99,
+                "lang_name": "English",
+                "name": "Test Project",
+                "description": "Test Description"
+            }
+        ])
     })
     assert r.status_code == 200
     # Force reloading of objects
     sampledb.db.session.rollback()
 
     project = sampledb.logic.projects.get_project(project_id)
-    assert project.name == 'Test Project'
-    assert project.description == 'Test Description'
+    assert project.name == {'en': 'Test Project'}
+    assert project.description == {'en': 'Test Description'}
 
 
 def test_add_user(flask_server, user_session, user):

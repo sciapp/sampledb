@@ -6,7 +6,8 @@ Usage: python -m sampledb list_actions
 """
 
 from .. import create_app
-from ..logic.actions import get_actions
+from ..logic.action_translations import get_actions_with_translation_in_language
+from ..logic.languages import Language
 
 
 def main(arguments):
@@ -15,6 +16,6 @@ def main(arguments):
         exit(1)
     app = create_app()
     with app.app_context():
-        actions = get_actions()
+        actions = get_actions_with_translation_in_language(Language.ENGLISH)
         for action in actions:
-            print(" - #{0.id}: {0.name}".format(action))
+            print(" - #{0.id}: {0.translation.name}".format(action))

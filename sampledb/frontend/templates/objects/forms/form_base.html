@@ -21,27 +21,58 @@
   <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
 {% endif %}
 <script type="text/javascript">
-    $(function () {
-        $('.input-group.date').each(function() {
-          $(this).datetimepicker({
-            format: 'YYYY-MM-DD HH:mm:ss',
-            date: $(this).attr('data-datetime')
-          });
-        });
+  window.mde_fields = [];
 
-        $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
-            var mde_field = new InscrybMDE({
-                element: e,
-                indentWithTabs: false,
-                spellChecker: false,
-                status: false,
-                hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-                showIcons: ["code", "table"],
-                minHeight: '100px',
-            });
-            setupImageDragAndDrop(mde_field);
-        });
+  $(function () {
+    $('.input-group.date').each(function() {
+      $(this).datetimepicker({
+        locale: "{{ get_user_language(current_user).lang_code }}",
+        format: "{{ get_user_language(current_user).datetime_format_moment }}",
+        date: $(this).attr('data-datetime')
+      });
     });
+
+    $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
+      var mde_field = new InscrybMDE({
+        element: e,
+        indentWithTabs: false,
+        spellChecker: false,
+        status: false,
+        hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+        showIcons: ["code", "table"],
+        minHeight: '100px',
+      });
+      setupImageDragAndDrop(mde_field);
+    });
+
+    function updateSelectLanguage(selectpicker) {
+      var enabled_languages = $(selectpicker).selectpicker('val');
+      if (!Array.isArray(enabled_languages)) {
+        return;
+      }
+      if (enabled_languages === '' || enabled_languages.length === 0) {
+        enabled_languages = ['en'];
+      } else {
+        enabled_languages.push('en');
+      }
+      var parent_form_group = $(selectpicker).closest('.form-group');
+      {% for language in languages %}
+        if (enabled_languages.includes("{{ language.lang_code }}")) {
+          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+        } else {
+          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+        }
+      {% endfor %}
+    }
+
+    var select_language_selectpicker = $('.select-language')
+    select_language_selectpicker.on('changed.bs.select', function() {
+      updateSelectLanguage(this);
+    });
+    select_language_selectpicker.each(function(_, selectpicker) {
+      updateSelectLanguage(selectpicker);
+    });
+  });
 
   var tags = new Bloodhound({
     initialize: true,

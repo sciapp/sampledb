@@ -10,17 +10,18 @@ from .. import db
 
 from .objects import Objects
 from .users import User
+import sqlalchemy.dialects.postgresql as postgresql
 
 
 class Location(db.Model):
     __tablename__ = 'locations'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text, nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    name = db.Column(postgresql.JSON, nullable=False)
+    description = db.Column(postgresql.JSON, nullable=False)
     parent_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
-    def __init__(self, name: str, description: str, parent_location_id: typing.Optional[int] = None):
+    def __init__(self, name: dict, description: dict, parent_location_id: typing.Optional[int] = None):
         self.name = name
         self.description = description
         self.parent_location_id = parent_location_id
@@ -37,12 +38,12 @@ class ObjectLocationAssignment(db.Model):
     location_id = db.Column(db.Integer, db.ForeignKey(Location.id), nullable=True)
     responsible_user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    description = db.Column(postgresql.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     location = db.relationship('Location')
 
-    def __init__(self, object_id: int, location_id: int, user_id: int, description: str, utc_datetime: typing.Optional[datetime.datetime] = None, responsible_user_id: typing.Optional[int] = None, confirmed: bool = False):
+    def __init__(self, object_id: int, location_id: int, user_id: int, description: dict, utc_datetime: typing.Optional[datetime.datetime] = None, responsible_user_id: typing.Optional[int] = None, confirmed: bool = False):
         self.object_id = object_id
         self.location_id = location_id
         self.user_id = user_id

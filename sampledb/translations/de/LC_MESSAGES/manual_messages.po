@@ -1,0 +1,29 @@
+msgid ".zip Archive"
+msgstr ".zip-Archiv"
+
+msgid ".tar.gz Archive"
+msgstr ".tar.gz-Archiv"
+
+msgid "read permissions"
+msgstr "Lese-Berechtigungen"
+
+msgid "write permissions"
+msgstr "Schreib-Berechtigungen"
+
+msgid "grant permissions"
+msgstr "Rechtevergabe-Berechtigungen"
+
+msgid "Gray"
+msgstr "Grau"
+
+msgid "Blue"
+msgstr "Blau"
+
+msgid "Green"
+msgstr "Grün"
+
+msgid "Yellow"
+msgstr "Gelb"
+
+msgid "Red"
+msgstr "Rot"

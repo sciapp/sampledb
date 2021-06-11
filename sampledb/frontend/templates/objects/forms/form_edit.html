@@ -1,6 +1,6 @@
 {% extends "objects/forms/form_base.html" %}
 
-{% block title %}Object #{{ object_id }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Object') }} #{{ object_id }} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
@@ -9,13 +9,28 @@
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
-      <div class="col-md-6 text-muted">* required</div>
+      <div class="col-md-6 text-muted">* {{ _('required') }}</div>
       <div class="col-md-3">
-        <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+        <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
       </div>
       <div class="col-md-3">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">Save</button>
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ _('Save') }}</button>
       </div>
     </div>
   </form>
 {% endblock %}
+
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+  $(function() {
+    $('form').on('submit', function() {
+      $('input').change();
+      $('textarea').change();
+
+      return ($('[data-name="help-block-pattern"]').length === 0);
+    });
+  });
+  </script>
+{% endblock%}

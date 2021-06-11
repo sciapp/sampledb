@@ -3,22 +3,26 @@
 
 """
 
+import json
 import base64
 from io import BytesIO
 import os
 from urllib.parse import quote_plus
+from datetime import datetime
+from math import log10
 
 import flask
 import flask_login
+from flask_babel import format_number, format_datetime, format_date, format_decimal, format_scientific
 import qrcode
 import qrcode.image.svg
 import plotly
-import json
 
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
+from ..logic.utils import get_translated_text
 
 
 def jinja_filter(func):
@@ -118,6 +122,56 @@ def to_json_no_extra_escapes(json_object, indent=None):
     return json.dumps(json_object, indent=indent)
 
 
+def custom_format_datetime(date, format='%Y-%m-%d %H:%M:%S'):
+    """
+    Returns a reformatted date in the given format.
+
+    :param date: a string representing a date in the given format
+    :param format: a string for the format of the given date
+    :return: the reformatted date or in case of an error the input date
+    """
+    try:
+        if isinstance(date, datetime):
+            datetime_obj = date
+        else:
+            datetime_obj = datetime.strptime(date, format)
+        if format == '%Y-%m-%d %H:%M:%S':
+            format2 = 'medium'
+            return format_datetime(datetime_obj, format=format2)
+        else:
+            return format_date(datetime_obj.date())
+    except ValueError:
+        return date
+
+
+def custom_format_date(date, format='%Y-%m-%d'):
+    if isinstance(date, datetime):
+        datetime_obj = date
+    else:
+        datetime_obj = datetime.strptime(date, format)
+    return format_date(datetime_obj.date())
+
+
+def custom_format_number(number):
+    """
+    Return the formatted number.
+
+    :param number: either an int or a float
+    :return: the reformatted number
+    """
+    try:
+        # if number is a string that can not be formatted. Wrong inputs...
+        float(number)
+    except ValueError:
+        return number
+    if float(number) != 0:
+        if log10(float(number)) <= -5.0 or int(log10(float(number))) >= 6:
+            return format_scientific(number)
+    if type(number) is int:
+        return format_number(number)
+    return format_decimal(number)
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -129,3 +183,7 @@ _jinja_filters['hash'] = generate_jinja_hash
 _jinja_filters['plot'] = plotly_base64_image_from_json
 _jinja_filters['plotly_chart_get_title'] = plotly_chart_get_title
 _jinja_filters['to_json_no_extra_escapes'] = to_json_no_extra_escapes
+_jinja_filters['get_translated_text'] = get_translated_text
+_jinja_filters['babel_format_datetime'] = custom_format_datetime
+_jinja_filters['babel_format_date'] = custom_format_date
+_jinja_filters['babel_format_number'] = custom_format_number

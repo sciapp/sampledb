@@ -19,13 +19,18 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0
+    - apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0 gettext
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
       done
     # install dependencies
     - python3 -m pip install -r requirements.txt
+    # build translations once instead of with each test
+    - python3 -m sampledb build_translations
+    # set up configuration values for testing
+    - mkdir ${CI_PROJECT_DIR}/test_files/
     - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
+    - export SAMPLEDB_BUILD_TRANSLATIONS=
     # run tests and gather coverage data
     - python3 -m pytest -x -s -n=4 --cov=sampledb/ --junitxml=pytest.xml tests
   artifacts:
@@ -52,7 +57,7 @@ documentation:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip xvfb chromium-browser
+    - apt-get install -y git python3-pip xvfb chromium-browser gettext
     # install dependencies
     - python3 -m pip install -r requirements.txt
     # generate documentation images using current version

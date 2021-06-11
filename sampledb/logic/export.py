@@ -147,40 +147,52 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
             relevant_instrument_ids.add(action_info.instrument_id)
             action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
             if logic.action_permissions.Permissions.READ in action_permissions:
+                action_translation = logic.action_translations.get_action_translation_for_action_in_language(
+                    action_id=action_info.id,
+                    language_id=logic.languages.Language.ENGLISH
+                )
+                action_type_translation = logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
+                    action_type_id=action_info.type_id,
+                    language_id=logic.languages.Language.ENGLISH
+                )
                 action_infos.append({
                     'id': action_info.id,
-                    'type': action_info.type.object_name.lower(),
-                    'name': action_info.name,
+                    'type': action_type_translation.object_name.lower(),
+                    'name': action_translation.name,
                     'user_id': action_info.user_id,
                     'instrument_id': action_info.instrument_id,
-                    'description': action_info.description,
+                    'description': action_translation.description,
                     'description_is_markdown': action_info.description_is_markdown,
-                    'short_description': action_info.short_description,
+                    'short_description': action_translation.short_description,
                     'short_description_is_markdown': action_info.short_description_is_markdown
                 })
-            if action_info.description_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description)))
-            if action_info.short_description_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description)))
+                if action_info.description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.description)))
+                if action_info.short_description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.short_description)))
     infos['actions'] = action_infos
 
     instrument_infos = []
     for instrument_info in logic.instruments.get_instruments():
         if instrument_info.id in relevant_instrument_ids:
             relevant_user_ids.update({user.id for user in instrument_info.responsible_users})
+            instrument_translation = logic.instrument_translations.get_instrument_translation_for_instrument_in_language(
+                instrument_id=instrument_info.id,
+                language_id=logic.languages.Language.ENGLISH
+            )
             instrument_infos.append({
                 'id': instrument_info.id,
-                'name': instrument_info.name,
-                'description': instrument_info.description,
+                'name': instrument_translation.name,
+                'description': instrument_translation.description,
                 'description_is_markdown': instrument_info.description_is_markdown,
-                'short_description': instrument_info.short_description,
+                'short_description': instrument_translation.short_description,
                 'short_description_is_markdown': instrument_info.short_description_is_markdown,
                 'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
                 'instrument_log_entries': []
             })
             user_is_instrument_responsible = user_id in [user.id for user in instrument_info.responsible_users]
             if user_is_instrument_responsible:
-                instrument_infos[-1]['notes'] = instrument_info.notes
+                instrument_infos[-1]['notes'] = instrument_translation.notes
                 instrument_infos[-1]['notes_is_markdown'] = instrument_info.notes_is_markdown
             if instrument_info.users_can_view_log_entries or user_is_instrument_responsible:
                 for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
@@ -221,11 +233,11 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                             'object_id': object_attachment.object_id
                         })
             if instrument_info.description_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.description)))
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.description)))
             if instrument_info.short_description_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.short_description)))
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.short_description)))
             if user_is_instrument_responsible and instrument_info.notes_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.notes)))
+                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.notes)))
     infos['instruments'] = instrument_infos
 
     user_infos = []

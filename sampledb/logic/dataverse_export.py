@@ -18,7 +18,7 @@ import requests
 
 from .. import db
 from .units import prettify_units
-from . import datatypes, object_log, users, actions, objects, errors, object_permissions, files, settings
+from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings, instrument_translations, languages
 from ..models import DataverseExport
 
 
@@ -62,6 +62,17 @@ def _flatten_metadata_object(
         yield from flatten_metadata(value, path + [key])
 
 
+def _translations_to_str(
+        content: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
+) -> str:
+    if isinstance(content, dict):
+        if len(content) == 1:
+            content = content[list(content)[0]]
+        else:
+            content = json.dumps(content)
+    return content
+
+
 def get_title_for_property(
         path: typing.List[str],
         schema: typing.Dict[str, typing.Any]
@@ -82,7 +93,10 @@ def get_title_for_property(
         for key in path:
             if isinstance(key, str):
                 subschema = subschema['properties'][key]
-                title_path.append(subschema['title'])
+                if isinstance(subschema['title'], dict):
+                    title_path.append(subschema['title'].get('en', subschema['title']))
+                else:
+                    title_path.append(subschema['title'])
             else:
                 subschema = subschema['items']
                 title_path.append(key)
@@ -132,7 +146,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                 units = ''
             magnitude = f"{datatypes.Quantity.from_json(value).magnitude:g}"
         elif value['_type'] == 'text':
-            symbol = datatypes.Text.from_json(value).text
+            symbol = _translations_to_str(datatypes.Text.from_json(value).text)
         elif value['_type'] == 'bool':
             symbol = str(datatypes.Boolean.from_json(value).value)
         elif value['_type'] == 'datetime':
@@ -161,7 +175,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
         elif value['_type'] in ('sample', 'measurement', 'object_reference'):
             object_id = value['object_id']
             if object_permissions.Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
-                object_name = objects.get_object(object_id).data.get('name', {}).get('text')
+                object_name = _translations_to_str(objects.get_object(object_id).data.get('name', {}).get('text'))
             else:
                 object_name = None
             if object_name:
@@ -239,8 +253,12 @@ def upload_object(
     schema = object.schema
 
     action = actions.get_action(object.action_id)
-    if action.instrument:
-        instrument_name = action.instrument.name
+    if action.instrument_id:
+        instrument_name = instrument_translations.get_instrument_translation_for_instrument_in_language(
+            instrument_id=action.instrument_id,
+            language_id=languages.Language.ENGLISH,
+            use_fallback=True
+        ).name
     else:
         instrument_name = None
 
@@ -310,7 +328,7 @@ def upload_object(
                 'typeName': 'title',
                 'multiple': False,
                 'typeClass': 'primitive',
-                'value': sampledb_metadata['name']['text']
+                'value': sampledb_metadata['name']['text'].get('en', json.dumps(sampledb_metadata['name']['text'])) if isinstance(sampledb_metadata['name']['text'], dict) else json.dumps(sampledb_metadata['name']['text'])
             },
             {
                 'typeName': 'alternativeURL',

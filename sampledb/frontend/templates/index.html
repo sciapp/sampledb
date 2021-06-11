@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Home — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Home') }} — {{ service_name }}{% endblock %}
 
 {# hide user area in navbar #}
 {% block navbar_userarea %}
@@ -11,37 +11,37 @@
 
 {% block content %}
   <div class="alert alert-warning">
-    <p><strong>Warning:</strong> This installation of {{ service_name }}, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:{{ contact_email }}?subject={{ service_name }}">let us know</a>. Thank you!</p>
+    <p><strong>{{ _('Warning:')}}</strong> {{ _('This installation of %(service_name)s, the sample and measurement metadata database, is still under active development. While we try to keep everything running smoothly, the system may be offline for several minutes when it is updated. If you have further questions or encounter any issues, please <a href="mailto:%(contact_email)s?subject=%(service_name)s">let us know</a>. Thank you!', contact_email=contact_email, service_name=service_name) }}</p>
   </div>
   {% if service_name == 'iffSamples' and config['SERVER_NAME'] != 'iffsamples.fz-juelich.de' %}
     <div class="alert alert-danger">
-      <p><strong>Warning:</strong> This is a preview installation of {{ service_name }}, the sample and measurement metadata database at PGI / JCNS. It is used for development, may be offline at any time and the <strong>data will be deleted!</strong></p>
+      <p><strong>{{ _('Warning:')}}</strong> {{ _('This is a preview installation of %(service_name)s, the sample and measurement metadata database at PGI / JCNS. It is used for development, may be offline at any time and the <strong>data will be deleted!</strong>', service_name=service_name) }}</p>
     </div>
   {% endif %}
 {% if not current_user.is_authenticated %}
   <div class="jumbotron">
-    <h1>Welcome to {{ service_name }}</h1>
-    <p>{{ service_description }}</p>
+    <h1>{{ _('Welcome to %(service_name)s', service_name=service_name)}}</h1>
+    <p>{{ service_description | get_translated_text }}</p>
     <div class="container">
     <div class="col-md-4 col-md-offset-4">
-      <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-block btn-lg btn-primary">Sign In</a>
+      <a href="{{ url_for('frontend.sign_in') }}" class="btn btn-block btn-lg btn-primary">{{ _('Sign In') }}</a>
     </div>
     </div>
   </div>
 {% else %}
   <div class="jumbotron">
-    <h1>Welcome to {{ service_name }}</h1>
-    <p>{{ service_description }}</p>
+    <h1>{{ _('Welcome to %(service_name)s', service_name=service_name) }}</h1>
+    <p>{{ service_description | get_translated_text }}</p>
     <div class="container">
-    {% for action_type in get_action_types() %}
-      {% if action_type.show_on_frontpage %}
+    {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
+        {% if action_type.show_on_frontpage %}
       <div class="row">
         <div class="col-md-offset-{% if not current_user.is_readonly %}2{% else %}4{% endif %} col-md-4">
-          <a href="{{ url_for('frontend.actions', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.perform_text }}</a>
+          <a href="{{ url_for('frontend.actions', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.translation.perform_text }}</a>
         </div>
         {% if not current_user.is_readonly %}
         <div class="col-md-4">
-          <a href="{{ url_for('frontend.objects', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.view_text }}</a>
+          <a href="{{ url_for('frontend.objects', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.translation.view_text }}</a>
         </div>
         {% endif %}
       </div>
@@ -51,3 +51,4 @@
   </div>
 {% endif %}
 {% endblock %}
+

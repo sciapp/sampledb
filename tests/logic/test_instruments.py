@@ -11,18 +11,40 @@ from sampledb.logic import instruments, errors
 
 def test_create_instrument():
     assert len(instruments.get_instruments()) == 0
-    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    instrument = instruments.create_instrument()
     assert len(instruments.get_instruments()) == 1
     assert instrument == instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 0
 
 
 def test_update_instrument():
-    instrument = instruments.create_instrument(name="Example Instrument", description="")
-    instruments.update_instrument(instrument_id=instrument.id, name="Test", description="desc")
+    instrument = instruments.create_instrument(
+        description_is_markdown=False,
+        users_can_create_log_entries=False,
+        users_can_view_log_entries=False,
+        notes_is_markdown=False,
+        create_log_entry_default=False,
+        is_hidden=False,
+        short_description_is_markdown=False
+    )
+    instruments.update_instrument(
+        instrument_id=instrument.id,
+        description_is_markdown=False,
+        users_can_create_log_entries=True,
+        users_can_view_log_entries=False,
+        notes_is_markdown=False,
+        create_log_entry_default=False,
+        is_hidden=True,
+        short_description_is_markdown=False
+    )
     instrument = instruments.get_instrument(instrument_id=instrument.id)
-    assert instrument.name == "Test"
-    assert instrument.description == "desc"
+    assert instrument.description_is_markdown is False
+    assert instrument.users_can_create_log_entries is True
+    assert instrument.users_can_view_log_entries is False
+    assert instrument.notes_is_markdown is False
+    assert instrument.create_log_entry_default is False
+    assert instrument.is_hidden is True
+    assert instrument.short_description_is_markdown is False
     assert len(instrument.responsible_users) == 0
 
 
@@ -30,7 +52,7 @@ def test_instrument_responsible_users():
     user = User(name="Testuser", email="example@example.com", type=UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    instrument = instruments.create_instrument()
     assert len(instrument.responsible_users) == 0
     instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     assert len(instrument.responsible_users) == 1
@@ -51,15 +73,17 @@ def test_instrument_responsible_users():
 
 
 def test_get_missing_instrument():
-    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    instrument = instruments.create_instrument()
     with pytest.raises(errors.InstrumentDoesNotExistError):
         instruments.get_instrument(instrument_id=instrument.id+1)
 
 
 def test_update_missing_instrument():
-    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    instrument = instruments.create_instrument()
     with pytest.raises(errors.InstrumentDoesNotExistError):
-        instruments.update_instrument(instrument_id=instrument.id+1, name="Test", description="desc")
+        instruments.update_instrument(
+            instrument_id=instrument.id+1
+        )
 
 
 def test_set_instrument_responsible_users():
@@ -68,7 +92,7 @@ def test_set_instrument_responsible_users():
     sampledb.db.session.add(user1)
     sampledb.db.session.add(user2)
     sampledb.db.session.commit()
-    instrument = instruments.create_instrument(name="Example Instrument", description="")
+    instrument = instruments.create_instrument()
     assert len(instrument.responsible_users) == 0
     instruments.set_instrument_responsible_users(instrument.id, [user1.id])
     assert len(instrument.responsible_users) == 1
