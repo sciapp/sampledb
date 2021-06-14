@@ -497,9 +497,11 @@
       </label>
       <span class="col-md-8">
         <select class="selectpicker form-control" id="select-locale" name="select-locale" data-width="100%" data-live-search="true">
-        <option value="auto_lc" {% if  user_settings['AUTO_LC'] ==  True %} selected {% endif %}>{{ _('Detect language (default): ') }} {{ your_locale }}  </option>
+        <option value="auto_lc" {% if  user_settings['AUTO_LC'] == True or user_settings['LOCALE'] not in allowed_language_codes %} selected {% endif %}>{{ _('Detect language (default): ') }} {{ your_locale }}  </option>
         {% for locale in supported_locales %}
+          {% if locale in allowed_language_codes %}
             <option value="{{ locale }}" {% if  user_settings['LOCALE'] ==  locale and user_settings['AUTO_LC'] == False%} selected {% endif %}>{{ supported_locales[locale].native_name }} ({{ locale }})</option>
+          {% endif %}
         {% endfor %}
         </select>
       </span>

@@ -19,6 +19,7 @@ from ..users_forms import RequestPasswordResetForm, PasswordForm, Authentication
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
 from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm
 
+from ... import logic
 from ...logic import user_log
 from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token
 from ...logic.users import get_user, get_users
@@ -428,10 +429,14 @@ def change_preferences(user, user_id):
         select_locale = flask.request.form.get('select-locale', '')
 
         if select_locale == 'auto_lc':
-            set_user_settings(flask_login.current_user.id,
-                              {'LOCALE': flask.request.accept_languages.best_match(SUPPORTED_LOCALES.keys()),
-                               'AUTO_LC': True})
-        else:
+            set_user_settings(
+                flask_login.current_user.id,
+                {
+                    'LOCALE': 'en',
+                    'AUTO_LC': True
+                }
+            )
+        elif select_locale in logic.locale.get_allowed_language_codes():
             set_user_settings(flask_login.current_user.id, {'LOCALE': select_locale, 'AUTO_LC': False})
 
         if select_timezone == 'auto_tz':
@@ -474,6 +479,7 @@ def change_preferences(user, user_id):
                                  all_timezones=all_timezones,
                                  your_locale=your_locale,
                                  supported_locales=SUPPORTED_LOCALES,
+                                 allowed_language_codes=logic.locale.get_allowed_language_codes(),
                                  Permissions=Permissions,
                                  users=users,
                                  get_user=get_user,

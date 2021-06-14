@@ -37,7 +37,7 @@ def set_locale():
         return request_locale
 
     stored_locale = sampledb.logic.settings.get_user_settings(current_user.id)['LOCALE']
-    if stored_locale in sampledb.logic.locale.SUPPORTED_LOCALES:
+    if stored_locale in sampledb.logic.locale.get_allowed_language_codes():
         return stored_locale
 
     return request_locale

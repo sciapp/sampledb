@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-06-11 09:05+0200\n"
+"POT-Creation-Date: 2021-06-14 14:18+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -31,14 +31,14 @@ msgstr ""
 "Durchführungstext sind erforderlich."
 
 #: frontend/action_types.py:172 frontend/action_types.py:260
-#: frontend/action_types.py:290 frontend/languages.py:140
+#: frontend/action_types.py:290 frontend/languages.py:146
 #: frontend/templates/action_types/action_type_form.html:109
-#: frontend/templates/preferences.html:685
+#: frontend/templates/preferences.html:687
 msgid "Create"
 msgstr "Erstellen"
 
 #: frontend/action_types.py:172 frontend/action_types.py:260
-#: frontend/action_types.py:290 frontend/languages.py:140
+#: frontend/action_types.py:290 frontend/languages.py:146
 #: frontend/templates/action_types/action_type_form.html:101
 #: frontend/templates/groups/group.html:159
 #: frontend/templates/objects/forms/form_create.html:112
@@ -48,7 +48,7 @@ msgstr "Erstellen"
 #: frontend/templates/preferences.html:62
 #: frontend/templates/preferences.html:209
 #: frontend/templates/preferences.html:349
-#: frontend/templates/preferences.html:573
+#: frontend/templates/preferences.html:575
 #: frontend/templates/projects/project.html:280
 #: frontend/templates/projects/project_permissions.html:170
 msgid "Save"
@@ -175,20 +175,26 @@ msgstr "Das Instrument wurde erfolgreich aktualisiert."
 msgid "Update Instrument"
 msgstr "Instrument bearbeiten"
 
-#: frontend/languages.py:115
+#: frontend/languages.py:118
 msgid "This language code is already in use."
 msgstr "Dieses Sprachkürzel wird bereits verwendet."
 
-#: frontend/languages.py:117
+#: frontend/languages.py:120
 msgid "The English language cannot be disabled for input."
 msgstr "Die englische Sprache kann nicht für Eingaben deaktiviert werden."
 
-#: frontend/languages.py:119
+#: frontend/languages.py:122
+msgid "The English language cannot be disabled for the user interface."
+msgstr ""
+"Die englische Sprache kann nicht für die Benutzerschnittstelle "
+"deaktiviert werden."
+
+#: frontend/languages.py:124
 #, python-format
 msgid "The language code must stay \"%(lang_code)s\"."
 msgstr "Das Sprachkürzel muss \"%(lang_code)s\" bleiben."
 
-#: frontend/languages.py:132
+#: frontend/languages.py:138
 msgid "Something went wrong while updating the language. Please try again."
 msgstr ""
 "Das Aktualisieren der Sprache ist fehlgeschlagen. Bitte versuchen Sie es "
@@ -1349,7 +1355,7 @@ msgstr "Name"
 #: frontend/templates/preferences.html:25
 #: frontend/templates/preferences.html:81
 #: frontend/templates/preferences.html:176
-#: frontend/templates/preferences.html:610
+#: frontend/templates/preferences.html:612
 #: frontend/templates/registration.html:12
 #: frontend/templates/reset_password_by_email.html:11
 #: frontend/templates/reset_password_by_email.html:13
@@ -1364,10 +1370,10 @@ msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 
 #: frontend/templates/create_other_user.html:20
 #: frontend/templates/create_other_user.html:21
-#: frontend/templates/password.html:19 frontend/templates/preferences.html:597
-#: frontend/templates/preferences.html:599
-#: frontend/templates/preferences.html:637
+#: frontend/templates/password.html:19 frontend/templates/preferences.html:599
+#: frontend/templates/preferences.html:601
 #: frontend/templates/preferences.html:639
+#: frontend/templates/preferences.html:641
 #: frontend/templates/registration.html:29
 #: frontend/templates/registration.html:31
 #: frontend/templates/registration.html:40 frontend/templates/sign_in.html:34
@@ -1387,7 +1393,7 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/groups/groups.html:100
 #: frontend/templates/instruments/instrument.html:423
 #: frontend/templates/instruments/instrument_form.html:421
-#: frontend/templates/languages/language_form.html:75
+#: frontend/templates/languages/language_form.html:86
 #: frontend/templates/locations/location_form.html:176
 #: frontend/templates/objects/dataverse_export.html:88
 #: frontend/templates/objects/dataverse_export_api_token.html:34
@@ -1399,9 +1405,9 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/objects/view/base.html:386
 #: frontend/templates/objects/view/base.html:580
 #: frontend/templates/objects/view/base.html:1077
-#: frontend/templates/preferences.html:617
-#: frontend/templates/preferences.html:656
-#: frontend/templates/preferences.html:684
+#: frontend/templates/preferences.html:619
+#: frontend/templates/preferences.html:658
+#: frontend/templates/preferences.html:686
 #: frontend/templates/projects/project.html:158
 #: frontend/templates/projects/project.html:188
 #: frontend/templates/projects/project.html:279
@@ -1798,8 +1804,8 @@ msgid "Authentication Methods"
 msgstr "Authentifizierungsmethoden"
 
 #: frontend/templates/preferences.html:72
-#: frontend/templates/preferences.html:589
-#: frontend/templates/preferences.html:591 frontend/templates/sign_in.html:28
+#: frontend/templates/preferences.html:591
+#: frontend/templates/preferences.html:593 frontend/templates/sign_in.html:28
 msgid "Username / Email"
 msgstr "Nutzername / E-Mail"
 
@@ -1810,7 +1816,7 @@ msgstr "Authentifizierungsmethode"
 #: frontend/templates/objects/view/base.html:795
 #: frontend/templates/preferences.html:81
 #: frontend/templates/preferences.html:188
-#: frontend/templates/preferences.html:610
+#: frontend/templates/preferences.html:612
 msgid "Other"
 msgstr "Andere"
 
@@ -1855,8 +1861,8 @@ msgstr ""
 #: frontend/templates/objects/view/base.html:684
 #: frontend/templates/pdfexport/export.html:129
 #: frontend/templates/preferences.html:133
-#: frontend/templates/preferences.html:676
 #: frontend/templates/preferences.html:678
+#: frontend/templates/preferences.html:680
 #: frontend/templates/projects/project.html:216
 #: frontend/templates/projects/project.html:252
 #: frontend/templates/projects/project.html:264
@@ -2069,7 +2075,7 @@ msgstr "Nutzer"
 #: frontend/templates/preferences.html:384
 #: frontend/templates/preferences.html:421
 #: frontend/templates/preferences.html:458
-#: frontend/templates/preferences.html:618
+#: frontend/templates/preferences.html:620
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -2148,119 +2154,119 @@ msgstr "Sprache"
 msgid "Detect language (default): "
 msgstr "Sprache erkennen (Standard): "
 
-#: frontend/templates/preferences.html:512
+#: frontend/templates/preferences.html:514
 msgid "Time Zone"
 msgstr "Zeitzone"
 
-#: frontend/templates/preferences.html:516
+#: frontend/templates/preferences.html:518
 msgid "Detect time zone (default): "
 msgstr "Zeitzone erkennen (Standard): "
 
-#: frontend/templates/preferences.html:525
+#: frontend/templates/preferences.html:527
 msgid "Objects per Page"
 msgstr "Objekte pro Seite"
 
 #: frontend/templates/objects/objects.html:186
 #: frontend/templates/objects/objects.html:188
-#: frontend/templates/preferences.html:530
+#: frontend/templates/preferences.html:532
 msgid "all"
 msgstr "alle"
 
-#: frontend/templates/preferences.html:536
+#: frontend/templates/preferences.html:538
 msgid "Administrator Settings"
 msgstr "Administratoreinstellungen"
 
-#: frontend/templates/preferences.html:539
+#: frontend/templates/preferences.html:541
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
 
-#: frontend/templates/preferences.html:544
+#: frontend/templates/preferences.html:546
 msgid "Yes &mdash; Use <b>GRANT</b> permissions for all objects"
 msgstr "Ja &mdash; Verwende <b>RECHTEVERGABE</b>-Berechtigungen für alle Objekte"
 
-#: frontend/templates/preferences.html:550
+#: frontend/templates/preferences.html:552
 msgid "No &mdash; Use regular permission system"
 msgstr "Nein &mdash; Verwende das normale Berechtigungenssystem"
 
-#: frontend/templates/preferences.html:556
+#: frontend/templates/preferences.html:558
 msgid "Show full invitation log for basic and project groups"
 msgstr "Zeige Einladungslog für Gruppen an"
 
-#: frontend/templates/preferences.html:561
+#: frontend/templates/preferences.html:563
 msgid "Yes &mdash; Show all past invitations"
 msgstr "Ja &mdash; Zeige alle Einladungen"
 
-#: frontend/templates/preferences.html:567
+#: frontend/templates/preferences.html:569
 msgid "No &mdash; Only show pending invitations"
 msgstr "Nein &mdash; Zeige nur ausstehende Einladungen"
 
 #: frontend/templates/instruments/instrument.html:334
 #: frontend/templates/objects/view/base.html:268
 #: frontend/templates/objects/view/base.html:366
-#: frontend/templates/preferences.html:583
-#: frontend/templates/preferences.html:630
-#: frontend/templates/preferences.html:670
-#: frontend/templates/preferences.html:697
-#: frontend/templates/preferences.html:713
+#: frontend/templates/preferences.html:585
+#: frontend/templates/preferences.html:632
+#: frontend/templates/preferences.html:672
+#: frontend/templates/preferences.html:699
+#: frontend/templates/preferences.html:715
 msgid "Close"
 msgstr "Schließen"
 
-#: frontend/templates/preferences.html:584
+#: frontend/templates/preferences.html:586
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
-#: frontend/templates/preferences.html:601
-#: frontend/templates/preferences.html:641
+#: frontend/templates/preferences.html:603
+#: frontend/templates/preferences.html:643
 msgid "The password must be at least 3 characters long."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
 #: frontend/templates/actions/action_form.html:289
 #: frontend/templates/actions/action_form.html:401
-#: frontend/templates/preferences.html:606
+#: frontend/templates/preferences.html:608
 msgid "Type"
 msgstr "Typ"
 
-#: frontend/templates/preferences.html:631
+#: frontend/templates/preferences.html:633
 msgid "Change Password"
 msgstr "Passwort ändern"
 
-#: frontend/templates/preferences.html:646
 #: frontend/templates/preferences.html:648
+#: frontend/templates/preferences.html:650
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
-#: frontend/templates/preferences.html:650
+#: frontend/templates/preferences.html:652
 msgid "Please enter the same password as above."
 msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
 
-#: frontend/templates/preferences.html:657
+#: frontend/templates/preferences.html:659
 msgid "Change"
 msgstr "Ändern"
 
-#: frontend/templates/preferences.html:671
+#: frontend/templates/preferences.html:673
 msgid "Create API Token"
 msgstr "API Token erstellen"
 
-#: frontend/templates/preferences.html:679
+#: frontend/templates/preferences.html:681
 msgid "Please enter a description for the API token."
 msgstr "Bitte geben Sie eine Beschreibung für das API Token an"
 
-#: frontend/templates/preferences.html:698
+#: frontend/templates/preferences.html:700
 msgid "New API Token"
 msgstr "Neues API Token"
 
-#: frontend/templates/preferences.html:710
+#: frontend/templates/preferences.html:712
 msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
 "Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
 "zugreifen können."
 
-#: frontend/templates/preferences.html:743
+#: frontend/templates/preferences.html:745
 msgid "Copied!"
 msgstr "Kopiert!"
 
-#: frontend/templates/preferences.html:746
-#: frontend/templates/preferences.html:750
+#: frontend/templates/preferences.html:748
+#: frontend/templates/preferences.html:752
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
 
@@ -3987,6 +3993,11 @@ msgstr ""
 " die bereits verwendet wurde, behalten alle bereits übersetzten Texte "
 "ihre Übersetzungen bis sie aktiv bearbeitet werden."
 
+#: frontend/templates/languages/language_form.html:75
+#: frontend/templates/languages/language_form.html:77
+msgid "Enabled for user interface"
+msgstr "Für Benutzerschnittstelle aktiviert"
+
 #: frontend/templates/languages/languages.html:7
 msgid ""
 "Available Languages to choose for names, descriptions and other "
@@ -5574,92 +5585,92 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
-#: frontend/users/preferences.py:138
+#: frontend/users/preferences.py:139
 msgid "Successfully updated your password."
 msgstr "Das Passwort wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:140 frontend/users/preferences.py:171
+#: frontend/users/preferences.py:141 frontend/users/preferences.py:172
 msgid "Failed to change password."
 msgstr "Das Ändern des Passworts ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:176
+#: frontend/users/preferences.py:177
 msgid "Successfully deleted your stored Dataverse API Token."
 msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 
-#: frontend/users/preferences.py:186
+#: frontend/users/preferences.py:187
 msgid "Successfully updated your user name."
 msgstr "Der Nutzername wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:194
+#: frontend/users/preferences.py:195
 msgid "Please see your email to confirm this change."
 msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
 
-#: frontend/users/preferences.py:220
+#: frontend/users/preferences.py:221
 msgid "Successfully updated your role."
 msgstr "Ihre Position wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:222
+#: frontend/users/preferences.py:223
 msgid "Successfully updated your ORCID iD and role."
 msgstr "Ihre ORCID iD und Position wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:224
+#: frontend/users/preferences.py:225
 msgid "Successfully updated your affiliation and role."
 msgstr "Ihre Zugehörigkeit und Position wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:226
+#: frontend/users/preferences.py:227
 msgid "Successfully updated your ORCID iD, affiliation and role."
 msgstr "Ihre ORCID iD, Zugehörigkeit und Position wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:229
+#: frontend/users/preferences.py:230
 msgid "Successfully updated your ORCID iD."
 msgstr "Ihre ORCID iD wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:231
+#: frontend/users/preferences.py:232
 msgid "Successfully updated your affiliation."
 msgstr "Ihre Zugehörigkeit wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:233
+#: frontend/users/preferences.py:234
 msgid "Successfully updated your ORCID iD and affiliation."
 msgstr "Ihre ORCID iD und Zugehörigkeit wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:241
+#: frontend/users/preferences.py:242
 msgid "Successfully removed the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich entfernt."
 
-#: frontend/users/preferences.py:243
+#: frontend/users/preferences.py:244
 msgid "Failed to remove the authentication method."
 msgstr "Das Entfernen der Authentifizierungsmethode ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:288
+#: frontend/users/preferences.py:289
 msgid "Successfully added the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
 
-#: frontend/users/preferences.py:290 frontend/users/preferences.py:320
+#: frontend/users/preferences.py:291 frontend/users/preferences.py:321
 msgid "Failed to add an authentication method."
 msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:328
+#: frontend/users/preferences.py:329
 msgid "Failed to add an API token."
 msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:382 frontend/users/preferences.py:391
-#: frontend/users/preferences.py:400 frontend/users/preferences.py:409
+#: frontend/users/preferences.py:383 frontend/users/preferences.py:392
+#: frontend/users/preferences.py:401 frontend/users/preferences.py:410
 msgid "Successfully updated default permissions."
 msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:419
+#: frontend/users/preferences.py:420
 msgid "Successfully updated your notification settings."
 msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:460
+#: frontend/users/preferences.py:465
 msgid "Successfully updated your settings."
 msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:572
+#: frontend/users/preferences.py:578
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."
 
-#: frontend/users/preferences.py:574
+#: frontend/users/preferences.py:580
 msgid ""
 "Resetting your password failed. Please try again or contact an "
 "administrator."

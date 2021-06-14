@@ -25,6 +25,7 @@ class Language(db.Model):
     datetime_format_datetime = db.Column(db.String)
     datetime_format_moment = db.Column(db.String)
     enabled_for_input = db.Column(db.Boolean, nullable=False)
+    enabled_for_user_interface = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
 
     def __init__(
             self,
@@ -32,13 +33,15 @@ class Language(db.Model):
             lang_code: str,
             datetime_format_datetime: str,
             datetime_format_moment: str,
-            enabled_for_input: bool
+            enabled_for_input: bool,
+            enabled_for_user_interface: bool
     ):
         self.names = names
         self.lang_code = lang_code
         self.datetime_format_datetime = datetime_format_datetime
         self.datetime_format_moment = datetime_format_moment
         self.enabled_for_input = enabled_for_input
+        self.enabled_for_user_interface = enabled_for_user_interface
 
     def __eq__(self, other):
         return (
@@ -46,7 +49,8 @@ class Language(db.Model):
             self.lang_code == other.lang_code and
             self.datetime_format_datetime == other.datetime_format_datetime and
             self.datetime_format_moment == other.datetime_format_moment and
-            self.enabled_for_input == other.enabled_for_input
+            self.enabled_for_input == other.enabled_for_input and
+            self.enabled_for_user_interface == other.enabled_for_user_interface
         )
 
     def __repr__(self):
