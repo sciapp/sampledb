@@ -2034,7 +2034,7 @@ msgstr "Administratoren"
 #: frontend/templates/objects/object_permissions.html:55
 #: frontend/templates/preferences.html:242
 msgid "Instrument Scientists"
-msgstr "Instrumentwissenschaftler"
+msgstr "Instrumentverantwortliche"
 
 #: frontend/templates/actions/action_permissions.html:64
 #: frontend/templates/actions/action_permissions.html:158
@@ -3594,11 +3594,11 @@ msgstr "Instrument bearbeiten"
 #: frontend/templates/instruments/instrument_form.html:324
 #: frontend/templates/instruments/instrument_form.html:341
 msgid "Instrument Scientist Notes"
-msgstr "Notizen für Instrumentwissenschaftler"
+msgstr "Notizen für Instrumentverantwortliche"
 
 #: frontend/templates/instruments/instrument.html:45
 msgid "These notes are only visible to the instrument scientists."
-msgstr "Diese Notizen werden nur den Instrumentwissenschaftlern angezeigt."
+msgstr "Diese Notizen werden nur den Instrumentverantwortlichen angezeigt."
 
 #: frontend/templates/instruments/instrument.html:65
 msgid "Instrument Log"
@@ -3610,7 +3610,7 @@ msgid ""
 "Instrument scientists can use the instrument log to keep track of "
 "problems, maintenance or other events."
 msgstr ""
-"Instrumentwissenschaftler können das Instrument-Log nutzen um Probleme, "
+"Instrumentverantwortliche können das Instrument-Log nutzen um Probleme, "
 "Wartungsarbeiten oder andere Ereignisse aufzuzeichnen."
 
 #: frontend/templates/instruments/instrument.html:69
@@ -3619,7 +3619,7 @@ msgid ""
 "Instrument scientists can <a href=\"%(edit_url)s\">edit the instrument "
 "settings</a> to configure whether users can create or view log entries."
 msgstr ""
-"Instrumentwissenschaftler können die <a href=\"%(edit_url)s\">Instrument-"
+"Instrumentverantwortliche können die <a href=\"%(edit_url)s\">Instrument-"
 "Einstellungen bearbeiten</a>, um zu konfigurieren ob Nutzer Log-Einträge "
 "erstellen oder betrachten können."
 
@@ -3645,7 +3645,7 @@ msgid ""
 "scientists about any issues they encounter."
 msgstr ""
 "Nutzer können Einträge im Instrument-Log erstellen, um "
-"Instrumentwissenschaftler über auftretende Probleme zu informieren."
+"Instrumentverantwortliche über auftretende Probleme zu informieren."
 
 #: frontend/templates/instruments/instrument.html:95
 #: frontend/templates/instruments/instrument.html:349
@@ -3885,7 +3885,7 @@ msgstr "Nutzer können Log-Einträge betrachten"
 
 #: frontend/templates/instruments/instrument_form.html:410
 msgid "Create log entries for objects created by instrument scientists"
-msgstr "Erstelle Log-Einträge für von Instrumentwissenschaftlern erstellte Objekte"
+msgstr "Erstelle Log-Einträge für von Instrumentverantwortlichen erstellte Objekte"
 
 #: frontend/templates/instruments/instrument_form.html:410
 msgid ""
@@ -3903,7 +3903,7 @@ msgstr "Dieses Instrument nicht in Instrumentlisten anzeigen"
 
 #: frontend/templates/instruments/instrument_scientists.html:3
 msgid "Instrument Scientists:"
-msgstr "Instrumentwissenschaftler:"
+msgstr "Instrumentverantwortliche:"
 
 #: frontend/templates/instruments/instruments.html:7
 #, python-format
