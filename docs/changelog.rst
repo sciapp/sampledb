@@ -11,6 +11,7 @@ Currently in development.
 - Added event datetime for instrument log entries
 - Added internationalization features
 - Added german localization
+- Allow setting a publicly visible user role
 - Improved user interface
 
 Version 0.18

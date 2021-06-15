@@ -30,6 +30,14 @@
       &mdash;
     {% endif %}
   </dd>
+  <dt>{{ _('Role') }}</dt>
+  <dd>
+    {% if user.role %}
+      {{ user.role }}
+    {% else %}
+      &mdash;
+    {% endif %}
+  </dd>
 </dl>
   <div class="btn-group">
     <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>

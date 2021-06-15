@@ -123,7 +123,8 @@ def test_get_object_version(flask_server, auth, user, action):
             'user_id': user.id,
             'name': user.name,
             'orcid': None,
-            'affiliation': None
+            'affiliation': None,
+            'role': None
         },
         "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
