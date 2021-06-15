@@ -1059,6 +1059,7 @@ def object(object_id):
             metadata_language=metadata_language,
             languages=languages,
             all_languages=all_languages,
+            SUPPORTED_LOCALES=logic.locale.SUPPORTED_LOCALES,
             ENGLISH=english,
             object_type=object_type,
             action=action,
@@ -1478,7 +1479,19 @@ def export_data(object_id):
                 sections = sections.intersection(json.loads(flask.request.args['sections']))
             except Exception:
                 return flask.abort(400)
-        pdf_data = pdfexport.create_pdfexport(object_ids, sections)
+        if 'language' in flask.request.args:
+            try:
+                lang_code = flask.request.args['language']
+                if lang_code not in logic.locale.SUPPORTED_LOCALES:
+                    raise ValueError()
+                language = logic.languages.get_language_by_lang_code(lang_code)
+                if not language.enabled_for_user_interface:
+                    raise ValueError()
+            except Exception:
+                lang_code = 'en'
+        else:
+            lang_code = 'en'
+        pdf_data = pdfexport.create_pdfexport(object_ids, sections, lang_code)
         file_bytes = io.BytesIO(pdf_data)
     elif file_extension in logic.export.FILE_FORMATS:
         file_bytes = logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids)

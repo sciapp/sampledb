@@ -382,7 +382,8 @@ def translations(base_url, driver):
                 lang_code=language.lang_code,
                 datetime_format_datetime=language.datetime_format_datetime,
                 datetime_format_moment=language.datetime_format_moment,
-                enabled_for_input=True
+                enabled_for_input=True,
+                enabled_for_user_interface=True
             )
 
     driver.get(base_url + 'actions/new/')

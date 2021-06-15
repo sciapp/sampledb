@@ -67,6 +67,7 @@ class LanguageForm(FlaskForm):
     datetime_format_datetime = StringField(validators=[InputRequired()])
     datetime_format_moment = StringField(validators=[InputRequired()])
     enabled_for_input = BooleanField()
+    enabled_for_user_interface = BooleanField()
 
 
 def show_language_form(language_id):
@@ -84,6 +85,7 @@ def show_language_form(language_id):
             language_form.datetime_format_datetime.data = language.datetime_format_datetime
             language_form.datetime_format_moment.data = language.datetime_format_moment
             language_form.enabled_for_input.data = language.enabled_for_input
+            language_form.enabled_for_user_interface.data = language.enabled_for_user_interface
     else:
         language = None
 
@@ -108,13 +110,16 @@ def show_language_form(language_id):
                 lang_code=language_form.lang_code.data.strip().lower(),
                 datetime_format_datetime=language_form.datetime_format_datetime.data.strip(),
                 datetime_format_moment=language_form.datetime_format_moment.data.strip(),
-                enabled_for_input=bool(language_form.enabled_for_input.data)
+                enabled_for_input=bool(language_form.enabled_for_input.data),
+                enabled_for_user_interface=bool(language_form.enabled_for_user_interface.data)
             )
             return flask.redirect(flask.url_for('.language', language_id=language.id))
         elif language_id is None or (existing_language_for_code is not None and language_id != existing_language_for_code.id):
             flask.flash(_('This language code is already in use.'), 'error')
         elif language_id == logic.languages.Language.ENGLISH and not bool(language_form.enabled_for_input.data):
             flask.flash(_('The English language cannot be disabled for input.'), 'error')
+        elif language_id == logic.languages.Language.ENGLISH and not bool(language_form.enabled_for_user_interface.data):
+            flask.flash(_('The English language cannot be disabled for the user interface.'), 'error')
         elif language is not None and language.lang_code != language_form.lang_code.data and language.lang_code in logic.locale.SUPPORTED_LOCALES:
             flask.flash(_('The language code must stay "%(lang_code)s".', lang_code=language.lang_code), 'error')
         else:
@@ -125,7 +130,8 @@ def show_language_form(language_id):
                     lang_code=language_form.lang_code.data.strip().lower(),
                     datetime_format_datetime=language_form.datetime_format_datetime.data.strip(),
                     datetime_format_moment=language_form.datetime_format_moment.data.strip(),
-                    enabled_for_input=bool(language_form.enabled_for_input.data)
+                    enabled_for_input=bool(language_form.enabled_for_input.data),
+                    enabled_for_user_interface=bool(language_form.enabled_for_user_interface.data)
                 )
                 return flask.redirect(flask.url_for('.language', language_id=language_id))
             except Exception:

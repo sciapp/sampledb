@@ -59,4 +59,16 @@ def run(db):
            """, params=language)
         performed_migration = True
 
+    languages_column_names = db.session.execute("""
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'languages'
+    """).fetchall()
+    if ('enabled_for_user_interface',) in languages_column_names:
+        db.session.execute("""
+            UPDATE languages
+            SET enabled_for_user_interface = TRUE
+            WHERE id < 0
+        """)
+
     return performed_migration

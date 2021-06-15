@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-06-11 09:05+0200\n"
+"POT-Creation-Date: 2021-06-15 08:41+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -31,14 +31,14 @@ msgstr ""
 "Durchführungstext sind erforderlich."
 
 #: frontend/action_types.py:172 frontend/action_types.py:260
-#: frontend/action_types.py:290 frontend/languages.py:140
+#: frontend/action_types.py:290 frontend/languages.py:146
 #: frontend/templates/action_types/action_type_form.html:109
-#: frontend/templates/preferences.html:685
+#: frontend/templates/preferences.html:687
 msgid "Create"
 msgstr "Erstellen"
 
 #: frontend/action_types.py:172 frontend/action_types.py:260
-#: frontend/action_types.py:290 frontend/languages.py:140
+#: frontend/action_types.py:290 frontend/languages.py:146
 #: frontend/templates/action_types/action_type_form.html:101
 #: frontend/templates/groups/group.html:159
 #: frontend/templates/objects/forms/form_create.html:112
@@ -48,7 +48,7 @@ msgstr "Erstellen"
 #: frontend/templates/preferences.html:62
 #: frontend/templates/preferences.html:209
 #: frontend/templates/preferences.html:349
-#: frontend/templates/preferences.html:573
+#: frontend/templates/preferences.html:575
 #: frontend/templates/projects/project.html:280
 #: frontend/templates/projects/project_permissions.html:170
 msgid "Save"
@@ -175,20 +175,26 @@ msgstr "Das Instrument wurde erfolgreich aktualisiert."
 msgid "Update Instrument"
 msgstr "Instrument bearbeiten"
 
-#: frontend/languages.py:115
+#: frontend/languages.py:118
 msgid "This language code is already in use."
 msgstr "Dieses Sprachkürzel wird bereits verwendet."
 
-#: frontend/languages.py:117
+#: frontend/languages.py:120
 msgid "The English language cannot be disabled for input."
 msgstr "Die englische Sprache kann nicht für Eingaben deaktiviert werden."
 
-#: frontend/languages.py:119
+#: frontend/languages.py:122
+msgid "The English language cannot be disabled for the user interface."
+msgstr ""
+"Die englische Sprache kann nicht für die Benutzerschnittstelle "
+"deaktiviert werden."
+
+#: frontend/languages.py:124
 #, python-format
 msgid "The language code must stay \"%(lang_code)s\"."
 msgstr "Das Sprachkürzel muss \"%(lang_code)s\" bleiben."
 
-#: frontend/languages.py:132
+#: frontend/languages.py:138
 msgid "Something went wrong while updating the language. Please try again."
 msgstr ""
 "Das Aktualisieren der Sprache ist fehlgeschlagen. Bitte versuchen Sie es "
@@ -323,106 +329,106 @@ msgstr "Das Objekt wurde erfolgreich erstellt."
 msgid "The object was updated successfully."
 msgstr "Das Objekt wurde erfolgreich aktualisiert."
 
-#: frontend/objects.py:1226 frontend/objects.py:1227
+#: frontend/objects.py:1227 frontend/objects.py:1228
 msgid "Unknown"
 msgstr "Unbekannt"
 
-#: frontend/objects.py:1233
+#: frontend/objects.py:1234
 msgid "Unknown Object"
 msgstr "Unbekanntes Objekt"
 
-#: frontend/objects.py:1275
+#: frontend/objects.py:1276
 msgid "Successfully posted a comment."
 msgstr "Kommentar erfolgreich eingetragen."
 
-#: frontend/objects.py:1277
+#: frontend/objects.py:1278
 msgid "Please enter a comment text."
 msgstr "Bitte geben Sie einen Kommentartext ein."
 
-#: frontend/objects.py:1368
+#: frontend/objects.py:1369
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
 
-#: frontend/objects.py:1371
+#: frontend/objects.py:1372
 msgid "Your request for permissions has been sent."
 msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
 
-#: frontend/objects.py:1414
+#: frontend/objects.py:1415
 msgid "Successfully assigned a new location to this object."
 msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
 
-#: frontend/objects.py:1416 frontend/objects.py:1418
+#: frontend/objects.py:1417 frontend/objects.py:1419
 msgid "Please select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
-#: frontend/objects.py:1445
+#: frontend/objects.py:1446
 msgid "This object has already been linked to this publication."
 msgstr "Dieses Objekt wurde bereits mit dieser Publikation verknüpft."
 
-#: frontend/objects.py:1449
+#: frontend/objects.py:1450
 msgid "Successfully linked this object to a publication."
 msgstr "Das Objekt wurde erfolgreich mit der Publikation verknüpft."
 
-#: frontend/objects.py:1451
+#: frontend/objects.py:1452
 msgid "Successfully updated the information for this publication."
 msgstr "Die Informationen für diese Publikation wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:1453
+#: frontend/objects.py:1454
 msgid ""
 "Please enter a valid DOI for the publication you want to link this object"
 " to."
 msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
 
-#: frontend/objects.py:1583
+#: frontend/objects.py:1597
 msgid "The file was hidden successfully."
 msgstr "Die Datei wurde erfolgreich versteckt."
 
-#: frontend/objects.py:1644
+#: frontend/objects.py:1658
 msgid "Successfully uploaded files."
 msgstr "Die Dateien wurden erfolgreich hochgeladen."
 
-#: frontend/objects.py:1646 frontend/objects.py:1655
+#: frontend/objects.py:1660 frontend/objects.py:1669
 msgid "Failed to upload files."
 msgstr "Das Hochladen der Dateien ist fehlgeschlagen"
 
-#: frontend/objects.py:1650
+#: frontend/objects.py:1664
 msgid "Successfully posted link."
 msgstr "Der Link wurde erfolgreich eingetragen."
 
-#: frontend/objects.py:1652
+#: frontend/objects.py:1666
 msgid "Failed to post link."
 msgstr "Das Eintragen des Links ist fehlgeschlagen."
 
-#: frontend/objects.py:1677
+#: frontend/objects.py:1691
 msgid "This object does not exist."
 msgstr "Dieses Objekt existiert nicht."
 
-#: frontend/objects.py:1680
+#: frontend/objects.py:1694
 msgid "You do not have the required permissions to use this object as a template."
 msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
 
-#: frontend/objects.py:1684
+#: frontend/objects.py:1698
 msgid "This object was created with a different action."
 msgstr "Dieses Objekt wurde mit einer anderen Aktion erstellt."
 
-#: frontend/objects.py:1692
+#: frontend/objects.py:1706
 msgid "This action does not exist."
 msgstr "Diese Aktion existiert nicht."
 
-#: frontend/objects.py:1695
+#: frontend/objects.py:1709
 msgid "You do not have the required permissions to use this action."
 msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
 
-#: frontend/objects.py:1945
+#: frontend/objects.py:1959
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
 
-#: frontend/objects.py:1973 frontend/objects.py:1982 frontend/objects.py:1991
-#: frontend/objects.py:2000
+#: frontend/objects.py:1987 frontend/objects.py:1996 frontend/objects.py:2005
+#: frontend/objects.py:2014
 msgid "Successfully updated object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:2002
+#: frontend/objects.py:2016
 msgid ""
 "A problem occurred while changing the object permissions. Please try "
 "again."
@@ -430,7 +436,7 @@ msgstr ""
 "Beim Ändern der Berechtigungen ist ein Problem aufgetreten. Bitte "
 "versuchen Sie es später erneut."
 
-#: frontend/pdfexport.py:96
+#: frontend/pdfexport.py:99
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> created this "
@@ -439,7 +445,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "als Teil einer Charge erstellt."
 
-#: frontend/pdfexport.py:98
+#: frontend/pdfexport.py:101
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> created this "
@@ -448,7 +454,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "erstellt."
 
-#: frontend/pdfexport.py:100
+#: frontend/pdfexport.py:103
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> edited this "
@@ -457,7 +463,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "bearbeitet."
 
-#: frontend/pdfexport.py:102
+#: frontend/pdfexport.py:105
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> posted a "
@@ -466,7 +472,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat einen "
 "Kommentar für dieses Objekt eingetragen."
 
-#: frontend/pdfexport.py:104
+#: frontend/pdfexport.py:107
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> restored a "
@@ -475,14 +481,14 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine "
 "vorherige Version dieses Objekts wiederhergestellt."
 
-#: frontend/pdfexport.py:106
+#: frontend/pdfexport.py:109
 #, python-format
 msgid "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> posted a file."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine Datei "
 "hochgeladen."
 
-#: frontend/pdfexport.py:114
+#: frontend/pdfexport.py:117
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -493,7 +499,7 @@ msgstr ""
 "in <a href=\"%(object_url)s\">Messung %(measurement_name)s "
 "(#%(measurement_id)s)</a> verwendet."
 
-#: frontend/pdfexport.py:116
+#: frontend/pdfexport.py:119
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -502,7 +508,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in <a href=\"%(object_url)s\">Messung #%(measurement_id)s</a> verwendet."
 
-#: frontend/pdfexport.py:118
+#: frontend/pdfexport.py:121
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -511,7 +517,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in einer Messung verwendet."
 
-#: frontend/pdfexport.py:126
+#: frontend/pdfexport.py:129
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -522,7 +528,7 @@ msgstr ""
 "zur Erstellung von <a href=\"%(object_url)s\">Probe %(sample_name)s "
 "(#%(sample_id)s)</a> verwendet."
 
-#: frontend/pdfexport.py:128
+#: frontend/pdfexport.py:131
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -532,7 +538,7 @@ msgstr ""
 "zur Erstellung von <a href=\"%(object_url)s\">Probe #%(sample_id)s</a> "
 "verwendet."
 
-#: frontend/pdfexport.py:130
+#: frontend/pdfexport.py:133
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -541,7 +547,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "zur Erstellung einer Probe verwendet."
 
-#: frontend/pdfexport.py:137
+#: frontend/pdfexport.py:140
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
@@ -553,7 +559,7 @@ msgstr ""
 "href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
 "zugeweisen."
 
-#: frontend/pdfexport.py:140
+#: frontend/pdfexport.py:143
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
@@ -562,7 +568,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> das Objekt dem "
 "<a href=\"%(location_url)s\">Ort %(location_id)s</a> zugewiesen."
 
-#: frontend/pdfexport.py:143
+#: frontend/pdfexport.py:146
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
@@ -573,7 +579,7 @@ msgstr ""
 "dem <a href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
 "zugewiesen."
 
-#: frontend/pdfexport.py:146
+#: frontend/pdfexport.py:149
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked "
@@ -584,7 +590,7 @@ msgstr ""
 "Publikation <a href=\"https://doi.org/%(doi)s\">%(doi)s</a> mit dem "
 "Objekt verknüpft."
 
-#: frontend/pdfexport.py:155
+#: frontend/pdfexport.py:158
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -595,7 +601,7 @@ msgstr ""
 "in den Metadaten von <a href=\"(object_url)s\">%(object_name)s "
 "#%(other_object_id)s</a> referenziert."
 
-#: frontend/pdfexport.py:157
+#: frontend/pdfexport.py:160
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -606,7 +612,7 @@ msgstr ""
 "in den Metadaten von <a href=\"(object_url)s\">object "
 "#%(other_object_id)s</a> referenziert."
 
-#: frontend/pdfexport.py:159
+#: frontend/pdfexport.py:162
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -615,7 +621,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in den Metadaten eines unbekannten Objekts referenziert."
 
-#: frontend/pdfexport.py:161
+#: frontend/pdfexport.py:164
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -624,7 +630,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in den Metadaten eines anderen Objekts referenziert."
 
-#: frontend/pdfexport.py:164
+#: frontend/pdfexport.py:167
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> exported this "
@@ -635,7 +641,7 @@ msgstr ""
 "als <a href=\"%(dataverse_url)s\">%(dataverse_url)s</a> in ein Dataverse "
 "exportiert."
 
-#: frontend/pdfexport.py:169
+#: frontend/pdfexport.py:172
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked this "
@@ -646,7 +652,7 @@ msgstr ""
 "mit <a href=\"%(project_url)s\">Projektgruppe %(project_name)s "
 "(#%(project_id)s)</a> verknüpft."
 
-#: frontend/pdfexport.py:171
+#: frontend/pdfexport.py:174
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked this "
@@ -655,7 +661,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "mit einer Projektgruppe verknüpft."
 
-#: frontend/pdfexport.py:174
+#: frontend/pdfexport.py:177
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> deleted the "
@@ -664,7 +670,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
 "Projektgruppe gelöscht mit der das Objekt verknüpft war."
 
-#: frontend/pdfexport.py:179
+#: frontend/pdfexport.py:182
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> removed the "
@@ -675,7 +681,7 @@ msgstr ""
 "Verknüpfung dieses Objekts mit <a href=\"%(project_url)s\">Projektgruppe "
 "%(project_name)s (#%(project_id)s)</a> entfernt."
 
-#: frontend/pdfexport.py:181
+#: frontend/pdfexport.py:184
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> removed the "
@@ -684,7 +690,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
 "Verknüpfung dieses Objekts mit einer Projektgruppe entfernt."
 
-#: frontend/pdfexport.py:183
+#: frontend/pdfexport.py:186
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> performed an "
@@ -1075,7 +1081,7 @@ msgstr "Aktionen"
 
 #: frontend/templates/base.html:108 frontend/templates/objects/objects.html:3
 #: frontend/templates/objects/objects.html:103
-#: frontend/templates/objects/view/base.html:1066
+#: frontend/templates/objects/view/base.html:1078
 msgid "Objects"
 msgstr "Objekte"
 
@@ -1184,7 +1190,7 @@ msgstr "Nutzer einladen"
 #: frontend/templates/objects/dataverse_export_api_token.html:3
 #: frontend/templates/objects/view/base.html:126
 #: frontend/templates/objects/view/base.html:1032
-#: frontend/templates/objects/view/base.html:1078
+#: frontend/templates/objects/view/base.html:1090
 msgid "Export Data"
 msgstr "Daten exportieren"
 
@@ -1349,7 +1355,7 @@ msgstr "Name"
 #: frontend/templates/preferences.html:25
 #: frontend/templates/preferences.html:81
 #: frontend/templates/preferences.html:176
-#: frontend/templates/preferences.html:610
+#: frontend/templates/preferences.html:612
 #: frontend/templates/registration.html:12
 #: frontend/templates/reset_password_by_email.html:11
 #: frontend/templates/reset_password_by_email.html:13
@@ -1364,10 +1370,10 @@ msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 
 #: frontend/templates/create_other_user.html:20
 #: frontend/templates/create_other_user.html:21
-#: frontend/templates/password.html:19 frontend/templates/preferences.html:597
-#: frontend/templates/preferences.html:599
-#: frontend/templates/preferences.html:637
+#: frontend/templates/password.html:19 frontend/templates/preferences.html:599
+#: frontend/templates/preferences.html:601
 #: frontend/templates/preferences.html:639
+#: frontend/templates/preferences.html:641
 #: frontend/templates/registration.html:29
 #: frontend/templates/registration.html:31
 #: frontend/templates/registration.html:40 frontend/templates/sign_in.html:34
@@ -1387,7 +1393,7 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/groups/groups.html:100
 #: frontend/templates/instruments/instrument.html:423
 #: frontend/templates/instruments/instrument_form.html:421
-#: frontend/templates/languages/language_form.html:75
+#: frontend/templates/languages/language_form.html:86
 #: frontend/templates/locations/location_form.html:176
 #: frontend/templates/objects/dataverse_export.html:88
 #: frontend/templates/objects/dataverse_export_api_token.html:34
@@ -1398,10 +1404,10 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/objects/view/base.html:359
 #: frontend/templates/objects/view/base.html:386
 #: frontend/templates/objects/view/base.html:580
-#: frontend/templates/objects/view/base.html:1077
-#: frontend/templates/preferences.html:617
-#: frontend/templates/preferences.html:656
-#: frontend/templates/preferences.html:684
+#: frontend/templates/objects/view/base.html:1089
+#: frontend/templates/preferences.html:619
+#: frontend/templates/preferences.html:658
+#: frontend/templates/preferences.html:686
 #: frontend/templates/projects/project.html:158
 #: frontend/templates/projects/project.html:188
 #: frontend/templates/projects/project.html:279
@@ -1798,8 +1804,8 @@ msgid "Authentication Methods"
 msgstr "Authentifizierungsmethoden"
 
 #: frontend/templates/preferences.html:72
-#: frontend/templates/preferences.html:589
-#: frontend/templates/preferences.html:591 frontend/templates/sign_in.html:28
+#: frontend/templates/preferences.html:591
+#: frontend/templates/preferences.html:593 frontend/templates/sign_in.html:28
 msgid "Username / Email"
 msgstr "Nutzername / E-Mail"
 
@@ -1810,7 +1816,7 @@ msgstr "Authentifizierungsmethode"
 #: frontend/templates/objects/view/base.html:795
 #: frontend/templates/preferences.html:81
 #: frontend/templates/preferences.html:188
-#: frontend/templates/preferences.html:610
+#: frontend/templates/preferences.html:612
 msgid "Other"
 msgstr "Andere"
 
@@ -1855,8 +1861,8 @@ msgstr ""
 #: frontend/templates/objects/view/base.html:684
 #: frontend/templates/pdfexport/export.html:129
 #: frontend/templates/preferences.html:133
-#: frontend/templates/preferences.html:676
 #: frontend/templates/preferences.html:678
+#: frontend/templates/preferences.html:680
 #: frontend/templates/projects/project.html:216
 #: frontend/templates/projects/project.html:252
 #: frontend/templates/projects/project.html:264
@@ -2034,7 +2040,7 @@ msgstr "Administratoren"
 #: frontend/templates/objects/object_permissions.html:55
 #: frontend/templates/preferences.html:242
 msgid "Instrument Scientists"
-msgstr "Instrumentwissenschaftler"
+msgstr "Instrumentverantwortliche"
 
 #: frontend/templates/actions/action_permissions.html:64
 #: frontend/templates/actions/action_permissions.html:158
@@ -2057,6 +2063,7 @@ msgstr "Nutzer hinzufügen"
 #: frontend/templates/objects/object_versions.html:11
 #: frontend/templates/objects/objects.html:122
 #: frontend/templates/objects/objects.html:124
+#: frontend/templates/pdfexport/user.html:5
 #: frontend/templates/preferences.html:359 frontend/templates/profile.html:3
 #: frontend/templates/projects/project.html:300
 msgid "User"
@@ -2069,7 +2076,7 @@ msgstr "Nutzer"
 #: frontend/templates/preferences.html:384
 #: frontend/templates/preferences.html:421
 #: frontend/templates/preferences.html:458
-#: frontend/templates/preferences.html:618
+#: frontend/templates/preferences.html:620
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -2148,119 +2155,119 @@ msgstr "Sprache"
 msgid "Detect language (default): "
 msgstr "Sprache erkennen (Standard): "
 
-#: frontend/templates/preferences.html:512
+#: frontend/templates/preferences.html:514
 msgid "Time Zone"
 msgstr "Zeitzone"
 
-#: frontend/templates/preferences.html:516
+#: frontend/templates/preferences.html:518
 msgid "Detect time zone (default): "
 msgstr "Zeitzone erkennen (Standard): "
 
-#: frontend/templates/preferences.html:525
+#: frontend/templates/preferences.html:527
 msgid "Objects per Page"
 msgstr "Objekte pro Seite"
 
-#: frontend/templates/objects/objects.html:186
-#: frontend/templates/objects/objects.html:188
-#: frontend/templates/preferences.html:530
+#: frontend/templates/objects/objects.html:187
+#: frontend/templates/objects/objects.html:189
+#: frontend/templates/preferences.html:532
 msgid "all"
 msgstr "alle"
 
-#: frontend/templates/preferences.html:536
+#: frontend/templates/preferences.html:538
 msgid "Administrator Settings"
 msgstr "Administratoreinstellungen"
 
-#: frontend/templates/preferences.html:539
+#: frontend/templates/preferences.html:541
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
 
-#: frontend/templates/preferences.html:544
+#: frontend/templates/preferences.html:546
 msgid "Yes &mdash; Use <b>GRANT</b> permissions for all objects"
 msgstr "Ja &mdash; Verwende <b>RECHTEVERGABE</b>-Berechtigungen für alle Objekte"
 
-#: frontend/templates/preferences.html:550
+#: frontend/templates/preferences.html:552
 msgid "No &mdash; Use regular permission system"
 msgstr "Nein &mdash; Verwende das normale Berechtigungenssystem"
 
-#: frontend/templates/preferences.html:556
+#: frontend/templates/preferences.html:558
 msgid "Show full invitation log for basic and project groups"
 msgstr "Zeige Einladungslog für Gruppen an"
 
-#: frontend/templates/preferences.html:561
+#: frontend/templates/preferences.html:563
 msgid "Yes &mdash; Show all past invitations"
 msgstr "Ja &mdash; Zeige alle Einladungen"
 
-#: frontend/templates/preferences.html:567
+#: frontend/templates/preferences.html:569
 msgid "No &mdash; Only show pending invitations"
 msgstr "Nein &mdash; Zeige nur ausstehende Einladungen"
 
 #: frontend/templates/instruments/instrument.html:334
 #: frontend/templates/objects/view/base.html:268
 #: frontend/templates/objects/view/base.html:366
-#: frontend/templates/preferences.html:583
-#: frontend/templates/preferences.html:630
-#: frontend/templates/preferences.html:670
-#: frontend/templates/preferences.html:697
-#: frontend/templates/preferences.html:713
+#: frontend/templates/preferences.html:585
+#: frontend/templates/preferences.html:632
+#: frontend/templates/preferences.html:672
+#: frontend/templates/preferences.html:699
+#: frontend/templates/preferences.html:715
 msgid "Close"
 msgstr "Schließen"
 
-#: frontend/templates/preferences.html:584
+#: frontend/templates/preferences.html:586
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
-#: frontend/templates/preferences.html:601
-#: frontend/templates/preferences.html:641
+#: frontend/templates/preferences.html:603
+#: frontend/templates/preferences.html:643
 msgid "The password must be at least 3 characters long."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
 #: frontend/templates/actions/action_form.html:289
 #: frontend/templates/actions/action_form.html:401
-#: frontend/templates/preferences.html:606
+#: frontend/templates/preferences.html:608
 msgid "Type"
 msgstr "Typ"
 
-#: frontend/templates/preferences.html:631
+#: frontend/templates/preferences.html:633
 msgid "Change Password"
 msgstr "Passwort ändern"
 
-#: frontend/templates/preferences.html:646
 #: frontend/templates/preferences.html:648
+#: frontend/templates/preferences.html:650
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
-#: frontend/templates/preferences.html:650
+#: frontend/templates/preferences.html:652
 msgid "Please enter the same password as above."
 msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
 
-#: frontend/templates/preferences.html:657
+#: frontend/templates/preferences.html:659
 msgid "Change"
 msgstr "Ändern"
 
-#: frontend/templates/preferences.html:671
+#: frontend/templates/preferences.html:673
 msgid "Create API Token"
 msgstr "API Token erstellen"
 
-#: frontend/templates/preferences.html:679
+#: frontend/templates/preferences.html:681
 msgid "Please enter a description for the API token."
 msgstr "Bitte geben Sie eine Beschreibung für das API Token an"
 
-#: frontend/templates/preferences.html:698
+#: frontend/templates/preferences.html:700
 msgid "New API Token"
 msgstr "Neues API Token"
 
-#: frontend/templates/preferences.html:710
+#: frontend/templates/preferences.html:712
 msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
 "Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
 "zugreifen können."
 
-#: frontend/templates/preferences.html:743
+#: frontend/templates/preferences.html:745
 msgid "Copied!"
 msgstr "Kopiert!"
 
-#: frontend/templates/preferences.html:746
-#: frontend/templates/preferences.html:750
+#: frontend/templates/preferences.html:748
+#: frontend/templates/preferences.html:752
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
 
@@ -3594,11 +3601,11 @@ msgstr "Instrument bearbeiten"
 #: frontend/templates/instruments/instrument_form.html:324
 #: frontend/templates/instruments/instrument_form.html:341
 msgid "Instrument Scientist Notes"
-msgstr "Notizen für Instrumentwissenschaftler"
+msgstr "Notizen für Instrumentverantwortliche"
 
 #: frontend/templates/instruments/instrument.html:45
 msgid "These notes are only visible to the instrument scientists."
-msgstr "Diese Notizen werden nur den Instrumentwissenschaftlern angezeigt."
+msgstr "Diese Notizen werden nur den Instrumentverantwortlichen angezeigt."
 
 #: frontend/templates/instruments/instrument.html:65
 msgid "Instrument Log"
@@ -3610,7 +3617,7 @@ msgid ""
 "Instrument scientists can use the instrument log to keep track of "
 "problems, maintenance or other events."
 msgstr ""
-"Instrumentwissenschaftler können das Instrument-Log nutzen um Probleme, "
+"Instrumentverantwortliche können das Instrument-Log nutzen um Probleme, "
 "Wartungsarbeiten oder andere Ereignisse aufzuzeichnen."
 
 #: frontend/templates/instruments/instrument.html:69
@@ -3619,7 +3626,7 @@ msgid ""
 "Instrument scientists can <a href=\"%(edit_url)s\">edit the instrument "
 "settings</a> to configure whether users can create or view log entries."
 msgstr ""
-"Instrumentwissenschaftler können die <a href=\"%(edit_url)s\">Instrument-"
+"Instrumentverantwortliche können die <a href=\"%(edit_url)s\">Instrument-"
 "Einstellungen bearbeiten</a>, um zu konfigurieren ob Nutzer Log-Einträge "
 "erstellen oder betrachten können."
 
@@ -3645,7 +3652,7 @@ msgid ""
 "scientists about any issues they encounter."
 msgstr ""
 "Nutzer können Einträge im Instrument-Log erstellen, um "
-"Instrumentwissenschaftler über auftretende Probleme zu informieren."
+"Instrumentverantwortliche über auftretende Probleme zu informieren."
 
 #: frontend/templates/instruments/instrument.html:95
 #: frontend/templates/instruments/instrument.html:349
@@ -3885,7 +3892,7 @@ msgstr "Nutzer können Log-Einträge betrachten"
 
 #: frontend/templates/instruments/instrument_form.html:410
 msgid "Create log entries for objects created by instrument scientists"
-msgstr "Erstelle Log-Einträge für von Instrumentwissenschaftlern erstellte Objekte"
+msgstr "Erstelle Log-Einträge für von Instrumentverantwortlichen erstellte Objekte"
 
 #: frontend/templates/instruments/instrument_form.html:410
 msgid ""
@@ -3903,7 +3910,7 @@ msgstr "Dieses Instrument nicht in Instrumentlisten anzeigen"
 
 #: frontend/templates/instruments/instrument_scientists.html:3
 msgid "Instrument Scientists:"
-msgstr "Instrumentwissenschaftler:"
+msgstr "Instrumentverantwortliche:"
 
 #: frontend/templates/instruments/instruments.html:7
 #, python-format
@@ -3946,11 +3953,17 @@ msgstr "Zeitpunktsformat für moment"
 msgid "Enabled for input"
 msgstr "Für Eingabe aktiviert"
 
-#: frontend/templates/languages/language.html:20
+#: frontend/templates/languages/language.html:16
+#: frontend/templates/languages/language_form.html:75
+#: frontend/templates/languages/language_form.html:77
+msgid "Enabled for user interface"
+msgstr "Für Benutzerschnittstelle aktiviert"
+
+#: frontend/templates/languages/language.html:21
 msgid "Modify this language."
 msgstr "Die Informationen dieser Sprache anpassen."
 
-#: frontend/templates/languages/language.html:20
+#: frontend/templates/languages/language.html:21
 msgid "Edit language"
 msgstr "Sprache bearbeiten"
 
@@ -4331,15 +4344,15 @@ msgstr "Erstellt"
 msgid "Last modified"
 msgstr "Zuletzt geändert"
 
-#: frontend/templates/objects/objects.html:166
+#: frontend/templates/objects/objects.html:167
 msgid "Pages"
 msgstr "Seiten"
 
-#: frontend/templates/objects/objects.html:182
+#: frontend/templates/objects/objects.html:183
 msgid "Objects per page"
 msgstr "Objekte pro Seite"
 
-#: frontend/templates/objects/objects.html:197
+#: frontend/templates/objects/objects.html:198
 msgid ""
 "Failed to interpret advanced search query. Please check your query or try"
 " the regular search instead."
@@ -4347,7 +4360,7 @@ msgstr ""
 "Die erweiterte Suchanfrage konnte nicht interpretiert werden. Bitte "
 "prüfen Sie die Anfrage oder versuchen Sie die normale Suche."
 
-#: frontend/templates/objects/objects.html:199
+#: frontend/templates/objects/objects.html:200
 msgid "No objects were found."
 msgstr "Es wurden keine Objekte gefunden."
 
@@ -5196,19 +5209,23 @@ msgstr "Zugehörige Objekte"
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"
 
-#: frontend/templates/objects/view/base.html:1074
+#: frontend/templates/objects/view/base.html:1063
+msgid "PDF Export Language"
+msgstr "PDF Export Sprache"
+
+#: frontend/templates/objects/view/base.html:1086
 msgid "Select All"
 msgstr "Alle auswählen"
 
-#: frontend/templates/objects/view/base.html:1075
+#: frontend/templates/objects/view/base.html:1087
 msgid "Deselect All"
 msgstr "Alle abwählen"
 
-#: frontend/templates/objects/view/base.html:1126
+#: frontend/templates/objects/view/base.html:1138
 msgid "Please select one responsible user or one location"
 msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
-#: frontend/templates/objects/view/base.html:1326
+#: frontend/templates/objects/view/base.html:1338
 msgid "files selected"
 msgstr "Dateien ausgewählt"
 
@@ -5574,92 +5591,92 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
-#: frontend/users/preferences.py:138
+#: frontend/users/preferences.py:139
 msgid "Successfully updated your password."
 msgstr "Das Passwort wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:140 frontend/users/preferences.py:171
+#: frontend/users/preferences.py:141 frontend/users/preferences.py:172
 msgid "Failed to change password."
 msgstr "Das Ändern des Passworts ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:176
+#: frontend/users/preferences.py:177
 msgid "Successfully deleted your stored Dataverse API Token."
 msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 
-#: frontend/users/preferences.py:186
+#: frontend/users/preferences.py:187
 msgid "Successfully updated your user name."
 msgstr "Der Nutzername wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:194
+#: frontend/users/preferences.py:195
 msgid "Please see your email to confirm this change."
 msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
 
-#: frontend/users/preferences.py:220
+#: frontend/users/preferences.py:221
 msgid "Successfully updated your role."
 msgstr "Ihre Position wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:222
+#: frontend/users/preferences.py:223
 msgid "Successfully updated your ORCID iD and role."
 msgstr "Ihre ORCID iD und Position wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:224
+#: frontend/users/preferences.py:225
 msgid "Successfully updated your affiliation and role."
 msgstr "Ihre Zugehörigkeit und Position wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:226
+#: frontend/users/preferences.py:227
 msgid "Successfully updated your ORCID iD, affiliation and role."
 msgstr "Ihre ORCID iD, Zugehörigkeit und Position wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:229
+#: frontend/users/preferences.py:230
 msgid "Successfully updated your ORCID iD."
 msgstr "Ihre ORCID iD wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:231
+#: frontend/users/preferences.py:232
 msgid "Successfully updated your affiliation."
 msgstr "Ihre Zugehörigkeit wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:233
+#: frontend/users/preferences.py:234
 msgid "Successfully updated your ORCID iD and affiliation."
 msgstr "Ihre ORCID iD und Zugehörigkeit wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:241
+#: frontend/users/preferences.py:242
 msgid "Successfully removed the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich entfernt."
 
-#: frontend/users/preferences.py:243
+#: frontend/users/preferences.py:244
 msgid "Failed to remove the authentication method."
 msgstr "Das Entfernen der Authentifizierungsmethode ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:288
+#: frontend/users/preferences.py:289
 msgid "Successfully added the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
 
-#: frontend/users/preferences.py:290 frontend/users/preferences.py:320
+#: frontend/users/preferences.py:291 frontend/users/preferences.py:321
 msgid "Failed to add an authentication method."
 msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:328
+#: frontend/users/preferences.py:329
 msgid "Failed to add an API token."
 msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:382 frontend/users/preferences.py:391
-#: frontend/users/preferences.py:400 frontend/users/preferences.py:409
+#: frontend/users/preferences.py:383 frontend/users/preferences.py:392
+#: frontend/users/preferences.py:401 frontend/users/preferences.py:410
 msgid "Successfully updated default permissions."
 msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:419
+#: frontend/users/preferences.py:420
 msgid "Successfully updated your notification settings."
 msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:460
+#: frontend/users/preferences.py:465
 msgid "Successfully updated your settings."
 msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:572
+#: frontend/users/preferences.py:578
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."
 
-#: frontend/users/preferences.py:574
+#: frontend/users/preferences.py:580
 msgid ""
 "Resetting your password failed. Please try again or contact an "
 "administrator."

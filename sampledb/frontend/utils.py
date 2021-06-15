@@ -165,7 +165,7 @@ def custom_format_number(number):
     except ValueError:
         return number
     if float(number) != 0:
-        if log10(float(number)) <= -5.0 or int(log10(float(number))) >= 6:
+        if log10(abs(float(number))) <= -5.0 or int(log10(abs(float(number)))) >= 6:
             return format_scientific(number)
     if type(number) is int:
         return format_number(number)

@@ -12,7 +12,7 @@ from .. import models
 
 
 class Language(collections.namedtuple(
-    'Language', ['id', 'lang_code', 'names', 'datetime_format_datetime', 'datetime_format_moment', 'enabled_for_input']
+    'Language', ['id', 'lang_code', 'names', 'datetime_format_datetime', 'datetime_format_moment', 'enabled_for_input', 'enabled_for_user_interface']
 )):
     ENGLISH = models.Language.ENGLISH
     GERMAN = models.Language.GERMAN
@@ -25,7 +25,8 @@ class Language(collections.namedtuple(
             names=language.names,
             datetime_format_datetime=language.datetime_format_datetime,
             datetime_format_moment=language.datetime_format_moment,
-            enabled_for_input=language.enabled_for_input
+            enabled_for_input=language.enabled_for_input,
+            enabled_for_user_interface=language.enabled_for_user_interface
         )
 
 
@@ -34,7 +35,8 @@ def create_language(
         lang_code: str,
         datetime_format_datetime: str,
         datetime_format_moment: str,
-        enabled_for_input: bool
+        enabled_for_input: bool,
+        enabled_for_user_interface: bool
 ) -> Language:
     """
     Create a new language.
@@ -44,6 +46,8 @@ def create_language(
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
     :param enabled_for_input: whether or not the language is enabled for input
+    :param enabled_for_user_interface: whether or not the language is enabled
+        for the user interface
     :return: the new language
     """
     if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
@@ -63,7 +67,8 @@ def create_language(
         lang_code=lang_code,
         datetime_format_datetime=datetime_format_datetime,
         datetime_format_moment=datetime_format_moment,
-        enabled_for_input=enabled_for_input
+        enabled_for_input=enabled_for_input,
+        enabled_for_user_interface=enabled_for_user_interface
     )
     db.session.add(language)
     db.session.commit()
@@ -76,7 +81,8 @@ def update_language(
         lang_code: str,
         datetime_format_datetime: str,
         datetime_format_moment: str,
-        enabled_for_input: bool
+        enabled_for_input: bool,
+        enabled_for_user_interface: bool
 ) -> None:
     """
     Update a language.
@@ -87,6 +93,8 @@ def update_language(
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
     :param enabled_for_input: whether or not the language is enabled for input
+    :param enabled_for_user_interface: whether or not the language is enabled
+        for the user interface
     :return: the language
     :raise errors.LanguageAlreadyExistsError: when the language code already
         exists for a different language or the current language code matches
@@ -115,6 +123,7 @@ def update_language(
     language.datetime_format_datetime = datetime_format_datetime
     language.datetime_format_moment = datetime_format_moment
     language.enabled_for_input = enabled_for_input
+    language.enabled_for_user_interface = enabled_for_user_interface
     db.session.add(language)
     db.session.commit()
 

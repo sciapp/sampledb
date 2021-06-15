@@ -20,7 +20,8 @@ def test_create_language():
         lang_code="xy",
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-        enabled_for_input=True
+        enabled_for_input=True,
+        enabled_for_user_interface=True
     )
 
     assert language.names == {
@@ -43,7 +44,8 @@ def test_create_existing_language():
             lang_code="de",
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-            enabled_for_input=True
+            enabled_for_input=True,
+            enabled_for_user_interface=True
         )
 
 
@@ -58,7 +60,8 @@ def test_create_language_with_unknown_name_translation():
             lang_code="xy",
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-            enabled_for_input=True
+            enabled_for_input=True,
+        enabled_for_user_interface=True
         )
 
 
@@ -71,7 +74,8 @@ def test_update_language():
         lang_code="xy",
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-        enabled_for_input=True
+        enabled_for_input=True,
+        enabled_for_user_interface=True
     )
 
     languages.update_language(
@@ -83,7 +87,8 @@ def test_update_language():
         lang_code="yz",
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-        enabled_for_input=False
+        enabled_for_input=False,
+        enabled_for_user_interface=True
     )
     with pytest.raises(errors.LanguageDoesNotExistError):
         languages.get_language_by_lang_code('xy')
@@ -108,7 +113,8 @@ def test_update_language_with_known_lang_code():
         lang_code="xy",
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-        enabled_for_input=True
+        enabled_for_input=True,
+        enabled_for_user_interface=True
     )
     with pytest.raises(errors.LanguageAlreadyExistsError):
         languages.update_language(
@@ -119,7 +125,8 @@ def test_update_language_with_known_lang_code():
             lang_code="en",
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-            enabled_for_input=False
+            enabled_for_input=False,
+            enabled_for_user_interface=True
         )
 
 
@@ -135,7 +142,8 @@ def test_update_language_with_unknown_name_translation():
             lang_code="de",
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-            enabled_for_input=True
+            enabled_for_input=True,
+            enabled_for_user_interface=True
         )
 
 
@@ -150,7 +158,8 @@ def test_update_language_with_locale_lang_code():
             lang_code="xy",
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
-            enabled_for_input=True
+            enabled_for_input=True,
+            enabled_for_user_interface=True
         )
 
 

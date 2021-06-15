@@ -68,6 +68,17 @@
         </div>
         <span class="text-muted">{{ _('<strong>Note</strong>: When disabling a language for input after it has already been used, any texts previously translated into this language will keep their translation until actively edited.')}}</span>
       </div>
+      <div class="form-group">
+        <div class="checkbox">
+          <label style="font-weight: bold">
+          {% if language_form.lang_code.data == 'en' %}
+            <input type="checkbox" checked="checked" disabled="disabled"><input type="hidden" value="{{ language_form.enabled_for_user_interface.name }}" name="{{ language_form.enabled_for_user_interface.name }}"/> {{ _('Enabled for user interface')}}
+          {% else %}
+            <input type="checkbox" {% if language_form.enabled_for_user_interface.data %}checked="checked"{% endif %} name="{{ language_form.enabled_for_user_interface.name }}"> {{ _('Enabled for user interface')}}
+          {% endif %}
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="form-group row clearfix" style="padding-right:0.75em">
