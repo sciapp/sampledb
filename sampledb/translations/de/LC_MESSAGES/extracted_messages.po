@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-06-14 14:18+0200\n"
+"POT-Creation-Date: 2021-06-15 08:41+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -329,106 +329,106 @@ msgstr "Das Objekt wurde erfolgreich erstellt."
 msgid "The object was updated successfully."
 msgstr "Das Objekt wurde erfolgreich aktualisiert."
 
-#: frontend/objects.py:1226 frontend/objects.py:1227
+#: frontend/objects.py:1227 frontend/objects.py:1228
 msgid "Unknown"
 msgstr "Unbekannt"
 
-#: frontend/objects.py:1233
+#: frontend/objects.py:1234
 msgid "Unknown Object"
 msgstr "Unbekanntes Objekt"
 
-#: frontend/objects.py:1275
+#: frontend/objects.py:1276
 msgid "Successfully posted a comment."
 msgstr "Kommentar erfolgreich eingetragen."
 
-#: frontend/objects.py:1277
+#: frontend/objects.py:1278
 msgid "Please enter a comment text."
 msgstr "Bitte geben Sie einen Kommentartext ein."
 
-#: frontend/objects.py:1368
+#: frontend/objects.py:1369
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
 
-#: frontend/objects.py:1371
+#: frontend/objects.py:1372
 msgid "Your request for permissions has been sent."
 msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
 
-#: frontend/objects.py:1414
+#: frontend/objects.py:1415
 msgid "Successfully assigned a new location to this object."
 msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
 
-#: frontend/objects.py:1416 frontend/objects.py:1418
+#: frontend/objects.py:1417 frontend/objects.py:1419
 msgid "Please select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
-#: frontend/objects.py:1445
+#: frontend/objects.py:1446
 msgid "This object has already been linked to this publication."
 msgstr "Dieses Objekt wurde bereits mit dieser Publikation verknüpft."
 
-#: frontend/objects.py:1449
+#: frontend/objects.py:1450
 msgid "Successfully linked this object to a publication."
 msgstr "Das Objekt wurde erfolgreich mit der Publikation verknüpft."
 
-#: frontend/objects.py:1451
+#: frontend/objects.py:1452
 msgid "Successfully updated the information for this publication."
 msgstr "Die Informationen für diese Publikation wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:1453
+#: frontend/objects.py:1454
 msgid ""
 "Please enter a valid DOI for the publication you want to link this object"
 " to."
 msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
 
-#: frontend/objects.py:1583
+#: frontend/objects.py:1597
 msgid "The file was hidden successfully."
 msgstr "Die Datei wurde erfolgreich versteckt."
 
-#: frontend/objects.py:1644
+#: frontend/objects.py:1658
 msgid "Successfully uploaded files."
 msgstr "Die Dateien wurden erfolgreich hochgeladen."
 
-#: frontend/objects.py:1646 frontend/objects.py:1655
+#: frontend/objects.py:1660 frontend/objects.py:1669
 msgid "Failed to upload files."
 msgstr "Das Hochladen der Dateien ist fehlgeschlagen"
 
-#: frontend/objects.py:1650
+#: frontend/objects.py:1664
 msgid "Successfully posted link."
 msgstr "Der Link wurde erfolgreich eingetragen."
 
-#: frontend/objects.py:1652
+#: frontend/objects.py:1666
 msgid "Failed to post link."
 msgstr "Das Eintragen des Links ist fehlgeschlagen."
 
-#: frontend/objects.py:1677
+#: frontend/objects.py:1691
 msgid "This object does not exist."
 msgstr "Dieses Objekt existiert nicht."
 
-#: frontend/objects.py:1680
+#: frontend/objects.py:1694
 msgid "You do not have the required permissions to use this object as a template."
 msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
 
-#: frontend/objects.py:1684
+#: frontend/objects.py:1698
 msgid "This object was created with a different action."
 msgstr "Dieses Objekt wurde mit einer anderen Aktion erstellt."
 
-#: frontend/objects.py:1692
+#: frontend/objects.py:1706
 msgid "This action does not exist."
 msgstr "Diese Aktion existiert nicht."
 
-#: frontend/objects.py:1695
+#: frontend/objects.py:1709
 msgid "You do not have the required permissions to use this action."
 msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
 
-#: frontend/objects.py:1945
+#: frontend/objects.py:1959
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
 
-#: frontend/objects.py:1973 frontend/objects.py:1982 frontend/objects.py:1991
-#: frontend/objects.py:2000
+#: frontend/objects.py:1987 frontend/objects.py:1996 frontend/objects.py:2005
+#: frontend/objects.py:2014
 msgid "Successfully updated object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:2002
+#: frontend/objects.py:2016
 msgid ""
 "A problem occurred while changing the object permissions. Please try "
 "again."
@@ -436,7 +436,7 @@ msgstr ""
 "Beim Ändern der Berechtigungen ist ein Problem aufgetreten. Bitte "
 "versuchen Sie es später erneut."
 
-#: frontend/pdfexport.py:96
+#: frontend/pdfexport.py:99
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> created this "
@@ -445,7 +445,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "als Teil einer Charge erstellt."
 
-#: frontend/pdfexport.py:98
+#: frontend/pdfexport.py:101
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> created this "
@@ -454,7 +454,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "erstellt."
 
-#: frontend/pdfexport.py:100
+#: frontend/pdfexport.py:103
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> edited this "
@@ -463,7 +463,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "bearbeitet."
 
-#: frontend/pdfexport.py:102
+#: frontend/pdfexport.py:105
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> posted a "
@@ -472,7 +472,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat einen "
 "Kommentar für dieses Objekt eingetragen."
 
-#: frontend/pdfexport.py:104
+#: frontend/pdfexport.py:107
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> restored a "
@@ -481,14 +481,14 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine "
 "vorherige Version dieses Objekts wiederhergestellt."
 
-#: frontend/pdfexport.py:106
+#: frontend/pdfexport.py:109
 #, python-format
 msgid "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> posted a file."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine Datei "
 "hochgeladen."
 
-#: frontend/pdfexport.py:114
+#: frontend/pdfexport.py:117
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -499,7 +499,7 @@ msgstr ""
 "in <a href=\"%(object_url)s\">Messung %(measurement_name)s "
 "(#%(measurement_id)s)</a> verwendet."
 
-#: frontend/pdfexport.py:116
+#: frontend/pdfexport.py:119
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -508,7 +508,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in <a href=\"%(object_url)s\">Messung #%(measurement_id)s</a> verwendet."
 
-#: frontend/pdfexport.py:118
+#: frontend/pdfexport.py:121
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -517,7 +517,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in einer Messung verwendet."
 
-#: frontend/pdfexport.py:126
+#: frontend/pdfexport.py:129
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -528,7 +528,7 @@ msgstr ""
 "zur Erstellung von <a href=\"%(object_url)s\">Probe %(sample_name)s "
 "(#%(sample_id)s)</a> verwendet."
 
-#: frontend/pdfexport.py:128
+#: frontend/pdfexport.py:131
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -538,7 +538,7 @@ msgstr ""
 "zur Erstellung von <a href=\"%(object_url)s\">Probe #%(sample_id)s</a> "
 "verwendet."
 
-#: frontend/pdfexport.py:130
+#: frontend/pdfexport.py:133
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
@@ -547,7 +547,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "zur Erstellung einer Probe verwendet."
 
-#: frontend/pdfexport.py:137
+#: frontend/pdfexport.py:140
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
@@ -559,7 +559,7 @@ msgstr ""
 "href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
 "zugeweisen."
 
-#: frontend/pdfexport.py:140
+#: frontend/pdfexport.py:143
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
@@ -568,7 +568,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> das Objekt dem "
 "<a href=\"%(location_url)s\">Ort %(location_id)s</a> zugewiesen."
 
-#: frontend/pdfexport.py:143
+#: frontend/pdfexport.py:146
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
@@ -579,7 +579,7 @@ msgstr ""
 "dem <a href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
 "zugewiesen."
 
-#: frontend/pdfexport.py:146
+#: frontend/pdfexport.py:149
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked "
@@ -590,7 +590,7 @@ msgstr ""
 "Publikation <a href=\"https://doi.org/%(doi)s\">%(doi)s</a> mit dem "
 "Objekt verknüpft."
 
-#: frontend/pdfexport.py:155
+#: frontend/pdfexport.py:158
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -601,7 +601,7 @@ msgstr ""
 "in den Metadaten von <a href=\"(object_url)s\">%(object_name)s "
 "#%(other_object_id)s</a> referenziert."
 
-#: frontend/pdfexport.py:157
+#: frontend/pdfexport.py:160
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -612,7 +612,7 @@ msgstr ""
 "in den Metadaten von <a href=\"(object_url)s\">object "
 "#%(other_object_id)s</a> referenziert."
 
-#: frontend/pdfexport.py:159
+#: frontend/pdfexport.py:162
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -621,7 +621,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in den Metadaten eines unbekannten Objekts referenziert."
 
-#: frontend/pdfexport.py:161
+#: frontend/pdfexport.py:164
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
@@ -630,7 +630,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "in den Metadaten eines anderen Objekts referenziert."
 
-#: frontend/pdfexport.py:164
+#: frontend/pdfexport.py:167
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> exported this "
@@ -641,7 +641,7 @@ msgstr ""
 "als <a href=\"%(dataverse_url)s\">%(dataverse_url)s</a> in ein Dataverse "
 "exportiert."
 
-#: frontend/pdfexport.py:169
+#: frontend/pdfexport.py:172
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked this "
@@ -652,7 +652,7 @@ msgstr ""
 "mit <a href=\"%(project_url)s\">Projektgruppe %(project_name)s "
 "(#%(project_id)s)</a> verknüpft."
 
-#: frontend/pdfexport.py:171
+#: frontend/pdfexport.py:174
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked this "
@@ -661,7 +661,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
 "mit einer Projektgruppe verknüpft."
 
-#: frontend/pdfexport.py:174
+#: frontend/pdfexport.py:177
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> deleted the "
@@ -670,7 +670,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
 "Projektgruppe gelöscht mit der das Objekt verknüpft war."
 
-#: frontend/pdfexport.py:179
+#: frontend/pdfexport.py:182
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> removed the "
@@ -681,7 +681,7 @@ msgstr ""
 "Verknüpfung dieses Objekts mit <a href=\"%(project_url)s\">Projektgruppe "
 "%(project_name)s (#%(project_id)s)</a> entfernt."
 
-#: frontend/pdfexport.py:181
+#: frontend/pdfexport.py:184
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> removed the "
@@ -690,7 +690,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
 "Verknüpfung dieses Objekts mit einer Projektgruppe entfernt."
 
-#: frontend/pdfexport.py:183
+#: frontend/pdfexport.py:186
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> performed an "
@@ -1081,7 +1081,7 @@ msgstr "Aktionen"
 
 #: frontend/templates/base.html:108 frontend/templates/objects/objects.html:3
 #: frontend/templates/objects/objects.html:103
-#: frontend/templates/objects/view/base.html:1066
+#: frontend/templates/objects/view/base.html:1078
 msgid "Objects"
 msgstr "Objekte"
 
@@ -1190,7 +1190,7 @@ msgstr "Nutzer einladen"
 #: frontend/templates/objects/dataverse_export_api_token.html:3
 #: frontend/templates/objects/view/base.html:126
 #: frontend/templates/objects/view/base.html:1032
-#: frontend/templates/objects/view/base.html:1078
+#: frontend/templates/objects/view/base.html:1090
 msgid "Export Data"
 msgstr "Daten exportieren"
 
@@ -1404,7 +1404,7 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/objects/view/base.html:359
 #: frontend/templates/objects/view/base.html:386
 #: frontend/templates/objects/view/base.html:580
-#: frontend/templates/objects/view/base.html:1077
+#: frontend/templates/objects/view/base.html:1089
 #: frontend/templates/preferences.html:619
 #: frontend/templates/preferences.html:658
 #: frontend/templates/preferences.html:686
@@ -2063,6 +2063,7 @@ msgstr "Nutzer hinzufügen"
 #: frontend/templates/objects/object_versions.html:11
 #: frontend/templates/objects/objects.html:122
 #: frontend/templates/objects/objects.html:124
+#: frontend/templates/pdfexport/user.html:5
 #: frontend/templates/preferences.html:359 frontend/templates/profile.html:3
 #: frontend/templates/projects/project.html:300
 msgid "User"
@@ -2166,8 +2167,8 @@ msgstr "Zeitzone erkennen (Standard): "
 msgid "Objects per Page"
 msgstr "Objekte pro Seite"
 
-#: frontend/templates/objects/objects.html:186
-#: frontend/templates/objects/objects.html:188
+#: frontend/templates/objects/objects.html:187
+#: frontend/templates/objects/objects.html:189
 #: frontend/templates/preferences.html:532
 msgid "all"
 msgstr "alle"
@@ -3952,11 +3953,17 @@ msgstr "Zeitpunktsformat für moment"
 msgid "Enabled for input"
 msgstr "Für Eingabe aktiviert"
 
-#: frontend/templates/languages/language.html:20
+#: frontend/templates/languages/language.html:16
+#: frontend/templates/languages/language_form.html:75
+#: frontend/templates/languages/language_form.html:77
+msgid "Enabled for user interface"
+msgstr "Für Benutzerschnittstelle aktiviert"
+
+#: frontend/templates/languages/language.html:21
 msgid "Modify this language."
 msgstr "Die Informationen dieser Sprache anpassen."
 
-#: frontend/templates/languages/language.html:20
+#: frontend/templates/languages/language.html:21
 msgid "Edit language"
 msgstr "Sprache bearbeiten"
 
@@ -3992,11 +3999,6 @@ msgstr ""
 "<strong>Hinweis</strong>: Wenn Sie eine Sprache für Eingabe deaktivieren,"
 " die bereits verwendet wurde, behalten alle bereits übersetzten Texte "
 "ihre Übersetzungen bis sie aktiv bearbeitet werden."
-
-#: frontend/templates/languages/language_form.html:75
-#: frontend/templates/languages/language_form.html:77
-msgid "Enabled for user interface"
-msgstr "Für Benutzerschnittstelle aktiviert"
 
 #: frontend/templates/languages/languages.html:7
 msgid ""
@@ -4342,15 +4344,15 @@ msgstr "Erstellt"
 msgid "Last modified"
 msgstr "Zuletzt geändert"
 
-#: frontend/templates/objects/objects.html:166
+#: frontend/templates/objects/objects.html:167
 msgid "Pages"
 msgstr "Seiten"
 
-#: frontend/templates/objects/objects.html:182
+#: frontend/templates/objects/objects.html:183
 msgid "Objects per page"
 msgstr "Objekte pro Seite"
 
-#: frontend/templates/objects/objects.html:197
+#: frontend/templates/objects/objects.html:198
 msgid ""
 "Failed to interpret advanced search query. Please check your query or try"
 " the regular search instead."
@@ -4358,7 +4360,7 @@ msgstr ""
 "Die erweiterte Suchanfrage konnte nicht interpretiert werden. Bitte "
 "prüfen Sie die Anfrage oder versuchen Sie die normale Suche."
 
-#: frontend/templates/objects/objects.html:199
+#: frontend/templates/objects/objects.html:200
 msgid "No objects were found."
 msgstr "Es wurden keine Objekte gefunden."
 
@@ -5207,19 +5209,23 @@ msgstr "Zugehörige Objekte"
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"
 
-#: frontend/templates/objects/view/base.html:1074
+#: frontend/templates/objects/view/base.html:1063
+msgid "PDF Export Language"
+msgstr "PDF Export Sprache"
+
+#: frontend/templates/objects/view/base.html:1086
 msgid "Select All"
 msgstr "Alle auswählen"
 
-#: frontend/templates/objects/view/base.html:1075
+#: frontend/templates/objects/view/base.html:1087
 msgid "Deselect All"
 msgstr "Alle abwählen"
 
-#: frontend/templates/objects/view/base.html:1126
+#: frontend/templates/objects/view/base.html:1138
 msgid "Please select one responsible user or one location"
 msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
-#: frontend/templates/objects/view/base.html:1326
+#: frontend/templates/objects/view/base.html:1338
 msgid "files selected"
 msgstr "Dateien ausgewählt"
 

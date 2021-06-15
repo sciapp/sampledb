@@ -11,7 +11,7 @@ import flask_login
 import jinja2
 import qrcode
 import qrcode.image.pil
-from flask_babel import _
+from flask_babel import _, refresh
 from weasyprint import default_url_fetcher, HTML
 
 from .. import logic
@@ -36,9 +36,14 @@ SECTIONS = {
 
 def create_pdfexport(
         object_ids: typing.Sequence[int],
-        sections: typing.Set[str] = SECTIONS
+        sections: typing.Set[str] = SECTIONS,
+        lang_code: str = 'en'
 ):
     exported_files = {}
+
+    language_id = logic.languages.get_language_by_lang_code(lang_code).id
+    flask.g.override_locale = lang_code
+    refresh()
 
     base_url = flask.url_for('.index', _external=True)
 
@@ -75,8 +80,6 @@ def create_pdfexport(
         if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
             url = ''
         return default_url_fetcher(url)
-
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
 
     objects = []
     for object_id in object_ids:
@@ -238,7 +241,7 @@ def create_pdfexport(
     def get_object_type_name(action):
         return logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
             action_type_id=action.type_id,
-            language_id=user_language_id,
+            language_id=language_id,
             use_fallback=True
         ).object_name
 
@@ -248,8 +251,13 @@ def create_pdfexport(
         export_date=datetime.datetime.utcnow(),
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         objects=objects,
-        get_user=get_user_if_exists
+        get_user=get_user_if_exists,
+        metadata_language=lang_code
     )
+
+    # use regular user language again
+    delattr(flask.g, 'override_locale')
+    refresh()
 
     return HTML(
         string=html,

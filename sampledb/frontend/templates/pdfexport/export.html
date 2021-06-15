@@ -94,7 +94,7 @@
 {% for object, action, activity_log_entries, location_entries, publications, comments, files, qrcode_url in objects %}
   <article>
   <header style="background-image: url({{ qrcode_url }})">#{{ object.object_id }} {{ _('Exported&nbsp;on %(export_date)s', export_date=export_date | babel_format_date) }}</header>
-  <h1>{{ get_object_type_name(action) }} #{{ object.object_id }}: {{ object.data.name.text | get_translated_text }}</h1>
+  <h1>{{ get_object_type_name(action) }} #{{ object.object_id }}: {{ object.data.name.text | get_translated_text(metadata_language) }}</h1>
   <h2>{{ _('Information') }}</h2>
   {% with data = object.data %}
   {% with schema = object.schema %}
@@ -118,7 +118,7 @@
     <li style="text-indent: -11em; margin-left: 11em;">
       {{ entry.utc_datetime | babel_format_datetime }} &mdash; <a href="{{ url_for('.user_profile', user_id=entry.assigning_user_id, _external=True) }}">{{ entry.assigning_user_name }} (#{{ entry.assigning_user_id }})</a>:
     {% if entry.location_id %}
-      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name | get_translated_text }} (#{{ entry.location_id }})</a>
+      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name | get_translated_text(metadata_language) }} (#{{ entry.location_id }})</a>
     {% endif %}
     {% if entry.responsible_user_id %}
       {% if entry.location_id %}/{% endif %}
@@ -127,7 +127,7 @@
     {% if entry.description %}
       <div style="text-indent: 0">
         {{ _('Description') }}:
-        <div class="object-user-content multiline">{{ entry.description | get_translated_text }}</div>
+        <div class="object-user-content multiline">{{ entry.description | get_translated_text(metadata_language) }}</div>
       </div>
     {% endif %}
     </li>

@@ -2,7 +2,7 @@
   {% set user = get_user(data.user_id) %}
   <a href="{{ url_for('.user_profile', user_id=user.id, _external=True) }}">
   {% if user is none %}
-    User #{{ user.id }}
+    {{ _('User') }} #{{ user.id }}
   {% else %}
     {{ user.name }} (#{{ user.id }})
   {% endif %}

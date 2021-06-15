@@ -1059,6 +1059,18 @@
               {% if action.type.enable_comments %}
               <label><input type="checkbox" checked="checked" name="comments"> {{ _('Comments') }}</label>
               {% endif %}
+              <div style="text-align: left">
+                <label style="font-weight: bold" for="select-pdf-export-language">{{ _('PDF Export Language') }}</label>
+                <select class="selectpicker" name="language" id="select-pdf-export-language">
+                  {% for language in all_languages %}
+                    {% if language.enabled_for_user_interface and language.lang_code in SUPPORTED_LOCALES %}
+                    <option value="{{ language.lang_code }}" {% if language.id == get_user_language(current_user).id %}selected="selected"{% endif %}>
+                      {{ language.names | get_translated_text }}
+                    </option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </div>
             </div>
 
             {% if action.type.enable_related_objects %}
@@ -1398,6 +1410,7 @@
             format = selected_format_option.val();
           }
           $('#pdf–export-sections').toggleClass('disabled', format !== '.pdf');
+          $('#pdf–export-sections select[name="language"]').attr('disabled', format !== '.pdf').selectpicker('refresh');
           var pdf_export_sections = $('#pdf–export-sections input');
           var enabled_sections = [];
           pdf_export_sections.each(function (_, input) {
@@ -1408,6 +1421,7 @@
               }
             }
           });
+          var pdf_export_language = $('#pdf–export-sections select[name="language"]').selectpicker('val');
           var object_ids_to_export = [];
           {% if action.type.enable_related_objects %}
             $('input[name^=data_export_object_]').each(function () {
@@ -1420,7 +1434,7 @@
           {% endif %}
           var export_link = $('#button-related-objects-export-data');
           if (object_ids_to_export.length > 0) {
-            export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)));
+            export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)) + "&language=" + encodeURIComponent(pdf_export_language));
             export_link.removeClass("disabled");
           } else {
             export_link.attr('href', "#");
@@ -1429,6 +1443,9 @@
         }
 
         $('#pdf–export-sections input').on('change', function () {
+          updateDataExportLink();
+        });
+        $('#pdf–export-sections select[name="language"]').on('change', function () {
           updateDataExportLink();
         });
         $('input[name^=data_export_object_]').on('change', function () {
