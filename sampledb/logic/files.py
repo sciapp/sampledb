@@ -20,6 +20,7 @@ will be inside folders named after the action's ID.
 
 import collections
 import datetime
+import io
 import os
 import typing
 
@@ -33,13 +34,21 @@ FILE_STORAGE_PATH: str = None
 MAX_NUM_FILES: int = 10000
 
 
-class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data'])):
+class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data', 'binary_data'])):
     """
     This class provides an immutable wrapper around models.files.File.
     """
 
-    def __new__(cls, id: int, object_id: int, user_id: int, utc_datetime: typing.Optional[datetime.datetime] = None, data: typing.Optional[typing.Dict[str, typing.Any]] = None):
-        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data)
+    def __new__(
+            cls,
+            id: int,
+            object_id: int,
+            user_id: int,
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            data: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            binary_data: typing.Optional[bytes] = None
+    ):
+        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data, binary_data)
         self._is_hidden = None
         self._hide_reason = None
         self._title = None
@@ -60,7 +69,9 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             object_id=file.object_id,
             user_id=file.user_id,
             utc_datetime=file.utc_datetime,
-            data=data)
+            data=data,
+            binary_data=file.binary_data
+        )
 
     @property
     def storage(self) -> str:
@@ -68,7 +79,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def original_file_name(self):
-        if self.storage == 'local':
+        if self.storage in {'local', 'database'}:
             return self.data['original_file_name']
         else:
             raise InvalidFileStorageError()
@@ -106,7 +117,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
                 type=FileLogEntryType.EDIT_TITLE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                if self.storage == 'local':
+                if self.storage in {'local', 'database'}:
                     return self.original_file_name
                 elif self.storage == 'url':
                     return self.data['url']
@@ -176,6 +187,11 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
                 os.makedirs(os.path.dirname(file_name), exist_ok=True)
                 mode = 'xb'
             return open(file_name, mode)
+        elif self.storage == 'database':
+            if self.binary_data is not None:
+                return io.BytesIO(self.binary_data)
+            else:
+                return io.BytesIO(b'')
         else:
             raise InvalidFileStorageError()
 
@@ -253,6 +269,48 @@ def create_url_file(object_id: int, user_id: int, url: str) -> File:
     return file
 
 
+def create_database_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> File:
+    """
+    Create a new database file and add it to the object and user logs.
+
+    The function will call save_content with an opened file (in binary mode).
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user
+    :param file_name: the original file name
+    :param save_content: a function which will save the file's content to the
+        given stream. The function will be called at most once.
+    :return: the newly created file
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.FileNameTooLongError: when the file name is longer than 150
+        bytes when encoded as UTF-8
+    """
+    # ensure that the file name is valid
+    if len(file_name.encode('utf8')) > 150:
+        raise FileNameTooLongError()
+
+    binary_data_file = io.BytesIO()
+    save_content(binary_data_file)
+    binary_data = binary_data_file.getvalue()
+
+    db_file = _create_db_file(
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'storage': 'database',
+            'original_file_name': file_name
+        }
+    )
+    db_file.binary_data = binary_data
+    db.session.commit()
+    file = File.from_database(db_file)
+    _create_file_logs(file)
+    return file
+
+
 def _create_file_logs(file: File) -> None:
     """
     Create object and user logs for a new file.
@@ -266,10 +324,13 @@ def _create_file_logs(file: File) -> None:
     user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
 
 
-def _create_db_file(object_id: int, user_id: int, data: typing.Dict[str, typing.Any]) -> files.File:
+def _create_db_file(
+        object_id: int,
+        user_id: int,
+        data: typing.Dict[str, typing.Any]
+) -> files.File:
     """
-    Creates a new file and adds it to the object and user logs. The function
-    will call save_content with the opened file (in binary mode).
+    Creates a new file in the database.
 
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user

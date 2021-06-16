@@ -13,6 +13,7 @@ from . import update_action
 from . import list_actions
 from . import export_action_schema
 from . import create_other_user
+from . import move_local_files_to_database
 from . import send_announcement
 from . import set_administrator
 from . import set_up_demo
@@ -33,6 +34,7 @@ script_modules = {
         list_actions,
         export_action_schema,
         create_other_user,
+        move_local_files_to_database,
         send_announcement,
         set_administrator,
         set_up_demo,

@@ -1518,7 +1518,7 @@ def object_files(object_id):
         for file in files:
             if file.is_hidden:
                 continue
-            if file.storage == 'local':
+            if file.storage in {'local', 'database'}:
                 try:
                     file_bytes = file.open(read_only=True).read()
                 except Exception:
@@ -1543,7 +1543,7 @@ def object_file(object_id, file_id):
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if file.storage == 'local':
+    if file.storage in ('local', 'database'):
         if 'preview' in flask.request.args:
             file_extension = os.path.splitext(file.original_file_name)[1]
             mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
@@ -1637,7 +1637,7 @@ def post_mobile_file_upload(object_id: int, token: str):
         )
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
-        logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
+        logic.files.create_database_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
     return flask.render_template('mobile_upload_success.html')
 
 
@@ -1653,7 +1653,7 @@ def post_object_files(object_id):
             files = flask.request.files.getlist(file_form.local_files.name)
             for file_storage in files:
                 file_name = werkzeug.utils.secure_filename(file_storage.filename)
-                logic.files.create_local_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
+                logic.files.create_database_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
             flask.flash(_('Successfully uploaded files.'), 'success')
         else:
             flask.flash(_('Failed to upload files.'), 'error')
