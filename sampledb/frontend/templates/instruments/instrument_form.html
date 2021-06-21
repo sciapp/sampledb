@@ -125,7 +125,7 @@
       updateCategoryJSON();
     });
 
-    {% if submit_text !=  _('Update Instrument') %}
+    {% if submit_text !=  _('Save') %}
       $('.form-group[data-name="input-names"] .selectpicker, .form-group[data-name="input-descriptions"] .selectpicker, .form-group[data-name="input-short-descriptions"] .selectpicker, .form-group[data-name="input-notes"] .selectpicker').each(function () {
         $(this).selectpicker('val', ['{{ ENGLISH.id }}']);
       });

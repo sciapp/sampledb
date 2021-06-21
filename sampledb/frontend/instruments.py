@@ -628,7 +628,7 @@ def edit_instrument(instrument_id):
                         ENGLISH = get_language(Language.ENGLISH)
                         return flask.render_template(
                             'instruments/instrument_form.html',
-                            submit_text='Update Instrument',
+                            submit_text=_('Save'),
                             instrument_log_category_themes=sorted(InstrumentLogCategoryTheme,
                                                                   key=lambda t: t.value),
                             instrument_translations=instrument_translations,
@@ -734,7 +734,7 @@ def edit_instrument(instrument_id):
     english = get_language(Language.ENGLISH)
     return flask.render_template(
         'instruments/instrument_form.html',
-        submit_text=_('Update Instrument'),
+        submit_text=_('Save'),
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
         instrument_translations=instrument_translations,
         instrument_language_ids=instrument_language_ids,
