@@ -4501,7 +4501,7 @@ msgid "View object information in a different language."
 msgstr "Zeigt Objektinformationen in einer anderen Sprache an."
 
 #: frontend/templates/objects/view/base.html:45
-msgid "Change language"
+msgid "Change Language"
 msgstr "Sprache wechseln"
 
 #: frontend/templates/objects/view/base.html:60
