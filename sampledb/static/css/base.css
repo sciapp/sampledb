@@ -338,7 +338,7 @@ th:hover .search-helper {
 .object-button-bar {
     display:flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-top: 10px;
 }
 
@@ -349,7 +349,7 @@ th:hover .search-helper {
 .object-button-bar > div > div > button,
 .object-button-bar > div > button,
 .object-button-bar > div > form > button {
-    width:15em;
+    min-width:15em;
 }
 .related-objects {
 }
