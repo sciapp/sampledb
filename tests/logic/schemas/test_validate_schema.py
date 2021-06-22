@@ -416,6 +416,18 @@ def test_validate_text_with_placeholder_and_choices():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_text_with_translated_placeholder():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'placeholder': {'en': 'Placeholder', 'de': 'Platzhalter'}
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['placeholder']['xy'] = 'Placeholder'
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_datetime_schema():
     schema = {
         'title': 'Example',
