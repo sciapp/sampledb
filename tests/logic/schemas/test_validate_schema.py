@@ -248,6 +248,35 @@ def test_validate_text_with_empty_choices():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_text_with_translated_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': [{'en': 'A', 'de': 'A2'}, {'en': 'B'}, {'en': 'C', 'de': 'C'}]
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_with_mixed_translated_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': ['A', 'B', {'en': 'C'}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_with_translated_choices_without_english():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': [{'en': 'A', 'de': 'A2'}, {'en': 'B'}, {'de': 'C'}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_text_with_pattern():
     schema = {
         'title': 'Example',

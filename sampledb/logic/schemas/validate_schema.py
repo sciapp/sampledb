@@ -300,15 +300,6 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
             allowed_language_codes = all_language_codes
     else:
         allowed_language_codes = {'en'}
-    if 'default' in schema and not isinstance(schema['default'], str) and not isinstance(schema['default'], dict):
-        raise ValidationError('default must be str or dict', path)
-    if 'default' in schema and isinstance(schema['default'], dict):
-        for lang_code in schema['default'].keys():
-            if lang_code not in allowed_language_codes:
-                raise ValidationError('default must only contain allowed languages', path)
-        for default_text in schema['default'].values():
-            if not isinstance(default_text, str):
-                raise ValidationError('default must only contain text', path)
     if 'placeholder' in schema and 'choices' in schema:
         raise ValidationError('placeholder cannot be used together with choices', path)
     if 'placeholder' in schema and not isinstance(schema['placeholder'], str) and not isinstance(schema['placeholder'], dict):
@@ -335,11 +326,39 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     if 'choices' in schema and not schema['choices']:
         raise ValidationError('choices must not be empty', path)
     if 'choices' in schema:
+        choice_type = None
         for i, choice in enumerate(schema['choices']):
-            if not isinstance(choice, str):
-                raise ValidationError('choice must be str', path + [str(i)])
-            if choice.isspace():
-                raise ValidationError('choice must contain more than whitespace', path + [str(i)])
+            if not isinstance(choice, str) and not isinstance(choice, dict):
+                raise ValidationError('choice must be str or dict', path + [str(i)])
+            if choice_type is not None and type(choice) != choice_type:
+                raise ValidationError('choices must be either all str or all dict', path + [str(i)])
+            choice_type = type(choice)
+            if isinstance(choice, dict):
+                if 'en' not in choice:
+                    raise ValidationError('choice must include an english translation', path + [str(i)])
+                for lang_code in choice.keys():
+                    if lang_code not in all_language_codes:
+                        raise ValidationError('choice must only contain known languages', path + [str(i)])
+                for choice_text in choice.values():
+                    if not isinstance(choice_text, str):
+                        raise ValidationError('choice must only contain text', path + [str(i)])
+                    if choice_text.isspace():
+                        raise ValidationError('choice must contain more than whitespace', path + [str(i)])
+            else:
+                if choice.isspace():
+                    raise ValidationError('choice must contain more than whitespace', path + [str(i)])
+    if 'default' in schema and not isinstance(schema['default'], str) and not isinstance(schema['default'], dict):
+        raise ValidationError('default must be str or dict', path)
+    if 'choices' in schema and 'default' in schema:
+        if schema['default'] not in schema['choices']:
+            raise ValidationError('default must only contain a valid choice', path)
+    elif 'default' in schema and isinstance(schema['default'], dict):
+        for lang_code in schema['default'].keys():
+            if lang_code not in allowed_language_codes:
+                raise ValidationError('default must only contain allowed languages', path)
+        for default_text in schema['default'].values():
+            if not isinstance(default_text, str):
+                raise ValidationError('default must only contain text', path)
     if 'pattern' in schema and not isinstance(schema['pattern'], str):
         raise ValidationError('pattern must be str', path)
     if 'pattern' in schema:

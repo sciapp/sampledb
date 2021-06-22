@@ -527,4 +527,31 @@ This example shows how Markdown can be used for instrument Notes.
                 instrument_log_entry_id=log_entry.id,
                 object_id=object.id
             )
+        action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'dropdown': {
+                        'title': {'en': 'English Title', 'de': 'Deutscher Titel'},
+                        'type': 'text',
+                        'choices': [
+                            {'en': 'en 1', 'de': 'de 1'},
+                            {'en': 'en 2', 'de': 'de 2'},
+                            {'en': 'en 3'}
+                        ],
+                        'default': {'en': 'en 2', 'de': 'de 2'}
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, action.id, name="choices translation test", description="")
+        sampledb.logic.action_permissions.set_action_public(action.id)
     print("Success: set up demo data")

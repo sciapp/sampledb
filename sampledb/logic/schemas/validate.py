@@ -246,7 +246,7 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
             raise ValidationError(_('The text must be at least %(min_length)s characters long.', min_length=min_length), path)
         if max_length is not None and len(instance['text']) > max_length:
             raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
-    else:
+    elif not choices:
         all_languages = languages.get_languages()
         language_names = {
             language.lang_code: get_translated_text(language.names)
