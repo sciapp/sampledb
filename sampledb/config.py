@@ -10,6 +10,7 @@ This configuration is the pure base, representing defaults. These values may be 
 
 import base64
 import io
+import json
 import os
 import requests
 import typing
@@ -427,3 +428,10 @@ try:
     INVITATION_TIME_LIMIT = int(INVITATION_TIME_LIMIT)
 except ValueError:
     pass
+
+# convert SERVICE_DESCRIPTION to a dict
+if isinstance(SERVICE_DESCRIPTION, str) and SERVICE_DESCRIPTION.startswith('{'):
+    try:
+        SERVICE_DESCRIPTION = json.loads(SERVICE_DESCRIPTION)
+    except Exception:
+        pass
