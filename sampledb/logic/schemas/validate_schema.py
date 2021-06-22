@@ -35,11 +35,21 @@ def validate_schema(schema: dict, path: typing.Optional[typing.List[str]] = None
         raise ValidationError('invalid schema (type must be str)', path)
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
+    all_language_codes = {
+        language.lang_code
+        for language in get_languages()
+    }
     if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
-        raise ValidationError('invalid schema (title must be str)', path)
+        raise ValidationError('title must be str or dict', path)
     if isinstance(schema['title'], dict):
-        # TODO: Validate dict?
-        pass
+        if 'en' not in schema['title']:
+            raise ValidationError('title must include an english translation', path)
+        for lang_code in schema['title'].keys():
+            if lang_code not in all_language_codes:
+                raise ValidationError('title must only contain known languages', path)
+        for note_text in schema['title'].values():
+            if not isinstance(note_text, str):
+                raise ValidationError('title must only contain text', path)
     if path == [] and schema['type'] != 'object':
         raise ValidationError('invalid schema (root must be an object)', path)
     if schema['type'] == 'array':
@@ -80,6 +90,8 @@ def _validate_note_in_schema(schema: dict, path: typing.List[str]):
     if 'note' in schema and not isinstance(schema['note'], str) and not isinstance(schema['note'], dict):
         raise ValidationError('note must be str or dict', path)
     if 'note' in schema and isinstance(schema['note'], dict):
+        if 'en' not in schema['note']:
+            raise ValidationError('note must include an english translation', path)
         for lang_code in schema['note'].keys():
             if lang_code not in all_language_codes:
                 raise ValidationError('note must only contain known languages', path)
@@ -305,6 +317,8 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     if 'placeholder' in schema and not isinstance(schema['placeholder'], str) and not isinstance(schema['placeholder'], dict):
         raise ValidationError('placeholder must be str or dict', path)
     if 'placeholder' in schema and isinstance(schema['placeholder'], dict):
+        if 'en' not in schema['placeholder']:
+            raise ValidationError('placeholder must include an english translation', path)
         for lang_code in schema['placeholder'].keys():
             if lang_code not in all_language_codes:
                 raise ValidationError('placeholder must only contain known languages', path)
@@ -466,6 +480,8 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     if 'placeholder' in schema and not isinstance(schema['placeholder'], str) and not isinstance(schema['placeholder'], dict):
         raise ValidationError('placeholder must be str or dict', path)
     if 'placeholder' in schema and isinstance(schema['placeholder'], dict):
+        if 'en' not in schema['placeholder']:
+            raise ValidationError('placeholder must include an english translation', path)
         for lang_code in schema['placeholder'].keys():
             if lang_code not in all_language_codes:
                 raise ValidationError('placeholder must only contain known languages', path)
