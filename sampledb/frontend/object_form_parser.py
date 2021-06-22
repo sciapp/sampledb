@@ -81,6 +81,11 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
             '_type': 'text',
             'text': str(text)
         }
+        # if choice was a dict turned to a string, restore it
+        for choice in schema.get('choices', []):
+            if str(choice) == data['text']:
+                data['text'] = choice
+                break
     else:
         if not all(key.startswith(id_prefix + '__text_') for key in keys):
             raise ValueError('invalid text form data')

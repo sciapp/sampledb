@@ -122,6 +122,19 @@ def test_validate_text_choices():
     validate(instance, schema)
 
 
+def test_validate_text_translated_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': [{'en': 'A'}, {'en': 'B'}, {'en': 'C'}]
+    }
+    instance = {
+        '_type': 'text',
+        'text': {'en': 'A'}
+    }
+    validate(instance, schema)
+
+
 def test_validate_text_invalid_choice():
     schema = {
         'title': 'Example',

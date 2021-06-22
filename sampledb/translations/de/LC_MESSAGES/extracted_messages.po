@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-06-15 08:41+0200\n"
+"POT-Creation-Date: 2021-06-21 15:46+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -38,9 +38,11 @@ msgid "Create"
 msgstr "Erstellen"
 
 #: frontend/action_types.py:172 frontend/action_types.py:260
-#: frontend/action_types.py:290 frontend/languages.py:146
+#: frontend/action_types.py:290 frontend/instruments.py:631
+#: frontend/instruments.py:737 frontend/languages.py:146
 #: frontend/templates/action_types/action_type_form.html:101
 #: frontend/templates/groups/group.html:159
+#: frontend/templates/instruments/instrument_form.html:128
 #: frontend/templates/objects/forms/form_create.html:112
 #: frontend/templates/objects/forms/form_edit.html:17
 #: frontend/templates/objects/object_permissions.html:250
@@ -169,11 +171,6 @@ msgstr "Bitte geben Sie einen englischen Instrumentnamen ein."
 #: frontend/instruments.py:725
 msgid "The instrument was updated successfully."
 msgstr "Das Instrument wurde erfolgreich aktualisiert."
-
-#: frontend/instruments.py:737
-#: frontend/templates/instruments/instrument_form.html:128
-msgid "Update Instrument"
-msgstr "Instrument bearbeiten"
 
 #: frontend/languages.py:118
 msgid "This language code is already in use."
@@ -379,56 +376,56 @@ msgid ""
 " to."
 msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
 
-#: frontend/objects.py:1597
+#: frontend/objects.py:1596
 msgid "The file was hidden successfully."
 msgstr "Die Datei wurde erfolgreich versteckt."
 
-#: frontend/objects.py:1658
+#: frontend/objects.py:1657
 msgid "Successfully uploaded files."
 msgstr "Die Dateien wurden erfolgreich hochgeladen."
 
-#: frontend/objects.py:1660 frontend/objects.py:1669
+#: frontend/objects.py:1659 frontend/objects.py:1668
 msgid "Failed to upload files."
 msgstr "Das Hochladen der Dateien ist fehlgeschlagen"
 
-#: frontend/objects.py:1664
+#: frontend/objects.py:1663
 msgid "Successfully posted link."
 msgstr "Der Link wurde erfolgreich eingetragen."
 
-#: frontend/objects.py:1666
+#: frontend/objects.py:1665
 msgid "Failed to post link."
 msgstr "Das Eintragen des Links ist fehlgeschlagen."
 
-#: frontend/objects.py:1691
+#: frontend/objects.py:1690
 msgid "This object does not exist."
 msgstr "Dieses Objekt existiert nicht."
 
-#: frontend/objects.py:1694
+#: frontend/objects.py:1693
 msgid "You do not have the required permissions to use this object as a template."
 msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
 
-#: frontend/objects.py:1698
+#: frontend/objects.py:1697
 msgid "This object was created with a different action."
 msgstr "Dieses Objekt wurde mit einer anderen Aktion erstellt."
 
-#: frontend/objects.py:1706
+#: frontend/objects.py:1705
 msgid "This action does not exist."
 msgstr "Diese Aktion existiert nicht."
 
-#: frontend/objects.py:1709
+#: frontend/objects.py:1708
 msgid "You do not have the required permissions to use this action."
 msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
 
-#: frontend/objects.py:1959
+#: frontend/objects.py:1958
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
 
-#: frontend/objects.py:1987 frontend/objects.py:1996 frontend/objects.py:2005
-#: frontend/objects.py:2014
+#: frontend/objects.py:1986 frontend/objects.py:1995 frontend/objects.py:2004
+#: frontend/objects.py:2013
 msgid "Successfully updated object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:2016
+#: frontend/objects.py:2015
 msgid ""
 "A problem occurred while changing the object permissions. Please try "
 "again."
@@ -4504,7 +4501,7 @@ msgid "View object information in a different language."
 msgstr "Zeigt Objektinformationen in einer anderen Sprache an."
 
 #: frontend/templates/objects/view/base.html:45
-msgid "Change language"
+msgid "Change Language"
 msgstr "Sprache wechseln"
 
 #: frontend/templates/objects/view/base.html:60
