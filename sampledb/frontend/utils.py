@@ -23,6 +23,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
+from ..logic.schemas.conditions import are_conditions_fulfilled
 
 
 def jinja_filter(func):
@@ -172,6 +173,18 @@ def custom_format_number(number):
     return format_decimal(number)
 
 
+def base64encode(value):
+    return base64.b64encode(json.dumps(value).encode('utf8')).decode('ascii')
+
+
+def filter_are_conditions_fulfilled(data, property_schema) -> bool:
+    if not data:
+        return False
+    if not isinstance(property_schema, dict):
+        return False
+    return are_conditions_fulfilled(property_schema.get('conditions'), data)
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -187,3 +200,5 @@ _jinja_filters['get_translated_text'] = get_translated_text
 _jinja_filters['babel_format_datetime'] = custom_format_datetime
 _jinja_filters['babel_format_date'] = custom_format_date
 _jinja_filters['babel_format_number'] = custom_format_number
+_jinja_filters['base64encode'] = base64encode
+_jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled

@@ -12,21 +12,21 @@
   {% for option in schema.choices %}
     {% if id_prefix+'_text' in form_data %}
       {% if form_data[id_prefix+'_text'] == option %}
-      <option value="{{ option }}" selected="selected">{{ option | get_translated_text }}</option>
+      <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" selected="selected">{{ option | get_translated_text }}</option>
       {% else %}
-      <option value="{{ option }}">{{ option | get_translated_text }}</option>
+      <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
       {% endif %}
     {% elif data is not none and "text" in data %}
       {% if data.text == option %}
-      <option value="{{ option }}" selected="selected">{{ option | get_translated_text }}</option>
+      <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" selected="selected">{{ option | get_translated_text }}</option>
       {% else %}
-      <option value="{{ option }}">{{ option | get_translated_text }}</option>
+      <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
       {% endif %}
     {% else %}
       {% if 'default' in schema and schema['default'] == option %}
-      <option value="{{ option }}" selected="selected">{{ option | get_translated_text }}</option>
+      <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" selected="selected">{{ option | get_translated_text }}</option>
       {% else %}
-      <option value="{{ option }}">{{ option | get_translated_text }}</option>
+      <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
       {% endif %}
     {% endif %}
   {% endfor %}

@@ -72,6 +72,9 @@
     select_language_selectpicker.each(function(_, selectpicker) {
       updateSelectLanguage(selectpicker);
     });
+    $.each(window.conditional_wrapper_scripts, function () {
+      this();
+    });
   });
 
   var tags = new Bloodhound({

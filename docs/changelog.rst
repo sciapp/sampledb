@@ -17,6 +17,7 @@ Currently in development.
 - Allow setting a default number of items for arrays
 - Improved user interface
 - Added support for a custom CSS file
+- Added support for conditional properties
 
 Version 0.18
 ------------

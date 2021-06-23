@@ -547,11 +547,41 @@ This example shows how Markdown can be used for instrument Notes.
                             {'en': 'en 3'}
                         ],
                         'default': {'en': 'en 2', 'de': 'de 2'}
+                    },
+                    'user': {
+                        'title': {'en': 'User', 'de': 'Nutzer'},
+                        'type': 'user'
+                    },
+                    'checkbox': {
+                        'title': {'en': 'Checkbox', 'de': 'Checkbox'},
+                        'type': 'bool'
+                    },
+                    'conditional_text': {
+                        'title': 'Conditional Name',
+                        'type': 'text',
+                        'markdown': True,
+                        'conditions': [
+                            {
+                                'type': 'choice_equals',
+                                'property_name': 'dropdown',
+                                'choice': {'en': 'en 1', 'de': 'de 1'}
+                            },
+                            {
+                                'type': 'user_equals',
+                                'property_name': 'user',
+                                'user_id': None
+                            },
+                            {
+                                'type': 'bool_equals',
+                                'property_name': 'checkbox',
+                                'value': True
+                            }
+                        ]
                     }
                 },
                 'required': ['name']
             }
         )
-        set_action_translation(Language.ENGLISH, action.id, name="choices translation test", description="")
+        set_action_translation(Language.ENGLISH, action.id, name="Conditions Demo Action", description="")
         sampledb.logic.action_permissions.set_action_public(action.id)
     print("Success: set up demo data")
