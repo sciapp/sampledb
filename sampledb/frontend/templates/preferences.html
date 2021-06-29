@@ -43,7 +43,7 @@
     <div class="form-group {% if change_user_form.affiliation.errors %} has-error{% endif %}">
         <label for="input-affiliation" class="col-sm-4 control-label">{{ _('Affiliation') }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="input-affiliation" name="{{change_user_form.affiliation.name}}" value="{{ change_user_form.affiliation.data or ""}}" placeholder="{{ _('Affiliation') }}">
+          <input class="form-control" type="text" id="input-affiliation" name="{{change_user_form.affiliation.name}}" value="{{ change_user_form.affiliation.data or ""}}" placeholder="{{ _('Affiliation, e.g. your institute, company or department') }}">
           {% if change_user_form.affiliation.errors %}
             <span class="help-block">{{ _('Please enter your affiliation or leave this field blank.') }}</span>
           {% endif %}
@@ -52,7 +52,7 @@
     <div class="form-group {% if change_user_form.role.errors %} has-error{% endif %}">
         <label for="input-role" class="col-sm-4 control-label">{{ _('Role') }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="input-role" name="{{change_user_form.role.name}}" value="{{ change_user_form.role.data or ""}}" placeholder="{{ _('Role') }}">
+          <input class="form-control" type="text" id="input-role" name="{{change_user_form.role.name}}" value="{{ change_user_form.role.data or ""}}" placeholder="{{ _('Role, e.g. PhD student, principal investigator or technician') }}">
           {% if change_user_form.role.errors %}
             <span class="help-block">{{ _('Please enter your role or leave this field blank.') }}</span>
           {% endif %}

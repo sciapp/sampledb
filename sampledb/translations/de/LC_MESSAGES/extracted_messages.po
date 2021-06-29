@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-06-29 11:07+0200\n"
+"POT-Creation-Date: 2021-06-29 13:24+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1779,19 +1779,25 @@ msgstr "Bitte geben Sie Ihre E-Mail-Adresse ein."
 msgid "Please enter your ORCID iD or leave this field blank."
 msgstr "Bitte geben Sie eine ORCID iD ein oder lassen Sie dieses Feld leer."
 
-#: frontend/templates/preferences.html:44
-#: frontend/templates/preferences.html:46 frontend/templates/profile.html:26
+#: frontend/templates/preferences.html:44 frontend/templates/profile.html:26
 msgid "Affiliation"
 msgstr "Zugehörigkeit"
+
+#: frontend/templates/preferences.html:46
+msgid "Affiliation, e.g. your institute, company or department"
+msgstr "Zugehörigkeit, z.B. Ihr Institut, Ihr Unternehmen oder Ihre Abteilung"
 
 #: frontend/templates/preferences.html:48
 msgid "Please enter your affiliation or leave this field blank."
 msgstr "Bitte geben Sie Ihre Zugehörigkeit ein oder lassen Sie dieses Feld leer."
 
-#: frontend/templates/preferences.html:53
-#: frontend/templates/preferences.html:55 frontend/templates/profile.html:34
+#: frontend/templates/preferences.html:53 frontend/templates/profile.html:34
 msgid "Role"
 msgstr "Position"
+
+#: frontend/templates/preferences.html:55
+msgid "Role, e.g. PhD student, principal investigator or technician"
+msgstr "Position, z.B. Techniker, Projektleiter oder Doktorand"
 
 #: frontend/templates/preferences.html:57
 msgid "Please enter your role or leave this field blank."
