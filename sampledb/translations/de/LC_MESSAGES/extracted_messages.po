@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-06-21 15:46+0200\n"
+"POT-Creation-Date: 2021-06-29 11:07+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -46,7 +46,7 @@ msgstr "Erstellen"
 #: frontend/templates/objects/forms/form_create.html:112
 #: frontend/templates/objects/forms/form_edit.html:17
 #: frontend/templates/objects/object_permissions.html:250
-#: frontend/templates/objects/view/base.html:358
+#: frontend/templates/objects/view/base.html:360
 #: frontend/templates/preferences.html:62
 #: frontend/templates/preferences.html:209
 #: frontend/templates/preferences.html:349
@@ -124,7 +124,7 @@ msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
 msgid "No suitable Dataverses available for export."
 msgstr "Kein für Export brauchbares Dataverse verfügbar."
 
-#: frontend/export.py:41 frontend/templates/objects/view/base.html:1038
+#: frontend/export.py:41 frontend/templates/objects/view/base.html:1040
 msgid "PDF file"
 msgstr "PDF-Dokument"
 
@@ -252,7 +252,7 @@ msgstr "Der Ort wurde erfolgreich erstellt."
 msgid "The location was updated successfully."
 msgstr "Der Ort wurde erfolgreich aktualisiert."
 
-#: frontend/object_form_parser.py:113 frontend/object_form_parser.py:136
+#: frontend/object_form_parser.py:118 frontend/object_form_parser.py:141
 msgid ""
 "Please select at least one hazard or confirm that the object poses no "
 "hazards."
@@ -260,35 +260,35 @@ msgstr ""
 "Bitte wählen Sie mindestens ein Gefahrensymbol aus, oder bestätigen Sie, "
 "dass das Objekt keine Gefahr darstellt."
 
-#: frontend/object_form_parser.py:177
+#: frontend/object_form_parser.py:182
 msgid "Please select a sample."
 msgstr "Bitte wählen Sie eine Probe aus."
 
-#: frontend/object_form_parser.py:200
+#: frontend/object_form_parser.py:205
 msgid "Please select a measurement."
 msgstr "Bitte wählen Sie eine Messung aus."
 
-#: frontend/object_form_parser.py:223
+#: frontend/object_form_parser.py:228
 msgid "Please select an object reference."
 msgstr "Bitte wählen Sie eine Objektreferenz aus."
 
-#: frontend/object_form_parser.py:247
+#: frontend/object_form_parser.py:252
 msgid "Please enter a magnitude."
 msgstr "Bitte geben Sie eine Größe ein."
 
-#: frontend/object_form_parser.py:257
+#: frontend/object_form_parser.py:262
 msgid "Unable to parse magnitude."
 msgstr "Größe konnte nicht geparset werden."
 
-#: frontend/object_form_parser.py:260
+#: frontend/object_form_parser.py:265
 msgid "The magnitude must be a number."
 msgstr "Die Größe muss eine Zahl sein."
 
-#: frontend/object_form_parser.py:298
+#: frontend/object_form_parser.py:303
 msgid "Please enter a valid datetime."
 msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein,"
 
-#: frontend/object_form_parser.py:395
+#: frontend/object_form_parser.py:400
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
@@ -985,9 +985,9 @@ msgstr ""
 
 #: frontend/templates/actions/action_form.html:409
 #: frontend/templates/api_log.html:14
-#: frontend/templates/objects/view/base.html:328
-#: frontend/templates/objects/view/base.html:617
-#: frontend/templates/objects/view/base.html:787
+#: frontend/templates/objects/view/base.html:330
+#: frontend/templates/objects/view/base.html:619
+#: frontend/templates/objects/view/base.html:789
 msgid "Datetime"
 msgstr "Zeitpunkt"
 
@@ -1023,7 +1023,7 @@ msgid "Search"
 msgstr "Suche"
 
 #: frontend/templates/base.html:65 frontend/templates/groups/group.html:40
-#: frontend/templates/profile.html:46
+#: frontend/templates/profile.html:47
 #: frontend/templates/projects/project.html:93
 #: frontend/templates/search.html:30
 msgid "Toggle Dropdown"
@@ -1078,7 +1078,7 @@ msgstr "Aktionen"
 
 #: frontend/templates/base.html:108 frontend/templates/objects/objects.html:3
 #: frontend/templates/objects/objects.html:103
-#: frontend/templates/objects/view/base.html:1078
+#: frontend/templates/objects/view/base.html:1080
 msgid "Objects"
 msgstr "Objekte"
 
@@ -1124,8 +1124,8 @@ msgstr "Projektgruppen"
 #: frontend/templates/base.html:125
 #: frontend/templates/locations/locations.html:3
 #: frontend/templates/locations/locations.html:6
-#: frontend/templates/objects/view/base.html:606
-#: frontend/templates/objects/view/base.html:1051
+#: frontend/templates/objects/view/base.html:608
+#: frontend/templates/objects/view/base.html:1053
 #: frontend/templates/pdfexport/export.html:115
 msgid "Locations"
 msgstr "Orte"
@@ -1185,9 +1185,9 @@ msgstr "Nutzer einladen"
 #: frontend/templates/base.html:154 frontend/templates/export.html:3
 #: frontend/templates/export.html:17 frontend/templates/export.html:35
 #: frontend/templates/objects/dataverse_export_api_token.html:3
-#: frontend/templates/objects/view/base.html:126
-#: frontend/templates/objects/view/base.html:1032
-#: frontend/templates/objects/view/base.html:1090
+#: frontend/templates/objects/view/base.html:128
+#: frontend/templates/objects/view/base.html:1034
+#: frontend/templates/objects/view/base.html:1092
 msgid "Export Data"
 msgstr "Daten exportieren"
 
@@ -1224,6 +1224,7 @@ msgstr "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
 #: frontend/templates/objects/forms/form_datetime.html:11
 #: frontend/templates/objects/forms/form_hazards.html:26
 #: frontend/templates/objects/forms/form_object_reference_base.html:20
+#: frontend/templates/objects/forms/form_plotly_chart.html:5
 #: frontend/templates/objects/forms/form_quantity.html:15
 #: frontend/templates/objects/forms/form_select.html:35
 #: frontend/templates/objects/forms/form_tags.html:6
@@ -1331,7 +1332,7 @@ msgstr "Botnutzer erstellen"
 #: frontend/templates/locations/location_form.html:114
 #: frontend/templates/locations/location_form.html:123
 #: frontend/templates/objects/objects.html:112
-#: frontend/templates/objects/view/base.html:294
+#: frontend/templates/objects/view/base.html:296
 #: frontend/templates/preferences.html:12
 #: frontend/templates/preferences.html:14 frontend/templates/profile.html:10
 #: frontend/templates/projects/project.html:208
@@ -1398,10 +1399,10 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/objects/object_permissions.html:378
 #: frontend/templates/objects/object_permissions.html:401
 #: frontend/templates/objects/restore_object_version.html:10
-#: frontend/templates/objects/view/base.html:359
-#: frontend/templates/objects/view/base.html:386
-#: frontend/templates/objects/view/base.html:580
-#: frontend/templates/objects/view/base.html:1089
+#: frontend/templates/objects/view/base.html:361
+#: frontend/templates/objects/view/base.html:388
+#: frontend/templates/objects/view/base.html:582
+#: frontend/templates/objects/view/base.html:1091
 #: frontend/templates/preferences.html:619
 #: frontend/templates/preferences.html:658
 #: frontend/templates/preferences.html:686
@@ -1436,7 +1437,7 @@ msgstr ""
 "Information enthalten sind."
 
 #: frontend/templates/export.html:25
-#: frontend/templates/objects/view/base.html:1036
+#: frontend/templates/objects/view/base.html:1038
 msgid "Export Format"
 msgstr "Exportformat"
 
@@ -1545,7 +1546,7 @@ msgstr "ausstehend"
 #: frontend/templates/mobile_upload.html:12
 #: frontend/templates/mobile_upload_success.html:5
 #: frontend/templates/mobile_upload_success.html:12
-#: frontend/templates/objects/view/base.html:433
+#: frontend/templates/objects/view/base.html:435
 msgid "Mobile File Upload"
 msgstr "Smartphone-Upload"
 
@@ -1554,7 +1555,7 @@ msgid "Select file"
 msgstr "Datei auswählen"
 
 #: frontend/templates/mobile_upload.html:16
-#: frontend/templates/objects/view/base.html:421
+#: frontend/templates/objects/view/base.html:423
 msgid "Upload"
 msgstr "Hochladen"
 
@@ -1599,7 +1600,7 @@ msgstr ""
 "#%(object_id)s</a> eingetragen."
 
 #: frontend/templates/notifications.html:45
-#: frontend/templates/objects/view/base.html:631
+#: frontend/templates/objects/view/base.html:633
 msgid "Confirm"
 msgstr "Bestätigen"
 
@@ -1779,7 +1780,7 @@ msgid "Please enter your ORCID iD or leave this field blank."
 msgstr "Bitte geben Sie eine ORCID iD ein oder lassen Sie dieses Feld leer."
 
 #: frontend/templates/preferences.html:44
-#: frontend/templates/preferences.html:46 frontend/templates/profile.html:25
+#: frontend/templates/preferences.html:46 frontend/templates/profile.html:26
 msgid "Affiliation"
 msgstr "Zugehörigkeit"
 
@@ -1788,7 +1789,7 @@ msgid "Please enter your affiliation or leave this field blank."
 msgstr "Bitte geben Sie Ihre Zugehörigkeit ein oder lassen Sie dieses Feld leer."
 
 #: frontend/templates/preferences.html:53
-#: frontend/templates/preferences.html:55 frontend/templates/profile.html:33
+#: frontend/templates/preferences.html:55 frontend/templates/profile.html:34
 msgid "Role"
 msgstr "Position"
 
@@ -1810,7 +1811,7 @@ msgstr "Nutzername / E-Mail"
 msgid "Authentication Method"
 msgstr "Authentifizierungsmethode"
 
-#: frontend/templates/objects/view/base.html:795
+#: frontend/templates/objects/view/base.html:797
 #: frontend/templates/preferences.html:81
 #: frontend/templates/preferences.html:188
 #: frontend/templates/preferences.html:612
@@ -1851,11 +1852,11 @@ msgstr ""
 #: frontend/templates/locations/location_form.html:144
 #: frontend/templates/locations/location_form.html:155
 #: frontend/templates/locations/location_form.html:162
-#: frontend/templates/objects/view/base.html:317
-#: frontend/templates/objects/view/base.html:617
-#: frontend/templates/objects/view/base.html:671
-#: frontend/templates/objects/view/base.html:676
-#: frontend/templates/objects/view/base.html:684
+#: frontend/templates/objects/view/base.html:319
+#: frontend/templates/objects/view/base.html:619
+#: frontend/templates/objects/view/base.html:673
+#: frontend/templates/objects/view/base.html:678
+#: frontend/templates/objects/view/base.html:686
 #: frontend/templates/pdfexport/export.html:129
 #: frontend/templates/preferences.html:133
 #: frontend/templates/preferences.html:678
@@ -2199,8 +2200,8 @@ msgid "No &mdash; Only show pending invitations"
 msgstr "Nein &mdash; Zeige nur ausstehende Einladungen"
 
 #: frontend/templates/instruments/instrument.html:334
-#: frontend/templates/objects/view/base.html:268
-#: frontend/templates/objects/view/base.html:366
+#: frontend/templates/objects/view/base.html:270
+#: frontend/templates/objects/view/base.html:368
 #: frontend/templates/preferences.html:585
 #: frontend/templates/preferences.html:632
 #: frontend/templates/preferences.html:672
@@ -2278,16 +2279,29 @@ msgid "ID"
 msgstr "ID"
 
 #: frontend/templates/profile.html:12 frontend/templates/users.html:24
+#, python-format
+msgid ""
+"Administrators can manage actions, objects and other %(service_name)s "
+"content."
+msgstr ""
+"Administratoren können Aktionen, Objekte und andere %(service_name)s "
+"Inhalte verwalten."
+
+#: frontend/templates/profile.html:12 frontend/templates/users.html:24
+msgid "administrator"
+msgstr "Administrator"
+
+#: frontend/templates/profile.html:13 frontend/templates/users.html:24
 msgid "Bot users are meant for the automation of object creation and other tasks."
 msgstr ""
 "Botnutzer dienen der Automatisierung von Objekterstellung und ähnlichen "
 "Aufgaben."
 
-#: frontend/templates/profile.html:12 frontend/templates/users.html:24
+#: frontend/templates/profile.html:13 frontend/templates/users.html:24
 msgid "bot"
 msgstr "Bot"
 
-#: frontend/templates/profile.html:13
+#: frontend/templates/profile.html:14
 #, python-format
 msgid ""
 "Accounts marked as read only are unable to create or change entries in "
@@ -2296,76 +2310,76 @@ msgstr ""
 "Als nur lesend markierte Nutzer können keine Einträge in %(service_name)s"
 " erstellen oder verändern."
 
-#: frontend/templates/profile.html:13 frontend/templates/users.html:24
+#: frontend/templates/profile.html:14 frontend/templates/users.html:24
 msgid "read only"
 msgstr "nur lesend"
 
-#: frontend/templates/profile.html:14 frontend/templates/users.html:24
+#: frontend/templates/profile.html:15 frontend/templates/users.html:24
 msgid "Accounts marked as hidden will not be shown in user lists."
 msgstr "Als versteckt markierte Nutzer werden nicht in Nutzerlisten angezeigt."
 
 #: frontend/templates/pdfexport/export.html:165
-#: frontend/templates/profile.html:14 frontend/templates/users.html:24
+#: frontend/templates/profile.html:15 frontend/templates/users.html:24
 msgid "hidden"
 msgstr "versteckt"
 
-#: frontend/templates/profile.html:15 frontend/templates/users.html:24
+#: frontend/templates/profile.html:16 frontend/templates/users.html:24
 msgid "Deactivated accounts cannot be used until they are activated again."
 msgstr ""
 "Deaktivierte Nutzerkonten können nicht verwendet werden, bis sie wieder "
 "aktiviert wurden."
 
-#: frontend/templates/profile.html:15 frontend/templates/users.html:24
+#: frontend/templates/profile.html:16 frontend/templates/users.html:24
 msgid "deactivated"
 msgstr "deaktiviert"
 
 #: frontend/templates/groups/group.html:37
 #: frontend/templates/locations/location.html:25
-#: frontend/templates/profile.html:43
+#: frontend/templates/profile.html:44
 #: frontend/templates/projects/project.html:90
 msgid "View Objects"
 msgstr "Objekte anzeigen"
 
-#: frontend/templates/profile.html:49
+#: frontend/templates/profile.html:50
 msgid "… with activity by this user"
 msgstr "… mit Aktivität dieses Nutzers"
 
-#: frontend/templates/groups/group.html:43 frontend/templates/profile.html:51
+#: frontend/templates/groups/group.html:43 frontend/templates/profile.html:52
 #: frontend/templates/projects/project.html:96
 msgid "… with <b>READ</b> permissions"
 msgstr "… mit <b>LESE</b>-Berechtigungen"
 
-#: frontend/templates/groups/group.html:44 frontend/templates/profile.html:52
+#: frontend/templates/groups/group.html:44 frontend/templates/profile.html:53
 #: frontend/templates/projects/project.html:97
 msgid "… with <b>WRITE</b> permissions"
 msgstr "… mit <b>SCHREIB</b>-Berechtigungen"
 
-#: frontend/templates/groups/group.html:45 frontend/templates/profile.html:53
+#: frontend/templates/groups/group.html:45 frontend/templates/profile.html:54
 #: frontend/templates/projects/project.html:98
 msgid "… with <b>GRANT</b> permissions"
 msgstr "… mit <b>RECHTEVERGABE</b>-Berechtigungen"
 
-#: frontend/templates/profile.html:62
+#: frontend/templates/profile.html:63
 msgid "Mark as read only"
 msgstr "Setze <i>nur lesend</i>"
 
-#: frontend/templates/profile.html:62
+#: frontend/templates/profile.html:63
 msgid "Unmark as read only"
 msgstr "Entferne <i>nur lesend</i>"
 
-#: frontend/templates/profile.html:72
+#: frontend/templates/profile.html:73
 msgid "Mark as hidden"
 msgstr "Setze <i>versteckt</i>"
 
-#: frontend/templates/profile.html:72
+#: frontend/templates/profile.html:73
 msgid "Unmark as hidden"
 msgstr "Entferne <i>versteckt</i>"
 
-#: frontend/templates/profile.html:82
+#: frontend/templates/profile.html:83
 msgid "Activate"
 msgstr "Aktivieren"
 
-#: frontend/templates/profile.html:82
+#: frontend/templates/profile.html:83
 msgid "Deactivate"
 msgstr "Deaktivieren"
 
@@ -2622,19 +2636,19 @@ msgstr ""
 " %(service_name)s erstellen oder verändern können sollen."
 
 #: frontend/templates/objects/object_versions.html:19
-#: frontend/templates/objects/view/base.html:818
-#: frontend/templates/objects/view/base.html:825
-#: frontend/templates/objects/view/base.html:833
-#: frontend/templates/objects/view/base.html:842
-#: frontend/templates/objects/view/base.html:851
-#: frontend/templates/objects/view/base.html:866
-#: frontend/templates/objects/view/base.html:882
-#: frontend/templates/objects/view/base.html:911
-#: frontend/templates/objects/view/base.html:938
-#: frontend/templates/objects/view/base.html:947
-#: frontend/templates/objects/view/base.html:962
-#: frontend/templates/objects/view/base.html:972
-#: frontend/templates/objects/view/base.html:996
+#: frontend/templates/objects/view/base.html:820
+#: frontend/templates/objects/view/base.html:827
+#: frontend/templates/objects/view/base.html:835
+#: frontend/templates/objects/view/base.html:844
+#: frontend/templates/objects/view/base.html:853
+#: frontend/templates/objects/view/base.html:868
+#: frontend/templates/objects/view/base.html:884
+#: frontend/templates/objects/view/base.html:913
+#: frontend/templates/objects/view/base.html:940
+#: frontend/templates/objects/view/base.html:949
+#: frontend/templates/objects/view/base.html:964
+#: frontend/templates/objects/view/base.html:974
+#: frontend/templates/objects/view/base.html:998
 #: frontend/templates/users.html:25
 msgid "View"
 msgstr "Anzeigen"
@@ -3016,7 +3030,7 @@ msgid "Edit the permissions for this action."
 msgstr "Berechtigungen für diese Aktion modifizieren."
 
 #: frontend/templates/actions/action.html:50
-#: frontend/templates/objects/view/base.html:70
+#: frontend/templates/objects/view/base.html:72
 #: frontend/templates/projects/project.html:121
 msgid "Edit Permissions"
 msgstr "Berechtigungen bearbeiten"
@@ -3026,7 +3040,7 @@ msgid "Create a new custom action based on the settings for this action."
 msgstr "Eine neue Aktion aufbauend auf dieser Aktion erstellen."
 
 #: frontend/templates/actions/action.html:53
-#: frontend/templates/objects/view/base.html:80
+#: frontend/templates/objects/view/base.html:82
 msgid "Use as Template"
 msgstr "Als Vorlage benutzen"
 
@@ -3196,11 +3210,11 @@ msgstr "Schema"
 #: frontend/templates/actions/action_form.html:353
 #: frontend/templates/actions/action_form.html:396
 #: frontend/templates/actions/action_form.html:397
-#: frontend/templates/objects/view/base.html:179
-#: frontend/templates/objects/view/base.html:289
-#: frontend/templates/objects/view/base.html:705
-#: frontend/templates/objects/view/base.html:740
-#: frontend/templates/objects/view/base.html:741
+#: frontend/templates/objects/view/base.html:181
+#: frontend/templates/objects/view/base.html:291
+#: frontend/templates/objects/view/base.html:707
+#: frontend/templates/objects/view/base.html:742
+#: frontend/templates/objects/view/base.html:743
 msgid "Title"
 msgstr "Titel"
 
@@ -3304,7 +3318,7 @@ msgstr "Weitere Informationen zur Eigenschaft"
 #: frontend/templates/actions/action_form.html:427
 #: frontend/templates/actions/action_form.html:428
 #: frontend/templates/objects/view/base.html:23
-#: frontend/templates/objects/view/base.html:382
+#: frontend/templates/objects/view/base.html:384
 msgid "Note"
 msgstr "Hinweis"
 
@@ -3754,7 +3768,7 @@ msgstr "Keine Dateien ausgewählt"
 
 #: frontend/templates/instruments/instrument.html:273
 #: frontend/templates/instruments/instrument.html:398
-#: frontend/templates/objects/view/base.html:409
+#: frontend/templates/objects/view/base.html:411
 msgid "Browse..."
 msgstr "Durchsuchen..."
 
@@ -3822,7 +3836,7 @@ msgid "Create log entry"
 msgstr "Log-Eintrag erstellen"
 
 #: frontend/templates/instruments/instrument.html:442
-#: frontend/templates/objects/view/base.html:436
+#: frontend/templates/objects/view/base.html:438
 msgid "To upload files from mobile devices, scan this QR code:"
 msgstr ""
 "Um Dateien von Mobilgeräten wie Smartphones oder Tablets hochzuladen, "
@@ -4016,8 +4030,8 @@ msgstr "Für Eingabe deaktiviert"
 #: frontend/templates/locations/location.html:3
 #: frontend/templates/locations/location.html:7
 #: frontend/templates/locations/location_form.html:3
-#: frontend/templates/objects/view/base.html:617
-#: frontend/templates/objects/view/base.html:653
+#: frontend/templates/objects/view/base.html:619
+#: frontend/templates/objects/view/base.html:655
 msgid "Location"
 msgstr "Ort"
 
@@ -4071,7 +4085,7 @@ msgstr "Ort erstellen"
 
 #: frontend/templates/objects/dataverse_export.html:3
 #: frontend/templates/objects/dataverse_export_already_exported.html:3
-#: frontend/templates/objects/view/base.html:131
+#: frontend/templates/objects/view/base.html:133
 #, python-format
 msgid "Export to %(dataverse_name)s"
 msgstr "Nach %(dataverse_name)s exportieren"
@@ -4124,9 +4138,9 @@ msgstr ""
 "sollen."
 
 #: frontend/templates/objects/dataverse_export.html:62
-#: frontend/templates/objects/view/base.html:173
-#: frontend/templates/objects/view/base.html:794
-#: frontend/templates/objects/view/base.html:1057
+#: frontend/templates/objects/view/base.html:175
+#: frontend/templates/objects/view/base.html:796
+#: frontend/templates/objects/view/base.html:1059
 #: frontend/templates/pdfexport/export.html:162
 msgid "Files"
 msgstr "Dateien"
@@ -4281,7 +4295,7 @@ msgstr ""
 "Berechtigungen von einem anderen Objekt kopieren."
 
 #: frontend/templates/objects/object_versions.html:7
-#: frontend/templates/objects/view/base.html:791
+#: frontend/templates/objects/view/base.html:793
 msgid "Versions"
 msgstr "Versionen"
 
@@ -4491,36 +4505,36 @@ msgstr ""
 "Informationen finden Sie <a href=\"%(latest_version_url)s\">hier</a>."
 
 #: frontend/templates/objects/view/base.html:32
-#: frontend/templates/objects/view/base.html:1046
+#: frontend/templates/objects/view/base.html:1048
 #: frontend/templates/pdfexport/export.html:98
 msgid "Information"
 msgstr "Informationen"
 
-#: frontend/templates/objects/view/base.html:44
+#: frontend/templates/objects/view/base.html:45
 msgid "View object information in a different language."
 msgstr "Zeigt Objektinformationen in einer anderen Sprache an."
 
-#: frontend/templates/objects/view/base.html:45
+#: frontend/templates/objects/view/base.html:46
 msgid "Change Language"
 msgstr "Sprache wechseln"
 
-#: frontend/templates/objects/view/base.html:60
+#: frontend/templates/objects/view/base.html:62
 msgid "Create a new version of the information for this object."
 msgstr "Eine neue Version aus den Informationen für dieses Objekt erstellen."
 
-#: frontend/templates/objects/view/base.html:60
+#: frontend/templates/objects/view/base.html:62
 msgid "Edit Object"
 msgstr "Objekt bearbeiten"
 
-#: frontend/templates/objects/view/base.html:65
+#: frontend/templates/objects/view/base.html:67
 msgid "Update the schema for the information for this object."
 msgstr "Das Schema für die Informationen für dieses Objekt aktualisieren."
 
-#: frontend/templates/objects/view/base.html:65
+#: frontend/templates/objects/view/base.html:67
 msgid "Update Schema"
 msgstr "Schema aktualisieren"
 
-#: frontend/templates/objects/view/base.html:70
+#: frontend/templates/objects/view/base.html:72
 msgid ""
 "Modify who can read the information for this object, write it or grant "
 "permissions to other users."
@@ -4528,213 +4542,213 @@ msgstr ""
 "Bearbeite die Berechtigungen dieses Objekt zu betrachten, zu bearbeiten "
 "oder Rechte zu vergeben."
 
-#: frontend/templates/objects/view/base.html:75
+#: frontend/templates/objects/view/base.html:77
 #, python-format
 msgid "View the Project Group linked to this %(object_type_name)s."
 msgstr "Zeige die mit diesem Objekt verknüpfte Projektgruppe an."
 
-#: frontend/templates/objects/view/base.html:75
+#: frontend/templates/objects/view/base.html:77
 msgid "View Project Group"
 msgstr "Projektgruppe anzeigen"
 
-#: frontend/templates/objects/view/base.html:80
+#: frontend/templates/objects/view/base.html:82
 msgid "Create a new object based on the information for this object."
 msgstr "Ein neues Objekt anhand der Informationen des Objektes erstellen."
 
-#: frontend/templates/objects/view/base.html:86
+#: frontend/templates/objects/view/base.html:88
 msgid "Create a new measurement using this sample."
 msgstr "Erstelle eine neue Messung mit dieser Probe."
 
-#: frontend/templates/objects/view/base.html:87
+#: frontend/templates/objects/view/base.html:89
 #, python-format
 msgid "Use in %(measurement_type_name)s"
 msgstr "In %(measurement_type_name)s nutzen"
 
-#: frontend/templates/objects/view/base.html:89
+#: frontend/templates/objects/view/base.html:91
 msgid "Favorites"
 msgstr "Favoriten"
 
-#: frontend/templates/objects/view/base.html:111
+#: frontend/templates/objects/view/base.html:113
 #, python-format
 msgid "See other %(measurement_type_name)s Actions..."
 msgstr "Andere %(measurement_type_name)s-Aktionen anzeigen..."
 
-#: frontend/templates/objects/view/base.html:119
+#: frontend/templates/objects/view/base.html:121
 msgid "Generate a PDF containing labels for this object."
 msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren"
 
-#: frontend/templates/objects/view/base.html:119
-#: frontend/templates/objects/view/base.html:469
-#: frontend/templates/objects/view/base.html:581
+#: frontend/templates/objects/view/base.html:121
+#: frontend/templates/objects/view/base.html:471
+#: frontend/templates/objects/view/base.html:583
 msgid "Generate Labels"
 msgstr "Etiketten generieren"
 
-#: frontend/templates/objects/view/base.html:123
+#: frontend/templates/objects/view/base.html:125
 msgid "Show a QR code for a link to this object."
 msgstr "QR Code mit einem Link zu diesem Objekt zeigen"
 
-#: frontend/templates/objects/view/base.html:123
+#: frontend/templates/objects/view/base.html:125
 msgid "Show QR Code"
 msgstr "QR Code anzeigen"
 
-#: frontend/templates/objects/view/base.html:126
+#: frontend/templates/objects/view/base.html:128
 msgid "Export object information to an archive or PDF file."
 msgstr "Objektinformationen in ein Archiv oder eine PDF-Datei exportieren."
 
-#: frontend/templates/objects/view/base.html:130
+#: frontend/templates/objects/view/base.html:132
 #, python-format
 msgid "Export object information and files to %(dataverse_name)s."
 msgstr "Exportiert Objektinformationen und Dateien nach %(dataverse_name)s."
 
-#: frontend/templates/objects/view/base.html:136
+#: frontend/templates/objects/view/base.html:138
 #, python-format
 msgid "View object information on %(dataverse_name)s."
 msgstr "Zeigt Objektinformationen in %(dataverse_name)s an."
 
-#: frontend/templates/objects/view/base.html:137
+#: frontend/templates/objects/view/base.html:139
 #, python-format
 msgid "View on %(dataverse_name)s"
 msgstr "In %(dataverse_name)s anzeigen"
 
-#: frontend/templates/objects/view/base.html:143
+#: frontend/templates/objects/view/base.html:145
 #, python-format
 msgid "Create a Jupyter Notebook in %(jupyterhub_name)s to analyze this object."
 msgstr ""
 "Erstellt ein Jupyter Notebook in %(jupyterhub_name)s um das Objekt zu "
 "analysieren."
 
-#: frontend/templates/objects/view/base.html:145
+#: frontend/templates/objects/view/base.html:147
 msgid "Create Notebook"
 msgstr "Notebook erstellen"
 
-#: frontend/templates/objects/view/base.html:165
+#: frontend/templates/objects/view/base.html:167
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
 
-#: frontend/templates/objects/view/base.html:182
+#: frontend/templates/objects/view/base.html:184
 msgid "Notebooks"
 msgstr "Notebooks"
 
-#: frontend/templates/objects/view/base.html:183
+#: frontend/templates/objects/view/base.html:185
 msgid "Other Files"
 msgstr "Andere Dateien"
 
-#: frontend/templates/objects/view/base.html:190
+#: frontend/templates/objects/view/base.html:192
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
 
-#: frontend/templates/objects/view/base.html:205
+#: frontend/templates/objects/view/base.html:207
 msgid "Fullscreen Image Preview"
 msgstr "Vollbild-Vorschau"
 
-#: frontend/templates/objects/view/base.html:217
+#: frontend/templates/objects/view/base.html:219
 msgid "View information"
 msgstr "Informationen anzeigen"
 
-#: frontend/templates/objects/view/base.html:220
+#: frontend/templates/objects/view/base.html:222
 msgid "View preview"
 msgstr "Vorschau anzeigen"
 
-#: frontend/templates/objects/view/base.html:224
+#: frontend/templates/objects/view/base.html:226
 msgid "Download file"
 msgstr "Datei herunterladen"
 
-#: frontend/templates/objects/view/base.html:226
+#: frontend/templates/objects/view/base.html:228
 msgid "Copy link to clipboard"
 msgstr "Link kopieren"
 
-#: frontend/templates/objects/view/base.html:227
+#: frontend/templates/objects/view/base.html:229
 msgid "Open external link"
 msgstr "Externen Link öffnen"
 
-#: frontend/templates/objects/view/base.html:247
+#: frontend/templates/objects/view/base.html:249
 #, python-format
 msgid "There are no files for this %(object_type)s."
 msgstr "Es gibt keine Dateien für dieses Objekt."
 
-#: frontend/templates/objects/view/base.html:257
+#: frontend/templates/objects/view/base.html:259
 msgid "Hidden File Information"
 msgstr "Informationen zu versteckter Datei"
 
-#: frontend/templates/objects/view/base.html:261
+#: frontend/templates/objects/view/base.html:263
 msgid "This file has been hidden for the following reason:"
 msgstr "Diese Datei wurde aus dem folgenden Grund versteckt:"
 
-#: frontend/templates/objects/view/base.html:264
+#: frontend/templates/objects/view/base.html:266
 msgid "This file has been hidden."
 msgstr "Diese Datei wurde versteckt."
 
-#: frontend/templates/objects/view/base.html:285
+#: frontend/templates/objects/view/base.html:287
 msgid "File Information"
 msgstr "Dateiinformationen"
 
-#: frontend/templates/objects/view/base.html:298
+#: frontend/templates/objects/view/base.html:300
 msgid "Uploaded by"
 msgstr "Hochgeladen von"
 
-#: frontend/templates/objects/view/base.html:303
+#: frontend/templates/objects/view/base.html:305
 msgid "URL"
 msgstr "URL"
 
-#: frontend/templates/objects/view/base.html:307
+#: frontend/templates/objects/view/base.html:309
 msgid "Linked by"
 msgstr "Verlinkt von"
 
-#: frontend/templates/objects/view/base.html:312
+#: frontend/templates/objects/view/base.html:314
 msgid "Posted by"
 msgstr "Eingetragen von"
 
-#: frontend/templates/objects/view/base.html:321
+#: frontend/templates/objects/view/base.html:323
 msgid "History"
 msgstr "Verlauf"
 
-#: frontend/templates/objects/view/base.html:322
+#: frontend/templates/objects/view/base.html:324
 msgid "Show/Hide"
 msgstr "Ein-/Ausblenden"
 
-#: frontend/templates/objects/view/base.html:335
+#: frontend/templates/objects/view/base.html:337
 #, python-format
 msgid "<a href=\"%(uploader_url)s\">%(uploader_name)s</a> has uploaded the file."
 msgstr ""
 "<a href=\"%(uploader_url)s\">%(uploader_name)s</a> hat die Datei "
 "hochgeladen."
 
-#: frontend/templates/objects/view/base.html:341
+#: frontend/templates/objects/view/base.html:343
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the title to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat den Titel aktualisiert"
 " zu:"
 
-#: frontend/templates/objects/view/base.html:346
+#: frontend/templates/objects/view/base.html:348
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the description to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die Beschreibung "
 "aktualisiert zu:"
 
-#: frontend/templates/objects/view/base.html:360
+#: frontend/templates/objects/view/base.html:362
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: frontend/templates/objects/view/base.html:361
-#: frontend/templates/objects/view/base.html:385
+#: frontend/templates/objects/view/base.html:363
+#: frontend/templates/objects/view/base.html:387
 msgid "Hide"
 msgstr "Verstecken"
 
-#: frontend/templates/objects/view/base.html:364
+#: frontend/templates/objects/view/base.html:366
 msgid "Download"
 msgstr "Herunterladen"
 
-#: frontend/templates/objects/view/base.html:375
+#: frontend/templates/objects/view/base.html:377
 msgid "Hide File"
 msgstr "Datei verstecken"
 
-#: frontend/templates/objects/view/base.html:379
+#: frontend/templates/objects/view/base.html:381
 msgid "Reason"
 msgstr "Begründung"
 
-#: frontend/templates/objects/view/base.html:382
+#: frontend/templates/objects/view/base.html:384
 msgid ""
 "Other users will still see that a file has been hidden. The file may be "
 "restored by an administrator upon request."
@@ -4743,35 +4757,35 @@ msgstr ""
 "Nachfrage kann die Datei durch einen Administrator wiederhergestellt "
 "werden."
 
-#: frontend/templates/objects/view/base.html:396
+#: frontend/templates/objects/view/base.html:398
 msgid "Upload File"
 msgstr "Datei hochladen"
 
-#: frontend/templates/objects/view/base.html:413
+#: frontend/templates/objects/view/base.html:415
 msgid "Local files"
 msgstr "Lokale Dateien"
 
-#: frontend/templates/objects/view/base.html:417
+#: frontend/templates/objects/view/base.html:419
 msgid "Smartphone"
 msgstr "Smartphone"
 
-#: frontend/templates/objects/view/base.html:443
+#: frontend/templates/objects/view/base.html:445
 msgid "Post Link"
 msgstr "Link eintragen"
 
-#: frontend/templates/objects/view/base.html:451
+#: frontend/templates/objects/view/base.html:453
 msgid "Submit"
 msgstr "Absenden"
 
-#: frontend/templates/objects/view/base.html:455
+#: frontend/templates/objects/view/base.html:457
 msgid "Please enter a valid URL."
 msgstr "Bitte geben Sie eine gültige URL ein."
 
-#: frontend/templates/objects/view/base.html:474
+#: frontend/templates/objects/view/base.html:476
 msgid "Mixed label formats"
 msgstr "Gemischte Etikettenformate"
 
-#: frontend/templates/objects/view/base.html:476
+#: frontend/templates/objects/view/base.html:478
 #, python-format
 msgid ""
 "This will generate labels in a selection of predefined formats. To "
@@ -4783,41 +4797,41 @@ msgstr ""
 "href=\"mailto:%(contact_email)s\">kontaktieren Sie einen "
 "Administrator</a>, um neue Formate anzufragen."
 
-#: frontend/templates/objects/view/base.html:478
-#: frontend/templates/objects/view/base.html:494
-#: frontend/templates/objects/view/base.html:549
+#: frontend/templates/objects/view/base.html:480
+#: frontend/templates/objects/view/base.html:496
+#: frontend/templates/objects/view/base.html:551
 msgid "Paper Size:"
 msgstr "Papierformat:"
-
-#: frontend/templates/objects/view/base.html:481
-#: frontend/templates/objects/view/base.html:497
-#: frontend/templates/objects/view/base.html:552
-msgid "DIN A4 (Portrait)"
-msgstr "DIN A4 (Hochformat)"
-
-#: frontend/templates/objects/view/base.html:482
-#: frontend/templates/objects/view/base.html:498
-#: frontend/templates/objects/view/base.html:553
-msgid "DIN A4 (Landscape)"
-msgstr "DIN A4 (Querformat)"
 
 #: frontend/templates/objects/view/base.html:483
 #: frontend/templates/objects/view/base.html:499
 #: frontend/templates/objects/view/base.html:554
-msgid "Letter / ANSI A (Portrait)"
-msgstr "Letter / ANSI A (Hochformat)"
+msgid "DIN A4 (Portrait)"
+msgstr "DIN A4 (Hochformat)"
 
 #: frontend/templates/objects/view/base.html:484
 #: frontend/templates/objects/view/base.html:500
 #: frontend/templates/objects/view/base.html:555
+msgid "DIN A4 (Landscape)"
+msgstr "DIN A4 (Querformat)"
+
+#: frontend/templates/objects/view/base.html:485
+#: frontend/templates/objects/view/base.html:501
+#: frontend/templates/objects/view/base.html:556
+msgid "Letter / ANSI A (Portrait)"
+msgstr "Letter / ANSI A (Hochformat)"
+
+#: frontend/templates/objects/view/base.html:486
+#: frontend/templates/objects/view/base.html:502
+#: frontend/templates/objects/view/base.html:557
 msgid "Letter / ANSI A (Landscape)"
 msgstr "Letter / ANSI A (Querformat)"
 
-#: frontend/templates/objects/view/base.html:490
+#: frontend/templates/objects/view/base.html:492
 msgid "Fixed-width labels"
 msgstr "Etiketten mit fester Breite"
 
-#: frontend/templates/objects/view/base.html:492
+#: frontend/templates/objects/view/base.html:494
 msgid ""
 "This will generate vertically oriented labels with a fixed width and an "
 "optional minimum height."
@@ -4825,27 +4839,27 @@ msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer festen Breite und "
 "einer optionalen Mindesthöhe erstellen."
 
-#: frontend/templates/objects/view/base.html:506
+#: frontend/templates/objects/view/base.html:508
 msgid "Label Width:"
 msgstr "Breite:"
 
-#: frontend/templates/objects/view/base.html:516
+#: frontend/templates/objects/view/base.html:518
 msgid "Minimum Label Height:"
 msgstr "Mindesthöhe:"
 
-#: frontend/templates/objects/view/base.html:529
+#: frontend/templates/objects/view/base.html:531
 msgid "QR Code and GHS symbols side-by-side"
 msgstr "QR Code und GHS Symbole nebeneinander anzeigen"
 
-#: frontend/templates/objects/view/base.html:538
+#: frontend/templates/objects/view/base.html:540
 msgid "Center QR Code and GHS symbols"
 msgstr "QR Code und GHS Symbole zentrieren"
 
-#: frontend/templates/objects/view/base.html:545
+#: frontend/templates/objects/view/base.html:547
 msgid "Minimal-height labels"
 msgstr "Etiketten mit minimaler Höhe"
 
-#: frontend/templates/objects/view/base.html:547
+#: frontend/templates/objects/view/base.html:549
 msgid ""
 "This will generate vertically oriented labels with a height as low as "
 "possible and an optional minimum width."
@@ -4853,111 +4867,111 @@ msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer minimalen Höhe und "
 "einer optionalen Mindestbreite erstellen."
 
-#: frontend/templates/objects/view/base.html:560
+#: frontend/templates/objects/view/base.html:562
 msgid "Minimum Label Width:"
 msgstr "Mindestbreite:"
 
-#: frontend/templates/objects/view/base.html:573
+#: frontend/templates/objects/view/base.html:575
 msgid "Include QR Code"
 msgstr "QR Code einfügen"
 
-#: frontend/templates/objects/view/base.html:594
+#: frontend/templates/objects/view/base.html:596
 msgid "Object QR Code"
 msgstr "Objekt QR Code"
 
-#: frontend/templates/objects/view/base.html:597
+#: frontend/templates/objects/view/base.html:599
 msgid "To view this object in the future, scan this QR code:"
 msgstr "Um dieses Objekt zukünftig anzuzeigen, scannen Sie diesen QR Code:"
 
-#: frontend/templates/objects/view/base.html:617
-#: frontend/templates/objects/view/base.html:661
+#: frontend/templates/objects/view/base.html:619
+#: frontend/templates/objects/view/base.html:663
 msgid "Responsible User"
 msgstr "Verantwortlicher Nutzer"
 
-#: frontend/templates/objects/view/base.html:617
+#: frontend/templates/objects/view/base.html:619
 msgid "Assigning User"
 msgstr "Zuweisender Nutzer"
 
-#: frontend/templates/objects/view/base.html:629
+#: frontend/templates/objects/view/base.html:631
 msgid "The user has confirmed this responsibility assignment."
 msgstr "Der Nutzer hat die Verantwortungszuweisung bestätigt."
 
-#: frontend/templates/objects/view/base.html:633
+#: frontend/templates/objects/view/base.html:635
 msgid "The user has not confirmed this responsibility assignment yet."
 msgstr "Der Nutzer hat die Verantwortungszuweisung noch nicht bestätigt."
 
-#: frontend/templates/objects/view/base.html:646
+#: frontend/templates/objects/view/base.html:648
 msgid "This object has not been assigned to a location yet."
 msgstr "Diesem Objekt wurde noch kein Ort zugewiesen."
 
-#: frontend/templates/objects/view/base.html:692
+#: frontend/templates/objects/view/base.html:694
 msgid "Assign Location"
 msgstr "Ort zuweisen"
 
-#: frontend/templates/objects/view/base.html:699
-#: frontend/templates/objects/view/base.html:1054
+#: frontend/templates/objects/view/base.html:701
+#: frontend/templates/objects/view/base.html:1056
 #: frontend/templates/pdfexport/export.html:139
 msgid "Publications"
 msgstr "Publikationen"
 
-#: frontend/templates/objects/view/base.html:704
-#: frontend/templates/objects/view/base.html:733
-#: frontend/templates/objects/view/base.html:734
+#: frontend/templates/objects/view/base.html:706
+#: frontend/templates/objects/view/base.html:735
+#: frontend/templates/objects/view/base.html:736
 msgid "DOI"
 msgstr "DOI"
 
-#: frontend/templates/objects/view/base.html:706
-#: frontend/templates/objects/view/base.html:744
-#: frontend/templates/objects/view/base.html:745
+#: frontend/templates/objects/view/base.html:708
+#: frontend/templates/objects/view/base.html:746
+#: frontend/templates/objects/view/base.html:747
 msgid "Object Name"
 msgstr "Objektname"
 
-#: frontend/templates/objects/view/base.html:716
+#: frontend/templates/objects/view/base.html:718
 msgid "View&nbsp;Objects"
 msgstr "Objekte&nbsp;anzeigen"
 
-#: frontend/templates/objects/view/base.html:722
+#: frontend/templates/objects/view/base.html:724
 msgid "This object has not been linked to a publication yet."
 msgstr "Dieses Objekt wurde noch nicht mit einer Publikation verknüpft."
 
-#: frontend/templates/objects/view/base.html:727
+#: frontend/templates/objects/view/base.html:729
 msgid "Please enter a valid DOI."
 msgstr "Bitte geben Sie eine gültige DOI ein."
 
-#: frontend/templates/objects/view/base.html:748
+#: frontend/templates/objects/view/base.html:750
 msgid "Link Publication"
 msgstr "Publikation verknüpfen"
 
-#: frontend/templates/objects/view/base.html:756
-#: frontend/templates/objects/view/base.html:793
-#: frontend/templates/objects/view/base.html:1060
+#: frontend/templates/objects/view/base.html:758
+#: frontend/templates/objects/view/base.html:795
+#: frontend/templates/objects/view/base.html:1062
 #: frontend/templates/pdfexport/export.html:150
 msgid "Comments"
 msgstr "Kommentare"
 
-#: frontend/templates/objects/view/base.html:765
+#: frontend/templates/objects/view/base.html:767
 msgid "There are no comments for this object."
 msgstr "Es gibt keine Kommentare für dieses Objekt."
 
-#: frontend/templates/objects/view/base.html:771
+#: frontend/templates/objects/view/base.html:773
 msgid "Comment"
 msgstr "Kommentar"
 
-#: frontend/templates/objects/view/base.html:774
+#: frontend/templates/objects/view/base.html:776
 msgid "Post Comment"
 msgstr "Kommentar eintragen"
 
-#: frontend/templates/objects/view/base.html:783
-#: frontend/templates/objects/view/base.html:1048
+#: frontend/templates/objects/view/base.html:785
+#: frontend/templates/objects/view/base.html:1050
 #: frontend/templates/pdfexport/export.html:106
 msgid "Activity Log"
 msgstr "Aktivitäts-Log"
 
-#: frontend/templates/objects/view/base.html:792
+#: frontend/templates/objects/view/base.html:794
 msgid "Measurements"
 msgstr "Messungen"
 
-#: frontend/templates/objects/view/base.html:812
+#: frontend/templates/objects/view/base.html:814
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> created the object using data "
@@ -4968,12 +4982,12 @@ msgstr ""
 "<a href=\"%(previous_object_url)s\">Objekt #%(previous_object_id)s</a> "
 "erstellt."
 
-#: frontend/templates/objects/view/base.html:814
+#: frontend/templates/objects/view/base.html:816
 #, python-format
 msgid "<a href=\"%(user_url)s\">%(user_name)s</a> created the object."
 msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt erstellt."
 
-#: frontend/templates/objects/view/base.html:822
+#: frontend/templates/objects/view/base.html:824
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> created the object as part of "
@@ -4982,12 +4996,12 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt als Teil einer "
 "<a href=\"%(batch_url)s\">Charge</a> erstellt."
 
-#: frontend/templates/objects/view/base.html:829
+#: frontend/templates/objects/view/base.html:831
 #, python-format
 msgid "<a href=\"%(user_url)s\">%(user_name)s</a> edited the object."
 msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt bearbeitet."
 
-#: frontend/templates/objects/view/base.html:838
+#: frontend/templates/objects/view/base.html:840
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> restored object <a "
@@ -4997,7 +5011,7 @@ msgstr ""
 "href=\"%(version_url)s\">Objektversion #%(version_id)s</a> "
 "wiederhergestellt."
 
-#: frontend/templates/objects/view/base.html:848
+#: frontend/templates/objects/view/base.html:850
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> used the object in <a "
@@ -5006,7 +5020,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in <a "
 "href=\"%(measurement_url)s\">Messung #%(measurement_id)s</a> verwendet."
 
-#: frontend/templates/objects/view/base.html:855
+#: frontend/templates/objects/view/base.html:857
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> used the object in a "
@@ -5015,7 +5029,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in einer "
 "Messung verwendet."
 
-#: frontend/templates/objects/view/base.html:863
+#: frontend/templates/objects/view/base.html:865
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create the "
@@ -5024,7 +5038,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
 "von <a href=\"%(sample_url)s\">Probe #%(sample_id)s</a> verwendet."
 
-#: frontend/templates/objects/view/base.html:870
+#: frontend/templates/objects/view/base.html:872
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create a "
@@ -5033,7 +5047,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
 "einer Probe verwendet."
 
-#: frontend/templates/objects/view/base.html:877
+#: frontend/templates/objects/view/base.html:879
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> posted a comment for this "
@@ -5042,7 +5056,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat einen Kommentar für dieses"
 " Objekt eingetragen."
 
-#: frontend/templates/objects/view/base.html:892
+#: frontend/templates/objects/view/base.html:894
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> uploaded <a "
@@ -5051,12 +5065,12 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
 "href=\"%(file_url)s\">%(file_name)s</a> hochgeladen."
 
-#: frontend/templates/objects/view/base.html:894
+#: frontend/templates/objects/view/base.html:896
 #, python-format
 msgid "<a href=\"%(user_url)s\">%(user_name)s</a> uploaded %(file_name)s."
 msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat %(file_name)s hochgeladen."
 
-#: frontend/templates/objects/view/base.html:897
+#: frontend/templates/objects/view/base.html:899
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> linked <a "
@@ -5065,7 +5079,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
 "href=\"%(link_url)s\">%(link_url)s</a> verlinkt."
 
-#: frontend/templates/objects/view/base.html:900
+#: frontend/templates/objects/view/base.html:902
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> posted <a "
@@ -5074,12 +5088,12 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
 "href=\"%(file_url)s\">Datei #%(file_id)s</a> eingetragen."
 
-#: frontend/templates/objects/view/base.html:902
+#: frontend/templates/objects/view/base.html:904
 #, python-format
 msgid "<a href=\"%(user_url)s\">%(user_name)s</a> posted a file."
 msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat eine Datei eingetragen."
 
-#: frontend/templates/objects/view/base.html:919
+#: frontend/templates/objects/view/base.html:921
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to "
@@ -5090,7 +5104,7 @@ msgstr ""
 "href=\"%(location_url)s\">%(location_name)s</a> und Nutzer <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
 
-#: frontend/templates/objects/view/base.html:923
+#: frontend/templates/objects/view/base.html:925
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to "
@@ -5099,7 +5113,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Ort <a "
 "href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
-#: frontend/templates/objects/view/base.html:927
+#: frontend/templates/objects/view/base.html:929
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to user "
@@ -5108,7 +5122,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Nutzer <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
 
-#: frontend/templates/objects/view/base.html:934
+#: frontend/templates/objects/view/base.html:936
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> linked publication <a "
@@ -5118,7 +5132,7 @@ msgstr ""
 "href=\"https://doi.org/%(url_doi)s\">%(doi)s</a> mit dem Objekt "
 "verknüpft."
 
-#: frontend/templates/objects/view/base.html:944
+#: frontend/templates/objects/view/base.html:946
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> referenced the object in the "
@@ -5128,7 +5142,7 @@ msgstr ""
 "Metadaten von <a href=\"(object_url)s\">%(object_name)s "
 "#%(object_id)s</a> referenziert."
 
-#: frontend/templates/objects/view/base.html:951
+#: frontend/templates/objects/view/base.html:953
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> referenced the object in the "
@@ -5137,7 +5151,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
 "Metadaten eines anderen Objekts referenziert."
 
-#: frontend/templates/objects/view/base.html:958
+#: frontend/templates/objects/view/base.html:960
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> exported this object to a "
@@ -5146,7 +5160,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in ein "
 "Dataverse exportiert."
 
-#: frontend/templates/objects/view/base.html:969
+#: frontend/templates/objects/view/base.html:971
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to <a "
@@ -5156,7 +5170,7 @@ msgstr ""
 "href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a> "
 "verknüpft."
 
-#: frontend/templates/objects/view/base.html:976
+#: frontend/templates/objects/view/base.html:978
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to a "
@@ -5165,7 +5179,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit einer "
 "Projektgruppe verknüpft."
 
-#: frontend/templates/objects/view/base.html:985
+#: frontend/templates/objects/view/base.html:987
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> deleted the project group this"
@@ -5174,7 +5188,7 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat die Projektgruppe gelöscht"
 " mit der das Objekt verknüpft war."
 
-#: frontend/templates/objects/view/base.html:993
+#: frontend/templates/objects/view/base.html:995
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
@@ -5185,7 +5199,7 @@ msgstr ""
 "Objekts mit <a href=\"%(project_url)s\">%(project_name)s "
 "(#%(project_id)s)</a> entfernt."
 
-#: frontend/templates/objects/view/base.html:1000
+#: frontend/templates/objects/view/base.html:1002
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
@@ -5194,35 +5208,35 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
 "Objekts mit einer Projektgruppe entfernt."
 
-#: frontend/templates/objects/view/base.html:1008
+#: frontend/templates/objects/view/base.html:1010
 msgid "Unknown event"
 msgstr "Unbekanntes Ereignis"
 
-#: frontend/templates/objects/view/base.html:1019
+#: frontend/templates/objects/view/base.html:1021
 msgid "Related Objects"
 msgstr "Zugehörige Objekte"
 
-#: frontend/templates/objects/view/base.html:1045
+#: frontend/templates/objects/view/base.html:1047
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"
 
-#: frontend/templates/objects/view/base.html:1063
+#: frontend/templates/objects/view/base.html:1065
 msgid "PDF Export Language"
 msgstr "PDF Export Sprache"
 
-#: frontend/templates/objects/view/base.html:1086
+#: frontend/templates/objects/view/base.html:1088
 msgid "Select All"
 msgstr "Alle auswählen"
 
-#: frontend/templates/objects/view/base.html:1087
+#: frontend/templates/objects/view/base.html:1089
 msgid "Deselect All"
 msgstr "Alle abwählen"
 
-#: frontend/templates/objects/view/base.html:1138
+#: frontend/templates/objects/view/base.html:1140
 msgid "Please select one responsible user or one location"
 msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
-#: frontend/templates/objects/view/base.html:1338
+#: frontend/templates/objects/view/base.html:1340
 msgid "files selected"
 msgstr "Dateien ausgewählt"
 

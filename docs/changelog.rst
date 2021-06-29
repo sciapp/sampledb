@@ -12,6 +12,7 @@ Currently in development.
 - Added internationalization features
 - Added german localization
 - Allow setting a publicly visible user role
+- Added label for administrators in user list
 - Improved user interface
 
 Version 0.18
