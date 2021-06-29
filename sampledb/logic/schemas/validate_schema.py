@@ -132,7 +132,7 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'default'}
+    valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'defaultItems', 'default'}
     required_keys = {'type', 'title', 'items'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -157,13 +157,29 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
             raise ValidationError('maxItems must not be negative', path)
         else:
             has_max_items = True
+    has_default_items = False
+    if 'defaultItems' in schema:
+        if not isinstance(schema['defaultItems'], int):
+            raise ValidationError('defaultItems must be an integer', path)
+        elif schema['defaultItems'] < 0:
+            raise ValidationError('defaultItems must not be negative', path)
+        else:
+            has_default_items = True
     if has_min_items and has_max_items:
         if schema['minItems'] > schema['maxItems']:
             raise ValidationError('minItems must be less than or equal to maxItems', path)
+    if has_min_items and has_default_items:
+        if schema['minItems'] > schema['defaultItems']:
+            raise ValidationError('minItems must be less than or equal to defaultItems', path)
+    if has_default_items and has_max_items:
+        if schema['defaultItems'] > schema['maxItems']:
+            raise ValidationError('defaultItems must be less than or equal to maxItems', path)
     if 'style' in schema and schema['style'] not in ('table', 'horizontal_table', 'list'):
         raise ValidationError('style must be one of "list", "table" and "horizontal_table"', path)
     validate_schema(schema['items'], path + ['[?]'])
     if 'default' in schema:
+        if has_default_items:
+            raise ValidationError('default and defaultItems are mutually exclusive', path)
         validate(schema['default'], schema, path + ['(default)'])
 
 

@@ -647,6 +647,48 @@ def test_validate_array_schema():
     validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_array_schema_default_items():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'defaultItems': 2
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_array_schema_invalid_default_items():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'defaultItems': '2'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['defaultItems'] = -1
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['defaultItems'] = 2
+    schema['minItems'] = 2
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['minItems'] = 3
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['minItems'] = 0
+    schema['maxItems'] = 2
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['maxItems'] = 1
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_array_schema_default():
     schema = {
         'title': 'Example',

@@ -63,13 +63,11 @@ def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
     """
     if 'default' in schema:
         return schema['default']
-    if 'minItems' not in schema:
-        return []
-    min_items = schema['minItems']
     item_schema = schema['items']
+    default_items = schema.get('defaultItems', schema.get('minItems', 0))
     return [
         generate_placeholder(item_schema, path + ['[?]'])
-        for _ in range(min_items)
+        for _ in range(default_items)
     ]
 
 
