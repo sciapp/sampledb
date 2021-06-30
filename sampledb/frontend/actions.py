@@ -587,6 +587,20 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
 
         flask.flash(_('The action was updated successfully.'), 'success')
         return flask.redirect(flask.url_for('.action', action_id=action.id))
+    if action_form.translations.name in flask.request.form:
+        # load translations from form
+        try:
+            translation_data = json.loads(action_form.translations.data)
+            for translation in translation_data:
+                translation['language_id'] = int(translation['language_id'])
+                translation['language'] = languages.get_language(translation['language_id'])
+                action_translations[translation['language_id']] = translation
+                if translation['language_id'] not in action_translations:
+                    action_language_ids.append(translation['language_id'])
+            if action_language_ids:
+                load_translations = True
+        except Exception:
+            pass
     return flask.render_template(
         'actions/action_form.html',
         action_form=action_form,
