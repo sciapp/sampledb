@@ -13,6 +13,7 @@ Currently in development.
 - Added german localization
 - Allow setting a publicly visible user role
 - Added label for administrators in user list
+- Allow setting a default number of items for arrays
 - Improved user interface
 
 Version 0.18

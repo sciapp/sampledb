@@ -183,6 +183,19 @@ def test_generate_array():
     assert placeholder_object == []
 
 
+def test_generate_array_with_default_items():
+    object_schema = {
+        'title': 'Example Array',
+        'type': 'array',
+        'items': {
+            'type': 'text'
+        },
+        "defaultItems": 2
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == [None, None]
+
+
 def test_generate_array_default():
     object_schema = {
         'title': 'Example Array',
