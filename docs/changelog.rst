@@ -12,6 +12,7 @@ Currently in development.
 - Added internationalization features
 - Added german localization
 - Allow setting a publicly visible user role
+- Added support for configurable user fields
 - Added label for administrators in user list
 - Allow setting a default number of items for arrays
 - Improved user interface

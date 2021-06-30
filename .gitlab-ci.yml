@@ -20,15 +20,16 @@ test:
     - apt-get update
     # set up Python 3
     - apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0 gettext
+    - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
+        mkdir ${CI_PROJECT_DIR}/test_files/$i/;
       done
     # install dependencies
     - python3 -m pip install -r requirements.txt
     # build translations once instead of with each test
     - python3 -m sampledb build_translations
     # set up configuration values for testing
-    - mkdir ${CI_PROJECT_DIR}/test_files/
     - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
     - export SAMPLEDB_BUILD_TRANSLATIONS=
     # run tests and gather coverage data
