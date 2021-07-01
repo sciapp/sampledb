@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-07-01 15:28+0200\n"
+"POT-Creation-Date: 2021-07-01 10:29+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -291,6 +291,15 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein,"
 #: frontend/object_form_parser.py:400
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
+
+#: frontend/objects.py:351
+#, python-format
+msgid ""
+"The advanced search was used automatically. Search for "
+"\"%(query_string)s\" to use the simple search."
+msgstr ""
+"Die erweiterte Suche wurde automatisch verwendet. Suchen Sie nach "
+"\"%(query_string)s\" um die einfache Suche zu verwenden."
 
 #: frontend/objects.py:642 frontend/objects.py:645
 msgid "Unable to copy permissions. Default permissions will be applied."

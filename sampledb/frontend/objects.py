@@ -348,7 +348,7 @@ def objects():
         else:
             object_ids_for_doi = logic.publications.get_object_ids_linked_to_doi(doi)
         if use_advanced_search and not must_use_advanced_search:
-            search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
+            search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
         try:
             object_ids = None
             if object_ids_at_location is not None:
