@@ -139,33 +139,42 @@ def change_preferences(user, user_id):
                 flask.flash(_("Successfully updated your password."), 'success')
             except Exception as e:
                 flask.flash(_("Failed to change password."), 'error')
-                return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
-                                             authentication_password_form=authentication_password_form,
-                                             default_permissions_form=default_permissions_form,
-                                             add_user_permissions_form=add_user_permissions_form,
-                                             add_group_permissions_form=add_group_permissions_form,
-                                             notification_mode_form=notification_mode_form,
-                                             Permissions=Permissions,
-                                             NotificationMode=NotificationMode,
-                                             NotificationType=NotificationType,
-                                             notification_modes=get_notification_modes(flask_login.current_user.id),
-                                             user_settings=user_settings,
-                                             other_settings_form=other_settings_form,
-                                             all_timezones=all_timezones,
-                                             supported_locales=SUPPORTED_LOCALES,
-                                             your_locale=your_locale,
-                                             get_user=get_user,
-                                             users=users,
-                                             groups=groups,
-                                             get_group=get_group,
-                                             user_permissions=user_permissions,
-                                             group_permissions=group_permissions,
-                                             public_permissions=public_permissions,
-                                             authentication_method_form=authentication_method_form,
-                                             authentication_form=authentication_form,
-                                             create_api_token_form=create_api_token_form,
-                                             confirmed_authentication_methods=confirmed_authentication_methods,
-                                             authentications=authentication_methods, error=str(e), api_tokens=api_tokens)
+                return flask.render_template(
+                    'preferences.html',
+                    user=user,
+                    change_user_form=change_user_form,
+                    authentication_password_form=authentication_password_form,
+                    default_permissions_form=default_permissions_form,
+                    add_user_permissions_form=add_user_permissions_form,
+                    add_group_permissions_form=add_group_permissions_form,
+                    notification_mode_form=notification_mode_form,
+                    Permissions=Permissions,
+                    NotificationMode=NotificationMode,
+                    NotificationType=NotificationType,
+                    notification_modes=get_notification_modes(flask_login.current_user.id),
+                    user_settings=user_settings,
+                    other_settings_form=other_settings_form,
+                    all_timezones=all_timezones,
+                    supported_locales=SUPPORTED_LOCALES,
+                    your_locale=your_locale,
+                    get_user=get_user,
+                    users=users,
+                    groups=groups,
+                    get_group=get_group,
+                    projects=projects,
+                    get_project=get_project,
+                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+                    user_permissions=user_permissions,
+                    group_permissions=group_permissions,
+                    public_permissions=public_permissions,
+                    authentication_method_form=authentication_method_form,
+                    authentication_form=authentication_form,
+                    create_api_token_form=create_api_token_form,
+                    confirmed_authentication_methods=confirmed_authentication_methods,
+                    authentications=authentication_methods,
+                    error=str(e),
+                    api_tokens=api_tokens
+                )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
         else:
@@ -206,32 +215,22 @@ def change_preferences(user, user_id):
                     role = change_user_form.role.data.strip()
                 else:
                     role = None
+                extra_fields = {}
+                for extra_field_id in flask.current_app.config['EXTRA_USER_FIELDS']:
+                    extra_fields[extra_field_id] = flask.request.form.get('extra_field_' + str(extra_field_id)) or None
                 change_orcid = (user.orcid != orcid and (orcid is not None or user.orcid is not None))
                 change_affiliation = (user.affiliation != affiliation and (affiliation is not None or user.affiliation is not None))
                 change_role = (user.role != role and (role is not None or user.role is not None))
-                if change_orcid or change_affiliation or change_role:
+                change_extra_fields = user.extra_fields != extra_fields
+                if change_orcid or change_affiliation or change_role or change_extra_fields:
                     user.orcid = orcid
                     user.affiliation = affiliation
                     user.role = role
+                    user.extra_fields = extra_fields
                     db.session.add(user)
                     db.session.commit()
                     user_log.edit_user_preferences(user_id=user_id)
-                    if change_role:
-                        if not change_orcid and not change_affiliation:
-                            flask.flash(_("Successfully updated your role."), 'success')
-                        elif change_orcid and not change_affiliation:
-                            flask.flash(_("Successfully updated your ORCID iD and role."), 'success')
-                        elif not change_orcid and change_affiliation:
-                            flask.flash(_("Successfully updated your affiliation and role."), 'success')
-                        else:
-                            flask.flash(_("Successfully updated your ORCID iD, affiliation and role."), 'success')
-                    else:
-                        if change_orcid and not change_affiliation:
-                            flask.flash(_("Successfully updated your ORCID iD."), 'success')
-                        elif not change_orcid and change_affiliation:
-                            flask.flash(_("Successfully updated your affiliation."), 'success')
-                        else:
-                            flask.flash(_("Successfully updated your ORCID iD and affiliation."), 'success')
+                    flask.flash(_("Successfully updated your user information."), 'success')
 
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
@@ -242,33 +241,42 @@ def change_preferences(user, user_id):
                 flask.flash(_("Successfully removed the authentication method."), 'success')
             except Exception as e:
                 flask.flash(_("Failed to remove the authentication method."), 'error')
-                return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
-                                             authentication_password_form=authentication_password_form,
-                                             default_permissions_form=default_permissions_form,
-                                             add_user_permissions_form=add_user_permissions_form,
-                                             add_group_permissions_form=add_group_permissions_form,
-                                             notification_mode_form=notification_mode_form,
-                                             Permissions=Permissions,
-                                             NotificationMode=NotificationMode,
-                                             NotificationType=NotificationType,
-                                             notification_modes=get_notification_modes(flask_login.current_user.id),
-                                             user_settings=user_settings,
-                                             other_settings_form=other_settings_form,
-                                             all_timezones=all_timezones,
-                                             supported_locales=SUPPORTED_LOCALES,
-                                             your_locale=your_locale,
-                                             get_user=get_user,
-                                             users=users,
-                                             groups=groups,
-                                             get_group=get_group,
-                                             user_permissions=user_permissions,
-                                             group_permissions=group_permissions,
-                                             public_permissions=public_permissions,
-                                             authentication_method_form=authentication_method_form,
-                                             authentication_form=authentication_form,
-                                             create_api_token_form=create_api_token_form,
-                                             confirmed_authentication_methods=confirmed_authentication_methods,
-                                             authentications=authentication_methods, error=str(e), api_tokens=api_tokens)
+                return flask.render_template(
+                    'preferences.html',
+                    user=user,
+                    change_user_form=change_user_form,
+                    authentication_password_form=authentication_password_form,
+                    default_permissions_form=default_permissions_form,
+                    add_user_permissions_form=add_user_permissions_form,
+                    add_group_permissions_form=add_group_permissions_form,
+                    notification_mode_form=notification_mode_form,
+                    Permissions=Permissions,
+                    NotificationMode=NotificationMode,
+                    NotificationType=NotificationType,
+                    notification_modes=get_notification_modes(flask_login.current_user.id),
+                    user_settings=user_settings,
+                    other_settings_form=other_settings_form,
+                    all_timezones=all_timezones,
+                    supported_locales=SUPPORTED_LOCALES,
+                    your_locale=your_locale,
+                    get_user=get_user,
+                    users=users,
+                    groups=groups,
+                    get_group=get_group,
+                    projects=projects,
+                    get_project=get_project,
+                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+                    user_permissions=user_permissions,
+                    group_permissions=group_permissions,
+                    public_permissions=public_permissions,
+                    authentication_method_form=authentication_method_form,
+                    authentication_form=authentication_form,
+                    create_api_token_form=create_api_token_form,
+                    confirmed_authentication_methods=confirmed_authentication_methods,
+                    authentications=authentication_methods,
+                    error=str(e),
+                    api_tokens=api_tokens
+                )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
@@ -289,33 +297,42 @@ def change_preferences(user, user_id):
                 flask.flash(_("Successfully added the authentication method."), 'success')
             except Exception as e:
                 flask.flash(_("Failed to add an authentication method."), 'error')
-                return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
-                                             authentication_password_form=authentication_password_form,
-                                             default_permissions_form=default_permissions_form,
-                                             add_user_permissions_form=add_user_permissions_form,
-                                             add_group_permissions_form=add_group_permissions_form,
-                                             notification_mode_form=notification_mode_form,
-                                             Permissions=Permissions,
-                                             NotificationMode=NotificationMode,
-                                             NotificationType=NotificationType,
-                                             notification_modes=get_notification_modes(flask_login.current_user.id),
-                                             user_settings=user_settings,
-                                             other_settings_form=other_settings_form,
-                                             all_timezones=all_timezones,
-                                             supported_locales=SUPPORTED_LOCALES,
-                                             your_locale=your_locale,
-                                             get_user=get_user,
-                                             users=users,
-                                             groups=groups,
-                                             get_group=get_group,
-                                             user_permissions=user_permissions,
-                                             group_permissions=group_permissions,
-                                             public_permissions=public_permissions,
-                                             authentication_method_form=authentication_method_form,
-                                             authentication_form=authentication_form,
-                                             create_api_token_form=create_api_token_form,
-                                             confirmed_authentication_methods=confirmed_authentication_methods,
-                                             authentications=authentication_methods, error_add=str(e), api_tokens=api_tokens)
+                return flask.render_template(
+                    'preferences.html',
+                    user=user,
+                    change_user_form=change_user_form,
+                    authentication_password_form=authentication_password_form,
+                    default_permissions_form=default_permissions_form,
+                    add_user_permissions_form=add_user_permissions_form,
+                    add_group_permissions_form=add_group_permissions_form,
+                    notification_mode_form=notification_mode_form,
+                    Permissions=Permissions,
+                    NotificationMode=NotificationMode,
+                    NotificationType=NotificationType,
+                    notification_modes=get_notification_modes(flask_login.current_user.id),
+                    user_settings=user_settings,
+                    other_settings_form=other_settings_form,
+                    all_timezones=all_timezones,
+                    supported_locales=SUPPORTED_LOCALES,
+                    your_locale=your_locale,
+                    get_user=get_user,
+                    users=users,
+                    groups=groups,
+                    get_group=get_group,
+                    projects=projects,
+                    get_project=get_project,
+                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+                    user_permissions=user_permissions,
+                    group_permissions=group_permissions,
+                    public_permissions=public_permissions,
+                    authentication_method_form=authentication_method_form,
+                    authentication_form=authentication_form,
+                    create_api_token_form=create_api_token_form,
+                    confirmed_authentication_methods=confirmed_authentication_methods,
+                    authentications=authentication_methods,
+                    error_add=str(e),
+                    api_tokens=api_tokens
+                )
             authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
         else:
             flask.flash(_("Failed to add an authentication method."), 'error')
@@ -327,33 +344,42 @@ def change_preferences(user, user_id):
             api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
         except Exception as e:
             flask.flash(_("Failed to add an API token."), 'error')
-            return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
-                                         authentication_password_form=authentication_password_form,
-                                         default_permissions_form=default_permissions_form,
-                                         add_user_permissions_form=add_user_permissions_form,
-                                         add_group_permissions_form=add_group_permissions_form,
-                                         notification_mode_form=notification_mode_form,
-                                         Permissions=Permissions,
-                                         NotificationMode=NotificationMode,
-                                         NotificationType=NotificationType,
-                                         notification_modes=get_notification_modes(flask_login.current_user.id),
-                                         user_settings=user_settings,
-                                         other_settings_form=other_settings_form,
-                                         all_timezones=all_timezones,
-                                         supported_locales=SUPPORTED_LOCALES,
-                                         your_locale=your_locale,
-                                         get_user=get_user,
-                                         users=users,
-                                         groups=groups,
-                                         get_group=get_group,
-                                         user_permissions=user_permissions,
-                                         group_permissions=group_permissions,
-                                         public_permissions=public_permissions,
-                                         authentication_method_form=authentication_method_form,
-                                         authentication_form=authentication_form,
-                                         create_api_token_form=create_api_token_form,
-                                         confirmed_authentication_methods=confirmed_authentication_methods,
-                                         authentications=authentication_methods, error_add=str(e), api_tokens=api_tokens)
+            return flask.render_template(
+                'preferences.html',
+                user=user,
+                change_user_form=change_user_form,
+                authentication_password_form=authentication_password_form,
+                default_permissions_form=default_permissions_form,
+                add_user_permissions_form=add_user_permissions_form,
+                add_group_permissions_form=add_group_permissions_form,
+                notification_mode_form=notification_mode_form,
+                Permissions=Permissions,
+                NotificationMode=NotificationMode,
+                NotificationType=NotificationType,
+                notification_modes=get_notification_modes(flask_login.current_user.id),
+                user_settings=user_settings,
+                other_settings_form=other_settings_form,
+                all_timezones=all_timezones,
+                supported_locales=SUPPORTED_LOCALES,
+                your_locale=your_locale,
+                get_user=get_user,
+                users=users,
+                groups=groups,
+                get_group=get_group,
+                projects=projects,
+                get_project=get_project,
+                EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+                user_permissions=user_permissions,
+                group_permissions=group_permissions,
+                public_permissions=public_permissions,
+                authentication_method_form=authentication_method_form,
+                authentication_form=authentication_form,
+                create_api_token_form=create_api_token_form,
+                confirmed_authentication_methods=confirmed_authentication_methods,
+                authentications=authentication_methods,
+                error_add=str(e),
+                api_tokens=api_tokens
+            )
     if 'edit_user_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
         set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
         for user_permissions_data in default_permissions_form.user_permissions.data:
@@ -464,39 +490,45 @@ def change_preferences(user, user_id):
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    return flask.render_template('preferences.html', user=user, change_user_form=change_user_form,
-                                 authentication_password_form=authentication_password_form,
-                                 default_permissions_form=default_permissions_form,
-                                 add_user_permissions_form=add_user_permissions_form,
-                                 add_group_permissions_form=add_group_permissions_form,
-                                 add_project_permissions_form=add_project_permissions_form,
-                                 notification_mode_form=notification_mode_form,
-                                 NotificationMode=NotificationMode,
-                                 NotificationType=NotificationType,
-                                 notification_modes=get_notification_modes(flask_login.current_user.id),
-                                 user_settings=user_settings,
-                                 other_settings_form=other_settings_form,
-                                 all_timezones=all_timezones,
-                                 your_locale=your_locale,
-                                 supported_locales=SUPPORTED_LOCALES,
-                                 allowed_language_codes=logic.locale.get_allowed_language_codes(),
-                                 Permissions=Permissions,
-                                 users=users,
-                                 get_user=get_user,
-                                 groups=groups,
-                                 get_group=get_group,
-                                 projects=projects,
-                                 get_project=get_project,
-                                 user_permissions=user_permissions,
-                                 group_permissions=group_permissions,
-                                 project_permissions=project_permissions,
-                                 public_permissions=public_permissions,
-                                 authentication_method_form=authentication_method_form,
-                                 authentication_form=authentication_form,
-                                 create_api_token_form=create_api_token_form,
-                                 created_api_token=created_api_token,
-                                 confirmed_authentication_methods=confirmed_authentication_methods,
-                                 authentications=authentication_methods, api_tokens=api_tokens)
+    return flask.render_template(
+        'preferences.html',
+        user=user,
+        change_user_form=change_user_form,
+        authentication_password_form=authentication_password_form,
+        default_permissions_form=default_permissions_form,
+        add_user_permissions_form=add_user_permissions_form,
+        add_group_permissions_form=add_group_permissions_form,
+        add_project_permissions_form=add_project_permissions_form,
+        notification_mode_form=notification_mode_form,
+        NotificationMode=NotificationMode,
+        NotificationType=NotificationType,
+        notification_modes=get_notification_modes(flask_login.current_user.id),
+        user_settings=user_settings,
+        other_settings_form=other_settings_form,
+        all_timezones=all_timezones,
+        your_locale=your_locale,
+        supported_locales=SUPPORTED_LOCALES,
+        allowed_language_codes=logic.locale.get_allowed_language_codes(),
+        Permissions=Permissions,
+        users=users,
+        get_user=get_user,
+        groups=groups,
+        get_group=get_group,
+        projects=projects,
+        get_project=get_project,
+        EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+        user_permissions=user_permissions,
+        group_permissions=group_permissions,
+        project_permissions=project_permissions,
+        public_permissions=public_permissions,
+        authentication_method_form=authentication_method_form,
+        authentication_form=authentication_form,
+        create_api_token_form=create_api_token_form,
+        created_api_token=created_api_token,
+        confirmed_authentication_methods=confirmed_authentication_methods,
+        authentications=authentication_methods,
+        api_tokens=api_tokens
+    )
 
 
 def confirm_email():

@@ -58,6 +58,14 @@
           {% endif %}
         </div>
     </div>
+    {% for extra_field_id, extra_field in EXTRA_USER_FIELDS.items() %}
+    <div class="form-group">
+        <label for="extra_field_{{ extra_field_id }}" class="col-sm-4 control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
+        <div class="col-sm-8">
+          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ user.extra_fields.get(extra_field_id) or '' }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+        </div>
+    </div>
+    {% endfor %}
     <div class="form-group">
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">{{ _('Save') }}</button>
     </div>
