@@ -49,6 +49,15 @@ def validate_condition_schema(
             raise ValidationError('property_name does not belong to a bool property', path)
         if not isinstance(condition['value'], bool):
             raise ValidationError('value must be boolean', path)
+    elif condition['type'] == 'object_equals':
+        if set(condition.keys()) != {'type', 'property_name', 'object_id'}:
+            raise ValidationError('expected type, property_name and object_id in condition', path)
+        if condition['property_name'] not in property_schemas:
+            raise ValidationError('unknown property_name', path)
+        if property_schemas[condition['property_name']].get('type') not in {'object_reference', 'sample', 'measurement'}:
+            raise ValidationError('property_name does not belong to a object_reference, sample or measurement property', path)
+        if condition['object_id'] is not None and not isinstance(condition['object_id'], int):
+            raise ValidationError('object_id must be integer or None', path)
     else:
         raise ValidationError('unknown condition type', path)
 
@@ -86,6 +95,16 @@ def is_condition_fulfilled(
             condition['property_name'] in instance and
             isinstance(instance[condition['property_name']], dict) and
             instance[condition['property_name']].get('value') == condition['value']
+        )
+    if condition['type'] == 'object_equals':
+        return (
+            condition['object_id'] is None and
+            condition['property_name'] not in instance
+        ) or (
+            condition['object_id'] is not None and
+            condition['property_name'] in instance and
+            isinstance(instance[condition['property_name']], dict) and
+            instance[condition['property_name']].get('object_id') == condition['object_id']
         )
 
     # unknown or unfulfillable condition

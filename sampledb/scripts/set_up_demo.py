@@ -546,15 +546,23 @@ This example shows how Markdown can be used for instrument Notes.
                             {'en': 'en 2', 'de': 'de 2'},
                             {'en': 'en 3'}
                         ],
-                        'default': {'en': 'en 2', 'de': 'de 2'}
+                        'default': {'en': 'en 2', 'de': 'de 2'},
+                        'note': 'Select option 1.'
                     },
                     'user': {
                         'title': {'en': 'User', 'de': 'Nutzer'},
-                        'type': 'user'
+                        'type': 'user',
+                        'note': 'Do not select a user.'
                     },
                     'checkbox': {
                         'title': {'en': 'Checkbox', 'de': 'Checkbox'},
-                        'type': 'bool'
+                        'type': 'bool',
+                        'note': 'Check this checkbox.'
+                    },
+                    'object': {
+                        'title': {'en': 'Object', 'de': 'Objekt'},
+                        'type': 'object_reference',
+                        'note': 'Select object #1.'
                     },
                     'conditional_text': {
                         'title': 'Conditional Name',
@@ -575,6 +583,11 @@ This example shows how Markdown can be used for instrument Notes.
                                 'type': 'bool_equals',
                                 'property_name': 'checkbox',
                                 'value': True
+                            },
+                            {
+                                'type': 'object_equals',
+                                'property_name': 'object',
+                                'object_id': 1
                             }
                         ]
                     }

@@ -217,6 +217,67 @@ def test_validate_bool_equals_condition():
         )
 
 
+def test_validate_object_equals_condition():
+    property_schemas = {
+        'example_object': {
+            'title': 'Example Object',
+            'type': 'object_reference'
+        },
+        'conditional_property': {
+            'title': 'Conditional Property',
+            'type': 'text',
+        }
+    }
+    validate_condition_schema(
+        {
+            'type': 'object_equals',
+            'property_name': 'example_object',
+            'object_id': None
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+    validate_condition_schema(
+        {
+            'type': 'object_equals',
+            'property_name': 'example_object',
+            'object_id': 1
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'object_equals',
+                'property_name': 'unknown_property'
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'object_equals',
+                'property_name': 'example_object',
+                'object_id': "1"
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'object_equals',
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+
 def test_is_unknown_condition_fulfilled():
     instance = {}
     assert not is_condition_fulfilled(
@@ -324,6 +385,38 @@ def test_is_bool_equals_condition_fulfilled():
             'example_bool': {
                 '_type': 'bool',
                 'value': True
+            }
+        }
+    )
+
+
+def test_is_object_equals_condition_fulfilled():
+    assert is_condition_fulfilled(
+        {
+            'type': 'object_equals',
+            'property_name': 'example_object',
+            'object_id': None
+        },
+        {}
+    )
+    assert not is_condition_fulfilled(
+        {
+            'type': 'object_equals',
+            'property_name': 'example_object',
+            'object_id': 1
+        },
+        {}
+    )
+    assert is_condition_fulfilled(
+        {
+            'type': 'object_equals',
+            'property_name': 'example_object',
+            'object_id': 1
+        },
+        {
+            'example_object': {
+                '_type': 'object_reference',
+                'object_id': 1
             }
         }
     )
