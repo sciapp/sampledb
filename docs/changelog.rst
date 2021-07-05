@@ -16,6 +16,7 @@ Currently in development.
 - Added label for administrators in user list
 - Allow setting a default number of items for arrays
 - Improved user interface
+- Added support for a custom CSS file
 
 Version 0.18
 ------------
