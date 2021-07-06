@@ -107,8 +107,10 @@ $(function() {
         }
 
         var data = $x.data('sampledbDefaultSelected');
-        if (data !== 'None')
+        if (data !== 'None') {
           $x.selectpicker('val', data);
+          $x.selectpicker('refresh');
+        }
       });
     });
   }

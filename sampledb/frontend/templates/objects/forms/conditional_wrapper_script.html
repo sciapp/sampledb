@@ -33,6 +33,8 @@
           }
 
           choice_element.on('changed.bs.select', evaluateCondition);
+          choice_element.on('loaded.bs.select', evaluateCondition);
+          choice_element.on('refreshed.bs.select', evaluateCondition);
           evaluateCondition();
         }
       {% elif condition['type'] == 'user_equals' %}
@@ -50,6 +52,8 @@
             $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
           }
           user_element.on('changed.bs.select', evaluateCondition);
+          user_element.on('loaded.bs.select', evaluateCondition);
+          user_element.on('refreshed.bs.select', evaluateCondition);
           evaluateCondition();
         }
       {% elif condition['type'] == 'bool_equals' %}
@@ -74,6 +78,8 @@
           let object_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__oid' }}\"]");
 
           let evaluateCondition = function () {
+            console.log("{{ id_prefix }} evaluate");
+            console.log(object_element.selectpicker('val'));
             window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (object_element.selectpicker('val') === "{{ condition["object_id"] if condition["object_id"] is not none else '' }}");
             let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
             if (all_conditions_fulfilled) {
@@ -84,6 +90,8 @@
             $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
           }
           object_element.on('changed.bs.select', evaluateCondition);
+          object_element.on('loaded.bs.select', evaluateCondition);
+          object_element.on('refreshed.bs.select', evaluateCondition);
           evaluateCondition();
         }
       {% endif %}
