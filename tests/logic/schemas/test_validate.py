@@ -1876,3 +1876,103 @@ def test_validate_plotly_chart_invalid_type():
     with pytest.raises(ValidationError):
         validate(instance, schema)
 
+
+def test_validate_choice_equals_condition():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'type': 'text',
+                'conditions': [
+                    {
+                        'type': 'choice_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name']
+    }
+
+    instance = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example Name'
+        }
+    }
+
+    validate(instance, schema)
+
+    instance = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example Name'
+        },
+        'conditional_property': {
+            '_type': 'text',
+            'text': 'Example Value'
+        }
+    }
+
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    instance = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example Name'
+        },
+        'example_choice': {
+            '_type': 'text',
+            'text': {
+                'en': '2'
+            }
+        },
+        'conditional_property': {
+            '_type': 'text',
+            'text': 'Example Value'
+        }
+    }
+
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    instance = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example Name'
+        },
+        'example_choice': {
+            '_type': 'text',
+            'text': {
+                'en': '1'
+            }
+        },
+        'conditional_property': {
+            '_type': 'text',
+            'text': 'Example Value'
+        }
+    }
+
+    validate(instance, schema)

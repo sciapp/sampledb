@@ -2099,3 +2099,142 @@ def test_validate_plotly_chart_schema_invalid_key():
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_unknown_condition_type():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'type': 'text',
+                'conditions': [
+                    {
+                        'type': 'choice_not_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_required_conditional():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'type': 'text',
+                'conditions': [
+                    {
+                        'type': 'choice_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name', 'conditional_property']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_choice_equals_conditions():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'conditions': [
+                    {
+                        'type': 'choice_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name']
+    }
+
+    for property_type in {'text', 'object_reference', 'sample', 'measurement', 'datetime', 'bool', 'user', 'plotly_chart'}:
+        schema['properties']['conditional_property']['type'] = property_type
+        validate_schema(schema)
+
+    schema['properties']['conditional_property']['type'] = 'quantity'
+    schema['properties']['conditional_property']['units'] = '1'
+    validate_schema(schema)
+    del schema['properties']['conditional_property']['units']
+
+    for property_type in {'hazards', 'tags'}:
+        schema['properties']['conditional_property']['type'] = property_type
+        with pytest.raises(ValidationError):
+            validate_schema(schema)
+
+    schema['properties']['conditional_property']['type'] = 'text'
+    schema['properties']['conditional_property']['conditions'][0]['choice']['en'] = '3'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

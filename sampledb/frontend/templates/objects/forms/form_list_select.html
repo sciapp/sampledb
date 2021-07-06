@@ -1,6 +1,6 @@
 <div class="form-group{% if id_prefix+'_text' in errors %} has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %}" style="padding-right:0.75em; flex-grow: 1">
   <select class="form-control selectpicker" name="{{ id_prefix }}_text">
-  {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') or 'default' in schema %}
+  {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
     {% if not is_required %}
       <option value="">&mdash;</option>
     {% endif %}
@@ -21,11 +21,7 @@
       <option value="{{ option }}">{{ option | get_translated_text }}</option>
       {% endif %}
     {% else %}
-      {% if 'default' in schema and schema['default'] == option %}
-      <option value="{{ option }}" selected="selected">{{ option | get_translated_text }}</option>
-      {% else %}
       <option value="{{ option }}">{{ option | get_translated_text }}</option>
-      {% endif %}
     {% endif %}
   {% endfor %}
   </select>

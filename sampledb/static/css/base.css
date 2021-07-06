@@ -934,3 +934,7 @@ label.required-label:before {
 .bootstrap-select.select-language> .dropdown-toggle.bs-placeholder{
   color: #333 !important;
 }
+
+.condition-wrapper {
+    display: none;
+}
