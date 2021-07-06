@@ -172,6 +172,25 @@ def test_validate_text_schema():
     validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_text_schema_may_copy():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'may_copy': True
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_schema_may_copy_invalid_type():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'may_copy': 'all'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_text_schema_note():
     schema = {
         'title': 'Example',

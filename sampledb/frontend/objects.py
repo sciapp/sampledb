@@ -590,7 +590,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     # Ignore invalid placeholder data
                     pass
     elif object is None and previous_object is not None:
-        data = previous_object.data
+        data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
     else:
         data = object.data
     previous_object_schema = None
