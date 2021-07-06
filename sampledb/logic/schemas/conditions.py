@@ -29,7 +29,7 @@ def validate_condition_schema(
             raise ValidationError('expected type, property_name and choice in condition', path)
         if condition['property_name'] not in property_schemas:
             raise ValidationError('unknown property_name', path)
-        if property_schemas[condition['property_name']].get('type') != 'text' or condition['choice'] not in property_schemas[condition['property_name']].get('choices', []):
+        if property_schemas[condition['property_name']].get('type') != 'text' or (condition['choice'] is not None and condition['choice'] not in property_schemas[condition['property_name']].get('choices', [])):
             raise ValidationError('unknown choice', path)
     elif condition['type'] == 'user_equals':
         if set(condition.keys()) != {'type', 'property_name', 'user_id'}:
@@ -75,6 +75,10 @@ def is_condition_fulfilled(
     """
     if condition['type'] == 'choice_equals':
         return (
+            condition['choice'] is None and
+            condition['property_name'] not in instance
+        ) or (
+            condition['choice'] is not None and
             condition['property_name'] in instance and
             isinstance(instance[condition['property_name']], dict) and
             instance[condition['property_name']].get('text') == condition['choice']

@@ -17,7 +17,11 @@
           let choice_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__text' }}\"]");
 
           let evaluateCondition = function () {
+            {% if condition['choice'] is none %}
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (choice_element.selectpicker('val')  === "");
+            {% else %}
             window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (!!choice_element.selectpicker('val') && choice_element.find('option:selected').data('valueBase64') === "{{ condition["choice"] | base64encode }}");
+            {% endif %}
 
             let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
             if (all_conditions_fulfilled) {
