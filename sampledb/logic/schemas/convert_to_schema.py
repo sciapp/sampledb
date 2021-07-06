@@ -141,6 +141,10 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
                 for upgrade_warning in property_upgrade_warnings:
                     if upgrade_warning not in upgrade_warnings:
                         upgrade_warnings.append(upgrade_warning)
+        for property_name in new_schema['properties']:
+            # check if any properties were explicitly not set
+            if property_name not in data and property_name not in new_schema.get('required', []) and property_name in previous_schema['properties']:
+                del new_data[property_name]
         return new_data, upgrade_warnings
     if new_schema['type'] == 'array':
         new_data = []
