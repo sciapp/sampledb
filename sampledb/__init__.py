@@ -117,7 +117,6 @@ def setup_jinja_environment(app):
         get_user_language=sampledb.logic.languages.get_user_language,
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
-    app.jinja_env.globals.update(sampledb.frontend.utils._jinja_functions)
 
 
 def build_translations(pybabel_path):

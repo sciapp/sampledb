@@ -187,30 +187,3 @@ _jinja_filters['get_translated_text'] = get_translated_text
 _jinja_filters['babel_format_datetime'] = custom_format_datetime
 _jinja_filters['babel_format_date'] = custom_format_date
 _jinja_filters['babel_format_number'] = custom_format_number
-
-
-def get_template(template_folder, type, style):
-    path = os.getcwd() + '/frontend/templates/' + template_folder
-    file = type + ".html"
-
-    try:
-        styled_file = style + "_" + file
-
-        if (os.path.exists(path + styled_file)):
-            return (template_folder + styled_file)
-        else:
-            return (template_folder + file)
-    except:
-        return (template_folder + file)
-
-
-def get_form_template(type, style):
-    return get_template('objects/forms/', type, style)
-
-def get_view_template(type, style):
-    return get_template('objects/view/', type, style)
-
-
-_jinja_functions = {}
-_jinja_functions['get_view_template'] = get_view_template
-
