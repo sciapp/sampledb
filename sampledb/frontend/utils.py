@@ -17,6 +17,7 @@ from flask_babel import format_number, format_datetime, format_date, format_deci
 import qrcode
 import qrcode.image.svg
 import plotly
+import pytz
 
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
@@ -24,6 +25,7 @@ from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
+from ..logic.settings import get_user_settings
 
 
 def jinja_filter(func):
@@ -150,7 +152,7 @@ def custom_format_date(date, format='%Y-%m-%d'):
         datetime_obj = date
     else:
         datetime_obj = datetime.strptime(date, format)
-    return format_date(datetime_obj.date())
+    return format_date(datetime_obj)
 
 
 def custom_format_number(number):
@@ -171,6 +173,19 @@ def custom_format_number(number):
     if type(number) is int:
         return format_number(number)
     return format_decimal(number)
+
+
+@jinja_filter
+def parse_datetime_string(datetime_string):
+    return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S')
+
+
+@jinja_filter
+def default_format_datetime(utc_datetime):
+    settings = get_user_settings(flask_login.current_user.id)
+    utc_datetime = pytz.utc.localize(utc_datetime)
+    local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
+    return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 
 def base64encode(value):
