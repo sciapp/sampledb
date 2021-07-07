@@ -43,7 +43,7 @@
     <div class="form-group {% if change_user_form.affiliation.errors %} has-error{% endif %}">
         <label for="input-affiliation" class="col-sm-4 control-label">{{ _('Affiliation') }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="input-affiliation" name="{{change_user_form.affiliation.name}}" value="{{ change_user_form.affiliation.data or ""}}" placeholder="{{ _('Affiliation') }}">
+          <input class="form-control" type="text" id="input-affiliation" name="{{change_user_form.affiliation.name}}" value="{{ change_user_form.affiliation.data or ""}}" placeholder="{{ _('Affiliation, e.g. your institute, company or department') }}">
           {% if change_user_form.affiliation.errors %}
             <span class="help-block">{{ _('Please enter your affiliation or leave this field blank.') }}</span>
           {% endif %}
@@ -52,12 +52,20 @@
     <div class="form-group {% if change_user_form.role.errors %} has-error{% endif %}">
         <label for="input-role" class="col-sm-4 control-label">{{ _('Role') }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="input-role" name="{{change_user_form.role.name}}" value="{{ change_user_form.role.data or ""}}" placeholder="{{ _('Role') }}">
+          <input class="form-control" type="text" id="input-role" name="{{change_user_form.role.name}}" value="{{ change_user_form.role.data or ""}}" placeholder="{{ _('Role, e.g. PhD student, principal investigator or technician') }}">
           {% if change_user_form.role.errors %}
             <span class="help-block">{{ _('Please enter your role or leave this field blank.') }}</span>
           {% endif %}
         </div>
     </div>
+    {% for extra_field_id, extra_field in EXTRA_USER_FIELDS.items() %}
+    <div class="form-group">
+        <label for="extra_field_{{ extra_field_id }}" class="col-sm-4 control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
+        <div class="col-sm-8">
+          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ user.extra_fields.get(extra_field_id) or '' }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+        </div>
+    </div>
+    {% endfor %}
     <div class="form-group">
         <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="change" value="Change">{{ _('Save') }}</button>
     </div>

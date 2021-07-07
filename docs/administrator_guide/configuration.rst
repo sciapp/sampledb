@@ -187,5 +187,7 @@ Miscellaneous
      - If set, force names to be entered as "surname, given names". **Note:** this will prevent users with a mononym from setting their name correctly!
    * - SAMPLEDB_PYBABEL_PATH
      - The path to the pybabel executable (default: ``pybabel``)
+   * - SAMPLEDB_EXTRA_USER_FIELDS
+     - A JSON-encoded dict containing extra user fields, e.g. ``{"phone": {"name": {"en": "Phone No."}, "placeholder": {"en": "Phone No."}}}`` (default: ``{}``)
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

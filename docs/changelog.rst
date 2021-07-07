@@ -12,7 +12,13 @@ Currently in development.
 - Added internationalization features
 - Added german localization
 - Allow setting a publicly visible user role
+- Added support for configurable user fields
+- Added label for administrators in user list
+- Allow individual exemptions for Use as Template
+- Allow setting a default number of items for arrays
 - Improved user interface
+- Added support for a custom CSS file
+- Added support for conditional properties
 
 Version 0.18
 ------------

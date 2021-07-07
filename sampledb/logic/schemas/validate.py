@@ -12,6 +12,7 @@ import json
 import plotly
 from flask_babel import _
 
+from .conditions import are_conditions_fulfilled
 from ...logic import actions, objects, datatypes, users, languages
 from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
@@ -19,7 +20,11 @@ from .utils import units_are_valid
 from ..utils import get_translated_text
 
 
-def validate(instance: typing.Union[dict, list], schema: dict, path: typing.Optional[typing.List[str]] = None) -> None:
+def validate(
+        instance: typing.Union[dict, list],
+        schema: dict,
+        path: typing.Optional[typing.List[str]] = None
+) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
 
@@ -191,6 +196,13 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> No
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
     errors = []
+
+    for property_name, property_schema in schema['properties'].items():
+        if property_name not in instance:
+            continue
+        if not are_conditions_fulfilled(property_schema.get('conditions'), instance):
+            errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
+
     if 'required' in schema:
         for property_name in schema['required']:
             if property_name not in instance:
@@ -246,7 +258,7 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str]) -> None
             raise ValidationError(_('The text must be at least %(min_length)s characters long.', min_length=min_length), path)
         if max_length is not None and len(instance['text']) > max_length:
             raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
-    else:
+    elif not choices:
         all_languages = languages.get_languages()
         language_names = {
             language.lang_code: get_translated_text(language.names)

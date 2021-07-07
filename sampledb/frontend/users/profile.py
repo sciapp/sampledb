@@ -82,5 +82,6 @@ def user_profile(user_id):
         user_read_only_form=user_read_only_form,
         user_hidden_form=user_hidden_form,
         user_active_form=user_active_form,
-        user=user
+        user=user,
+        EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
     )

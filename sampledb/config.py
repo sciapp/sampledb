@@ -10,6 +10,7 @@ This configuration is the pure base, representing defaults. These values may be 
 
 import base64
 import io
+import json
 import os
 import requests
 import typing
@@ -299,7 +300,34 @@ def check_config(
         print(
             ansi_color(
                 f'Expected INVITATION_TIME_LIMIT to be a positive integer, but got {config["INVITATION_TIME_LIMIT"]!r}\n',
-                color=33
+                color=31
+            ),
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
+
+    if not isinstance(config['EXTRA_USER_FIELDS'], dict):
+        print(
+            ansi_color(
+                f'Expected EXTRA_USER_FIELDS to be a dictionary, but got {config["EXTRA_USER_FIELDS"]!r}\n',
+                color=31
+            ),
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
+    elif any(
+            not isinstance(value, dict) or
+            set(value.keys()) - {'name', 'placeholder'} or
+            not isinstance(value.get('name', ''), (dict, str)) or
+            not isinstance(value.get('placeholder', ''), (dict, str))
+            for key, value in config['EXTRA_USER_FIELDS'].items()
+    ):
+        print(
+            ansi_color(
+                'Invalid EXTRA_USER_FIELDS.\n',
+                color=31
             ),
             file=sys.stderr
         )
@@ -419,6 +447,8 @@ ENFORCE_SPLIT_NAMES = False
 BUILD_TRANSLATIONS = True
 PYBABEL_PATH = 'pybabel'
 
+EXTRA_USER_FIELDS = {}
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -427,3 +457,12 @@ try:
     INVITATION_TIME_LIMIT = int(INVITATION_TIME_LIMIT)
 except ValueError:
     pass
+
+# parse values as json
+for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS'}:
+    value = globals().get(config_name)
+    if isinstance(value, str) and value.startswith('{'):
+        try:
+            globals()[config_name] = json.loads(value)
+        except Exception:
+            pass

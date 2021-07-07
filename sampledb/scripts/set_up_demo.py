@@ -527,4 +527,74 @@ This example shows how Markdown can be used for instrument Notes.
                 instrument_log_entry_id=log_entry.id,
                 object_id=object.id
             )
+        action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'dropdown': {
+                        'title': {'en': 'English Title', 'de': 'Deutscher Titel'},
+                        'type': 'text',
+                        'choices': [
+                            {'en': 'en 1', 'de': 'de 1'},
+                            {'en': 'en 2', 'de': 'de 2'},
+                            {'en': 'en 3'}
+                        ],
+                        'default': {'en': 'en 2', 'de': 'de 2'},
+                        'note': 'Select option 1.'
+                    },
+                    'user': {
+                        'title': {'en': 'User', 'de': 'Nutzer'},
+                        'type': 'user',
+                        'note': 'Do not select a user.'
+                    },
+                    'checkbox': {
+                        'title': {'en': 'Checkbox', 'de': 'Checkbox'},
+                        'type': 'bool',
+                        'note': 'Check this checkbox.'
+                    },
+                    'object': {
+                        'title': {'en': 'Object', 'de': 'Objekt'},
+                        'type': 'object_reference',
+                        'note': 'Select object #1.'
+                    },
+                    'conditional_text': {
+                        'title': 'Conditional Name',
+                        'type': 'text',
+                        'markdown': True,
+                        'conditions': [
+                            {
+                                'type': 'choice_equals',
+                                'property_name': 'dropdown',
+                                'choice': {'en': 'en 1', 'de': 'de 1'}
+                            },
+                            {
+                                'type': 'user_equals',
+                                'property_name': 'user',
+                                'user_id': None
+                            },
+                            {
+                                'type': 'bool_equals',
+                                'property_name': 'checkbox',
+                                'value': True
+                            },
+                            {
+                                'type': 'object_equals',
+                                'property_name': 'object',
+                                'object_id': 1
+                            }
+                        ]
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, action.id, name="Conditions Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_public(action.id)
     print("Success: set up demo data")

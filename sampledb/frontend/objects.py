@@ -348,7 +348,7 @@ def objects():
         else:
             object_ids_for_doi = logic.publications.get_object_ids_linked_to_doi(doi)
         if use_advanced_search and not must_use_advanced_search:
-            search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
+            search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
         try:
             object_ids = None
             if object_ids_at_location is not None:
@@ -590,7 +590,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     # Ignore invalid placeholder data
                     pass
     elif object is None and previous_object is not None:
-        data = previous_object.data
+        data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
     else:
         data = object.data
     previous_object_schema = None

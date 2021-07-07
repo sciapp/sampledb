@@ -100,7 +100,7 @@ Additionally, there are special data types:
     - Sample References
     - Measurement References
 
-All metadata property definitions require a ``title`` and a ``type`` property. They can also contain a ``note`` property with information for users. Some data types allow or require additional properties.
+All metadata property definitions require a ``title`` and a ``type`` property. They can also contain a ``note`` property with information for users. Some data types allow or require additional properties. They can have a ``may_copy`` property, which indicates whether or not this property may be copied when using the "Use as Template" function.
 
 Objects
 ^^^^^^^
@@ -299,6 +299,50 @@ User references do not allow additional properties.
       "title": "Client",
       "type": "user"
     }
+
+
+Conditional Properties
+``````````````````````
+
+Some properties might only sometimes be needed, based on some conditions, such as a particular setting of an instrument. Properties can contain conditions like this, consisting of a ``type`` and additional information depending on the type of condition.
+
+.. code-block:: json
+    :caption: A schema with a conditional property
+
+{
+    'title': 'Example Object',
+    'type': 'object',
+    'properties': {
+        'name': {
+            'title': 'Object Name',
+            'type': 'text',
+            'languages': ['en', 'de']
+        },
+        'dropdown': {
+            'title': 'Dropdown',
+            'type': 'text',
+            'choices': [
+                {'en': 'A'},
+                {'en': 'B'},
+            ],
+            'default': {'en': 'A'}
+        },
+        'conditional_text': {
+            'title': 'Conditional Text',
+            'type': 'text',
+            'markdown': True,
+            'conditions': [
+                {
+                    'type': 'choice_equals',
+                    'property_name': 'dropdown',
+                    'choice': {'en': 'B'}
+                }
+            ]
+        }
+    },
+    'required': ['name']
+}
+
 
 Notebook Templates
 ``````````````````

@@ -7,6 +7,7 @@
 <div>
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}
+    {% if data | are_conditions_fulfilled(property_schema) %}
     {% set name = property_name %}
     {% set schema = property_schema %}
     {% if data is not none and property_name in data %}
@@ -20,10 +21,12 @@
       {% set search_query_attribute = name %}
     {% endif %}
     {% include "objects/view/any.html" %}
+    {% endif %}
   {% endfor %}
 {% else %}
   {% for property_name in schema.propertyOrder %}
     {% if property_name in schema.properties %}
+      {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
       {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
       {% if data is not none and property_name in data %}
@@ -37,10 +40,12 @@
         {% set search_query_attribute = name %}
       {% endif %}
       {% include "objects/view/any.html" %}
+      {% endif %}
     {% endif %}
   {% endfor %}
   {% for property_name, property_schema in schema.properties.items() %}
     {% if property_name not in schema.propertyOrder %}
+      {% if data | are_conditions_fulfilled(property_schema) %}
       {% set name = property_name %}
       {% set schema = property_schema %}
       {% if data is not none and property_name in data %}
@@ -54,6 +59,7 @@
         {% set search_query_attribute = name %}
       {% endif %}
       {% include "objects/view/any.html" %}
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% endif %}
