@@ -217,3 +217,35 @@ _jinja_filters['babel_format_date'] = custom_format_date
 _jinja_filters['babel_format_number'] = custom_format_number
 _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
+
+
+def get_template(template_folder, schema):
+    path = os.getcwd() + '/sampledb/frontend/templates/' + template_folder
+
+    if "choices" in schema:
+        schema["type"] = 'select'
+
+    file = schema["type"] + ".html"
+
+    try:
+        styled_file = schema["style"] + "_" + file
+
+        if (os.path.exists(path + styled_file)):
+            return (template_folder + styled_file)
+        else:
+            return (template_folder + file)
+    except:
+        return (template_folder + file)
+
+
+def get_form_template(schema):
+    return get_template('objects/forms/', schema)
+
+
+def get_view_template(schema):
+    return get_template('objects/view/', schema)
+
+
+_jinja_functions = {}
+_jinja_functions['get_view_template'] = get_view_template
+_jinja_functions['get_form_template'] = get_form_template
