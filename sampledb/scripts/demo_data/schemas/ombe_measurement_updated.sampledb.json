@@ -12,11 +12,13 @@
     },
     "created": {
       "title": {"en": "Creation Datetime"},
-      "type": "datetime"
+      "type": "datetime",
+      "may_copy": false
     },
     "sample": {
       "title": {"en": "Previous Sample"},
-      "type": "sample"
+      "type": "sample",
+      "may_copy": false
     },
     "tags": {
       "title": {"en": "Tags"},

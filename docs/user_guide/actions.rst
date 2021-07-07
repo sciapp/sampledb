@@ -100,7 +100,7 @@ Additionally, there are special data types:
     - Sample References
     - Measurement References
 
-All metadata property definitions require a ``title`` and a ``type`` property. They can also contain a ``note`` property with information for users. Some data types allow or require additional properties.
+All metadata property definitions require a ``title`` and a ``type`` property. They can also contain a ``note`` property with information for users. Some data types allow or require additional properties. They can have a ``may_copy`` property, which indicates whether or not this property may be copied when using the "Use as Template" function.
 
 Objects
 ^^^^^^^

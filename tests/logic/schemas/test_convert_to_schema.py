@@ -433,3 +433,29 @@ def test_convert_object_reference_to_measurement():
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
     assert new_data == data
     assert not warnings
+
+
+def test_convert_schema_missing_values():
+    data = {}
+    previous_schema = {
+        'type': 'object',
+        'properties': {
+            'text': {
+                'title': 'Text',
+                'type': 'text'
+            }
+        }
+    }
+    new_schema = {
+        'type': 'object',
+        'properties': {
+            'text': {
+                'title': 'Text2',
+                'type': 'text'
+            }
+        }
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
