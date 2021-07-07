@@ -417,9 +417,9 @@ def objects():
         objects[i] = {
             'object_id': obj.object_id,
             'created_by': cached_users[original_object.user_id],
-            'created_at': original_object.utc_datetime.strftime('%Y-%m-%d'),
+            'created_at': original_object.utc_datetime,
             'modified_by': cached_users[obj.user_id],
-            'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d'),
+            'last_modified_at': obj.utc_datetime,
             'data': obj.data,
             'schema': obj.schema,
             'action': cached_actions[obj.action_id],
