@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-07-01 10:29+0200\n"
+"POT-Creation-Date: 2021-07-08 14:40+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -335,106 +335,106 @@ msgstr "Das Objekt wurde erfolgreich erstellt."
 msgid "The object was updated successfully."
 msgstr "Das Objekt wurde erfolgreich aktualisiert."
 
-#: frontend/objects.py:1227 frontend/objects.py:1228
+#: frontend/objects.py:1232 frontend/objects.py:1233
 msgid "Unknown"
 msgstr "Unbekannt"
 
-#: frontend/objects.py:1234
+#: frontend/objects.py:1239
 msgid "Unknown Object"
 msgstr "Unbekanntes Objekt"
 
-#: frontend/objects.py:1276
+#: frontend/objects.py:1281
 msgid "Successfully posted a comment."
 msgstr "Kommentar erfolgreich eingetragen."
 
-#: frontend/objects.py:1278
+#: frontend/objects.py:1283
 msgid "Please enter a comment text."
 msgstr "Bitte geben Sie einen Kommentartext ein."
 
-#: frontend/objects.py:1369
+#: frontend/objects.py:1374
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
 
-#: frontend/objects.py:1372
+#: frontend/objects.py:1377
 msgid "Your request for permissions has been sent."
 msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
 
-#: frontend/objects.py:1415
+#: frontend/objects.py:1420
 msgid "Successfully assigned a new location to this object."
 msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
 
-#: frontend/objects.py:1417 frontend/objects.py:1419
+#: frontend/objects.py:1422 frontend/objects.py:1424
 msgid "Please select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
-#: frontend/objects.py:1446
+#: frontend/objects.py:1451
 msgid "This object has already been linked to this publication."
 msgstr "Dieses Objekt wurde bereits mit dieser Publikation verknüpft."
 
-#: frontend/objects.py:1450
+#: frontend/objects.py:1455
 msgid "Successfully linked this object to a publication."
 msgstr "Das Objekt wurde erfolgreich mit der Publikation verknüpft."
 
-#: frontend/objects.py:1452
+#: frontend/objects.py:1457
 msgid "Successfully updated the information for this publication."
 msgstr "Die Informationen für diese Publikation wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:1454
+#: frontend/objects.py:1459
 msgid ""
 "Please enter a valid DOI for the publication you want to link this object"
 " to."
 msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
 
-#: frontend/objects.py:1596
+#: frontend/objects.py:1601
 msgid "The file was hidden successfully."
 msgstr "Die Datei wurde erfolgreich versteckt."
 
-#: frontend/objects.py:1657
+#: frontend/objects.py:1662
 msgid "Successfully uploaded files."
 msgstr "Die Dateien wurden erfolgreich hochgeladen."
 
-#: frontend/objects.py:1659 frontend/objects.py:1668
+#: frontend/objects.py:1664 frontend/objects.py:1673
 msgid "Failed to upload files."
 msgstr "Das Hochladen der Dateien ist fehlgeschlagen"
 
-#: frontend/objects.py:1663
+#: frontend/objects.py:1668
 msgid "Successfully posted link."
 msgstr "Der Link wurde erfolgreich eingetragen."
 
-#: frontend/objects.py:1665
+#: frontend/objects.py:1670
 msgid "Failed to post link."
 msgstr "Das Eintragen des Links ist fehlgeschlagen."
 
-#: frontend/objects.py:1690
+#: frontend/objects.py:1695
 msgid "This object does not exist."
 msgstr "Dieses Objekt existiert nicht."
 
-#: frontend/objects.py:1693
+#: frontend/objects.py:1698
 msgid "You do not have the required permissions to use this object as a template."
 msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
 
-#: frontend/objects.py:1697
+#: frontend/objects.py:1702
 msgid "This object was created with a different action."
 msgstr "Dieses Objekt wurde mit einer anderen Aktion erstellt."
 
-#: frontend/objects.py:1705
+#: frontend/objects.py:1710
 msgid "This action does not exist."
 msgstr "Diese Aktion existiert nicht."
 
-#: frontend/objects.py:1708
+#: frontend/objects.py:1713
 msgid "You do not have the required permissions to use this action."
 msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
 
-#: frontend/objects.py:1958
+#: frontend/objects.py:1963
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
 
-#: frontend/objects.py:1986 frontend/objects.py:1995 frontend/objects.py:2004
-#: frontend/objects.py:2013
+#: frontend/objects.py:1991 frontend/objects.py:2000 frontend/objects.py:2009
+#: frontend/objects.py:2018
 msgid "Successfully updated object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/objects.py:2015
+#: frontend/objects.py:2020
 msgid ""
 "A problem occurred while changing the object permissions. Please try "
 "again."
@@ -1012,92 +1012,92 @@ msgstr "Endpunkt"
 msgid "This API token has not been used so far."
 msgstr "Dieses API Token ist noch nicht benutzt worden."
 
-#: frontend/templates/base.html:34
+#: frontend/templates/base.html:35
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
 
-#: frontend/templates/base.html:46 frontend/templates/base.html:134
+#: frontend/templates/base.html:47 frontend/templates/base.html:135
 msgid "Help"
 msgstr "Hilfe"
 
-#: frontend/templates/base.html:60 frontend/templates/base.html:249
-#: frontend/templates/base.html:302 frontend/templates/search.html:184
+#: frontend/templates/base.html:61 frontend/templates/base.html:250
+#: frontend/templates/base.html:303 frontend/templates/search.html:184
 msgid "Search…"
 msgstr "Suche…"
 
-#: frontend/templates/base.html:62 frontend/templates/base.html:116
+#: frontend/templates/base.html:63 frontend/templates/base.html:117
 #: frontend/templates/search.html:3 frontend/templates/search.html:18
 #: frontend/templates/search.html:158
 msgid "Search"
 msgstr "Suche"
 
-#: frontend/templates/base.html:65 frontend/templates/groups/group.html:40
+#: frontend/templates/base.html:66 frontend/templates/groups/group.html:40
 #: frontend/templates/profile.html:57
 #: frontend/templates/projects/project.html:93
 #: frontend/templates/search.html:30
 msgid "Toggle Dropdown"
 msgstr "Menü aus-/einklappen"
 
-#: frontend/templates/base.html:68 frontend/templates/search.html:33
+#: frontend/templates/base.html:69 frontend/templates/search.html:33
 msgid "Advanced Search"
 msgstr "Erweiterte Suche"
 
-#: frontend/templates/base.html:69 frontend/templates/search.html:65
+#: frontend/templates/base.html:70 frontend/templates/search.html:65
 msgid "Build Search Query"
 msgstr "Suchanfrage erstellen"
 
-#: frontend/templates/base.html:74
+#: frontend/templates/base.html:75
 #, python-format
 msgid "Search %(objects)s from this project group"
 msgstr "Suche in allen %(objects)s dieser Projektgruppe"
 
-#: frontend/templates/base.html:76
+#: frontend/templates/base.html:77
 msgid "Search objects from this project group"
 msgstr "Suche in allen Objekten dieser Projektgruppe"
 
-#: frontend/templates/base.html:81
+#: frontend/templates/base.html:82
 #, python-format
 msgid "Search %(objects)s from this action"
 msgstr "Suche in allen %(objects)s dieser Aktion"
 
-#: frontend/templates/base.html:83
+#: frontend/templates/base.html:84
 msgid "Search objects from this action"
 msgstr "Suche in allen Objekten dieser Aktion"
 
-#: frontend/templates/base.html:87
+#: frontend/templates/base.html:88
 #, python-format
 msgid "Search all %(objects)s"
 msgstr "Suche in allen %(objects)s"
 
-#: frontend/templates/base.html:89
+#: frontend/templates/base.html:90
 msgid "Search all objects"
 msgstr "Suche in allen Objekten"
 
-#: frontend/templates/base.html:96
+#: frontend/templates/base.html:97
 #: frontend/templates/instruments/instruments.html:3
 #: frontend/templates/instruments/instruments.html:6
 msgid "Instruments"
 msgstr "Instrumente"
 
 #: frontend/templates/actions/actions.html:3
-#: frontend/templates/actions/actions.html:6 frontend/templates/base.html:98
+#: frontend/templates/actions/actions.html:6 frontend/templates/base.html:99
 #: frontend/templates/instruments/instrument.html:26
 msgid "Actions"
 msgstr "Aktionen"
 
-#: frontend/templates/base.html:108 frontend/templates/objects/objects.html:3
+#: frontend/templates/base.html:109 frontend/templates/objects/objects.html:3
 #: frontend/templates/objects/objects.html:103
 #: frontend/templates/objects/view/base.html:1080
 msgid "Objects"
 msgstr "Objekte"
 
-#: frontend/templates/base.html:120
+#: frontend/templates/base.html:121
 msgid "More"
 msgstr "Mehr"
 
 #: frontend/templates/actions/action_permissions.html:128
 #: frontend/templates/actions/action_permissions.html:220
-#: frontend/templates/base.html:122
+#: frontend/templates/base.html:123
 #: frontend/templates/objects/object_permissions.html:133
 #: frontend/templates/objects/object_permissions.html:222
 #: frontend/templates/preferences.html:326
@@ -1109,7 +1109,7 @@ msgstr "Nutzer"
 
 #: frontend/templates/actions/action_permissions.html:102
 #: frontend/templates/actions/action_permissions.html:170
-#: frontend/templates/base.html:123 frontend/templates/groups/groups.html:3
+#: frontend/templates/base.html:124 frontend/templates/groups/groups.html:3
 #: frontend/templates/groups/groups.html:11
 #: frontend/templates/objects/object_permissions.html:107
 #: frontend/templates/objects/object_permissions.html:172
@@ -1121,7 +1121,7 @@ msgstr "Einfache Gruppen"
 
 #: frontend/templates/actions/action_permissions.html:76
 #: frontend/templates/actions/action_permissions.html:195
-#: frontend/templates/base.html:124
+#: frontend/templates/base.html:125
 #: frontend/templates/objects/object_permissions.html:81
 #: frontend/templates/objects/object_permissions.html:197
 #: frontend/templates/preferences.html:300
@@ -1130,7 +1130,7 @@ msgstr "Einfache Gruppen"
 msgid "Project Groups"
 msgstr "Projektgruppen"
 
-#: frontend/templates/base.html:125
+#: frontend/templates/base.html:126
 #: frontend/templates/locations/locations.html:3
 #: frontend/templates/locations/locations.html:6
 #: frontend/templates/objects/view/base.html:608
@@ -1141,57 +1141,57 @@ msgstr "Orte"
 
 #: frontend/templates/actions/action_form.html:357
 #: frontend/templates/actions/action_form.html:361
-#: frontend/templates/base.html:126 frontend/templates/tags.html:3
+#: frontend/templates/base.html:127 frontend/templates/tags.html:3
 #: frontend/templates/tags.html:6
 msgid "Tags"
 msgstr "Tags"
 
 #: frontend/templates/action_types/action_types.html:3
 #: frontend/templates/action_types/action_types.html:6
-#: frontend/templates/base.html:129
+#: frontend/templates/base.html:130
 msgid "Action Types"
 msgstr "Aktionstypen"
 
 #: frontend/templates/action_types/action_type_form.html:174
-#: frontend/templates/base.html:130
+#: frontend/templates/base.html:131
 #: frontend/templates/languages/languages.html:3
 #: frontend/templates/languages/languages.html:6
 msgid "Languages"
 msgstr "Sprachen"
 
-#: frontend/templates/base.html:145 frontend/templates/preferences.html:4
+#: frontend/templates/base.html:146 frontend/templates/preferences.html:4
 #: frontend/templates/preferences.html:7
 msgid "Preferences"
 msgstr "Einstellungen"
 
-#: frontend/templates/base.html:146 frontend/templates/notifications.html:3
+#: frontend/templates/base.html:147 frontend/templates/notifications.html:3
 #: frontend/templates/notifications.html:6
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
-#: frontend/templates/base.html:148
+#: frontend/templates/base.html:149
 msgid "Your Basic Groups"
 msgstr "Ihre einfachen Gruppen"
 
-#: frontend/templates/base.html:149
+#: frontend/templates/base.html:150
 msgid "Your Project Groups"
 msgstr "Ihre Projektgruppen"
 
-#: frontend/templates/base.html:150
+#: frontend/templates/base.html:151
 msgid "Your Actions"
 msgstr "Ihre Aktionen"
 
-#: frontend/templates/base.html:152 frontend/templates/invitation.html:3
+#: frontend/templates/base.html:153 frontend/templates/invitation.html:3
 #: frontend/templates/invitation.html:6
 msgid "Invite a Guest"
 msgstr "Gast einladen"
 
-#: frontend/templates/base.html:152 frontend/templates/invitation.html:3
+#: frontend/templates/base.html:153 frontend/templates/invitation.html:3
 #: frontend/templates/invitation.html:6
 msgid "Invite another User"
 msgstr "Nutzer einladen"
 
-#: frontend/templates/base.html:154 frontend/templates/export.html:3
+#: frontend/templates/base.html:155 frontend/templates/export.html:3
 #: frontend/templates/export.html:17 frontend/templates/export.html:35
 #: frontend/templates/objects/dataverse_export_api_token.html:3
 #: frontend/templates/objects/view/base.html:128
@@ -1200,20 +1200,20 @@ msgstr "Nutzer einladen"
 msgid "Export Data"
 msgstr "Daten exportieren"
 
-#: frontend/templates/base.html:156 frontend/templates/sign_out.html:9
+#: frontend/templates/base.html:157 frontend/templates/sign_out.html:9
 msgid "Sign out"
 msgstr "Abmelden"
 
-#: frontend/templates/base.html:161 frontend/templates/sign_in.html:57
+#: frontend/templates/base.html:162 frontend/templates/sign_in.html:57
 msgid "Sign in"
 msgstr "Anmelden"
 
-#: frontend/templates/base.html:171 frontend/templates/index.html:14
+#: frontend/templates/base.html:172 frontend/templates/index.html:14
 #: frontend/templates/index.html:18 frontend/templates/objects/objects.html:20
 msgid "Warning:"
 msgstr "Warnung:"
 
-#: frontend/templates/base.html:171
+#: frontend/templates/base.html:172
 msgid ""
 "This service requires JavaScript. Please <a href=\"https://www.enable-"
 "javascript.com/\">enable JavaScript</a> and reload the page."
@@ -1222,20 +1222,20 @@ msgstr ""
 "javascript.com/\">aktivieren Sie JavaScript</a> und laden Sie die Seite "
 "neu."
 
-#: frontend/templates/base.html:189
+#: frontend/templates/base.html:190
 msgid "Please log in to access this page."
 msgstr "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
 
-#: frontend/templates/base.html:199
+#: frontend/templates/base.html:200
 #: frontend/templates/locations/location_form.html:77
 #: frontend/templates/objects/forms/form_array.html:197
 #: frontend/templates/objects/forms/form_bool.html:11
 #: frontend/templates/objects/forms/form_datetime.html:11
 #: frontend/templates/objects/forms/form_hazards.html:26
-#: frontend/templates/objects/forms/form_object_reference_base.html:20
+#: frontend/templates/objects/forms/form_object_reference_base.html:38
 #: frontend/templates/objects/forms/form_plotly_chart.html:5
 #: frontend/templates/objects/forms/form_quantity.html:15
-#: frontend/templates/objects/forms/form_select.html:35
+#: frontend/templates/objects/forms/form_select.html:31
 #: frontend/templates/objects/forms/form_tags.html:6
 #: frontend/templates/objects/forms/form_text.html:49
 #: frontend/templates/objects/forms/form_user.html:23
@@ -1246,7 +1246,7 @@ msgstr "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
 msgid "Note:"
 msgstr "Hinweis:"
 
-#: frontend/templates/base.html:199
+#: frontend/templates/base.html:200
 msgid ""
 "Your account has been marked as read only. If you think this was done "
 "erroneously, please"
@@ -1254,61 +1254,61 @@ msgstr ""
 "Ihr Nutzerkonto wurde als nur lesend markiert. Falls Sie denken, dass "
 "dies irrtümlicherweise geschah, "
 
-#: frontend/templates/base.html:199
+#: frontend/templates/base.html:200
 msgid "contact an administrator"
 msgstr "kontaktieren Sie bitte einen Administrator"
 
-#: frontend/templates/base.html:207
+#: frontend/templates/base.html:208
 msgid "is a service by the"
 msgstr "ist ein Dienst des"
 
-#: frontend/templates/base.html:207
+#: frontend/templates/base.html:208
 msgid "team"
 msgstr "Teams"
 
-#: frontend/templates/base.html:207
+#: frontend/templates/base.html:208
 msgid "Citation Guide"
 msgstr "Zitierhilfe"
 
-#: frontend/templates/base.html:207
+#: frontend/templates/base.html:208
 msgid "Imprint"
 msgstr "Impressum"
 
-#: frontend/templates/base.html:207
+#: frontend/templates/base.html:208
 msgid "Privacy Policy"
 msgstr "Datenschutzerklärung"
 
-#: frontend/templates/base.html:247 frontend/templates/base.html:300
+#: frontend/templates/base.html:248 frontend/templates/base.html:301
 #: frontend/templates/search.html:182
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
 
-#: frontend/templates/base.html:257
+#: frontend/templates/base.html:258
 msgid "Advanced Search (by action)…"
 msgstr "Erweiterte Suche (nach Aktion)…"
 
-#: frontend/templates/base.html:259
+#: frontend/templates/base.html:260
 msgid "Search (by action)…"
 msgstr "Suche (nach Aktion)…"
 
-#: frontend/templates/base.html:267
+#: frontend/templates/base.html:268
 msgid "Advanced Search (by project group)…"
 msgstr "Erweiterte Suche (nach Projektgruppe)…"
 
-#: frontend/templates/base.html:269
+#: frontend/templates/base.html:270
 msgid "Search (by project group)…"
 msgstr "Suche (nach Projektgruppe)…"
 
-#: frontend/templates/base.html:277
+#: frontend/templates/base.html:278
 msgid "Advanced Search (by type)…"
 msgstr "Erweiterte Suche (nach Typ)…"
 
-#: frontend/templates/base.html:279
+#: frontend/templates/base.html:280
 msgid "Search (by type)…"
 msgstr "Suche (nach Typ)…"
 
-#: frontend/templates/base.html:285 frontend/templates/base.html:286
-#: frontend/templates/base.html:289 frontend/templates/base.html:290
+#: frontend/templates/base.html:286 frontend/templates/base.html:287
+#: frontend/templates/base.html:290 frontend/templates/base.html:291
 msgid "Advanced "
 msgstr "Erweiterte "
 
@@ -1384,6 +1384,7 @@ msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 #: frontend/templates/registration.html:29
 #: frontend/templates/registration.html:31
 #: frontend/templates/registration.html:40 frontend/templates/sign_in.html:34
+#: frontend/templates/sign_in.html:36
 msgid "Password"
 msgstr "Passwort"
 
@@ -1819,6 +1820,7 @@ msgstr "Authentifizierungsmethoden"
 #: frontend/templates/preferences.html:80
 #: frontend/templates/preferences.html:599
 #: frontend/templates/preferences.html:601 frontend/templates/sign_in.html:28
+#: frontend/templates/sign_in.html:30
 msgid "Username / Email"
 msgstr "Nutzername / E-Mail"
 
@@ -4319,14 +4321,14 @@ msgstr "Versionen"
 #: frontend/templates/objects/forms/form_hazards.html:25
 #: frontend/templates/objects/forms/form_list_bool.html:8
 #: frontend/templates/objects/forms/form_list_datetime.html:8
-#: frontend/templates/objects/forms/form_list_object_reference_base.html:17
+#: frontend/templates/objects/forms/form_list_object_reference_base.html:35
 #: frontend/templates/objects/forms/form_list_quantity.html:12
-#: frontend/templates/objects/forms/form_list_select.html:32
+#: frontend/templates/objects/forms/form_list_select.html:28
 #: frontend/templates/objects/forms/form_list_text.html:9
 #: frontend/templates/objects/forms/form_list_user.html:20
-#: frontend/templates/objects/forms/form_object_reference_base.html:19
+#: frontend/templates/objects/forms/form_object_reference_base.html:37
 #: frontend/templates/objects/forms/form_quantity.html:14
-#: frontend/templates/objects/forms/form_select.html:34
+#: frontend/templates/objects/forms/form_select.html:30
 #: frontend/templates/objects/forms/form_text.html:47
 #: frontend/templates/objects/forms/form_text.html:48
 #: frontend/templates/objects/forms/form_user.html:22
@@ -4440,6 +4442,10 @@ msgstr "%(item_name)s entfernen"
 msgid "Add %(item_name)s"
 msgstr "%(item_name)s hinzufügen"
 
+#: frontend/templates/objects/forms/form_base.html:80
+msgid "Filter by Action…"
+msgstr "Nach Aktion filtern…"
+
 #: frontend/templates/objects/forms/form_create.html:3
 msgid "New Object"
 msgstr "Neues Objekt"
@@ -4505,6 +4511,13 @@ msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
 #: frontend/templates/objects/forms/form_hazards.html:14
 msgid "This object poses the following hazards:"
 msgstr "Dieses Objekt stellt folgende Gefahren dar:"
+
+#: frontend/templates/objects/forms/form_list_object_reference_base.html:19
+#: frontend/templates/objects/forms/form_object_reference_base.html:21
+#: frontend/templates/objects/forms/form_table_object_reference_base.html:19
+#, fuzzy
+msgid "All Actions"
+msgstr "Aktionen"
 
 #: frontend/templates/objects/view/array.html:243
 msgid "Unsupported item type for horizontal_table style."
@@ -5728,52 +5741,52 @@ msgstr ""
 "Konnte physikalische Größe '%(title)s' nicht von Dimensionalität "
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
 
-#: logic/schemas/convert_to_schema.py:155
+#: logic/schemas/convert_to_schema.py:159
 #, python-format
 msgid "Unable to convert property '%(title)s' of type '%(type)s'."
 msgstr "Konnte Eigenschaft '%(title)s' von Typ '%(type)s' nicht umwandeln."
 
-#: logic/schemas/validate.py:240
+#: logic/schemas/validate.py:252
 #, python-format
 msgid "The text must be one of %(choices)s."
 msgstr "Der Text muss einer der folgenden sein: %(choices)s."
 
-#: logic/schemas/validate.py:246 logic/schemas/validate.py:272
+#: logic/schemas/validate.py:258 logic/schemas/validate.py:284
 #, python-format
 msgid "The text must be at least %(min_length)s characters long."
 msgstr "Bitte geben Sie mindestens %(min_length)s Zeichen ein."
 
-#: logic/schemas/validate.py:248 logic/schemas/validate.py:274
+#: logic/schemas/validate.py:260 logic/schemas/validate.py:286
 #, python-format
 msgid "The text must be at most %(max_length)s characters long."
 msgstr "Bitte geben Sie höchstens %(max_length)s Zeichen ein."
 
-#: logic/schemas/validate.py:277
+#: logic/schemas/validate.py:289
 #, python-format
 msgid "The language \"%(lang_code)s\" is not allowed for this field."
 msgstr "Die Sprache \"%(lang_code)s\" ist für dieses Feld nicht erlaubt."
 
-#: logic/schemas/validate.py:282 logic/schemas/validate.py:285
+#: logic/schemas/validate.py:294 logic/schemas/validate.py:297
 #, python-format
 msgid "Input must match: %(pattern)s"
 msgstr "Eingabe muss dem Muster %(pattern)s entsprechen."
 
-#: logic/schemas/validate.py:317
+#: logic/schemas/validate.py:329
 #, python-format
 msgid "Please enter the date and time in the format: %(datetime_format)s"
 msgstr ""
 "Bitte geben Sie Datum und Uhrzeit in folgendem Format ein: "
 "%(datetime_format)s"
 
-#: logic/schemas/validate.py:577
+#: logic/schemas/validate.py:589
 msgid "plotly data must be valid JSON"
 msgstr "Die plotly-Daten müssen gültiges JSON sein"
 
-#: logic/schemas/validate.py:581
+#: logic/schemas/validate.py:593
 msgid "plotly must be a dict"
 msgstr "Die plotly-Daten müssen ein dict enthalten"
 
-#: logic/schemas/validate.py:586
+#: logic/schemas/validate.py:598
 msgid ""
 "The plotly data must be valid. Look up which schema is supported by "
 "plotly."

@@ -75,6 +75,32 @@
     $.each(window.conditional_wrapper_scripts, function () {
       this();
     });
+
+    $('div.objectpicker').each(function () {
+      let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
+      $(this).append(filter_button);
+      let objectpicker = $(this).find('.selectpicker');
+      let actionpicker = $(this).next('.objectpicker-actionpicker').find('.selectpicker');
+      filter_button.tooltip();
+      filter_button.on('click', function() {
+        actionpicker.selectpicker('toggle');
+      });
+      actionpicker.on('hidden.bs.select', function() {
+        let action_id = actionpicker.selectpicker('val');
+        if (action_id === "") {
+          objectpicker.find('option').prop('disabled', false);
+        } else {
+          objectpicker.find('option').prop('disabled', true);
+          objectpicker.find('option[data-action-id="' + action_id+ '"]').prop('disabled', false);
+        }
+        objectpicker.find('option[value=""]').prop('disabled', false);
+        objectpicker.selectpicker('refresh');
+        objectpicker.selectpicker('toggle');
+        if (objectpicker.selectpicker('val') === null) {
+          objectpicker.selectpicker('val', '');
+        }
+      });
+    });
   });
 
   var tags = new Bloodhound({
