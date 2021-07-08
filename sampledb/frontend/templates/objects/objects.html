@@ -129,9 +129,9 @@
     <tr>
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.data['name']['text'] | get_translated_text }}</a></td>
-      <td>{{ object.created_at | babel_format_date}}</td>
+      <td>{{ object.created_at | babel_format_date }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>
-      <td>{{ object.last_modified_at | babel_format_date}}</td>
+      <td>{{ object.last_modified_at | babel_format_date }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.name }}</a></td>
       {% if show_action %}
       {% if object.action is not none %}
