@@ -11,6 +11,7 @@ Currently in development.
 - Added event datetime for instrument log entries
 - Added internationalization features
 - Added german localization
+- Store file contents in database by default
 - Allow setting a publicly visible user role
 - Added support for configurable user fields
 - Added label for administrators in user list

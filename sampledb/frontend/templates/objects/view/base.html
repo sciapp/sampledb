@@ -217,7 +217,7 @@
           <td>
             <span class="pull-right" style="display:flex;">
               <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="{{ _('View information') }}"><i class="fa fa-info"></i></button>
-              {% if file.storage == 'local' %}
+              {% if file.storage == 'local' or file.storage == 'database' %}
               {% if file | has_preview %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('View preview') }}"><i class="fa fa-search"></i></a>
               {% else %}
@@ -291,7 +291,7 @@
               <div class="col-sm-3 text-right"><label>{{ _('Title') }}:</label></div>
               <div class="col-sm-9"><span class="file-info-view-mode">{% if file.title %}{{ file.title }}{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><input type="text" name="{{ file_information_form.title.name }}" class="input-file-info-title" style="width:100%" value="{% if file.title %}{{ file.title }}{% endif %}"></span></div>
             </div>
-            {% if file.storage == 'local' %}
+            {% if file.storage == 'local' or file.storage == 'database' %}
             <div class="row">
               <div class="col-sm-3 text-right"><label>{{ _('Name') }}:</label></div>
               <div class="col-sm-9">{{ file.original_file_name }}</div>
@@ -362,7 +362,7 @@
               <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">{{ _('Edit') }}</button>
               <button type="button" class="btn btn-default file-info-view-mode button-file-info-hide">{{ _('Hide') }}</button>
               {% endif %}
-              {% if file.storage == 'local' %}
+              {% if file.storage == 'local' or file.storage == 'database' %}
               <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-default file-info-view-mode">{{ _('Download') }}</a>
               {% endif %}
               <button type="button" class="btn btn-default file-info-view-mode" data-dismiss="modal">{{ _('Close') }}</button>
@@ -889,7 +889,7 @@
             <td>
               {% for file in files %}
                 {% if file.id == object_log_entry.data['file_id'] %}
-                  {% if file.storage == 'local' %}
+                  {% if file.storage == 'local' or file.storage == 'database' %}
                     {% if action.type.enable_files %}
                       {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
                     {% else %}

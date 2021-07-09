@@ -120,7 +120,7 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
                     'uploader_id': file_info.user_id,
                     'utc_datetime': file_info.utc_datetime.isoformat()
                 })
-                if file_info.storage == 'local':
+                if file_info.storage in {'local', 'database'}:
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
                     try:
                         file_bytes = file_info.open(read_only=True).read()
