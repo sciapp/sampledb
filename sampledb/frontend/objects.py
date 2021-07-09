@@ -838,6 +838,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     else:
         referencable_objects = []
         existing_objects = []
+    sorted_actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
 
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
@@ -875,6 +878,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             user_groups=user_groups,
             user_projects=user_projects,
             referencable_objects=referencable_objects,
+            sorted_actions=sorted_actions,
             action_type_id_by_action_id=action_type_id_by_action_id,
             ActionType=models.ActionType,
             datetime=datetime,
@@ -900,6 +904,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             previous_actions=serializer.dumps(previous_actions),
             form=form,
             referencable_objects=referencable_objects,
+            sorted_actions=sorted_actions,
             action_type_id_by_action_id=action_type_id_by_action_id,
             ActionType=models.ActionType,
             datetime=datetime,

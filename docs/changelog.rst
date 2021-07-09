@@ -20,6 +20,7 @@ Currently in development.
 - Improved user interface
 - Added support for a custom CSS file
 - Added support for conditional properties
+- Allow filtering object references by action
 
 Version 0.18
 ------------

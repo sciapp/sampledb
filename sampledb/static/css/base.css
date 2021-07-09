@@ -938,3 +938,29 @@ label.required-label:before {
 .condition-wrapper {
     display: none;
 }
+
+div.objectpicker {
+    display: flex !important;
+    margin-bottom: -20px !important;
+}
+
+div.objectpicker > .dropdown-toggle {
+    width: inherit !important;
+    flex-grow: 1;
+    border-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+div.objectpicker > .objectpicker-filter-button {
+    margin-bottom: 2px;
+    min-width: 39px;
+}
+
+div.objectpicker-actionpicker > .dropdown-toggle {
+    display: none;
+}
+
+div.objectpicker-actionpicker > .dropdown-menu {
+    margin-top: 9px !important;
+}
