@@ -943,7 +943,7 @@
           {% elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA %}
             {% if object_log_entry.data['object_id'] %}
             <td>
-              {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="(object_url)s">%(object_name)s #%(object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].data['name']['text'], object_id=object_log_entry.data['object_id']) }}
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s #%(object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].data['name']['text'] | get_translated_text, object_id=object_log_entry.data['object_id']) }}
             </td>
             <td class="text-right">
               <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">{{ _('View') }}</a>
