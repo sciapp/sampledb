@@ -1,27 +1,29 @@
-|service_name|
-==============
+.. raw:: html
 
-|service_description|
-
-You can access |service_name| at |service_url|.
-
-.. note::
-    Both |service_name| and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know`_.
+    <div class="table_of_contents_row">
+    <div class="table_of_contents_block">
 
 User Guide
 ----------
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     user_guide/users.rst
     user_guide/groups.rst
     user_guide/projects.rst
     user_guide/instruments.rst
     user_guide/actions.rst
+    user_guide/schemas.rst
     user_guide/objects.rst
+    user_guide/search.rst
     user_guide/export.rst
     user_guide/citations.rst
+
+.. raw:: html
+
+    </div>
+    <div class="table_of_contents_block">
 
 Administrator Guide
 -------------------
@@ -48,6 +50,11 @@ Developer Guide
     developer_guide/api.rst
     developer_guide/contributing.rst
 
+.. raw:: html
+
+    </div>
+    </div>
+
 .. toctree::
     :hidden:
     :maxdepth: 2
@@ -55,3 +62,6 @@ Developer Guide
     changelog.rst
 
 .. todolist::
+
+.. note::
+    Both |service_name| and this documentation are still a work in progress. If you come across any issues or want to request a feature, please `let us know`_.
