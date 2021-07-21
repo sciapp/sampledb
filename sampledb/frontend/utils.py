@@ -239,7 +239,7 @@ def get_template(template_folder, schema):
 
 
 def get_form_template(schema):
-    return get_template('objects/forms/', schema)
+    return get_template('objects/forms/form_', schema)
 
 
 def get_view_template(schema):
