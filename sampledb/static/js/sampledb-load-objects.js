@@ -80,7 +80,7 @@ $(function() {
                 }
                 data_tokens += el.text + '"';
               }
-              return '<option value="' + el.id + '" '+ data_tokens + '>' + el.text + '</option>';
+              return '<option value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
             }).join(""));
 
         $x.selectpicker('refresh').prop("disabled", false).selectpicker('refresh');

@@ -458,6 +458,15 @@ try:
 except ValueError:
     pass
 
+# parse values as integers
+for config_name in {'MAX_CONTENT_LENGTH', }:
+    value = globals().get(config_name)
+    if isinstance(value, str):
+        try:
+            globals()[config_name] = int(value)
+        except Exception:
+            pass
+
 # parse values as json
 for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS'}:
     value = globals().get(config_name)

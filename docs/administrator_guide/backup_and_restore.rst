@@ -75,3 +75,7 @@ Or, if you wish to create a backup locally, you can simply use ``cp``:
 Here the ``-n`` option prevents copying files which already exist in the backup directory.
 
 To restore the backup, simply copy the backup to your local file directory.
+
+.. note::
+
+    By default, new files will be stored in the database instead of in the file directory, so the file directory may be empty.

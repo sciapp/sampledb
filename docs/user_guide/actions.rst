@@ -306,42 +306,42 @@ Conditional Properties
 
 Some properties might only sometimes be needed, based on some conditions, such as a particular setting of an instrument. Properties can contain conditions like this, consisting of a ``type`` and additional information depending on the type of condition.
 
-.. code-block:: json
+.. code-block:: javascript
     :caption: A schema with a conditional property
 
-{
-    'title': 'Example Object',
-    'type': 'object',
-    'properties': {
-        'name': {
-            'title': 'Object Name',
-            'type': 'text',
-            'languages': ['en', 'de']
+    {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Object Name',
+                'type': 'text',
+                'languages': ['en', 'de']
+            },
+            'dropdown': {
+                'title': 'Dropdown',
+                'type': 'text',
+                'choices': [
+                    {'en': 'A'},
+                    {'en': 'B'},
+                ],
+                'default': {'en': 'A'}
+            },
+            'conditional_text': {
+                'title': 'Conditional Text',
+                'type': 'text',
+                'markdown': true,
+                'conditions': [
+                    {
+                        'type': 'choice_equals',
+                        'property_name': 'dropdown',
+                        'choice': {'en': 'B'}
+                    }
+                ]
+            }
         },
-        'dropdown': {
-            'title': 'Dropdown',
-            'type': 'text',
-            'choices': [
-                {'en': 'A'},
-                {'en': 'B'},
-            ],
-            'default': {'en': 'A'}
-        },
-        'conditional_text': {
-            'title': 'Conditional Text',
-            'type': 'text',
-            'markdown': True,
-            'conditions': [
-                {
-                    'type': 'choice_equals',
-                    'property_name': 'dropdown',
-                    'choice': {'en': 'B'}
-                }
-            ]
-        }
-    },
-    'required': ['name']
-}
+        'required': ['name']
+    }
 
 
 Notebook Templates

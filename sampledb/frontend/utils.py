@@ -62,7 +62,7 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
 
 
 def has_preview(file):
-    if file.storage != 'local':
+    if file.storage not in {'local', 'database'}:
         return False
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
@@ -75,7 +75,7 @@ def file_name_is_image(file_name):
 
 
 def is_image(file):
-    if file.storage != 'local':
+    if file.storage not in {'local', 'database'}:
         return False
     return file_name_is_image(file.original_file_name)
 

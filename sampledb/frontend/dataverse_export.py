@@ -115,7 +115,7 @@ def dataverse_export(object_id):
     dataverse_export_form.files.choices = [
         (str(file.id), file.data['original_file_name'])
         for file in logic.files.get_files_for_object(object_id)
-        if file.data.get('storage') == 'local'
+        if file.data.get('storage') in {'local', 'database'}
     ]
 
     tags = set()
