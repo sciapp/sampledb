@@ -62,6 +62,7 @@
     {% if data is not none %}
       {% for item in data %}
         {% set name = "item" %}
+        {% set tmp_style = schema['style'] %}
         {% set schema = schema['items'] %}
         {% set data = item %}
         {% set entry_index = loop.index0 %}
@@ -71,13 +72,14 @@
           <td>
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
+            {% set z = schema.update({'style': tmp_style}) %}
             {% if data is not none and property_name in data %}
             {% set data = data[property_name] %}
             {% else %}
             {% set data = none %}
             {% endif %}
             {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-            {% include "objects/view/table_any.html" %}
+            {% include "objects/view/any.html" %}
           </td>
           {% endif %}
         {% endfor %}
@@ -86,13 +88,14 @@
           <td>
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
+            {% set z = schema.update({'style': tmp_style}) %}
             {% if data is not none and property_name in data %}
             {% set data = data[property_name] %}
             {% else %}
             {% set data = none %}
             {% endif %}
             {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-            {% include "objects/view/table_any.html" %}
+            {% include "objects/view/any.html" %}
           </td>
           {% endif %}
         {% endfor %}
@@ -133,10 +136,12 @@
     {% for field in item %}
       <td>
           {% set name = name ~ "_" ~ loop.index0 %}
+          {% set tmp_style = schema['style'] %}
           {% set schema = schema["items"]["items"] %}
+          {% set z = schema.update({'style': tmp_style}) %}
           {% set data = field %}
           {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-          {% include "objects/view/table_any.html" %}
+          {% include "objects/view/any.html" %}
       </td>
     {% endfor %}
     </tr>
