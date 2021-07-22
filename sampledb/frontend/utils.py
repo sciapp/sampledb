@@ -200,6 +200,13 @@ def filter_are_conditions_fulfilled(data, property_schema) -> bool:
     return are_conditions_fulfilled(property_schema.get('conditions'), data)
 
 
+def to_string_if_dict(data) -> str:
+    if isinstance(data, dict):
+        return str(data)
+    else:
+        return data
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -217,13 +224,11 @@ _jinja_filters['babel_format_date'] = custom_format_date
 _jinja_filters['babel_format_number'] = custom_format_number
 _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
+_jinja_filters['to_string_if_dict'] = to_string_if_dict
 
 
 def get_template(template_folder, schema):
-    path = os.getcwd() + '/sampledb/frontend/templates/' + template_folder
-
-#    if "choices" in schema:
-#        schema["type"] = 'select'
+    path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
 
     file = schema["type"] + ".html"
 

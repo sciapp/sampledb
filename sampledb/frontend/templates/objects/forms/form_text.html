@@ -40,9 +40,8 @@
       <option selected="selected" value="">&mdash;</option>
       {% endif %}
       {% for option in schema.choices %}
-        {{ option }}
         {% if id_prefix+'_text' in form_data %}
-          {% if form_data[id_prefix+'_text'] == option %}
+          {% if form_data[id_prefix+'_text'] == ( option | to_string_if_dict ) %}
           <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" selected="selected">{{ option | get_translated_text }}</option>
           {% else %}
           <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
