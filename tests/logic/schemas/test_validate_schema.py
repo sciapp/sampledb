@@ -850,7 +850,7 @@ def test_validate_array_schema_with_invalid_style():
             'title': 'Example Item',
             'type': 'text'
         },
-        'style': 'grid'
+        'style': 1
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))

@@ -15,7 +15,7 @@
       {% set name = name ~ "_" ~ loop.index0 %}
       {% set tmp_style = schema['style'] %}
       {% set schema = schema['items'] %}
-      {% set z = schema.update({'style': tmp_style}) %}
+      {% set z = schema.update({'parent_style': tmp_style}) %}
       {% set data = item %}
       {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
       <li>{% include "objects/view/any.html" %}</li>

@@ -19,7 +19,7 @@
       {% set name = "item" %}
       {% set tmp_style = schema['style'] %}
       {% set schema = schema['items'] %}
-      {% set z = schema.update({'style': tmp_style}) %}
+      {% set z = schema.update({'parent_style': tmp_style}) %}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set data = item %}
         <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">

@@ -39,7 +39,7 @@
           <td>
             {% set name = property_name %}
             {% set schema = schema['items'].properties[property_name] %}
-            {% set z = schema.update({'style': 'table'}) %}
+            {% set z = schema.update({'parent_style': 'table'}) %}
             {% if property_name in item %}
             {% set data = item[property_name] %}
             {% else %}
@@ -78,7 +78,7 @@
             <td>
               {% set name = property_name %}
               {% set schema = schema['items'].properties[property_name] %}
-              {% set z = schema.update({'style': 'table'}) %}
+              {% set z = schema.update({'parent_style': 'table'}) %}
               {% if property_name in item %}
               {% set data = item[property_name] %}
               {% else %}

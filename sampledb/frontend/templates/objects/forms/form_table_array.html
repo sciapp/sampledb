@@ -46,7 +46,7 @@
           <td>
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'style': tmp_style}) %}
+            {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set id_prefix = id_prefix + '_' + name + '_' %}
             {% if data is not none and property_name in data %}
             {% set data = data[property_name] %}
@@ -62,7 +62,7 @@
           <td>
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'style': tmp_style}) %}
+            {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set id_prefix = id_prefix + '_' + name + '_' %}
             {% if data is not none and property_name in data %}
             {% set data = data[property_name] %}
@@ -136,7 +136,7 @@
           {% set name = "field_".format(loop.index0) %}
           {% set tmp_style = schema['style'] %}
           {% set schema = schema["items"]["items"] %}
-          {% set z = schema.update({'style': tmp_style}) %}
+          {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
           {% set data = field %}
           {% include "objects/forms/form_any.html" %}
@@ -148,7 +148,7 @@
           {% set name ="field_".format(loop.index0) %}
           {% set tmp_style = schema['style'] %}
           {% set schema = schema["items"]["items"] %}
-          {% set z = schema.update({'style': tmp_style}) %}
+          {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
           {% set data = null %}
           {% include "objects/forms/form_any.html" %}
