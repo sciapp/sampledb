@@ -236,6 +236,8 @@ def get_template(template_folder, default_prefix, schema):
         file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + base_file))
     if schema.get('style'):
         file_order.insert(0, (default_prefix + schema["style"] + "_" + base_file))
+    if schema.get('parent_style') and schema.get('style'):
+        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + schema.get('style') + "_" + base_file))
 
     for file in file_order:
         if os.path.exists(os.path.join(system_path, file)):
