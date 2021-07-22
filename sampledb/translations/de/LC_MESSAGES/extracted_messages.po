@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-07-21 16:13+0200\n"
+"POT-Creation-Date: 2021-07-22 07:52+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4515,9 +4515,8 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 #: frontend/templates/objects/forms/form_list_object_reference_base.html:19
 #: frontend/templates/objects/forms/form_object_reference_base.html:21
 #: frontend/templates/objects/forms/form_table_object_reference_base.html:19
-#, fuzzy
 msgid "All Actions"
-msgstr "Aktionen"
+msgstr "Alle Aktionen"
 
 #: frontend/templates/objects/view/array.html:243
 msgid "Unsupported item type for horizontal_table style."
@@ -5043,10 +5042,12 @@ msgstr ""
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> used the object in <a "
-"href=\"%(measurement_url)s\">measurement #%(measurement_id)s</a>."
+"href=\"%(measurement_url)s\">%(measurement_name)s "
+"(#%(measurement_id)s)</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in <a "
-"href=\"%(measurement_url)s\">Messung #%(measurement_id)s</a> verwendet."
+"href=\"%(measurement_url)s\">%(measurement_name)s "
+"(#%(measurement_id)s)</a> verwendet."
 
 #: frontend/templates/objects/view/base.html:857
 #, python-format
@@ -5060,11 +5061,12 @@ msgstr ""
 #: frontend/templates/objects/view/base.html:865
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create the "
-"<a href=\"%(sample_url)s\">sample #%(sample_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create <a "
+"href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
-"von <a href=\"%(sample_url)s\">Probe #%(sample_id)s</a> verwendet."
+"von <a href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a> "
+"verwendet."
 
 #: frontend/templates/objects/view/base.html:872
 #, python-format
