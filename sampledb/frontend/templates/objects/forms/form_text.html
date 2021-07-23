@@ -9,7 +9,7 @@
     <div class="row">
       <label class="control-label col-md-12 {% if schema.title | get_translated_text and (is_required and (schema.minLength or schema.choices)) %}required-label{% endif %}">{{ schema.title | get_translated_text }}</label>
     </div>
-    {% if input_languages | length > 1 %}
+    {% if input_languages | length > 1 and 'choices' not in schema %}
     <div class="row col-md-offset-4">
       <select class="selectpicker col-md-12 select-language" multiple="multiple" style="padding-bottom: 5px;"  data-style="btn-default btn-xs" id="{{ id_prefix }}-select-language" name="{{ id_prefix }}_text_languages">
       {% for language in input_languages %}
@@ -30,20 +30,49 @@
     {% endif %}
   </div>
   <div class="col-md-9">
-    {% for language in input_languages %}
-      <div data-sampledb-language-input-for="{{ language.lang_code }}" {% if input_languages | length > 1 %}style="display: none; {% if loop.index0 %}margin-top: 15px;{% endif %}"{% endif %} class="{% if input_languages | length > 1 %}input-group{% endif %} {% if not language.enabled_for_input %}has-error{% endif %}">
-        {% if schema.markdown %}
-          <textarea style="resize: vertical; min-height: 171px;" class="form-control" data-markdown-textarea="true" name="{{ id_prefix }}_text_{{ language.lang_code }}" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}{{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}{{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
-        {% elif 'multiline' in schema and schema['multiline']  %}
-          <textarea style="resize: vertical; min-height:2.5em; height:4em;" class="form-control" name="{{ id_prefix }}_text_{{ language.lang_code }}" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}{{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}{{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
+    {% if 'choices' in schema %}
+      <select class="form-control selectpicker" name="{{ id_prefix }}_text">
+      {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
+        {% if not is_required %}
+          <option value="">&mdash;</option>
+        {% endif %}
+      {% else %}
+      <option selected="selected" value="">&mdash;</option>
+      {% endif %}
+      {% for option in schema.choices %}
+        {% if id_prefix+'_text' in form_data %}
+          {% if form_data[id_prefix+'_text'] == ( option | to_string_if_dict ) %}
+          <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" selected="selected">{{ option | get_translated_text }}</option>
+          {% else %}
+          <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
+          {% endif %}
+        {% elif data is not none and "text" in data %}
+          {% if data.text == option %}
+          <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" selected="selected">{{ option | get_translated_text }}</option>
+          {% else %}
+          <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
+          {% endif %}
         {% else %}
-          <input type="text" class="form-control" name="{{ id_prefix }}_text_{{ language.lang_code }}" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text  }}" {% if id_prefix+'_text_' + language.lang_code in form_data %}value="{{ form_data[id_prefix + '_text_' + language.lang_code] }}"{% elif data is not none and "text" in data %}value="{{ data.text | get_translated_text(language.lang_code) }}"{% endif %}>
+          <option value="{{ option }}" data-value-base64="{{ option | base64encode }}">{{ option | get_translated_text }}</option>
         {% endif %}
-        {% if input_languages | length > 1 %}
-          <span class="input-group-addon language-addon">{{ language.names | get_translated_text }}</span>
-        {% endif %}
-      </div>
-    {% endfor %}
+      {% endfor %}
+      </select>
+    {% else %}
+      {% for language in input_languages %}
+        <div data-sampledb-language-input-for="{{ language.lang_code }}" {% if input_languages | length > 1 %}style="display: none; {% if loop.index0 %}margin-top: 15px;{% endif %}"{% endif %} class="{% if input_languages | length > 1 %}input-group{% endif %} {% if not language.enabled_for_input %}has-error{% endif %}">
+          {% if schema.markdown %}
+            <textarea style="resize: vertical; min-height: 171px;" class="form-control" data-markdown-textarea="true" name="{{ id_prefix }}_text_{{ language.lang_code }}" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}{{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}{{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
+          {% elif 'multiline' in schema and schema['multiline']  %}
+            <textarea style="resize: vertical; min-height:2.5em; height:4em;" class="form-control" name="{{ id_prefix }}_text_{{ language.lang_code }}" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}{{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}{{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
+          {% else %}
+            <input type="text" class="form-control" name="{{ id_prefix }}_text_{{ language.lang_code }}" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text  }}" {% if id_prefix+'_text_' + language.lang_code in form_data %}value="{{ form_data[id_prefix + '_text_' + language.lang_code] }}"{% elif data is not none and "text" in data %}value="{{ data.text | get_translated_text(language.lang_code) }}"{% endif %}>
+          {% endif %}
+          {% if input_languages | length > 1 %}
+            <span class="input-group-addon language-addon">{{ language.names | get_translated_text }}</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
     {% if id_prefix + '_text' in object_errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix + '_text'] }}</span>{% endif %}
     {% if id_prefix + '_text_en' in object_errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix + '_text_en'] }}</span>{% endif %}
     {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}

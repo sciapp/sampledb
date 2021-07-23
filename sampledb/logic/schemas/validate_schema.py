@@ -55,6 +55,8 @@ def validate_schema(
         for note_text in schema['title'].values():
             if not isinstance(note_text, str):
                 raise ValidationError('title must only contain text', path)
+    if 'style' in schema and not isinstance(schema['style'], str):
+        raise ValidationError('style must only contain text', path)
     if 'conditions' in schema:
         if parent_conditions is not None:
             if not isinstance(schema['conditions'], list):
@@ -65,6 +67,7 @@ def validate_schema(
             raise ValidationError('only schemas with an object parent may contain conditions', path)
     if not isinstance(schema.get('may_copy', True), bool):
         raise ValidationError('may_copy must be bool', path)
+
     if path == [] and schema['type'] != 'object':
         raise ValidationError('invalid schema (root must be an object)', path)
     if schema['type'] == 'array':
@@ -123,7 +126,7 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'may_copy'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -136,6 +139,7 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('dataverse_export must be True or False', path)
     if path != ['hazards']:
         raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
+
     _validate_note_in_schema(schema, path)
 
 
@@ -189,8 +193,6 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
     if has_default_items and has_max_items:
         if schema['defaultItems'] > schema['maxItems']:
             raise ValidationError('defaultItems must be less than or equal to maxItems', path)
-    if 'style' in schema and schema['style'] not in ('table', 'horizontal_table', 'list'):
-        raise ValidationError('style must be one of "list", "table" and "horizontal_table"', path)
     validate_schema(schema['items'], path + ['[?]'])
     if 'default' in schema:
         if has_default_items:
@@ -206,7 +208,7 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'dataverse_export', 'may_copy'}
+    valid_keys = {'type', 'title', 'default', 'dataverse_export', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -231,7 +233,7 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy'}
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
@@ -330,7 +332,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'languages', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'languages', 'conditions', 'may_copy', 'style'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -445,7 +447,7 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -472,7 +474,7 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -493,7 +495,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -539,7 +541,7 @@ def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -562,7 +564,7 @@ def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -585,7 +587,7 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -662,7 +664,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'default', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'default', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -686,7 +688,7 @@ def _validate_plotly_chart_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
     schema_keys = schema.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:

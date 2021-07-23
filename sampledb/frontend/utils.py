@@ -200,6 +200,13 @@ def filter_are_conditions_fulfilled(data, property_schema) -> bool:
     return are_conditions_fulfilled(property_schema.get('conditions'), data)
 
 
+def to_string_if_dict(data) -> str:
+    if isinstance(data, dict):
+        return str(data)
+    else:
+        return data
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -217,3 +224,36 @@ _jinja_filters['babel_format_date'] = custom_format_date
 _jinja_filters['babel_format_number'] = custom_format_number
 _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
+_jinja_filters['to_string_if_dict'] = to_string_if_dict
+
+
+def get_template(template_folder, default_prefix, schema):
+    system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
+    base_file = schema["type"] + ".html"
+
+    file_order = [(default_prefix + base_file)]
+    if schema.get('parent_style'):
+        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + base_file))
+    if schema.get('style'):
+        file_order.insert(0, (default_prefix + schema["style"] + "_" + base_file))
+    if schema.get('parent_style') and schema.get('style'):
+        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + schema.get('style') + "_" + base_file))
+
+    for file in file_order:
+        if os.path.exists(os.path.join(system_path, file)):
+            return (template_folder + file)
+
+    return (template_folder + default_prefix + base_file)
+
+
+def get_form_template(schema):
+    return get_template('objects/forms/', 'form_', schema)
+
+
+def get_view_template(schema):
+    return get_template('objects/view/', '', schema)
+
+
+_jinja_functions = {}
+_jinja_functions['get_view_template'] = get_view_template
+_jinja_functions['get_form_template'] = get_form_template
