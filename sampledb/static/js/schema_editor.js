@@ -208,7 +208,7 @@ $(function() {
         name = 'new_property_' + num_new_properties;
       }
       schema['properties'][name] = {
-        "title": "New Property",
+        "title": "",
         "type": "text"
       };
       schema['propertyOrder'].push(name);
