@@ -1,0 +1,83 @@
+{% extends "alabaster/layout.html" %}
+
+{% set title = _('Index') %}
+
+{%- block sidebar1 %}
+{% endblock %}
+
+{%- block content %}
+<div class="document landing_page">
+  <header>
+    <a href="">SampleDB</a>
+    <a href="#features">Features</a>
+    <a href="#documentation">Documentation</a>
+    <a href="https://github.com/sciapp/SampleDB">Code</a>
+  </header>
+  <div class="title">
+    <h1>SampleDB</h1>
+    <span>is a web-based electronic lab notebook with a focus on sample and measurement metadata.</span>
+    <div id="title_buttons">
+      <a href="{{ pathto("administrator_guide/getting_started") }}">Get Started</a>
+    </div>
+  </div>
+  <section>
+    <h2 id="features">Features</h2>
+    <div class="feature_blocks_row">
+      <div>
+        <div class="feature_block_image">
+          <img src="{{ pathto('_static/img/lifecycle.svg', 1) | e }}"  alt="Lifecycle Symbolic Image"/>
+        </div>
+        <h3>Track the entire sample lifecycle</h3>
+        <p>From sample creation to its location in long-term storage, SampleDB can help you track each step in the sample lifecycle. By documenting how a sample is created or processed, used for a measurement or a publication, you ensure that all information is readily available whenever you need it.</p>
+      </div>
+      <div>
+        <div class="feature_block_image">
+          <img src="{{ pathto('_static/img/metadata.svg', 1) | e }}" alt="Metadata Symbolic Image"/>
+        </div>
+        <h3>Model complex processes</h3>
+        <p>The <em>SampleDB schema system</em> allows you to define exactly what metadata should be stored for each process, from a simple check box to Markdown-powered rich text and plotly charts.<br />You can either quickly define a simple schema using the graphical editor or write it in JSON syntax to have access to all schema features.<br /><a href="{{ pathto('user_guide/schemas') }}">Learn more about schemas.</a></p>
+      </div>
+    </div>
+    <div class="feature_blocks_row">
+      <div>
+        <div class="feature_block_image">
+          <img src="{{ pathto('_static/img/search.svg', 1) | e }}" alt="Search Function Symbolic Image"/>
+        </div>
+        <h3>Find what you are looking for</h3>
+        <p>By leveraging the schema system and PostgreSQL JSONB support, SampleDB lets you search the process-specific metadata of all your objects. When you need to find a sample created with a specific combination of parameters, you can use the advanced search system with support for type-specific search filters and logical operators, and SampleDB will automatically do any unit conversions for you.<br /><a href="{{ pathto('user_guide/search') }}">Learn more about the search function.</a></p>
+      </div>
+      <div>
+        <div class="feature_block_image">
+          <img src="{{ pathto('_static/img/automation.svg', 1) | e }}" alt="Automation Symbolic Image"/>
+        </div>
+        <h3>Save Time with Automation</h3>
+        <p>Instead of entering data manually, you can save time and avoid errors by using the SampleDB HTTP API to automatically enter all information, whenever it is available in a machine-readable format in log files or instrument control systems.<br /><a href="{{ pathto('developer_guide/api') }}">Learn more about the HTTP API.</a></p>
+      </div>
+    </div>
+    <div class="feature_blocks_row">
+      <div>
+        <div class="feature_block_image">
+          <img src="{{ pathto('_static/img/hublogo.svg', 1) | e }}" alt="JupyterHub Logo"/>
+        </div>
+        <h3>Analyze Data with JupyterHub</h3>
+        <p>With all metadata available in SampleDB, you can define Jupyter notebook templates that can then be used on a JupyterHub with the relevant metadata inserted as a notebook cell.<br /><a href="{{ pathto('administrator_guide/jupyterhub_support') }}">Learn more about JupyterHub support.</a></p>
+      </div>
+      <div>
+        <div class="feature_block_image">
+          <img src="{{ pathto('_static/img/dataverse_r_project.png', 1) | e }}" alt="Dataverse Logo" />
+        </div>
+        <h3>Export to Dataverse</h3>
+        <p>If you are using Dataverse to share your research data, you can use SampleDB to export metadata directly into a new dataset in a Dataverse of your choice.<br /><a href="{{ pathto('administrator_guide/dataverse_export') }}">Learn more about Dataverse export.</a></p>
+      </div>
+    </div>
+  </section>
+<a id="documentation"></a>
+          <div class="body" role="main">
+            <h1>Documentation</h1>
+            {% block body %}
+  {{ body }}
+{% endblock %}
+            <div class="clearer"></div>
+          </div>
+</div>
+{% endblock %}

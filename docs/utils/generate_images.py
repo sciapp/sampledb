@@ -369,6 +369,27 @@ def schema_editor(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
+def disable_schema_editor(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + f'users/{user.id}/autologin')
+
+    driver.get(base_url + f'users/{user.id}/preferences')
+    radio_button = driver.find_element_by_id('input-use-schema-editor-yes')
+    parent = radio_button.find_element_by_xpath('./..')
+    while parent is not None:
+        if parent.get_attribute('class') == 'form-group':
+            form = parent
+            break
+        else:
+            parent = parent.find_element_by_xpath('./..')
+    else:
+        assert False
+    y_offset = scroll_to(driver, 0, form.location['y'])
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/disable_schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
+
+
 def translations(base_url, driver):
     width = 1280
     max_height = 1000
@@ -524,6 +545,7 @@ try:
                 locations(flask_server.base_url, driver, object)
                 schema_editor(flask_server.base_url, driver)
                 unread_notification_icon(flask_server.base_url, driver)
+                disable_schema_editor(flask_server.base_url, driver)
                 translations(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

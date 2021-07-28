@@ -11,7 +11,6 @@ sys.path.insert(0, base_dir)
 # Project information
 
 service_name = 'SampleDB'
-service_description = 'SampleDB is a web-based sample and measurement metadata database developed at PGI and JCNS. Scientists can use SampleDB to store and retrieve information on samples, measurements and simulations, analyze them using Jupyter notebooks, track sample locations and responsibilities and view sample lifecycles. As a tool for reproducible and sustainable science, it facilitates long-term storage of research data with clear benefits to scientists, interfaces with dedicated JupyterHub instances and can be integrated in instrument systems to automate data entry. A schema system allows users to store and search even complex types of metadata, and the powerful permission system ensures that information stays secure while simplifying collaboration with external users.'
 service_url = 'https://iffsamples.fz-juelich.de'
 service_imprint = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
 contact_email = 'f.rhiem@fz-juelich.de'
@@ -105,7 +104,6 @@ def setup(app):
 
 rst_prolog = """
 .. |service_url| replace:: {service_url}
-.. |service_description| replace:: {service_description}
 .. |service_name| replace:: {service_name}
 .. |service_invitation_url| replace:: {service_url}/users/invitation
 .. |service_actions_url| replace:: {service_url}/actions
@@ -115,7 +113,6 @@ rst_prolog = """
 
 """.format(
     service_name=service_name,
-    service_description=service_description,
     service_url=service_url,
     contact_email=contact_email
 )
