@@ -141,10 +141,6 @@ deploy-to-dockerhub:
   image: docker:stable
   tags:
     - privileged-executor
-  variables:
-    DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
   only:
     - tags@Scientific-IT-Systems/SampleDB
     - develop@Scientific-IT-Systems/SampleDB
