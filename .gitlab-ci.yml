@@ -76,10 +76,6 @@ build:
   image: docker:stable
   tags:
     - privileged-executor
-  variables:
-    DOCKER_DRIVER: overlay2
-  services:
-    - docker:stable-dind
   script:
   - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
