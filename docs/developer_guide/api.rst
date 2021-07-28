@@ -1696,6 +1696,7 @@ Uploading a file
         {
             "storage": "local",
             "original_file_name": "test.txt",
+            "overwrite": false,
             "base64_content": "dGVzdA=="
         }
 
@@ -1709,6 +1710,7 @@ Uploading a file
 
     :<json string storage: how the file is stored (local)
     :<json string original_file_name: the original name of the file
+    :<json bool overwrite: overwrite an existing file with the same name, if exists (optional, default is false)
     :<json string base64_content: the base64 encoded content of the file
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object

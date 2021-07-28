@@ -196,7 +196,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             raise InvalidFileStorageError()
 
 
-def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> File:
+def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None], overwrite: bool = False) -> File:
     """
     Create a new local file and add it to the object and user logs.
 
@@ -207,6 +207,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
+    :param overwrite: overwrite an existing file with the same name
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -227,7 +228,8 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         data={
             'storage': 'local',
             'original_file_name': file_name
-        }
+        },
+        overwrite=overwrite
     )
     file = File.from_database(db_file)
     try:
@@ -269,7 +271,7 @@ def create_url_file(object_id: int, user_id: int, url: str) -> File:
     return file
 
 
-def create_database_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> File:
+def create_database_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None], overwrite: bool = False) -> File:
     """
     Create a new database file and add it to the object and user logs.
 
@@ -280,6 +282,7 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
+    :param overwrite: overwrite an existing file with the same name
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -302,7 +305,8 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
         data={
             'storage': 'database',
             'original_file_name': file_name
-        }
+        },
+        overwrite=overwrite
     )
     db_file.binary_data = binary_data
     db.session.commit()
@@ -322,47 +326,6 @@ def _create_file_logs(file: File) -> None:
     user_id = file.user_id
     object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
     user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
-
-
-def _create_db_file(
-        object_id: int,
-        user_id: int,
-        data: typing.Dict[str, typing.Any]
-) -> files.File:
-    """
-    Creates a new file in the database.
-
-    :param object_id: the ID of an existing object
-    :param user_id: the ID of an existing user
-    :param data: the file storage data
-    :raise errors.ObjectDoesNotExistError: when no object with the given
-        object ID exists
-    :raise errors.UserDoesNotExistError: when no user with the given user ID
-        exists
-    :raise errors.TooManyFilesForObjectError: when there are already 10000
-        files for the object with the given id
-    """
-    # ensure that the object exists
-    object = objects.get_object(object_id)
-    # ensure that the user exists
-    users.get_user(user_id)
-    # calculate the next file id
-    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
-    if previous_file_id is None:
-        file_id = 0
-    else:
-        file_id = previous_file_id + 1
-    if file_id >= MAX_NUM_FILES:
-        raise TooManyFilesForObjectError()
-    db_file = files.File(
-        file_id=file_id,
-        object_id=object_id,
-        user_id=user_id,
-        data=data
-    )
-    db.session.add(db_file)
-    db.session.commit()
-    return db_file
 
 
 def update_file_information(object_id: int, file_id: int, user_id: int, title: str, description: str) -> None:
@@ -394,6 +357,60 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
         })
         db.session.add(log_entry)
         db.session.commit()
+
+
+def _create_db_file(
+        object_id: int,
+        user_id: int,
+        data: typing.Dict[str, typing.Any],
+        overwrite: bool = False
+) -> files.File:
+    """
+    Creates a new file in the database.
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user
+    :param data: the file storage data
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.TooManyFilesForObjectError: when there are already 10000
+        files for the object with the given id
+    """
+    # ensure that the object exists
+    object = objects.get_object(object_id)
+    # ensure that the user exists
+    users.get_user(user_id)
+    # calculate the next file id
+    if overwrite == True and 'original_file_name' in data:
+        q = db.session.query(files.File)
+        q = q.filter(files.File.object_id == object.id, files.File.data["original_file_name"].as_string() == data["original_file_name"])
+        db_file = q.first()
+        if db_file is not None:
+            db_file.data = data
+            db_file.utc_datetime = datetime.datetime.utcnow()
+            db.session.commit()
+            return db_file
+
+    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
+    if previous_file_id is None:
+        file_id = 0
+    else:
+        file_id = previous_file_id + 1
+    if file_id >= MAX_NUM_FILES:
+        raise TooManyFilesForObjectError()
+
+    db_file = files.File(
+        file_id=file_id,
+        object_id=object_id,
+        user_id=user_id,
+        data=data
+    )
+    db.session.add(db_file)
+    db.session.commit()
+
+    return db_file
 
 
 def hide_file(object_id: int, file_id: int, user_id: int, reason: str) -> None:
