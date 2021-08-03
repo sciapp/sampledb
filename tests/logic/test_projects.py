@@ -34,7 +34,7 @@ def test_create_project_with_user_that_does_not_exist():
     assert len(sampledb.models.projects.Project.query.all()) == 0
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.projects.create_project("Example Project", "", user.id+1)
+        sampledb.logic.projects.create_project("Example Project", "", user.id + 1)
 
     assert len(sampledb.models.projects.Project.query.all()) == 0
 
@@ -71,17 +71,17 @@ def test_create_project_with_long_name():
     assert len(sampledb.models.projects.Project.query.all()) == 0
 
     with pytest.raises(sampledb.logic.errors.InvalidProjectNameError):
-        sampledb.logic.projects.create_project("A"*101, "", user.id)
+        sampledb.logic.projects.create_project("A" * 101, "", user.id)
 
     assert len(sampledb.models.projects.Project.query.all()) == 0
 
-    project_id = sampledb.logic.projects.create_project("A"*100, "", user.id).id
+    project_id = sampledb.logic.projects.create_project("A" * 100, "", user.id).id
 
     assert len(sampledb.models.projects.Project.query.all()) == 1
     project = sampledb.models.projects.Project.query.get(project_id)
     assert project is not None
     assert project.id == project_id
-    assert project.name == {'en': "A"*100}
+    assert project.name == {'en': "A" * 100}
     assert project.description == {}
 
 
@@ -107,7 +107,7 @@ def test_get_project_that_does_not_exist():
     assert len(sampledb.models.projects.Project.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.get_project(project_id+1)
+        sampledb.logic.projects.get_project(project_id + 1)
 
 
 def test_get_projects():
@@ -162,7 +162,7 @@ def test_update_project_that_does_not_exist():
     assert len(sampledb.models.projects.Project.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.update_project(project_id+1, {'en': "Test Project"}, {'en': "Test Description"})
+        sampledb.logic.projects.update_project(project_id + 1, {'en': "Test Project"}, {'en': "Test Description"})
 
     project = sampledb.models.projects.Project.query.get(project_id)
     assert project is not None
@@ -216,7 +216,7 @@ def test_update_project_with_long_name():
     assert len(sampledb.models.projects.Project.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.InvalidProjectNameError):
-        sampledb.logic.projects.update_project(project_id, {'en': "A"*101}, {})
+        sampledb.logic.projects.update_project(project_id, {'en': "A" * 101}, {})
 
     project = sampledb.models.projects.Project.query.get(project_id)
     assert project is not None
@@ -224,12 +224,12 @@ def test_update_project_with_long_name():
     assert project.name == {'en': "Example Project"}
     assert project.description == {}
 
-    sampledb.logic.projects.update_project(project_id, {'en': "A"*100}, {})
+    sampledb.logic.projects.update_project(project_id, {'en': "A" * 100}, {})
 
     project = sampledb.models.projects.Project.query.get(project_id)
     assert project is not None
     assert project.id == project_id
-    assert project.name == {'en': "A"*100}
+    assert project.name == {'en': "A" * 100}
     assert project.description == {}
 
 
@@ -261,7 +261,7 @@ def test_delete_project_that_does_not_exist():
     assert len(sampledb.models.projects.Project.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.delete_project(project_id+1)
+        sampledb.logic.projects.delete_project(project_id + 1)
 
     assert len(sampledb.models.projects.Project.query.all()) == 1
     project = sampledb.models.projects.Project.query.get(project_id)
@@ -305,7 +305,7 @@ def test_add_user_to_project_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.add_user_to_project(project_id+1, user.id, sampledb.models.Permissions.WRITE)
+        sampledb.logic.projects.add_user_to_project(project_id + 1, user.id, sampledb.models.Permissions.WRITE)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -323,7 +323,7 @@ def test_add_user_that_does_not_exist_to_project():
     }
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.projects.add_user_to_project(project_id, user.id+1, sampledb.models.Permissions.WRITE)
+        sampledb.logic.projects.add_user_to_project(project_id, user.id + 1, sampledb.models.Permissions.WRITE)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -388,7 +388,7 @@ def test_invite_user_to_project_user_does_not_exist():
     project_id = sampledb.logic.projects.create_project("Example Project", "", user.id).id
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.projects.invite_user_to_project(project_id, 2, user.id)
+        sampledb.logic.projects.invite_user_to_project(project_id, user.id + 1, user.id)
 
 
 def test_invite_user_that_is_already_a_member_to_project():
@@ -518,7 +518,7 @@ def test_remove_user_from_project_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.remove_user_from_project(project_id+1, user.id)
+        sampledb.logic.projects.remove_user_from_project(project_id + 1, user.id)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -536,7 +536,7 @@ def test_remove_user_that_does_not_exist_from_project():
     }
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.projects.remove_user_from_project(project_id, user.id+1)
+        sampledb.logic.projects.remove_user_from_project(project_id, user.id + 1)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -598,7 +598,7 @@ def test_get_user_projects_for_user_that_does_not_exist():
     sampledb.db.session.commit()
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.projects.get_user_projects(user.id+1)
+        sampledb.logic.projects.get_user_projects(user.id + 1)
 
 
 def test_get_user_project_permissions():
@@ -609,7 +609,6 @@ def test_get_user_project_permissions():
     project_id = sampledb.logic.projects.create_project("Example Project", "", user.id).id
 
     assert sampledb.logic.projects.get_user_project_permissions(project_id, user.id) == sampledb.models.Permissions.GRANT
-
 
     user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
@@ -653,10 +652,10 @@ def test_get_project_member_ids_for_project_that_does_not_exist():
     sampledb.models.projects.Project.query.get(project_id)
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id+1)
+        sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id + 1)
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id+1)
+        sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id + 1)
 
 
 def test_add_group_to_project():
@@ -707,7 +706,7 @@ def test_add_group_to_project_that_does_not_exist():
     group = sampledb.logic.groups.create_group("Example Group", "", user2.id)
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.add_group_to_project(project_id+1, group.id, sampledb.models.Permissions.WRITE)
+        sampledb.logic.projects.add_group_to_project(project_id + 1, group.id, sampledb.models.Permissions.WRITE)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -735,7 +734,7 @@ def test_add_group_that_does_not_exist_to_project():
     group = sampledb.logic.groups.create_group("Example Group", "", user2.id)
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.projects.add_group_to_project(project_id, group.id+1, sampledb.models.Permissions.WRITE)
+        sampledb.logic.projects.add_group_to_project(project_id, group.id + 1, sampledb.models.Permissions.WRITE)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -930,7 +929,7 @@ def test_remove_group_from_project_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.remove_group_from_project(project_id+1, group.id)
+        sampledb.logic.projects.remove_group_from_project(project_id + 1, group.id)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -964,7 +963,7 @@ def test_remove_group_that_does_not_exist_from_project():
     }
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.projects.remove_group_from_project(project_id, group.id+1)
+        sampledb.logic.projects.remove_group_from_project(project_id, group.id + 1)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -1098,7 +1097,7 @@ def test_update_user_project_permissions_for_user_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.projects.update_user_project_permissions(project_id, user.id+1, permissions=sampledb.models.Permissions.GRANT)
+        sampledb.logic.projects.update_user_project_permissions(project_id, user.id + 1, permissions=sampledb.models.Permissions.GRANT)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -1116,7 +1115,7 @@ def test_update_user_project_permissions_for_project_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.update_user_project_permissions(project_id+1, user.id, permissions=sampledb.models.Permissions.GRANT)
+        sampledb.logic.projects.update_user_project_permissions(project_id + 1, user.id, permissions=sampledb.models.Permissions.GRANT)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -1229,7 +1228,7 @@ def test_update_group_project_permissions_for_user_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.projects.update_group_project_permissions(project_id, group.id+1, permissions=sampledb.models.Permissions.GRANT)
+        sampledb.logic.projects.update_group_project_permissions(project_id, group.id + 1, permissions=sampledb.models.Permissions.GRANT)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -1262,7 +1261,7 @@ def test_update_group_project_permissions_for_project_that_does_not_exist():
     }
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
-        sampledb.logic.projects.update_group_project_permissions(project_id+1, group.id, permissions=sampledb.models.Permissions.WRITE)
+        sampledb.logic.projects.update_group_project_permissions(project_id + 1, group.id, permissions=sampledb.models.Permissions.WRITE)
 
     assert sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id) == {
         user.id: sampledb.models.Permissions.GRANT
@@ -1338,7 +1337,7 @@ def test_get_group_projects_for_group_that_does_not_exist():
     group = sampledb.logic.groups.create_group("Example Group", "", user.id)
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.projects.get_group_projects(group.id+1)
+        sampledb.logic.projects.get_group_projects(group.id + 1)
 
 
 def test_get_project_member_user_ids_including_groups():

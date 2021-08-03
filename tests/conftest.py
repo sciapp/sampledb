@@ -74,7 +74,10 @@ def flask_server(worker_id):
 
     app = create_app()
     # empty the database first, to ensure all tests rebuild it before use
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
+    if worker_id != 'master':
+        sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
+    else:
+        sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=False)
     yield from create_flask_server(app)
 
 
