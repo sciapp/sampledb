@@ -188,6 +188,17 @@ def default_format_datetime(utc_datetime):
     return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 
+@jinja_filter
+def convert_datetime_input(datetime_input):
+    if not datetime_input:
+        return ''
+    try:
+        local_datetime = datetime.strptime(datetime_input, flask_login.current_user.language.datetime_format_datetime)
+        return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        return ''
+
+
 def base64encode(value):
     return base64.b64encode(json.dumps(value).encode('utf8')).decode('ascii')
 
