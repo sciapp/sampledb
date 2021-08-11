@@ -12,12 +12,11 @@ import sys
 
 import sampledb
 from .. import create_app
-from sampledb.models import Objects, UserType, ActionType, Language
+from sampledb.models import UserType, ActionType, Language
 from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
 from sampledb.logic.instrument_translations import set_instrument_translation
 from sampledb.logic.action_translations import set_action_translation
 from sampledb.logic.actions import create_action
-from sampledb.logic.object_log import create_object
 from ..logic import groups, object_permissions, projects, comments, files
 
 
@@ -197,10 +196,8 @@ This example shows how Markdown can be used for instrument Notes.
 
         with open(os.path.join(objects_directory, 'ombe-1.sampledb.json'), 'r', encoding='utf-8') as data_file:
             data = json.load(data_file)
-        instrument_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id, connection=sampledb.db.engine)
-        create_object(object_id=instrument_object.object_id, user_id=instrument_responsible_user.id)
-        independent_object = Objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id, connection=sampledb.db.engine)
-        create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+        instrument_object = sampledb.logic.objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=instrument_action.id)
+        independent_object = sampledb.logic.objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
         files.create_local_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
@@ -243,7 +240,7 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, action.id, "Searchable Object", "")
 
         sampledb.logic.action_permissions.set_action_public(action.id)
-        independent_object = Objects.create_object(data={
+        independent_object = sampledb.logic.objects.create_object(data={
             "name": {
                 "_type": "text",
                 "text": {"en": "TEST-1", "de": "TEST-1"}
@@ -258,11 +255,10 @@ This example shows how Markdown can be used for instrument Notes.
                 "magnitude_in_base_units": 0.00001,
                 "units": "mg"
             }
-        }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
-        create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+        }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id)
         object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
         object_permissions.set_user_object_permissions(independent_object.object_id, api_user.id, object_permissions.Permissions.WRITE)
-        independent_object = Objects.create_object(data={
+        independent_object = sampledb.logic.objects.create_object(data={
             "name": {
                 "_type": "text",
                 "text": {'en': "TEST-2"}
@@ -277,8 +273,7 @@ This example shows how Markdown can be used for instrument Notes.
                 "magnitude_in_base_units": 0.000005,
                 "units": "mg"
             }
-        }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id, connection=sampledb.db.engine)
-        create_object(object_id=independent_object.object_id, user_id=instrument_responsible_user.id)
+        }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id)
         object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
         sampledb.db.session.commit()
 
