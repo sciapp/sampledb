@@ -554,12 +554,18 @@ def apply_action_to_data(action, data, schema):
     if action_type == 'add':
         if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
             sub_data.append(generate_placeholder(sub_schema["items"]))
+            if isinstance(sub_data[-1], list) and sub_schema.get('style') == 'table':
+                num_existing_columns = sub_schema["items"].get("minItems", 0)
+                for row in sub_data:
+                    num_existing_columns = max(num_existing_columns, len(row))
+                while len(sub_data[-1]) < num_existing_columns:
+                    sub_data[-1].append(None)
     elif action_type == 'delete':
         action_index = int(action_index)
         if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
             del sub_data[action_index]
     else:
-        num_existing_columns = sub_schema["items"].get("minItems", 1)
+        num_existing_columns = sub_schema["items"].get("minItems", 0)
         for row in sub_data:
             num_existing_columns = max(num_existing_columns, len(row))
         if action_type == 'addcolumn':
@@ -569,7 +575,7 @@ def apply_action_to_data(action, data, schema):
                     while len(row) < num_existing_columns:
                         row.append(generate_placeholder(sub_schema["items"]["items"]))
         elif action_type == 'deletecolumn':
-            if num_existing_columns > sub_schema.get("minItems", 1):
+            if num_existing_columns > sub_schema.get("minItems", 0):
                 num_existing_columns -= 1
                 for row in sub_data:
                     while len(row) > num_existing_columns:
