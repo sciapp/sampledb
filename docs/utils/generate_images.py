@@ -525,6 +525,7 @@ try:
         options = Options()
         # disable Chrome sandbox for root in GitLab CI
         if 'CI' in os.environ and getpass.getuser() == 'root':
+            options.add_argument('--headless')
             options.add_argument('--no-sandbox')
         with contextlib.contextmanager(tests.conftest.create_flask_server)(app) as flask_server:
             with contextlib.closing(Chrome(options=options)) as driver:
