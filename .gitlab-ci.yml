@@ -58,7 +58,7 @@ documentation:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip xvfb chromium-browser gettext
+    - apt-get install -y git python3-pip xvfb chromium-browser libpangocairo-1.0-0 gettext
     # install dependencies
     - python3 -m pip install -r requirements.txt
     # generate documentation images using current version
