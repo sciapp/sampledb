@@ -321,7 +321,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             'required': ['name']
         }, indent=2)
         submit_text = "Create"
-    may_change_public = action is None
     may_set_user_specific = action is None and flask_login.current_user.is_admin
     schema = None
     pygments_output = None
@@ -455,7 +454,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 may_change_type=action is None,
                 may_change_instrument=action is None,
                 may_set_user_specific=may_set_user_specific,
-                may_change_public=may_change_public,
                 languages=get_languages(only_enabled_for_input=True),
                 load_translations=load_translations,
                 ENGLISH=english
@@ -503,7 +501,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                             may_change_type=action is None,
                             may_change_instrument=action is None,
                             may_set_user_specific=may_set_user_specific,
-                            may_change_public=may_change_public,
                             languages=get_languages(only_enabled_for_input=True),
                             load_translations=load_translations,
                             ENGLISH=english
@@ -535,7 +532,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown
             )
-            if may_change_public and is_public:
+            if is_public:
                 set_action_public(action.id, True)
         else:
             update_action(
@@ -545,6 +542,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown
             )
+            set_action_public(action.id, is_public)
 
         # After validation
         valid_translations = set()
@@ -617,7 +615,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         may_change_type=action is None,
         may_change_instrument=action is None,
         may_set_user_specific=may_set_user_specific,
-        may_change_public=may_change_public,
         languages=get_languages(only_enabled_for_input=True),
         load_translations=load_translations,
         ENGLISH=english
