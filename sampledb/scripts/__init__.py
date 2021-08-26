@@ -5,6 +5,7 @@
 
 from . import build_translations
 from . import create_instrument
+from . import disable_two_factor_authentication
 from . import update_instrument
 from . import list_instruments
 from . import update_instrument_responsible_users
@@ -26,6 +27,7 @@ script_modules = {
     for module in (
         build_translations,
         create_instrument,
+        disable_two_factor_authentication,
         update_instrument,
         list_instruments,
         update_instrument_responsible_users,

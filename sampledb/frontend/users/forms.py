@@ -51,3 +51,8 @@ class OtherSettingsForm(FlaskForm):
 
 class CreateAPITokenForm(FlaskForm):
     description = StringField('description', validators=[Length(min=1, max=100)])
+
+
+class ManageTwoFactorAuthenticationMethodForm(FlaskForm):
+    method_id = IntegerField(validators=[InputRequired()])
+    action = StringField(validators=[InputRequired()])

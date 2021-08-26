@@ -17,11 +17,11 @@ from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
-from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm
+from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm
 
 from ... import logic
 from ...logic import user_log
-from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
@@ -67,6 +67,29 @@ def user_preferences(user_id):
 
 
 def change_preferences(user, user_id):
+    two_factor_authentication_methods = get_two_factor_authentication_methods(user_id)
+    manage_two_factor_authentication_method_form = ManageTwoFactorAuthenticationMethodForm()
+
+    if manage_two_factor_authentication_method_form.validate_on_submit():
+        method_id = manage_two_factor_authentication_method_form.method_id.data
+        if any(
+            method.id == manage_two_factor_authentication_method_form.method_id.data
+            for method in two_factor_authentication_methods
+        ):
+            if manage_two_factor_authentication_method_form.action.data == 'delete':
+                delete_two_factor_authentication_method(method_id)
+                flask.flash(_('The two factor authentication method has been deleted.'), 'success')
+                return flask.redirect(flask.url_for('.user_me_preferences'))
+            if manage_two_factor_authentication_method_form.action.data == 'enable':
+                activate_two_factor_authentication_method(method_id)
+                flask.flash(_('The two factor authentication method has been enabled.'), 'success')
+                return flask.redirect(flask.url_for('.user_me_preferences'))
+            if manage_two_factor_authentication_method_form.action.data == 'disable':
+                deactivate_two_factor_authentication_method(method_id)
+                flask.flash(_('The two factor authentication method has been disabled.'), 'success')
+                return flask.redirect(flask.url_for('.user_me_preferences'))
+        flask.flash(_('Something went wrong, please try again.'), 'error')
+
     api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
@@ -173,6 +196,9 @@ def change_preferences(user, user_id):
                     confirmed_authentication_methods=confirmed_authentication_methods,
                     authentications=authentication_methods,
                     error=str(e),
+                    two_factor_authentication_methods=two_factor_authentication_methods,
+                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+                    has_active_method=any(method.active for method in two_factor_authentication_methods),
                     api_tokens=api_tokens
                 )
             user_log.edit_user_preferences(user_id=user_id)
@@ -275,6 +301,9 @@ def change_preferences(user, user_id):
                     confirmed_authentication_methods=confirmed_authentication_methods,
                     authentications=authentication_methods,
                     error=str(e),
+                    two_factor_authentication_methods=two_factor_authentication_methods,
+                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+                    has_active_method=any(method.active for method in two_factor_authentication_methods),
                     api_tokens=api_tokens
                 )
             user_log.edit_user_preferences(user_id=user_id)
@@ -331,6 +360,9 @@ def change_preferences(user, user_id):
                     confirmed_authentication_methods=confirmed_authentication_methods,
                     authentications=authentication_methods,
                     error_add=str(e),
+                    two_factor_authentication_methods=two_factor_authentication_methods,
+                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+                    has_active_method=any(method.active for method in two_factor_authentication_methods),
                     api_tokens=api_tokens
                 )
             authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
@@ -378,6 +410,9 @@ def change_preferences(user, user_id):
                 confirmed_authentication_methods=confirmed_authentication_methods,
                 authentications=authentication_methods,
                 error_add=str(e),
+                two_factor_authentication_methods=two_factor_authentication_methods,
+                manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+                has_active_method=any(method.active for method in two_factor_authentication_methods),
                 api_tokens=api_tokens
             )
     if 'edit_user_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
@@ -527,6 +562,9 @@ def change_preferences(user, user_id):
         created_api_token=created_api_token,
         confirmed_authentication_methods=confirmed_authentication_methods,
         authentications=authentication_methods,
+        two_factor_authentication_methods=two_factor_authentication_methods,
+        manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+        has_active_method=any(method.active for method in two_factor_authentication_methods),
         api_tokens=api_tokens
     )
 

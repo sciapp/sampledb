@@ -24,7 +24,7 @@ from .actions import Action, ActionType
 from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions
 from .api_log import APILogEntry, HTTPMethod
-from .authentication import Authentication, AuthenticationType
+from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod
 from .comments import Comment
 from .dataverse_export import DataverseExport
 from .favorites import FavoriteAction, FavoriteInstrument
@@ -118,6 +118,7 @@ __all__ = [
     'SubprojectRelationship',
     'Settings',
     'Tag',
+    'TwoFactorAuthenticationMethod',
     'User',
     'UserType',
     'UserLogEntry',

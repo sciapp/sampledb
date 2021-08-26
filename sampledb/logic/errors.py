@@ -264,3 +264,7 @@ class InvalidNumberError(Exception):
 
 class LanguageAlreadyExistsError(Exception):
     pass
+
+
+class TwoFactorAuthenticationMethodDoesNotExistError(Exception):
+    pass

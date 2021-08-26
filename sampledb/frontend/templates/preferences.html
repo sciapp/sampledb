@@ -169,6 +169,39 @@
     </table>
   </div>
 
+  <h3>{{ _('Two Factor Authentication') }}</h3>
+  {% if two_factor_authentication_methods %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ _('Description') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for method in two_factor_authentication_methods %}
+      <tr>
+        <td>
+          {{ _('Unknown Two Factor Authentication Method') }}
+        </td>
+        <td style="width: 1%; white-space: nowrap;">
+          <form method="post">
+            {{ manage_two_factor_authentication_method_form.hidden_tag() }}
+            <input type="hidden" name="{{ manage_two_factor_authentication_method_form.method_id.name }}" value="{{ method.id }}">
+      {% if method.active %}
+            <button type="submit" class="btn btn-default" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="disable">{{ _('Disable') }}</button>
+      {% else %}
+            <button type="submit" class="btn btn-default" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="enable" {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before enabling this one.') }}"{% endif %}>{{ _('Enable') }}</button>
+      {% endif %}
+            <button type="submit" class="btn btn-danger" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="delete" {% if method.active %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable this method before deleting it.') }}"{% endif %}>{{ _('Delete') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
   <h2>{{ _('Notification Settings')}}</h2>
   <p><strong>{{ _('Note:')}}</strong>
     {{ _('%(service_name)s will notify you about various events. By default, these notifications will be sent using the %(service_name)s notification system, but you can also chose to receive them via email or decide to ignore some notification types.', service_name=service_name) }}</p>
