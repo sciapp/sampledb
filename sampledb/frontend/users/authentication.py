@@ -93,6 +93,16 @@ def _sign_in_impl(is_for_refresh):
                     )
             two_factor_authentication_method = get_active_two_factor_authentication_method(user.id)
             if two_factor_authentication_method is not None:
+                if two_factor_authentication_method.data.get('type') == 'totp':
+                    flask.session['confirm_data'] = {
+                        'reason': 'login',
+                        'user_id': two_factor_authentication_method.user_id,
+                        'method_id': two_factor_authentication_method.id,
+                        'is_for_refresh': is_for_refresh,
+                        'remember_me': form.remember_me.data,
+                        'expiration_datetime': (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
                 return flask.render_template('two_factor_authentication/unsupported_method.html')
             return complete_sign_in(user, is_for_refresh, form.remember_me.data)
         has_errors = True

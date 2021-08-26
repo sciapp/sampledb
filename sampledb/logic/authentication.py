@@ -374,3 +374,23 @@ def delete_two_factor_authentication_method(
         raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
     db.session.delete(deleted_method)
     db.session.commit()
+
+
+def create_totp_two_factor_authentication_method(
+        user_id: int,
+        secret: str
+) -> TwoFactorAuthenticationMethod:
+    """
+    Create a new TOTP-based two factor authentication method.
+
+    :param user_id: the ID of an existing user
+    :param secret: the TOTP secret
+    :return: the newly created method
+    """
+    return _create_two_factor_authentication_method(
+        user_id=user_id,
+        data={
+            'type': 'totp',
+            'secret': secret
+        }
+    )

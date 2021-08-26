@@ -14,6 +14,7 @@ from . import list
 from . import notifications
 from . import preferences
 from . import profile
+from . import totp_two_factor_authentication
 
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     'list',
     'notifications',
     'preferences',
-    'profile'
+    'profile',
+    'totp_two_factor_authentication'
 ]

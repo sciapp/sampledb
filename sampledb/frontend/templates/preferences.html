@@ -182,7 +182,11 @@
     {% for method in two_factor_authentication_methods %}
       <tr>
         <td>
+      {% if method.data.type == 'totp' %}
+          {{ _('TOTP-based Two Factor Authentication') }}
+      {% else %}
           {{ _('Unknown Two Factor Authentication Method') }}
+      {% endif %}
         </td>
         <td style="width: 1%; white-space: nowrap;">
           <form method="post">
@@ -201,6 +205,9 @@
     </tbody>
   </table>
   {% endif %}
+  <div class="text-right">
+    <a href="{{ url_for('.setup_totp_two_factor_authentication') }}" class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
+  </div>
 
   <h2>{{ _('Notification Settings')}}</h2>
   <p><strong>{{ _('Note:')}}</strong>

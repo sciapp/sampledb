@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-08-31 14:27+0200\n"
+"POT-Creation-Date: 2021-09-01 09:54+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -33,7 +33,7 @@ msgstr ""
 #: frontend/action_types.py:172 frontend/action_types.py:260
 #: frontend/action_types.py:290 frontend/languages.py:146
 #: frontend/templates/action_types/action_type_form.html:109
-#: frontend/templates/preferences.html:728
+#: frontend/templates/preferences.html:735
 msgid "Create"
 msgstr "Erstellen"
 
@@ -48,9 +48,9 @@ msgstr "Erstellen"
 #: frontend/templates/objects/object_permissions.html:250
 #: frontend/templates/objects/view/base.html:360
 #: frontend/templates/preferences.html:70
-#: frontend/templates/preferences.html:250
-#: frontend/templates/preferences.html:390
-#: frontend/templates/preferences.html:616
+#: frontend/templates/preferences.html:257
+#: frontend/templates/preferences.html:397
+#: frontend/templates/preferences.html:623
 #: frontend/templates/projects/project.html:280
 #: frontend/templates/projects/project_permissions.html:170
 msgid "Save"
@@ -1100,7 +1100,7 @@ msgstr "Mehr"
 #: frontend/templates/base.html:123
 #: frontend/templates/objects/object_permissions.html:133
 #: frontend/templates/objects/object_permissions.html:222
-#: frontend/templates/preferences.html:359
+#: frontend/templates/preferences.html:366
 #: frontend/templates/projects/project_permissions.html:81
 #: frontend/templates/projects/project_permissions.html:141
 #: frontend/templates/users.html:3 frontend/templates/users.html:6
@@ -1113,7 +1113,7 @@ msgstr "Nutzer"
 #: frontend/templates/groups/groups.html:11
 #: frontend/templates/objects/object_permissions.html:107
 #: frontend/templates/objects/object_permissions.html:172
-#: frontend/templates/preferences.html:307
+#: frontend/templates/preferences.html:314
 #: frontend/templates/projects/project_permissions.html:55
 #: frontend/templates/projects/project_permissions.html:116
 msgid "Basic Groups"
@@ -1124,7 +1124,7 @@ msgstr "Einfache Gruppen"
 #: frontend/templates/base.html:125
 #: frontend/templates/objects/object_permissions.html:81
 #: frontend/templates/objects/object_permissions.html:197
-#: frontend/templates/preferences.html:333
+#: frontend/templates/preferences.html:340
 #: frontend/templates/projects/projects.html:3
 #: frontend/templates/projects/projects.html:10
 msgid "Project Groups"
@@ -1240,8 +1240,8 @@ msgstr "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
 #: frontend/templates/objects/forms/form_user.html:23
 #: frontend/templates/objects/objects.html:22
 #: frontend/templates/preferences.html:135
-#: frontend/templates/preferences.html:206
-#: frontend/templates/preferences.html:256
+#: frontend/templates/preferences.html:213
+#: frontend/templates/preferences.html:263
 msgid "Note:"
 msgstr "Hinweis:"
 
@@ -1360,8 +1360,8 @@ msgstr "Name"
 #: frontend/templates/preferences.html:23
 #: frontend/templates/preferences.html:25
 #: frontend/templates/preferences.html:89
-#: frontend/templates/preferences.html:217
-#: frontend/templates/preferences.html:653
+#: frontend/templates/preferences.html:224
+#: frontend/templates/preferences.html:660
 #: frontend/templates/registration.html:12
 #: frontend/templates/reset_password_by_email.html:11
 #: frontend/templates/reset_password_by_email.html:13
@@ -1376,10 +1376,10 @@ msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 
 #: frontend/templates/create_other_user.html:20
 #: frontend/templates/create_other_user.html:21
-#: frontend/templates/password.html:19 frontend/templates/preferences.html:640
-#: frontend/templates/preferences.html:642
-#: frontend/templates/preferences.html:680
-#: frontend/templates/preferences.html:682
+#: frontend/templates/password.html:19 frontend/templates/preferences.html:647
+#: frontend/templates/preferences.html:649
+#: frontend/templates/preferences.html:687
+#: frontend/templates/preferences.html:689
 #: frontend/templates/registration.html:29
 #: frontend/templates/registration.html:31
 #: frontend/templates/registration.html:40 frontend/templates/sign_in.html:34
@@ -1412,9 +1412,9 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/objects/view/base.html:388
 #: frontend/templates/objects/view/base.html:582
 #: frontend/templates/objects/view/base.html:1091
-#: frontend/templates/preferences.html:660
-#: frontend/templates/preferences.html:699
-#: frontend/templates/preferences.html:727
+#: frontend/templates/preferences.html:667
+#: frontend/templates/preferences.html:706
+#: frontend/templates/preferences.html:734
 #: frontend/templates/projects/project.html:158
 #: frontend/templates/projects/project.html:188
 #: frontend/templates/projects/project.html:279
@@ -1427,6 +1427,8 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 #: frontend/templates/projects/project_permissions.html:191
 #: frontend/templates/projects/projects.html:111
 #: frontend/templates/sign_out.html:10
+#: frontend/templates/two_factor_authentication/confirm_totp.html:24
+#: frontend/templates/two_factor_authentication/set_up_totp.html:17
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -1491,6 +1493,7 @@ msgid "Welcome to %(service_name)s"
 msgstr "Willkommen bei %(service_name)s"
 
 #: frontend/templates/index.html:27 frontend/templates/sign_in.html:3
+#: frontend/templates/two_factor_authentication/confirm_totp.html:23
 msgid "Sign In"
 msgstr "Anmelden"
 
@@ -1746,7 +1749,7 @@ msgid "Mark as Read"
 msgstr "Als gelesen markieren"
 
 #: frontend/templates/notifications.html:117
-#: frontend/templates/preferences.html:196
+#: frontend/templates/preferences.html:200
 msgid "Delete"
 msgstr "Löschen"
 
@@ -1818,8 +1821,8 @@ msgid "Authentication Methods"
 msgstr "Authentifizierungsmethoden"
 
 #: frontend/templates/preferences.html:80
-#: frontend/templates/preferences.html:632
-#: frontend/templates/preferences.html:634 frontend/templates/sign_in.html:28
+#: frontend/templates/preferences.html:639
+#: frontend/templates/preferences.html:641 frontend/templates/sign_in.html:28
 #: frontend/templates/sign_in.html:30
 msgid "Username / Email"
 msgstr "Nutzername / E-Mail"
@@ -1830,8 +1833,8 @@ msgstr "Authentifizierungsmethode"
 
 #: frontend/templates/objects/view/base.html:797
 #: frontend/templates/preferences.html:89
-#: frontend/templates/preferences.html:229
-#: frontend/templates/preferences.html:653
+#: frontend/templates/preferences.html:236
+#: frontend/templates/preferences.html:660
 msgid "Other"
 msgstr "Andere"
 
@@ -1877,8 +1880,8 @@ msgstr ""
 #: frontend/templates/pdfexport/export.html:129
 #: frontend/templates/preferences.html:141
 #: frontend/templates/preferences.html:177
-#: frontend/templates/preferences.html:719
-#: frontend/templates/preferences.html:721
+#: frontend/templates/preferences.html:726
+#: frontend/templates/preferences.html:728
 #: frontend/templates/projects/project.html:216
 #: frontend/templates/projects/project.html:252
 #: frontend/templates/projects/project.html:264
@@ -1896,31 +1899,39 @@ msgstr "Log anzeigen"
 msgid "Two Factor Authentication"
 msgstr "Zwei-Faktor-Authentisierung"
 
-#: frontend/templates/preferences.html:185
+#: frontend/templates/preferences.html:186
+msgid "TOTP-based Two Factor Authentication"
+msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
+
+#: frontend/templates/preferences.html:188
 msgid "Unknown Two Factor Authentication Method"
 msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode."
 
-#: frontend/templates/preferences.html:192
+#: frontend/templates/preferences.html:196
 msgid "Disable"
 msgstr "Deaktivieren"
 
-#: frontend/templates/preferences.html:194
+#: frontend/templates/preferences.html:198
 msgid "Disable the current method before enabling this one."
 msgstr "Deaktivieren Sie die aktuelle Methode um diese aktivieren zu können."
 
-#: frontend/templates/preferences.html:194
+#: frontend/templates/preferences.html:198
 msgid "Enable"
 msgstr "Aktivieren"
 
-#: frontend/templates/preferences.html:196
+#: frontend/templates/preferences.html:200
 msgid "Disable this method before deleting it."
 msgstr "Deaktivieren Sie diese Methode um sie löschen zu können."
 
-#: frontend/templates/preferences.html:205
+#: frontend/templates/preferences.html:209
+msgid "Set up TOTP-based Two Factor Authentication"
+msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+#: frontend/templates/preferences.html:212
 msgid "Notification Settings"
 msgstr "Benachrichtigungseinstellungen"
 
-#: frontend/templates/preferences.html:207
+#: frontend/templates/preferences.html:214
 #, python-format
 msgid ""
 "%(service_name)s will notify you about various events. By default, these "
@@ -1933,55 +1944,55 @@ msgstr ""
 "%(service_name)s übermittelt, aber Sie können auch einstellen, dass Sie "
 "einige Benachrichtungstypen per E-Mail erhalten oder ignorieren wollen."
 
-#: frontend/templates/preferences.html:214
+#: frontend/templates/preferences.html:221
 msgid "Notification Type"
 msgstr "Benachrichtigungstypen"
 
-#: frontend/templates/preferences.html:215
+#: frontend/templates/preferences.html:222
 msgid "Ignore"
 msgstr "Ignorieren"
 
-#: frontend/templates/preferences.html:216
+#: frontend/templates/preferences.html:223
 msgid "Web"
 msgstr "Web"
 
-#: frontend/templates/preferences.html:221
+#: frontend/templates/preferences.html:228
 msgid "Announcements"
 msgstr "Ankündigungen"
 
-#: frontend/templates/preferences.html:222
+#: frontend/templates/preferences.html:229
 msgid "Becoming responsible for an object"
 msgstr "Für ein Objekt verantworlich werden"
 
-#: frontend/templates/preferences.html:223
+#: frontend/templates/preferences.html:230
 msgid "Being invited to a basic group"
 msgstr "In eine einfache Gruppe eingeladen werden"
 
-#: frontend/templates/preferences.html:224
+#: frontend/templates/preferences.html:231
 msgid "Being invited to a project group"
 msgstr "In eine Projektgruppe eingeladen werden"
 
-#: frontend/templates/preferences.html:225
+#: frontend/templates/preferences.html:232
 msgid "Receiving object permission requests"
 msgstr "Eine Anfrage nach Objektberechtigungen erhalten"
 
-#: frontend/templates/preferences.html:226
+#: frontend/templates/preferences.html:233
 msgid "Receiving a new instrument log entry"
 msgstr "Einen neuen Instrument-Log-Eintrag erhalten"
 
-#: frontend/templates/preferences.html:227
+#: frontend/templates/preferences.html:234
 msgid "Receiving an edit to an instrument log"
 msgstr "Eine Änderung in einem Instrument-Log-Eintrag erhalten"
 
-#: frontend/templates/preferences.html:228
+#: frontend/templates/preferences.html:235
 msgid "Being referenced in object metadata"
 msgstr "In den Metadaten eines Objekts referenziert werden"
 
-#: frontend/templates/preferences.html:255
+#: frontend/templates/preferences.html:262
 msgid "Default Permissions"
 msgstr "Standardberechtigungen"
 
-#: frontend/templates/preferences.html:256
+#: frontend/templates/preferences.html:263
 msgid ""
 "These permissions will be used for objects that you create in the future."
 " To change the permissions for an already existing object, please use the"
@@ -1994,7 +2005,7 @@ msgstr ""
 
 #: frontend/templates/actions/action_permissions.html:29
 #: frontend/templates/objects/object_permissions.html:34
-#: frontend/templates/preferences.html:263
+#: frontend/templates/preferences.html:270
 msgid "Special Groups"
 msgstr "Sondergruppen"
 
@@ -2006,10 +2017,10 @@ msgstr "Sondergruppen"
 #: frontend/templates/objects/object_permissions.html:261
 #: frontend/templates/objects/object_permissions.html:298
 #: frontend/templates/objects/object_permissions.html:335
-#: frontend/templates/preferences.html:264
-#: frontend/templates/preferences.html:401
-#: frontend/templates/preferences.html:437
-#: frontend/templates/preferences.html:474
+#: frontend/templates/preferences.html:271
+#: frontend/templates/preferences.html:408
+#: frontend/templates/preferences.html:444
+#: frontend/templates/preferences.html:481
 #: frontend/templates/projects/project_permissions.html:56
 #: frontend/templates/projects/project_permissions.html:88
 msgid "None"
@@ -2023,10 +2034,10 @@ msgstr "Keine"
 #: frontend/templates/objects/object_permissions.html:262
 #: frontend/templates/objects/object_permissions.html:299
 #: frontend/templates/objects/object_permissions.html:336
-#: frontend/templates/preferences.html:265
-#: frontend/templates/preferences.html:402
-#: frontend/templates/preferences.html:438
-#: frontend/templates/preferences.html:475
+#: frontend/templates/preferences.html:272
+#: frontend/templates/preferences.html:409
+#: frontend/templates/preferences.html:445
+#: frontend/templates/preferences.html:482
 #: frontend/templates/projects/project_permissions.html:57
 #: frontend/templates/projects/project_permissions.html:89
 #: frontend/templates/projects/projects.html:21
@@ -2041,10 +2052,10 @@ msgstr "Lesen"
 #: frontend/templates/objects/object_permissions.html:263
 #: frontend/templates/objects/object_permissions.html:300
 #: frontend/templates/objects/object_permissions.html:337
-#: frontend/templates/preferences.html:266
-#: frontend/templates/preferences.html:403
-#: frontend/templates/preferences.html:439
-#: frontend/templates/preferences.html:476
+#: frontend/templates/preferences.html:273
+#: frontend/templates/preferences.html:410
+#: frontend/templates/preferences.html:446
+#: frontend/templates/preferences.html:483
 #: frontend/templates/projects/project_permissions.html:58
 #: frontend/templates/projects/project_permissions.html:90
 #: frontend/templates/projects/projects.html:22
@@ -2059,10 +2070,10 @@ msgstr "Schreiben"
 #: frontend/templates/objects/object_permissions.html:264
 #: frontend/templates/objects/object_permissions.html:301
 #: frontend/templates/objects/object_permissions.html:338
-#: frontend/templates/preferences.html:267
-#: frontend/templates/preferences.html:404
-#: frontend/templates/preferences.html:440
-#: frontend/templates/preferences.html:477
+#: frontend/templates/preferences.html:274
+#: frontend/templates/preferences.html:411
+#: frontend/templates/preferences.html:447
+#: frontend/templates/preferences.html:484
 #: frontend/templates/projects/project_permissions.html:59
 #: frontend/templates/projects/project_permissions.html:91
 #: frontend/templates/projects/projects.html:23
@@ -2071,14 +2082,14 @@ msgstr "Rechtevergabe"
 
 #: frontend/templates/actions/action_permissions.html:37
 #: frontend/templates/objects/object_permissions.html:42
-#: frontend/templates/preferences.html:271
+#: frontend/templates/preferences.html:278
 msgid "Administrators"
 msgstr "Administratoren"
 
 #: frontend/templates/actions/action_permissions.html:50
 #: frontend/templates/instruments/instrument_form.html:352
 #: frontend/templates/objects/object_permissions.html:55
-#: frontend/templates/preferences.html:283
+#: frontend/templates/preferences.html:290
 msgid "Instrument Scientists"
 msgstr "Instrumentverantwortliche"
 
@@ -2086,13 +2097,13 @@ msgstr "Instrumentverantwortliche"
 #: frontend/templates/actions/action_permissions.html:158
 #: frontend/templates/objects/object_permissions.html:69
 #: frontend/templates/objects/object_permissions.html:160
-#: frontend/templates/preferences.html:295
+#: frontend/templates/preferences.html:302
 msgid "Everyone"
 msgstr "Jeder Nutzer"
 
 #: frontend/templates/actions/action_permissions.html:252
 #: frontend/templates/objects/object_permissions.html:254
-#: frontend/templates/preferences.html:394
+#: frontend/templates/preferences.html:401
 msgid "Add User"
 msgstr "Nutzer hinzufügen"
 
@@ -2104,7 +2115,7 @@ msgstr "Nutzer hinzufügen"
 #: frontend/templates/objects/objects.html:122
 #: frontend/templates/objects/objects.html:124
 #: frontend/templates/pdfexport/user.html:5
-#: frontend/templates/preferences.html:400 frontend/templates/profile.html:3
+#: frontend/templates/preferences.html:407 frontend/templates/profile.html:3
 #: frontend/templates/projects/project.html:300
 msgid "User"
 msgstr "Nutzer"
@@ -2113,16 +2124,16 @@ msgstr "Nutzer"
 #: frontend/templates/objects/object_permissions.html:286
 #: frontend/templates/objects/object_permissions.html:323
 #: frontend/templates/objects/object_permissions.html:360
-#: frontend/templates/preferences.html:425
-#: frontend/templates/preferences.html:462
-#: frontend/templates/preferences.html:499
-#: frontend/templates/preferences.html:661
+#: frontend/templates/preferences.html:432
+#: frontend/templates/preferences.html:469
+#: frontend/templates/preferences.html:506
+#: frontend/templates/preferences.html:668
 msgid "Add"
 msgstr "Hinzufügen"
 
 #: frontend/templates/actions/action_permissions.html:289
 #: frontend/templates/objects/object_permissions.html:291
-#: frontend/templates/preferences.html:430
+#: frontend/templates/preferences.html:437
 #: frontend/templates/projects/project.html:118
 #: frontend/templates/projects/project.html:357
 #: frontend/templates/projects/project.html:376
@@ -2133,20 +2144,20 @@ msgstr "Einfache Gruppe hinzufügen"
 #: frontend/templates/groups/group.html:3
 #: frontend/templates/groups/group.html:15
 #: frontend/templates/objects/object_permissions.html:297
-#: frontend/templates/preferences.html:436
+#: frontend/templates/preferences.html:443
 #: frontend/templates/projects/project.html:363
 msgid "Basic Group"
 msgstr "Einfache Gruppe"
 
 #: frontend/templates/actions/action_permissions.html:326
 #: frontend/templates/objects/object_permissions.html:328
-#: frontend/templates/preferences.html:467
+#: frontend/templates/preferences.html:474
 msgid "Add Project Group"
 msgstr "Projektgruppe hinzufügen"
 
 #: frontend/templates/actions/action_permissions.html:332
 #: frontend/templates/objects/object_permissions.html:334
-#: frontend/templates/preferences.html:473
+#: frontend/templates/preferences.html:480
 #: frontend/templates/projects/project.html:3
 #: frontend/templates/projects/project.html:15
 #: frontend/templates/projects/project.html:397
@@ -2156,30 +2167,30 @@ msgstr "Projektgruppe hinzufügen"
 msgid "Project Group"
 msgstr "Projektgruppe"
 
-#: frontend/templates/preferences.html:505
+#: frontend/templates/preferences.html:512
 msgid "Other Settings"
 msgstr "Sonstige Einstellungen"
 
-#: frontend/templates/preferences.html:510
+#: frontend/templates/preferences.html:517
 msgid "Dataverse API Token"
 msgstr "Dataverse API Token"
 
-#: frontend/templates/preferences.html:512
+#: frontend/templates/preferences.html:519
 msgid "Delete Dataverse API Token"
 msgstr "Dataverse API Token löschen"
 
 #: frontend/templates/actions/action_form.html:558
-#: frontend/templates/preferences.html:520
+#: frontend/templates/preferences.html:527
 msgid "Use Schema Editor"
 msgstr "Schema Editor verwenden"
 
-#: frontend/templates/preferences.html:525
+#: frontend/templates/preferences.html:532
 msgid "Yes &mdash; Use graphical editor for editing action schemas (recommended)"
 msgstr ""
 "Ja &mdash; Verwende den grafischen Editor zum Bearbeiten von "
 "Aktionsschemas (empfohlen)"
 
-#: frontend/templates/preferences.html:531
+#: frontend/templates/preferences.html:538
 msgid "No &mdash; Edit schemas as JSON using a text editor (advanced)"
 msgstr ""
 "Nein &mdash; Bearbeite Schemas als JSON mit einem Texteditor "
@@ -2187,127 +2198,127 @@ msgstr ""
 
 #: frontend/templates/languages/language.html:3
 #: frontend/templates/languages/language_form.html:3
-#: frontend/templates/preferences.html:537
+#: frontend/templates/preferences.html:544
 msgid "Language"
 msgstr "Sprache"
 
-#: frontend/templates/preferences.html:541
+#: frontend/templates/preferences.html:548
 msgid "Detect language (default): "
 msgstr "Sprache erkennen (Standard): "
 
-#: frontend/templates/preferences.html:555
+#: frontend/templates/preferences.html:562
 msgid "Time Zone"
 msgstr "Zeitzone"
 
-#: frontend/templates/preferences.html:559
+#: frontend/templates/preferences.html:566
 msgid "Detect time zone (default): "
 msgstr "Zeitzone erkennen (Standard): "
 
-#: frontend/templates/preferences.html:568
+#: frontend/templates/preferences.html:575
 msgid "Objects per Page"
 msgstr "Objekte pro Seite"
 
 #: frontend/templates/objects/objects.html:188
 #: frontend/templates/objects/objects.html:190
-#: frontend/templates/preferences.html:573
+#: frontend/templates/preferences.html:580
 msgid "all"
 msgstr "alle"
 
-#: frontend/templates/preferences.html:579
+#: frontend/templates/preferences.html:586
 msgid "Administrator Settings"
 msgstr "Administratoreinstellungen"
 
-#: frontend/templates/preferences.html:582
+#: frontend/templates/preferences.html:589
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
 
-#: frontend/templates/preferences.html:587
+#: frontend/templates/preferences.html:594
 msgid "Yes &mdash; Use <b>GRANT</b> permissions for all objects"
 msgstr "Ja &mdash; Verwende <b>RECHTEVERGABE</b>-Berechtigungen für alle Objekte"
 
-#: frontend/templates/preferences.html:593
+#: frontend/templates/preferences.html:600
 msgid "No &mdash; Use regular permission system"
 msgstr "Nein &mdash; Verwende das normale Berechtigungenssystem"
 
-#: frontend/templates/preferences.html:599
+#: frontend/templates/preferences.html:606
 msgid "Show full invitation log for basic and project groups"
 msgstr "Zeige Einladungslog für Gruppen an"
 
-#: frontend/templates/preferences.html:604
+#: frontend/templates/preferences.html:611
 msgid "Yes &mdash; Show all past invitations"
 msgstr "Ja &mdash; Zeige alle Einladungen"
 
-#: frontend/templates/preferences.html:610
+#: frontend/templates/preferences.html:617
 msgid "No &mdash; Only show pending invitations"
 msgstr "Nein &mdash; Zeige nur ausstehende Einladungen"
 
 #: frontend/templates/instruments/instrument.html:334
 #: frontend/templates/objects/view/base.html:270
 #: frontend/templates/objects/view/base.html:368
-#: frontend/templates/preferences.html:626
-#: frontend/templates/preferences.html:673
-#: frontend/templates/preferences.html:713
-#: frontend/templates/preferences.html:740
-#: frontend/templates/preferences.html:756
+#: frontend/templates/preferences.html:633
+#: frontend/templates/preferences.html:680
+#: frontend/templates/preferences.html:720
+#: frontend/templates/preferences.html:747
+#: frontend/templates/preferences.html:763
 msgid "Close"
 msgstr "Schließen"
 
-#: frontend/templates/preferences.html:627
+#: frontend/templates/preferences.html:634
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
-#: frontend/templates/preferences.html:644
-#: frontend/templates/preferences.html:684
+#: frontend/templates/preferences.html:651
+#: frontend/templates/preferences.html:691
 msgid "The password must be at least 3 characters long."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
 #: frontend/templates/actions/action_form.html:289
 #: frontend/templates/actions/action_form.html:401
-#: frontend/templates/preferences.html:649
+#: frontend/templates/preferences.html:656
 msgid "Type"
 msgstr "Typ"
 
-#: frontend/templates/preferences.html:674
+#: frontend/templates/preferences.html:681
 msgid "Change Password"
 msgstr "Passwort ändern"
 
-#: frontend/templates/preferences.html:689
-#: frontend/templates/preferences.html:691
+#: frontend/templates/preferences.html:696
+#: frontend/templates/preferences.html:698
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
-#: frontend/templates/preferences.html:693
+#: frontend/templates/preferences.html:700
 msgid "Please enter the same password as above."
 msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
 
-#: frontend/templates/preferences.html:700
+#: frontend/templates/preferences.html:707
 msgid "Change"
 msgstr "Ändern"
 
-#: frontend/templates/preferences.html:714
+#: frontend/templates/preferences.html:721
 msgid "Create API Token"
 msgstr "API Token erstellen"
 
-#: frontend/templates/preferences.html:722
+#: frontend/templates/preferences.html:729
 msgid "Please enter a description for the API token."
 msgstr "Bitte geben Sie eine Beschreibung für das API Token an"
 
-#: frontend/templates/preferences.html:741
+#: frontend/templates/preferences.html:748
 msgid "New API Token"
 msgstr "Neues API Token"
 
-#: frontend/templates/preferences.html:753
+#: frontend/templates/preferences.html:760
 msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
 "Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
 "zugreifen können."
 
-#: frontend/templates/preferences.html:786
+#: frontend/templates/preferences.html:793
 msgid "Copied!"
 msgstr "Kopiert!"
 
-#: frontend/templates/preferences.html:789
-#: frontend/templates/preferences.html:793
+#: frontend/templates/preferences.html:796
+#: frontend/templates/preferences.html:800
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
 
@@ -5500,6 +5511,65 @@ msgstr ""
 msgid "Create Project Group"
 msgstr "Projektgruppe erstellen"
 
+#: frontend/templates/two_factor_authentication/confirm_totp.html:3
+#: frontend/templates/two_factor_authentication/confirm_totp.html:7
+msgid "Enter TOTP Verification Code"
+msgstr "TOTP Bestätigungscode eingeben"
+
+#: frontend/templates/two_factor_authentication/confirm_totp.html:12
+msgid ""
+"Please enter the TOTP verification code generated using an app such as "
+"Google Authenticator to complete the sign in process."
+msgstr ""
+"Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
+" Bestätigungscode ein, um die Anmeldung abzuschließen."
+
+#: frontend/templates/two_factor_authentication/confirm_totp.html:14
+msgid ""
+"Please enter the TOTP verification code generated using an app such as "
+"Google Authenticator to activate this two factor authentication method."
+msgstr ""
+"Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
+" Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
+"aktivieren."
+
+#: frontend/templates/two_factor_authentication/confirm_totp.html:16
+msgid ""
+"Please enter the TOTP verification code generated using an app such as "
+"Google Authenticator to deactivate this two factor authentication method."
+msgstr ""
+"Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
+" Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
+"deaktivieren."
+
+#: frontend/templates/two_factor_authentication/confirm_totp.html:20
+#: frontend/templates/two_factor_authentication/set_up_totp.html:13
+msgid "Verification Code"
+msgstr "Bestätigungscode"
+
+#: frontend/templates/two_factor_authentication/set_up_totp.html:3
+#: frontend/templates/two_factor_authentication/set_up_totp.html:7
+msgid "Set Up TOTP-based Two Factor Authentication"
+msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+#: frontend/templates/two_factor_authentication/set_up_totp.html:10
+msgid ""
+"Please scan the following QR Code using an app such as Google "
+"Authenticator and then enter the generated verification code in the field"
+" below to complete the setup."
+msgstr ""
+"Bitte scannen Sie den folgenden QR Code mit einer App wie Google "
+"Authenticator und geben Sie dann den damit erstellten Bestätigungscode "
+"ein, um die Einrichtung abzuschließen."
+
+#: frontend/templates/two_factor_authentication/set_up_totp.html:11
+msgid "TOTP Setup QR Code"
+msgstr "TOTP Setup QR Code"
+
+#: frontend/templates/two_factor_authentication/set_up_totp.html:16
+msgid "Set Up"
+msgstr "Einrichten"
+
 #: frontend/templates/two_factor_authentication/unsupported_method.html:3
 #: frontend/templates/two_factor_authentication/unsupported_method.html:6
 msgid "Unsupported Two Factor Authentication Method"
@@ -5534,7 +5604,7 @@ msgstr ""
 "Dokumentation. Bitte ändern Sie Ihr Passwort, bevor Sie diese SampleDB-"
 "Installation für andere verfügbar machen."
 
-#: frontend/users/authentication.py:106
+#: frontend/users/authentication.py:116
 msgid "Please sign in again."
 msgstr "Bitte melden Sie sich erneut an."
 
@@ -5678,84 +5748,90 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
-#: frontend/users/preferences.py:81
+#: frontend/users/preferences.py:83
+msgid "You cannot delete an active two factor authentication method."
+msgstr "Sie können eine aktive Zwei-Faktor-Authentisierungsmethode nicht löschen."
+
+#: frontend/users/preferences.py:86
 msgid "The two factor authentication method has been deleted."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde gelöscht."
 
-#: frontend/users/preferences.py:85
+#: frontend/users/preferences.py:99
+#: frontend/users/totp_two_factor_authentication.py:141
 msgid "The two factor authentication method has been enabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde aktiviert."
 
-#: frontend/users/preferences.py:89
+#: frontend/users/preferences.py:112
+#: frontend/users/totp_two_factor_authentication.py:145
 msgid "The two factor authentication method has been disabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde deaktiviert."
 
-#: frontend/users/preferences.py:91
+#: frontend/users/preferences.py:114
 msgid "Something went wrong, please try again."
 msgstr "Etwas ist fehlgeschlagen, bitte versuchen Sie es erneut."
 
-#: frontend/users/preferences.py:162
+#: frontend/users/preferences.py:185
 msgid "Successfully updated your password."
 msgstr "Das Passwort wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:164 frontend/users/preferences.py:207
+#: frontend/users/preferences.py:187 frontend/users/preferences.py:230
 msgid "Failed to change password."
 msgstr "Das Ändern des Passworts ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:212
+#: frontend/users/preferences.py:235
 msgid "Successfully deleted your stored Dataverse API Token."
 msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 
-#: frontend/users/preferences.py:222
+#: frontend/users/preferences.py:245
 msgid "Successfully updated your user name."
 msgstr "Der Nutzername wurde erfolgreich geändert."
 
-#: frontend/users/preferences.py:230
+#: frontend/users/preferences.py:253
 msgid "Please see your email to confirm this change."
 msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
 
-#: frontend/users/preferences.py:259
+#: frontend/users/preferences.py:282
 msgid "Successfully updated your user information."
 msgstr "Ihre Nutzerinformationen wurden erfolgreich geändert."
 
-#: frontend/users/preferences.py:267
+#: frontend/users/preferences.py:290
 msgid "Successfully removed the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich entfernt."
 
-#: frontend/users/preferences.py:269
+#: frontend/users/preferences.py:292
 msgid "Failed to remove the authentication method."
 msgstr "Das Entfernen der Authentifizierungsmethode ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:326
+#: frontend/users/preferences.py:349
 msgid "Successfully added the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
 
-#: frontend/users/preferences.py:328 frontend/users/preferences.py:370
+#: frontend/users/preferences.py:351 frontend/users/preferences.py:393
 msgid "Failed to add an authentication method."
 msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:378
+#: frontend/users/preferences.py:401
 msgid "Failed to add an API token."
 msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
 
-#: frontend/users/preferences.py:444 frontend/users/preferences.py:453
-#: frontend/users/preferences.py:462 frontend/users/preferences.py:471
+#: frontend/users/preferences.py:467 frontend/users/preferences.py:476
+#: frontend/users/preferences.py:485 frontend/users/preferences.py:494
 msgid "Successfully updated default permissions."
 msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:481
+#: frontend/users/preferences.py:504
 msgid "Successfully updated your notification settings."
 msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:526
+#: frontend/users/preferences.py:549
 msgid "Successfully updated your settings."
 msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
 
-#: frontend/users/preferences.py:648
+#: frontend/users/preferences.py:671
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."
 
-#: frontend/users/preferences.py:650
+#: frontend/users/preferences.py:673
 msgid ""
 "Resetting your password failed. Please try again or contact an "
 "administrator."
@@ -5786,6 +5862,35 @@ msgstr "Der Nutzer wurde aktiviert."
 #: frontend/users/profile.py:72
 msgid "The user has been deactivated."
 msgstr "Der Nutzer wurde deaktiviert."
+
+#: frontend/users/totp_two_factor_authentication.py:39
+msgid "Successfully set up two factor authentication."
+msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
+
+#: frontend/users/totp_two_factor_authentication.py:42
+#: frontend/users/totp_two_factor_authentication.py:150
+msgid "The code was invalid, please try again."
+msgstr "Der Code war ungültig. Bitte versuchen Sie es erneut."
+
+#: frontend/users/totp_two_factor_authentication.py:63
+#: frontend/users/totp_two_factor_authentication.py:68
+#: frontend/users/totp_two_factor_authentication.py:78
+#: frontend/users/totp_two_factor_authentication.py:87
+#: frontend/users/totp_two_factor_authentication.py:92
+#: frontend/users/totp_two_factor_authentication.py:100
+#: frontend/users/totp_two_factor_authentication.py:118
+#: frontend/users/totp_two_factor_authentication.py:123
+#: frontend/users/totp_two_factor_authentication.py:128
+msgid "This two factor authentication attempt has failed. Please try again."
+msgstr ""
+"Der Zwei-Faktor-Authentisierungsversuch ist fehlgeschlagen. Bitte "
+"versuchen Sie es erneut."
+
+#: frontend/users/totp_two_factor_authentication.py:72
+msgid "This two factor authentication attempt has expired. Please try again."
+msgstr ""
+"Der Zwei-Faktor-Authentisierungsversuch ist abgelaufen. Bitte versuchen "
+"Sie es erneut."
 
 #: logic/schemas/convert_to_schema.py:90
 #, python-format

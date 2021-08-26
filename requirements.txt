@@ -63,6 +63,7 @@ py==1.10.0
 pyasn1==0.4.8
 pycparser==2.20
 Pygments==2.9.0
+pyotp==2.6.0
 pyparsing==2.4.7
 Pyphen==0.10.0
 pyrsistent==0.17.3
