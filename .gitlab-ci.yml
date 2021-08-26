@@ -16,6 +16,8 @@ test:
   image: ubuntu:18.04
   services:
     - postgres:12
+  tags:
+    - kubernetes-executor
   script:
     - apt-get update
     # set up Python 3
@@ -55,6 +57,8 @@ documentation:
   image: ubuntu:18.04
   services:
     - postgres:latest
+  tags:
+    - kubernetes-executor
   script:
     - apt-get update
     # set up Python 3
