@@ -449,6 +449,8 @@ PYBABEL_PATH = 'pybabel'
 
 EXTRA_USER_FIELDS = {}
 
+SHOW_PREVIEW_WARNING = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
