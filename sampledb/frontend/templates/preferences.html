@@ -206,7 +206,7 @@
   </table>
   {% endif %}
   <div class="text-right">
-    <a href="{{ url_for('.setup_totp_two_factor_authentication') }}" class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
+    <a {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before adding a new one.') }}" {% else %}href="{{ url_for('.setup_totp_two_factor_authentication') }}"{% endif %} class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
   </div>
 
   <h2>{{ _('Notification Settings')}}</h2>

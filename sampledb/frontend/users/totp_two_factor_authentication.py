@@ -27,6 +27,10 @@ class TOTPForm(FlaskForm):
 @frontend.route('/users/me/two_factor_authentication/totp/setup', methods=['GET', 'POST'])
 @flask_login.login_required
 def setup_totp_two_factor_authentication():
+    active_method = authentication.get_active_two_factor_authentication_method(flask_login.current_user.id)
+    if active_method is not None:
+        flask.flash(_('You cannot set up a new two factor authentication method while another is active.'), 'error')
+        return flask.redirect(flask.url_for('.user_me_preferences'))
     setup_form = TOTPForm()
     email = flask_login.current_user.email
     service_name = flask.current_app.config['SERVICE_NAME']

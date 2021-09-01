@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-09-01 09:54+0200\n"
+"POT-Creation-Date: 2021-09-01 10:32+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1613,6 +1613,7 @@ msgstr ""
 
 #: frontend/templates/notifications.html:45
 #: frontend/templates/objects/view/base.html:633
+#: frontend/templates/two_factor_authentication/confirm_totp.html:23
 msgid "Confirm"
 msgstr "Bestätigen"
 
@@ -1922,6 +1923,10 @@ msgstr "Aktivieren"
 #: frontend/templates/preferences.html:200
 msgid "Disable this method before deleting it."
 msgstr "Deaktivieren Sie diese Methode um sie löschen zu können."
+
+#: frontend/templates/preferences.html:209
+msgid "Disable the current method before adding a new one."
+msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu können."
 
 #: frontend/templates/preferences.html:209
 msgid "Set up TOTP-based Two Factor Authentication"
@@ -5757,12 +5762,12 @@ msgid "The two factor authentication method has been deleted."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde gelöscht."
 
 #: frontend/users/preferences.py:99
-#: frontend/users/totp_two_factor_authentication.py:141
+#: frontend/users/totp_two_factor_authentication.py:145
 msgid "The two factor authentication method has been enabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde aktiviert."
 
 #: frontend/users/preferences.py:112
-#: frontend/users/totp_two_factor_authentication.py:145
+#: frontend/users/totp_two_factor_authentication.py:149
 msgid "The two factor authentication method has been disabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde deaktiviert."
 
@@ -5863,30 +5868,38 @@ msgstr "Der Nutzer wurde aktiviert."
 msgid "The user has been deactivated."
 msgstr "Der Nutzer wurde deaktiviert."
 
-#: frontend/users/totp_two_factor_authentication.py:39
+#: frontend/users/totp_two_factor_authentication.py:32
+msgid ""
+"You cannot set up a new two factor authentication method while another is"
+" active."
+msgstr ""
+"Sie können keine Zwei-Faktor-Authentisierungsmethode hinzufügen, während "
+"eine andere aktiv ist."
+
+#: frontend/users/totp_two_factor_authentication.py:43
 msgid "Successfully set up two factor authentication."
 msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
 
-#: frontend/users/totp_two_factor_authentication.py:42
-#: frontend/users/totp_two_factor_authentication.py:150
+#: frontend/users/totp_two_factor_authentication.py:46
+#: frontend/users/totp_two_factor_authentication.py:154
 msgid "The code was invalid, please try again."
 msgstr "Der Code war ungültig. Bitte versuchen Sie es erneut."
 
-#: frontend/users/totp_two_factor_authentication.py:63
-#: frontend/users/totp_two_factor_authentication.py:68
-#: frontend/users/totp_two_factor_authentication.py:78
-#: frontend/users/totp_two_factor_authentication.py:87
-#: frontend/users/totp_two_factor_authentication.py:92
-#: frontend/users/totp_two_factor_authentication.py:100
-#: frontend/users/totp_two_factor_authentication.py:118
-#: frontend/users/totp_two_factor_authentication.py:123
-#: frontend/users/totp_two_factor_authentication.py:128
+#: frontend/users/totp_two_factor_authentication.py:67
+#: frontend/users/totp_two_factor_authentication.py:72
+#: frontend/users/totp_two_factor_authentication.py:82
+#: frontend/users/totp_two_factor_authentication.py:91
+#: frontend/users/totp_two_factor_authentication.py:96
+#: frontend/users/totp_two_factor_authentication.py:104
+#: frontend/users/totp_two_factor_authentication.py:122
+#: frontend/users/totp_two_factor_authentication.py:127
+#: frontend/users/totp_two_factor_authentication.py:132
 msgid "This two factor authentication attempt has failed. Please try again."
 msgstr ""
 "Der Zwei-Faktor-Authentisierungsversuch ist fehlgeschlagen. Bitte "
 "versuchen Sie es erneut."
 
-#: frontend/users/totp_two_factor_authentication.py:72
+#: frontend/users/totp_two_factor_authentication.py:76
 msgid "This two factor authentication attempt has expired. Please try again."
 msgstr ""
 "Der Zwei-Faktor-Authentisierungsversuch ist abgelaufen. Bitte versuchen "

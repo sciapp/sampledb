@@ -20,7 +20,7 @@
       <input type="text" placeholder="{{ _('Verification Code') }}" name="{{ confirm_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
     </div>
     <div>
-      <input type="submit" value="{{ _('Sign In') }}" class="btn btn-primary" style="width:100px;" />
+      <input type="submit" value="{% if reason == 'login' %}{{ _('Sign In') }}{% else %}{{ _('Confirm') }}{% endif %}" class="btn btn-primary" style="width:100px;" />
       <a href="{{ url_for('.index') }}" class="btn btn-default" style="width:100px;">{{ _('Cancel') }}</a>
     </div>
   </form>
