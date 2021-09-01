@@ -4,7 +4,7 @@ import flask
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, User
+from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, User
 from . import errors, api_log
 
 
@@ -276,3 +276,121 @@ def is_login_available(login: str) -> bool:
     :return: whether the login is available
     """
     return Authentication.query.filter(Authentication.login['login'].astext == login).first() is None
+
+
+def _create_two_factor_authentication_method(
+        user_id: int,
+        data: typing.Dict[str, typing.Any]
+) -> TwoFactorAuthenticationMethod:
+    """
+    Create a new two factor authentication method.
+
+    :param user_id: the ID of an existing user
+    :param data: the method data
+    :return: the newly created method
+    """
+    two_factor_authentication_method = TwoFactorAuthenticationMethod(
+        user_id=user_id,
+        data=data
+    )
+    db.session.add(two_factor_authentication_method)
+    db.session.commit()
+    return two_factor_authentication_method
+
+
+def get_two_factor_authentication_methods(
+        user_id: int
+) -> typing.List[TwoFactorAuthenticationMethod]:
+    """
+    Get all two factor authentication methods for a user.
+
+    :param user_id: the ID of an existing user
+    :return: a list containing all methods
+    """
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
+
+
+def get_active_two_factor_authentication_method(
+        user_id: int
+) -> typing.Optional[TwoFactorAuthenticationMethod]:
+    """
+    Get the currently active two factor authentication method, or None.
+
+    :param user_id: the ID of an existing user
+    :return: the active method
+    """
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
+
+
+def activate_two_factor_authentication_method(
+        id: int
+) -> None:
+    """
+    Activate a two factor authentication method and deactivate all others.
+
+    :rtype: object
+    :param id: the ID of the method
+    :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
+    """
+    activated_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
+    if activated_method is None:
+        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
+    activated_method.active = True
+    for method in TwoFactorAuthenticationMethod.query.filter_by(user_id=activated_method.user_id).all():
+        if method.id != id:
+            method.active = False
+        db.session.add(method)
+    db.session.commit()
+
+
+def deactivate_two_factor_authentication_method(
+        id: int
+) -> None:
+    """
+    Deactivate a two factor authentication method.
+
+    :param id: the ID of the method
+    :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
+    """
+    deactivated_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
+    if deactivated_method is None:
+        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
+    deactivated_method.active = False
+    db.session.add(deactivated_method)
+    db.session.commit()
+
+
+def delete_two_factor_authentication_method(
+        id: int
+) -> None:
+    """
+    Delete a two factor authentication method.
+
+    :param id: the ID of the method
+    :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
+    """
+    deleted_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
+    if deleted_method is None:
+        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
+    db.session.delete(deleted_method)
+    db.session.commit()
+
+
+def create_totp_two_factor_authentication_method(
+        user_id: int,
+        secret: str
+) -> TwoFactorAuthenticationMethod:
+    """
+    Create a new TOTP-based two factor authentication method.
+
+    :param user_id: the ID of an existing user
+    :param secret: the TOTP secret
+    :return: the newly created method
+    """
+    return _create_two_factor_authentication_method(
+        user_id=user_id,
+        data={
+            'type': 'totp',
+            'secret': secret
+        }
+    )

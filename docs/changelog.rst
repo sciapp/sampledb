@@ -21,6 +21,7 @@ Currently in development.
 - Added support for a custom CSS file
 - Added support for conditional properties
 - Allow filtering object references by action
+- Implemented TOTP-based two factor authentication
 
 Version 0.18
 ------------
