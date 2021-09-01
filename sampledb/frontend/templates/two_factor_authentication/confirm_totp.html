@@ -17,7 +17,7 @@
       {% endif %}
     </p>
     <div class="form-group {% if confirm_form.is_submitted() %}has-error{% endif %}">
-      <input type="text" placeholder="{{ _('Verification Code') }}" name="{{ confirm_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
+      <input type="text" autocomplete="off" placeholder="{{ _('Verification Code') }}" name="{{ confirm_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
     </div>
     <div>
       <input type="submit" value="{% if reason == 'login' %}{{ _('Sign In') }}{% else %}{{ _('Confirm') }}{% endif %}" class="btn btn-primary" style="width:100px;" />

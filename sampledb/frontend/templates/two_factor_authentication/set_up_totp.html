@@ -10,7 +10,7 @@
     <p class="text-muted">{{ _('Please scan the following QR Code using an app such as Google Authenticator and then enter the generated verification code in the field below to complete the setup.') }}</p>
     <img src="{{ qrcode_url }}" alt="{{ _('TOTP Setup QR Code') }}" />
     <div class="form-group {% if setup_form.is_submitted() %}has-error{% endif %}">
-      <input type="text" placeholder="{{ _('Verification Code') }}" name="{{ setup_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
+      <input type="text" autocomplete="off" placeholder="{{ _('Verification Code') }}" name="{{ setup_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
     </div>
     <div>
       <input type="submit" value="{{ _('Set Up') }}" class="btn btn-primary" style="width:100px;" />
