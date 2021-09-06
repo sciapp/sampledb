@@ -58,6 +58,8 @@ try:
     print("or visit any other site that requires being signed in.")
     print()
 
-    app.run(debug=True)
+    # app.run(debug=True)
+    # Changed to avoid errors by getting more than 15 connections to the database
+    app.run(debug=False)
 finally:
     shutil.rmtree(temp_dir)

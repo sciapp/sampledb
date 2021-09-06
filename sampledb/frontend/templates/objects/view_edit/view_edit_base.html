@@ -5,8 +5,7 @@
 
 {% block head %}
     {{ super() }}
-    <link rel="meta" type="application/rdf+xml" href="
-            {% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}"/>
+    <link rel="meta" type="application/rdf+xml" href="{% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}"/>
 {% endblock %}
 
 {% block stylesheets %}
@@ -19,17 +18,1877 @@
 
 {% endblock %}
 
+{% block content %}
+
+    {# counter for plotly_chart_plots #}
+    {% set plot_counter = namespace(value=0) %}
+
+    <script>
+        window.plotly_charts = [];
+    </script>
+
+    <h1>{{ action_type.translation.object_name }} #{{ object_id }}: {{ data.name.text | get_translated_text }}</h1>
+
+    <h2>{{ _('Information') }}</h2>
+    <div class="row" style="padding-right:0.75em">
+        <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+        <div class="col-md-9">{% if instrument is not none %}
+            <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>
+            {% else %}&mdash;{% endif %}</div>
+    </div>
+    <div class="row" style="padding-right:0.75em">
+        <label class="col-md-3" style="text-align: right">{{ _('Action') }} <a
+                href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search"
+                                                                                            aria-hidden="true"></i></a></label>
+        <div class="col-md-9"><a
+                href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
+    </div>
+
+    <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}">
+        {{ form.csrf_token() }}
+        <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
+        {% set id_prefix = "object_" %}
+        {% include "objects/view_edit/view_edit_any.html" %}
+    </form>
+
+    <div class="object-button-bar">
+        {% if languages | length > 1 %}
+            <div class="form-group">
+                <div class="btn-group" data-toggle="tooltip" data-placement="top"
+                     title="{{ _("View object information in a different language.") }}">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false"><i class="fa fa-language" aria-hidden="true"></i> {{ _("Change Language") }}
+                        <span class="caret"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        {% for language in languages %}
+                            <li><a href="?language={{ language.lang_code }}">{{ language.names | get_translated_text }}
+                                {% if (metadata_language is none and language.id == get_user_language(current_user).id) or (metadata_language is none and get_user_language(current_user) not in languages and language.lang_code == 'en') or language.lang_code == metadata_language %}
+                                    <i class="fa fa-check" aria-hidden="true"> </i>{% endif %}</a></li>
+                        {% endfor %}
+                        {% if languages | length == 0 %}
+                            <li><a>{{ ENGLISH.names | get_translated_text }} <i class="fa fa-check" aria-hidden="true"> </i></a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+        {% if not is_archived %}
+            {% if not current_user.is_readonly %}
+                {% if user_may_edit %}
+                    <div class="form-group">
+                        <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{ _('Create a new version of the information for this object.') }}"><i
+                                class="fa fa-pencil" aria-hidden="true"></i> {{ _('Edit Object') }}</a>
+                    </div>
+                {% endif %}
+                {% if user_may_edit and new_schema_available %}
+                    <div class="form-group">
+                        <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{ _('Update the schema for the information for this object.') }}"><i
+                                class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> {{ _('Update Schema') }}</a>
+                    </div>
+                {% endif %}
+                {% if user_may_grant %}
+                    <div class="form-group">
+                        <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{ _('Modify who can read the information for this object, write it or grant permissions to other users.') }}"><i
+                                class="fa fa-lock" aria-hidden="true"></i> {{ _('Edit Permissions') }}</a>
+                    </div>
+                {% endif %}
+                {% if project %}
+                    <div class="form-group">
+                        <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.translation.object_name) }}"><i
+                                class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
+                    </div>
+                {% endif %}
+                {% if user_may_use_as_template %}
+                    <div class="form-group">
+                        <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{ _('Create a new object based on the information for this object.') }}"><i
+                                class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
+                    </div>
+                {% endif %}
+                {% if action.type.id == action.type.SAMPLE_CREATION and not config['DISABLE_USE_IN_MEASUREMENT'] %}
+
+                    <div class="form-group">
+                        <div class="btn-group" data-toggle="tooltip" data-placement="top"
+                             title="{{ _('Create a new measurement using this sample.') }}">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart"
+                                                                                  aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type_with_translation_in_language(action.type.MEASUREMENT, get_user_language(current_user).id).translation.name) }}
+                                <span class="caret"></span></button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
+                                {% if favorite_measurement_actions %}
+                                    {% for action in favorite_measurement_actions %}
+                                        <li>
+                                            <a href="{{ url_for('.new_object', action_id=action.id, sample_id=object_id) }}">
+                                                {% if action.user is not none %}
+                                                    {{ action.user.name }} /
+                                                {% endif %}
+                                                {% if action.instrument is not none %}
+                                                    {% set temp = namespace(instrument=get_instrument_with_translation_in_language(action.instrument_id, get_user_language(current_user).id)) %}
+                                                    {% if temp.instrument.translation.english_name %}
+                                                        {{ temp.instrument.translation.english_name }}
+                                                    {% else %} {{ temp.instrument.translation.name }} {% endif %}
+                                                    &mdash;
+                                                {% endif %}
+                                                {{ action.translation.name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li><span style="padding: 3px 20px">&mdash;</span></li>
+                                {% endif %}
+                                <li role="separator" class="divider"></li>
+                                <li>
+                                    <a href="{{ url_for('.actions', t='measurements', sample_id=object_id) }}">{{ _('See other %(measurement_type_name)s Actions...', measurement_type_name=measurement_type_name) }}</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+            {% if action.type.enable_labels %}
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" id="button-show-object-label-modal"
+                            data-toggle="tooltip" data-placement="top"
+                            title="{{ _('Generate a PDF containing labels for this object.') }}"><i class="fa fa-tag"
+                                                                                                    aria-hidden="true"></i> {{ _('Generate Labels') }}
+                    </button>
+                </div>
+            {% endif %}
+            <div class="form-group">
+                <button type="button" class="btn btn-primary" id="button-show-object-qrcode-modal" data-toggle="tooltip"
+                        data-placement="top" title="{{ _('Show a QR code for a link to this object.') }}"><i
+                        class="fa fa-qrcode" aria-hidden="true"></i> {{ _('Show QR Code') }}</button>
+            </div>
+            <div class="form-group">
+                <div data-toggle="tooltip" data-placement="top"
+                     title="{{ _('Export object information to an archive or PDF file.') }}">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dataExportModal"><i
+                            class="fa fa-file-text-o" aria-hidden="true"></i> {{ _('Export Data') }}</button>
+                </div>
+            </div>
+            {% if show_dataverse_export %}
+                <div class="form-group">
+                    <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary"
+                       data-toggle="tooltip" data-placement="top"
+                       title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
+                        <img src="{{ url_for("static", filename="img/dataverse-40.png") }}"
+                             style="height:1.3em; margin-top:-0.2em;"
+                             alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+                    </a>
+                </div>
+            {% elif dataverse_url %}
+                <div class="form-group">
+                    <a href="{{ dataverse_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top"
+                       title="{{ _('View object information on %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
+                        <img src="{{ url_for("static", filename="img/dataverse-40.png") }}"
+                             style="height:1.3em; margin-top:-0.2em;"
+                             alt=""/>{{ _('View on %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+                    </a>
+                </div>
+            {% endif %}
+            {% if notebook_templates and jupyterhub_templates_url %}
+                <div class="form-group">
+                    <div class="btn-group" data-toggle="tooltip" data-placement="top"
+                         title="{{ _('Create a Jupyter Notebook in %(jupyterhub_name)s to analyze this object.', jupyterhub_name=jupyterhub_name) }}">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="notebookDropdownMenuButton"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <img src="{{ url_for("static", filename="img/jupyter-40.png") }}"
+                                 style="height:1.3em; margin-top:-0.2em; margin-right: -0.2em;"
+                                 alt=""/> {{ _('Create Notebook') }} <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="notebookDropdownMenuButton">
+                            {% for notebook_template in notebook_templates %}
+                                <li>
+                                    <form action="{{ jupyterhub_templates_url }}/t/{{ notebook_template.url }}"
+                                          method="post">
+                                        <input type="hidden" name="params"
+                                               value='{{ notebook_template.params | tojson }}'>
+                                        <input type="submit" value="{{ notebook_template.title }}"
+                                               class="btn btn-link dropdown-menu-button"/>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+        {% if restore_form is not none %}
+            <div class="form-group">
+                <form class="text-center"
+                      action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}"
+                      method="post">
+                    {{ restore_form.csrf_token() }}
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-undo"
+                                                                     aria-hidden="true"></i> {{ _('Restore Version') }}
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if not is_archived %}
+        {% if action.type.enable_files %}
+            <h2>{{ _('Files') }}</h2>
+            {% if files %}
+                <table class="table" id="file_table">
+                    <thead>
+                    <tr>
+                        <th scope="col" style="white-space: nowrap;width: 1%;"></th>
+                        <th scope="col">{{ _('Title') }}</th>
+                        <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
+                            <button type="button" class="btn btn-sm btn-primary" data-container="body"
+                                    data-toggle="popover" data-placement="left" data-html="true" data-content="
+              <label style='font-weight:400'><input type='checkbox' id='file_table_filter_notebooks' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;notebooks&quot;);'/> {{ _('Notebooks') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='file_table_filter_other' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);' /> {{ _('Other Files') }}</label><br />
+              <script>
+                window.update_file_table_filter_states();
+              </script>
+            " style="display: none">
+                                <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge"
+                                                                                             id="file_table_counter"></span>
+                            </button>
+                            <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link"
+                               style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top"
+                               title="{{ _('Download files as zip archive') }}"><i class="fa fa-download"></i></a>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for file in files %}
+                        {% if not file.is_hidden %}
+                            <tr id="file-{{ file.id }}">
+                                <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}
+                                    <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview"
+                                         alt="{{ file.title }}" style="max-width:100px; max-height:100px;"
+                                         class="show-fullscreen-image-preview"/>
+                                    <span class="fullscreen-image-preview">
+              <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
+              <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">
+                <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
+              </a>
+              <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview"
+                   alt="{{ _('Fullscreen Image Preview') }}">
+            </span>{% endif %}
+                                </td>
+                                <td>
+                                    {{ file.title }}
+                                    {% if file.description %}
+                                        <span class="file-description">
+{{ file.description }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+            <span class="pull-right" style="display:flex;">
+              <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;"
+                      data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top"
+                      title="{{ _('View information') }}"><i class="fa fa-info"></i></button>
+                {% if file.storage == 'local' or file.storage == 'database' %}
+                    {% if file | has_preview %}
+                        <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview"
+                           class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip"
+                           data-placement="top" title="{{ _('View preview') }}"><i class="fa fa-search"></i></a>
+                    {% else %}
+                        <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview"
+                           class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i
+                                class="fa fa-search"></i></a>
+                    {% endif %}
+                    <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link"
+                       style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top"
+                       title="{{ _('Download file') }}"><i class="fa fa-download"></i></a>
+                {% elif file.storage == 'url' %}
+                    <span data-placement="top" data-trigger="manual" title="Copied successfully"><span
+                            data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link"
+                            style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top"
+                            title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
+                    <a href="{{ file.data['url'] }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;"
+                       data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i
+                            class="fa fa-external-link"></i></a>
+                {% endif %}
+            </span>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td style="white-space: nowrap;width: 1%;"></td>
+                                <td>&mdash;</td>
+                                <td>
+            <span class="pull-right" style="display:flex;">
+              <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;"
+                      data-file_id="{{ file.id }}"><i class="fa fa-question"></i></button>
+            </span>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>{{ _('There are no files for this %(object_type)s.', object_type=action_type.translation.object_name.lower()) }}</p>
+            {% endif %}
+
+            {% for file in files %}
+                {% if file.is_hidden %}
+                    <div class="modal fade modal-file-info" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog"
+                         aria-labelledby="fileInfoModalLabel-{{ file.id }}">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                            aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title"
+                                        id="fileInfoModalLabel-{{ file.id }}">{{ _('Hidden File Information') }}</h4>
+                                </div>
+                                <div class="modal-body">
+                                    {% if file.hide_reason %}
+                                        {{ _('This file has been hidden for the following reason:') }}
+                                        <pre style="font-family: inherit">{{ file.hide_reason }}</pre>
+                                    {% else %}
+                                        {{ _('This file has been hidden.') }}
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default"
+                                            data-dismiss="modal">{{ _('Close') }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            {% for file in files %}
+                {% if not file.is_hidden %}
+                    <div class="modal fade modal-file-info" id="fileInfoModal-{{ file.id }}" tabindex="-1" role="dialog"
+                         aria-labelledby="fileInfoModalLabel-{{ file.id }}">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content file-info-main">
+                                <form method="post"
+                                      action="{{ url_for('.update_file_information', object_id=object_id, file_id=file.id) }}">
+                                    {{ file_information_form.csrf_token() }}
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title"
+                                            id="fileInfoModalLabel-{{ file.id }}">{{ _('File Information') }}</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-sm-3 text-right"><label>{{ _('Title') }}:</label></div>
+                                            <div class="col-sm-9"><span class="file-info-view-mode">{% if file.title %}
+                                                {{ file.title }}{% else %}&mdash;{% endif %}</span><span
+                                                    class="file-info-edit-mode"><input type="text"
+                                                                                       name="{{ file_information_form.title.name }}"
+                                                                                       class="input-file-info-title"
+                                                                                       style="width:100%" value="
+                                                    {% if file.title %}{{ file.title }}{% endif %}"></span></div>
+                                        </div>
+                                        {% if file.storage == 'local' or file.storage == 'database' %}
+                                            <div class="row">
+                                                <div class="col-sm-3 text-right"><label>{{ _('Name') }}:</label></div>
+                                                <div class="col-sm-9">{{ file.original_file_name }}</div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-3 text-right"><label>{{ _('Uploaded by') }}:</label>
+                                                </div>
+                                                <div class="col-sm-9"><a
+                                                        href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a>
+                                                </div>
+                                            </div>
+                                        {% elif file.storage == 'url' %}
+                                            <div class="row">
+                                                <div class="col-sm-3 text-right"><label>{{ _('URL') }}:</label></div>
+                                                <div class="col-sm-9">{{ file.data.url }}</div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-3 text-right"><label>{{ _('Linked by') }}:</label>
+                                                </div>
+                                                <div class="col-sm-9"><a
+                                                        href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="row">
+                                                <div class="col-sm-3 text-right"><label>{{ _('Posted by') }}:</label>
+                                                </div>
+                                                <div class="col-sm-9"><a
+                                                        href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <div class="row">
+                                            <div class="col-sm-3 text-right"><label>{{ _('Description') }}:</label>
+                                            </div>
+                                            <div class="col-sm-9"><span
+                                                    class="file-info-view-mode">{% if file.description %}
+                                                <pre style="font-family: inherit">{{ file.description }}</pre>
+                                                {% else %}&mdash;{% endif %}</span><span
+                                                    class="file-info-edit-mode"><textarea
+                                                    name="{{ file_information_form.description.name }}"
+                                                    class="input-file-info-description"
+                                                    style="width:100%;resize: vertical;">{% if file.description %}
+                                                {{ file.description }}{% endif %}</textarea></span></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-3 text-right"><label>{{ _('History') }}:</label></div>
+                                            <div class="col-sm-9"><a role="button" data-toggle="collapse"
+                                                                     href="#fileInfoModalCollapse-{{ file.id }}"
+                                                                     aria-expanded="false"
+                                                                     aria-controls="fileInfoModalCollapse-{{ file.id }}">{{ _('Show/Hide') }}</a>
+                                            </div>
+                                        </div>
+                                        <div class="collapse" id="fileInfoModalCollapse-{{ file.id }}">
+                                            <table class="table">
+                                                <thead>
+                                                <tr>
+                                                    <th scope="col"
+                                                        style="white-space: nowrap;width: 1%;">{{ _('Datetime') }}</th>
+                                                    <th scope="col"></th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr>
+                                                    <td>{{ file.utc_datetime | babel_format_datetime }}</td>
+                                                    <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.name) }}</td>
+                                                </tr>
+                                                {% for log_entry in file.log_entries %}
+                                                    {% if log_entry.type == FileLogEntryType.EDIT_TITLE %}
+                                                        <tr>
+                                                            <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
+                                                            <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.name) }}<br/>{{ log_entry.data['title'] }}
+                                                            </td>
+                                                        </tr>
+                                                    {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
+                                                        <tr>
+                                                            <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
+                                                            <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.name) }}
+                                                                <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre>
+                                                            </td>
+                                                        </tr>
+                                                    {% else %}
+                                                        <tr>{{ log_entry.type }}</tr>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        {% if user_may_edit %}
+                                            <button type="submit"
+                                                    class="btn btn-primary file-info-edit-mode">{{ _('Save') }}</button>
+                                            <button type="button"
+                                                    class="btn btn-default file-info-edit-mode button-file-info-cancel">{{ _('Cancel') }}</button>
+                                            <button type="button"
+                                                    class="btn btn-primary file-info-view-mode button-file-info-edit">{{ _('Edit') }}</button>
+                                            <button type="button"
+                                                    class="btn btn-default file-info-view-mode button-file-info-hide">{{ _('Hide') }}</button>
+                                        {% endif %}
+                                        {% if file.storage == 'local' or file.storage == 'database' %}
+                                            <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}"
+                                               class="btn btn-default file-info-view-mode">{{ _('Download') }}</a>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-default file-info-view-mode"
+                                                data-dismiss="modal">{{ _('Close') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-content file-info-hide">
+                                <form method="post"
+                                      action="{{ url_for('.hide_file', object_id=object_id, file_id=file.id) }}">
+                                    {{ file_hiding_form.csrf_token() }}
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title">{{ _('Hide File') }}</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label>{{ _('Reason') }}:</label>
+                                            <textarea class="form-control" rows="3"
+                                                      name="{{ file_hiding_form.reason.name }}"
+                                                      title="Reason"></textarea>
+                                        </div>
+                                        <strong>{{ _('Note') }}:</strong> {{ _('Other users will still see that a file has been hidden. The file may be restored by an administrator upon request.') }}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-danger">{{ _('Hide') }}</button>
+                                        <button type="button"
+                                                class="btn btn-default button-file-info-hide-cancel">{{ _('Cancel') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            {% if user_may_edit %}
+                <h5>{{ _('Upload File') }}</h5>
+                <div class="form-group row clearfix" style="padding-right:0.75em">
+                    <div class="col-md-12">
+                        <form class="form" method="post"
+                              action="{{ url_for('.post_object_files', object_id=object_id) }}"
+                              enctype="multipart/form-data">
+                            <div class="input-group" id="upload-area">
+                                <span class="input-group-addon"><i class="fa fa-file"></i></span>
+                                <input id="input-file-text" type="text" class="form-control disabled" disabled/>
+                                <span class="input-group-btn">
+                  <input type="hidden" value="" id="input-file-names-hidden" name="{{ file_form.file_names.name }}"/>
+                  <input type="hidden" value="" id="input-file-source-hidden" name="{{ file_form.file_source.name }}"/>
+                  {{ file_form.csrf_token }}
+                  <div class="btn-group" style="z-index: 3">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false" style="width:11em; margin-bottom: 0">
+                    <i class="fa fa-folder-open"></i> {{ _('Browse...') }} <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <label class="btn btn-link btn-file" style="color:#333333;"><i
+                                class="fa fa-hdd-o fa-fw"></i> {{ _('Local files') }}<input id="input-file-upload"
+                                                                                            type="file"
+                                                                                            name="{{ file_form.local_files.name }}"
+                                                                                            multiple
+                                                                                            style="display: none;"></label>
+                      </li>
+                      <li role="separator" class="divider"></li>
+                      <li>
+                        <button type="button" class="btn btn-link" style="color:#333333;"
+                                id="button-show-mobile-file-upload-modal"><i
+                                class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone') }}</button>
+                      </li>
+                    </ul>
+                  </div>
+                  <button type="submit" class="btn btn-primary disabled" style="width:11em;" id="button-upload-files"><i
+                          class="fa fa-upload fa-fw"></i> {{ _('Upload') }}</button>
+                </span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="mobileFileLinkModal" tabindex="-1" role="dialog"
+                     aria-labelledby="mobileFileLinkModalLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                        aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title" id="mobileFileLinkModalLabel">{{ _('Mobile File Upload') }}</h4>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-center">{{ _('To upload files from mobile devices, scan this QR code:') }}</p>
+                                <a href="{{ mobile_upload_url }}"><img src="{{ mobile_upload_qrcode }}"
+                                                                       alt="{{ mobile_upload_url }}"
+                                                                       style="width: 100%"/></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 id="anchor-post-link">{{ _('Post Link') }}</h5>
+                <div class="form-group" style="padding-right:0.75em">
+                    <form class="form {% if external_link_invalid %}has-error{% endif %}" method="post"
+                          action="{{ url_for('.post_object_files', object_id=object_id) }}">
+                        {{ external_link_form.csrf_token }}
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-link"></i></span>
+                            <input name="url" type="text" class="form-control" required="required"/>
+                            <span class="input-group-btn">
+            <button type="submit" class="btn btn-primary" style="width:11em;"><i
+                    class="fa fa-link fa-fw"></i> {{ _('Submit') }}</button>
+          </span>
+                        </div>
+                        {% if external_link_invalid %}
+                            <div class="help-block">{{ _('Please enter a valid URL.') }}</div>
+                        {% endif %}
+                    </form>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    {% if action.type.enable_labels %}
+        <div class="modal fade" id="objectLabelModal" tabindex="-1" role="dialog"
+             aria-labelledby="objectLabelModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="objectLabelModalLabel">{{ _('Generate Labels') }}</h4>
+                    </div>
+                    <form method="get" action="{{ url_for('.print_object_label', object_id=object_id) }}"
+                          class="form-horizontal" onsubmit="return validateLabelsForm()" id="form-generate-labels">
+                        <div class="modal-body">
+                            <div class="radio">
+                                <label class="control-label"><input type="radio" name="mode" value="mixed"
+                                                                    checked="checked"
+                                                                    onchange="updateLabelsForm()"/>{{ _('Mixed label formats') }}
+                                </label>
+                            </div>
+                            <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>', contact_email=config['CONTACT_EMAIL']) }}.</span>
+                            <div class="form-group">
+                                <label for="input-label-mixed-paper-format"
+                                       class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
+                                <div class="col-sm-8">
+                                    <select class="selectpicker form-control" id="input-label-mixed-paper-format"
+                                            name="mixed-paper-format">
+                                        <option value="DIN A4 (Portrait)"
+                                                selected="selected">{{ _('DIN A4 (Portrait)') }}</option>
+                                        <option value="DIN A4 (Landscape)">{{ _('DIN A4 (Landscape)') }}</option>
+                                        <option value="Letter (Portrait)">{{ _('Letter / ANSI A (Portrait)') }}</option>
+                                        <option value="Letter (Landscape)">{{ _('Letter / ANSI A (Landscape)') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <hr/>
+                            <div class="radio">
+                                <label class="control-label"><input type="radio" name="mode" value="fixed-width"
+                                                                    onchange="updateLabelsForm()"/>{{ _('Fixed-width labels') }}
+                                </label>
+                            </div>
+                            <span class="help-block">{{ _('This will generate vertically oriented labels with a fixed width and an optional minimum height.') }}</span>
+                            <div class="form-group">
+                                <label for="input-label-width-paper-format"
+                                       class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
+                                <div class="col-sm-8">
+                                    <select class="selectpicker form-control" id="input-label-width-paper-format"
+                                            name="width-paper-format">
+                                        <option value="DIN A4 (Portrait)"
+                                                selected="selected">{{ _('DIN A4 (Portrait)') }}</option>
+                                        <option value="DIN A4 (Landscape)">{{ _('DIN A4 (Landscape)') }}</option>
+                                        <option value="Letter (Portrait)">{{ _('Letter / ANSI A (Portrait)') }}</option>
+                                        <option value="Letter (Landscape)">{{ _('Letter / ANSI A (Landscape)') }}</option>
+                                    </select>
+                                    <span class="help-block"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-width" class="col-sm-4 control-label">{{ _('Label Width:') }}</label>
+                                <div class="col-sm-8">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" aria-label="Label Width" value="40"
+                                               name="label-width" id="input-width">
+                                        <span class="input-group-addon">mm</span>
+                                    </div>
+                                    <span class="help-block"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-minimum-height"
+                                       class="col-sm-4 control-label">{{ _('Minimum Label Height:') }}</label>
+                                <div class="col-sm-8">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" aria-label="Minimum Label Height"
+                                               value="0" name="label-minimum-height" id="input-minimum-height">
+                                        <span class="input-group-addon">mm</span>
+                                    </div>
+                                    <span class="help-block"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-4 col-sm-8">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="side-by-side"> {{ _('QR Code and GHS symbols side-by-side') }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-4 col-sm-8">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="centered"
+                                                   checked="checked"> {{ _('Center QR Code and GHS symbols') }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr/>
+                            <div class="radio">
+                                <label class="control-label"><input type="radio" name="mode" value="minimum-height"
+                                                                    onchange="updateLabelsForm()"/>{{ _('Minimal-height labels') }}
+                                </label>
+                            </div>
+                            <span class="help-block">{{ _('This will generate vertically oriented labels with a height as low as possible and an optional minimum width.') }}</span>
+                            <div class="form-group">
+                                <label for="input-label-height-paper-format"
+                                       class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
+                                <div class="col-sm-8">
+                                    <select class="selectpicker form-control" id="input-label-height-paper-format"
+                                            name="height-paper-format">
+                                        <option value="DIN A4 (Portrait)"
+                                                selected="selected">{{ _('DIN A4 (Portrait)') }}</option>
+                                        <option value="DIN A4 (Landscape)">{{ _('DIN A4 (Landscape)') }}</option>
+                                        <option value="Letter (Portrait)">{{ _('Letter / ANSI A (Portrait)') }}</option>
+                                        <option value="Letter (Landscape)">{{ _('Letter / ANSI A (Landscape)') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-minimum-width"
+                                       class="col-sm-4 control-label">{{ _('Minimum Label Width:') }}</label>
+                                <div class="col-sm-8">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" aria-label="Minimum Label Width"
+                                               value="0" name="label-minimum-width" id="input-minimum-width">
+                                        <span class="input-group-addon">mm</span>
+                                    </div>
+                                    <span class="help-block"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-4 col-sm-8">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="include-qrcode"> {{ _('Include QR Code') }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default"
+                                    data-dismiss="modal">{{ _('Cancel') }}</button>
+                            <button class="btn btn-primary" type="submit">{{ _('Generate Labels') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if object_qrcode %}
+        <div class="modal fade" id="mobileObjectLinkModal" tabindex="-1" role="dialog"
+             aria-labelledby="mobileObjectLinkModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="mobileObjectLinkModalLabel">{{ _('Object QR Code') }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-center">{{ _('To view this object in the future, scan this QR code:') }}</p>
+                        <a href="{{ object_qrcode }}"><img src="{{ object_qrcode }}" alt="{{ object_url }}"
+                                                           style="width: 100%"/></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if not is_archived and action.type.enable_locations %}
+        <h2 id="locations">{{ _("Locations") }}</h2>
+        {% set allowed_language_ids = [] %}
+        {% for language in all_languages %}
+            {% if language.enabled_for_input %}
+                {{ allowed_language_ids.append(language.id) or '' }}
+            {% endif %}
+        {% endfor %}
+        {% if object_location_assignments %}
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>{{ _("Datetime") }}</th>
+                    <th>{{ _("Location") }}</th>
+                    <th>{{ _("Responsible User") }}</th>
+                    <th>{{ _("Assigning User") }}</th>
+                    <th>{{ _("Description") }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for object_location_assignment in object_location_assignments | reverse %}
+                    <tr>
+                        <td>{{ object_location_assignment.utc_datetime | babel_format_datetime }}</td>
+                        <td>{% if object_location_assignment.location_id is not none %}
+                            <a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name | get_translated_text }}
+                                (#{{ object_location_assignment.location_id }})</a>{% else %}&mdash;{% endif %}</td>
+                        <td>
+                            {% if object_location_assignment.responsible_user_id is not none %}
+                                <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>
+                                {% if object_location_assignment.confirmed %}
+                                    <span class="label label-primary label-responsibility-assigment"
+                                          data-toggle="tooltip" data-placement="top"
+                                          title="{{ _('The user has confirmed this responsibility assignment.') }}">&check;</span>
+                                {% elif object_location_assignment.responsible_user_id == current_user.id %}
+                                    <a class="btn btn-xs btn-primary"
+                                       href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">{{ _('Confirm') }}</a>
+                                {% else %}
+                                    <span class="label label-warning label-responsibility-assigment"
+                                          data-toggle="tooltip" data-placement="top"
+                                          title="{{ _('The user has not confirmed this responsibility assignment yet.') }}">?</span>
+                                {% endif %}
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">{{ get_user(object_location_assignment.user_id).name }}</a>
+                        </td>
+                        <td>
+                            <pre class="location-description">{{ object_location_assignment.description | get_translated_text or ('&mdash;' | safe) }}</pre>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            {{ _('This object has not been assigned to a location yet.') }}
+        {% endif %}
+        {% if user_may_assign_location %}
+            <form class="form" method="post"
+                  action="{{ url_for('frontend.post_object_location', object_id=object_id) }}"
+                  id="assign-location-form">
+                {{ location_form.csrf_token }}
+                <span class="help-block" style="color: red" id="object_location-help-block"></span>
+                <div class="form-group {% if location_form.location.name in location_form.errors %}has-error{% endif %}">
+                    <label for="input-location" class="control-label">{{ _("Location") }}</label>
+                    <select class="selectpicker form-control" id="input-location"
+                            name="{{ location_form.location.name }}" data-live-search="true">
+                        {% for location_id, location_name in location_form.location.choices %}
+                            <option value="{{ location_id }}"
+                                    {% if location_form.location.data == location_id %}selected="selected"{% endif %}>
+                                {% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group {% if location_form.responsible_user.name in location_form.errors %}has-error{% endif %}">
+                    <label for="input-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
+                    <select class="selectpicker form-control" id="input-responsible-user"
+                            name="{{ location_form.responsible_user.name }}" data-live-search="true">
+                        {% for user_id, user_name in location_form.responsible_user.choices %}
+                            <option value="{{ user_id }}"
+                                    {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>
+                                {% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="hidden" id="object_location-template">
+                    <div class="input-group" data-name="input-group-object_location" style="margin-top: 5px" id="">
+                        <textarea class="form-control" rows="3" placeholder="{{ _("Description") }}"
+                                  style="resize:vertical; min-height:2.5em"></textarea>
+                        <span class="input-group-addon language-addon" data-name="language"></span>
+                    </div>
+                </div>
+                <div class="form-group {% if location_form.description.name in location_form.errors %}has-error{% endif %}"
+                     data-name="input-descriptions">
+                    <label for="input-location" class="control-label"
+                           style="padding-right: 5px">{{ _('Description') }}</label>
+                    <select class="selectpicker pull-right select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}"
+                            multiple="multiple" data-style="btn-default btn-xs" id="select-language-object_location">
+                        {% for language in all_languages %}
+                            <option value="{{ language.lang_code }}" {% if language.id == ENGLISH.id %}
+                                    disabled="disabled"
+                                    selected="selected"{% endif %}>{{ language.names | get_translated_text }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %}
+                         id="input-group-object_location-{{ ENGLISH.lang_code }}"
+                         data-name="input-group-object_location" data-language="{{ ENGLISH.lang_code }}">
+                        <textarea class="form-control" rows="3" placeholder="{{ _('Description') }}"
+                                  style="resize:vertical; min-height:2.5em"
+                                  id="textarea-object_location-{{ ENGLISH.lang_code }}"></textarea>
+                        {% if allowed_language_ids | length > 1 %}
+                            <span class="input-group-addon language-addon"
+                                  data-name="language">{{ ENGLISH.names | get_translated_text }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <input hidden="hidden" type="text" value="" id="input-object_location-translations"
+                       name="{{ location_form.description.name }}">
+                <div class="text-right">
+                    <button type="submit" class="btn btn-primary" style="width:15em; margin-bottom: 20px;"><i
+                            class="fa fa-map-marker fa-fw"></i> {{ _('Assign Location') }}</button>
+                </div>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% if not is_archived and action.type.enable_publications %}
+        <h2 id="publications">{{ _('Publications') }}</h2>
+        {% if object_publications %}
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col" style="white-space: nowrap;width: 1%;">{{ _('DOI') }}</th>
+                    <th scope="col">{{ _('Title') }}</th>
+                    <th scope="col">{{ _('Object Name') }}</th>
+                    <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for object_publication in object_publications %}
+                    <tr>
+                        <td>
+                            <a href="http://doi.org/{{ object_publication.doi | urlencode }}">{{ object_publication.doi }}</a>
+                        </td>
+                        <td>{% if object_publication.title is none %}&mdash;{% else %}
+                            {{ object_publication.title }}{% endif %}</td>
+                        <td>{% if object_publication.object_name is none %}&mdash;{% else %}
+                            {{ object_publication.object_name }}{% endif %}</td>
+                        <td>
+                            <a href="{{ url_for('.objects', doi=object_publication.doi) }}">{{ _('View&nbsp;Objects') }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{{ _('This object has not been linked to a publication yet.') }}</p>
+        {% endif %}
+        {% if user_may_link_publication %}
+            {% for message in get_flashed_messages() %}
+                {% if 'Please enter a valid DOI' in message %}
+                    {{ publication_form.errors.__setitem__(publication_form.doi.name, _('Please enter a valid DOI.')) or '' }}
+                {% endif %}
+            {% endfor %}
+            <form class="form" method="post"
+                  action="{{ url_for('frontend.post_object_publication', object_id=object_id) }}"
+                  id="assign-publication-form">
+                {{ publication_form.csrf_token }}
+                <div class="form-group {% if publication_form.doi.name in publication_form.errors %}has-error{% endif %}">
+                    <label for="input-location" class="control-label">{{ _('DOI') }}</label>
+                    <input type="text" class="form-control" placeholder="{{ _('DOI') }}" style="margin-bottom: 10px;"
+                           name="{{ publication_form.doi.name }}"
+                           value="{% if publication_form.doi.data %}{{ publication_form.doi.data }}{% endif %}"/>
+                    {% if publication_form.doi.name in publication_form.errors %}
+                        <span class="help-block">{{ publication_form.errors[publication_form.doi.name] }}</span>
+                    {% endif %}
+                </div>
+                <div class="form-group {% if publication_form.title.name in publication_form.errors %}has-error{% endif %}">
+                    <label for="input-location" class="control-label">{{ _('Title') }}</label>
+                    <input type="text" class="form-control" placeholder="{{ _('Title') }}" style="margin-bottom: 10px;"
+                           name="{{ publication_form.title.name }}"
+                           value="{% if publication_form.title.data %}{{ publication_form.title.data }}{% endif %}"/>
+                </div>
+                <div class="form-group {% if publication_form.object_name.name in publication_form.errors %}has-error{% endif %}">
+                    <label for="input-location" class="control-label">{{ _('Object Name') }}</label>
+                    <input type="text" class="form-control" placeholder="{{ _('Object Name') }}"
+                           style="margin-bottom: 10px;" name="{{ publication_form.object_name.name }}" value="
+
+
+
+
+                            {% if publication_form.object_name.data %}{{ publication_form.object_name.data }}{% endif %}"/>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="btn btn-primary" style="width:15em; margin-bottom: 20px;"><i
+                            class="fa fa-book fa-fw"></i> {{ _('Link Publication') }}</button>
+                </div>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% if not is_archived %}
+        {% if action.type.enable_comments %}
+            <h2>{{ _('Comments') }}</h2>
+            {% if comments %}
+                {% for comment in comments %}
+                    <div class="well" id="comment-{{ comment.id }}">
+                        <pre class="comment">{{ comment.content }}</pre>
+                        <div class="text-right">&mdash; <a
+                                href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.name }}</a>, {{ comment.utc_datetime | babel_format_datetime }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>{{ _('There are no comments for this object.') }}</p>
+            {% endif %}
+            {% if user_may_comment %}
+                <form class="form" method="post"
+                      action="{{ url_for('frontend.post_object_comments', object_id=object_id) }}"
+                      id="new-comment-form">
+                    {{ comment_form.csrf_token }}
+                    <div class="form-group">
+                        <textarea class="form-control" rows="3" placeholder="{{ _('Comment') }}"
+                                  style="resize:vertical; min-height:2.5em; margin-bottom: 10px;"
+                                  name="{{ comment_form.content.name }}">{% if comment_form.content.data %}
+                            {{ comment_form.content.data }}{% endif %}</textarea>
+                    </div>
+                    <div class="text-right">
+                        <button type="submit" class="btn btn-primary" style="width:15em; margin-bottom: 20px;"><i
+                                class="fa fa-comment fa-fw"></i> {{ _('Post Comment') }}</button>
+                    </div>
+                </form>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    {% if not is_archived and action.type.enable_activity_log %}
+        {% if object_log_entries %}
+            <h2>{{ _('Activity Log') }}</h2>
+            <table class="table" id="activity_log">
+                <thead>
+                <tr>
+                    <th scope="col" style="white-space: nowrap;width: 1%;">{{ _('Datetime') }}</th>
+                    <th scope="col"></th>
+                    <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
+                        <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover"
+                                data-placement="left" data-html="true" data-content="
+              <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;versions&quot;);'/> {{ _('Versions') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> {{ _('Measurements') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> {{ _('Comments') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> {{ _('Files') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> {{ _('Other') }}</label>
+              <script>
+                window.update_activity_log_filter_states();
+              </script>
+            ">
+                            <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge"
+                                                                                         id="activity_log_counter"></span>
+                        </button>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for object_log_entry in object_log_entries %}
+                    <tr data-activity-log-type="{{ object_log_entry.type.name.lower() }}">
+                        <td style="white-space: nowrap;width: 1%;">{{ object_log_entry.utc_datetime | babel_format_datetime }}</td>
+                        {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
+                            <td>
+                                {% if 'previous_object_id' in object_log_entry.data %}
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
+                                {% else %}
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">{{ _('View') }}</a>
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
+                            <td>
+                                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=object_log_entry.user.id, user_name=object_log_entry.user.name, batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
+                            </td>
+                            <td class="text-right">
+                                <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">{{ _('View') }}</a>
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
+                            <td>
+                                {{ _('<a href="%(user_url)s">%(user_name)s</a> edited the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                            </td>
+                            <td class="text-right">
+                                {% if 'version_id' in object_log_entry.data %}
+                                    <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']) }}">{{ _('View') }}</a>
+                                {% endif %}
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION %}
+                            <td>
+                                {{ _('<a href="%(user_url)s">%(user_name)s</a> restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
+                            </td>
+                            <td class="text-right">
+                                {% if 'version_id' in object_log_entry.data %}
+                                    <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']) }}">{{ _('View') }}</a>
+                                {% endif %}
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT %}
+                            {% if object_log_entry.data['measurement_id'] %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].data.name.text | get_translated_text) }}
+                                </td>
+                                <td class="text-right">
+                                    <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ _('View') }}</a>
+                                </td>
+                            {% else %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in a measurement.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                </td>
+                                <td class="text-right">
+                                </td>
+                            {% endif %}
+                        {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION %}
+                            {% if object_log_entry.data['sample_id'] %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].data.name.text | get_translated_text) }}
+                                </td>
+                                <td class="text-right">
+                                    <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">{{ _('View') }}</a>
+                                </td>
+                            {% else %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create a sample.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                </td>
+                                <td class="text-right">
+                                </td>
+                            {% endif %}
+                        {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
+                            <td>
+                                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a comment for this object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                            </td>
+                            <td class="text-right">
+                                {% if action.type.enable_comments %}
+                                    {% if 'comment_id' in object_log_entry.data %}
+                                        <a href="#comment-{{ object_log_entry.data['comment_id'] }}">{{ _('View') }}</a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE %}
+                            <td>
+                                {% for file in files %}
+                                    {% if file.id == object_log_entry.data['file_id'] %}
+                                        {% if file.storage == 'local' or file.storage == 'database' %}
+                                            {% if action.type.enable_files %}
+                                                {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
+                                            {% else %}
+                                                {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded %(file_name)s.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_name=file.original_file_name) }}
+                                            {% endif %}
+                                        {% elif file.storage == 'url' %}
+                                            {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, link_url=file.data.url) }}
+                                        {% else %}
+                                            {% if action.type.enable_files %}
+                                                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
+                                            {% else %}
+                                                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a file.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="text-right">
+                                {% if action.type.enable_files %}
+                                    {% if 'file_id' in object_log_entry.data %}
+                                        <a href="#file-{{ object_log_entry.data['file_id'] }}">{{ _('View') }}</a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
+                            {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
+                            {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                                </td>
+                            {% elif object_location_assignment.location is not none %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text) }}
+                                </td>
+                            {% elif object_location_assignment.responsible_user_id is not none %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                                </td>
+                            {% endif %}
+                            <td class="text-right">
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
+                            <td>
+                                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
+                            </td>
+                            <td class="text-right">
+                                {% if action.type.enable_publications %}
+                                    <a href="#publications">{{ _('View') }}</a>
+                                {% endif %}
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA %}
+                            {% if object_log_entry.data['object_id'] %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].data['name']['text'] | get_translated_text, object_id=object_log_entry.data['object_id']) }}
+                                </td>
+                                <td class="text-right">
+                                    <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">{{ _('View') }}</a>
+                                </td>
+                            {% else %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of another object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                </td>
+                                <td class="text-right">
+                                </td>
+                            {% endif %}
+                        {% elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE %}
+                            <td>
+                                {{ _('<a href="%(user_url)s">%(user_name)s</a> exported this object to a Dataverse.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                            </td>
+                            <td class="text-right">
+                                {% if object_log_entry.data.get('dataverse_url') %}
+                                    <a href="{{ object_log_entry.data['dataverse_url'] }}">{{ _('View') }}</a>
+                                {% endif %}
+                            </td>
+                        {% elif object_log_entry.type == ObjectLogEntryType.LINK_PROJECT %}
+                            {% with project = get_project(object_log_entry.data.project_id) %}
+                                {% if project is not none %}
+                                    <td>
+                                        {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                                    </td>
+                                    <td class="text-right">
+                                        <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
+                                    </td>
+                                {% else %}
+                                    <td>
+                                        {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                    </td>
+                                    <td class="text-right">
+                                    </td>
+                                {% endif %}
+                            {% endwith %}
+                        {% elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT %}
+                            {% if object_log_entry.data.project_deleted %}
+                                <td>
+                                    {{ _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                </td>
+                                <td class="text-right">
+                                </td>
+                            {% else %}
+                                {% with project = get_project(object_log_entry.data.project_id) %}
+                                    {% if project is not none %}
+                                        <td>
+                                            {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                                        </td>
+                                        <td class="text-right">
+                                            <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
+                                        </td>
+                                    {% else %}
+                                        <td>
+                                            {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                                        </td>
+                                        <td class="text-right">
+                                        </td>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        {% else %}
+                            <td>{{ _('Unknown event') }}</td>
+                            <td></td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endif %}
+
+    {% if related_objects_tree %}
+        {% if not is_archived and action.type.enable_related_objects %}
+            <h2>{{ _('Related Objects') }}</h2>
+
+            <div class="related-objects">
+                {% set in_export_data_model = False %}
+                {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+            </div>
+        {% endif %}
+
+        <div class="modal fade" id="dataExportModal" tabindex="-1" role="dialog" aria-labelledby="dataExportModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="dataExportModalLabel">{{ _('Export Data') }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="select-export-format" class="control-label">{{ _('Export Format') }}</label>
+                            <select id="select-export-format" class="selectpicker" data-width="100%">
+                                <option value=".pdf" selected="selected">{{ _('PDF file') }}</option>
+                                {% for file_extension in export_file_formats %}
+                                    <option value="{{ file_extension }}">{{ _(export_file_formats[file_extension][0]) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" id="pdf–export-sections">
+                            <div>{{ _('PDF Export Sections') }}</div>
+                            <label><input type="checkbox" checked="checked" disabled="disabled"
+                                          class="disabled"> {{ _('Information') }}</label>
+                            {% if action.type.enable_activity_log %}
+                                <label><input type="checkbox" checked="checked"
+                                              name="activity_log"> {{ _('Activity Log') }}</label>
+                            {% endif %}
+                            {% if action.type.enable_locations %}
+                                <label><input type="checkbox" checked="checked" name="locations"> {{ _('Locations') }}
+                                </label>
+                            {% endif %}
+                            {% if action.type.enable_publications %}
+                                <label><input type="checkbox" checked="checked"
+                                              name="publications"> {{ _('Publications') }}</label>
+                            {% endif %}
+                            {% if action.type.enable_files %}
+                                <label><input type="checkbox" checked="checked" name="files"> {{ _('Files') }}</label>
+                            {% endif %}
+                            {% if action.type.enable_comments %}
+                                <label><input type="checkbox" checked="checked" name="comments"> {{ _('Comments') }}
+                                </label>
+                            {% endif %}
+                            <div style="text-align: left">
+                                <label style="font-weight: bold"
+                                       for="select-pdf-export-language">{{ _('PDF Export Language') }}</label>
+                                <select class="selectpicker" name="language" id="select-pdf-export-language">
+                                    {% for language in all_languages %}
+                                        {% if language.enabled_for_user_interface and language.lang_code in SUPPORTED_LOCALES %}
+                                            <option value="{{ language.lang_code }}"
+                                                    {% if language.id == get_user_language(current_user).id %}selected="selected"{% endif %}>
+                                                {{ language.names | get_translated_text }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        {% if action.type.enable_related_objects %}
+                            <div class="related-objects">
+                                <div>{{ _('Objects') }}</div>
+                                {% set in_export_data_model = True %}
+                                {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        {% if action.type.enable_related_objects %}
+                            <button type="button" class="btn btn-default"
+                                    id="button-related-objects-select-all">{{ _('Select All') }}</button>
+                            <button type="button" class="btn btn-default"
+                                    id="button-related-objects-deselect-all">{{ _('Deselect All') }}</button>
+                        {% endif %}
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+                        <a href="{{ url_for('.export_data', object_id=object_id) }}" class="btn btn-primary"
+                           id="button-related-objects-export-data">{{ _('Export Data') }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/js.cookie.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
     <script src="{{ url_for('static', filename='js/view-edit.js') }}"></script>
+    {% if get_user_language(current_user).lang_code == 'de' %}
+        <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>
+        <script type="text/javascript">
+            Plotly.setPlotConfig({locale: 'de'})
+        </script>
+    {% endif %}
+    <script type="text/javascript">
 
+        window.object_location_translations = {'{{ENGLISH.lang_code}}': '',}
+
+
+        window.languages = [
+            {% for lang in all_languages %}
+                {
+                    'id': '{{ lang.id }}',
+                    'name': '{{ lang.names | get_translated_text }}',
+                    'lang_code': '{{ lang.lang_code }}'
+                },
+            {% endfor %}
+        ]
+        $(function () {
+
+            function updateObjectLocationTranslationJSON() {
+                var translation_json = JSON.stringify(window.object_location_translations);
+                $('#input-object_location-translations').val(translation_json);
+            }
+
+            $('form#assign-location-form').on('submit', function () {
+                resp = $('.selectpicker#input-responsible-user').val();
+                locat = $('.selectpicker#input-location').val()
+                if (resp === '-1' && locat === '-1') {
+                    $('#object_location-help-block').html('{{ _("Please select one responsible user or one location") }}');
+                } else {
+                    $('#object_location-help-block').html('')
+                }
+                return (resp !== '-1' || locat !== '-1')
+            });
+
+            $('#select-language-object_location').on('change', function () {
+                var existing_languages = []
+                $.each(window.object_location_translations, function (key, value) {
+                    existing_languages.push(key)
+                })
+                let selected = ["{{ ENGLISH.lang_code }}",]
+                let input_descriptions = $('[data-name="input-descriptions"]')
+                selected = selected.concat($(this).val())
+                let remove_languages = existing_languages.filter(n => !selected.includes(n))
+                let add_languages = selected.filter(n => !existing_languages.includes(n))
+                for (const del_language of remove_languages) {
+                    let temp = $('#input-group-object_location-' + del_language)
+                    $.each(window.object_location_translations, function (key, value) {
+                        if (key === del_language)
+                            delete window.object_location_translations[key];
+                    });
+                    $(temp).remove();
+                    updateObjectLocationTranslationJSON();
+                }
+                for (const new_language of selected) {
+                    if (!$('#input-group-object_location-' + new_language).length) {
+                        $($('#object_location-template').html()).insertAfter(input_descriptions.children().last());
+                        let temp = input_descriptions.children().last();
+                        let lang_name = window.languages.find(lang => lang.lang_code === new_language).name
+                        $(temp).children().first().attr('id', 'textarea-object_location' + new_language.toString())
+
+                        $(temp).attr('id', 'input-group-object_location-' + new_language)
+                        $(temp).attr('data-name', 'input-group-object_location')
+                        $(temp).children('.input-group-addon[data-name="language"]').text(lang_name)
+                        $(temp).attr('data-language', new_language);
+
+                        $(temp).change(function () {
+                            var language = $(this).attr('data-language');
+                            var translation_text = $(this).find('textarea').val();
+                            window.object_location_translations[language] = translation_text;
+                            updateObjectLocationTranslationJSON();
+                        });
+                        $(temp).find('textarea').change();
+                    }
+                    if (add_languages.includes(new_language)) {
+                        window.object_location_translations[new_language] = '';
+                    }
+                    updateObjectLocationTranslationJSON();
+                }
+            });
+
+            $('#input-group-object_location-{{ ENGLISH.lang_code }}').change(function () {
+                var language = $(this).attr('data-language');
+                var translation_text = $(this).find('textarea').val();
+                window.object_location_translations[language] = translation_text;
+                updateObjectLocationTranslationJSON();
+            });
+            $('#input-group-object_location-{{ ENGLISH.lang_code }}').change();
+
+            $('.nav-tabs a').click(function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+            {% if (not is_archived) and user_may_comment and action.type.enable_comments %}
+                var comment_form = $('#new-comment-form');
+                var comment_textarea = comment_form.find('textarea');
+                comment_textarea.on('input change propertychange', function () {
+                    comment_textarea.closest('.form-group').removeClass('has-error');
+                });
+                comment_form.on('submit', function () {
+                    if (comment_textarea.val() === "") {
+                        comment_textarea.closest('.form-group').addClass('has-error');
+                        comment_textarea.focus();
+                        return false;
+                    }
+                    return true;
+                });
+            {% endif %}
+            $(function () {
+                $('[data-toggle="popover"]').popover()
+            });
+            {% if object_log_entries and action.type.enable_activity_log %}
+                var activity_log_filter_type_list = {
+                    "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
+                    "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
+                    "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
+                    "files": ['{{ ObjectLogEntryType.UPLOAD_FILE.name.lower() }}'],
+                    "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}']
+                };
+                window.activity_log_toggle = function (should_show, category) {
+                    var type_list = activity_log_filter_type_list[category];
+                    var activity_log = $('#activity_log').find('> tbody');
+                    type_list.forEach(function (activity_log_type) {
+                        var activity_log_rows = activity_log.find('tr[data-activity-log-type=' + activity_log_type + ']');
+                        if (should_show) {
+                            activity_log_rows.css({display: 'table-row'});
+                        } else {
+                            activity_log_rows.css({display: 'none'});
+                        }
+                    });
+                    $('#activity_log_counter').html('' + activity_log.find('tr:visible').length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
+                    window.activity_log_toggle.current_state[category] = should_show;
+                    Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', window.activity_log_toggle.current_state);
+                };
+                window.activity_log_toggle.current_state = {};
+                var activity_log_filter_state = Cookies.getJSON('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE');
+                if (activity_log_filter_state === undefined) {
+                    activity_log_filter_state = {
+                        "versions": true,
+                        "measurements": true,
+                        "comments": true,
+                        "files": true,
+                        "other": true
+                    };
+                    Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
+                }
+                window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
+                window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
+                window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
+                window.activity_log_toggle(activity_log_filter_state['files'], "files");
+                window.activity_log_toggle(activity_log_filter_state['other'], "other");
+                window.update_activity_log_filter_states = function () {
+                    if (window.activity_log_toggle.current_state['versions']) {
+                        $('#activity_log_filter_versions').attr('checked', 'checked');
+                    }
+                    if (window.activity_log_toggle.current_state['measurements']) {
+                        $('#activity_log_filter_measurements').attr('checked', 'checked');
+                    }
+                    if (window.activity_log_toggle.current_state['comments']) {
+                        $('#activity_log_filter_comments').attr('checked', 'checked');
+                    }
+                    if (window.activity_log_toggle.current_state['files']) {
+                        $('#activity_log_filter_files').attr('checked', 'checked');
+                    }
+                    if (window.activity_log_toggle.current_state['other']) {
+                        $('#activity_log_filter_other').attr('checked', 'checked');
+                    }
+                };
+            {% endif %}
+            {% if not is_archived %}
+                {% if action.type.enable_files %}
+                    window.file_table_toggle = function (should_show, category) {
+                        var file_table = $('#file_table').find('> tbody');
+                        var file_table_rows = file_table.find('tr[data-file-type=' + category + ']');
+                        if (should_show) {
+                            file_table_rows.css({display: 'table-row'});
+                        } else {
+                            file_table_rows.css({display: 'none'});
+                        }
+                        $('#file_table_counter').html('' + file_table.find('tr:visible').length + '&thinsp;/&thinsp;' + file_table.find('tr').length);
+                        window.file_table_toggle.current_state[category] = should_show;
+                        Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', window.file_table_toggle.current_state);
+                    };
+                    window.file_table_toggle.current_state = {};
+                    var file_table_filter_state = Cookies.getJSON('SAMPLEDB_FILE_TABLE_FILTER_STATE');
+                    if (file_table_filter_state === undefined) {
+                        file_table_filter_state = {
+                            "notebooks": true,
+                            "other": true
+                        };
+                        Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', file_table_filter_state);
+                    }
+                    window.file_table_toggle(file_table_filter_state['notebooks'], "notebooks");
+                    window.file_table_toggle(file_table_filter_state['other'], "other");
+                    window.update_file_table_filter_states = function () {
+                        if (window.file_table_toggle.current_state['notebooks']) {
+                            $('#file_table_filter_notebooks').attr('checked', 'checked');
+                        }
+                        if (window.file_table_toggle.current_state['other']) {
+                            $('#file_table_filter_other').attr('checked', 'checked');
+                        }
+                    };
+                {% endif %}
+                $('#button-show-mobile-file-upload-modal').click(function () {
+                    $('#mobileFileLinkModal').modal('show');
+                });
+                $('#button-show-object-qrcode-modal').click(function () {
+                    $('#mobileObjectLinkModal').modal('show');
+                });
+                $('#button-show-object-label-modal').click(function () {
+                    $('#objectLabelModal').modal('show');
+                });
+                {% if action.type.enable_files %}
+                    function changeHandler() {
+                        var files = $('#input-file-upload').get(0).files;
+                        if (files.length === 0) {
+                            $('#input-file-text').val("");
+                        } else if (files.length === 1) {
+                            $('#input-file-text').val(files[0].name);
+                            $('#button-upload-files').removeClass('disabled');
+                        } else {
+                            $('#input-file-text').val(files.length + " {{ _('files selected') }}");
+                            $('#button-upload-files').removeClass('disabled');
+                        }
+                        $('#input-file-names-hidden').val("");
+                        $('#input-file-source-hidden').val("local");
+                    }
+                    {% if user_may_edit %}
+                        $('#input-file-upload').on('change', changeHandler);
+                        function dropHandler(e) {
+                            e.preventDefault();
+                            $('#input-file-upload')[0].files = e.dataTransfer.files;
+                            changeHandler();
+                        }
+                        function dragOverHandler(e) {
+                            e.preventDefault();
+                        }
+                        var upload_area = $('#upload-area')[0];
+                        upload_area.ondrop = dropHandler;
+                        upload_area.ondragover = dragOverHandler;
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+
+            {% if action.type.enable_files %}
+                $('.button-file-info').on('click', function () {
+                    var file_id = $(this).attr('data-file_id');
+                    $('#fileInfoModal-' + file_id).modal('show');
+                });
+                $('.file-info-hide').hide();
+                $('.file-info-edit-mode').hide();
+                $('.file-info-view-mode').show();
+                $('.button-file-info-edit').on('click', function () {
+                    $('.input-file-info-title').each(function () {
+                        $(this).attr('data-value', $(this).attr('value'));
+                    });
+                    $('.input-file-info-description').each(function () {
+                        $(this).attr('data-value', $(this).val());
+                    });
+                    $('.file-info-edit-mode').show();
+                    $('.file-info-view-mode').hide();
+                });
+                $('.button-file-info-cancel').on('click', function () {
+                    $('.file-info-edit-mode').hide();
+                    $('.file-info-view-mode').show();
+                    $('.input-file-info-title').each(function () {
+                        $(this).val($(this).attr('data-value'));
+                    });
+                    $('.input-file-info-description').each(function () {
+                        $(this).val($(this).attr('data-value'));
+                    });
+                });
+                $('.button-file-info-hide-cancel').on('click', function () {
+                    $('.file-info-main').show();
+                    $('.file-info-hide').hide();
+                });
+                $('.button-file-info-hide').on('click', function () {
+                    $('.file-info-main').hide();
+                    $('.file-info-hide').show();
+                });
+                $('.modal-file-info').on('hidden.bs.modal', function (e) {
+                    $('.file-info-hide').hide();
+                    $('.file-info-main').show();
+                });
+            {% endif %}
+            {% if related_objects_tree %}
+                $('input[name^=data_export_object_]').prop("checked", false);
+                $('input.data_export_object').prop("checked", false);
+                $('input.data_export_object_{{ object_id }}').prop("checked", true);
+                function updateDataExportLink() {
+                    var format = ".pdf";
+                    var selected_format_option = $('#select-export-format > option:selected');
+                    if (selected_format_option) {
+                        format = selected_format_option.val();
+                    }
+                    $('#pdf–export-sections').toggleClass('disabled', format !== '.pdf');
+                    $('#pdf–export-sections select[name="language"]').attr('disabled', format !== '.pdf').selectpicker('refresh');
+                    var pdf_export_sections = $('#pdf–export-sections input');
+                    var enabled_sections = [];
+                    pdf_export_sections.each(function (_, input) {
+                        if (!$(input).hasClass('disabled')) {
+                            input.disabled = (format !== '.pdf');
+                            if (input.checked) {
+                                enabled_sections.push(input.name);
+                            }
+                        }
+                    });
+                    var pdf_export_language = $('#pdf–export-sections select[name="language"]').selectpicker('val');
+                    var object_ids_to_export = [];
+                    {% if action.type.enable_related_objects %}
+                        $('input[name^=data_export_object_]').each(function () {
+                            if ($(this).prop('checked')) {
+                                object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
+                            }
+                        });
+                    {% else %}
+                        object_ids_to_export.push({{ object_id }});
+                    {% endif %}
+                    var export_link = $('#button-related-objects-export-data');
+                    if (object_ids_to_export.length > 0) {
+                        export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)) + "&language=" + encodeURIComponent(pdf_export_language));
+                        export_link.removeClass("disabled");
+                    } else {
+                        export_link.attr('href', "#");
+                        export_link.addClass("disabled");
+                    }
+                }
+
+                $('#pdf–export-sections input').on('change', function () {
+                    updateDataExportLink();
+                });
+                $('#pdf–export-sections select[name="language"]').on('change', function () {
+                    updateDataExportLink();
+                });
+                $('input[name^=data_export_object_]').on('change', function () {
+                    $('input.' + this.name + ':not([name=' + this.name + '])').prop("checked", $(this).prop("checked"));
+                    updateDataExportLink();
+                });
+                $('#button-related-objects-select-all').on('click', function () {
+                    $('#dataExportModal .related-objects-tree-toggle').prop("checked", true);
+                    $('input.data_export_object').prop("checked", true);
+                    updateDataExportLink();
+                });
+                $('#button-related-objects-deselect-all').on('click', function () {
+                    $('input.data_export_object').prop("checked", false);
+                    updateDataExportLink();
+                });
+                $('#select-export-format').on('change', function () {
+                    updateDataExportLink();
+                });
+                updateDataExportLink();
+            {% endif %}
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        function copyToClipboard(text) {
+            var element = document.createElement('textarea');
+            element.value = text;
+            element.setAttribute('readonly', '');
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+            document.body.appendChild(element);
+            var selected = false;
+            if (document.getSelection().rangeCount > 0) {
+                selected = document.getSelection().getRangeAt(0);
+            }
+            element.select();
+            document.execCommand('copy');
+            document.body.removeChild(element);
+            if (selected) {
+                document.getSelection().removeAllRanges();
+                document.getSelection().addRange(selected);
+            }
+        }
+
+        $('span.copy-external-link').on('click', function () {
+            var button = $(this);
+            copyToClipboard(button.attr('data-url'));
+            var wrapper = button.parent();
+            button.tooltip('hide');
+            wrapper.tooltip('show');
+            setTimeout(function () {
+                wrapper.tooltip('hide');
+            }.bind(wrapper), 500);
+        });
+        {% if not is_archived %}
+            {% if action.type.enable_labels %}
+                function validateLabelsForm() {
+                    const PAGE_SIZES = {
+                        {% for paper_format in PAGE_SIZES %}
+                            "{{ paper_format }}": [
+                                {{ PAGE_SIZES[paper_format][0] / mm }},
+                                {{ PAGE_SIZES[paper_format][1] / mm }}
+                            ]{% if loop.index < (PAGE_SIZES | length) %},{% endif %}
+                        {% endfor %}
+                    };
+                    var labels_form = $('#form-generate-labels');
+                    var is_valid = true;
+                    labels_form.find('.has-error').removeClass('has-error');
+                    labels_form.find('.has-success').removeClass('has-success');
+                    labels_form.find('.help-block').text("");
+                    if (labels_form.find('input[name="mode"][value="fixed-width"]').is(':checked')) {
+                        var paper_format = labels_form.find('select[name="width-paper-format"] > option:checked').val();
+                        if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
+                            var paper_format_group = labels_form.find('select[name="width-paper-format"]').closest('.form-group');
+                            paper_format_group.addClass('has-error');
+                            paper_format_group.find('.help-block').text("Please select a paper format.");
+                            is_valid = false;
+                        } else {
+                            labels_form.find('select[name="width-paper-format"]').closest('.form-group').addClass('has-success');
+                            var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
+                            var maximum_height = Math.floor(PAGE_SIZES[paper_format][1] - {{ VERTICAL_LABEL_MARGIN * 2 }});
+                            var minimum_width = 20;
+                            if (labels_form.find('input[name="side-by-side"]').is(':checked')) {
+                                minimum_width = 40;
+                            }
+                            var input_width = $('#input-width');
+                            var input_width_group = input_width.closest('.form-group');
+                            var input_width_help = input_width_group.find('.help-block');
+                            var label_width = +input_width.val();
+                            if (!isNaN(label_width) && label_width >= minimum_width && label_width <= maximum_width) {
+                                input_width_group.addClass('has-success');
+                                input_width_help.text("");
+                                input_width.val(label_width);
+                            } else {
+                                input_width_group.addClass('has-error');
+                                input_width_help.text("Please enter a number between " + minimum_width.toString() + " and " + maximum_width.toString() + ".");
+                                input_width.closest('.form-group').addClass('has-error');
+                                is_valid = false;
+                            }
+                            var input_minimum_height = $('#input-minimum-height');
+                            var input_minimum_height_group = input_minimum_height.closest('.form-group');
+                            var input_minimum_height_help = input_minimum_height_group.find('.help-block');
+                            var label_minimum_height = +input_minimum_height.val();
+                            if (!isNaN(label_minimum_height) && label_minimum_height >= 0 && label_minimum_height <= maximum_height) {
+                                input_minimum_height_group.addClass('has-success');
+                                input_minimum_height.val(label_minimum_height);
+                            } else {
+                                input_minimum_height_group.addClass('has-error');
+                                input_minimum_height_help.text("Please enter number between 0 and " + maximum_height.toString() + ".");
+                                is_valid = false;
+                            }
+                        }
+                    }
+                    if (labels_form.find('input[name="mode"][value="minimum-height"]').is(':checked')) {
+                        var paper_format = labels_form.find('select[name="height-paper-format"] > option:checked').val();
+                        if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
+                            var paper_format_group = labels_form.find('select[name="height-paper-format"]').closest('.form-group');
+                            paper_format_group.addClass('has-error');
+                            paper_format_group.find('.help-block').text("Please select a paper format.");
+                            is_valid = false;
+                        } else {
+                            labels_form.find('select[name="height-paper-format"]').closest('.form-group').addClass('has-success');
+                            var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
+                            var input_minimum_width = $('#input-minimum-width');
+                            var input_minimum_width_group = input_minimum_width.closest('.form-group');
+                            var input_minimum_width_help = input_minimum_width_group.find('.help-block');
+                            var label_minimum_width = +input_minimum_width.val();
+                            if (!isNaN(label_minimum_width) && label_minimum_width >= 0 && label_minimum_width <= maximum_width) {
+                                input_minimum_width_group.addClass('has-success');
+                                input_minimum_width.val(label_minimum_width);
+                            } else {
+                                input_minimum_width_group.addClass('has-error');
+                                input_minimum_width_help.text("Please enter a number between 0 and " + maximum_width.toString() + ".");
+                                is_valid = false;
+                            }
+                        }
+                    }
+                    if (labels_form.find('input[name="mode"][value="mixed"]').is(':checked')) {
+                        var paper_format = labels_form.find('select[name="mixed-paper-format"] > option:checked').val();
+                        if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
+                            var paper_format_group = labels_form.find('select[name="mixed-paper-format"]').closest('.form-group');
+                            paper_format_group.addClass('has-error');
+                            paper_format_group.find('.help-block').text("Please select a paper format.");
+                            is_valid = false;
+                        } else {
+                            labels_form.find('select[name="mixed-paper-format"]').closest('.form-group').addClass('has-success');
+                        }
+                    }
+                    if (labels_form.find('input[name="mode"]:checked').length == 0) {
+                        labels_form.find('input[name="mode"]').closest('.radio').addClass('has-error');
+                        is_valid = false;
+                    }
+                    return is_valid;
+                }
+                function updateLabelsForm() {
+                    var labels_form = $('#form-generate-labels');
+                    labels_form.find('.has-error').removeClass('has-error');
+                    labels_form.find('.has-success').removeClass('has-success');
+                    labels_form.find('.help-block').text("");
+                    var is_mixed = labels_form.find('input[name="mode"][value="mixed"]').is(':checked');
+                    labels_form.find('select[name="mixed-paper-format"]').prop('disabled', !is_mixed).selectpicker('refresh');
+                    var is_fixed_width = labels_form.find('input[name="mode"][value="fixed-width"]').is(':checked');
+                    labels_form.find('input[name="side-by-side"]').prop('disabled', !is_fixed_width);
+                    labels_form.find('input[name="centered"]').prop('disabled', !is_fixed_width);
+                    labels_form.find('input[name="label-width"]').prop('disabled', !is_fixed_width);
+                    labels_form.find('input[name="label-minimum-height"]').prop('disabled', !is_fixed_width);
+                    labels_form.find('select[name="width-paper-format"]').prop('disabled', !is_fixed_width).selectpicker('refresh');
+                    var is_minimum_height = labels_form.find('input[name="mode"][value="minimum-height"]').is(':checked');
+                    labels_form.find('input[name="include-qrcode"]').prop('disabled', !is_minimum_height);
+                    labels_form.find('input[name="label-minimum-width"]').prop('disabled', !is_minimum_height);
+                    labels_form.find('select[name="height-paper-format"]').prop('disabled', !is_minimum_height).selectpicker('refresh');
+                }
+                updateLabelsForm();
+            {% endif %}
+        {% endif %}
+
+        $(document).ready(function () {
+            $(plotly_charts).each(function (index, element) {
+                Plotly.newPlot(element[0], element[1]);
+            });
+        });
+    </script>
 
     <script type="text/javascript">
         window.mde_fields = [];
@@ -156,43 +2015,4 @@
         });
 
     </script>
-
-{% endblock %}
-
-{% block content %}
-
-    {# counter for plotly_chart_plots #}
-    {% set plot_counter = namespace(value=0) %}
-
-    <script>
-        window.plotly_charts = [];
-    </script>
-
-    <h1>{{ action_type.translation.object_name }} #{{ object_id }}: {{ data.name.text | get_translated_text }}</h1>
-
-    <h2>{{ _('Information') }}</h2>
-    <div class="row" style="padding-right:0.75em">
-        <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search"
-                                                                                   style="visibility:hidden"
-                                                                                   aria-hidden="true"></i></label>
-        <div class="col-md-9">{% if instrument is not none %}
-            <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>
-            {% else %}&mdash;{% endif %}</div>
-    </div>
-    <div class="row" style="padding-right:0.75em">
-        <label class="col-md-3" style="text-align: right">{{ _('Action') }} <a
-                href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search"
-                                                                                            aria-hidden="true"></i></a></label>
-        <div class="col-md-9"><a
-                href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
-    </div>
-
-    <h2>{{ {"de": "Daten", "en": "Data"} | get_translated_text }}</h2>
-
-    <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}">
-        {{ form.csrf_token() }}
-        <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
-        {% set id_prefix = "object_" %}
-        {% include "objects/view_edit/view_edit_any.html" %}
-    </form>
 {% endblock %}

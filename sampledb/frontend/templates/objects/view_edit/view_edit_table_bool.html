@@ -1,4 +1,5 @@
 <div class="form-area">
+    {# View #}
     <div class="view-switch">
         <div class="row" style="padding-right: 0.75em">
             {% if data is not none and "value" in data and not (data.value is none) %}
@@ -17,8 +18,7 @@
     </div>
     {# Form #}
     <div class="form-switch">
-            <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
-            <input type="checkbox" name="{{ id_prefix }}_value"
-                   {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data %}checked{% endif %}{% elif data is not none and "value" in data and data.value %}checked="checked"{% endif %}>
+        <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+        <input type="checkbox" name="{{ id_prefix }}_value" {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data %}checked{% endif %}{% elif data is not none and "value" in data and data.value %}checked="checked"{% endif %}>
     </div>
 </div>
