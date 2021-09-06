@@ -1,23 +1,28 @@
 <div class="form-group row form-area" style="padding-right:0.75em">
     {# Label #}
-    <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title | get_translated_text }}
-        {% if data is not none and "value" in data %}
-            {% if data.value %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}"
-                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
-            {% else %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == False', advanced='on') }}"
-                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
-            {% endif %}
-        {% else %}
-            <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i
-                    class="fa fa-search" aria-hidden="true"></i></a></label>
-        {% endif %}
-    </label>
+    <div class="col-md-3">
+        <div class="row">
+            <label class="control-label col-md-12">{{ schema.title | get_translated_text }}
+                {% if data is not none and "value" in data %}
+                    {% if data.value %}
+                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}"
+                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+                    {% else %}
+                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == False', advanced='on') }}"
+                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}"
+                       class="search-helper"><i
+                            class="fa fa-search" aria-hidden="true"></i></a></label>
+                {% endif %}
+            </label>
+        </div>
+    </div>
     {# View #}
     <div class="view-switch">
-        <div class="container alert-upload-container">
-            <div class="col-md-9">
+        <div class="col-md-9" style="padding-left: 15px">
+            <div class="container alert-upload-container">
                 {% if data is not none and "value" in data and not (data.value is none) %}
                     {% if data.value %}
                         <i class="fa fa-check"></i>

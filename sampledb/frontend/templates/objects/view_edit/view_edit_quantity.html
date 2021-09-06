@@ -1,42 +1,49 @@
 <div class="form-group form-area row" style="padding-right:0.75em">
     {# Label #}
-    <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title  | get_translated_text }}
-        {% if data is not none %}
-            {% if schema['units'] == "1" %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format(data.magnitude_in_base_units), advanced='on') }}"
-                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-            {% else %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format((data | to_datatype).magnitude) + (data | to_datatype).units, advanced='on') }}"
-                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-            {% endif %}
-        {% else %}
-            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}"
-               class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-        {% endif %}
-    </label>
+    <div class="col-md-3" style="padding-right: 15px">
+        <div class="row">
+            <label class="control-label col-md-12">{{ schema.title  | get_translated_text }}
+                {% if data is not none %}
+                    {% if schema['units'] == "1" %}
+                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format(data.magnitude_in_base_units), advanced='on') }}"
+                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                    {% else %}
+                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format((data | to_datatype).magnitude) + (data | to_datatype).units, advanced='on') }}"
+                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}"
+                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                {% endif %}
+            </label>
+        </div>
+    </div>
     {# View #}
     <div class="view-switch">
-        {% if schema['units'] == "1" %}
-            <div class="container alert-upload-container">
-                <div class="col-md-9">
-                    {% if data is not none %}
-                        {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
-                    <div class="alert-upload-failed">
-                        {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+        <div class="col-md-9">
+            {% if schema['units'] == "1" %}
+                <div class="container alert-upload-container">
+                    <div class="col-md-9" style="padding-left: 0px">
+                        {% if data is not none %}
+                            {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
+                        <div class="alert-upload-failed">
+                            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% else %}
-            <div class="container alert-upload-container">
-                <div class="col-md-9">
-                    {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
-                        {{ (data | to_datatype).units | prettify_units }}{% endif %}
-                    <div class="alert-upload-failed">
-                        {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+            {% else %}
+                <div class="container alert-upload-container">
+                    <div class="col-md-9" style="padding-left: 0px">
+                        {% if data is not none %}
+                            {{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
+                            {{ (data | to_datatype).units | prettify_units }}{% endif %}
+                        <div class="alert-upload-failed">
+                            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
     {# Form #}
     <div class="form-switch">
@@ -50,6 +57,9 @@
                 {% endif %}
             {% else %}
                 <input type="hidden" name="{{ id_prefix }}_units" value="
+
+
+
                         {% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
                 <div class="input-group">
                     <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
