@@ -922,6 +922,320 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         )
 
 
+def show_view_edit(obj, action):
+    # new_schema_available = False
+
+    # Set view attributes
+    related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, flask_login.current_user.id)
+
+    user_language_id = get_user_language(flask_login.current_user).id
+    english = get_language(Language.ENGLISH)
+
+    object_id = obj.id
+
+    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    user_may_grant = Permissions.GRANT in user_permissions
+    user_may_use_as_template = Permissions.READ in get_user_action_permissions(obj.action_id, user_id=flask_login.current_user.id)
+
+    instrument = get_instrument_with_translation_in_language(action.instrument_id,
+                                                             user_language_id) if action.instrument else None
+    object_type = get_action_type_with_translation_in_language(
+        action_type_id=action.type_id,
+        language_id=user_language_id
+    ).translation.object_name
+    object_log_entries = object_log.get_object_log_entries(object_id=obj.id, user_id=flask_login.current_user.id)
+
+    dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
+    if dataverse_enabled:
+        dataverse_url = logic.dataverse_export.get_dataverse_url(obj.id)
+        show_dataverse_export = not dataverse_url
+    else:
+        dataverse_url = None
+        show_dataverse_export = False
+
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
+    token = serializer.dumps([flask_login.current_user.id, object_id])
+    mobile_upload_url = flask.url_for('.mobile_file_upload', object_id=object_id, token=token, _external=True)
+    mobile_upload_qrcode = generate_qrcode(mobile_upload_url, should_cache=False)
+    object_url = flask.url_for('.object', object_id=object_id, _external=True)
+    object_qrcode = generate_qrcode(object_url, should_cache=True)
+
+    location_form = ObjectLocationAssignmentForm()
+    locations_map, locations_tree = get_locations_tree()
+    locations = [('-1', '—')]
+    unvisited_location_ids_prefixes_and_subtrees = [(location_id, '', locations_tree[location_id]) for location_id in
+                                                    locations_tree]
+    while unvisited_location_ids_prefixes_and_subtrees:
+        location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
+        location = locations_map[location_id]
+        locations.append(
+            (str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name), location.id)))
+        for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name),
+                                  reverse=True):
+            unvisited_location_ids_prefixes_and_subtrees.insert(0, (
+            location_id, '{}{} / '.format(prefix, get_translated_text(location.name)), subtree[location_id]))
+
+    location_form.location.choices = locations
+    possible_responsible_users = [('-1', '—')]
+    for user in logic.users.get_users(exclude_hidden=True):
+        possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+    location_form.responsible_user.choices = possible_responsible_users
+
+    measurement_actions = logic.action_translations.get_actions_with_translation_in_language(user_language_id,
+                                                                                             models.ActionType.MEASUREMENT,
+                                                                                             use_fallback=True)
+    favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+    favorite_measurement_actions = [
+        action
+        for action in measurement_actions
+        if action.id in favorite_action_ids and not action.is_hidden
+    ]
+    # Sort by: instrument name (independent actions first), action name
+    favorite_measurement_actions.sort(key=lambda action: (
+        action.user.name.lower() if action.user else '',
+        get_instrument_with_translation_in_language(action.instrument_id,
+                                                    user_language_id).translation.name.lower() if action.instrument else '',
+        action.translation.name.lower()
+    ))
+
+    publication_form = ObjectPublicationForm()
+
+    object_publications = logic.publications.get_publications_for_object(object_id=obj.id)
+    user_may_link_publication = True
+
+    notebook_templates = get_notebook_templates(
+        object_id=obj.id,
+        data=obj.data,
+        schema=obj.schema,
+        user_id=flask_login.current_user.id
+    )
+
+    def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
+        confirmation_url = flask.url_for(
+            'frontend.accept_responsibility_for_object',
+            t=logic.security_tokens.generate_token(
+                object_location_assignment_id,
+                salt='confirm_responsibility',
+                secret_key=flask.current_app.config['SECRET_KEY']
+            ),
+            _external=True
+        )
+        return confirmation_url
+
+    linked_project = logic.projects.get_project_linked_to_object(object_id)
+
+    def get_project_if_it_exists(project_id):
+        try:
+            return get_project(project_id)
+        except logic.errors.ProjectDoesNotExistError:
+            return None
+
+    object_languages = logic.languages.get_languages_in_object_data(obj.data)
+    languages = []
+    for lang_code in object_languages:
+        languages.append(get_language_by_lang_code(lang_code))
+
+    all_languages = get_languages()
+    metadata_language = flask.request.args.get('language', None)
+    if not any(
+            language.lang_code == metadata_language
+            for language in languages
+    ):
+        metadata_language = None
+
+    view_kwargs = {
+        "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
+            action_type_id=logic.actions.models.ActionType.MEASUREMENT,
+            language_id=logic.languages.get_user_language(flask_login.current_user).id,
+            use_fallback=True
+        ).name,
+        "metadata_language": metadata_language,
+        "languages": languages,
+        "all_languages": all_languages,
+        "SUPPORTED_LOCALES": logic.locale.SUPPORTED_LOCALES,
+        "ENGLISH": english,
+        "object_type": object_type,
+        "action": action,
+        "action_type": get_action_type_with_translation_in_language(action.type_id, user_language_id),
+        "instrument": instrument,
+        "schema": obj.schema,
+        "data": obj.data,
+        "object_log_entries": object_log_entries,
+        "ObjectLogEntryType": ObjectLogEntryType,
+        "last_edit_datetime": obj.utc_datetime,
+        "last_edit_user": get_user(obj.user_id),
+        "object_id": object_id,
+        "user_may_edit": True,
+        "user_may_comment": True,
+        "comments": comments.get_comments_for_object(object_id),
+        "comment_form": CommentForm(),
+        "files": logic.files.get_files_for_object(object_id),
+        "file_source_instrument_exists": False,
+        "file_source_jupyterhub_exists": False,
+        "file_form": FileForm(),
+        "external_link_form": ExternalLinkForm(),
+        "external_link_invalid": 'invalid_link' in flask.request.args,
+        "mobile_upload_url": mobile_upload_url,
+        "mobile_upload_qrcode": mobile_upload_qrcode,
+        "notebook_templates": notebook_templates,
+        "object_qrcode": object_qrcode,
+        "object_url": object_url,
+        "restore_form": None,
+        "version_id": obj.version_id,
+        "user_may_grant": user_may_grant,
+        "favorite_measurement_actions": favorite_measurement_actions,
+        "FileLogEntryType": FileLogEntryType,
+        "file_information_form": FileInformationForm(),
+        "file_hiding_form": FileHidingForm(),
+        "new_schema_available": False,
+        "related_objects_tree": related_objects_tree,
+        "object_publications": object_publications,
+        "user_may_link_publication": user_may_link_publication,
+        "user_may_use_as_template": user_may_use_as_template,
+        "show_dataverse_export": show_dataverse_export,
+        "dataverse_url": dataverse_url,
+        "publication_form": publication_form,
+        "get_object": get_object,
+        "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
+        "get_object_location_assignment": get_object_location_assignment,
+        "get_user": get_user,
+        "get_location": get_location,
+        "PAGE_SIZES": PAGE_SIZES,
+        "HORIZONTAL_LABEL_MARGIN": HORIZONTAL_LABEL_MARGIN,
+        "VERTICAL_LABEL_MARGIN": VERTICAL_LABEL_MARGIN,
+        "mm": mm,
+        "object_location_assignments": get_object_location_assignments(object_id),
+        "build_object_location_assignment_confirmation_url": build_object_location_assignment_confirmation_url,
+        "user_may_assign_location": True,
+        "location_form": location_form,
+        "project": linked_project,
+        "get_project": get_project_if_it_exists,
+        "get_action_type": get_action_type,
+        "get_action_type_with_translation_in_language": get_action_type_with_translation_in_language,
+        "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language
+    }
+
+    # form kwargs
+    previous_object_schema = None
+
+    if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+        may_create_log_entry = True
+        create_log_entry_default = action.instrument.create_log_entry_default
+        instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
+        if 'create_instrument_log_entry' in flask.request.form:
+            category_ids = []
+            for category_id in flask.request.form.getlist('instrument_log_categories'):
+                try:
+                    if int(category_id) in [category.id for category in instrument_log_categories]:
+                        category_ids.append(int(category_id))
+                except Exception:
+                    pass
+        else:
+            category_ids = None
+    else:
+        instrument_log_categories = None
+        category_ids = None
+        create_log_entry_default = None
+        may_create_log_entry = False
+
+    permissions_for_group_id = None
+    permissions_for_project_id = None
+    copy_permissions_object_id = None
+
+    action_id = action.id
+    previous_object_id = None
+    has_grant_for_previous_object = False
+
+    errors = []
+    object_errors = {}
+    form_data = {}
+    previous_actions = []
+    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
+    form = ObjectForm()
+    if flask.request.method != 'GET' and form.validate_on_submit():
+        raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
+        form_data = {k: v[0] for k, v in raw_form_data.items()}
+        if 'input_num_batch_objects' in form_data:
+            try:
+                num_objects_in_batch = int(form_data['input_num_batch_objects'])
+            except ValueError:
+                try:
+                    # The form allows notations like '1.2e1' for '12', however
+                    # Python can only parse these as floats
+                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
+                    if num_objects_in_batch == int(num_objects_in_batch):
+                        num_objects_in_batch = int(num_objects_in_batch)
+                    else:
+                        raise
+                except ValueError:
+                    errors.append('input_num_batch_objects')
+                    num_objects_in_batch = None
+                else:
+                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+            else:
+                form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+        else:
+            num_objects_in_batch = None
+
+        if 'previous_actions' in flask.request.form:
+            try:
+                previous_actions = serializer.loads(flask.request.form['previous_actions'])
+            except itsdangerous.BadData:
+                flask.abort(400)
+
+    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+        referencable_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+        if object is not None:
+            referencable_objects = [
+                referencable_object
+                for referencable_object in referencable_objects
+                if referencable_object.object_id != object_id
+            ]
+
+    else:
+        referencable_objects = []
+        existing_objects = []
+    sorted_actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
+
+    action_type_id_by_action_id = {}
+    for action_type in get_action_types():
+        for action in get_actions(action_type.id):
+            action_type_id_by_action_id[action.id] = action_type.id
+
+    tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
+    users = get_users(exclude_hidden=True)
+    users.sort(key=lambda user: user.id)
+
+    english = get_language(Language.ENGLISH)
+
+    form_kwargs = {
+        "errors": errors,
+        "object_errors": object_errors,
+        "form_data": form_data,
+        "previous_actions": serializer.dumps(previous_actions),
+        "form": form,
+        "referencable_objects": referencable_objects,
+        "sorted_actions": sorted_actions,
+        "action_type_id_by_action_id": action_type_id_by_action_id,
+        "ActionType": models.ActionType,
+        "datetime": datetime,
+        "tags": tags,
+        "users": users,
+        "mode": 'edit',
+        "languages": get_languages(),
+        "ENGLISH": english
+    }
+
+    kwargs = {**view_kwargs, **form_kwargs}
+
+    return flask.render_template('objects/view_edit/view_edit_base.html', **kwargs)
+
+
 def get_object_if_current_user_has_read_permissions(object_id):
     user_id = flask_login.current_user.id
     try:
@@ -957,6 +1271,11 @@ def object(object_id):
         return flask.abort(403)
     if not user_may_edit and flask.request.args.get('mode', '') == 'upgrade':
         return flask.abort(403)
+    # ---- Inline Edit -------------------------------------------------------------------------------------------------
+    if not user_may_edit and flask.request.args.get('mode', '') == 'inline_edit':
+        return flask.abort(403)
+    if object is not None and flask.request.method == 'GET' and flask.request.args.get('mode', '') == 'inline_edit':
+        return show_view_edit(object, get_action(object.action_id))
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
         instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument else None
         object_type = get_action_type_with_translation_in_language(

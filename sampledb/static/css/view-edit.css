@@ -1,0 +1,25 @@
+.form-switch {
+    display: none;
+}
+
+.view-switch {
+    display: block;
+    padding-top: 7px;
+    margin-left: 15px;
+}
+
+.alert-upload-failed {
+    display: none
+}
+
+.alert-upload-container {
+    padding-left: 0px;
+}
+
+.form-area {
+    margin-bottom: 0px;
+}
+
+.title-label {
+    margin-top: 5px;
+}

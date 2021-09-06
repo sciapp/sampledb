@@ -265,6 +265,11 @@ def get_view_template(schema):
     return get_template('objects/view/', '', schema)
 
 
+def get_view_edit_template(schema):
+    return get_template('objects/view_edit/', 'view_edit_', schema)
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
+_jinja_functions['get_view_edit_template'] = get_view_edit_template
