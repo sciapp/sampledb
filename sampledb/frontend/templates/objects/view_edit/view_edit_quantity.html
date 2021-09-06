@@ -57,9 +57,6 @@
                 {% endif %}
             {% else %}
                 <input type="hidden" name="{{ id_prefix }}_units" value="
-
-
-
                         {% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
                 <div class="input-group">
                     <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"

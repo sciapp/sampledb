@@ -20,28 +20,26 @@
         </div>
     </div>
     {# View #}
-    <div class="view-switch">
-        <div class="col-md-9" style="padding-left: 15px">
-            <div class="container alert-upload-container">
-                {% if data is not none and "value" in data and not (data.value is none) %}
-                    {% if data.value %}
-                        <i class="fa fa-check"></i>
-                        <div class="alert-upload-failed">
-                            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-                        </div>
-                    {% else %}
-                        <i class="fa fa-times"></i>
-                        <div class="alert-upload-failed">
-                            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-                        </div>
-                    {% endif %}
+    <div class="col-md-9" style="padding-left: 15px">
+        <div class="container alert-upload-container">
+            {% if data is not none and "value" in data and not (data.value is none) %}
+                {% if data.value %}
+                    <i class="fa fa-check"></i>
+                    <div class="alert-upload-failed">
+                        {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+                    </div>
                 {% else %}
-                    &mdash;
+                    <i class="fa fa-times"></i>
                     <div class="alert-upload-failed">
                         {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
                     </div>
                 {% endif %}
-            </div>
+            {% else %}
+                &mdash;
+                <div class="alert-upload-failed">
+                    {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+                </div>
+            {% endif %}
         </div>
     </div>
     {# Form #}
