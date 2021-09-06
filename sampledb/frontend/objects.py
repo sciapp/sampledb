@@ -923,8 +923,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
 
 def show_view_edit(obj, action):
-    # new_schema_available = False
-
     # Set view attributes
     related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, flask_login.current_user.id)
 
@@ -936,6 +934,8 @@ def show_view_edit(obj, action):
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_grant = Permissions.GRANT in user_permissions
     user_may_use_as_template = Permissions.READ in get_user_action_permissions(obj.action_id, user_id=flask_login.current_user.id)
+
+    new_schema_available = True if action.schema != obj.schema else False
 
     instrument = get_instrument_with_translation_in_language(action.instrument_id,
                                                              user_language_id) if action.instrument else None
@@ -1087,7 +1087,7 @@ def show_view_edit(obj, action):
         "FileLogEntryType": FileLogEntryType,
         "file_information_form": FileInformationForm(),
         "file_hiding_form": FileHidingForm(),
-        "new_schema_available": False,
+        "new_schema_available": new_schema_available,
         "related_objects_tree": related_objects_tree,
         "object_publications": object_publications,
         "user_may_link_publication": user_may_link_publication,

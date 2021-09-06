@@ -5,7 +5,7 @@
     {% endif %}
 {% endfor %}
 <div class="form-group row form-area" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
-    <div class="col-md-3">
+    <div class="col-md-3" style="padding-right: 15px">
         {# Label #}
         <div class="row">
             <label class="control-label col-md-12 {% if schema.title | get_translated_text and (is_required and (schema.minLength or schema.choices)) %}required-label{% endif %}">{{ schema.title | get_translated_text }}
@@ -46,26 +46,31 @@
     </div>
     {# View #}
     <div class="view-switch">
-        {% if data %}
-            {% if schema.markdown and data.is_markdown %}
-                <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"
-                     class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
-            {% elif 'multiline' in schema and schema['multiline'] %}
-                {% if data.text | get_translated_text(metadata_language) %}
-                    <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
+        <div class="col-md-9" style="padding-left: 15px">
+            {% if data %}
+                {% if schema.markdown and data.is_markdown %}
+                    <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"
+                         class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
+                {% elif 'multiline' in schema and schema['multiline'] %}
+                    {% if data.text | get_translated_text(metadata_language) %}
+                        <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
+                    {% else %}
+                        &mdash;
+                    {% endif %}
                 {% else %}
-                    &mdash;
+                    {% if data.text | get_translated_text(metadata_language) %}
+                        {{ data.text | get_translated_text(metadata_language) }}
+                    {% else %}
+                        &mdash;
+                    {% endif %}
                 {% endif %}
             {% else %}
-                {% if data.text | get_translated_text(metadata_language) %}
-                    {{ data.text | get_translated_text(metadata_language) }}
-                {% else %}
-                    &mdash;
-                {% endif %}
+                &mdash;
             {% endif %}
-        {% else %}
-            &mdash;
-        {% endif %}
+            <div class="alert-upload-failed">
+                {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+            </div>
+        </div>
     </div>
     {# Form #}
     <div class="form-switch">
