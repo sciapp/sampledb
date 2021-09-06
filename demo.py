@@ -27,9 +27,9 @@ try:
     sampledb.config.SERVER_NAME = 'localhost:5000'
 
     # fully empty the database first
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=False)
+    # sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=False)
 
-    sampledb.scripts.set_up_demo.main(())
+    # sampledb.scripts.set_up_demo.main(())
 
     app = create_app()
 

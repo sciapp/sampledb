@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Object') }} #{{ object_id }}: {{ data['name']['text'] | get_translated_text }} —
+    {{ service_name }}{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="meta" type="application/rdf+xml" href="
+            {% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}"/>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/view-edit.css') }}"/>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/view-edit.js') }}"></script>
+
+
+    <script type="text/javascript">
+        window.mde_fields = [];
+
+        $(function () {
+            $('.input-group.date').each(function () {
+                $(this).datetimepicker({
+                    locale: "{{ get_user_language(current_user).lang_code }}",
+                    format: "{{ get_user_language(current_user).datetime_format_moment }}",
+                    date: $(this).attr('data-datetime')
+                });
+            });
+
+            $('textarea[data-markdown-textarea="true"]').each(function (_, e) {
+                var mde_field = new InscrybMDE({
+                    element: e,
+                    indentWithTabs: false,
+                    spellChecker: false,
+                    status: false,
+                    hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+                    showIcons: ["code", "table"],
+                    minHeight: '100px',
+                });
+                setupImageDragAndDrop(mde_field);
+            });
+
+            function updateSelectLanguage(selectpicker) {
+                var enabled_languages = $(selectpicker).selectpicker('val');
+                if (!Array.isArray(enabled_languages)) {
+                    return;
+                }
+                if (enabled_languages === '' || enabled_languages.length === 0) {
+                    enabled_languages = ['en'];
+                } else {
+                    enabled_languages.push('en');
+                }
+                var parent_form_group = $(selectpicker).closest('.form-group');
+                {% for language in languages %}
+                    if (enabled_languages.includes("{{ language.lang_code }}")) {
+                        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+                    } else {
+                        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+                    }
+                {% endfor %}
+            }
+
+            var select_language_selectpicker = $('.select-language')
+            select_language_selectpicker.on('changed.bs.select', function () {
+                updateSelectLanguage(this);
+            });
+            select_language_selectpicker.each(function (_, selectpicker) {
+                updateSelectLanguage(selectpicker);
+            });
+            $.each(window.conditional_wrapper_scripts, function () {
+                this();
+            });
+
+            $('div.objectpicker').each(function () {
+                let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
+                $(this).append(filter_button);
+                let objectpicker = $(this).find('.selectpicker');
+                let actionpicker = $(this).next('.objectpicker-actionpicker').find('.selectpicker');
+                filter_button.tooltip();
+                filter_button.on('click', function () {
+                    actionpicker.selectpicker('toggle');
+                });
+                actionpicker.on('hidden.bs.select', function () {
+                    let action_id = actionpicker.selectpicker('val');
+                    if (action_id === "") {
+                        objectpicker.find('option').prop('disabled', false);
+                    } else {
+                        objectpicker.find('option').prop('disabled', true);
+                        objectpicker.find('option[data-action-id="' + action_id + '"]').prop('disabled', false);
+                    }
+                    objectpicker.find('option[value=""]').prop('disabled', false);
+                    objectpicker.selectpicker('refresh');
+                    objectpicker.selectpicker('toggle');
+                    if (objectpicker.selectpicker('val') === null) {
+                        objectpicker.selectpicker('val', '');
+                    }
+                });
+            });
+        });
+
+        var tags = new Bloodhound({
+            initialize: true,
+            local: {{ tags | tojson }},
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace
+        });
+        $('input[name^=\'object__\'][name$=\'__tags\']').each(function () {
+            var tagsinput = $(this);
+            tagsinput.tagsinput({
+                trimValue: true,
+                typeaheadjs: {
+                    name: 'Tags',
+                    valueKey: 'name',
+                    displayKey: 'name',
+                    source: tags.ttAdapter(),
+                    templates: {
+                        'suggestion': function (item) {
+                            return '<div>' + item.name + ' (×' + item.uses + ')' + '</div>'
+                        }
+                    }
+                }
+            });
+            tagsinput.on('beforeItemAdd', function (event) {
+                var sanitized_tag = event.item.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9_\-äüöß]/g, '');
+                if (event.item !== sanitized_tag) {
+                    if (!event.options || !event.options.fromHandler) {
+                        event.cancel = true;
+                        $(this).tagsinput('add', sanitized_tag, {fromHandler: true});
+                    }
+                }
+            });
+            $(tagsinput.tagsinput('input')).on('blur', function () {
+                var item = $(this).tagsinput('input').val();
+                $(this).tagsinput('input').val('');
+                item = item.trim();
+                if (item) {
+                    $(this).tagsinput('add', item);
+                }
+            }.bind(tagsinput));
+        });
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+    {# counter for plotly_chart_plots #}
+    {% set plot_counter = namespace(value=0) %}
+
+    <script>
+        window.plotly_charts = [];
+    </script>
+
+    <h1>{{ action_type.translation.object_name }} #{{ object_id }}: {{ data.name.text | get_translated_text }}</h1>
+
+    <h2>{{ _('Information') }}</h2>
+    <div class="row" style="padding-right:0.75em">
+        <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search"
+                                                                                   style="visibility:hidden"
+                                                                                   aria-hidden="true"></i></label>
+        <div class="col-md-9">{% if instrument is not none %}
+            <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>
+            {% else %}&mdash;{% endif %}</div>
+    </div>
+    <div class="row" style="padding-right:0.75em">
+        <label class="col-md-3" style="text-align: right">{{ _('Action') }} <a
+                href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search"
+                                                                                            aria-hidden="true"></i></a></label>
+        <div class="col-md-9"><a
+                href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
+    </div>
+
+    <h2>{{ {"de": "Daten", "en": "Data"} | get_translated_text }}</h2>
+
+    <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}">
+        {{ form.csrf_token() }}
+        <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
+        {% set id_prefix = "object_" %}
+        {% include "objects/view_edit/view_edit_any.html" %}
+    </form>
+{% endblock %}

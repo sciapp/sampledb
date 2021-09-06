@@ -1,0 +1,8 @@
+{% if schema["type"] in ["object", "array", "list", "text", "table", "quantity", "bool", "datetime"] %}
+    {% include get_view_edit_template(schema) %}
+{% else %}
+    <div class="hidden">
+        {% include get_form_template(schema) %}
+    </div>
+    {% include get_view_template(schema) %}
+{% endif %}

@@ -1,45 +1,54 @@
 <!-- array start -->
 <div class="form-group row">
-  <div class="col-md-3 control-label">
-    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
-  </div>
-{% set is_required = False %}
-{% set minItems = schema.get('minItems', 0) %}
-{% set maxItems = schema.get('maxItems', None) %}
-{% if data is not none %}
-{% set numItems = (data | length) %}
-{% else %}
-{% set numItems = 0 %}
-{% endif %}
+    <div class="col-md-3 control-label">
+        {% if schema.title %}<strong><span
+                {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
+    </div>
+    {% set is_required = False %}
+    {% set minItems = schema.get('minItems', 0) %}
+    {% set maxItems = schema.get('maxItems', None) %}
+    {% if data is not none %}
+        {% set numItems = (data | length) %}
+    {% else %}
+        {% set numItems = 0 %}
+    {% endif %}
 </div>
 <div style="padding-left:2.5em;">
-  {% set itemName = (schema['items'].title | get_translated_text) %}
-  {% if data is not none %}
-    {% for item in data %}
-      {% set name = "item" %}
-      {% set tmp_style = schema['style'] %}
-      {% set schema = schema['items'] %}
-      {% set z = schema.update({'parent_style': tmp_style}) %}
-      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-      {% set data = item %}
-        <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
-        {% if numItems > minItems %}
-        <div class="pull-right" style="padding-right:0.75em"><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
-        {% else %}
-          <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger disabled" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
-        {% endif %}
-        {% include "objects/forms/form_any.html" %}
+    {% set itemName = (schema['items'].title | get_translated_text) %}
+    {% if data is not none %}
+        {% for item in data %}
+            {% set name = "item" %}
+            {% set tmp_style = schema['style'] %}
+            {% set schema = schema['items'] %}
+            {% set z = schema.update({'parent_style': tmp_style}) %}
+            {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+            {% set data = item %}
+            <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
+                {% if numItems > minItems %}
+                    <div class="pull-right" style="padding-right:0.75em">
+                        <button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger"
+                                style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button>
+                    </div>
+                {% else %}
+                    <div class="pull-right" style="padding-right:0.75em">
+                        <button type="button" class="btn btn-danger disabled"
+                                style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button>
+                    </div>
+                {% endif %}
+                {% include "objects/forms/form_any.html" %}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+        <div class="col-md-9 col-md-offset-3">
+            {% if maxItems is none or numItems < maxItems %}
+                <button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right"
+                        style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
+            {% else %}
+                <button type="button" class="btn btn-success pull-right disabled"
+                        style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
+            {% endif %}
         </div>
-    {% endfor %}
-  {% endif %}
-  <div class="form-group row clearfix" style="padding-right:0.75em">
-    <div class="col-md-9 col-md-offset-3">
-  {% if maxItems is none or numItems < maxItems %}
-    <button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
-  {% else %}
-    <button type="button" class="btn btn-success pull-right disabled" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
-  {% endif %}
     </div>
-  </div>
 </div>
 <!-- array end -->
