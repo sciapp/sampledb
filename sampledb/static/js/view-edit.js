@@ -1,14 +1,14 @@
-function send_data(elem, act_val) {
+function send_data(elem, act_vals) {
+    // Read out all form 'key - value' pairs out of the 'form-horizontal' element in the actual document
     let data_list = $($(".form-horizontal")[0]).serializeArray();
 
-
-    console.log(data_list);
+    // Search for 'key - value' pairs in the given list and the list that has been read out of the actual document to check if there are different entries
     let found = false;
-    if(data_list.length != act_val.length) {
+    if(data_list.length != act_vals.length) {
         found = true;
     } else {
-        for (let i = 0; i < Math.min(data_list.length, act_val.length); i++) {
-            if (data_list[i]["name"] != act_val[i]["name"] || data_list[i]["value"] != act_val[i]["value"]) {
+        for (let i = 0; i < Math.min(data_list.length, act_vals.length); i++) {
+            if (data_list[i]["name"] != act_vals[i]["name"] || data_list[i]["value"] != act_vals[i]["value"]) {
                 found = true;
                 break;
             }
@@ -17,6 +17,8 @@ function send_data(elem, act_val) {
     if(!found) {
         return;
     }
+
+    // Create new string which contains the 'key - value' pairs
     let data_string = "";
 
     for (let i = 0; i < data_list.length; i++) {
@@ -27,36 +29,45 @@ function send_data(elem, act_val) {
     data_string += "action_submit="
     data_string = encodeURI(data_string);
 
+    // Create new HTTP-Request to POST the data to SampleDB
     let xml_request = new XMLHttpRequest();
 
+    // Add listener to request to being able to react on the finish of the POST
     xml_request.addEventListener("load", function () {
+        // Read out the replied html
         let res_html = ($.parseHTML(xml_request.responseText));
         for (let i = 0; i < res_html.length; i++) {
             if ($(res_html[i]).attr("id") == "main") {
                 let main_html = $(res_html[i])
+                // Check if the 'edit-website' has been replied to check if an error occurred
                 if (main_html.find(".form-horizontal[method=post]").length > 0) {
+                    // Message user using alert div
                     $(elem).find(".alert-upload-failed").each(function () {
                         $(this).css("display", "block");
                     });
                     $(elem).addClass("alert alert-danger");
                 } else {
+                    // Reload website to show that the change has been successful and to being able to edit the new object
                     window.location.reload();
                 }
             }
         }
     });
 
+    // Open request
     xml_request.open("POST", window.location.href.split("?")[0] + "?mode=edit");
 
+    // Set headers
     xml_request.setRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
     xml_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
+    // Send request
     xml_request.send(data_string);
 }
 
 function setup(elem) {
     // Save actual value
-    let act_val = $($(".form-horizontal")[0]).serializeArray();
+    let act_vals = $($(".form-horizontal")[0]).serializeArray();
     // Make all form elements visible
     $(elem).find(".form-switch").each(function () {
         $(this).css("display", "block");
@@ -78,7 +89,7 @@ function setup(elem) {
                 $(this).css("display", "");
             });
             // Send actualized data
-            let res = send_data(elem, act_val);
+            let res = send_data(elem, act_vals);
             event.stopPropagation();
         }
     });
@@ -95,7 +106,7 @@ function setup(elem) {
                     $(this).css("display", "");
                 });
                 // Send actualized data
-                let res = send_data(elem, act_val);
+                let res = send_data(elem, act_vals);
                 event.stopPropagation();
             }
         })
@@ -103,6 +114,7 @@ function setup(elem) {
 }
 
 function setLstnr() {
+    // Setup every 'form-area' to listen for a double click
     $(".form-area").each(function () {
         $(this).dblclick(function () {
             setup(this);

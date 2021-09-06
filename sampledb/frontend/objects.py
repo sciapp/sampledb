@@ -1276,6 +1276,8 @@ def object(object_id):
         return flask.abort(403)
     if object is not None and flask.request.method == 'GET' and flask.request.args.get('mode', '') == 'inline_edit':
         return show_view_edit(object, get_action(object.action_id))
+    if user_may_edit and object is not None and flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ['edit', 'upgrade']:
+        return show_view_edit(object, get_action(object.action_id))
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
         instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument else None
         object_type = get_action_type_with_translation_in_language(
