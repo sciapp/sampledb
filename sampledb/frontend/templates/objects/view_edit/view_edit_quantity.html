@@ -18,7 +18,7 @@
     <div class="view-switch">
         {% if schema['units'] == "1" %}
             <div class="container alert-upload-container">
-                <div class="col-md-9" style="padding-left: 0px">
+                <div class="col-md-9">
                     {% if data is not none %}
                         {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
                     <div class="alert-upload-failed">
@@ -28,7 +28,7 @@
             </div>
         {% else %}
             <div class="container alert-upload-container">
-                <div class="col-md-9" style="padding-left: 0px">
+                <div class="col-md-9">
                     {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
                         {{ (data | to_datatype).units | prettify_units }}{% endif %}
                     <div class="alert-upload-failed">

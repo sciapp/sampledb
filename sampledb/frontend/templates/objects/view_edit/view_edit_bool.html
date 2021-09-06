@@ -17,24 +17,26 @@
     {# View #}
     <div class="view-switch">
         <div class="container alert-upload-container">
-            {% if data is not none and "value" in data and not (data.value is none) %}
-                {% if data.value %}
-                    <i class="fa fa-check"></i>
-                    <div class="alert-upload-failed">
-                        {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-                    </div>
+            <div class="col-md-9">
+                {% if data is not none and "value" in data and not (data.value is none) %}
+                    {% if data.value %}
+                        <i class="fa fa-check"></i>
+                        <div class="alert-upload-failed">
+                            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+                        </div>
+                    {% else %}
+                        <i class="fa fa-times"></i>
+                        <div class="alert-upload-failed">
+                            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+                        </div>
+                    {% endif %}
                 {% else %}
-                    <i class="fa fa-times"></i>
+                    &mdash;
                     <div class="alert-upload-failed">
                         {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
                     </div>
                 {% endif %}
-            {% else %}
-                &mdash;
-                <div class="alert-upload-failed">
-                        {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-                    </div>
-            {% endif %}
+            </div>
         </div>
     </div>
     {# Form #}

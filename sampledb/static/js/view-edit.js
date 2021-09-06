@@ -79,7 +79,6 @@ function setup(elem) {
     // If clicked outside the focussed element
     $(document).click(function (event) {
         if (!elem.contains(event.target)) {
-            console.log("abc");
             // Hide all form elements
             $(elem).find(".form-switch").each(function () {
                 $(this).css("display", "none");
