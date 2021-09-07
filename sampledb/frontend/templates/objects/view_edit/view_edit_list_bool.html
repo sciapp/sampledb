@@ -1,25 +1,20 @@
-<div class="form-group form-area col-md-9">
+<div class="form-area">
     {# View #}
-    <div class="view-switch" style="padding-left: 2em">
-        <div class="col-md-3">
-        </div>
-        <li>
-            {% if data is not none and "value" in data and not (data.value is none) %}
-                {% if data.value %}
-                    <i class="fa fa-check"></i>
-                {% else %}
-                    <i class="fa fa-times"></i>
-                {% endif %}
+    <div class="view-switch">
+        &bull;
+        {% if data is not none and "value" in data and not (data.value is none) %}
+            {% if data.value %}
+                <i class="fa fa-check"></i>
             {% else %}
-                &mdash;
+                <i class="fa fa-times"></i>
             {% endif %}
-        </li>
+        {% else %}
+            &mdash;
+        {% endif %}
     </div>
     {# Form #}
     <div class="form-switch">
-        <div class="col-md-3">
-        </div>
-        <div class="checkbox col-md-9" style="padding-left: 2em">
+        <div class="checkbox col-md-9">
             <label>
                 <span class="sr-only">{{ schema.title | get_translated_text }}</span>
                 <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">

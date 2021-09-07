@@ -7,7 +7,7 @@ function send_data(elem, act_vals) {
     if(data_list.length != act_vals.length) {
         found = true;
     } else {
-        for (let i = 0; i < Math.min(data_list.length, act_vals.length); i++) {
+        for (let i = 0; i < data_list.length; i++) {
             if (data_list[i]["name"] != act_vals[i]["name"] || data_list[i]["value"] != act_vals[i]["value"]) {
                 found = true;
                 break;

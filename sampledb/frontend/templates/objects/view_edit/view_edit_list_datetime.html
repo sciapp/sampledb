@@ -1,21 +1,14 @@
-<div class="form-group form-area col-md-9">
+<div class="form-area">
     {# View #}
     <div class="view-switch">
-        <div class="col-md-3">
+        &bull;
+        {{ data.utc_datetime | babel_format_datetime }}
+        <div class="alert-upload-failed">
+            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
         </div>
-        <li>
-            <div class="col-md-9">
-                {{ data.utc_datetime | babel_format_datetime }}
-                <div class="alert-upload-failed">
-                    {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-                </div>
-            </div>
-        </li>
     </div>
     {# Form #}
     <div class="form-switch">
-        <div class="col-md-3">
-        </div>
         <div class="input-group date" data-datetime="
 
                 {% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | parse_datetime_string | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | parse_datetime_string | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
