@@ -1,32 +1,25 @@
-<div class="form-group form-area col-md-9">
+<div class="form-area">
     {# View #}
-    <div class="view-switch" style="padding-left: 2em">
-        <div class="col-md-3">
+    <div class="view-switch">
+        &bull;
+        {% if data is not none and data.text %}
+            {% if schema.markdown and data.is_markdown %}
+                <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;"
+                      class="object-user-content">{{ (data.text | get_translated_text(metadata_language)) | markdown_to_safe_html | safe }}</span>
+            {% elif 'multiline' in schema and schema['multiline'] %}
+                <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</span>
+            {% else %}
+                {{ data.text | get_translated_text }}
+            {% endif %}
+        {% else %}
+            &mdash;
+        {% endif %}
+        <div class="alert-upload-failed">
+            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
         </div>
-        <li>
-            <div class="col-md-9">
-                {% if data is not none and data.text %}
-                    {% if schema.markdown and data.is_markdown %}
-                        <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;"
-                              class="object-user-content">{{ (data.text | get_translated_text(metadata_language)) | markdown_to_safe_html | safe }}</span>
-                    {% elif 'multiline' in schema and schema['multiline'] %}
-                        <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</span>
-                    {% else %}
-                        {{ data.text | get_translated_text }}
-                    {% endif %}
-                {% else %}
-                    &mdash;
-                {% endif %}
-                <div class="alert-upload-failed">
-                    {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-                </div>
-            </div>
-        </li>
     </div>
     {# Form #}
     <div class="form-switch row">
-        <div class="col-md-3">
-        </div>
         <div class="col-md-9">
             {% if schema.markdown %}
                 <textarea style="resize: vertical; min-height: 171px;" class="form-control"

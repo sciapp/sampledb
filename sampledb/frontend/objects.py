@@ -1037,6 +1037,7 @@ def show_view_edit(obj, action):
 
     all_languages = get_languages()
     metadata_language = flask.request.args.get('language', None)
+    print(metadata_language)
     if not any(
             language.lang_code == metadata_language
             for language in languages
@@ -1376,6 +1377,7 @@ def object(object_id):
 
         all_languages = get_languages()
         metadata_language = flask.request.args.get('language', None)
+        print(metadata_language)
         if not any(
             language.lang_code == metadata_language
             for language in languages

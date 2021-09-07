@@ -5,6 +5,9 @@
         {% include get_form_template(schema) %}
     </div>
     <div style="padding-left: -15px">
+        {% if schema["parent_style"] == "list" %}
+            &bull;
+        {% endif %}
         {% include get_view_template(schema) %}
     </div>
 {% endif %}

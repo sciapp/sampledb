@@ -15,7 +15,7 @@
     {% endif %}
     {% set itemName = (schema['items'].title | get_translated_text) %}
     {% if data is not none %}
-        <ul style="padding-left: 1.25em; list-style: initial">
+        <ul style="padding-left: 1.25em">
             {% for item in data %}
                 {% set name = "item" %}
                 {% set tmp_style = schema['style'] %}
@@ -24,7 +24,11 @@
                 {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
                 {% set data = item %}
                 {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
-                {% include "objects/view_edit/view_edit_any.html" %}
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-9" style="padding-left: 0px">
+                    {% include "objects/view_edit/view_edit_any.html" %}
+                </div>
             {% endfor %}
         </ul>
     {% endif %}
