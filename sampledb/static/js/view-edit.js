@@ -1,10 +1,14 @@
+// Enable to control that only one element can be edited in time
+var selected_element;
+var form_changed = false;
+
 function send_data(elem, act_vals) {
     // Read out all form 'key - value' pairs out of the 'form-horizontal' element in the actual document
     let data_list = $($(".form-horizontal")[0]).serializeArray();
 
     // Search for 'key - value' pairs in the given list and the list that has been read out of the actual document to check if there are different entries
     let found = false;
-    if(data_list.length != act_vals.length) {
+    if (data_list.length != act_vals.length) {
         found = true;
     } else {
         for (let i = 0; i < data_list.length; i++) {
@@ -14,8 +18,11 @@ function send_data(elem, act_vals) {
             }
         }
     }
-    if(!found) {
+    if (!found) {
         return;
+    } else {
+        // Actual form changed
+        form_changed = true;
     }
 
     // Create new string which contains the 'key - value' pairs
@@ -42,10 +49,10 @@ function send_data(elem, act_vals) {
                 // Check if the 'edit-website' has been replied to check if an error occurred
                 if (main_html.find(".form-horizontal[method=post]").length > 0) {
                     // Message user using alert div
-                    $(elem).find(".alert-upload-failed").each(function () {
+                    $(selected_element).find(".alert-upload-failed").each(function () {
                         $(this).css("display", "block");
                     });
-                    $(elem).addClass("alert alert-danger");
+                    $(selected_element).addClass("alert alert-danger");
                 } else {
                     // Reload website to show that the change has been successful and to being able to edit the new object
                     window.location.reload();
@@ -88,7 +95,8 @@ function setup(elem) {
                 $(this).css("display", "");
             });
             // Send actualized data
-            let res = send_data(elem, act_vals);
+            selected_element = elem;
+            send_data(elem, act_vals);
             event.stopPropagation();
         }
     });
@@ -105,7 +113,8 @@ function setup(elem) {
                     $(this).css("display", "");
                 });
                 // Send actualized data
-                let res = send_data(elem, act_vals);
+                send_data(elem, act_vals);
+                a = elem;
                 event.stopPropagation();
             }
         })
@@ -116,7 +125,10 @@ function setLstnr() {
     // Setup every 'form-area' to listen for a double click
     $(".form-area").each(function () {
         $(this).dblclick(function () {
-            setup(this);
+            // If no other form changed before or this is the actual element
+            if(!form_changed || this == selected_element) {
+                setup(this);
+            }
         });
     });
 }
