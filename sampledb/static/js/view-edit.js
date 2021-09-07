@@ -95,7 +95,6 @@ function setup(elem) {
                 $(this).css("display", "");
             });
             // Send actualized data
-            selected_element = elem;
             send_data(elem, act_vals);
             event.stopPropagation();
         }
@@ -127,6 +126,7 @@ function setLstnr() {
         $(this).dblclick(function () {
             // If no other form changed before or this is the actual element
             if(!form_changed || this == selected_element) {
+                selected_element = this;
                 setup(this);
             }
         });
