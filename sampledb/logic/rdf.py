@@ -9,6 +9,7 @@ import flask
 import jinja2
 
 from . import objects, object_log, users
+from ..frontend.utils import get_translated_text
 
 RDF_TEMPLATE = jinja2.Template("""<?xml version="1.0"?>
 <rdf:RDF
@@ -18,7 +19,16 @@ xmlns:foaf="http://xmlns.com/foaf/0.1/"
 >
   <rdf:Description xml:lang="en" rdf:about="{{ object_url }}">
     <dcterms:identifier>{{ object_url }}</dcterms:identifier>
-    <dcterms:title>{{object_name}}</dcterms:title>
+    {% if object_name_is_str %}
+    <dcterms:title>{{ object_name }}</dcterms:title>
+    {% else %}
+    <dcterms:title>{{ get_translated_text(object_name, 'en') }}</dcterms:title>
+      {% for language_code in object_name %}
+        {% if language_code != 'en' and object_name[language_code] %}
+    <dcterms:alternative xml:lang="{{ language_code }}">{{ object_name[language_code] }}</dcterms:alternative>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
     <dcterms:created>{{ created.isoformat() }}</dcterms:created>
     <dcterms:modified>{{ modified.isoformat() }}</dcterms:modified>
 
@@ -151,6 +161,7 @@ def generate_rdf(user_id: int, object_id: int, version_id: typing.Optional[int] 
     return RDF_TEMPLATE.render(
         object_url=object_url,
         object_name=object_name,
+        object_name_is_str=isinstance(object_name, str),
         created=creation_datetime,
         modified=modification_datetime,
         creators=[
@@ -168,5 +179,6 @@ def generate_rdf(user_id: int, object_id: int, version_id: typing.Optional[int] 
             for user in contributors
         ],
         version_urls=version_urls,
-        current_object_url=current_object_url
+        current_object_url=current_object_url,
+        get_translated_text=get_translated_text
     )
