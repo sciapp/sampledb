@@ -113,7 +113,6 @@ function setup(elem) {
                 });
                 // Send actualized data
                 send_data(elem, act_vals);
-                a = elem;
                 event.stopPropagation();
             }
         })
