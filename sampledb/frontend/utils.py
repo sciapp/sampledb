@@ -12,6 +12,7 @@ from datetime import datetime
 from math import log10
 
 import flask
+import flask_babel
 import flask_login
 from flask_babel import format_number, format_datetime, format_date, format_decimal, format_scientific
 import qrcode
@@ -265,6 +266,14 @@ def get_view_template(schema):
     return get_template('objects/view/', '', schema)
 
 
+def get_local_month_names():
+    return [
+        flask_babel.get_locale().months['format']['wide'][i]
+        for i in range(1, 13)
+    ]
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
+_jinja_functions['get_local_month_names'] = get_local_month_names

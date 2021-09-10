@@ -964,3 +964,38 @@ div.objectpicker-actionpicker > .dropdown-toggle {
 div.objectpicker-actionpicker > .dropdown-menu {
     margin-top: 9px !important;
 }
+
+#instrument-log-tree div.instrument-log-tree-block {
+    border-left: 1px solid black;
+    margin-left: 15px;
+    padding-left: 15px;
+}
+#instrument-log-tree div.instrument-log-tree-block#instrument-log-tree-root-block {
+    border: 0;
+    margin-left: 0;
+    padding-left: 0;
+}
+#instrument-log-tree > div.instrument-log-tree-container  > input[type="checkbox"], div.instrument-log-tree-block > div.instrument-log-tree-container > input[type="checkbox"] {
+    display: none;
+}
+#instrument-log-tree div.instrument-log-tree-container > input[type="checkbox"] ~ div.instrument-log-tree-block {
+    display:none;
+}
+#instrument-log-tree div.instrument-log-tree-container > input[type="checkbox"]:checked ~ div.instrument-log-tree-block {
+    display:block;
+}
+#instrument-log-tree div.instrument-log-tree-container > input[type="checkbox"]:checked ~ h3 > label > i:before {
+    content:'\f146';
+}
+div.instrument-log-tree-container > h3 {
+    margin-bottom: 0;
+    margin-top: 5px;
+}
+#instrument-log-tree > div.instrument-log-tree-container > h3 > label,
+#instrument-log-tree div.instrument-log-tree-block > div.instrument-log-tree-container > h3 > label {
+    cursor:pointer;
+}
+
+.instrument-log-control-buttons button {
+    margin-bottom: 10px;
+}
