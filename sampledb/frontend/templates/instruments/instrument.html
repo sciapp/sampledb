@@ -197,28 +197,28 @@
             <ul class="file-attachment-list">
             {% with hidden_file_attachments = [] %}
             {% for file_attachment in file_attachments %}{% if not file_attachment.is_hidden %}
-                <li>
-                  {% if file_attachment | attachment_is_image %}
-                  <span class="file-attachment-preview">
-                    <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="&#xf15b;" class="show-fullscreen-image-preview" />
-                    <span class="fullscreen-image-preview">
-                      <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
-                      <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
-                        <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
-                      </a>
-                      <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}" alt="Fullscreen Image Preview">
-                    </span>
+              <li>
+                {% if file_attachment | attachment_is_image %}
+                <span class="file-attachment-preview">
+                  <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="&#xf15b;" class="show-fullscreen-image-preview" />
+                  <span class="fullscreen-image-preview">
+                    <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
+                    <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
+                      <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
+                    </a>
+                    <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}" alt="Fullscreen Image Preview">
                   </span>
-                  <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
-                  {% else %}
-                  <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
-                    <span class="file-attachment-preview">
-                      <i class="fa fa-file"></i>
-                    </span>
-                  {% endif %}
-                    <span>{{ file_attachment.file_name }}</span>
-                  </a>
-                </li>
+                </span>
+                <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
+                {% else %}
+                <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
+                  <span class="file-attachment-preview">
+                    <i class="fa fa-file"></i>
+                  </span>
+                {% endif %}
+                  <span>{{ file_attachment.file_name }}</span>
+                </a>
+              </li>
             {% else %}{{ hidden_file_attachments.append(file_attachment) or '' }}{% endif %}{% endfor %}
             {% if hidden_file_attachments %}
               <li>{{ ngettext('%(num)s hidden file', '%(num)s hidden files', hidden_file_attachments | length) }}</li>
