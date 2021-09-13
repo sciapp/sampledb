@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-09-01 16:16+0200\n"
+"POT-Creation-Date: 2021-09-10 16:21+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2536,6 +2536,15 @@ msgstr "Log-Eintrag erstellen"
 msgid "Smartphone Upload as Log Entry"
 msgstr "Smartphone-Upload als Log-Eintrag"
 
+msgid "View as list"
+msgstr "Als Liste anzeigen"
+
+msgid "View as tree (Date, Author)"
+msgstr "Als Baum anzeigen (Datum, Autor)"
+
+msgid "View as tree (Author, Date)"
+msgstr "Als Baum anzeigen (Autor, Datum)"
+
 msgid "Sort by date"
 msgstr "Nach Datum sortieren"
 
@@ -2662,6 +2671,30 @@ msgstr "Vorherige Versionen ausblenden"
 
 msgid " and "
 msgstr " und "
+
+msgid "Expand all years"
+msgstr "Alle Jahre ausklappen"
+
+msgid "Collapse all years"
+msgstr "Alle Jahre einklappen"
+
+msgid "Expand all months"
+msgstr "Alle Monate ausklappen"
+
+msgid "Collapse all months"
+msgstr "Alle Monate einklappen"
+
+msgid "Expand all days"
+msgstr "Alle Tage ausklappen"
+
+msgid "Collapse all days"
+msgstr "Alle Monate einklappen"
+
+msgid "Expand all authors"
+msgstr "Alle Autoren ausklappen"
+
+msgid "Collapse all authors"
+msgstr "Alle Autoren einklappen"
 
 msgid "Please enter a category title."
 msgstr "Bitte geben Sie einen Kategorietitel ein."

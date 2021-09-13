@@ -22,6 +22,7 @@ Currently in development.
 - Added support for conditional properties
 - Allow filtering object references by action
 - Implemented TOTP-based two factor authentication
+- Added tree view for instrument log entries
 
 Version 0.18
 ------------
