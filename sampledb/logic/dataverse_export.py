@@ -138,6 +138,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
         title = get_title_for_property(path, schema)
         units = ''
         magnitude = ''
+        text_value = ''
         symbol = ''
         if value['_type'] == 'quantity':
             units = prettify_units(value['units'])
@@ -146,11 +147,11 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                 units = ''
             magnitude = f"{datatypes.Quantity.from_json(value).magnitude:g}"
         elif value['_type'] == 'text':
-            symbol = _translations_to_str(datatypes.Text.from_json(value).text)
+            text_value = _translations_to_str(datatypes.Text.from_json(value).text)
         elif value['_type'] == 'bool':
-            symbol = str(datatypes.Boolean.from_json(value).value)
+            text_value = str(datatypes.Boolean.from_json(value).value)
         elif value['_type'] == 'datetime':
-            symbol = datatypes.DateTime.from_json(value).utc_datetime.isoformat()
+            text_value = datatypes.DateTime.from_json(value).utc_datetime.isoformat()
         elif value['_type'] == 'hazards':
             hazard_names = {
                 1: 'Explosive',
@@ -163,15 +164,15 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                 8: 'Health Hazard',
                 9: 'Environmental Hazard'
             }
-            symbol = ', '.join(hazard_names[hazard_id] for hazard_id in sorted(value['hazards']))
+            text_value = ', '.join(hazard_names[hazard_id] for hazard_id in sorted(value['hazards']))
         elif value['_type'] == 'tags':
             # tags are handled separately via the keywords in Citation Metadata
             continue
         elif value['_type'] == 'user':
             try:
-                symbol = users.get_user(value['user_id']).name
+                text_value = users.get_user(value['user_id']).name
             except errors.UserDoesNotExistError:
-                symbol = 'Unknown'
+                text_value = 'Unknown'
         elif value['_type'] in ('sample', 'measurement', 'object_reference'):
             object_id = value['object_id']
             if object_permissions.Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
@@ -179,9 +180,9 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
             else:
                 object_name = None
             if object_name:
-                symbol = f"{object_name} (#{object_id})"
+                text_value = f"{object_name} (#{object_id})"
             else:
-                symbol = f"#{object_id}"
+                text_value = f"#{object_id}"
         else:
             continue
         fields.append({
@@ -202,6 +203,12 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                 'multiple': False,
                 'typeClass': 'primitive',
                 'value': magnitude
+            },
+            'processMethodsParTextValue': {
+                'typeName': 'processMethodsParTextValue',
+                'multiple': False,
+                'typeClass': 'primitive',
+                'value': text_value
             },
             'processMethodsParSymbol': {
                 'typeName': 'processMethodsParSymbol',
