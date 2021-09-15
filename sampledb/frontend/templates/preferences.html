@@ -775,7 +775,6 @@
     <script src="{{ url_for('static', filename='js/moment-timezone.min.js') }}"></script>
 
     <script>
-    $('[data-toggle="tooltip"]').tooltip();
     const tz_pref = moment.tz.guess(true);
     var auto_tz = document.getElementById("auto_tz");
     auto_tz.textContent += tz_pref;

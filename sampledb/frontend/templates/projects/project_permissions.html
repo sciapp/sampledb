@@ -12,7 +12,6 @@
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
   <script>
     $(function () {
-      $('[data-toggle="tooltip"]').tooltip();
       $('#form-project-permissions').find('button[type=submit]').on('click', function() {
         num_read_users = $('.permissions_user_read:checked').length;
         num_write_users = $('.permissions_user_write:checked').length;

@@ -59,10 +59,4 @@
 {% block scripts %}
 {{ super() }}
   <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
-</script>
 {% endblock %}
-

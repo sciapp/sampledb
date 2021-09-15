@@ -27,12 +27,3 @@
     <a href="{{ url_for('.action_type', type_id=action_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this action type.') }}">{{ _('Edit Action Type') }}</a>
   {% endif %}
 {% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip();
-});
-</script>
-{% endblock %}

@@ -60,7 +60,6 @@
   ];
   window.new_category_counter = -1;
   $(function() {
-    $('[data-toggle="tooltip"]').tooltip();
     function updateCategoryJSON() {
       var category_json = JSON.stringify(window.categories);
       $('#input-categories').val(category_json);
