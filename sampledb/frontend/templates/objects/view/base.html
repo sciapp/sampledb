@@ -98,8 +98,7 @@
             {% endif %}
             {% if action.instrument is not none %}
               {% set temp = namespace(instrument=get_instrument_with_translation_in_language(action.instrument_id, get_user_language(current_user).id)) %}
-              {% if temp.instrument.translation.english_name%} {{ temp.instrument.translation.english_name }}
-              {% else %} {{ temp.instrument.translation.name }} {% endif %}
+              {{ temp.instrument.translation.name }}
               &mdash;
             {% endif %}
               {{ action.translation.name }}

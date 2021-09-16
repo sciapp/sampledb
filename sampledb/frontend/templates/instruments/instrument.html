@@ -3,19 +3,15 @@
 {% block title %}{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>{{ _('Instrument') }} #{{ instrument.id }}: {% if single_instrument_translation.name %}{{ single_instrument_translation.name }}{% else %}{{ single_instrument_translation.english_name }}{% endif %}</h1>
+  <h1>{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }}</h1>
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.')}}</p>
   {% endif %}
-    {% if single_instrument_translation.description %}
+  {% if single_instrument_translation.description %}
     <div class="instrument-user-content">
       {% if instrument.description_is_markdown %}{{ single_instrument_translation.description | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ single_instrument_translation.description }}</p>{% endif %}
     </div>
-    {% elif single_instrument_translation.english_description %}
-    <div class="instrument-user-content">
-      {% if instrument.description_is_markdown %}{{ single_instrument_translation.english_description | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ single_instrument_translation.english_description }}</p>{% endif %}
-    </div>
-    {% endif %}
+  {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
   {% if current_user.is_admin or current_user in instrument.responsible_users %}
@@ -57,7 +53,7 @@
     {% endif %}
   {% endfor %}
   {% if not ns.has_notes %}
-      &mdash;
+    &mdash;
   {% endif %}
   {% endwith %}
   {% endif %}

@@ -15,13 +15,8 @@
         <input type="hidden" name="instrument_id" value="{{ instrument.id }}">
         {{ toggle_favorite_instrument_form.csrf_token() }}
         <h2>
-        {% if instrument.translation.name %}
-           <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}"
+            <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}"
                 title="{{ instrument.translation.name }}">{{ instrument.translation.name }}</a>
-        {% else %}
-         <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}"
-                title="{{ instrument.translation.english_name }}">{{ instrument.translation.english_name }}</a>
-        {% endif %}
             <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
         </h2>
         </form>
@@ -31,13 +26,7 @@
             </p>
         {% endif %}
 
-        {% if instrument.translation.english_short_description %}
-            <div class="instrument-user-content">
-            {% if instrument.short_description_is_markdown %}
-                {{ instrument.translation.english_short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
-            {% else %}<p>{{ instrument.translation.english_short_description }}</p>{% endif %}
-            </div>
-        {% elif instrument.translation.short_description %}
+        {% if instrument.translation.short_description %}
             <div class="instrument-user-content">
             {% if instrument.short_description_is_markdown %}
                 {{ instrument.translation.short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
