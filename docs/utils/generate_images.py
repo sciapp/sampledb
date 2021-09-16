@@ -189,9 +189,9 @@ def activity_log(base_url, driver, object):
 
 def locations(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    fzj = sampledb.logic.locations.create_location({"en": "FZJ"}, {"en": ""}, None, user.id)
-    b048 = sampledb.logic.locations.create_location({"en": "Building 04.8"}, {"en": ""}, fzj.id, user.id)
-    r139b = sampledb.logic.locations.create_location({"en": "Room 139b"}, {"en": ""}, b048.id, user.id)
+    campus = sampledb.logic.locations.create_location({"en": "Campus A"}, {"en": ""}, None, user.id)
+    b048 = sampledb.logic.locations.create_location({"en": "Building 1"}, {"en": ""}, campus.id, user.id)
+    r139b = sampledb.logic.locations.create_location({"en": "Room 42"}, {"en": ""}, b048.id, user.id)
     sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, None, user.id, {"en": "Shelf C"})
 
     width = 1280
