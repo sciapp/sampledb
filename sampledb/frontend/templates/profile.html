@@ -95,12 +95,3 @@
   </form>
   {% endif %}
 {% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip();
-});
-</script>
-{% endblock %}

@@ -18,13 +18,13 @@
     window.translations = [
       {% for translation in action_type_translations %}
         {
-            'language_id': "{{ translation.language_id }}",
-            'name': "{{ translation.name }}",
-            'description': "{{ translation.description }}",
-            'object_name': "{{ translation.object_name }}",
-            'object_name_plural': "{{ translation.object_name_plural }}",
-            'view_text': "{{ translation.view_text }}",
-            'perform_text': "{{ translation.perform_text }}",
+          'language_id': "{{ translation.language_id }}",
+          'name': "{{ translation.name }}",
+          'description': "{{ translation.description }}",
+          'object_name': "{{ translation.object_name }}",
+          'object_name_plural': "{{ translation.object_name_plural }}",
+          'view_text': "{{ translation.view_text }}",
+          'perform_text': "{{ translation.perform_text }}",
         },
       {% endfor %}
     ];
@@ -32,9 +32,9 @@
     window.languages = [
       {% for lang in languages %}
         {
-            'id': '{{ lang.id }}',
-            'name': '{{ lang.names | get_translated_text }}',
-            'lang_code': '{{ lang.lang_code }}'
+          'id': '{{ lang.id }}',
+          'name': '{{ lang.names | get_translated_text }}',
+          'lang_code': '{{ lang.lang_code }}'
         },
       {% endfor %}
     ]
@@ -63,12 +63,12 @@
         }
 
         const attributes = [
-            ['name', 'names'],
-            ['description', 'descriptions'],
-            ['object-name-singular', 'object-names-singular'],
-            ['object-name-plural', 'object-names-plural'],
-            ['view-text', 'view-texts'],
-            ['perform-text', 'perform-texts'],
+          ['name', 'names'],
+          ['description', 'descriptions'],
+          ['object-name-singular', 'object-names-singular'],
+          ['object-name-plural', 'object-names-plural'],
+          ['view-text', 'view-texts'],
+          ['perform-text', 'perform-texts'],
         ];
         for (const new_language of add_languages) {
           let lang_name = window.languages.find(lang => lang.id.toString() === new_language).name;
@@ -87,13 +87,13 @@
 
           // add new object to translations if no object exists with the language_id
           window.translations.push({
-             'language_id': new_language.toString(),
-             'name': '',
-             'description': '',
-             'object_name': '',
-             'object_name_plural': '',
-             'view_text': '',
-             'perform_text': '',
+            'language_id': new_language.toString(),
+            'name': '',
+            'description': '',
+            'object_name': '',
+            'object_name_plural': '',
+            'view_text': '',
+            'perform_text': '',
           });
           }
       });
@@ -196,73 +196,73 @@
       </div>
 
       <div class="form-group" data-name="input-descriptions">
-          <div class="form-group" style="margin-bottom: 0">
-              <label for="input-description" class="control-label">{{ _("Description") }}</label>
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-description" class="control-label">{{ _("Description") }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in action_type_translations %}
+          <div class="input-group" data-language-id="{{ translation.language.id }}">
+            <input type="text" class="form-control" id="input-description-{{ translation.language.id }}" placeholder="{{ _('Description') }}" data-name="input-description" value="{{ translation.description }}" data-translation-attribute="description">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
           </div>
-          <div class="input-group" hidden="hidden"></div>
-          {% for translation in action_type_translations %}
-              <div class="input-group" data-language-id="{{ translation.language.id }}">
-                <input type="text" class="form-control" id="input-description-{{ translation.language.id }}" placeholder="{{ _('Description') }}" data-name="input-description" value="{{ translation.description }}" data-translation-attribute="description">
-                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
-              </div>
-              <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
-          {% endfor %}
+          <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+        {% endfor %}
       </div>
 
       <div class="form-group" data-name="input-object-names-singular">
-          <div class="form-group" style="margin-bottom: 0">
-              <label for="input-object-name-singular" class="control-label">{{ _("Object Name (singular)") }}</label>
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-object-name-singular" class="control-label">{{ _("Object Name (singular)") }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in action_type_translations %}
+          <div class="input-group" data-language-id="{{ translation.language.id }}">
+            <input type="text" class="form-control" id="input-object-name-singular-{{ translation.language.id }}" placeholder="{{ _('Object Name (singular)') }}" data-name="input-object-name-singular" value="{{ translation.object_name }}" data-translation-attribute="object_name" data-empty-text="{{ _("Please enter an object name (singular).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (singular) (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
           </div>
-          <div class="input-group" hidden="hidden"></div>
-          {% for translation in action_type_translations %}
-              <div class="input-group" data-language-id="{{ translation.language.id }}">
-                <input type="text" class="form-control" id="input-object-name-singular-{{ translation.language.id }}" placeholder="{{ _('Object Name (singular)') }}" data-name="input-object-name-singular" value="{{ translation.object_name }}" data-translation-attribute="object_name" data-empty-text="{{ _("Please enter an object name (singular).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (singular) (at most 100 characters).") }}">
-                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
-              </div>
-              <span class="help-block" data-name="name" id="help-block-object-name-singular-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
-          {% endfor %}
+          <span class="help-block" data-name="name" id="help-block-object-name-singular-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+        {% endfor %}
       </div>
 
       <div class="form-group" data-name="input-object-names-plural">
-          <div class="form-group" style="margin-bottom: 0">
-              <label for="input-object-name-plural" class="control-label">{{ _("Object Name (plural)") }}</label>
+        <div class="form-group" style="margin-bottom: 0">
+            <label for="input-object-name-plural" class="control-label">{{ _("Object Name (plural)") }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in action_type_translations %}
+          <div class="input-group" data-language-id="{{ translation.language.id }}">
+            <input type="text" class="form-control" id="input-object-name-plural-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-object-name-plural" value="{{ translation.object_name_plural }}" data-translation-attribute="object_name_plural" data-empty-text="{{ _("Please enter an object name (plural).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (plural) (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
           </div>
-          <div class="input-group" hidden="hidden"></div>
-          {% for translation in action_type_translations %}
-              <div class="input-group" data-language-id="{{ translation.language.id }}">
-                <input type="text" class="form-control" id="input-object-name-plural-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-object-name-plural" value="{{ translation.object_name_plural }}" data-translation-attribute="object_name_plural" data-empty-text="{{ _("Please enter an object name (plural).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (plural) (at most 100 characters).") }}">
-                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
-              </div>
-              <span class="help-block" data-name="name" id="help-block-object-name-plural-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
-          {% endfor %}
+          <span class="help-block" data-name="name" id="help-block-object-name-plural-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+        {% endfor %}
       </div>
 
       <div class="form-group" data-name="input-view-texts">
-          <div class="form-group" style="margin-bottom: 0">
-              <label for="input-view-text" class="control-label">{{ _("View Text") }}</label>
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-view-text" class="control-label">{{ _("View Text") }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in action_type_translations %}
+          <div class="input-group" data-language-id="{{ translation.language.id }}">
+            <input type="text" class="form-control" id="input-view-text-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-view-text" value="{{ translation.view_text }}" data-translation-attribute="view_text" data-empty-text="{{ _("Please enter a view text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter view text (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
           </div>
-          <div class="input-group" hidden="hidden"></div>
-          {% for translation in action_type_translations %}
-              <div class="input-group" data-language-id="{{ translation.language.id }}">
-                <input type="text" class="form-control" id="input-view-text-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-view-text" value="{{ translation.view_text }}" data-translation-attribute="view_text" data-empty-text="{{ _("Please enter a view text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter view text (at most 100 characters).") }}">
-                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
-              </div>
-              <span class="help-block" data-name="name" id="help-block-view-text-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
-          {% endfor %}
+          <span class="help-block" data-name="name" id="help-block-view-text-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+        {% endfor %}
       </div>
 
       <div class="form-group" data-name="input-perform-texts">
-          <div class="form-group" style="margin-bottom: 0">
-              <label for="input-perform-text" class="control-label">{{ _("Perform Text") }}</label>
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-perform-text" class="control-label">{{ _("Perform Text") }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in action_type_translations %}
+          <div class="input-group" data-language-id="{{ translation.language.id }}">
+            <input type="text" class="form-control" id="input-perform-text-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-perform-text" value="{{ translation.perform_text }}" data-translation-attribute="perform_text" data-empty-text="{{ _("Please enter a perform text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter perform text (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
           </div>
-          <div class="input-group" hidden="hidden"></div>
-          {% for translation in action_type_translations %}
-              <div class="input-group" data-language-id="{{ translation.language.id }}">
-                <input type="text" class="form-control" id="input-perform-text-{{ translation.language.id }}" placeholder="{{ _('Object Name (plural)') }}" data-name="input-perform-text" value="{{ translation.perform_text }}" data-translation-attribute="perform_text" data-empty-text="{{ _("Please enter a perform text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter perform text (at most 100 characters).") }}">
-                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
-              </div>
-              <span class="help-block" data-name="name" id="help-block-perform-text-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
-          {% endfor %}
+          <span class="help-block" data-name="name" id="help-block-perform-text-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+        {% endfor %}
       </div>
 
       <div class="checkbox">

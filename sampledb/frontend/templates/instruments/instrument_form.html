@@ -19,14 +19,14 @@
   <script>
   {% set allowed_language_ids = [] %}
   window.languages = [
-      {% for language in languages %}
-          {
-              'id': '{{ language.id }}',
-              'name': '{{ language.names | get_translated_text }}',
-              'lang_code': '{{ language.lang_code }}'
-          },
-        {{ allowed_language_ids.append(language.id) or '' }}
-      {% endfor %}
+    {% for language in languages %}
+      {
+        'id': '{{ language.id }}',
+        'name': '{{ language.names | get_translated_text }}',
+        'lang_code': '{{ language.lang_code }}'
+      },
+      {{ allowed_language_ids.append(language.id) or '' }}
+    {% endfor %}
   ];
 
   window.translations = [
@@ -60,7 +60,6 @@
   ];
   window.new_category_counter = -1;
   $(function() {
-    $('[data-toggle="tooltip"]').tooltip();
     function updateCategoryJSON() {
       var category_json = JSON.stringify(window.categories);
       $('#input-categories').val(category_json);
@@ -207,9 +206,9 @@
     <div class="hidden" id="description-template">
       <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
       <textarea class="form-control input-description" style="resize: vertical; min-height: 371px" id="input-description" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
-       {% if allowed_language_ids | length > 1 %}
-         <span class="input-group-addon language-addon" data-name="language"></span>
-       {% endif %}
+        {% if allowed_language_ids | length > 1 %}
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        {% endif %}
       </div>
       <span class="help-block"></span>
     </div>
@@ -237,44 +236,44 @@
     <input type="hidden" id="input-translations" name="{{ instrument_form.translations.name }}" value="">
 
     <div class="form-group" data-name="input-names">
-        <div class="form-group row" style="padding-right: 10px; margin-bottom: 0;">
-            <label for="input-name" class="control-label col-md-10" style="margin-top: 5px">{{ _('Name') }}</label>
-            <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-name">
-                {% for language in languages %}
-              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0;">
+        <label for="input-name" class="control-label col-md-10" style="margin-top: 5px">{{ _('Name') }}</label>
+        <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-name">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
               {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].name)%} selected="selected"{% endif %}
               data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
-                 {% endfor %}
-            </select>
-        </div>
-        <div class="input-group" hidden="hidden"></div>
-        {% for translation in instrument_translations.values() %}
-          {% if (translation.language_id == ENGLISH.id or translation.name) and translation.language_id in allowed_language_ids %}
-            <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
-            <input type="text" class="form-control" id="input-name-{{ translation.language.id }}" placeholder="{{ _('Name') }}" data-name="input-name" value="{{ translation.name }}" data-translation-attribute="name" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter instrument name (at most 100 characters).') }}" data-empty-text="{{ _('Please enter an instrument name in English.') }}">
-            {% if allowed_language_ids | length > 1 %}
-              <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
-            {% endif %}
-            </div>
-            <span class="help-block"></span>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="input-group" hidden="hidden"></div>
+      {% for translation in instrument_translations.values() %}
+        {% if (translation.language_id == ENGLISH.id or translation.name) and translation.language_id in allowed_language_ids %}
+          <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
+          <input type="text" class="form-control" id="input-name-{{ translation.language.id }}" placeholder="{{ _('Name') }}" data-name="input-name" value="{{ translation.name }}" data-translation-attribute="name" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter instrument name (at most 100 characters).') }}" data-empty-text="{{ _('Please enter an instrument name in English.') }}">
+          {% if allowed_language_ids | length > 1 %}
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
           {% endif %}
-        {% endfor %}
+          </div>
+          <span class="help-block"></span>
+        {% endif %}
+      {% endfor %}
     </div>
 
     <div class="form-group" data-name="input-descriptions">
-        <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
-            <label for="input-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown on the instrument site') }}</span></label>
-            <label for="input-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
-            <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}>
-              {{ _('Use Markdown') }}
-            </label>
-            <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-description">
-                {% for language in languages %}
-                    <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
-                    {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].description) %} selected="selected"{% endif %}
-                     data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
-                {% endfor %}
-            </select>
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+        <label for="input-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown on the instrument site') }}</span></label>
+        <label for="input-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
+          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}>
+          {{ _('Use Markdown') }}
+        </label>
+          <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-description">
+            {% for language in languages %}
+              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+                {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].description) %} selected="selected"{% endif %}
+                data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+            {% endfor %}
+          </select>
         </div>
 
         <div class="input-group" hidden="hidden"></div>
@@ -292,22 +291,21 @@
     </div>
 
     <div class="form-group" data-name="input-short-descriptions">
-        <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
-            <label for="input-short-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the instrument list') }}</span></label>
-            <label for="input-short-description-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
-              <input type="checkbox" id="input-short-description-is-markdown" name="{{ instrument_form.short_description_is_markdown.name }}" {% if instrument_form.short_description_is_markdown.data %}checked="checked"{% endif %}>
-                {{ _('Use Markdown') }}
-            </label>
-            <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-short-description">
-                {% for language in languages %}
-              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+        <label for="input-short-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the instrument list') }}</span></label>
+        <label for="input-short-description-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
+          <input type="checkbox" id="input-short-description-is-markdown" name="{{ instrument_form.short_description_is_markdown.name }}" {% if instrument_form.short_description_is_markdown.data %}checked="checked"{% endif %}>
+          {{ _('Use Markdown') }}
+        </label>
+        <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-short-description">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
               {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].short_description)%} selected="selected"{% endif %}
               data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
-                 {% endfor %}
-            </select>
-        </div>
-        <div class="input-group" hidden="hidden"></div>
-
+          {% endfor %}
+        </select>
+      </div>
+      <div class="input-group" hidden="hidden"></div>
         {% for translation in instrument_translations.values() %}
           {% if (translation.language_id == ENGLISH.id or translation.short_description) and translation.language_id in allowed_language_ids %}
             <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
@@ -320,19 +318,19 @@
     </div>
     
     <div class="form-group" data-name="input-notes">
-        <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
-            <label for="input-notes" class="control-label col-md-8" style="margin-top: 5px">{{ _('Instrument Scientist Notes') }}</label>
-            <label for="input-notes-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
-                <input type="checkbox" id="input-notes-is-markdown" name="{{ instrument_form.notes_is_markdown.name }}" {% if instrument_form.notes_is_markdown.data %}checked="checked"{% endif %}>
-                {{ _('Use Markdown') }}
-            </label>
-            <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-notes">
-                {% for language in languages %}
-              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+        <label for="input-notes" class="control-label col-md-8" style="margin-top: 5px">{{ _('Instrument Scientist Notes') }}</label>
+        <label for="input-notes-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
+          <input type="checkbox" id="input-notes-is-markdown" name="{{ instrument_form.notes_is_markdown.name }}" {% if instrument_form.notes_is_markdown.data %}checked="checked"{% endif %}>
+          {{ _('Use Markdown') }}
+        </label>
+        <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-notes">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
               {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].notes)%} selected="selected"{% endif %}
               data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
-                 {% endfor %}
-            </select>
+          {% endfor %}
+        </select>
         </div>
         <div class="input-group" hidden="hidden"></div>
         {% for translation in instrument_translations.values() %}
@@ -352,7 +350,7 @@
         <label for="input-instrument_repsonsible_users" class="control-label">{{ _('Instrument Scientists')}}</label>
         <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No user selected') }}">
           {% for choice in instrument_form.instrument_responsible_users.choices %}
-              <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
+            <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
           {% endfor %}
         </select>
       </div>
