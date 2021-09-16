@@ -9,7 +9,6 @@
     <a href="{{ url_for('.new_action_type') }}" class="btn btn-default"> {{ _('Create Action Type') }}</a>
   {% endif %}
 
-
   {% for action_type in action_types %}
     <h2>
       <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
