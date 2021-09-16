@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Basic configuration for iffSamples
+Basic configuration for SampleDB
 
 This configuration is the pure base, representing defaults. These values may be altered or expanded in several ways:
 - For tests, the configuration is modified in tests/conftest.py.
