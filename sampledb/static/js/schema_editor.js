@@ -925,9 +925,23 @@ $(function() {
       value_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-input');
       value_label.attr('for', value_input.attr('id'));
       if (is_type && name in schema) {
-        value_input.val(schema[name]);
-        value_checkbox.prop('checked', true);
-        value_input.prop('disabled', false);
+        if (typeof schema[name] === 'object') {
+          // translations for text properties not supported in graphical editor
+          window.schema_editor_missing_type_support = true;
+          if ('en' in schema[name]) {
+            value_input.val(schema[name]['en']);
+            value_checkbox.prop('checked', true);
+            value_input.prop('disabled', false);
+          } else {
+            value_input.val('');
+            value_checkbox.prop('checked', false);
+            value_input.prop('disabled', true);
+          }
+        } else {
+          value_input.val(schema[name]);
+          value_checkbox.prop('checked', true);
+          value_input.prop('disabled', false);
+        }
       } else {
         value_input.val("");
         value_checkbox.prop('checked', false);
@@ -961,7 +975,15 @@ $(function() {
     if (type === 'choice' && 'choices' in schema) {
       var choices_text = "";
       for (var i in schema['choices']) {
-        choices_text += schema['choices'][i] + "\n";
+        if (typeof schema['choices'][i] === 'object') {
+          // translations for text properties not supported in graphical editor
+          window.schema_editor_missing_type_support = true;
+          if ('en' in schema['choices'][i]) {
+            choices_text += schema['choices'][i]['en'] + "\n";
+          }
+        } else {
+          choices_text += schema['choices'][i] + "\n";
+        }
       }
       choices_input.val(choices_text);
     } else {
