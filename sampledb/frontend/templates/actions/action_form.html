@@ -551,7 +551,7 @@
         </div>
         <div class="modal-body">
           <p>{{ _('The schema for this action contains advanced features which the graphical schema editor does not support. If you continue, these might be removed from the schema.') }}</p>
-          <p>{{ _('If you wish to edit the schema with the more text-based editor, you can enable it in your <a href="%(preference_url)s">preferences</a>.', preference_url=url_for('.user_me_preferences')) }}</p>
+          <p>{{ _('If you wish to edit the schema with the text-based editor, you can enable it in your <a href="%(preference_url)s">preferences</a>.', preference_url=url_for('.user_me_preferences')) }}</p>
         </div>
         <div class="modal-footer">
           <a class="btn btn-primary" href="{{ url_for('.user_me_preferences') }}">{{ _('Edit Preferences') }}</a>
