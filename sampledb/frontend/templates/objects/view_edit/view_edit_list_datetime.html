@@ -1,7 +1,6 @@
-<div class="form-area">
+<div class="input-list form-area">
     {# View #}
     <div class="view-switch">
-        &bull;
         {{ data.utc_datetime | babel_format_datetime }}
         <div class="alert-upload-failed">
             {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}

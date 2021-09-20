@@ -1,20 +1,19 @@
-<div class="form-area">
+<div class="input-list form-area">
     {# View #}
     <div class="view-switch">
-        &bull;
-        {% if data is none %}
-            &mdash;
-        {% else %}
-            {% if schema['units'] == "1" %}
-                {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}
+            {% if data is none %}
+                &mdash;
             {% else %}
-                {{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
-                {{ (data | to_datatype).units | prettify_units }}
+                {% if schema['units'] == "1" %}
+                    {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}
+                {% else %}
+                    {{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
+                    {{ (data | to_datatype).units | prettify_units }}
+                {% endif %}
             {% endif %}
-        {% endif %}
-        <div class="alert-upload-failed">
-            {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
-        </div>
+            <div class="alert-upload-failed">
+                {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+            </div>
     </div>
     {# Form #}
     <div class="form-switch">

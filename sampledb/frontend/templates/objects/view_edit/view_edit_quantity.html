@@ -1,8 +1,7 @@
 <div class="form-group form-area row" style="padding-right:0.75em">
     {# Label #}
-    <div class="col-md-3" style="padding-right: 15px">
-        <div class="row">
-            <label class="control-label col-md-12">{{ schema.title  | get_translated_text }}
+    <div class="col-md-3" style="padding-right: 0px">
+            <label class="col-md-12 view-label">{{ schema.title  | get_translated_text }}
                 {% if data is not none %}
                     {% if schema['units'] == "1" %}
                         <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format(data.magnitude_in_base_units), advanced='on') }}"
@@ -16,7 +15,6 @@
                        class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                 {% endif %}
             </label>
-        </div>
     </div>
     {# View #}
     <div class="view-switch">

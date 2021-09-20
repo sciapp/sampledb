@@ -1,10 +1,5 @@
 <!-- object start -->
 <div style="">
-    {% if schema.title %}
-        <label class="title-label" style="padding-left: 1.5em; font-size: 17px">
-            {{ schema.title }}:
-        </label>
-    {% endif %}
     {% if search_query_attribute %}
         {% set base_search_query_attribute = search_query_attribute %}
     {% else %}
