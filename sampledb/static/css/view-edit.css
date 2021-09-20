@@ -2,10 +2,13 @@
     display: none;
 }
 
+.view-label {
+    text-align: right;
+    padding-right: 15px;
+}
+
 .view-switch {
     display: block;
-    padding-top: 7px;
-    /*margin-left: 15px;*/
 }
 
 .alert-upload-failed {
@@ -22,4 +25,10 @@
 
 .title-label {
     margin-top: 5px;
+}
+
+.input-list {
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
 }

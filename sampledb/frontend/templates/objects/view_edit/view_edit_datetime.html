@@ -1,17 +1,15 @@
 <div class="form-group form-area row" style="padding-right:0.75em">
     {# Label #}
-    <div class="col-md-3" style="padding-right: 15px">
-        <div class="row">
-            <label class="control-label col-md-12">{{ schema.title | get_translated_text }}
-                {% if data is not none %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ' + data.utc_datetime.split()[0], advanced='on') }}"
-                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% else %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 2018-01-01', advanced='on') }}"
-                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% endif %}
-            </label>
-        </div>
+    <div class="col-md-3" style="padding-right: 0px">
+        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+            {% if data is not none %}
+                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ' + data.utc_datetime.split()[0], advanced='on') }}"
+                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+                <a href="{{ url_for('.objects', q=search_query_attribute + ' == 2018-01-01', advanced='on') }}"
+                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+        </label>
     </div>
     {# View #}
     <div class="view-switch">
@@ -28,7 +26,8 @@
     {# Form #}
     <div class="form-switch">
         <div class="col-md-9">
-            <div class="input-group date" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | parse_datetime_string | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | parse_datetime_string | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
+            <div class="input-group date" data-datetime="
+                    {% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | parse_datetime_string | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | parse_datetime_string | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
                 <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
                 <span class="input-group-addon">
             <span class="glyphicon glyphicon-calendar"></span>

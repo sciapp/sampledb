@@ -1,7 +1,6 @@
-<div class="form-area">
+<div class="input-list form-area">
     {# View #}
     <div class="view-switch">
-        &bull;
         {% if data is not none and data.text %}
             {% if schema.markdown and data.is_markdown %}
                 <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;"
@@ -19,7 +18,7 @@
         </div>
     </div>
     {# Form #}
-    <div class="form-switch row">
+    <div class="form-switch">
         <div class="col-md-9">
             {% if schema.markdown %}
                 <textarea style="resize: vertical; min-height: 171px;" class="form-control"

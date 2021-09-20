@@ -5,10 +5,9 @@
     {% endif %}
 {% endfor %}
 <div class="form-group row form-area" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
-    <div class="col-md-3" style="padding-right: 15px">
+    <div class="col-md-3" style="padding-right: 0px">
         {# Label #}
-        <div class="row">
-            <label class="control-label col-md-12 {% if schema.title | get_translated_text and (is_required and (schema.minLength or schema.choices)) %}required-label{% endif %}">{{ schema.title | get_translated_text }}
+            <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
                 {% if data.text %}
                     <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + data.text | get_translated_text(metadata_language) + '"', advanced='on') }}"
                        class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
@@ -17,7 +16,6 @@
                        class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                 {% endif %}
             </label>
-        </div>
         {% if input_languages | length > 1 and 'choices' not in schema %}
             <div class="form-switch">
                 <div class="row col-md-offset-4">

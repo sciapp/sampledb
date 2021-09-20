@@ -1,10 +1,12 @@
 <!-- array start -->
-<div class="form-group row">
-    {% if schema.title %}
-        <label class="title-label" style="padding-left: 1.5em; margin-left: 15px; font-size: 17px">
-            {{ schema.title }}:
+<div class="row" style="padding-right: 0.75em">
+    {# Label #}
+    <div class="col-md-3" style="padding-right: 0px">
+        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+            <a class="search-helper" style="visibility: hidden"><i class="fa fa-search" aria-hidden="true"></i></a></label>
         </label>
-    {% endif %}
+    </div>
+    {# Content #}
     {% set is_required = False %}
     {% set minItems = schema.get('minItems', 0) %}
     {% set maxItems = schema.get('maxItems', None) %}
@@ -14,22 +16,20 @@
         {% set numItems = 0 %}
     {% endif %}
     {% set itemName = (schema['items'].title | get_translated_text) %}
-    {% if data is not none %}
-        <ul style="padding-left: 1.25em">
-            {% for item in data %}
-                {% set name = "item" %}
-                {% set tmp_style = schema['style'] %}
-                {% set schema = schema['items'] %}
-                {% set z = schema.update({'parent_style': tmp_style}) %}
-                {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-                {% set data = item %}
-                {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
-                <div class="col-md-3">
-                </div>
-                <div class="col-md-9" style="padding-left: 0px">
-                    {% include "objects/view_edit/view_edit_any.html" %}
-                </div>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    <div class="col-md-9 array-style-list">
+        {% if data is not none %}
+            <ul style="padding-left: 1.25em">
+                {% for item in data %}
+                    {% set name = "item" %}
+                    {% set tmp_style = schema['style'] %}
+                    {% set schema = schema['items'] %}
+                    {% set z = schema.update({'parent_style': tmp_style}) %}
+                    {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                    {% set data = item %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+                    <li>{% include "objects/view_edit/view_edit_any.html" %}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
 </div>
