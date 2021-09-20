@@ -2,6 +2,9 @@
 var selected_element;
 var form_changed = false;
 
+// Recognize if error occurred to avoid missing a change in datetime-objects
+var form_error_edit = false;
+
 function send_data(elem, act_vals) {
     // Read out all form 'key - value' pairs out of the 'form-horizontal' element in the actual document
     let data_list = $($(".form-horizontal")[0]).serializeArray();
@@ -18,9 +21,10 @@ function send_data(elem, act_vals) {
             }
         }
     }
-    if (!found) {
+    if (!found && !form_error_edit) {
         return;
     } else {
+        console.log("a");
         // Actual form changed
         form_changed = true;
     }
@@ -48,6 +52,7 @@ function send_data(elem, act_vals) {
                 let main_html = $(res_html[i])
                 // Check if the 'edit-website' has been replied to check if an error occurred
                 if (main_html.find(".form-horizontal[method=post]").length > 0) {
+                    form_error_edit = true;
                     // Message user using alert div
                     $(selected_element).find(".alert-upload-failed").each(function () {
                         $(this).css("display", "block");
