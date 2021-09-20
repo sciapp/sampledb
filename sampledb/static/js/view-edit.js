@@ -24,7 +24,6 @@ function send_data(elem, act_vals) {
     if (!found && !form_error_edit) {
         return;
     } else {
-        console.log("a");
         // Actual form changed
         form_changed = true;
     }
