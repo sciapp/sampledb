@@ -6,6 +6,8 @@ var form_changed = false;
 var form_error_edit = false;
 
 function send_data(elem, act_vals) {
+    // Set the cursor style to 'wait' to indicate the website is loading
+    document.body.style.cursor = "wait";
     // Read out all form 'key - value' pairs out of the 'form-horizontal' element in the actual document
     let data_list = $($(".form-horizontal")[0]).serializeArray();
 
@@ -22,6 +24,7 @@ function send_data(elem, act_vals) {
         }
     }
     if (!found && !form_error_edit) {
+        document.body.style.cursor = "default";
         return;
     } else {
         // Actual form changed
@@ -57,6 +60,7 @@ function send_data(elem, act_vals) {
                         $(this).css("display", "block");
                     });
                     $(selected_element).addClass("alert alert-danger");
+                    document.body.style = "default";
                 } else {
                     // Reload website to show that the change has been successful and to being able to edit the new object
                     window.location.reload();
