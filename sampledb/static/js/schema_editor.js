@@ -917,32 +917,6 @@ $(function() {
     required_input.bootstrapToggle();
     required_input.on('change', updateProperty.bind(path));
 
-    var note_label = node.find('.schema-editor-generic-property-note-label');
-    var note_input = node.find('.schema-editor-generic-property-note-input');
-    var note_checkbox = node.find('.schema-editor-generic-property-note-checkbox');
-    note_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-note-checkbox');
-    note_input.attr('id', 'schema-editor-object__' + path.join('__') + '-note-input');
-    note_label.attr('for', note_input.attr('id'));
-    if ('note' in schema) {
-      note_input.val(schema['note']);
-      note_checkbox.prop('checked', true);
-      note_input.prop('disabled', false);
-    } else {
-      note_input.val("");
-      note_checkbox.prop('checked', false);
-      note_input.prop('disabled', true);
-    }
-    note_checkbox.on('change', function() {
-      var note_input = $(this).parent().parent().find('.schema-editor-generic-property-note-input');
-      if ($(this).prop('checked')) {
-        note_input.prop('disabled', false);
-      } else {
-        note_input.prop('disabled', true);
-      }
-    });
-    note_checkbox.on('change', updateProperty.bind(path));
-    note_input.on('change', updateProperty.bind(path));
-
     function setupValueFromSchema(path, type, name, schema, is_type) {
       var value_label = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-label');
       var value_input = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-input');
@@ -951,9 +925,23 @@ $(function() {
       value_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-input');
       value_label.attr('for', value_input.attr('id'));
       if (is_type && name in schema) {
-        value_input.val(schema[name]);
-        value_checkbox.prop('checked', true);
-        value_input.prop('disabled', false);
+        if (typeof schema[name] === 'object') {
+          // translations for text properties not supported in graphical editor
+          window.schema_editor_missing_type_support = true;
+          if ('en' in schema[name]) {
+            value_input.val(schema[name]['en']);
+            value_checkbox.prop('checked', true);
+            value_input.prop('disabled', false);
+          } else {
+            value_input.val('');
+            value_checkbox.prop('checked', false);
+            value_input.prop('disabled', true);
+          }
+        } else {
+          value_input.val(schema[name]);
+          value_checkbox.prop('checked', true);
+          value_input.prop('disabled', false);
+        }
       } else {
         value_input.val("");
         value_checkbox.prop('checked', false);
@@ -971,6 +959,7 @@ $(function() {
       value_input.on('change', updateProperty.bind(path));
     }
 
+    setupValueFromSchema(path, 'generic', 'note', schema, type === 'text');
     setupValueFromSchema(path, 'text', 'default', schema, type === 'text');
     setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text');
     setupValueFromSchema(path, 'text', 'pattern', schema, type === 'text');
@@ -986,7 +975,15 @@ $(function() {
     if (type === 'choice' && 'choices' in schema) {
       var choices_text = "";
       for (var i in schema['choices']) {
-        choices_text += schema['choices'][i] + "\n";
+        if (typeof schema['choices'][i] === 'object') {
+          // translations for text properties not supported in graphical editor
+          window.schema_editor_missing_type_support = true;
+          if ('en' in schema['choices'][i]) {
+            choices_text += schema['choices'][i]['en'] + "\n";
+          }
+        } else {
+          choices_text += schema['choices'][i] + "\n";
+        }
       }
       choices_input.val(choices_text);
     } else {
