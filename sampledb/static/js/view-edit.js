@@ -5,6 +5,7 @@ var form_changed = false;
 // Recognize if error occurred to avoid missing a change in datetime-objects
 var form_error_edit = false;
 
+
 function send_data(elem, act_vals) {
     // Set the cursor style to 'wait' to indicate the website is loading
     document.body.style.cursor = "wait";
@@ -132,6 +133,7 @@ function setup(elem) {
     });
 }
 
+
 function setLstnr() {
     // Setup every 'form-area' to listen for a double click
     $(".form-area").each(function () {
@@ -144,6 +146,7 @@ function setLstnr() {
         });
     });
 }
+
 
 $(document).ready(function () {
     setLstnr();
