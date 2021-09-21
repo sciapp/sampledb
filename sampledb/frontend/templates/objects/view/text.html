@@ -6,8 +6,8 @@
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% endif %}
   </label>
-    <div class="col-md-9">
-    {% if data %}
+  <div class="col-md-9">
+  {% if data %}
     {% if schema.markdown and data.is_markdown %}
       <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
     {% elif 'multiline' in schema and schema['multiline']  %}
