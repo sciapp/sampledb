@@ -1272,7 +1272,6 @@ def object(object_id):
         return flask.abort(403)
     if not user_may_edit and flask.request.args.get('mode', '') == 'upgrade':
         return flask.abort(403)
-    # ---- Inline Edit -------------------------------------------------------------------------------------------------
     if not user_may_edit and flask.request.args.get('mode', '') == 'inline_edit':
         return flask.abort(403)
     if object is not None and flask.request.method == 'GET' and flask.request.args.get('mode', '') == 'inline_edit':
