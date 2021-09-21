@@ -90,7 +90,7 @@ class ObjectFiles(Resource):
             }, 400
         if storage in {'local', 'database'}:
             for key in request_json:
-                if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'overwrite'}:
+                if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'hide_older_versions'}:
                     return {
                         "message": "invalid key '{}'".format(key)
                     }, 400
@@ -105,9 +105,9 @@ class ObjectFiles(Resource):
                 }, 400
             base64_content = request_json['base64_content']
 
-            overwrite = False
-            if 'overwrite' in request_json:
-                overwrite = request_json['overwrite']
+            hide_older_versions = False
+            if 'hide_older_versions' in request_json:
+                hide_older_versions = request_json['hide_older_versions']
 
             try:
                 content = base64.b64decode(base64_content.encode('utf-8'), validate=True)
@@ -121,7 +121,7 @@ class ObjectFiles(Resource):
                     user_id=flask.g.user.id,
                     file_name=original_file_name,
                     save_content=lambda stream: stream.write(content),
-                    overwrite=overwrite
+                    hide_older_versions=hide_older_versions
                 )
             else:
                 file = create_database_file(
@@ -129,7 +129,7 @@ class ObjectFiles(Resource):
                     user_id=flask.g.user.id,
                     file_name=original_file_name,
                     save_content=lambda stream: stream.write(content),
-                    overwrite=overwrite
+                    hide_older_versions=hide_older_versions
                 )
         if storage == 'url':
             for key in request_json:

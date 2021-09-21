@@ -196,7 +196,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             raise InvalidFileStorageError()
 
 
-def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None], overwrite: bool = False) -> File:
+def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None], hide_older_versions: bool = False) -> File:
     """
     Create a new local file and add it to the object and user logs.
 
@@ -207,7 +207,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
-    :param overwrite: overwrite an existing file with the same name
+    :param hide_older_versions: hide existing files with the same name
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -229,7 +229,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
             'storage': 'local',
             'original_file_name': file_name
         },
-        overwrite=overwrite
+        hide_older_versions=hide_older_versions
     )
     file = File.from_database(db_file)
     try:
@@ -271,7 +271,7 @@ def create_url_file(object_id: int, user_id: int, url: str) -> File:
     return file
 
 
-def create_database_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None], overwrite: bool = False) -> File:
+def create_database_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None], hide_older_versions: bool = False) -> File:
     """
     Create a new database file and add it to the object and user logs.
 
@@ -282,7 +282,7 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
-    :param overwrite: overwrite an existing file with the same name
+    :param hide_older_versions: hide existing files with the same name
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -306,7 +306,7 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
             'storage': 'database',
             'original_file_name': file_name
         },
-        overwrite=overwrite
+        hide_older_versions=hide_older_versions
     )
     db_file.binary_data = binary_data
     db.session.commit()
@@ -363,7 +363,7 @@ def _create_db_file(
         object_id: int,
         user_id: int,
         data: typing.Dict[str, typing.Any],
-        overwrite: bool = False
+        hide_older_versions: bool = False
 ) -> files.File:
     """
     Creates a new file in the database.
@@ -383,15 +383,11 @@ def _create_db_file(
     # ensure that the user exists
     users.get_user(user_id)
     # calculate the next file id
-    if overwrite == True and 'original_file_name' in data:
+    if hide_older_versions == True and 'original_file_name' in data:
         q = db.session.query(files.File)
         q = q.filter(files.File.object_id == object.id, files.File.data["original_file_name"].as_string() == data["original_file_name"])
-        db_file = q.first()
-        if db_file is not None:
-            db_file.data = data
-            db_file.utc_datetime = datetime.datetime.utcnow()
-            db.session.commit()
-            return db_file
+        for db_file in q.all():
+            hide_file(object_id, db_file.id, user_id, "File replaced through API Upload")
 
     previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
     if previous_file_id is None:
