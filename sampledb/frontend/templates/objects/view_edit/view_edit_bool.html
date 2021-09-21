@@ -1,7 +1,6 @@
 <div class="row form-area" style="padding-right:0.75em">
     {# Label #}
     <div class="col-md-3" style="padding-right: 0px">
-{#        <div class="row">#}
             <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
                 {% if data is not none and "value" in data %}
                     {% if data.value %}
@@ -17,7 +16,6 @@
                             class="fa fa-search" aria-hidden="true"></i></a></label>
                 {% endif %}
             </label>
-{#        </div>#}
     </div>
     {# View #}
     <div class="view-switch col-md-9" style="padding-left: 15px">
