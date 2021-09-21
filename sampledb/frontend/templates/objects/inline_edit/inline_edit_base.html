@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/view-edit.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inline-edit.css') }}"/>
 
 {% endblock %}
 
@@ -48,7 +48,7 @@
         {{ form.csrf_token() }}
         <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
         {% set id_prefix = "object_" %}
-        {% include "objects/view_edit/view_edit_any.html" %}
+        {% include "objects/inline_edit/inline_edit_any.html" %}
     </form>
 
     <div class="object-button-bar">
@@ -1372,7 +1372,7 @@
     <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/view-edit.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/inline-edit.js') }}"></script>
     {% if get_user_language(current_user).lang_code == 'de' %}
         <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>
         <script type="text/javascript">

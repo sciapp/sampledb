@@ -24,11 +24,11 @@
             {% endif %}
             {% if 'conditions' in schema %}
                 <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                    {% include "objects/view_edit/view_edit_any.html" %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
                     {% include "objects/forms/conditional_wrapper_script.html" %}
                 </div>
             {% else %}
-                {% include "objects/view_edit/view_edit_any.html" %}
+                {% include "objects/inline_edit/inline_edit_any.html" %}
             {% endif %}
         {% endfor %}
     {% else %}
@@ -51,11 +51,11 @@
                 {% endif %}
                 {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                        {% include "objects/view_edit/view_edit_any.html" %}
+                        {% include "objects/inline_edit/inline_edit_any.html" %}
                         {% include "objects/forms/conditional_wrapper_script.html" %}
                     </div>
                 {% else %}
-                    {% include "objects/view_edit/view_edit_any.html" %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
                 {% endif %}
             {% endif %}
         {% endfor %}
@@ -80,11 +80,11 @@
 
                 {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                        {% include "objects/view_edit/view_edit_any.html" %}
+                        {% include "objects/inline_edit/inline_edit_any.html" %}
                         {% include "objects/forms/conditional_wrapper_script.html" %}
                     </div>
                 {% else %}
-                    {% include "objects/view_edit/view_edit_any.html" %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
                 {% endif %}
             {% endif %}
         {% endfor %}
