@@ -114,15 +114,11 @@
                             <textarea style="resize: vertical; min-height: 171px;" class="form-control"
                                       data-markdown-textarea="true"
                                       name="{{ id_prefix }}_text_{{ language.lang_code }}"
-                                      placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}
-                                {{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}
-                                {{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
+                                      placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}{{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}{{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
                         {% elif 'multiline' in schema and schema['multiline'] %}
                             <textarea style="resize: vertical; min-height:2.5em; height:4em;" class="form-control"
                                       name="{{ id_prefix }}_text_{{ language.lang_code }}"
-                                      placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}
-                                {{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}
-                                {{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
+                                      placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text_' + language.lang_code in form_data %}{{ form_data[id_prefix + '_text_' + language.lang_code] }}{% elif data is not none and "text" in data %}{{ data.text | get_translated_text(language.lang_code) }}{% endif %}</textarea>
                         {% else %}
                             <input type="text" class="form-control"
                                    name="{{ id_prefix }}_text_{{ language.lang_code }}"

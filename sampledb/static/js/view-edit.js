@@ -80,6 +80,7 @@ function send_data(elem, act_vals) {
     xml_request.send(data_string);
 }
 
+
 function setup(elem) {
     // Save actual value
     let act_vals = $($(".form-horizontal")[0]).serializeArray();
@@ -92,7 +93,7 @@ function setup(elem) {
         $(this).css("display", "none")
     });
     // If clicked outside the focussed element
-    $(document).click(function (event) {
+    document.addEventListener("click", function (event) {
         if (!elem.contains(event.target)) {
             // Hide all form elements
             $(elem).find(".form-switch").each(function () {
@@ -105,6 +106,8 @@ function setup(elem) {
             // Send actualized data
             send_data(elem, act_vals);
             event.stopPropagation();
+            // Remove event listener to avoid multiple reactions
+            this.removeEventListener("click", arguments.callee);
         }
     });
     // If presses enter
@@ -122,6 +125,8 @@ function setup(elem) {
                 // Send actualized data
                 send_data(elem, act_vals);
                 event.stopPropagation();
+                // Remove event to avoid multiple reactions
+                this.removeEventListener("keyup", arguments.callee);
             }
         })
     });
