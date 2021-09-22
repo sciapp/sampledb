@@ -119,9 +119,9 @@ function setup(elem) {
     }
 
     // If clicked outside the focussed element
-    document.addEventListener("click", event_function);
+    document.addEventListener("click", event_function, );
     // If the user presses enter
-    document.addEventListener("keyup", event_function);
+    document.addEventListener("keyup", event_function, true);
 }
 
 
