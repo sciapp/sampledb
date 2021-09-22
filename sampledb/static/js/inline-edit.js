@@ -24,7 +24,7 @@ function send_data(elem, act_vals) {
             }
         }
     }
-    if (!found && !form_error_edit) {
+    if (!found) {
         document.body.style.cursor = "default";
         return;
     } else {
@@ -121,7 +121,7 @@ function setup(elem) {
     // If clicked outside the focussed element
     document.addEventListener("click", event_function);
     // If the user presses enter
-    document.addEventListener("keyup", event_function)
+    document.addEventListener("keyup", event_function);
 }
 
 
