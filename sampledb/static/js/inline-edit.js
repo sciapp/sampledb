@@ -93,6 +93,11 @@ function setup(elem) {
     $(elem).find(".view-switch").each(function () {
         $(this).css("display", "none")
     });
+    // Focus the element to being able directly starting typing
+    let focusable_elements =  $( elem ).find("input[type=text], input[type=textarea]");
+    if(focusable_elements.length > 0) {
+        focusable_elements[0].focus();
+    }
     // If clicked outside the focussed element
     document.addEventListener("click", function (event) {
         if (!elem.contains(event.target)) {
