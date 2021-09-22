@@ -26,7 +26,7 @@ function send_data(elem, act_vals) {
     }
     if (!found && !form_error_edit) {
         document.body.style.cursor = "default";
-        return 1;
+        return;
     } else {
         // Actual form changed
         form_changed = true;
