@@ -26,7 +26,7 @@ function send_data(elem, act_vals) {
     }
     if (!found && !form_error_edit) {
         document.body.style.cursor = "default";
-        return;
+        return 1;
     } else {
         // Actual form changed
         form_changed = true;
@@ -94,13 +94,13 @@ function setup(elem) {
         $(this).css("display", "none")
     });
     // Focus the element to being able directly starting typing
-    let focusable_elements =  $( elem ).find("input[type=text], input[type=textarea]");
-    if(focusable_elements.length > 0) {
+    let focusable_elements = $(elem).find("input[type=text], input[type=textarea]");
+    if (focusable_elements.length > 0) {
         focusable_elements[0].focus();
     }
-    // If clicked outside the focussed element
-    document.addEventListener("click", function (event) {
-        if (!elem.contains(event.target)) {
+
+    function event_function(event) {
+        if (event.type == "click" && !elem.contains(event.target) || event.type == "keyup" && event.keyCode == 13) {
             // Hide all form elements
             $(elem).find(".form-switch").each(function () {
                 $(this).css("display", "none");
@@ -111,31 +111,17 @@ function setup(elem) {
             });
             // Send actualized data
             send_data(elem, act_vals);
-            event.stopPropagation();
             // Remove event listener to avoid multiple reactions
             this.removeEventListener("click", arguments.callee);
+            this.removeEventListener("keyup", arguments.callee);
+            event.stopPropagation();
         }
-    });
-    // If presses enter
-    $(elem).find(":input").each(function () {
-        this.addEventListener("keyup", function (event) {
-            if (event.keyCode == 13) {
-                // Hide all form elements
-                $(elem).find(".form-switch").each(function () {
-                    $(this).css("display", "none");
-                });
-                // Show all view elements
-                $(elem).find(".view-switch").each(function () {
-                    $(this).css("display", "");
-                });
-                // Send actualized data
-                send_data(elem, act_vals);
-                event.stopPropagation();
-                // Remove event to avoid multiple reactions
-                this.removeEventListener("keyup", arguments.callee);
-            }
-        })
-    });
+    }
+
+    // If clicked outside the focussed element
+    document.addEventListener("click", event_function);
+    // If the user presses enter
+    document.addEventListener("keyup", event_function)
 }
 
 
@@ -144,7 +130,7 @@ function setLstnr() {
     $(".form-area").each(function () {
         $(this).dblclick(function () {
             // If no other form changed before or this is the actual element
-            if(!form_changed || this == selected_element) {
+            if (!form_changed || this == selected_element) {
                 selected_element = this;
                 setup(this);
             }
