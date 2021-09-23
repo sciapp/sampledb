@@ -55,7 +55,6 @@ function send_data(elem, act_vals) {
                 let main_html = $(res_html[i])
                 // Check if the 'edit-website' has been replied to check if an error occurred
                 if (main_html.find(".form-horizontal[method=post]").length > 0) {
-                    console.log(selected_element);
                     form_error_edit = true;
                     // Message user using alert div
                     $(selected_element).find(".alert-upload-failed").each(function () {
