@@ -24,6 +24,7 @@
                     <div class="col-md-9" style="padding-left: 0px">
                         {% if data is not none %}
                             {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
+                            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                         <div class="alert-upload-failed">
                             {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
                         </div>
@@ -35,6 +36,7 @@
                         {% if data is not none %}
                             {{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
                             {{ (data | to_datatype).units | prettify_units }}{% endif %}
+                            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                         <div class="alert-upload-failed">
                             {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
                         </div>

@@ -37,3 +37,9 @@
     vertical-align: middle;
     width: 100%;
 }
+
+.edit-helper {
+    padding-left: 0.8em;
+    visibility: hidden;
+    cursor: pointer ;
+}

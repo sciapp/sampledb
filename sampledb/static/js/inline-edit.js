@@ -55,6 +55,7 @@ function send_data(elem, act_vals) {
                 let main_html = $(res_html[i])
                 // Check if the 'edit-website' has been replied to check if an error occurred
                 if (main_html.find(".form-horizontal[method=post]").length > 0) {
+                    console.log(selected_element);
                     form_error_edit = true;
                     // Message user using alert div
                     $(selected_element).find(".alert-upload-failed").each(function () {
@@ -135,6 +136,27 @@ function setLstnr() {
                 setup(this);
             }
         });
+        // Set an info element on mouseover
+        $(this).mouseover(function () {
+            if(!form_error_edit || this == selected_element) {
+                $(this).find(".edit-helper").each(function () {
+                    $(this).css("visibility", "visible");
+                })
+            }
+        })
+        $(this).mouseout(function () {
+            $(this).find(".edit-helper").each(function () {
+                $(this).css("visibility", "hidden");
+            })
+        })
+        // Set on click listener to every 'edit-helper' to being able to edit using it
+        let actual_form_area = this;
+        $(this).find(".edit-helper").each(function () {
+            this.addEventListener("click", function () {
+                selected_element = actual_form_area;
+                setup(actual_form_area);
+            });
+        })
     });
 }
 

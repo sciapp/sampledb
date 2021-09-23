@@ -10,13 +10,19 @@
                     {% if not (obj is none) %}
                         <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] | get_translated_text(metadata_language) }}
                             (#{{ obj.object_id }})</a>
+                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                     {% else %}
                         <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
+                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                     {% endif %}
                 {% endwith %}
             {% else %}
                 &mdash;
+                <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
             {% endif %}
+            <div class="alert-upload-failed">
+                {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+            </div>
         </div>
     </div>
     {# Form #}

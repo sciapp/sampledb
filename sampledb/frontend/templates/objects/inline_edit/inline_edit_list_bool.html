@@ -10,6 +10,10 @@
         {% else %}
             &mdash;
         {% endif %}
+        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+        <div class="alert-upload-failed">
+                    {{ {"de": "Ihre Eingabe ist nicht korrekt. Bitte überprüfen.", "en": "Your input isn't valid. Please check."} | get_translated_text }}
+        </div>
     </div>
     {# Form #}
     <div class="form-switch">
