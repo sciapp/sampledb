@@ -974,8 +974,9 @@ def show_inline_edit(obj, action):
             (str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name), location.id)))
         for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name),
                                   reverse=True):
-            unvisited_location_ids_prefixes_and_subtrees.insert(0, (
-            location_id, '{}{} / '.format(prefix, get_translated_text(location.name)), subtree[location_id]))
+            unvisited_location_ids_prefixes_and_subtrees.insert(
+                0, (location_id, f'{prefix}{get_translated_text(location.name)} / ', subtree[location_id])
+            )
 
     location_form.location.choices = locations
     possible_responsible_users = [('-1', '—')]
@@ -1120,11 +1121,7 @@ def show_inline_edit(obj, action):
     }
 
     # form kwargs
-    previous_object_schema = None
-
     if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
-        may_create_log_entry = True
-        create_log_entry_default = action.instrument.create_log_entry_default
         instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
         if 'create_instrument_log_entry' in flask.request.form:
             category_ids = []
@@ -1134,21 +1131,6 @@ def show_inline_edit(obj, action):
                         category_ids.append(int(category_id))
                 except Exception:
                     pass
-        else:
-            category_ids = None
-    else:
-        instrument_log_categories = None
-        category_ids = None
-        create_log_entry_default = None
-        may_create_log_entry = False
-
-    permissions_for_group_id = None
-    permissions_for_project_id = None
-    copy_permissions_object_id = None
-
-    action_id = action.id
-    previous_object_id = None
-    has_grant_for_previous_object = False
 
     errors = []
     object_errors = {}
@@ -1173,13 +1155,10 @@ def show_inline_edit(obj, action):
                         raise
                 except ValueError:
                     errors.append('input_num_batch_objects')
-                    num_objects_in_batch = None
                 else:
                     form_data['input_num_batch_objects'] = str(num_objects_in_batch)
             else:
                 form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-        else:
-            num_objects_in_batch = None
 
         if 'previous_actions' in flask.request.form:
             try:
@@ -1201,7 +1180,6 @@ def show_inline_edit(obj, action):
 
     else:
         referencable_objects = []
-        existing_objects = []
     sorted_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
