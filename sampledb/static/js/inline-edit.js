@@ -57,9 +57,7 @@ function send_data(elem, act_vals) {
                 if (main_html.find(".form-horizontal[method=post]").length > 0) {
                     form_error_edit = true;
                     // Message user using alert div
-                    $(selected_element).find(".alert-upload-failed").each(function () {
-                        $(this).css("display", "block");
-                    });
+                    $(selected_element).find(".alert-upload-failed").show();
                     $(selected_element).addClass("alert alert-danger");
                     document.body.style = "default";
                 } else {
@@ -109,13 +107,9 @@ function setup(elem) {
     // Save actual value
     let act_vals = $($(".form-horizontal")[0]).serializeArray();
     // Make all form elements visible
-    $(elem).find(".form-switch").each(function () {
-        $(this).css("display", "block");
-    });
+    $(elem).find(".form-switch").show();
     // Hide view elements
-    $(elem).find(".view-switch").each(function () {
-        $(this).css("display", "none")
-    });
+    $(elem).find(".view-switch").hide();
     setup_markdown(elem);
     // Focus the element to being able directly starting typing
     let focusable_elements = $(elem).find("input[type=text], input[type=textarea], textarea[display!=none]");
@@ -128,9 +122,7 @@ function setup(elem) {
             event.stopPropagation();
             if (document.activeElement.type != "textarea") {
                 // Hide all form elements
-                $(elem).find(".form-switch").each(function () {
-                    $(this).css("display", "none");
-                });
+                $(elem).find(".form-switch").hide();
                 // Show all view elements
                 $(elem).find(".view-switch").each(function () {
                     $(this).css("display", "");
