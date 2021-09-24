@@ -5,7 +5,11 @@
 
 {% block head %}
     {{ super() }}
-    <link rel="meta" type="application/rdf+xml" href="{% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}"/>
+    <link rel="meta" type="application/rdf+xml" href="
+
+
+
+            {% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}"/>
 {% endblock %}
 
 {% block stylesheets %}
@@ -31,7 +35,9 @@
 
     <h2>{{ _('Information') }}</h2>
     <div class="row" style="padding-right:0.75em">
-        <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+        <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search"
+                                                                                   style="visibility:hidden"
+                                                                                   aria-hidden="true"></i></label>
         <div class="col-md-9">{% if instrument is not none %}
             <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>
             {% else %}&mdash;{% endif %}</div>
@@ -57,7 +63,8 @@
                 <div class="btn-group" data-toggle="tooltip" data-placement="top"
                      title="{{ _("View object information in a different language.") }}">
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false"><i class="fa fa-language" aria-hidden="true"></i> {{ _("Change Language") }}
+                            aria-haspopup="true" aria-expanded="false"><i class="fa fa-language"
+                                                                          aria-hidden="true"></i> {{ _("Change Language") }}
                         <span class="caret"></span></button>
                     <ul class="dropdown-menu dropdown-menu-right">
                         {% for language in languages %}
@@ -66,7 +73,8 @@
                                     <i class="fa fa-check" aria-hidden="true"> </i>{% endif %}</a></li>
                         {% endfor %}
                         {% if languages | length == 0 %}
-                            <li><a>{{ ENGLISH.names | get_translated_text }} <i class="fa fa-check" aria-hidden="true"> </i></a></li>
+                            <li><a>{{ ENGLISH.names | get_translated_text }} <i class="fa fa-check"
+                                                                                aria-hidden="true"> </i></a></li>
                         {% endif %}
                     </ul>
                 </div>
@@ -984,6 +992,10 @@
 
 
 
+
+
+
+
                             {% if publication_form.object_name.data %}{{ publication_form.object_name.data }}{% endif %}"/>
                 </div>
                 <div class="text-right">
@@ -1368,6 +1380,7 @@
     <script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/js.cookie.js') }}"></script>
     <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
     <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>

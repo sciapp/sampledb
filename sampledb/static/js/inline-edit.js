@@ -137,7 +137,7 @@ function setLstnr() {
         });
         // Set an info element on mouseover
         $(this).mouseover(function () {
-            if(!form_error_edit || this == selected_element) {
+            if (!form_error_edit || this == selected_element) {
                 $(this).find(".edit-helper").each(function () {
                     $(this).css("visibility", "visible");
                 })
