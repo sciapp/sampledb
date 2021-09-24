@@ -9,6 +9,8 @@
 
 
 
+
+
             {% if link_version_specific_rdf %}{{ url_for('.object_rdf', object_id=object_id, version_id=version_id) }}{% else %}{{ url_for('.object_rdf', object_id=object_id) }}{% endif %}"/>
 {% endblock %}
 
@@ -996,6 +998,8 @@
 
 
 
+
+
                             {% if publication_form.object_name.data %}{{ publication_form.object_name.data }}{% endif %}"/>
                 </div>
                 <div class="text-right">
@@ -1913,19 +1917,6 @@
                     format: "{{ get_user_language(current_user).datetime_format_moment }}",
                     date: $(this).attr('data-datetime')
                 });
-            });
-
-            $('textarea[data-markdown-textarea="true"]').each(function (_, e) {
-                var mde_field = new InscrybMDE({
-                    element: e,
-                    indentWithTabs: false,
-                    spellChecker: false,
-                    status: false,
-                    hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-                    showIcons: ["code", "table"],
-                    minHeight: '100px',
-                });
-                setupImageDragAndDrop(mde_field);
             });
 
             function updateSelectLanguage(selectpicker) {

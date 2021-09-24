@@ -82,6 +82,41 @@ function send_data(elem, act_vals) {
 }
 
 
+function setup_markdown_input() {
+    $(".form-area").each(function () {
+        let act_form_area = this;
+        $(this).find(".CodeMirror-wrap").each(function () {
+            let act_textarea = $(act_form_area).find("textarea")[0];
+            $(act_textarea).attr("textContent", $(this))
+        })
+    })
+}
+
+function setup_markdown(elem) {
+    $(elem).find('textarea[data-markdown-textarea="true"]').each(function (_, e) {
+        if ($(this).attr("markdown-editor-initialized") != "true") {
+            $(this).attr("markdown-editor-initialized", "true");
+            let act_textarea = this
+            let mde_field = new InscrybMDE({
+                element: e,
+                indentWithTabs: false,
+                forceSync: true,
+                spellChecker: false,
+                status: false,
+                hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+                showIcons: ["code", "table"],
+                minHeight: '100px',
+            });
+            mde_field._rendered.parentNode.addEventListener("change", function () {
+                $(act_textarea).html(mde_field.value());
+            });
+            setupImageDragAndDrop(mde_field);
+        }
+    });
+
+}
+
+
 function setup(elem) {
     // Save actual value
     let act_vals = $($(".form-horizontal")[0]).serializeArray();
@@ -93,27 +128,30 @@ function setup(elem) {
     $(elem).find(".view-switch").each(function () {
         $(this).css("display", "none")
     });
+    setup_markdown(elem);
     // Focus the element to being able directly starting typing
-    let focusable_elements = $(elem).find("input[type=text], input[type=textarea]");
+    let focusable_elements = $(elem).find("input[type=text], input[type=textarea], textarea[display!=none]");
     if (focusable_elements.length > 0) {
         focusable_elements[0].focus();
     }
 
     function event_function(event) {
         if (event.type == "click" && !elem.contains(event.target) || event.type == "keyup" && event.keyCode == 13) {
-            // Hide all form elements
-            $(elem).find(".form-switch").each(function () {
-                $(this).css("display", "none");
-            });
-            // Show all view elements
-            $(elem).find(".view-switch").each(function () {
-                $(this).css("display", "");
-            });
-            // Send actualized data
-            send_data(elem, act_vals);
-            // Remove event listener to avoid multiple reactions
-            this.removeEventListener("click", arguments.callee);
-            this.removeEventListener("keyup", arguments.callee);
+            if (document.activeElement.type != "textarea") {
+                // Hide all form elements
+                $(elem).find(".form-switch").each(function () {
+                    $(this).css("display", "none");
+                });
+                // Show all view elements
+                $(elem).find(".view-switch").each(function () {
+                    $(this).css("display", "");
+                });
+                // Send actualized data
+                send_data(elem, act_vals);
+                // Remove event listener to avoid multiple reactions
+                this.removeEventListener("click", arguments.callee);
+                this.removeEventListener("keyup", arguments.callee);
+            }
             event.stopPropagation();
         }
     }
