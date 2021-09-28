@@ -81,26 +81,14 @@ function send_data(elem, act_vals) {
     xml_request.send(data_string);
 }
 
-
-function setup_markdown_input() {
-    $(".form-area").each(function () {
-        let act_form_area = this;
-        $(this).find(".CodeMirror-wrap").each(function () {
-            let act_textarea = $(act_form_area).find("textarea")[0];
-            $(act_textarea).attr("textContent", $(this))
-        })
-    })
-}
-
 function setup_markdown(elem) {
     $(elem).find('textarea[data-markdown-textarea="true"]').each(function (_, e) {
         if ($(this).attr("markdown-editor-initialized") != "true") {
             $(this).attr("markdown-editor-initialized", "true");
             let act_textarea = this
             let mde_field = new InscrybMDE({
-                element: e,
+                element: act_textarea,
                 indentWithTabs: false,
-                forceSync: true,
                 spellChecker: false,
                 status: false,
                 hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
@@ -137,6 +125,7 @@ function setup(elem) {
 
     function event_function(event) {
         if (event.type == "click" && !elem.contains(event.target) || event.type == "keyup" && event.keyCode == 13) {
+            event.stopPropagation();
             if (document.activeElement.type != "textarea") {
                 // Hide all form elements
                 $(elem).find(".form-switch").each(function () {
@@ -152,7 +141,6 @@ function setup(elem) {
                 this.removeEventListener("click", arguments.callee);
                 this.removeEventListener("keyup", arguments.callee);
             }
-            event.stopPropagation();
         }
     }
 
@@ -164,6 +152,10 @@ function setup(elem) {
 
 
 function setLstnr() {
+    // Prevent submitting form
+    $("#data-form").submit(function(event) {
+        event.preventDefault();
+    });
     // Setup every 'form-area' to listen for a double click
     $(".form-area").each(function () {
         $(this).dblclick(function () {

@@ -7,15 +7,15 @@
 <div class="form-group row form-area" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
     <div class="col-md-3" style="padding-right: 0px">
         {# Label #}
-            <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
-                {% if data.text %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + data.text | get_translated_text(metadata_language) + '"', advanced='on') }}"
-                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% else %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}"
-                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% endif %}
-            </label>
+        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+            {% if data.text %}
+                <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + data.text | get_translated_text(metadata_language) + '"', advanced='on') }}"
+                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}"
+                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+        </label>
         {% if input_languages | length > 1 and 'choices' not in schema %}
             <div class="form-switch">
                 <div class="row col-md-offset-4">
@@ -49,14 +49,16 @@
                 {% if schema.markdown and data.is_markdown %}
                     <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"
                          class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
-                    <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i class="fa fa-pencil-square-o"></i></a>
+                    <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i
+                            class="fa fa-pencil-square-o"></i></a>
                 {% elif 'multiline' in schema and schema['multiline'] %}
                     {% if data.text | get_translated_text(metadata_language) %}
                         <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
                     {% else %}
                         &mdash;
                     {% endif %}
-                    <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                    <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i
+                            class="fa fa-pencil-square-o"></i></a>
                 {% else %}
                     {% if data.text | get_translated_text(metadata_language) %}
                         {{ data.text | get_translated_text(metadata_language) }}
