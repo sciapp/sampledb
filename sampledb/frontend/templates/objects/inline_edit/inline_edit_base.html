@@ -1380,6 +1380,9 @@
     <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/inline-edit.js') }}"></script>
+    {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
+        <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+    {% endif %}
     {% if get_user_language(current_user).lang_code == 'de' %}
         <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>
         <script type="text/javascript">
