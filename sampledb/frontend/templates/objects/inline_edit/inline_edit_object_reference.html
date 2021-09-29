@@ -1,9 +1,10 @@
 <div class="row form-area" style="padding-right: 0.75em">
+    {# Label #}
+    <label class="col-md-3"
+           style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}
+    </label>
     {# View #}
     <div class="view-switch">
-        {# Label #}
-        <label class="col-md-3"
-               style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}</label>
         <div class="col-md-9">
             {% if data is not none and "object_id" in data %}
                 {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
@@ -27,16 +28,22 @@
     </div>
     {# Form #}
     <div class="form-switch ">
-        {% if 'action_type_id' not in schema or schema['action_type_id'] is none %}
-            {% set selected_action_type = none %}
-        {% else %}
-            {% set selected_action_type = schema['action_type_id'] %}
+        {% if schema["type"] != "sample" %}
+            {% if 'action_type_id' not in schema or schema['action_type_id'] is none %}
+                {% set selected_action_type = none %}
+            {% else %}
+                {% set selected_action_type = schema['action_type_id'] %}
+            {% endif %}
+            {% if 'action_id' not in schema or schema['action_id'] is none %}
+                {% set selected_action = none %}
+            {% else %}
+                {% set selected_action = schema['action_id'] %}
+            {% endif %}
         {% endif %}
-        {% if 'action_id' not in schema or schema['action_id'] is none %}
-            {% set selected_action = none %}
-        {% else %}
-            {% set selected_action = schema['action_id'] %}
-        {% endif %}
-        {% include 'objects/forms/form_object_reference_base.html' %}
+        <div class="col-md-9">
+            <div class="container-fluid" style="padding-right: 15px">
+                {% include 'objects/forms/form_table_object_reference_base.html' %}
+            </div>
+        </div>
     </div>
 </div>
