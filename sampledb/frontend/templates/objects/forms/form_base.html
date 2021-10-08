@@ -47,9 +47,14 @@
 
     $('textarea.plotly-chart-editor').each(function() {
       var jsonStr = $( this ).text();
-      var jsonObj = JSON.parse(jsonStr);
-      var jsonPretty = JSON.stringify(jsonObj, null, '\t');
-      $( this ).text(jsonPretty);
+      try {
+        var jsonObj = JSON.parse(jsonStr);
+        var jsonPretty = JSON.stringify(jsonObj, null, '\t');
+        $( this ).text(jsonPretty);
+      }
+      catch (e) {
+        return;
+      }
     });
 
     function updateSelectLanguage(selectpicker) {
