@@ -1047,6 +1047,7 @@ def show_inline_edit(obj, action):
         metadata_language = None
 
     view_kwargs = {
+        "template_mode": "inline_edit",
         "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
             action_type_id=logic.actions.models.ActionType.MEASUREMENT,
             language_id=logic.languages.get_user_language(flask_login.current_user).id,
@@ -1386,6 +1387,7 @@ def object(object_id):
             metadata_language = None
         return flask.render_template(
             'objects/view/base.html',
+            template_mode="view",
             measurement_type_name=logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
                 action_type_id=logic.actions.models.ActionType.MEASUREMENT,
                 language_id=logic.languages.get_user_language(flask_login.current_user).id,
@@ -2109,6 +2111,7 @@ def object_version(object_id, version_id):
         metadata_language = None
     return flask.render_template(
         'objects/view/base.html',
+        template_mode="view",
         languages=languages,
         metadata_language=metadata_language,
         ENGLISH=english,
