@@ -108,7 +108,7 @@
   <table class="table" id="table-objects">
   <thead>
     <tr>
-      <th scope="col" rowspan="2">{{ _('ID') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_object_id', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_object_id' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_object_id', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_object_id' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
+      {% if show_object_id %}<th scope="col" rowspan="2">{{ _('ID') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_object_id', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_object_id' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_object_id', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_object_id' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>{% endif %}
       <th scope="col" rowspan="2">{{ _('Name') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='name', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == 'name' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='name', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == 'name' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
       <th scope="col" colspan="2">{{ _('Created') }}</th>
       <th scope="col" colspan="2">{{ _('Last modified') }}</th>
@@ -127,7 +127,7 @@
   <tbody>
   {% for object in objects %}
     <tr>
-      <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
+      {% if show_object_id %}<th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>{% endif %}
       <td><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.data['name']['text'] | get_translated_text }}</a></td>
       <td>{{ object.created_at | babel_format_date }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>

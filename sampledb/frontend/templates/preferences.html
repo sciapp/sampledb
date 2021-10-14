@@ -123,7 +123,23 @@
            <tr>
              <td></td>
              <td></td>
-             <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+             <td class="text-right"><button typ<div class="form-group">
+      <label class="col-md-4 control-label" for="input-use-schema-editor-yes">
+        {{ _('Show object id') }}
+      </label>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-object-id" id="input-show-object-id-yes" value="yes" {% if user_settings["SHOW_OBJECT_ID"] %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Display ist (default)') }}
+        </label>
+      </div>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-object-id" id="input-input-show-object-id-no" value="no" {% if not user_settings["SHOW_OBJECT_ID"] %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Hide it') }}
+        </label>
+      </div>
+    </div>e="button" class="btn btn-success" data-toggle="modal" data-target="#myModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
            </tr>
          </tfoot>
        </table>
@@ -536,6 +552,23 @@
         <label>
           <input type="radio" name="input-use-schema-editor" id="input-use-schema-editor-no" value="no" {% if not user_settings["USE_SCHEMA_EDITOR"] %}checked="checked"{% endif %}>
           {{ _('No &mdash; Edit schemas as JSON using a text editor (advanced)') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-use-schema-editor-yes">
+        {{ _('Show object id') }}
+      </label>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-object-id" id="input-show-object-id-yes" value="yes" {% if user_settings["SHOW_OBJECT_ID"] %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Display ist (default)') }}
+        </label>
+      </div>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-object-id" id="input-input-show-object-id-no" value="no" {% if not user_settings["SHOW_OBJECT_ID"] %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Hide it') }}
         </label>
       </div>
     </div>

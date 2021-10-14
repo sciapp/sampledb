@@ -539,6 +539,9 @@ def change_preferences(user, user_id):
             except ValueError:
                 pass
 
+        show_object_id = flask.request.form.get('input-show-object-id', 'yes') != 'no'
+        modified_settings['SHOW_OBJECT_ID'] = show_object_id
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
