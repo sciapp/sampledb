@@ -456,6 +456,7 @@ def objects():
 
     return flask.render_template(
         'objects/objects.html',
+        show_object_id=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"],
         objects=objects,
         display_properties=display_properties,
         display_property_titles=display_property_titles,
