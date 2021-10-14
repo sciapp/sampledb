@@ -1484,6 +1484,15 @@ msgstr ""
 "Nein &mdash; Bearbeite Schemas als JSON mit einem Texteditor "
 "(fortgeschritten)"
 
+msgid "Show object titles"
+msgstr "Zeige Objekt Titel"
+
+msgid "Yes &mdash; Show object titles"
+msgstr "Ja &mdash; Zeige Objekt Titel"
+
+msgid "No &mdash; Hide object titles (default)"
+msgstr "Nein &mdash; Verstecke Objekt Titel (default)"
+
 msgid "Language"
 msgstr "Sprache"
 
