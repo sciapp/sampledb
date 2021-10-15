@@ -38,9 +38,14 @@
         {% set name = "item" %}
         {% set tmp_style = schema['style'] %}
         {% set schema = schema['items'] %}
-        {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+        {% if loop.last %}
+          {% set index = "placeholder" %}
+        {% else %}
+          {% set index = loop.index0 %}
+        {% endif %}
+        {% set id_prefix = id_prefix + '_{}_'.format(index) %}
         {% set data = item %}
-        <tr>
+        <tr id="{{ id_prefix }}" class="array_item_{{ index }}">
         {% for property_name in property_order %}
           {% if property_name in item_property_names %}
           <td>
@@ -74,7 +79,7 @@
           {% endif %}
         {% endfor %}
         {% if numItems > minItems %}
-          <td><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
+          <td><button type="button" onclick="$('#{{ id_prefix }}').remove()" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
         {% else %}
           <td><button type="button" class="btn btn-danger pull-right disabled">&times;</button></td>
         {% endif %}
@@ -88,7 +93,7 @@
           <th scope="col"></th>
         {% endfor %}
   {% if maxItems is none or numItems < maxItems %}
-        <th><button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
+        <th><button type="button" onclick="add_array_item('{{ id_prefix }}')" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
   {% else %}
         <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
   {% endif %}

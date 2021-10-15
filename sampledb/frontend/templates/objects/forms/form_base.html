@@ -6,6 +6,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jsuites.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jexcel.css') }}" />
+{% endblock %}
+
+{% block head_scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/jsuites.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jexcel.js') }}"></script>
 {% endblock %}
 
 {% block scripts %}
@@ -154,6 +162,31 @@
       }
     }.bind(tagsinput));
   });
+
+  function add_array_item(prefix) {
+    placeholder_element = $( "#" + prefix + "_placeholder_" );
+
+    var max_id = -1;
+    $('[id^="'+prefix+'"]').each( function() {
+      var cur_id = $( this ).attr('id').slice(-2, -1);
+      if ($( this ).attr('id').length <= (prefix.length + 3)) {
+        try {
+          cur_id = Number(cur_id);
+          max_id = (cur_id > max_id) ? cur_id : max_id;
+        }
+        catch (e) {
+        }
+      }
+    });
+
+    var content = placeholder_element.clone().wrap('<p/>').parent().html();
+    var newId = (max_id + 1).toString();
+    var re = new RegExp(prefix + '_placeholder_', 'g');
+
+    content = content.replace(re, prefix + '_' + newId + '_');
+    content = content.replace('array_item_placeholder', 'array_item_' + newId);
+    $( content ).insertBefore(placeholder_element);
+  }
 
 </script>
 {% endblock %}

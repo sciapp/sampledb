@@ -1000,6 +1000,9 @@ div.instrument-log-tree-container > h3 {
     margin-bottom: 10px;
 }
 
+.array_item_placeholder {
+    display: none;
+}
 .dropdown-menu > li > a.button-search-filter {
     padding: 0;
 }

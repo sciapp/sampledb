@@ -327,9 +327,11 @@ def parse_boolean_form_data(form_data, schema, id_prefix, errors, required=False
 
 @form_data_parser
 def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    keys = sorted([key for key in form_data.keys() if key.startswith(id_prefix + '__') and not key.startswith(id_prefix + '__placeholder')])
     item_schema = schema['items']
     item_indices = set()
+    running_index = 0
+    last_index = None
     for key in keys:
         key_rest = key.replace(id_prefix, '', 1)
         if not key_rest.startswith('__'):
@@ -339,6 +341,15 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
             raise ValueError('invalid array form data')
         try:
             item_index = int(key_parts[1])
+            if item_index > running_index and item_index != last_index and last_index is not None:
+                running_index += 1
+
+            last_index = item_index
+
+            if item_index != running_index:
+                new_key = key.replace(id_prefix + '__{}'.format(item_index), id_prefix + '__{}'.format(running_index), 1)
+                form_data[new_key] = form_data.pop(key)
+                item_index = running_index
         except ValueError:
             raise ValueError('invalid array form data')
         item_indices.add(item_index)

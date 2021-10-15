@@ -496,7 +496,7 @@ def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
-def get_sub_data_and_schema(data, schema, id_prefix):
+def get_sub_data_and_schema(data, schema, id_prefix, ignore_sub_type = False):
     sub_data = data
     sub_schema = schema
     try:
@@ -506,6 +506,8 @@ def get_sub_data_and_schema(data, schema, id_prefix):
                 sub_schema = sub_schema['items']
             elif sub_schema['type'] == 'object':
                 sub_schema = sub_schema['properties'][key]
+            elif ignore_sub_type is True:
+                sub_schema = {}
             else:
                 raise ValueError('invalid type')
             if isinstance(key, int):
@@ -514,7 +516,7 @@ def get_sub_data_and_schema(data, schema, id_prefix):
             elif key not in sub_data:
                 sub_data[key] = generate_placeholder(sub_schema)
             sub_data = sub_data[key]
-        if sub_schema['type'] != 'array':
+        if ignore_sub_type is False and sub_schema['type'] != 'array':
             raise ValueError('invalid type')
     except (ValueError, KeyError, IndexError, TypeError):
         # TODO: error handling/logging?
@@ -541,6 +543,22 @@ def apply_action_to_form_data(action, form_data):
                     new_name = parent_id_prefix + '__' + str(item_index - 1) + '__' + id_suffix
                     new_form_data[new_name] = form_data[name]
     return new_form_data
+
+
+def add_array_placeholders_to_data(data, schema):
+    for key, val in data.items():
+        if isinstance(val, dict):
+            sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
+            data[key] = add_array_placeholders_to_data(sub_data, sub_schema)
+        elif isinstance(val, list):
+            sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
+            if 'type' in sub_schema['items'] and sub_schema['items']['type'] == 'array':
+                continue
+
+            data[key].append(generate_placeholder(sub_schema['items']))
+            for index, list_val in enumerate(data[key]):
+                data[key][index] = add_array_placeholders_to_data(data[key][index], sub_schema['items'])
+    return data
 
 
 def apply_action_to_data(action, data, schema):
@@ -829,6 +847,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             form_data = apply_action_to_form_data(previous_actions[-1], form_data)
         except ValueError:
             flask.abort(400)
+
+    add_array_placeholders_to_data(data, schema)
 
     if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
         referencable_objects = get_objects_with_permissions(

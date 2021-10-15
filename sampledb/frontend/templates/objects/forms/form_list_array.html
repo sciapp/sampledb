@@ -18,13 +18,18 @@
   {% set tmp_style = schema['style'] %}
   {% set schema = schema['items'] %}
   {% set z = schema.update({'parent_style': tmp_style}) %}
-  {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+  {% if loop.last %}
+    {% set index = "placeholder" %}
+  {% else %}
+    {% set index = loop.index0 %}
+  {% endif %}
+  {% set id_prefix = id_prefix + '_{}_'.format(index) %}
   {% set data = item %}
-    <div class="col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %}" style="display:flex; padding-left:2em; padding-right:1.75em">
+    <div id="{{ id_prefix }}" class="array_item_{{ index }} col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %}" style="display:flex; padding-left:2em; padding-right:1.75em">
       {% include "objects/forms/form_any.html" %}
       <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
       {% if numItems > minItems %}
-        <button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px;"><i class="fa fa-minus"></i></button>
+        <button type="button" onclick="$('#{{ id_prefix }}').remove()" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px;"><i class="fa fa-minus"></i></button>
       {% else %}
         <button type="button" class="btn btn-danger disabled" style="height:34px;"><i class="fa fa-minus"></i></button>
       {% endif %}
@@ -40,7 +45,7 @@
   </div>
 <div style="flex-grow: 0; flex-basis: 4em;"></div>
 {% if maxItems is none or numItems < maxItems %}
-  <button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success" style="height:34px;"><i class="fa fa-plus"></i></button>
+  <button type="button" onclick="add_array_item('{{ id_prefix }}')" name="action_{{ id_prefix }}_?__add" class="btn btn-success" style="height:34px;"><i class="fa fa-plus"></i></button>
 {% else %}
   <button type="button" class="btn btn-success disabled" style="height:34px;"><i class="fa fa-plus"></i></button>
 {% endif %}
