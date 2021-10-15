@@ -451,6 +451,8 @@ EXTRA_USER_FIELDS = {}
 
 SHOW_PREVIEW_WARNING = False
 
+DISABLE_INLINE_EDIT = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 

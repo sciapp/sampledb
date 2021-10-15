@@ -191,5 +191,7 @@ Miscellaneous
      - A JSON-encoded dict containing extra user fields, e.g. ``{"phone": {"name": {"en": "Phone No."}, "placeholder": {"en": "Phone No."}}}`` (default: ``{}``)
    * - SAMPLEDB_SHOW_PREVIEW_WARNING
      - If set, a warning will be shown indicating that the instance is a preview installation and that data will be deleted.
+   * - SAMPLEDB_DISABLE_INLINE_EDIT
+     - If set, the inline edit mode will be disabled and users will not be able to edit individual fields.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.
