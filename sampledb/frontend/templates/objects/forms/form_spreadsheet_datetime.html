@@ -1,0 +1,4 @@
+<input type="hidden" bla="{{loop.index0}}" class="form-control" name="{{ id_prefix }}_datetime" value="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | parse_datetime_string | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | parse_datetime_string | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}" />
+<script>
+  row.push("{{ id_prefix }}_datetime")
+</script>
