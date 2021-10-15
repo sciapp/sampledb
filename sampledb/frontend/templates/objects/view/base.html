@@ -14,8 +14,6 @@
 {% endblock %}
 
 {% block content %}
-  {# counter for plotly_chart_plots #}
-  {% set plot_counter = namespace(value=0) %}
 
   {% if is_archived %}
   <div class="alert alert-info alert-dismissible" role="alert">
@@ -39,6 +37,8 @@
     <div class="col-md-9"><a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
   </div>
     {% block includes %}
+        {# counter for plotly_chart_plots #}
+        {% set plot_counter = namespace(value=0) %}
         {% include "objects/view/any.html" %}
     {% endblock %}
     <div class="object-button-bar">

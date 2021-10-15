@@ -10,6 +10,8 @@
 {% set id_prefix = "object_" %}
 
 {% block includes %}
+    {# counter for plotly_chart_plots #}
+    {% set plot_counter = namespace(value=0) %}
     <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form">
         {{ form.csrf_token() }}
         <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
