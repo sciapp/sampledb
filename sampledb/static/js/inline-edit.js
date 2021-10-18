@@ -97,7 +97,7 @@ function setup_markdown(elem) {
                 showIcons: ["code", "table"],
                 minHeight: '100px',
             });
-            mde_field._rendered.parentNode.addEventListener("change", function () {
+            mde_field._rendered.parentNode.addEventListener("keyup", function () {
                 $(act_textarea).html(mde_field.value());
             });
             setupImageDragAndDrop(mde_field);
