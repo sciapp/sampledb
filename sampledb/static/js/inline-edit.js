@@ -4,6 +4,8 @@ var form_changed = false;
 
 // Recognize if error occurred to avoid missing a change in datetime-objects
 var form_error_edit = false;
+// Log if the user is editing an entry in the moment
+var is_editing = false;
 
 
 function send_data(elem, act_vals) {
@@ -25,6 +27,7 @@ function send_data(elem, act_vals) {
         }
     }
     if (!found) {
+        is_editing = false;
         document.body.style.cursor = "default";
         return;
     } else {
@@ -60,6 +63,7 @@ function send_data(elem, act_vals) {
                     $(selected_element).find(".alert-upload-failed").show();
                     $(selected_element).addClass("alert alert-danger");
                     document.body.style = "default";
+                    is_editing = false;
                 } else {
                     // Reload website to show that the change has been successful and to being able to edit the new object
                     window.location.reload();
@@ -152,7 +156,8 @@ function setLstnr() {
     $(".form-area").each(function () {
         $(this).dblclick(function () {
             // If no other form changed before or this is the actual element
-            if (!form_changed || this == selected_element) {
+            if (!is_editing && (!form_changed || this == selected_element)) {
+                is_editing = true;
                 selected_element = this;
                 setup(this);
             }
@@ -174,8 +179,11 @@ function setLstnr() {
         let actual_form_area = this;
         $(this).find(".edit-helper").each(function () {
             this.addEventListener("click", function () {
-                selected_element = actual_form_area;
-                setup(actual_form_area);
+                if(!is_editing && (!form_changed || actual_form_area == selected_element)) {
+                    is_editing = true;
+                    selected_element = actual_form_area;
+                    setup(actual_form_area);
+                }
             });
         })
     });
