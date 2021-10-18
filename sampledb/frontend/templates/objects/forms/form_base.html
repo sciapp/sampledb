@@ -31,8 +31,8 @@
 <script type="text/javascript">
   window.mde_fields = [];
 
-  $(function () {
-    $('.input-group.date').each(function() {
+  function initialize_form_inputs (scope) {
+    $('.input-group.date', scope).each(function() {
       $(this).datetimepicker({
         locale: "{{ get_user_language(current_user).lang_code }}",
         format: "{{ get_user_language(current_user).datetime_format_moment }}",
@@ -40,7 +40,7 @@
       });
     });
 
-    $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
+    $('textarea[data-markdown-textarea="true"]', scope).each(function(_, e) {
       var mde_field = new InscrybMDE({
         element: e,
         indentWithTabs: false,
@@ -53,7 +53,7 @@
       setupImageDragAndDrop(mde_field);
     });
 
-    $('textarea.plotly-chart-editor').each(function() {
+    $('textarea.plotly-chart-editor', scope).each(function() {
       var jsonStr = $( this ).text();
       try {
         var jsonObj = JSON.parse(jsonStr);
@@ -85,7 +85,7 @@
       {% endfor %}
     }
 
-    var select_language_selectpicker = $('.select-language')
+    var select_language_selectpicker = $('.select-language', scope)
     select_language_selectpicker.on('changed.bs.select', function() {
       updateSelectLanguage(this);
     });
@@ -96,7 +96,7 @@
       this();
     });
 
-    $('div.objectpicker').each(function () {
+    $('div.objectpicker', scope).each(function () {
       let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
       $(this).append(filter_button);
       let objectpicker = $(this).find('.selectpicker');
@@ -121,6 +121,11 @@
         }
       });
     });
+
+  }
+
+  $(function () {
+    initialize_form_inputs(document);
   });
 
   var tags = new Bloodhound({
@@ -185,7 +190,8 @@
 
     content = content.replace(re, prefix + '_' + newId + '_');
     content = content.replace('array_item_placeholder', 'array_item_' + newId);
-    $( content ).insertBefore(placeholder_element);
+    new_el = $( content ).insertBefore(placeholder_element);
+    initialize_form_inputs(new_el);
   }
 
 </script>
