@@ -285,11 +285,13 @@ def objects():
             else:
                 sorting_order_name = 'asc'
                 sorting_order = object_sorting.ascending
-
-        if sorting_property_name is None:
-            sorting_property_name = '_object_id'
+        if get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"]:
+            if sorting_property_name is None:
+                sorting_property_name = '_object_id'
+            else:
+                name_only = False
         else:
-            name_only = False
+            sorting_property_name = '_last_modification_date'
         if sorting_property_name == '_object_id':
             sorting_property = object_sorting.object_id()
         elif sorting_property_name == '_creation_date':
