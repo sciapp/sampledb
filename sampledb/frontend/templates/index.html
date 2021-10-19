@@ -36,14 +36,14 @@
     {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
         {% if action_type.show_on_frontpage %}
       <div class="row">
-        <div class="col-md-offset-{% if not current_user.is_readonly %}2{% else %}4{% endif %} col-md-4">
+        {% if not current_user.is_readonly %}
+        <div class="col-md-offset-2 col-md-4">
           <a href="{{ url_for('frontend.actions', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.translation.perform_text }}</a>
         </div>
-        {% if not current_user.is_readonly %}
-        <div class="col-md-4">
+        {% endif %}
+        <div class="{% if current_user.is_readonly %}col-md-offset-4{% endif %} col-md-4">
           <a href="{{ url_for('frontend.objects', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.translation.view_text }}</a>
         </div>
-        {% endif %}
       </div>
       {% endif %}
     {% endfor %}
