@@ -1487,7 +1487,7 @@ msgstr ""
 msgid "Show object id"
 msgstr "Zeige Object ID"
 
-msgid "Yes &mdash; Display ist (default)"
+msgid "Yes &mdash; Display it (default)"
 msgstr "Ja &mdash; Anzeigen (default)"
 
 msgid "No &mdash; Hide it"
