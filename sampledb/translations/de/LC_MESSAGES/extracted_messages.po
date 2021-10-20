@@ -1484,6 +1484,15 @@ msgstr ""
 "Nein &mdash; Bearbeite Schemas als JSON mit einem Texteditor "
 "(fortgeschritten)"
 
+msgid "Show object schema titles"
+msgstr "Zeige Objekt-Schema Titel"
+
+msgid "Yes &mdash; Show object schema titles when viewing metadata"
+msgstr "Ja &mdash; Zeige Objekt-Schema Titel beim Betrachten von Metadaten"
+
+msgid "No &mdash; Hide object schema titles when viewing metadata (default)"
+msgstr "Nein &mdash; Verstecke Objekt-Schema Titel beim Betrachten von Metadaten (Standard)"
+
 msgid "Language"
 msgstr "Sprache"
 
