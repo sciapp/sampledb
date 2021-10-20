@@ -1484,11 +1484,11 @@ msgstr ""
 "Nein &mdash; Bearbeite Schemas als JSON mit einem Texteditor "
 "(fortgeschritten)"
 
-msgid "Show object id"
-msgstr "Zeige Object ID"
+msgid "Show object id in title"
+msgstr "Zeige Object ID in Objekt Titel"
 
 msgid "Yes &mdash; Display it (default)"
-msgstr "Ja &mdash; Anzeigen (default)"
+msgstr "Ja &mdash; Anzeigen (Standard)"
 
 msgid "No &mdash; Hide it"
 msgstr "Nein &mdash; Verstecken"

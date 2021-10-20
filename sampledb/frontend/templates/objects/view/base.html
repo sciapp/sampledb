@@ -27,7 +27,7 @@
   <script>
   window.plotly_charts = [];
   </script>
-  <h1>{{ action_type.translation.object_name }}{% if show_object_id %} #{{ object_id }}{% endif %}: {{ data.name.text | get_translated_text }}</h1>
+  <h1>{{ action_type.translation.object_name }}{% if show_object_id_in_title %} #{{ object_id }}{% endif %}: {{ data.name.text | get_translated_text }}</h1>
 
   <h2>{{ _('Information') }}</h2>
   <div class="row" style="padding-right:0.75em">

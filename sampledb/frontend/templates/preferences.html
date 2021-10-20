@@ -541,17 +541,17 @@
     </div>
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-use-schema-editor-yes">
-        {{ _('Show object id') }}
+        {{ _('Show object id in title') }}
       </label>
       <div class="radio col-md-4">
         <label>
-          <input type="radio" name="input-show-object-id" id="input-show-object-id-yes" value="yes" {% if user_settings["SHOW_OBJECT_ID"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-show-object-id-in-title" id="input-show-object-id-in-title-yes" value="yes" {% if user_settings["SHOW_OBJECT_ID_IN_TITLE"] %}checked="checked"{% endif %}>
           {{ _('Yes &mdash; Display it (default)') }}
         </label>
       </div>
       <div class="radio col-md-4">
         <label>
-          <input type="radio" name="input-show-object-id" id="input-input-show-object-id-no" value="no" {% if not user_settings["SHOW_OBJECT_ID"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-show-object-id-in-title" id="input-input-show-object-id-in-title-no" value="no" {% if not user_settings["SHOW_OBJECT_ID_IN_TITLE"] %}checked="checked"{% endif %}>
           {{ _('No &mdash; Hide it') }}
         </label>
       </div>

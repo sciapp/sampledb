@@ -286,11 +286,9 @@ def objects():
                 sorting_order_name = 'asc'
                 sorting_order = object_sorting.ascending
         if sorting_property_name is None:
-            if get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"]:
-                sorting_property_name = '_object_id'
-            else:
-                name_only = False
-                sorting_property_name = '_last_modification_date'
+            sorting_property_name = '_object_id'
+        else:
+            name_only = False
         if sorting_property_name == '_object_id':
             sorting_property = object_sorting.object_id()
         elif sorting_property_name == '_creation_date':
@@ -457,7 +455,6 @@ def objects():
 
     return flask.render_template(
         'objects/objects.html',
-        show_object_id=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"],
         objects=objects,
         display_properties=display_properties,
         display_property_titles=display_property_titles,
@@ -1064,7 +1061,7 @@ def object(object_id):
             metadata_language = None
         return flask.render_template(
             'objects/view/base.html',
-            show_object_id=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"],
+            show_object_id_in_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID_IN_TITLE"],
             show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
             measurement_type_name=logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
                 action_type_id=logic.actions.models.ActionType.MEASUREMENT,
@@ -1789,7 +1786,7 @@ def object_version(object_id, version_id):
         metadata_language = None
     return flask.render_template(
         'objects/view/base.html',
-        show_object_id=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"],
+        show_object_id_in_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID_IN_TITLE"],
         show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
         languages=languages,
         metadata_language=metadata_language,

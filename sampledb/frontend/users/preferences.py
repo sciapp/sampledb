@@ -539,8 +539,8 @@ def change_preferences(user, user_id):
             except ValueError:
                 pass
 
-        show_object_id = flask.request.form.get('input-show-object-id', 'yes') != 'no'
-        modified_settings['SHOW_OBJECT_ID'] = show_object_id
+        show_object_id_in_title = flask.request.form.get('input-show-object-id-in-title', 'yes') != 'no'
+        modified_settings['SHOW_OBJECT_ID_IN_TITLE'] = show_object_id_in_title
 
         show_object_title = flask.request.form.get('input-show-object-title', 'yes') != 'no'
         modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
