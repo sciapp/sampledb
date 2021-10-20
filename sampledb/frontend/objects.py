@@ -1049,7 +1049,8 @@ def show_inline_edit(obj, action):
 
     view_kwargs = {
         "template_mode": "inline_edit",
-        "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
+        "show_object_title": get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
+                            "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
             action_type_id=logic.actions.models.ActionType.MEASUREMENT,
             language_id=logic.languages.get_user_language(flask_login.current_user).id,
             use_fallback=True
