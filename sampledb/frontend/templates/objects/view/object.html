@@ -1,4 +1,7 @@
 <!-- object start -->
+    {% if show_object_title and schema.title %}
+        <span style="font-size:1.5em; padding-left: 15px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
+    {% endif %}
 {% if search_query_attribute %}
   {% set base_search_query_attribute = search_query_attribute %}
 {% else %}

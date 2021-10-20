@@ -45,6 +45,18 @@
       setupImageDragAndDrop(mde_field);
     });
 
+    $('textarea.plotly-chart-editor').each(function() {
+      var jsonStr = $( this ).text();
+      try {
+        var jsonObj = JSON.parse(jsonStr);
+        var jsonPretty = JSON.stringify(jsonObj, null, '\t');
+        $( this ).text(jsonPretty);
+      }
+      catch (e) {
+        return;
+      }
+    });
+
     function updateSelectLanguage(selectpicker) {
       var enabled_languages = $(selectpicker).selectpicker('val');
       if (!Array.isArray(enabled_languages)) {
