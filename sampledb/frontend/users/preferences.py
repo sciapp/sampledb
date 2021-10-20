@@ -542,6 +542,9 @@ def change_preferences(user, user_id):
         show_object_id = flask.request.form.get('input-show-object-id', 'yes') != 'no'
         modified_settings['SHOW_OBJECT_ID'] = show_object_id
 
+        show_object_title = flask.request.form.get('input-show-object-title', 'yes') != 'no'
+        modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions

@@ -1065,6 +1065,7 @@ def object(object_id):
         return flask.render_template(
             'objects/view/base.html',
             show_object_id=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"],
+            show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
             measurement_type_name=logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
                 action_type_id=logic.actions.models.ActionType.MEASUREMENT,
                 language_id=logic.languages.get_user_language(flask_login.current_user).id,
@@ -1789,6 +1790,7 @@ def object_version(object_id, version_id):
     return flask.render_template(
         'objects/view/base.html',
         show_object_id=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_ID"],
+        show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
         languages=languages,
         metadata_language=metadata_language,
         ENGLISH=english,
