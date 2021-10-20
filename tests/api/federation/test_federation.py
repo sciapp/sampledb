@@ -4,14 +4,59 @@ import time
 
 import flask
 import requests
+import pytest
 
 import sampledb
 from sampledb import logic
+from sampledb import models
+from sampledb.logic import shares, actions, objects, component_authentication, components, files
 from sampledb.logic.component_authentication import add_token_authentication
 from sampledb.logic.components import add_component
 from sampledb.logic.users import create_user_alias
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+
+
+@pytest.fixture
+def user(flask_server):
+    user = models.User(name='User', email="example@example.com", type=models.UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    return user
+
+
+@pytest.fixture
+def action():
+    action = actions.create_action(
+        action_type_id=models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Sample Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        },
+        instrument_id=None
+    )
+    return action
+
+
+@pytest.fixture
+def simple_object(user, action):
+    data = {'name': {'_type': 'text', 'text': 'Object'}}
+    return objects.create_object(user_id=user.id, action_id=action.id, data=data)
+
+
+@pytest.fixture
+def component_token():
+    token = 'a' * 64
+    component = components.add_component(UUID_1, 'TestDB', None, '')
+    component_authentication.add_token_authentication(component.id, token, '')
+    return component, token
 
 
 def test_get_users(flask_server):
@@ -31,7 +76,7 @@ def test_get_users(flask_server):
         sampledb.db.session.commit()
 
         ts1 = datetime.datetime.utcnow()
-        time.sleep(0.1)
+        time.sleep(0.01)
         alias_user1 = create_user_alias(user1.id, component.id, 'B. User 1', False, None, False, None, False, None, False, None, False)
         alias_data_1 = {
             'user_id': alias_user1.user_id,
@@ -43,8 +88,8 @@ def test_get_users(flask_server):
             'role': alias_user1.role,
             'extra_fields': alias_user1.extra_fields
         }
+        time.sleep(0.01)
         ts2 = datetime.datetime.utcnow()
-        time.sleep(0.1)
         alias_user2 = create_user_alias(user2.id, component.id, None, False, None, False, None, False, None, False, None, False)
         alias_data_2 = {
             'user_id': alias_user2.user_id,
@@ -67,7 +112,7 @@ def test_get_users(flask_server):
             'role': alias_user3.role,
             'extra_fields': alias_user3.extra_fields
         }
-        time.sleep(0.1)
+        time.sleep(0.01)
         ts3 = datetime.datetime.utcnow()
 
     headers = {
@@ -139,3 +184,73 @@ def test_get_users(flask_server):
         'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
     assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
+
+
+def test_file_resource_database(flask_server, simple_object, user, component_token):
+    component, token = component_token
+    database_file = files.create_database_file(simple_object.object_id, user.id, 'testfile.txt', lambda stream: stream.write(b'testcontent'))
+    shares.add_object_share(database_file.object_id, component.id, {'access': {'files': True}})
+
+    headers = {'Authorization': 'Bearer  {}'.format(token)}
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id, database_file.id), headers=headers)
+    assert r.status_code == 200
+    assert r.headers['Content-Disposition'] == 'attachment; filename={}'.format(database_file.original_file_name)
+    with database_file.open() as f:
+        assert r.content == f.read()
+
+
+def test_file_resource_local(flask_server, simple_object, user, component_token):
+    component, token = component_token
+    local_file = files.create_local_file(simple_object.object_id, user.id, 'testfile.txt', lambda stream: stream.write(b'testcontent'))
+    shares.add_object_share(local_file.object_id, component.id, {'access': {'files': True}})
+
+    headers = {'Authorization': 'Bearer  {}'.format(token)}
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(local_file.object_id, local_file.id), headers=headers)
+    assert r.status_code == 200
+    assert r.headers['Content-Disposition'] == 'attachment; filename={}'.format(local_file.original_file_name)
+    with local_file.open() as f:
+        assert r.content == f.read()
+
+
+def test_file_resource_url(flask_server, simple_object, user, component_token):
+    uuid = flask.current_app.config['FEDERATION_UUID']
+    component, token = component_token
+    url_file = files.create_url_file(simple_object.object_id, user.id, 'www.example.com')
+    shares.add_object_share(url_file.object_id, component.id, {'access': {'files': True}})
+
+    headers = {'Authorization': 'Bearer  {}'.format(token)}
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(url_file.object_id, url_file.id), headers=headers)
+    assert r.status_code == 200
+    result = r.json()
+    assert result['header']['db_uuid'] == uuid
+    assert result['header']['target_uuid'] == component.uuid
+    assert result['header']['protocol_version'] == {
+        'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
+        'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
+    }
+    assert result['object_id'] == url_file.object_id
+    assert result['file_id'] == url_file.id
+    assert result['storage'] == 'url'
+    assert result['url'] == url_file.url
+
+
+def test_file_resource_errors(flask_server, simple_object, user, component_token):
+    component, token = component_token
+    database_file = files.create_database_file(simple_object.object_id, user.id, 'testfile.txt', lambda stream: stream.write(b'testcontent'))
+    headers = {'Authorization': 'Bearer  {}'.format(token)}
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id, database_file.id))
+    assert r.status_code == 401
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id + 1, database_file.id), headers=headers)
+    assert r.status_code == 404
+    assert r.json() == {"message": "object {} does not exist".format(database_file.object_id + 1)}
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id, database_file.id), headers=headers)
+    assert r.status_code == 403
+    assert r.json() == {"message": "object {} is not shared".format(database_file.object_id)}
+    shares.add_object_share(database_file.object_id, component.id, {})
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id, database_file.id), headers=headers)
+    assert r.status_code == 403
+    assert r.json() == {"message": "files linked to object {} are not shared".format(database_file.object_id)}
+    shares.update_object_share(database_file.object_id, component.id, {'access': {'files': False}})
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id, database_file.id), headers=headers)
+    assert r.status_code == 403
+    assert r.json() == {"message": "files linked to object {} are not shared".format(database_file.object_id)}

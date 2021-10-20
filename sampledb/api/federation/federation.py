@@ -11,7 +11,7 @@ import flask
 from ..utils import Resource, ResponseData
 from ...logic import errors
 from ...logic.components import Component
-from ...logic.shares import get_shares_for_component, ObjectShare
+from ...logic.shares import get_shares_for_component, get_share, ObjectShare
 from ...logic.federation.action_types import shared_action_type_preprocessor
 from ...logic.federation.actions import shared_action_preprocessor
 from ...logic.federation.instruments import shared_instrument_preprocessor
@@ -21,6 +21,7 @@ from ...logic.federation.objects import shared_object_preprocessor
 from ...logic.federation.update import import_updates, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
 from ...logic.federation.users import shared_user_preprocessor
 from ...api.federation.authentication import http_token_auth
+from ...logic.files import get_file
 from ...logic.users import get_user_aliases_for_component
 
 preprocessors = {
@@ -162,3 +163,47 @@ class Users(Resource):
             'header': _get_header(component),
             'users': result_users
         }
+
+
+class File(Resource):
+    @http_token_auth.login_required
+    def get(self, object_id: int, file_id: int) -> ResponseData:
+        component = flask.g.component
+
+        try:
+            share = get_share(object_id, component.id)
+            if 'access' not in share.policy or not share.policy['access'].get('files'):
+                return {
+                    "message": "files linked to object {} are not shared".format(object_id)
+                }, 403
+        except errors.ObjectDoesNotExistError:
+            return {
+                "message": "object {} does not exist".format(object_id)
+            }, 404
+        except errors.ShareDoesNotExistError:
+            return {
+                "message": "object {} is not shared".format(object_id)
+            }, 403
+
+        try:
+            file = get_file(file_id, object_id)
+        except errors.FileDoesNotExistError:
+            return {
+                "message": "file {} of object {} does not exist".format(file_id, object_id)
+            }, 404
+
+        if file.storage in {'database', 'local'}:
+            with file.open() as f:
+                response = flask.make_response(f.read())
+                response.headers.set('Content-Disposition', 'attachment', filename=file.original_file_name)
+        elif file.storage == 'url':
+            file_json = {
+                'header': _get_header(component),
+                'object_id': file.object_id,
+                'file_id': file.id,
+                'storage': file.storage,
+                'url': file.url
+            }
+            return file_json, 200
+
+        return response
