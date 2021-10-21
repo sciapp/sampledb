@@ -543,16 +543,22 @@
       <label class="col-md-4 control-label" for="input-show-object-title">
         {{ _('Show object schema titles') }}
       </label>
-      <div class="radio col-md-4">
+      <div class="radio col-md-8">
         <label>
-          <input type="radio" name="input-show-object-title" id="input-show-object-title-yes" value="yes" {% if user_settings["SHOW_OBJECT_TITLE"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-show-object-title" id="input-show-object-title-yes" value="yes" {% if user_settings["SHOW_OBJECT_TITLE"] is true %}checked="checked"{% endif %}>
           {{ _('Yes &mdash; Show object schema titles when viewing metadata') }}
         </label>
       </div>
-      <div class="radio col-md-4">
+      <div class="radio col-md-8 col-md-offset-4">
         <label>
-          <input type="radio" name="input-show-object-title" id="input-show-object-title-no" value="no" {% if not user_settings["SHOW_OBJECT_TITLE"] %}checked="checked"{% endif %}>
-          {{ _('No &mdash; Hide object schema titles when viewing metadata (default)') }}
+          <input type="radio" name="input-show-object-title" id="input-show-object-title-no" value="no" {% if user_settings["SHOW_OBJECT_TITLE"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Hide object schema titles when viewing metadata') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-show-object-title" id="input-show-object-title-default" value="default" {% if user_settings["SHOW_OBJECT_TITLE"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
         </label>
       </div>
     </div>
