@@ -25,7 +25,7 @@ DEFAULT_SETTINGS = {
     "OBJECTS_PER_PAGE": 25,
     "USE_SCHEMA_EDITOR": True,
     "SHOW_OBJECT_ID_IN_TITLE": True,
-    "SHOW_OBJECT_TITLE": False,
+    "SHOW_OBJECT_TITLE": None,
     "USE_ADMIN_PERMISSIONS": False,
     "SHOW_INVITATION_LOG": False,
     "INSTRUMENT_LOG_ORDER_ASCENDING": True,
@@ -99,6 +99,8 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
             return key in {'OBJECTS_PER_PAGE'}
         return isinstance(value, type(default_value))
     # custom data type verification can be included here
+    if key == 'SHOW_OBJECT_TITLE':
+        return value is None or isinstance(value, bool)
     return False
 
 

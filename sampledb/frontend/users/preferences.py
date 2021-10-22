@@ -542,7 +542,13 @@ def change_preferences(user, user_id):
         show_object_id_in_title = flask.request.form.get('input-show-object-id-in-title', 'yes') != 'no'
         modified_settings['SHOW_OBJECT_ID_IN_TITLE'] = show_object_id_in_title
 
-        show_object_title = flask.request.form.get('input-show-object-title', 'yes') != 'no'
+        show_object_title_text = flask.request.form.get('input-show-object-title', 'default')
+        if show_object_title_text == 'yes':
+            show_object_title = True
+        elif show_object_title_text == 'no':
+            show_object_title = False
+        else:
+            show_object_title = None
         modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
 
         if flask_login.current_user.is_admin:
