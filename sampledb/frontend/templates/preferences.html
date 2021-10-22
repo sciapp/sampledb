@@ -540,24 +540,30 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="col-md-4 control-label" for="input-use-schema-editor-yes">
-        {{ _('Show object id in title') }}
+      <label class="col-md-4 control-label" for="input-show-object-type-and-id-on-object-page-yes">
+        {{ _('Show object type and id on object page') }}
       </label>
-      <div class="radio col-md-4">
+      <div class="radio col-md-8">
         <label>
-          <input type="radio" name="input-show-object-id-in-title" id="input-show-object-id-in-title-yes" value="yes" {% if user_settings["SHOW_OBJECT_ID_IN_TITLE"] %}checked="checked"{% endif %}>
-          {{ _('Yes &mdash; Display it (default)') }}
+          <input type="radio" name="input-show-object-type-and-id-on-object-page" id="input-show-object-type-and-id-on-object-page-yes" value="yes" {% if user_settings["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"] is true %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Show object type and id, e.g. "Sample #4"') }}
         </label>
       </div>
-      <div class="radio col-md-4">
+      <div class="radio col-md-offset-4 col-md-8">
         <label>
-          <input type="radio" name="input-show-object-id-in-title" id="input-input-show-object-id-in-title-no" value="no" {% if not user_settings["SHOW_OBJECT_ID_IN_TITLE"] %}checked="checked"{% endif %}>
-          {{ _('No &mdash; Hide it') }}
+          <input type="radio" name="input-show-object-type-and-id-on-object-page" id="input-show-object-type-and-id-on-object-page-no" value="no" {% if user_settings["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Hide object type and id') }}
+        </label>
+      </div>
+      <div class="radio col-md-offset-4 col-md-8">
+        <label>
+          <input type="radio" name="input-show-object-type-and-id-on-object-page" id="input-show-object-type-and-id-on-object-page-default" value="default" {% if user_settings["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
         </label>
       </div>
     </div>
     <div class="form-group">
-      <label class="col-md-4 control-label" for="input-show-object-title">
+      <label class="col-md-4 control-label" for="input-show-object-title-yes">
         {{ _('Show object schema titles') }}
       </label>
       <div class="radio col-md-8">

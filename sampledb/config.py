@@ -453,6 +453,8 @@ SHOW_PREVIEW_WARNING = False
 
 SHOW_OBJECT_TITLE = False
 
+HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -493,6 +495,7 @@ for config_name in {
     'BUILD_TRANSLATIONS',
     'SHOW_PREVIEW_WARNING',
     'SHOW_OBJECT_TITLE',
+    'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

@@ -539,8 +539,14 @@ def change_preferences(user, user_id):
             except ValueError:
                 pass
 
-        show_object_id_in_title = flask.request.form.get('input-show-object-id-in-title', 'yes') != 'no'
-        modified_settings['SHOW_OBJECT_ID_IN_TITLE'] = show_object_id_in_title
+        show_object_type_and_id_on_object_page_text = flask.request.form.get('input-show-object-type-and-id-on-object-page', 'default')
+        if show_object_type_and_id_on_object_page_text == 'yes':
+            show_object_type_and_id_on_object_page = True
+        elif show_object_type_and_id_on_object_page_text == 'no':
+            show_object_type_and_id_on_object_page = False
+        else:
+            show_object_type_and_id_on_object_page = None
+        modified_settings['SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE'] = show_object_type_and_id_on_object_page
 
         show_object_title_text = flask.request.form.get('input-show-object-title', 'default')
         if show_object_title_text == 'yes':

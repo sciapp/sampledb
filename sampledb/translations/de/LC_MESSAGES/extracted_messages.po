@@ -1484,14 +1484,14 @@ msgstr ""
 "Nein &mdash; Bearbeite Schemas als JSON mit einem Texteditor "
 "(fortgeschritten)"
 
-msgid "Show object id in title"
-msgstr "Zeige Object ID in Objekt Titel"
+msgid "Show object type and id on object page"
+msgstr "Zeige Objekttyp und -ID auf der Objektseite"
 
-msgid "Yes &mdash; Display it (default)"
-msgstr "Ja &mdash; Anzeigen (Standard)"
+msgid "Yes &mdash; Show object type and id, e.g. \"Sample #4\""
+msgstr "Ja &mdash; Zeige Objekttyp und -ID, z.B. \"Probe #4\""
 
-msgid "No &mdash; Hide it"
-msgstr "Nein &mdash; Verstecken"
+msgid "No &mdash; Hide object type and id"
+msgstr "Nein &mdash; Verstecke Objekttyp und -ID"
 
 msgid "Show object schema titles"
 msgstr "Zeige Objekt-Schema Titel"
