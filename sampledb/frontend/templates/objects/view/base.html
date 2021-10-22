@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Object') }} #{{ object_id }}: {{ data['name']['text'] | get_translated_text }} — {{ service_name }}{% endblock %}
+{% block title %}{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{{ action_type.translation.object_name }} #{{ object_id }}: {% endif %}{{ data['name']['text'] | get_translated_text }} — {{ service_name }}{% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -27,7 +27,7 @@
   <script>
   window.plotly_charts = [];
   </script>
-  <h1>{{ action_type.translation.object_name }} #{{ object_id }}: {{ data.name.text | get_translated_text }}</h1>
+  <h1>{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{{ action_type.translation.object_name }} #{{ object_id }}: {% endif %}{{ data.name.text | get_translated_text }}</h1>
 
   <h2>{{ _('Information') }}</h2>
   <div class="row" style="padding-right:0.75em">
