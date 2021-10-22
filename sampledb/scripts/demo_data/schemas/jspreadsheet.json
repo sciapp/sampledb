@@ -1,0 +1,184 @@
+{
+  "title": "",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": {
+        "en": "Name",
+        "de": "Name"
+      },
+      "type": "text"
+    },
+    "table": {
+      "type": "array",
+      "style": "table",
+	  "minItems": 2,
+	  "maxItems": 5,
+      "title": {
+        "en": "Old Table Style",
+        "de": "Alte Tabellenansicht"
+      },
+      "items": {
+        "type": "object",
+        "title": {
+			"en": "Old Table Style",
+			"de": "Alte Tabellenansicht"
+        },
+        "properties": {
+          "q": {
+            "type": "quantity",
+            "title": "Quantity",
+            "units": "g"
+          },
+		  "q2": {
+			"type": "quantity",
+			"title": "Quantity2",
+			"units": "l"
+		  },
+          "b": {
+            "type": "bool",
+            "default": true,
+            "title": "Bool"
+          },
+          "d": {
+            "type": "datetime",
+            "title": "Date"
+          },
+          "or": {
+            "type": "object_reference",
+            "title": {
+              "en": "Object reference",
+              "de": "Objektreferenz"
+            }
+          },
+          "reg_text": {
+            "type": "text",
+            "title": {
+              "en": "Regular Text",
+              "de": "Normaler Text"
+            }
+          },
+          "choice": {
+            "type": "text",
+            "choices": [
+              "Choice 1",
+              "Choice 2",
+              "Choice 3",
+              "Choice 4",
+              "Choice 5"
+            ],
+            "title": {
+              "en": "Choices",
+              "de": "Text Dropdown"
+            }
+          },
+          "mul_text": {
+            "type": "text",
+			"multiline": true,
+            "title": {
+              "en": "Multiline Text",
+              "de": "Multiline Text"
+            }
+          }
+        },
+		"propertyOrder": [
+			"q",
+			"q2",
+			"b",
+			"d",
+			"or",
+			"reg_text",
+			"choice",
+			"mul_text"
+		]
+      }
+    },
+    "table2": {
+      "type": "array",
+      "style": "spreadsheet",
+	  "minItems": 2,
+	  "maxItems": 5,
+      "title": {
+        "en": "JSpreadsheet",
+        "de": "JSpreadsheet"
+      },
+      "items": {
+        "type": "object",
+        "title": {
+          "en": "JSpreadsheet",
+          "de": "JSpreadsheet"
+        },
+        "properties": {
+          "q": {
+            "type": "quantity",
+            "title": "Quantity",
+            "units": "g"
+          },
+		  "q2": {
+			"type": "quantity",
+			"title": "Quantity2",
+			"units": "l"
+		  },
+          "b": {
+            "type": "bool",
+            "default": true,
+            "title": "Bool"
+          },
+          "d": {
+            "type": "datetime",
+            "title": "Date"
+          },
+          "or": {
+            "type": "object_reference",
+            "title": {
+              "en": "Object reference",
+              "de": "Objektreferenz"
+            }
+          },
+          "reg_text": {
+            "type": "text",
+            "title": {
+              "en": "Regular Text",
+              "de": "Normaler Text"
+            }
+          },
+          "choice": {
+            "type": "text",
+            "choices": [
+              "Choice 1",
+              "Choice 2",
+              "Choice 3",
+              "Choice 4",
+              "Choice 5"
+            ],
+            "title": {
+              "en": "Choices",
+              "de": "Text Dropdown"
+            }
+          },
+          "mul_text": {
+            "type": "text",
+			"multiline": true,
+            "title": {
+              "en": "Multiline Text",
+              "de": "Multiline Text"
+            }
+          }
+        },
+		"propertyOrder": [
+			"q",
+			"q2",
+			"b",
+			"d",
+			"or",
+			"reg_text",
+			"choice",
+			"mul_text"
+		]
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

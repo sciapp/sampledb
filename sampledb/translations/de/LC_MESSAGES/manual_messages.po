@@ -27,3 +27,6 @@ msgstr "Gelb"
 
 msgid "Red"
 msgstr "Rot"
+
+msgid "Spreadsheet-View only supports arrays of objects"
+msgstr "Die Spreadsheet-Ansicht kann nur für Listen von Objekten verwendet werden"

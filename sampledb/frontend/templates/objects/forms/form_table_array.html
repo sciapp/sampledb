@@ -78,11 +78,7 @@
           </td>
           {% endif %}
         {% endfor %}
-        {% if numItems > minItems %}
-          <td><button type="button" onclick="$('#{{ id_prefix }}').remove()" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
-        {% else %}
-          <td><button type="button" class="btn btn-danger pull-right disabled">&times;</button></td>
-        {% endif %}
+          <td><button type="button" onclick="removeArrayItem('{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right {{'disabled' if minItems is not none and numItems - 1 <= minItems}}">&times;</button></td>
         </tr>
       {% endfor %}
     {% endif %}
@@ -92,11 +88,7 @@
         {% for property_name in item_property_names %}
           <th scope="col"></th>
         {% endfor %}
-  {% if maxItems is none or numItems < maxItems %}
-        <th><button type="button" onclick="add_array_item('{{ id_prefix }}')" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
-  {% else %}
-        <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
-  {% endif %}
+        <th><button type="button" onclick="addArrayItem('{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right {{'disabled' if maxItems is not none and numItems - 1 >= maxItems}}">+</button></th>
       </tr>
     </tfoot>
   </table>

@@ -546,18 +546,19 @@ def apply_action_to_form_data(action, form_data):
 
 
 def add_array_placeholders_to_data(data, schema):
-    for key, val in data.items():
-        if isinstance(val, dict):
-            sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
-            data[key] = add_array_placeholders_to_data(sub_data, sub_schema)
-        elif isinstance(val, list):
-            sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
-            if 'type' in sub_schema['items'] and sub_schema['items']['type'] == 'array':
-                continue
+    if data is not None:
+        for key, val in data.items():
+            if isinstance(val, dict):
+                sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
+                data[key] = add_array_placeholders_to_data(sub_data, sub_schema)
+            elif isinstance(val, list):
+                sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
+                if 'type' in sub_schema['items'] and sub_schema['items']['type'] == 'array':
+                    continue
 
-            data[key].append(generate_placeholder(sub_schema['items']))
-            for index, list_val in enumerate(data[key]):
-                data[key][index] = add_array_placeholders_to_data(data[key][index], sub_schema['items'])
+                data[key].append(generate_placeholder(sub_schema['items']))
+                for index, list_val in enumerate(data[key]):
+                    data[key][index] = add_array_placeholders_to_data(data[key][index], sub_schema['items'])
     return data
 
 

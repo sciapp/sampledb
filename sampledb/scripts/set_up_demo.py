@@ -505,6 +505,16 @@ This example shows how Markdown can be used for instrument Notes.
         }
         plotly_object = sampledb.logic.objects.create_object(plotly_array_action.id, data, basic_user.id)
         sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
+
+        with open(os.path.join(schema_directory, 'jspreadsheet.json'), 'r', encoding='utf-8') as schema_file:
+            schema = json.load(schema_file)
+        jspreadsheet_action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, jspreadsheet_action.id, name="JSpreadsheet Example Action", description="")
+        sampledb.logic.action_permissions.set_action_public(jspreadsheet_action.id, True)
+
         sampledb.db.session.commit()
 
         campus = sampledb.logic.locations.create_location({"en": "Campus"}, {"en": "Max Mustermann Campus"}, None, instrument_responsible_user.id)

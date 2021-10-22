@@ -28,11 +28,7 @@
     <div id="{{ id_prefix }}" class="array_item_{{ index }} col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %}" style="display:flex; padding-left:2em; padding-right:1.75em">
       {% include "objects/forms/form_any.html" %}
       <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-      {% if numItems > minItems %}
-        <button type="button" onclick="$('#{{ id_prefix }}').remove()" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px;"><i class="fa fa-minus"></i></button>
-      {% else %}
-        <button type="button" class="btn btn-danger disabled" style="height:34px;"><i class="fa fa-minus"></i></button>
-      {% endif %}
+        <button type="button" onclick="removeArrayItem('{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_delete" class="btn btn-danger {{'disabled' if minItems is not none and numItems - 1 <= minItems}}" style="height:34px;"><i class="fa fa-minus"></i></button>
       </div>
   </div>
 {% endfor %}
@@ -44,10 +40,6 @@
   {% endif %}
   </div>
 <div style="flex-grow: 0; flex-basis: 4em;"></div>
-{% if maxItems is none or numItems < maxItems %}
-  <button type="button" onclick="add_array_item('{{ id_prefix }}')" name="action_{{ id_prefix }}_?__add" class="btn btn-success" style="height:34px;"><i class="fa fa-plus"></i></button>
-{% else %}
-  <button type="button" class="btn btn-success disabled" style="height:34px;"><i class="fa fa-plus"></i></button>
-{% endif %}
+  <button type="button" onclick="addArrayItem('{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_?__add" class="btn btn-success {{'disabled' if maxItems is not none and numItems - 1 >= maxItems}}" style="height:34px;"><i class="fa fa-plus"></i></button>
 </div>
 </div>

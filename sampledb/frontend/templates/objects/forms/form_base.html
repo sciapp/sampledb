@@ -20,7 +20,8 @@
   {{ super() }}
   <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <!-- <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script> -->
+  <script src="{{ url_for('static', filename='js/bootstrap-select.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
@@ -31,8 +32,38 @@
 <script type="text/javascript">
   window.mde_fields = [];
 
-  function initialize_form_inputs (scope) {
-    $('.input-group.date', scope).each(function() {
+  function updateSelectLanguage(selectpicker) {
+    var enabled_languages = $(selectpicker).selectpicker('val');
+    if (!Array.isArray(enabled_languages)) {
+      return;
+    }
+    if (enabled_languages === '' || enabled_languages.length === 0) {
+      enabled_languages = ['en'];
+    } else {
+      enabled_languages.push('en');
+    }
+    var parent_form_group = $(selectpicker).closest('.form-group');
+    {% for language in languages %}
+      if (enabled_languages.includes("{{ language.lang_code }}")) {
+        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+      } else {
+        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+      }
+    {% endfor %}
+  }
+
+  function initializeExternalEditors (scope) {
+    if (scope.constructor.name != 'HTMLDocument') {
+      $('.selectpicker', scope).each (function () {
+        var parent = $(this).parent();
+        if (parent.hasClass("bootstrap-select")) {
+          parent.replaceWith($(this));
+        }
+        $(this).selectpicker();
+      });
+    }
+
+    $('.input-group.date:visible', scope).each(function() {
       $(this).datetimepicker({
         locale: "{{ get_user_language(current_user).lang_code }}",
         format: "{{ get_user_language(current_user).datetime_format_moment }}",
@@ -40,7 +71,7 @@
       });
     });
 
-    $('textarea[data-markdown-textarea="true"]', scope).each(function(_, e) {
+    $('textarea[data-markdown-textarea="true"]:visible', scope).each(function(_, e) {
       var mde_field = new InscrybMDE({
         element: e,
         indentWithTabs: false,
@@ -53,39 +84,7 @@
       setupImageDragAndDrop(mde_field);
     });
 
-    $('textarea.plotly-chart-editor', scope).each(function() {
-      var jsonStr = $( this ).text();
-      try {
-        var jsonObj = JSON.parse(jsonStr);
-        var jsonPretty = JSON.stringify(jsonObj, null, '\t');
-        $( this ).text(jsonPretty);
-      }
-      catch (e) {
-        return;
-      }
-    });
-
-    function updateSelectLanguage(selectpicker) {
-      var enabled_languages = $(selectpicker).selectpicker('val');
-      if (!Array.isArray(enabled_languages)) {
-        return;
-      }
-      if (enabled_languages === '' || enabled_languages.length === 0) {
-        enabled_languages = ['en'];
-      } else {
-        enabled_languages.push('en');
-      }
-      var parent_form_group = $(selectpicker).closest('.form-group');
-      {% for language in languages %}
-        if (enabled_languages.includes("{{ language.lang_code }}")) {
-          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
-        } else {
-          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
-        }
-      {% endfor %}
-    }
-
-    var select_language_selectpicker = $('.select-language', scope)
+    var select_language_selectpicker = $('.select-language:visible', scope);
     select_language_selectpicker.on('changed.bs.select', function() {
       updateSelectLanguage(this);
     });
@@ -96,7 +95,7 @@
       this();
     });
 
-    $('div.objectpicker', scope).each(function () {
+    $('div.objectpicker:visible', scope).each(function () {
       let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
       $(this).append(filter_button);
       let objectpicker = $(this).find('.selectpicker');
@@ -121,11 +120,28 @@
         }
       });
     });
-
   }
 
   $(function () {
-    initialize_form_inputs(document);
+    $('textarea.plotly-chart-editor').each(function() {
+      var jsonStr = $( this ).text();
+      try {
+        var jsonObj = JSON.parse(jsonStr);
+        var jsonPretty = JSON.stringify(jsonObj, null, '\t');
+        $( this ).text(jsonPretty);
+      }
+      catch (e) {
+        return;
+      }
+    });
+
+    $("div[id$='_spreadsheet']").each(function() {
+      var id_prefix = $(this).attr('id').replace(/_spreadsheet$/i, "");
+      var data = buildSpreadsheetData(id_prefix);
+      window[id_prefix].setData(data);
+    });
+
+    initializeExternalEditors(document);
   });
 
   var tags = new Bloodhound({
@@ -168,7 +184,41 @@
     }.bind(tagsinput));
   });
 
-  function add_array_item(prefix) {
+  function getArrayItemCount(prefix) {
+    return ($('[id^="'+prefix+'"][class^="array_item"]').length - 1);
+  }
+
+  function removeArrayItem(prefix, min, max) {
+    var parent_prefix = prefix.substring(0, prefix.length - 3);
+    var array_cnt = getArrayItemCount(parent_prefix);
+    if (min !== null && array_cnt > min) {
+      $('#'+prefix).remove();
+    }
+    else {
+      return false;
+    }
+
+    if (min !== null && (array_cnt - 1) <= min) {
+      $('button[name^="action_'+parent_prefix+'"][name$="__delete"]').addClass("disabled");
+    }
+    if (max !== null && (array_cnt - 1) < max) {
+      $('button[name="action_'+parent_prefix+'_?__add"]').removeClass("disabled");
+    }
+    return true;
+  }
+
+  function addArrayItem(prefix, min, max) {
+    var array_cnt = getArrayItemCount(prefix);
+    if (max !== null && array_cnt >= max) {
+      return null;
+    }
+    if (max !== null && (array_cnt + 1) >= max) {
+      $('button[name="action_'+prefix+'_?__add"]').addClass("disabled");
+    }
+    if (min !== null && (array_cnt + 1) > min) {
+      $('button[name^="action_'+prefix+'"][name$="__delete"]').removeClass("disabled");
+    }
+
     placeholder_element = $( "#" + prefix + "_placeholder_" );
 
     var max_id = -1;
@@ -184,14 +234,64 @@
       }
     });
 
-    var content = placeholder_element.clone().wrap('<p/>').parent().html();
-    var newId = (max_id + 1).toString();
+    var content = placeholder_element.clone(false).wrap('<p/>').parent().html();
+    var newId = (max_id + 1);
     var re = new RegExp(prefix + '_placeholder_', 'g');
 
     content = content.replace(re, prefix + '_' + newId + '_');
     content = content.replace('array_item_placeholder', 'array_item_' + newId);
     new_el = $( content ).insertBefore(placeholder_element);
-    initialize_form_inputs(new_el);
+    initializeExternalEditors(new_el);
+
+    return newId;
+  }
+
+  function buildSpreadsheetData ( id_prefix ) {
+    var data = [];
+
+    for( var r = 0; r < window[(id_prefix + "_row_ref")].length; r++ )
+    {
+      if (window[(id_prefix + "_row_ref")][r] == "placeholder") { continue; }
+
+      var row = [];
+      for( var c = 0; c < window[(id_prefix + "_col_ref")].length; c++ )
+      {
+        var name = id_prefix + "_" + window[(id_prefix + "_row_ref")][r] + "__" + window[(id_prefix + "_col_ref")][c];
+
+        element = $( '[name='+name+']' ).first();
+        if (element.length > 0) {
+          var value = element.val();
+          if (element.prop("tagName").toLowerCase() == "textarea") {
+            value = element.html();
+          }
+          else if (element.attr('type') == "checkbox") {
+            value = element.is(':checked');
+          }
+          else if (element.parent().hasClass('date')) {
+            value = element.parent().attr('data-datetime');
+          }
+          row.push(value);
+        }
+        else {
+          if (name.endsWith("array") || name.endsWith("object")) {
+            row.push("#REF!");
+          }
+          else {
+            row.push(null);
+          }
+        }
+      }
+      data.push(row);
+    }
+    return data;
+  }
+
+  function addSpreadsheetRow ( id_prefix, min, max ) {
+      var new_id = addArrayItem( id_prefix, min, max );
+      if (new_id !== null) {
+        window[(id_prefix + "_row_ref")].push(new_id);
+        window[id_prefix].setData(buildSpreadsheetData(id_prefix));
+      }
   }
 
 </script>

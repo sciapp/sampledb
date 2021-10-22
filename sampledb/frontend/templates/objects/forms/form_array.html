@@ -1,6 +1,6 @@
 <!-- array start -->
 <div class="form-group row">
-  <div class="col-md-3 control-label">
+  <div class="col-md-3 control-label form_array">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
   </div>
 {% set is_required = False %}
@@ -28,22 +28,14 @@
       {% set id_prefix = id_prefix + '_{}_'.format(index) %}
       {% set data = item %}
         <div id="{{ id_prefix }}" class="array_item_{{ index }}" style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
-        {% if numItems > minItems %}
-          <div class="pull-right" style="padding-right:0.75em"><button type="button" onclick="$('#{{ id_prefix }}').remove()" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
-        {% else %}
-          <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger disabled" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
-        {% endif %}
-        {% include "objects/forms/form_any.html" %}
+          <div class="pull-right" style="padding-right:0.75em"><button type="button" onclick="removeArrayItem('#{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_delete" class="btn btn-danger {{'disabled' if minItems is not none and numItems - 1 <= minItems}}" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
+          {% include "objects/forms/form_any.html" %}
         </div>
     {% endfor %}
   {% endif %}
   <div class="form-group row clearfix" style="padding-right:0.75em">
     <div class="col-md-9 col-md-offset-3">
-  {% if maxItems is none or numItems < maxItems %}
-    <button type="button" onclick="add_array_item('{{ id_prefix }}')" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
-  {% else %}
-    <button type="button" class="btn btn-success pull-right disabled" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
-  {% endif %}
+    <button type="button" onclick="addArrayItem('{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right {{'disabled' if maxItems is not none and numItems - 1 >= maxItems}}" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
     </div>
   </div>
 </div>

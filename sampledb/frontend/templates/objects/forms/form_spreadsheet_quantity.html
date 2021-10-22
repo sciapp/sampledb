@@ -1,9 +1,0 @@
-{% if schema['units'] == "1" %}
-    <input type="hidden" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text  }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units | babel_format_number }}"{% endif %}>
-{% else %}
-    <input type="hidden" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"{% elif data is not none %}value="{{ (data | to_datatype).magnitude | babel_format_number }}"{% endif %}>
-    <input type="hidden" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
-{% endif %}
-<script>
-  row.push("{{ id_prefix }}_magnitude")
-</script>

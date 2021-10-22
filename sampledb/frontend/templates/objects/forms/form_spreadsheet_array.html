@@ -1,5 +1,3 @@
-{% set config = {'unsupported_data_types': ['plotly_chart', 'object', 'array'], 'error': False} %}
-
 <div class="form-group row">
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
@@ -12,8 +10,6 @@
   {% set ordered_property_names = [] %}
   {% for property_name in property_order %}
     {% if property_name in item_property_names %}
-      ++##{{ schema['items']['properties'][property_name]['type'] }}
-
       {% do ordered_property_names.append(property_name) %}
     {% endif %}
   {% endfor %}
@@ -22,84 +18,129 @@
       {% do ordered_property_names.append(property_name) %}
     {% endif %}
   {% endfor %}
+
   <script>
-  var col_ref = [];
-  var row_ref = {};
-  var ref_array = [];
-
-  {% for property_name in ordered_property_names %}
-    {% if schema['items']['properties'][property_name]['type'] == 'quantity' %}
-      col_ref.push("{{ property_name }}__magnitude");
-    {% elif schema['items']['properties'][property_name]['type'] == 'plotly_chart' %}
-      col_ref.push("{{ property_name }}__plotly");
-    {% elif schema['items']['properties'][property_name]['type'] == 'user' %}
-      col_ref.push("{{ property_name }}__uid");
-    {% elif schema['items']['properties'][property_name]['type'] in ["object_reference", "measurement", "sample"] %}
-      col_ref.push("{{ property_name }}__oid");
-    {% else %}
-      col_ref.push("{{ property_name }}__{{ schema['items']['properties'][property_name]['type'] }}");
-    {% endif %}
-  {% endfor %}
-
-  console.log(JSON.stringify(col_ref, null, 2));
+  var {{ id_prefix }}_col_ref = [];
+  var {{ id_prefix }}_dropdown_sources = {};
+  var {{ id_prefix }}_row_ref = [];
   </script>
 
-
   <div style="display: none;">
+  {% set minItems = schema.get('minItems', 0) %}
+  {% set maxItems = schema.get('maxItems', None) %}
+
   {% if data is not none %}
+    {% set numItems = ((data | length) - 1) %}
     {% for item in data %}
-      <script>
-      var row = [];
-      </script>
-      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+      {% if loop.last %}
+        {% set index = "placeholder" %}
+      {% else %}
+        {% set index = loop.index0 %}
+        <script>
+        {{ id_prefix }}_row_ref.push({{ index }});
+        </script>
+      {% endif %}
+      {% set id_prefix = id_prefix + '_{}_'.format(index) %}
+      <div id="{{ id_prefix }}" class="array_item_{{ index }}">
       {% for property_name in ordered_property_names %}
         {% if item is not none and property_name in item %}
           {% set data = item[property_name] %}
-          {% set schema = schema['items'].properties[property_name] %}
-          {% set z = schema.update({'parent_style': 'table'}) %}
-          {% set id_prefix = id_prefix + '_' + property_name + '_' %}
-          {% include "objects/forms/form_any.html" %}
+        {% else %}
+          {% set data = none %}
         {% endif %}
+        {% set schema = schema['items'].properties[property_name] %}
+        {% set id_prefix = id_prefix + '_' + property_name + '_' %}
+        {% do schema.update({'parent_style': 'table'}) %}
+        {% include "objects/forms/form_any.html" %}
       {% endfor %}
-      <script>
-        ref_array.push(row)
-      </script>
+      </div>
     {% endfor %}
+  {% else %}
+    {% set numItems = 0 %}
   {% endif %}
   </div>
 
-
-  <div style="padding-left:2.5em;" id="spreadsheet"></div>
   <script>
-  var data = [];
-  for( var r = 0; r < ref_array.length; r++ )
-  {
-    var row = [];
-    for( var c = 0; c < ref_array[r].length; c++ )
-    {
-      var name = ref_array[r][c];
-      input_elements = document.getElementsByName(name);
-      if ((typeof input_elements !== 'undefined') && (0 in input_elements)) {
-        row.push(document.getElementsByName(name)[0].value.toString())
+  {% for property_name in ordered_property_names %}
+    {% if schema['items']['properties'][property_name]['type'] == 'quantity' %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__magnitude");
+    {% elif schema['items']['properties'][property_name]['type'] == 'plotly_chart' %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__plotly");
+    {% elif schema['items']['properties'][property_name]['type'] == 'user' %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__uid");
+    {% elif schema['items']['properties'][property_name]['type'] == 'bool' %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__value");
+    {% elif schema['items']['properties'][property_name]['type'] in ["object_reference", "measurement", "sample"] %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__oid");
+      var option_elements = document.getElementsByName("{{ id_prefix }}_placeholder__{{property_name}}__oid")[0].childNodes;
+      var source_array = [];
+      for(var x=0; x < option_elements.length; x++)
+      {
+        if (option_elements[x].tagName != 'OPTION') { continue; }
+        var option_dict = { id: option_elements[x].value, name: option_elements[x].innerHTML };
+        source_array.push(option_dict);
       }
-    }
-    data.push(row)
+      {{ id_prefix }}_dropdown_sources["{{ property_name }}__oid"] = source_array;
+    {% elif schema['items']['properties'][property_name]['type'] == 'text' and 'choices' in schema['items']['properties'][property_name] %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__text");
+      var option_elements = document.getElementsByName("{{ id_prefix }}_placeholder__{{property_name}}__text")[0].childNodes;
+      var source_array = [];
+      for(var x=0; x < option_elements.length; x++)
+      {
+        if (option_elements[x].tagName != 'OPTION') { continue; }
+        var option_dict = { id: option_elements[x].value, name: option_elements[x].innerHTML };
+        source_array.push(option_dict);
+      }
+      {{ id_prefix }}_dropdown_sources["{{ property_name }}__text"] = source_array;
+    {% else %}
+      {{ id_prefix }}_col_ref.push("{{ property_name }}__{{ schema['items']['properties'][property_name]['type'] }}");
+    {% endif %}
+  {% endfor %}
+  </script>
+
+
+<div style="padding-left:2.5em;">
+  <div id="{{ id_prefix }}_spreadsheet"></div>
+  <div class="form-group row clearfix" style="padding-right:0.75em">
+    <div class="col-md-9 col-md-offset-3">
+      <button type="button" onclick="addSpreadsheetRow('{{ id_prefix }}', {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}})" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right {{'disabled' if maxItems is not none and numItems - 1 > maxItems}}">+</button>
+    </div>
+  </div>
+</div>
+  <script>
+  function {{ id_prefix }}_onbeforedeleterow ( instance, rowNumber, numOfRows ) {
+      for (r = (rowNumber + numOfRows - 1); r >= rowNumber; r--) {
+        id = "{{ id_prefix }}_" + window["{{ id_prefix }}_row_ref"][r] + "_";
+        var res = removeArrayItem(id, {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}});
+
+        if (res === false) {
+          break;
+        }
+        window["{{ id_prefix }}_row_ref"].splice(r, 1);
+      }
+      window["{{ id_prefix }}"].setData(buildSpreadsheetData("{{ id_prefix }}"));
+      return false;
   }
 
-  jspreadsheet(document.getElementById('spreadsheet'), {
+  var {{ id_prefix }} = jspreadsheet(document.getElementById('{{ id_prefix }}_spreadsheet'), {
       defaultColWidth: {{ (1055 / ordered_property_names|length) | int }},
       columnDrag: false,
       allowInsertColumn: false,
       allowDeleteColumn: false,
+      allowInsertRow: false,
+      allowManualInsertRow: false,
       allowRenameColumn: false,
+      copyCompatibility: true,
+      columnSorting: false,
       allowComments: false,
-      data:data,
+      onbeforedeleterow: {{ id_prefix }}_onbeforedeleterow,
+      data: [],
       columns: [
           {% for property_name in ordered_property_names %}
             {
               {% if schema["items"].properties[property_name].type == 'datetime' %}
                 type: 'calendar',
-                options: { format:'YYYY-MM-DD HH24:MI:SS' },
+                options: { format:'YYYY-MM-DD HH24:MI:SS', time:1 },
               {% elif schema["items"].properties[property_name].type == 'quantity' %}
                 type: 'number',
                 {% if schema["items"].properties[property_name].units == "1" %}
@@ -107,21 +148,58 @@
                 {% else %}
                   mask: '{{ "2220.00" | babel_format_number | replace("2", "#") }} {{ schema["items"].properties[property_name].units }}',
                 {% endif %}
+              {% elif schema["items"].properties[property_name].type == 'bool' %}
+                type: 'checkbox',
+                width: 50,
+              {% elif schema["items"].properties[property_name].type in ['measurement', 'sample', 'object_reference'] %}
+                type: 'dropdown',
+                source: {{ id_prefix }}_dropdown_sources["{{ property_name }}__oid"],
+              {% elif schema["items"].properties[property_name].type == 'text' and "choices" in schema["items"].properties[property_name] %}
+                type: 'dropdown',
+                source: {{ id_prefix }}_dropdown_sources["{{ property_name }}__text"],
+              {% elif schema["items"].properties[property_name].type == 'text' %}
+                type: 'text',
+                {% if 'multiline' in schema["items"].properties[property_name] %}
+                  wordWrap:true,
+                {% endif %}
               {% else %}
                 type: 'text',
+                readOnly: true,
               {% endif %}
                 title: '{{ schema["items"].properties[property_name].title | get_translated_text }}',
             },
           {% endfor %}
        ],
-      updateTable: function(instance, cell, col, row, val, label, cellName) {
-        ref_string = ref_array[row][col];
-        alert
-        if (ref_string) {
-          document.getElementsByName(name)[0].value = cell.innerText;
-        }
-      }
+        updateTable: function(instance, cell, col, row, val, label, cellName) {
+          var config = {{ id_prefix }}.getConfig();
+          if (config.columns[col].readOnly == true) {
+            return;
+          }
+          var parent_name = "{{ id_prefix }}_" + window["{{ id_prefix }}_row_ref"][row] + "_";
+          var name = parent_name + "_" + window["{{ id_prefix }}_col_ref"][col];
+          var elements = document.getElementsByName(name);
 
+          var value = val;
+          if (value.toString().startsWith("=")) {
+            value = {{ id_prefix }}.getValue(cellName);
+            if (config.columns[col].type == 'number') {
+              value = value.replace(/[^\d\.\,]/g, '');
+            }
+          }
+
+          if (elements.length > 0) {
+            var element = elements[0];
+            if (element.tagName.toLowerCase() == "textarea") {
+              element.innerHTML = value;
+            }
+            else if (element.getAttribute('type') == "checkbox") {
+              element.checked = value;
+            }
+            else {
+              element.value = value;
+            }
+          }
+       },
   });
   </script>
 {% else %}
@@ -134,186 +212,3 @@
     </div>
   </div>
 {% endif %}
-
-<!--
-<div class="form-group row">
-  <div class="col-md-3 control-label">
-    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
-  </div>
-{% set is_required = False %}
-{% set minItems = schema.get('minItems', 0) %}
-{% set maxItems = schema.get('maxItems', None) %}
-{% if data is not none %}
-{% set numItems = (data | length) %}
-{% else %}
-{% set numItems = 0 %}
-{% endif %}
-</div>
-<div style="padding-left:2.5em;">
-  {% if schema['items']['type'] == 'object' %}
-  <table class="table">
-    <thead>
-      <tr>
-        {% set item_property_names = schema["items"].properties.keys() %}
-        {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
-        {% for property_name in property_order %}
-          {% if property_name in item_property_names %}
-          <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }}</span>{% endif %}</th>
-          {% endif %}
-        {% endfor %}
-        {% for property_name in item_property_names %}
-          {% if property_name not in property_order %}
-          <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }}</span>{% endif %}</th>
-          {% endif %}
-        {% endfor %}
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-    {% if data is not none %}
-      {% for item in data %}
-        {% set name = "item" %}
-        {% set tmp_style = schema['style'] %}
-        {% set schema = schema['items'] %}
-        {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-        {% set data = item %}
-        <tr>
-        {% for property_name in property_order %}
-          {% if property_name in item_property_names %}
-          <td>
-            {% set name = property_name %}
-            {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'parent_style': 'table'}) %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% if data is not none and property_name in data %}
-            {% set data = data[property_name] %}
-            {% else %}
-            {% set data = none %}
-            {% endif %}
-            {% include "objects/forms/form_any.html" %}
-          </td>
-          {% endif %}
-        {% endfor %}
-        {% for property_name in item_property_names %}
-          {% if property_name not in property_order %}
-          <td>
-            {% set name = property_name %}
-            {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'parent_style': 'table'}) %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% if data is not none and property_name in data %}
-            {% set data = data[property_name] %}
-            {% else %}
-            {% set data = none %}
-            {% endif %}
-            {% include "objects/forms/form_any.html" %}
-          </td>
-          {% endif %}
-        {% endfor %}
-        {% if numItems > minItems %}
-          <td><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
-        {% else %}
-          <td><button type="button" class="btn btn-danger pull-right disabled">&times;</button></td>
-        {% endif %}
-        </tr>
-      {% endfor %}
-    {% endif %}
-    </tbody>
-    <tfoot>
-      <tr>
-        {% for property_name in item_property_names %}
-          <th scope="col"></th>
-        {% endfor %}
-  {% if maxItems is none or numItems < maxItems %}
-        <th><button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
-  {% else %}
-        <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
-  {% endif %}
-      </tr>
-    </tfoot>
-  </table>
-  {% elif schema['items']['type'] == 'array' %}
-  <table class="table">
-  {% set max_used_fields = 0 %}
-  {% if data is not none %}
-    {% set max_used_fields = [0] %}
-    {% for item in data %}
-      {% if (item | length) > max_used_fields[-1] %}
-        {% set tmp = max_used_fields.append(item | length) %}
-      {% endif %}
-    {% endfor %}
-    {% set max_used_fields = max_used_fields [-1] %}
-    <thead>
-    <tr>
-    {% for i in range(max_used_fields) %}
-      <th>{{ _('Field %(index)s', index=(i+1)) }}</th>
-    {% endfor %}
-      <th>
-        <div class="btn-group pull-right" role="group" aria-label="Column Controls">
-      {% if (data | length) > 0 and max_used_fields > schema["items"].get("minItems", 0) %}
-          <button type="submit" name="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger"><i class="fa fa-arrow-left"></i></button>
-      {% else %}
-          <button type="button" class="btn btn-danger disabled"><i class="fa fa-arrow-left"></i></button>
-      {% endif %}
-      {% if (data | length) > 0 and ("maxItems" not in schema["items"] or max_used_fields < schema["items"]["maxItems"]) %}
-          <button type="submit" name="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success"><i class="fa fa-arrow-right"></i></button>
-      {% else %}
-          <button type="button" class="btn btn-success disabled"><i class="fa fa-arrow-right"></i></button>
-      {% endif %}
-        </div>
-      </th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for item in data %}
-      {% set item_index = loop.index0 %}
-      <tr>
-      {% for field in item %}
-        <td>
-          {% set name = "field_".format(loop.index0) %}
-          {% set tmp_style = schema['style'] %}
-          {% set schema = schema["items"]["items"] %}
-          {% set z = schema.update({'parent_style': 'table'}) %}
-          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
-          {% set data = field %}
-          {% include "objects/forms/form_any.html" %}
-        </td>
-      {% endfor %}
-      {% if (item | length) < max_used_fields %}
-        {% for i in range((item | length), max_used_fields) %}
-        <td>
-          {% set name ="field_".format(loop.index0) %}
-          {% set tmp_style = schema['style'] %}
-          {% set schema = schema["items"]["items"] %}
-          {% set z = schema.update({'parent_style': 'table'}) %}
-          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
-          {% set data = null %}
-          {% include "objects/forms/form_any.html" %}
-        </td>{% endfor %}
-      {% endif %}
-      {% if numItems > minItems %}
-        <td><button type="submit" name="action_{{ id_prefix }}_{{ item_index }}__delete" class="btn btn-danger pull-right">&times;</button></td>
-      {% else %}
-        <td><button type="button" class="btn btn-danger pull-right disabled">&times;</button></td>
-      {% endif %}
-      </tr>
-    {% endfor %}
-    </tbody>
-  {% endif %}
-  <tfoot>
-  <tr>
-  {% for i in range(max_used_fields) %}
-    <th>{{ _('Field %(index)s', index=(i+1)) }}</th>
-  {% endfor %}
-  {% if maxItems is none or numItems < maxItems %}
-        <th><button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right">+</button></th>
-  {% else %}
-        <th><button type="button" class="btn btn-success pull-right disabled">+</button></th>
-  {% endif %}
-  </tr>
-  </tfoot>
-  </table>
-  {% endif %}
-</div>
--->
-<!-- array end -->
