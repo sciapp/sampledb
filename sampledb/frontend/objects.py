@@ -553,6 +553,8 @@ def add_array_placeholders_to_data(data, schema):
                 data[key] = add_array_placeholders_to_data(sub_data, sub_schema)
             elif isinstance(val, list):
                 sub_data, sub_schema = get_sub_data_and_schema(data, schema, key, True)
+                if 'items' not in sub_schema: #Tags
+                    continue
                 if 'type' in sub_schema['items'] and sub_schema['items']['type'] == 'array':
                     continue
 
