@@ -114,7 +114,7 @@
         var res = removeArrayItem(id, {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}});
 
         if (res === false) {
-          alert('{{ _('This table has a minimum row number, cannot delete any more rows') }}');
+          {{ id_prefix }}.options.allowDeleteRow = false;
           break;
         }
         window["{{ id_prefix }}_row_ref"].splice(r, 1);
@@ -134,6 +134,7 @@
       copyCompatibility: true,
       columnSorting: false,
       allowComments: false,
+      allowDeleteRow: false,
       onbeforedeleterow: {{ id_prefix }}_onbeforedeleterow,
       data: [],
       columns: [
@@ -173,6 +174,10 @@
        ],
         updateTable: function(instance, cell, col, row, val, label, cellName) {
           var config = {{ id_prefix }}.getConfig();
+          if (row >= {{minItems if minItems is not none else 0}}) {
+            {{ id_prefix }}.options.allowDeleteRow = true;
+          }
+
           if (config.columns[col].readOnly == true) {
             return;
           }
