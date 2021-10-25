@@ -195,16 +195,17 @@
       $('#'+prefix).remove();
     }
     else {
-      return false;
+      return 0;
     }
 
-    if (min !== null && (array_cnt - 1) <= min) {
-      $('button[name^="action_'+parent_prefix+'"][name$="__delete"]').addClass("disabled");
-    }
     if (max !== null && (array_cnt - 1) < max) {
       $('button[name="action_'+parent_prefix+'_?__add"]').removeClass("disabled");
     }
-    return true;
+    if (min !== null && (array_cnt - 1) <= min) {
+      $('button[name^="action_'+parent_prefix+'"][name$="__delete"]').addClass("disabled");
+      return -1
+    }
+    return 1;
   }
 
   function addArrayItem(prefix, min, max) {

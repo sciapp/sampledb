@@ -113,8 +113,10 @@
         id = "{{ id_prefix }}_" + window["{{ id_prefix }}_row_ref"][r] + "_";
         var res = removeArrayItem(id, {{minItems if minItems is not none else 'null'}}, {{maxItems if maxItems is not none else 'null'}});
 
-        if (res === false) {
+        if (res <= 0) {
           {{ id_prefix }}.options.allowDeleteRow = false;
+        }
+        if (res == 0) {
           break;
         }
         window["{{ id_prefix }}_row_ref"].splice(r, 1);
