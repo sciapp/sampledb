@@ -30,3 +30,6 @@ msgstr "Rot"
 
 msgid "Spreadsheet-View only supports arrays of objects"
 msgstr "Die Spreadsheet-Ansicht kann nur für Listen von Objekten verwendet werden"
+
+msgid "This table has a minimum row number, cannot delete any more rows"
+msgstr "Diese Tabelle hat eine Mindestzeilenanzahl, es können keine weiteren Zeilen gelöscht werden."
