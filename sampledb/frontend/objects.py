@@ -20,6 +20,7 @@ from flask_babel import _
 from . import frontend
 from .. import logic
 from .. import models
+from .. import db
 from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
 from ..logic.action_type_translations import get_action_types_with_translations_in_language, \
@@ -1040,7 +1041,6 @@ def show_inline_edit(obj, action):
 
     all_languages = get_languages()
     metadata_language = flask.request.args.get('language', None)
-    print(metadata_language)
     if not any(
             language.lang_code == metadata_language
             for language in languages
@@ -1181,9 +1181,12 @@ def show_inline_edit(obj, action):
 
     else:
         referencable_objects = []
+
     sorted_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
+    for action in sorted_actions:
+        db.session.expunge(action)
 
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
