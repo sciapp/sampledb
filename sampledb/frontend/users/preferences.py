@@ -539,7 +539,22 @@ def change_preferences(user, user_id):
             except ValueError:
                 pass
 
-        show_object_title = flask.request.form.get('input-show-object-title', 'yes') != 'no'
+        show_object_type_and_id_on_object_page_text = flask.request.form.get('input-show-object-type-and-id-on-object-page', 'default')
+        if show_object_type_and_id_on_object_page_text == 'yes':
+            show_object_type_and_id_on_object_page = True
+        elif show_object_type_and_id_on_object_page_text == 'no':
+            show_object_type_and_id_on_object_page = False
+        else:
+            show_object_type_and_id_on_object_page = None
+        modified_settings['SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE'] = show_object_type_and_id_on_object_page
+
+        show_object_title_text = flask.request.form.get('input-show-object-title', 'default')
+        if show_object_title_text == 'yes':
+            show_object_title = True
+        elif show_object_title_text == 'no':
+            show_object_title = False
+        else:
+            show_object_title = None
         modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
 
         if flask_login.current_user.is_admin:

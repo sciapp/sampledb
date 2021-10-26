@@ -453,6 +453,10 @@ SHOW_PREVIEW_WARNING = False
 
 DISABLE_INLINE_EDIT = False
 
+SHOW_OBJECT_TITLE = False
+
+HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -479,3 +483,22 @@ for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS'}:
             globals()[config_name] = json.loads(value)
         except Exception:
             pass
+
+# parse boolean values
+for config_name in {
+    'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
+    'ONLY_ADMINS_CAN_CREATE_GROUPS',
+    'ONLY_ADMINS_CAN_DELETE_GROUPS',
+    'ONLY_ADMINS_CAN_CREATE_PROJECTS',
+    'DISABLE_USE_IN_MEASUREMENT',
+    'DISABLE_SUBPROJECTS',
+    'LOAD_OBJECTS_IN_BACKGROUND',
+    'ENFORCE_SPLIT_NAMES',
+    'BUILD_TRANSLATIONS',
+    'SHOW_PREVIEW_WARNING',
+    'SHOW_OBJECT_TITLE',
+    'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+}:
+    value = globals().get(config_name)
+    if isinstance(value, str):
+        globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}

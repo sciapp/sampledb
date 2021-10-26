@@ -24,6 +24,7 @@ Currently in development.
 - Implemented TOTP-based two factor authentication
 - Added tree view for instrument log entries
 - Allow editing individual fields
+- Allow hiding object type and id on object page
 
 Version 0.18
 ------------

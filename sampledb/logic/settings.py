@@ -24,7 +24,8 @@ from .users import get_user
 DEFAULT_SETTINGS = {
     "OBJECTS_PER_PAGE": 25,
     "USE_SCHEMA_EDITOR": True,
-    "SHOW_OBJECT_TITLE": False,
+    "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE": None,
+    "SHOW_OBJECT_TITLE": None,
     "USE_ADMIN_PERMISSIONS": False,
     "SHOW_INVITATION_LOG": False,
     "INSTRUMENT_LOG_ORDER_ASCENDING": True,
@@ -98,6 +99,8 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
             return key in {'OBJECTS_PER_PAGE'}
         return isinstance(value, type(default_value))
     # custom data type verification can be included here
+    if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE'}:
+        return value is None or isinstance(value, bool)
     return False
 
 
