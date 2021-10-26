@@ -16,7 +16,7 @@ from .. import frontend
 from ... import logic
 from ...logic.objects import get_object
 from ...logic.object_permissions import Permissions
-from ...logic.errors import UserDoesNotExistError
+from ...logic.errors import UserDoesNotExistError, FederationFileNotAvailableError
 from .forms import FileForm, FileInformationForm, FileHidingForm, ExternalLinkForm
 from ...utils import object_permissions_required
 from ..utils import check_current_user_is_not_readonly
@@ -32,7 +32,7 @@ def object_files(object_id):
         for file in files:
             if file.is_hidden:
                 continue
-            if file.storage in {'local', 'database'}:
+            if file.storage in {'local', 'database', 'federation'}:
                 try:
                     file_bytes = file.open(read_only=True).read()
                 except Exception:
@@ -57,13 +57,21 @@ def object_file(object_id, file_id):
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if file.storage in ('local', 'database'):
+    if file.storage in ('local', 'database', 'federation'):
         if 'preview' in flask.request.args:
             file_extension = os.path.splitext(file.original_file_name)[1]
             mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
             if mime_type is not None:
-                return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
-        return flask.send_file(file.open(), as_attachment=True, download_name=file.original_file_name, last_modified=file.utc_datetime)
+                try:
+                    return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
+                except FederationFileNotAvailableError:
+                    flask.flash(_('File stored in other database is not available.'), 'error')
+                    return flask.abort(404)
+        try:
+            return flask.send_file(file.open(), as_attachment=True, download_name=file.original_file_name, last_modified=file.utc_datetime)
+        except FederationFileNotAvailableError:
+            flask.flash(_('File stored in other database is not available.'), 'error')
+            return flask.abort(404)
     # TODO: better error handling
     return flask.abort(404)
 

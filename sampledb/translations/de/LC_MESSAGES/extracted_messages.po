@@ -182,6 +182,9 @@ msgstr ""
 msgid "Server error when requesting the data."
 msgstr "Serverfehler bei der Abfrage der Daten."
 
+msgid "Received error code when requesting the data."
+msgstr "Fehlercode bei der Abfrage der Daten empfangen."
+
 #, python-format
 msgid ""
 "Failed to establish a connection to %(component_name)s "
@@ -860,6 +863,9 @@ msgstr "Unbenannte Kategorie"
 
 msgid "Unnamed Project Group"
 msgstr "Unbenannte Projektgruppe"
+
+msgid "File stored in other database is not available."
+msgstr "Datei aus anderer Datenbank ist nicht verfügbar."
 
 msgid "Uploading files for imported objects is not yet supported."
 msgstr ""
@@ -4158,9 +4164,6 @@ msgstr "Nicht teilen"
 msgid "Comments"
 msgstr "Kommentare"
 
-msgid "Currently limited to sharing links."
-msgstr "Aktuell beschränkt auf das Teilen von Links."
-
 msgid "Special Groups"
 msgstr "Sondergruppen"
 
@@ -4781,6 +4784,9 @@ msgstr "Informationen anzeigen"
 
 msgid "View preview"
 msgstr "Vorschau anzeigen"
+
+msgid "Download file from other database"
+msgstr "Datei aus anderer Datenbank herunterladen"
 
 msgid "Download file"
 msgstr "Datei herunterladen"

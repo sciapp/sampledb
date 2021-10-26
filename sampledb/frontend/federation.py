@@ -119,6 +119,8 @@ def component(component_id):
             flask.flash(_('This database has not been configured to exchange data with other databases.'))
         except errors.RequestServerError:
             flask.flash(_('Server error when requesting the data.'), 'error')
+        except errors.RequestError:
+            flask.flash(_('Received error code when requesting the data.'), 'error')
         except requests.exceptions.ConnectionError:
             flask.flash(_('Failed to establish a connection to %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'error')
         return flask.redirect(flask.url_for('.component', component_id=component_id))

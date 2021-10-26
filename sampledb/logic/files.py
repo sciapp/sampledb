@@ -25,10 +25,13 @@ import os
 import typing
 
 import flask
+import requests
 
 from . import components, errors, object_log, objects, user_log, users
+from .components import get_component
 from .errors import FileDoesNotExistError, FileNameTooLongError, \
-    InvalidFileStorageError, TooManyFilesForObjectError
+    InvalidFileStorageError, TooManyFilesForObjectError, FederationFileNotAvailableError
+from .objects import get_object
 from .users import get_user
 from .. import db
 from ..models import files
@@ -90,7 +93,7 @@ class File:
 
     @property
     def original_file_name(self) -> str:
-        if self.data is not None and self.storage in {'local', 'database'}:
+        if self.data is not None and self.storage in {'local', 'database', 'federation'}:
             return str(self.data.get('original_file_name', ''))
         else:
             raise InvalidFileStorageError()
@@ -143,7 +146,7 @@ class File:
         if self._cache.title is None:
             self._cache.title = self.real_title
             if self._cache.title is None:
-                if self.storage in {'local', 'database'}:
+                if self.storage in {'local', 'database', 'federation'}:
                     return self.original_file_name
                 elif self.storage == 'local_reference':
                     return self.filepath
@@ -239,6 +242,28 @@ class File:
                 return io.BytesIO(self.binary_data)
             else:
                 return io.BytesIO(b'')
+        elif self.storage == 'federation':
+            object = get_object(self.object_id)
+            if self.component_id:
+                component = get_component(self.component_id)
+            else:
+                raise InvalidFileStorageError()
+            from .federation.update import get_binary
+            try:
+                file_data = get_binary(f'/federation/v1/shares/objects/{object.fed_object_id}/files/{self.fed_id}', component)
+            except errors.UnauthorizedRequestError:
+                raise FederationFileNotAvailableError()
+            except errors.MissingComponentAddressError:
+                raise FederationFileNotAvailableError()
+            except errors.RequestServerError:
+                raise FederationFileNotAvailableError()
+            except errors.RequestError:
+                raise FederationFileNotAvailableError()
+            except requests.exceptions.ConnectionError:
+                raise FederationFileNotAvailableError()
+            except errors.NoAuthenticationMethodError:
+                raise FederationFileNotAvailableError()
+            return file_data
         else:
             raise InvalidFileStorageError()
 

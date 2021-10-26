@@ -412,8 +412,6 @@ def shared_object_preprocessor(
             files = get_files_for_object(object_id)
             result['files'] = []
             for file in files:
-                if file.storage != 'url':
-                    continue
                 if file.component_id is None:
                     res_file = {
                         'file_id': file.id,
@@ -467,6 +465,9 @@ def shared_object_preprocessor(
                         }
                 else:
                     res_file['data'] = file.data
+
+                if file.storage in {'database', 'local'}:
+                    res_file['data']['storage'] = 'federation'
                 result['files'].append(SharedFileData(
                     file_id=res_file['file_id'],
                     component_uuid=res_file['component_uuid'],

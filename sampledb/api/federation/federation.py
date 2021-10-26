@@ -80,6 +80,8 @@ class UpdateHook(Resource):
             pass
         except errors.RequestServerError:
             pass
+        except errors.RequestError:
+            pass
         except ConnectionError:
             pass
         return None
@@ -193,9 +195,15 @@ class File(Resource):
             }, 404
 
         if file.storage in {'database', 'local'}:
-            with file.open() as f:
-                response = flask.make_response(f.read())
-                response.headers.set('Content-Disposition', 'attachment', filename=file.original_file_name)
+            try:
+                with file.open() as f:
+                    response = flask.make_response(f.read())
+                    response.headers.set('Content-Disposition', 'attachment', filename=file.original_file_name)
+                    return response
+            except Exception:
+                return {
+                    "message": "file {} of object {} could not be read".format(file_id, object_id)
+                }, 404
         elif file.storage == 'url':
             file_json = {
                 'header': _get_header(component),
@@ -206,4 +214,6 @@ class File(Resource):
             }
             return file_json, 200
 
-        return response
+        return {
+            "message": "file {} of object {} is not shareable".format(file_id, object_id)
+        }, 403
