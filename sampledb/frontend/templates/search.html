@@ -195,14 +195,17 @@
         action_type_select.selectpicker('val', selected_action_type_id);
       }
     });
-    action_type_select.change(function() {
+
+    function updateActionOptions() {
       action_select.find('option').show();
       if (action_type_select.selectpicker('val')) {
         action_select.selectpicker('val', '');
         action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"][value!=""]').hide();
       }
       action_select.selectpicker('refresh');
-    });
+    }
+
+    action_type_select.change(updateActionOptions);
 
     function updateCondition(condition, search_paths) {
       var property_name = condition.find('.input-condition-property:visible').val();
@@ -403,6 +406,7 @@
       $('#search-field').val(query_state['q']);
       $('[name="action"]').selectpicker('val', query_state['action']);
       $('[name="t"]').selectpicker('val', query_state['t']);
+      updateActionOptions();
       if (query_state['v'].length > 0) {
         for (var i = 0; i < query_state['v'].length; i++) {
           var condition = addCondition();
