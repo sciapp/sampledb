@@ -199,7 +199,7 @@
       action_select.find('option').show();
       if (action_type_select.selectpicker('val')) {
         action_select.selectpicker('val', '');
-        action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"]').hide();
+        action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"][value!=""]').hide();
       }
       action_select.selectpicker('refresh');
     });
