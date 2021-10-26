@@ -13,11 +13,6 @@
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
     <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script>
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
 {% endblock %}
 
 {% block content %}
