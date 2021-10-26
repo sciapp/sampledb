@@ -198,9 +198,13 @@
 
     function updateActionOptions() {
       action_select.find('option').show();
+      action_select[0].disabled = false;
       if (action_type_select.selectpicker('val')) {
         action_select.selectpicker('val', '');
         action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"][value!=""]').hide();
+        if (action_select.find('option[data-action-type-id="' + action_type_select.selectpicker('val') + '"]').length == 0) {
+          action_select[0].disabled = true;
+        }
       }
       action_select.selectpicker('refresh');
     }
