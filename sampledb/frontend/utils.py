@@ -266,6 +266,10 @@ def get_view_template(schema):
     return get_template('objects/view/', '', schema)
 
 
+def get_inline_edit_template(schema):
+    return get_template('objects/inline_edit/', 'inline_edit_', schema)
+
+
 def get_local_month_names():
     return [
         flask_babel.get_locale().months['format']['wide'][i]
@@ -277,3 +281,4 @@ _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
 _jinja_functions['get_local_month_names'] = get_local_month_names
+_jinja_functions['get_inline_edit_template'] = get_inline_edit_template

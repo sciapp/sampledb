@@ -1,0 +1,96 @@
+<!-- object start -->
+{% if show_object_title and schema.title %}
+    <span style="font-size:1.5em; padding-left: 15px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
+{% endif %}
+<div style="">
+    {% if search_query_attribute %}
+        {% set base_search_query_attribute = search_query_attribute %}
+    {% else %}
+        {% set base_search_query_attribute = "" %}
+    {% endif %}
+    {% if "propertyOrder" not in schema %}
+        {% for property_name, property_schema in schema.properties.items() %}
+            {% set is_required = ('required' in schema and property_name in schema['required']) %}
+            {% set name = property_name %}
+            {% set schema = property_schema %}
+            {% set parent_id_prefix = id_prefix %}
+            {% set id_prefix = id_prefix + '_' + name + '_' %}
+            {% if data is not none and property_name in data %}
+                {% set data = data[property_name] %}
+            {% else %}
+                {% set data = none %}
+            {% endif %}
+            {% if base_search_query_attribute %}
+                {% set search_query_attribute = base_search_query_attribute + "." + name %}
+            {% else %}
+                {% set search_query_attribute = name %}
+            {% endif %}
+            {% if 'conditions' in schema %}
+                <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                    {% include "objects/forms/conditional_wrapper_script.html" %}
+                </div>
+            {% else %}
+                {% include "objects/inline_edit/inline_edit_any.html" %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for property_name in schema.propertyOrder %}
+            {% if property_name in schema.properties %}
+                {% set is_required = ('required' in schema and property_name in schema['required']) %}
+                {% set name = property_name %}
+                {% set schema = schema.properties[property_name] %}
+                {% set parent_id_prefix = id_prefix %}
+                {% set id_prefix = id_prefix + '_' + name + '_' %}
+                {% if data is not none and property_name in data %}
+                    {% set data = data[property_name] %}
+                {% else %}
+                    {% set data = none %}
+                {% endif %}
+                {% if base_search_query_attribute %}
+                    {% set search_query_attribute = base_search_query_attribute + "." + name %}
+                {% else %}
+                    {% set search_query_attribute = name %}
+                {% endif %}
+                {% if 'conditions' in schema %}
+                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                        {% include "objects/inline_edit/inline_edit_any.html" %}
+                        {% include "objects/forms/conditional_wrapper_script.html" %}
+                    </div>
+                {% else %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        {% for property_name, property_schema in schema.properties.items() %}
+            {% if property_name not in schema.propertyOrder %}
+                {% set is_required = ('required' in schema and property_name in schema['required']) %}
+                {% set name = property_name %}
+                {% set schema = property_schema %}
+                {% set parent_id_prefix = id_prefix %}
+                {% set id_prefix = id_prefix + '_' + name + '_' %}
+                {% if data is not none and property_name in data %}
+                    {% set data = data[property_name] %}
+                {% else %}
+                    {% set data = none %}
+                {% endif %}
+
+                {% if base_search_query_attribute %}
+                    {% set search_query_attribute = base_search_query_attribute + "." + name %}
+                {% else %}
+                    {% set search_query_attribute = name %}
+                {% endif %}
+
+                {% if 'conditions' in schema %}
+                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                        {% include "objects/inline_edit/inline_edit_any.html" %}
+                        {% include "objects/forms/conditional_wrapper_script.html" %}
+                    </div>
+                {% else %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
+<!-- object end-->

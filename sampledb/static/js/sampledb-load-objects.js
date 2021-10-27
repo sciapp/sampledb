@@ -70,6 +70,7 @@ $(function() {
           }).filter(function (el) {
             return action_ids.length === 0 || $.inArray(el.action_id, action_ids) !== -1;
           });
+        $x.find( 'option[value != ""]' ).remove();
         $x.append(
           to_add.map(function (el) {
               var data_tokens = "";
