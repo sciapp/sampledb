@@ -17,6 +17,8 @@ from .utils import check_current_user_is_not_readonly
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
+from ..logic.components import get_component_or_none
+
 
 @frontend.route('/action_types/')
 @flask_login.login_required
@@ -28,7 +30,7 @@ def action_types():
     action_types_with_translations = logic.action_type_translations.get_action_types_with_translations_in_language(user_language_id)
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=action_types_with_translations,
+        action_types=action_types_with_translations
     )
 
 
@@ -37,8 +39,6 @@ def action_types():
 def action_type(type_id):
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
-    if flask.request.args.get('mode') == 'edit':
-        return show_action_type_form(type_id)
 
     try:
         action_type = logic.action_type_translations.get_action_type_with_translation_in_language(
@@ -47,6 +47,13 @@ def action_type(type_id):
         )
     except logic.errors.ActionTypeDoesNotExistError:
         return flask.abort(404)
+
+    if flask.request.args.get('mode') == 'edit':
+        if action_type.fed_id is not None:
+            flask.flash(_('Editing imported action types is not yet supported.'), 'error')
+            return flask.abort(403)
+        else:
+            return show_action_type_form(type_id)
 
     try:
         translations = logic.action_type_translations.get_action_type_translations_for_action_type(action_type.id)
@@ -57,6 +64,7 @@ def action_type(type_id):
         'action_types/action_type.html',
         action_type=action_type,
         translations=translations,
+        component=get_component_or_none(action_type.component_id)
     )
 
 

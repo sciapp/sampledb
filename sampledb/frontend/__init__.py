@@ -36,6 +36,7 @@ from . import users
 from . import users_forms
 from . import errors
 from . import utils
+from . import federation
 
 
 __all__ = [
@@ -59,5 +60,6 @@ __all__ = [
     'users',
     'users_forms',
     'errors',
-    'utils'
+    'utils',
+    'federation'
 ]

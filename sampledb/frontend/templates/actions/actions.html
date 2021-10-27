@@ -18,12 +18,15 @@
       {{ toggle_favorite_action_form.csrf_token() }}
       <h2>
         {% if action.user is not none %}
-        <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
+        <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.get_name() }}">{{ action.user.get_name() }}</a>
+          {{ federation_information_symbol(action.user.component, action.user.fed_id, 'user') }} /
         {% endif %}
         {% if action.instrument is not none %}
-          <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.name }}">{{ action.instrument.translation.name }}</a> &mdash;
+          <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.name }}">{{ action.instrument.translation.name }}</a>
+          {{ federation_information_symbol(action.instrument.component, action.instrument.fed_id, 'instrument') }} &mdash;
         {% endif %}
         <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.translation.name }}">{{ action.translation.name }}</a>
+        {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>

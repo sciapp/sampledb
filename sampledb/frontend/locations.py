@@ -15,6 +15,7 @@ from wtforms.validators import DataRequired
 
 from . import frontend
 from ..logic import errors
+from ..logic.components import get_component
 from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility
 from ..logic.languages import Language, get_language, get_languages, get_language_by_lang_code
 from ..logic.security_tokens import verify_token
@@ -36,7 +37,8 @@ def locations():
         'locations/locations.html',
         locations_map=locations_map,
         locations_tree=locations_tree,
-        sort_location_ids_by_name=_sort_location_ids_by_name
+        sort_location_ids_by_name=_sort_location_ids_by_name,
+        get_component=get_component
     )
 
 
@@ -52,6 +54,9 @@ def location(location_id):
         if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
             flask.flash(_('Only administrators can edit locations.'), 'error')
             return flask.abort(403)
+        if location.fed_id is not None:
+            flask.flash(_('Editing imported locations is not yet supported.'), 'error')
+            return flask.abort(403)
         check_current_user_is_not_readonly()
         return _show_location_form(location, None)
     locations_map, locations_tree = get_locations_tree()
@@ -59,9 +64,9 @@ def location(location_id):
     parent_location = location
     while parent_location.parent_location_id is not None:
         parent_location = get_location(parent_location.parent_location_id)
-        ancestors.insert(0, (parent_location.id, parent_location.name))
-    for ancestor_id, ancestor_name in ancestors:
-        locations_tree = locations_tree[ancestor_id]
+        ancestors.insert(0, parent_location)
+    for ancestor in ancestors:
+        locations_tree = locations_tree[ancestor.id]
     locations_tree = locations_tree[location_id]
     return flask.render_template(
         'locations/location.html',
@@ -69,7 +74,8 @@ def location(location_id):
         locations_tree=locations_tree,
         location=location,
         ancestors=ancestors,
-        sort_location_ids_by_name=_sort_location_ids_by_name
+        sort_location_ids_by_name=_sort_location_ids_by_name,
+        get_component=get_component
     )
 
 
@@ -171,6 +177,7 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         for location_id in locations_map
         if location_id not in invalid_location_ids
     ]
+    location_is_fed = {str(loc.id): loc.fed_id is not None for loc in locations_map.values() if loc.id not in invalid_location_ids}
     if not location_form.is_submitted():
         if location is not None and location.parent_location_id:
             location_form.parent_location.data = str(location.parent_location_id)
@@ -267,5 +274,6 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         languages=get_languages(only_enabled_for_input=True),
         translations=location_translations,
         name_language_ids=name_language_ids,
-        description_language_ids=description_language_ids
+        description_language_ids=description_language_ids,
+        location_is_fed=location_is_fed
     )

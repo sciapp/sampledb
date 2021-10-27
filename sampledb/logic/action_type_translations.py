@@ -256,7 +256,8 @@ def get_action_types_with_translations():
 
 
 def get_action_types_with_translations_in_language(
-        language_id: int
+        language_id: int,
+        filter_fed_defaults: bool = False
 ) -> typing.List[ActionType]:
     """
     Returns all action types with a single translation each in a given language or the users language
@@ -266,7 +267,7 @@ def get_action_types_with_translations_in_language(
         called translation.
     :raise errors.LanguageDoesNotExistError: when the language does not exist
     """
-    action_types = get_action_types()
+    action_types = get_action_types(filter_fed_defaults=filter_fed_defaults)
 
     for action_type in action_types:
         setattr(action_type, 'translation', get_action_type_translation_for_action_type_in_language(action_type.id, language_id, use_fallback=True))

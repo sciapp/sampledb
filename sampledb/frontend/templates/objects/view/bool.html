@@ -10,7 +10,7 @@
     <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
     {% endif %}
   <div class="col-md-9">
-    {% if data is not none and "value" in data and not (data.value is none) %}
+    {% if data and "value" in data and not (data.value is none) %}
       {% if data.value %}
         <i class="fa fa-check"></i>
       {% else %}
@@ -18,6 +18,9 @@
       {% endif %}
     {% else %}
       &mdash;
+    {% endif %}
+    {% if data and data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
     {% endif %}
   </div>
 </div>

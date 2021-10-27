@@ -19,13 +19,17 @@ class InstrumentTranslation(db.Model):
     language_id = db.Column(db.Integer, db.ForeignKey('languages.id'))
     language = db.relationship('Language')
 
-    name = db.Column(db.String, nullable=False, default='')
-    description = db.Column(db.String, nullable=False, default='')
-    notes = db.Column(db.String, nullable=False, default='')
-    short_description = db.Column(db.String, nullable=False, default='')
+    name = db.Column(db.String, nullable=True, default='')
+    description = db.Column(db.String, nullable=True, default='')
+    notes = db.Column(db.String, nullable=True, default='')
+    short_description = db.Column(db.String, nullable=True, default='')
 
     __table_args__ = (
         db.UniqueConstraint('language_id', 'instrument_id', name='_language_id_instrument_id_uc'),
+        db.CheckConstraint(
+            'NOT (name IS NULL AND description IS NULL AND notes IS NULL AND short_description IS NULL)',
+            name='instrument_translations_not_empty_check'
+        )
     )
 
     def __init__(
@@ -35,7 +39,7 @@ class InstrumentTranslation(db.Model):
             name: str,
             description: str = '',
             notes: str = '',
-            short_description: str = '',
+            short_description: str = ''
     ):
         self.instrument_id = instrument_id
         self.language_id = language_id

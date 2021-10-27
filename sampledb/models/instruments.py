@@ -3,6 +3,8 @@
 
 """
 
+import typing
+
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -17,6 +19,9 @@ instrument_user_association_table = db.Table(
 
 class Instrument(db.Model):
     __tablename__ = 'instruments'
+    __table_args__ = (
+        db.UniqueConstraint('fed_id', 'component_id', name='instruments_fed_id_component_id_key'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name")
@@ -27,6 +32,9 @@ class Instrument(db.Model):
     notes_is_markdown = db.Column(db.Boolean, nullable=True, default=False)
     description_is_markdown = db.Column(db.Boolean, nullable=True, default=False)
     short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
+    fed_id = db.Column(db.Integer, nullable=True)
+    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component = db.relationship('Component')
 
     instrument_translations = db.relationship("InstrumentTranslation", back_populates="instruments")
 
@@ -38,7 +46,9 @@ class Instrument(db.Model):
             users_can_create_log_entries: bool = False,
             users_can_view_log_entries: bool = False,
             create_log_entry_default: bool = False,
-            is_hidden: bool = False
+            is_hidden: bool = False,
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None
     ):
         self.description_is_markdown = description_is_markdown
         self.short_description_is_markdown = short_description_is_markdown
@@ -47,6 +57,8 @@ class Instrument(db.Model):
         self.users_can_view_log_entries = users_can_view_log_entries
         self.create_log_entry_default = create_log_entry_default
         self.is_hidden = is_hidden
+        self.fed_id = fed_id
+        self.component_id = component_id
 
     def __eq__(self, other):
         return (
@@ -58,7 +70,9 @@ class Instrument(db.Model):
             self.users_can_view_log_entries == other.users_can_view_log_entries and
             self.create_log_entry_default == other.create_log_entry_default and
             self.is_hidden == other.is_hidden and
-            self.responsible_users == other.responsible_users
+            self.responsible_users == other.responsible_users and
+            self.fed_id == other.fed_id and
+            self.component_id == other.component_id
         )
 
     def __repr__(self):

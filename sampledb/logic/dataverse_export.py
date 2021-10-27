@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 import flask
 import requests
 
+from .components import get_component_by_uuid
 from .. import db
 from .units import prettify_units
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings, instrument_translations, languages
@@ -169,20 +170,73 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
             # tags are handled separately via the keywords in Citation Metadata
             continue
         elif value['_type'] == 'user':
-            try:
-                text_value = users.get_user(value['user_id']).name
-            except errors.UserDoesNotExistError:
-                text_value = 'Unknown'
+            if 'component_uuid' in value:
+                try:
+                    component = get_component_by_uuid(value['component_uuid'])
+                    try:
+                        name = users.get_user(value['user_id'], component.id).name
+                        if name is None:
+                            text_value = f'Unknown (#{value["user_id"]} @ {component.get_name()})'
+                        else:
+                            text_value = f'{name} (#{value["user_id"]} @ {component.get_name()})'
+                    except errors.UserDoesNotExistError:
+                        text_value = f'Unknown (#{value["user_id"]} @ {component.get_name()})'
+                except errors.ComponentDoesNotExistError:
+                    text_value = f'Unknown (#{value["user_id"]} @ {value["component_uuid"]})'
+            else:
+                try:
+                    user = users.get_user(value["user_id"])
+                    if user.name is None:
+                        name = 'Unknown'
+                    else:
+                        name = user.name
+                    if user.component is not None:
+                        text_value = f'{name} (#{value["user_id"]}, #{user.fed_id} @ {user.component.get_name()}))'
+                    else:
+                        text_value = f'{name} (#{value["user_id"]})'
+                except errors.UserDoesNotExistError:
+                    text_value = f'Unknown (#{value["user_id"]})'
         elif value['_type'] in ('sample', 'measurement', 'object_reference'):
             object_id = value['object_id']
-            if object_permissions.Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
-                object_name = _translations_to_str(objects.get_object(object_id).data.get('name', {}).get('text'))
+            if 'component_uuid' in value:
+                try:
+                    component = get_component_by_uuid(value['component_uuid'])
+                    component_id = component.id
+                    component_name = component.get_name()
+                except errors.ComponentDoesNotExistError:
+                    component_id = None
+                    component_name = value['component_uuid']
             else:
+                component_name = None
+                component_id = None
+            try:
+                if component_id:
+                    obj = objects.get_fed_object(object_id, component_id)
+                else:
+                    obj = objects.get_object(object_id)
+                if object_permissions.Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
+                    object_name = _translations_to_str(obj.data.get('name', {}).get('text'))
+                else:
+                    object_name = None
+                if obj.component:
+                    component_name = obj.component.get_name()
+                    fed_id = obj.fed_object_id
+                else:
+                    component_name = None
+                    fed_id = obj.fed_object_id
+            except errors.ObjectDoesNotExistError:
+                fed_id = value['object_id']
                 object_name = None
             if object_name:
-                text_value = f"{object_name} (#{object_id})"
+                if component_name:
+                    text_value = f"{object_name} (#{object_id}, #{fed_id} @ {component_name})"
+                else:
+                    text_value = f"{object_name} (#{object_id})"
             else:
-                text_value = f"#{object_id}"
+                if component_name:
+                    text_value = f"#{object_id} (#{fed_id} @ {component_name})"
+                else:
+                    text_value = f"#{object_id}"
         else:
             continue
         fields.append({
@@ -328,6 +382,11 @@ def upload_object(
 
     method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist)
 
+    if object.component is None or object.component.uuid == flask.current_app.config['SERVICE_NAME']:
+        description = f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
+    else:
+        description = f'Dataset exported as object #{object.object_id} from {flask.current_app.config["SERVICE_NAME"]} and created as object #{object.fed_object_id} at {object.component.get_name()}.'
+
     citation_metadata = {
         'displayName': 'Citation Metadata',
         'fields': [
@@ -401,7 +460,7 @@ def upload_object(
                             'typeName': 'dsDescriptionValue',
                             'multiple': False,
                             'typeClass': 'primitive',
-                            'value': f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
+                            'value': description
                         }
                     }
                 ]
@@ -426,6 +485,29 @@ def upload_object(
             }
         ]
     }
+
+    if object.component is not None:
+        citation_metadata['fields'].append({
+            'typeName': 'otherId',
+            'multiple': True,
+            'typeClass': 'compound',
+            'value': [
+                {
+                    'otherIdAgency': {
+                        'typeName': 'otherIdAgency',
+                        'multiple': False,
+                        'typeClass': 'primitive',
+                        'value': object.component.get_name()
+                    },
+                    'otherIdValue': {
+                        'typeName': 'otherIdValue',
+                        'multiple': False,
+                        'typeClass': 'primitive',
+                        'value': str(object.fed_object_id)
+                    }
+                }
+            ]
+        })
 
     if tags:
         citation_metadata['fields'].append({

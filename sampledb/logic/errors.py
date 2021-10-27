@@ -16,6 +16,22 @@ class ObjectVersionDoesNotExistError(Exception):
     pass
 
 
+class ObjectNotSharedError(Exception):
+    pass
+
+
+class ObjectNotFederatedError(Exception):
+    pass
+
+
+class ShareDoesNotExistError(Exception):
+    pass
+
+
+class ShareAlreadyExistsError(Exception):
+    pass
+
+
 class FileNameTooLongError(Exception):
     pass
 
@@ -37,6 +53,10 @@ class GroupAlreadyExistsError(Exception):
 
 
 class UserDoesNotExistError(Exception):
+    pass
+
+
+class UserAliasDoesNotExistError(Exception):
     pass
 
 
@@ -113,6 +133,26 @@ class SubprojectRelationshipDoesNotExistError(Exception):
 
 
 class CreatingObjectsDisabledError(Exception):
+    pass
+
+
+class UnauthorizedRequestError(Exception):
+    pass
+
+
+class RequestServerError(Exception):
+    pass
+
+
+class ComponentNotConfiguredForFederationError(Exception):
+    pass
+
+
+class NoAuthenticationMethodError(Exception):
+    pass
+
+
+class AuthenticationMethodDoesNotExistError(Exception):
     pass
 
 
@@ -226,6 +266,34 @@ class ActionTypeDoesNotExistError(Exception):
     pass
 
 
+class InvalidComponentNameError(Exception):
+    pass
+
+
+class InvalidComponentAddressError(Exception):
+    pass
+
+
+class InsecureComponentAddressError(Exception):
+    pass
+
+
+class InvalidComponentUUIDError(Exception):
+    pass
+
+
+class ComponentAlreadyExistsError(Exception):
+    pass
+
+
+class ComponentDoesNotExistError(Exception):
+    pass
+
+
+class ComponentValidationError(Exception):
+    pass
+
+
 class CommentDoesNotExistError(Exception):
     pass
 
@@ -279,4 +347,24 @@ class LanguageAlreadyExistsError(Exception):
 
 
 class TwoFactorAuthenticationMethodDoesNotExistError(Exception):
+    pass
+
+
+class InvalidDataExportError(Exception):
+    pass
+
+
+class InvalidJSONError(Exception):
+    pass
+
+
+class InvalidTokenError(Exception):
+    pass
+
+
+class TokenExistsError(Exception):
+    pass
+
+
+class MissingComponentAddressError(Exception):
     pass

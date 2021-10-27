@@ -223,3 +223,21 @@ def get_languages_in_object_data(
             language_codes.update(get_languages_in_object_data(item_data))
 
     return language_codes
+
+
+def filter_translations(
+        translations: typing.Dict[str, str]
+) -> typing.Dict[str, str]:
+    allowed_language_codes = {
+        language.lang_code
+        for language in get_languages(only_enabled_for_input=True)
+    }
+
+    filtered_translations = {}
+    for language_code, translation in translations.items():
+        if language_code not in allowed_language_codes:
+            raise errors.LanguageDoesNotExistError()
+        if translation:
+            filtered_translations[language_code] = translation
+
+    return filtered_translations

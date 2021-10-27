@@ -26,8 +26,11 @@ from .action_permissions import UserActionPermissions, GroupActionPermissions, P
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod
 from .comments import Comment
+from .components import Component
+from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
 from .dataverse_export import DataverseExport
 from .favorites import FavoriteAction, FavoriteInstrument
+from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType
 from .files import File
 from .groups import Group
 from .instruments import Instrument
@@ -45,8 +48,9 @@ from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .settings import Settings
+from .shares import ObjectShare
 from .tags import Tag
-from .users import User, UserType
+from .users import User, UserType, UserFederationAlias
 from .user_log import UserLogEntry, UserLogEntryType
 
 
@@ -120,7 +124,31 @@ __all__ = [
     'Tag',
     'TwoFactorAuthenticationMethod',
     'User',
+    'UserFederationAlias',
     'UserType',
     'UserLogEntry',
     'UserLogEntryType',
+    'Component',
+    'ComponentAuthentication',
+    'OwnComponentAuthentication',
+    'ComponentAuthenticationType',
+    'ObjectShare',
+    'FedUserLogEntry',
+    'FedUserLogEntryType',
+    'FedObjectLogEntry',
+    'FedObjectLogEntryType',
+    'FedLocationLogEntry',
+    'FedLocationLogEntryType',
+    'FedActionLogEntry',
+    'FedActionLogEntryType',
+    'FedActionTypeLogEntry',
+    'FedActionTypeLogEntryType',
+    'FedInstrumentLogEntry',
+    'FedInstrumentLogEntryType',
+    'FedCommentLogEntry',
+    'FedCommentLogEntryType',
+    'FedFileLogEntry',
+    'FedFileLogEntryType',
+    'FedObjectLocationAssignmentLogEntry',
+    'FedObjectLocationAssignmentLogEntryType'
 ]

@@ -88,17 +88,41 @@
     {% set object_suffix = _(" for <a href=\"{}\">Basic Group #{}: {}</a>").format(url_for('.group', group_id=group_id), group_id, (group.name | get_translated_text) | e) | safe %}
   {% elif action_id %}
     {% set object_suffix = _(" for <a href=\"{}\">Action #{}: {}</a>").format(url_for('.action', action_id=action_id), action_id, action.translation.name | e) | safe %}
+    {% if action.component_id is not none %}
+      {% set linked_component = get_component(action.component_id) %}
+      {% if linked_component.address is not none %}
+        {% set object_suffix = object_suffix + " <a href=\"{}{}\"><i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i></a>".format(linked_component.address, url_for('frontend.action', action_id=action.fed_id), action.fed_id, linked_component.get_name()) | safe %}
+      {% else %}
+        {% set object_suffix = object_suffix + " <i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i>".format(action.fed_id, linked_component.get_name()) | safe %}
+      {% endif %}
+    {% endif %}
   {% elif location_id %}
     {% set object_suffix = _(" for <a href=\"{}\">Location #{}: {}</a>").format(url_for('.location', location_id=location_id), location_id, (location.name | get_translated_text) | e) | safe %}
+    {% if location.component_id is not none %}
+      {% set linked_component = location.component %}
+      {% if linked_component.address is not none %}
+        {% set object_suffix = object_suffix + " <a href=\"{}{}\"><i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i></a>".format(linked_component.address, url_for('frontend.location', location_id=location.fed_id), location.fed_id, linked_component.get_name()) | safe %}
+      {% else %}
+        {% set object_suffix = object_suffix + " <i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i>".format(location.fed_id, linked_component.get_name()) | safe %}
+      {% endif %}
+    {% endif %}
   {% elif user_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">User #{}: {}</a>").format(url_for('.user_profile', user_id=user_id), user_id, user.name | e) | safe %}
+    {% set object_suffix = _(" for <a href=\"{}\">User #{}: {}</a>").format(url_for('.user_profile', user_id=user_id), user_id, user.get_name() | e) | safe %}
+    {% if user.component_id is not none %}
+      {% set linked_component = get_component(user.component_id) %}
+      {% if linked_component.address is not none %}
+        {% set object_suffix = object_suffix + " <a href=\"{}{}\"><i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i></a>".format(linked_component.address, url_for('frontend.user_profile', user_id=user.fed_id), user.fed_id, linked_component.get_name()) | safe %}
+      {% else %}
+        {% set object_suffix = object_suffix + " <i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i>".format(user.fed_id, linked_component.get_name()) | safe %}
+      {% endif %}
+    {% endif %}
   {% elif doi %}
     {% set object_suffix = _(" for Publication <a href=\"https://doi.org/{}\">doi:{}</a>").format(doi, doi) | safe %}
   {% else %}
     {% set object_suffix = "" %}
   {% endif %}
   {% if action_type %}
-  <h1>{{ action_type.translation.object_name_plural }}{{ object_suffix }}</h1>
+  <h1>{{ action_type.translation.object_name_plural }}{{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}{{ object_suffix }}</h1>
   {% else %}
   <h1>{{ _('Objects') }}{{ object_suffix }}</h1>
   {% endif %}
@@ -128,23 +152,37 @@
   {% for object in objects %}
     <tr>
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
-      <td><a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.data['name']['text'] | get_translated_text == '' %}&mdash;{% else %}{{ object.data['name']['text'] | get_translated_text }}{% endif %}</a></td>
+      <td>
+        <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
+        {{ federation_information_symbol(object.component, object.fed_object_id, 'object') }}
+      </td>
       <td>{{ object.created_at | babel_format_date }}</td>
-      <td><a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.name }}</a></td>
-      <td>{{ object.last_modified_at | babel_format_date }}</td>
-      <td><a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.name }}</a></td>
+      <td>{% if object.created_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.get_name() }}</a>
+        {{ federation_information_symbol(object.created_by.component, object.created_by.fed_id, 'user') }}
+        {% else %}&mdash;{% endif %}</td>
+      <td>{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
+      <td>{% if object.modified_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.get_name() }}</a>
+        {{ federation_information_symbol(object.modified_by.component, object.modified_by.fed_id, 'user') }}
+        {% else %}&mdash;{% endif %}</td>
       {% if show_action %}
-      {% if object.action is not none %}
-        {% if object.action.instrument is not none %}
-          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ get_instrument_translation_for_instrument_in_language(object.action.instrument_id, get_user_language(current_user).id, use_fallback=True).name }}</a></td>
+        {% if object.action is not none %}
+          {% if object.action.instrument is not none %}
+            <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ get_instrument_translation_for_instrument_in_language(object.action.instrument_id, get_user_language(current_user).id, use_fallback=True).name }}</a>
+              {{ federation_information_symbol(object.action.instrument.component, object.action.instrument.fed_id, 'instrument') }}
+            </td>
+          {% else %}
+            <td>&mdash;</td>
+          {% endif %}
+          <td>
+            <a href="{{ url_for('.action', action_id=object.action.id) }}">
+              {{ action_translations[object.action.id].name }}
+            </a>
+            {{ federation_information_symbol(object.action.component, object.action.fed_id, 'action') }}
+          </td>
         {% else %}
           <td>&mdash;</td>
+          <td>&mdash;</td>
         {% endif %}
-        <td><a href="{{ url_for('.action', action_id=object.action.id) }}">{{ action_translations[object.action.id].name }}</a></td>
-      {% else %}
-        <td>&mdash;</td>
-        <td>&mdash;</td>
-      {% endif %}
       {% endif %}
       {% for property_name in display_properties %}
         {% if object.display_properties[property_name] is not none %}

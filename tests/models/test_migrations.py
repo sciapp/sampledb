@@ -19,6 +19,9 @@ def test_migrations():
                     sql_statement = ''
                 continue
             sql_statement += sql_line
+
+    # create missing tables using SQLAlchemy
+    sampledb.db.metadata.create_all(bind=engine)
     del engine
 
     sampledb.utils.migrations.run(sampledb.db)

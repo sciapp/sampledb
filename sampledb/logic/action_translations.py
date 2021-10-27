@@ -8,6 +8,7 @@ for a specific language.
 
 import collections
 import typing
+from flask_babel import _
 
 from .. import db
 from . import errors, actions, languages
@@ -110,7 +111,7 @@ def get_action_translations_for_action(
             ActionTranslation(
                 action_id=action_id,
                 language_id=Language.ENGLISH,
-                name=f'#{action_id}',
+                name=_('Unnamed Action (#%(action_id)s)', action_id=action_id),
                 description='',
                 short_description=''
             )
@@ -162,7 +163,7 @@ def get_action_translation_for_action_in_language(
     result_translation = ActionTranslation(
         action_id=action_id,
         language_id=language_id if action_translation is not None else Language.ENGLISH,
-        name=f'#{action_id}',
+        name=_('Unnamed Action (#%(action_id)s)', action_id=action_id),
         description='',
         short_description=''
     )
@@ -275,7 +276,11 @@ def get_actions_with_translation_in_language(
 
     """
     if action_type_id is not None:
-        actions = models.Action.query.filter_by(type_id=action_type_id).all()
+        if action_type_id <= 0:
+            # merge with default types of other databases
+            actions = models.Action.query.filter(db.or_(models.Action.type_id == action_type_id, models.Action.type.has(fed_id=action_type_id))).all()
+        else:
+            actions = models.Action.query.filter_by(type_id=action_type_id).all()
         if not actions:
             # ensure the action type exists
             get_action_type(action_type_id=action_type_id)

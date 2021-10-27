@@ -12,10 +12,11 @@
   {% for action_type in action_types %}
     <h2>
       <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
+      {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type') }}
     </h2>
     <p>
       <a href="{{ url_for('.actions', t=action_type.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>
-      {% if current_user.is_admin and not current_user.is_readonly %}
+      {% if current_user.is_admin and not current_user.is_readonly and action_type.fed_id is none %}
       <a href="{{ url_for('.action_type', type_id=action_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this action type.') }}">{{ _('Edit Action Type') }}</a>
       {% endif %}
     </p>

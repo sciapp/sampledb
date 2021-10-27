@@ -7,6 +7,7 @@ import flask
 import flask_login
 
 from .. import frontend
+from ...logic.components import get_component
 from ...logic.users import get_users
 
 
@@ -15,5 +16,6 @@ from ...logic.users import get_users
 def users():
     return flask.render_template(
         'users.html',
-        users=sorted(get_users(exclude_hidden=not flask_login.current_user.is_admin), key=lambda u: u.id)
+        users=sorted(get_users(exclude_hidden=not flask_login.current_user.is_admin), key=lambda u: u.id),
+        get_component=get_component
     )

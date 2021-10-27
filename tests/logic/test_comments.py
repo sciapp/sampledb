@@ -7,8 +7,16 @@ import datetime
 import pytest
 
 import sampledb
-from sampledb.models import User, UserType, Action, ActionType, Object
-from sampledb.logic import comments, objects, actions
+from sampledb.models import User, UserType, Action, Object
+from sampledb.logic import comments, objects, actions, components, errors
+
+UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+
+
+@pytest.fixture
+def component():
+    component = components.add_component(address=None, uuid=UUID_1, name='Example component', description='')
+    return component
 
 
 @pytest.fixture
@@ -65,3 +73,63 @@ def test_comments(user: User, object: Object):
     assert comment2.content == "Test 1"
     assert comment2.utc_datetime >= start_datetime
     assert comment2.utc_datetime <= datetime.datetime.utcnow()
+
+
+def test_create_comment_invalid_object(user, object):
+    with pytest.raises(errors.ObjectDoesNotExistError):
+        comments.create_comment(object.id + 1, user.id, 'Comment text')
+
+
+def test_create_comment_invalid_user(user, object):
+    with pytest.raises(errors.UserDoesNotExistError):
+        comments.create_comment(object.id, user.id + 1, 'Comment text')
+
+
+def test_create_fed_comment(user, object, component):
+    dt = datetime.datetime.utcnow()
+    assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
+    comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, 1, component.id))
+    assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
+    assert comment.user_id == user.id
+    assert comment.author == user
+    assert comment.object_id == object.object_id
+    assert comment.content == "Comment text"
+    assert comment.fed_id == 1
+    assert comment.component_id == component.id
+    assert comment.utc_datetime == dt
+
+
+def test_create_fed_comment_missing_user_id(object, component):
+    dt = datetime.datetime.utcnow()
+    assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
+    comment = comments.get_comment(comments.create_comment(object.object_id, None, 'Comment text', dt, 1, component.id))
+    assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
+    assert comment.user_id is None
+    assert comment.author is None
+    assert comment.object_id == object.object_id
+    assert comment.content == "Comment text"
+    assert comment.fed_id == 1
+    assert comment.component_id == component.id
+    assert comment.utc_datetime == dt
+
+
+def test_get_fed_comment(object, user, component):
+    dt = datetime.datetime.utcnow()
+    assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
+    comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, 1, component.id))
+    assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
+    assert comment == comments.get_comment(1, component.id)
+
+
+def test_get_fed_comment_missing_component(object, user, component):
+    dt = datetime.datetime.utcnow()
+    comments.create_comment(object.object_id, user.id, 'Comment text', dt, 1, component.id)
+    with pytest.raises(errors.ComponentDoesNotExistError):
+        comments.get_comment(1, component.id + 1)
+
+
+def test_get_fed_comment_missing_comment(object, user, component):
+    dt = datetime.datetime.utcnow()
+    comments.create_comment(object.object_id, user.id, 'Comment text', dt, 1, component.id)
+    with pytest.raises(errors.CommentDoesNotExistError):
+        comments.get_comment(2, component.id)

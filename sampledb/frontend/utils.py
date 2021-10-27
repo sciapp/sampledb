@@ -22,10 +22,13 @@ import qrcode.image.svg
 import plotly
 import pytz
 
+from ..logic import errors
+from ..logic.components import get_component_or_none
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
+from ..logic.users import get_user
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.settings import get_user_settings
@@ -298,9 +301,19 @@ def get_templates(user_id):
     ]
 
 
+def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None):
+    try:
+        return get_user(user_id, component_id)
+    except errors.UserDoesNotExistError:
+        return None
+    except errors.ComponentDoesNotExistError:
+        return None
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
 _jinja_functions['get_local_month_names'] = get_local_month_names
 _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
 _jinja_functions['get_templates'] = get_templates
+_jinja_functions['get_component_or_none'] = get_component_or_none

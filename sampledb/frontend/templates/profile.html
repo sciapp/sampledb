@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('User') }} #{{ user.id }}: {{ user.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('User') }} #{{ user.id }}: {{ user.get_name() }} — {{ service_name }}{% endblock %}
 
 {% block content %}
 <h1>{{ _('User Profile') }}</h1>
@@ -8,13 +8,28 @@
   <dt>{{ _('ID') }}</dt>
   <dd>#{{ user.id }}</dd>
   <dt>{{ _('Name') }}</dt>
-  <dd>{{ user.name }}
+  <dd>
+    {% if user.name is not none %}
+      {{ user.name }}
+    {% else %}
+      &mdash;
+    {% endif %}
     {% if user.is_admin %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Administrators can manage actions, objects and other %(service_name)s content.', service_name=service_name) }}">{{ _('administrator') }}</span>{% endif %}
     {% if user.type.name.lower() == 'other' %}<span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Bot users are meant for the automation of object creation and other tasks.') }}">{{ _('bot') }}</span>{% endif %}
     {% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as read only are unable to create or change entries in %(service_name)s.', service_name=service_name) }}">{{ _('read only') }}</span>{% endif %}
     {% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as hidden will not be shown in user lists.') }}">{{ _('hidden') }}</span>{% endif %}
     {% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Deactivated accounts cannot be used until they are activated again.') }}">{{ _('deactivated') }}</span>{% endif %}
   </dd>
+  {% if user.component is not none %}
+    <dt>{{ _('Other Databases') }}</dt>
+    <dd>
+      {% if user.component.address is not none %}
+      {{ _('<a href="%(user_url)s">User #%(user_id)s</a> (<a href="%(component_url)s">%(component_name)s</a>)', user_url=user.component.address ~ url_for('.user_profile', user_id=user.fed_id), user_id=user.fed_id, component_url=user.component.address, component_name=user.component.get_name()) }}
+      {% else %}
+        {{ _('User #%(user_id)s (%(component_name)s)', user_id=user.id, component_name=user.component.get_name()) }}
+      {% endif %}
+    </dd>
+  {% endif %}
   <dt>ORCID iD</dt>
   <dd>
     {% if user.orcid %}
@@ -42,11 +57,7 @@
   {% for extra_field_id, extra_field in EXTRA_USER_FIELDS.items() %}
   <dt>{{ (extra_field.name | get_translated_text) or extra_field_id }}</dt>
   <dd>
-    {% if user.extra_fields.get(extra_field_id) %}
-      {{ user.extra_fields.get(extra_field_id) }}
-    {% else %}
-      &mdash;
-    {% endif %}
+    {{ (user.extra_fields or {}).get(extra_field_id, '&mdash;') | safe }}
   </dd>
   {% endfor %}
 </dl>

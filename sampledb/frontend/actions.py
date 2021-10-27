@@ -22,10 +22,10 @@ from ..logic.actions import Action, create_action, get_action, update_action, ge
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
     get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
-
 from ..logic.languages import get_languages, get_language, Language
+from ..logic.components import get_component
 from ..logic.favorites import get_user_favorite_action_ids
-from ..logic.instruments import get_user_instruments
+from ..logic.instruments import get_user_instruments, get_instrument
 from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users, languages
@@ -163,9 +163,11 @@ def actions():
         'actions/actions.html',
         actions=actions,
         action_type=action_type,
-        action_permissions=action_permissions, Permissions=Permissions,
+        action_permissions=action_permissions,
+        Permissions=Permissions,
         user_favorite_action_ids=user_favorite_action_ids,
         toggle_favorite_action_form=toggle_favorite_action_form,
+        get_component=get_component
     )
 
 
@@ -179,7 +181,7 @@ def action(action_id):
     permissions = get_user_action_permissions(action_id, flask_login.current_user.id)
     if Permissions.READ not in permissions:
         return flask.abort(403)
-    may_edit = Permissions.WRITE in permissions
+    may_edit = Permissions.WRITE in permissions and action.fed_id is None
 
     translations = get_action_translations_for_action(action.id, use_fallback=True)
 
@@ -200,6 +202,8 @@ def action(action_id):
                 flask.abort(400)
         check_current_user_is_not_readonly()
         if not may_edit:
+            if action.fed_id is not None:
+                flask.flash(_('Editing imported actions is not yet supported.'), 'error')
             return flask.abort(403)
         return show_action_form(action)
 
@@ -218,7 +222,8 @@ def action(action_id):
         may_edit=may_edit,
         may_grant=may_grant,
         is_public=action_is_public(action_id),
-        single_translation=single_translation
+        single_translation=single_translation,
+        get_component=get_component
     )
 
 
@@ -342,6 +347,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     pygments_output = None
     error_message = None
     action_form = ActionForm()
+    instrument_is_fed = {}
 
     sample_action_type = get_action_type_with_translation_in_language(
         action_type_id=models.ActionType.SAMPLE_CREATION,
@@ -364,6 +370,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.instrument.choices = [
                 (str(action.instrument_id), get_instrument_translation_for_instrument_in_language(action.instrument_id, user_language_id, use_fallback=True).name)
             ]
+            instrument_is_fed[str(action.instrument_id)] = get_instrument(action.instrument_id).component_id is not None
             action_form.instrument.data = str(action.instrument_id)
         else:
             action_form.instrument.choices = [('-1', '-')]
@@ -375,6 +382,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             (str(instrument_id), get_instrument_translation_for_instrument_in_language(instrument_id, user_language_id, use_fallback=True).name)
             for instrument_id in user_instrument_ids
         ]
+        for instrument_id in user_instrument_ids:
+            instrument_is_fed[str(instrument_id)] = get_instrument(instrument_id).component_id is not None
         if action_form.instrument.data is None or action_form.instrument.data == str(None):
             if previous_action is not None and previous_action.instrument_id in user_instrument_ids:
                 action_form.instrument.data = str(previous_action.instrument_id)
@@ -476,7 +485,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 may_set_user_specific=may_set_user_specific,
                 languages=get_languages(only_enabled_for_input=True),
                 load_translations=load_translations,
-                ENGLISH=english
+                ENGLISH=english,
+                instrument_is_fed=instrument_is_fed
             )
         else:
             translation_keys = {'language_id', 'name', 'description', 'short_description'}
@@ -524,7 +534,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                             may_set_user_specific=may_set_user_specific,
                             languages=get_languages(only_enabled_for_input=True),
                             load_translations=load_translations,
-                            ENGLISH=english
+                            ENGLISH=english,
+                            instrument_is_fed=instrument_is_fed
                         )
 
         instrument_id = action_form.instrument.data
@@ -639,7 +650,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         may_set_user_specific=may_set_user_specific,
         languages=get_languages(only_enabled_for_input=True),
         load_translations=load_translations,
-        ENGLISH=english
+        ENGLISH=english,
+        instrument_is_fed=instrument_is_fed
     )
 
 
@@ -690,7 +702,7 @@ def action_permissions(action_id):
             group_permissions=group_permission_form_data,
             project_permissions=project_permission_form_data
         )
-        users = get_users(exclude_hidden=True)
+        users = get_users(exclude_hidden=True, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         add_user_permissions_form = ActionUserPermissionsForm()
         groups = get_groups()

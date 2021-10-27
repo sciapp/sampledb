@@ -459,6 +459,10 @@ HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
 
 MAX_BATCH_SIZE = 100
 
+FEDERATION_UUID = None
+ALLOW_HTTP = False
+VALID_TIME_DELTA = 300
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -469,7 +473,7 @@ except ValueError:
     pass
 
 # parse values as integers
-for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE'}:
+for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE', 'VALID_TIME_DELTA'}:
     value = globals().get(config_name)
     if isinstance(value, str):
         try:

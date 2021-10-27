@@ -8,6 +8,7 @@ Translations contain all linguistic elements of instruments such as names.
 
 import collections
 import typing
+from flask_babel import _
 
 from .. import db
 from ..models import Instrument, Language
@@ -116,7 +117,7 @@ def get_instrument_translations_for_instrument(instrument_id: int, use_fallback:
             InstrumentTranslation(
                 instrument_id=instrument_id,
                 language_id=Language.ENGLISH,
-                name=f'#{instrument_id}',
+                name=_('Unnamed Instrument (#%(instrument_id)s)', instrument_id=instrument_id),
                 description='',
                 short_description='',
                 notes=''
@@ -168,7 +169,7 @@ def get_instrument_translation_for_instrument_in_language(
     result_translation = InstrumentTranslation(
         instrument_id=instrument_id,
         language_id=language_id if instrument_translation is not None else Language.ENGLISH,
-        name=f'#{instrument_id}',
+        name=_('Unnamed Instrument (#%(instrument_id)s)', instrument_id=instrument_id),
         description='',
         short_description='',
         notes=''

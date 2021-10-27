@@ -83,7 +83,7 @@ def test_get_action_translations_for_action():
 
     assert len(action_translations.get_action_translations_for_action(action.id, use_fallback=True)) == 1
     action_translation = action_translations.get_action_translations_for_action(action.id, use_fallback=True)[0]
-    assert action_translation.name == f"#{action.id}"
+    assert action_translation.name == f'Unnamed Action (#{action.id})'
 
     action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
@@ -123,7 +123,7 @@ def test_get_action_translation_for_action_in_language():
         use_fallback=True
     )
     assert action_translation.language.lang_code == 'en'
-    assert action_translation.name == f'#{action.id}'
+    assert action_translation.name == f'Unnamed Action (#{action.id})'
     assert action_translation.description == ''
     assert action_translation.short_description == ''
 

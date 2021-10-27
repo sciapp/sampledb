@@ -11,19 +11,28 @@ import collections
 import datetime
 import typing
 
+from .components import get_component, Component
 from .. import db
-from . import user_log, object_log, objects, users, errors, languages
+from . import user_log, object_log, objects, users, errors, languages, components
 from .notifications import create_notification_for_being_assigned_as_responsible_user
 from ..models import locations
 
 
-class Location(collections.namedtuple('Location', ['id', 'name', 'description', 'parent_location_id'])):
+class Location(collections.namedtuple('Location', ['id', 'name', 'description', 'parent_location_id', 'fed_id', 'component'])):
     """
     This class provides an immutable wrapper around models.locations.Location.
     """
 
-    def __new__(cls, id: int, name: dict, description: dict, parent_location_id: typing.Optional[int] = None):
-        self = super(Location, cls).__new__(cls, id, name, description, parent_location_id)
+    def __new__(
+            cls,
+            id: int,
+            name: typing.Optional[typing.Dict[str, str]],
+            description: typing.Optional[typing.Dict[str, str]],
+            parent_location_id: typing.Optional[int] = None,
+            fed_id: typing.Optional[int] = None,
+            component: typing.Optional[Component] = None
+    ):
+        self = super(Location, cls).__new__(cls, id, name, description, parent_location_id, fed_id, component)
         return self
 
     @classmethod
@@ -32,17 +41,19 @@ class Location(collections.namedtuple('Location', ['id', 'name', 'description', 
             id=location.id,
             name=location.name,
             description=location.description,
-            parent_location_id=location.parent_location_id
+            parent_location_id=location.parent_location_id,
+            fed_id=location.fed_id,
+            component=location.component
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id', 'confirmed'])):
+class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id', 'confirmed', 'fed_id', 'component_id'])):
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
 
-    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: dict, utc_datetime: datetime.datetime, responsible_user_id: int, confirmed: bool):
-        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed)
+    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: typing.Optional[typing.Dict[str, str]], utc_datetime: datetime.datetime, responsible_user_id: int, confirmed: bool, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None):
+        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed, fed_id, component_id)
         return self
 
     @classmethod
@@ -55,11 +66,13 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             user_id=object_location_assignment.user_id,
             description=object_location_assignment.description,
             utc_datetime=object_location_assignment.utc_datetime,
-            confirmed=object_location_assignment.confirmed
+            confirmed=object_location_assignment.confirmed,
+            fed_id=object_location_assignment.fed_id,
+            component_id=object_location_assignment.component_id
         )
 
 
-def create_location(name: typing.Union[str, dict], description: typing.Union[str, dict], parent_location_id: typing.Optional[int], user_id: int) -> Location:
+def create_location(name: typing.Optional[typing.Dict[str, str]], description: typing.Optional[typing.Dict[str, str]], parent_location_id: typing.Optional[int], user_id: typing.Optional[int], fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None) -> Location:
     """
     Create a new location.
 
@@ -68,58 +81,70 @@ def create_location(name: typing.Union[str, dict], description: typing.Union[str
         Keys are the language code and values are the descriptions.
     :param parent_location_id: the optional parent location ID for the new location
     :param user_id: the ID of an existing user
+    :param fed_id: the federation ID of the location
+    :param component_id: origin component ID
     :return: the created location
     :raise errors.LocationDoesNotExistError: when no location with the given
         parent location ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    if isinstance(name, str):
-        name = {
-            'en': name
-        }
-    if isinstance(description, str):
-        description = {
-            'en': description
-        }
 
-    allowed_language_codes = {
-        language.lang_code
-        for language in languages.get_languages(only_enabled_for_input=True)
-    }
+    if (component_id is None) != (fed_id is None) or (component_id is None and (name is None or description is None or user_id is None)):
+        raise TypeError('Invalid parameter combination.')
 
-    for language_code, name_text in list(name.items()):
-        if language_code not in allowed_language_codes:
-            raise errors.LanguageDoesNotExistError()
-        if not name_text:
-            del name[language_code]
+    if name is not None:
+        if isinstance(name, str):
+            name = {
+                'en': name
+            }
+        assert isinstance(name, dict)
+        if component_id is None:
+            name = languages.filter_translations(name)
 
-    for language_code, description_text in list(description.items()):
-        if language_code not in allowed_language_codes:
-            raise errors.LanguageDoesNotExistError()
-        if not description_text:
-            del description[language_code]
+        # if a name is provided, there should be an english translation
+        if 'en' not in name:
+            raise errors.MissingEnglishTranslationError()
 
-    if 'en' not in name:
-        raise errors.MissingEnglishTranslationError()
+    if description is not None:
+        if isinstance(description, str):
+            description = {
+                'en': description
+            }
+        assert isinstance(description, dict)
+        if component_id is None:
+            description = languages.filter_translations(description)
 
     # ensure the user exists
-    users.get_user(user_id)
+    if user_id is not None:
+        users.get_user(user_id)
     if parent_location_id is not None:
         # ensure parent location exists
         get_location(parent_location_id)
+    if component_id is not None:
+        # ensure that the component can be found
+        components.get_component(component_id)
     location = locations.Location(
         name=name,
         description=description,
-        parent_location_id=parent_location_id
+        parent_location_id=parent_location_id,
+        fed_id=fed_id,
+        component_id=component_id
     )
     db.session.add(location)
     db.session.commit()
-    user_log.create_location(user_id, location.id)
+    if component_id is None:
+        user_log.create_location(user_id, location.id)
     return Location.from_database(location)
 
 
-def update_location(location_id: int, name: dict, description: dict, parent_location_id: typing.Optional[int], user_id: int) -> None:
+def update_location(
+        location_id: int,
+        name: typing.Optional[typing.Dict[str, str]],
+        description: dict,
+        parent_location_id: typing.Optional[int],
+        user_id: typing.Optional[int]
+) -> None:
     """
     Update a location's information.
 
@@ -139,32 +164,27 @@ def update_location(location_id: int, name: dict, description: dict, parent_loca
     :raise errors.LanguageDoesNotExistError: if an unknown language code is
         used
     """
-
-    allowed_language_codes = {
-        language.lang_code
-        for language in languages.get_languages(only_enabled_for_input=True)
-    }
-
-    for language_code, name_text in list(name.items()):
-        if language_code not in allowed_language_codes:
-            raise errors.LanguageDoesNotExistError()
-        if not name_text:
-            del name[language_code]
-
-    for language_code, description_text in list(description.items()):
-        if language_code not in allowed_language_codes:
-            raise errors.LanguageDoesNotExistError()
-        if not description_text:
-            del description[language_code]
-
-    if 'en' not in name:
-        raise errors.MissingEnglishTranslationError()
-
-    # ensure the user exists
-    users.get_user(user_id)
     location = locations.Location.query.filter_by(id=location_id).first()
     if location is None:
         raise errors.LocationDoesNotExistError()
+
+    if name is not None:
+        assert isinstance(name, dict)
+        if location.component_id is None:
+            name = languages.filter_translations(name)
+
+        # if a name is provided, there should be an english translation
+        if 'en' not in name:
+            raise errors.MissingEnglishTranslationError()
+
+    if description is not None:
+        assert isinstance(description, dict)
+        if location.component_id is None:
+            description = languages.filter_translations(description)
+
+    # ensure the user exists
+    if user_id is not None:
+        users.get_user(user_id)
     if parent_location_id is not None:
         if location_id == parent_location_id or location_id in _get_location_ancestors(parent_location_id):
             raise errors.CyclicLocationError()
@@ -173,10 +193,11 @@ def update_location(location_id: int, name: dict, description: dict, parent_loca
     location.parent_location_id = parent_location_id
     db.session.add(location)
     db.session.commit()
-    user_log.update_location(user_id, location.id)
+    if user_id is not None:
+        user_log.update_location(user_id, location.id)
 
 
-def get_location(location_id: int) -> Location:
+def get_location(location_id: int, component_id: typing.Optional[int] = None) -> Location:
     """
     Get a location.
 
@@ -185,8 +206,13 @@ def get_location(location_id: int) -> Location:
         parent location ID exists
     :return: the location with the given location ID
     """
-    location = locations.Location.query.filter_by(id=location_id).first()
+    if component_id is None:
+        location = locations.Location.query.filter_by(id=location_id).first()
+    else:
+        location = locations.Location.query.filter_by(fed_id=location_id, component_id=component_id).first()
     if location is None:
+        if component_id is not None:
+            get_component(component_id)
         raise errors.LocationDoesNotExistError()
     return Location.from_database(location)
 
@@ -246,7 +272,13 @@ def _get_location_ancestors(location_id: int) -> typing.List[int]:
     return ancestor_location_ids[1:]
 
 
-def assign_location_to_object(object_id: int, location_id: typing.Optional[int], responsible_user_id: typing.Optional[int], user_id: int, description: typing.Union[str, dict]) -> None:
+def assign_location_to_object(
+        object_id: int,
+        location_id: typing.Optional[int],
+        responsible_user_id: typing.Optional[int],
+        user_id: int,
+        description: typing.Optional[typing.Dict[str, str]]
+) -> None:
     """
     Assign a location to an object.
 
@@ -263,10 +295,15 @@ def assign_location_to_object(object_id: int, location_id: typing.Optional[int],
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         or responsible user ID exists
     """
-    if isinstance(description, str):
-        description = {
-            'en': description
-        }
+
+    if description is not None:
+        if isinstance(description, str):
+            description = {
+                'en': description
+            }
+        assert isinstance(description, dict)
+        description = languages.filter_translations(description)
+
     # ensure the object exists
     objects.get_object(object_id)
     if location_id is not None:
@@ -293,6 +330,51 @@ def assign_location_to_object(object_id: int, location_id: typing.Optional[int],
     user_log.assign_location(user_id, object_location_assignment.id)
 
 
+def create_fed_assignment(
+        fed_id: int,
+        component_id: int,
+        object_id: int,
+        location_id: typing.Optional[int],
+        responsible_user_id: typing.Optional[int],
+        user_id: typing.Optional[int],
+        description: typing.Optional[typing.Dict[str, str]],
+        utc_datetime: typing.Optional[datetime.datetime],
+        confirmed: typing.Optional[bool]
+) -> ObjectLocationAssignment:
+    if description is not None:
+        if isinstance(description, str):
+            description = {
+                'en': description
+            }
+        assert isinstance(description, dict)
+        description = languages.filter_translations(description)
+
+    objects.get_object(object_id)
+    # ensure the component exists
+    get_component(component_id)
+    if location_id is not None:
+        # ensure the location exists
+        get_location(location_id)
+    if user_id is not None:
+        users.get_user(user_id)
+    if responsible_user_id is not None:
+        users.get_user(responsible_user_id)
+    object_location_assignment = locations.ObjectLocationAssignment(
+        object_id=object_id,
+        location_id=location_id,
+        responsible_user_id=responsible_user_id,
+        user_id=user_id,
+        description=description,
+        utc_datetime=utc_datetime,
+        confirmed=confirmed,
+        fed_id=fed_id,
+        component_id=component_id
+    )
+    db.session.add(object_location_assignment)
+    db.session.commit()
+    return object_location_assignment
+
+
 def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocationAssignment]:
     """
     Get a list of all object location assignments for an object.
@@ -309,6 +391,11 @@ def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocatio
         ObjectLocationAssignment.from_database(object_location_assignment)
         for object_location_assignment in object_location_assignments
     ]
+
+
+def get_fed_object_location_assignment(fed_id: int, component_id: int):
+    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(fed_id=fed_id, component_id=component_id).first()
+    return object_location_assignment
 
 
 def get_current_object_location_assignment(object_id: int) -> typing.Optional[ObjectLocationAssignment]:

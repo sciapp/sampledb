@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{{ action_type.translation.object_name }} #{{ object_id }}: {% endif %}{{ data['name']['text'] | get_translated_text }} — {{ service_name }}{% endblock %}
+{% block title %}{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}: {% endif %}{{ name | get_translated_text }} — {{ service_name }}{% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -25,23 +25,49 @@
   <script>
   window.plotly_charts = [];
   </script>
-  <h1>{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{{ action_type.translation.object_name }} #{{ object_id }}: {% endif %}{{ data.name.text | get_translated_text }}</h1>
-
+  <h1>
+    {% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}: {% endif %}{{ name | get_translated_text }}
+    {{ federation_information_symbol(component, fed_object_id, 'object') }}
+  </h1>
   <h2>{{ _('Information') }}</h2>
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-    <div class="col-md-9">{% if instrument is not none %}<a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>{% else %}&mdash;{% endif %}</div>
+    <div class="col-md-9">
+      {% if instrument is not none %}
+        <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>
+        {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
+      {% else %}&mdash;{% endif %}
+    </div>
   </div>
   <div class="row" style="padding-right:0.75em">
-    <label class="col-md-3" style="text-align: right">{{ _('Action') }} <a href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
-    <div class="col-md-9"><a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
+    <label class="col-md-3" style="text-align: right">{{ _('Action') }}
+      {% if action is not none %}
+        <a href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
+      {% endif %}
+    </label>
+    <div class="col-md-9">
+      {% if action is not none %}
+        <a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a>
+        {{ federation_information_symbol(get_component_or_none(action.component_id), action.fed_id, 'action') }}
+      {% else %}&mdash;{% endif %}
+    </div>
   </div>
-    {% block includes %}
-        {# counter for plotly_chart_plots #}
-        {% set plot_counter = namespace(value=0) %}
-        {% include "objects/view/any.html" %}
-    {% endblock %}
-    <div class="object-button-bar">
+  {% block includes %}
+      {# counter for plotly_chart_plots #}
+      {% set plot_counter = namespace(value=0) %}
+      {% if data is not none and schema is not none %}
+          {% include "objects/view/any.html" %}
+      {% endif %}
+  {% endblock %}
+  {% if data is none or schema is none %}
+    <div class="row" style="padding-right:0.75em">
+      <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+      <div class="col-md-9">
+        <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+      </div>
+    </div>
+  {% endif %}
+  <div class="object-button-bar">
     {% if languages | length > 1 %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _("View object information in a different language.") }}">
@@ -84,7 +110,8 @@
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
       {% endif %}
-      {% if action.type.id == action.type.SAMPLE_CREATION and not config['DISABLE_USE_IN_MEASUREMENT'] %}
+      {% if (action is not none and action.type.id == action.type.SAMPLE_CREATION) and not config['DISABLE_USE_IN_MEASUREMENT'] %}
+
         <div class="form-group">
           <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">
             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type_with_translation_in_language(action.type.MEASUREMENT, get_user_language(current_user).id).translation.name) }} <span class="caret"></span></button>
@@ -95,7 +122,7 @@
               <li>
                 <a href="{{ url_for('.new_object', action_id=action.id, sample_id=object_id) }}">
                 {% if action.user is not none %}
-                  {{ action.user.name }} /
+                  {{ action.user.get_name() }} /
                 {% endif %}
                 {% if action.instrument is not none %}
                   {% set temp = namespace(instrument=get_instrument_with_translation_in_language(action.instrument_id, get_user_language(current_user).id)) %}
@@ -116,7 +143,7 @@
         </div>
       {% endif %}
     {% endif %}
-    {% if action.type.enable_labels %}
+    {% if action is not none and action.type.enable_labels %}
       <div class="form-group">
         <button type="button" class="btn btn-primary" id="button-show-object-label-modal" data-toggle="tooltip" data-placement="top" title="{{ _('Generate a PDF containing labels for this object.') }}"><i class="fa fa-tag" aria-hidden="true"></i> {{ _('Generate Labels') }}</button>
       </div>
@@ -160,7 +187,7 @@
       </div>
     {% endif %}
   {% endif %}
-    {% if restore_form is not none %}
+    {% if restore_form is not none and not component %}
     <div class="form-group">
       <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
         {{ restore_form.csrf_token() }}
@@ -171,7 +198,7 @@
   </div>
 
   {% if not is_archived %}
-    {% if action.type.enable_files %}
+    {% if action is not none and action.type.enable_files %}
       <h2>{{ _('Files') }}</h2>
       {% if files %}
       <table class="table" id="file_table">
@@ -297,7 +324,7 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Uploaded by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ federation_information_symbol(file.uploader.component, file.uploader.fed_id, 'user') }}</a></div>
                   </div>
                   {% elif file.storage == 'url' %}
                   <div class="row">
@@ -306,18 +333,26 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Linked by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ federation_information_symbol(file.uploader.component, file.uploader.fed_id, 'user') }}</a></div>
                   </div>
                   {% else %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Posted by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ federation_information_symbol(file.uploader.component, file.uploader.fed_id, 'user') }}</a></div>
                   </div>
                   {% endif %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Description') }}:</label></div>
                     <div class="col-sm-9"><span class="file-info-view-mode">{% if file.description %}<pre style="font-family: inherit">{{ file.description }}</pre>{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><textarea name="{{ file_information_form.description.name }}" class="input-file-info-description" style="width:100%;resize: vertical;">{% if file.description %}{{ file.description }}{% endif %}</textarea></span></div>
                   </div>
+                  {% if file.fed_id is not none %}
+                  <div class="row">
+                    <div class="col-sm-3 text-right"><label>{{ _('Other Databases') }}:</label></div>
+                    {% with file_component = get_component(file.component_id) %}
+                    <div class="col-sm-9">{{ _('This file was created as file #%(fed_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_id=file.fed_id, component_url=url_for('.component', component_id=file.component_id), component_name=file_component.get_name()) }}</div>
+                    {% endwith %}
+                  </div>
+                  {% endif %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('History') }}:</label></div>
                     <div class="col-sm-9"><a role="button" data-toggle="collapse" href="#fileInfoModalCollapse-{{ file.id }}" aria-expanded="false" aria-controls="fileInfoModalCollapse-{{ file.id }}">{{ _('Show/Hide') }}</a></div>
@@ -333,18 +368,18 @@
                       <tbody>
                         <tr>
                           <td>{{ file.utc_datetime | babel_format_datetime }}</td>
-                          <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.name) }}</td>
+                          <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.get_name()) }}</td>
                         </tr>
                         {% for log_entry in file.log_entries %}
                           {% if log_entry.type == FileLogEntryType.EDIT_TITLE %}
                             <tr>
                               <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
-                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.name) }}<br />{{ log_entry.data['title'] }}</td>
+                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }}<br />{{ log_entry.data['title'] }}</td>
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
                             <tr>
                               <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
-                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.name) }} <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
+                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
                             </tr>
                           {% else %}
                             <tr>{{ log_entry.type }}</tr>
@@ -461,7 +496,7 @@
     {% endif %}
   {% endif %}
 
-  {% if action.type.enable_labels %}
+  {% if action is not none and action.type.enable_labels %}
     <div class="modal fade" id="objectLabelModal" tabindex="-1" role="dialog" aria-labelledby="objectLabelModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -603,7 +638,7 @@
     </div>
   {% endif %}
 
-  {% if not is_archived and action.type.enable_locations %}
+  {% if not is_archived and action is not none and action.type.enable_locations %}
     <h2 id="locations">{{ _("Locations") }}</h2>
     {% set allowed_language_ids = [] %}
     {% for language in all_languages %}
@@ -621,23 +656,42 @@
       <tbody>
       {% for object_location_assignment in object_location_assignments | reverse %}
         <tr>
-          <td>{{ object_location_assignment.utc_datetime | babel_format_datetime}}</td>
-          <td>{% if object_location_assignment.location_id is not none %}<a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name | get_translated_text }} (#{{ object_location_assignment.location_id }})</a>{% else %}&mdash;{% endif %}</td>
+          <td>{{ object_location_assignment.utc_datetime | babel_format_datetime }}</td>
+          <td>
+            {% if object_location_assignment.location_id is not none %}
+              {% with location = get_location(object_location_assignment.location_id) %}
+                <a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">
+                  {{ location.name | get_translated_text(default=_('Unnamed Location')) }} (#{{ location.id }})
+                </a>
+                {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
+              {% endwith %}
+            {% else %}&mdash;{% endif %}
+          </td>
           <td>
             {% if object_location_assignment.responsible_user_id is not none %}
-            <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>
-              {% if object_location_assignment.confirmed %}
-                <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.') }}">&check;</span>
-              {% elif object_location_assignment.responsible_user_id == current_user.id %}
-                <a class="btn btn-xs btn-primary" href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">{{ _('Confirm') }}</a>
-              {% else %}
-                <span class="label label-warning label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has not confirmed this responsibility assignment yet.') }}">?</span>
-              {% endif %}
+              {% with user = get_user(object_location_assignment.responsible_user_id) %}
+                <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ user.get_name() }}</a>
+                {{ federation_information_symbol(user.component, user.fed_id, 'user') }}
+                {% if object_location_assignment.confirmed %}
+                  <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.')}}">&check;</span>
+                {% elif object_location_assignment.responsible_user_id == current_user.id %}
+                  <a class="btn btn-xs btn-primary" href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">{{ _('Confirm') }}</a>
+                {% else %}
+                  <span class="label label-warning label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has not confirmed this responsibility assignment yet.') }}">?</span>
+                {% endif %}
+              {% endwith %}
             {% else %}
               &mdash;
             {% endif %}
           </td>
-          <td><a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">{{ get_user(object_location_assignment.user_id).name }}</a></td>
+          {% with user = get_user(object_location_assignment.user_id) %}
+            <td>
+              <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">
+                {{ user.get_name() }}
+              </a>
+              {{ federation_information_symbol(user.component, user.fed_id, 'user') }}
+            </td>
+          {% endwith %}
           <td><pre class="location-description">{{ object_location_assignment.description | get_translated_text or ('&mdash;' | safe) }}</pre></td>
         </tr>
       {% endfor %}
@@ -654,7 +708,7 @@
           <label for="input-location" class="control-label">{{ _("Location") }}</label>
           <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
             {% for location_id, location_name in location_form.location.choices %}
-            <option value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+            <option {% if location_is_fed[location_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
             {% endfor %}
           </select>
         </div>
@@ -662,7 +716,7 @@
           <label for="input-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
           <select class="selectpicker form-control" id="input-responsible-user" name="{{ location_form.responsible_user.name }}" data-live-search="true">
             {% for user_id, user_name in location_form.responsible_user.choices %}
-            <option value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
+            <option {% if user_is_fed[user_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
             {% endfor %}
           </select>
         </div>
@@ -696,7 +750,7 @@
     {% endif %}
   {% endif %}
 
-  {% if not is_archived and action.type.enable_publications %}
+  {% if not is_archived and action is not none and action.type.enable_publications %}
     <h2 id="publications">{{ _('Publications') }}</h2>
     {% if object_publications %}
       <table class="table">
@@ -753,13 +807,21 @@
   {% endif %}
 
   {% if not is_archived %}
-    {% if action.type.enable_comments %}
+    {% if action is not none and action.type.enable_comments %}
       <h2>{{ _('Comments') }}</h2>
       {% if comments %}
         {% for comment in comments %}
           <div class="well" id="comment-{{ comment.id }}">
             <pre class="comment">{{ comment.content }}</pre>
-            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.name }}</a>, {{ comment.utc_datetime | babel_format_datetime }}</div>
+            <div class="text-right">
+              &mdash;
+              {% if comment.author is none %}
+                <span class="text-muted fst-italic">{{ _('Unknown User') }}</span>
+              {% else %}
+                <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.get_name() }}</a>
+                {{ federation_information_symbol(comment.author.component, comment.author.fed_id, 'user') }}
+              {% endif %}, {{ comment.utc_datetime | babel_format_datetime }}
+            </div>
           </div>
         {% endfor %}
       {% else %}
@@ -779,7 +841,7 @@
     {% endif %}
   {% endif %}
 
-  {% if not is_archived and action.type.enable_activity_log %}
+  {% if not is_archived and action is not none and action.type.enable_activity_log %}
     {% if object_log_entries %}
       <h2>{{ _('Activity Log')}}</h2>
       <table class="table" id="activity_log">
@@ -810,9 +872,9 @@
             {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
               <td>
               {% if 'previous_object_id' in object_log_entry.data %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
               {% else %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               {% endif %}
               </td>
               <td class="text-right">
@@ -820,14 +882,14 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=object_log_entry.user.id, user_name=object_log_entry.user.name, batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=object_log_entry.user.id, user_name=object_log_entry.user.get_name(), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">{{ _('View') }}</a>
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> edited the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> edited the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
@@ -836,7 +898,7 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
@@ -846,14 +908,14 @@
             {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT %}
               {% if object_log_entry.data['measurement_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].data.name.text | get_translated_text) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].name | get_translated_text) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in a measurement.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in a measurement.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
               </td>
@@ -861,24 +923,24 @@
             {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION %}
               {% if object_log_entry.data['sample_id'] %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].data.name.text | get_translated_text) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].name | get_translated_text) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create a sample.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create a sample.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
               </td>
               {% endif %}
             {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a comment for this object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a comment for this object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
-              {% if action.type.enable_comments %}
+              {% if action is not none and action.type.enable_comments %}
                 {% if 'comment_id' in object_log_entry.data %}
                   <a href="#comment-{{ object_log_entry.data['comment_id'] }}">{{ _('View') }}</a>
                 {% endif %}
@@ -889,25 +951,25 @@
                 {% for file in files %}
                   {% if file.id == object_log_entry.data['file_id'] %}
                     {% if file.storage == 'local' or file.storage == 'database' %}
-                      {% if action.type.enable_files %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
+                      {% if action is not none and action.type.enable_files %}
+                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
                       {% else %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded %(file_name)s.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_name=file.original_file_name) }}
+                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded %(file_name)s.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_name=file.original_file_name) }}
                       {% endif %}
                     {% elif file.storage == 'url' %}
-                      {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, link_url=file.data.url) }}
+                      {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), link_url=file.data.url) }}
                     {% else %}
-                      {% if action.type.enable_files %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
+                      {% if action is not none and action.type.enable_files %}
+                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
                       {% else %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a file.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a file.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
                       {% endif %}
                     {% endif %}
                   {% endif %}
                 {% endfor %}
               </td>
               <td class="text-right">
-              {% if action.type.enable_files %}
+              {% if action is not none and action.type.enable_files %}
                 {% if 'file_id' in object_log_entry.data %}
                   <a href="#file-{{ object_log_entry.data['file_id'] }}">{{ _('View') }}</a>
                 {% endif %}
@@ -917,46 +979,46 @@
               {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
               {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
               {% elif object_location_assignment.location is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text) }}
               </td>
               {% elif object_location_assignment.responsible_user_id is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
               {% endif %}
               <td class="text-right">
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
               </td>
               <td class="text-right">
-              {% if action.type.enable_publications %}
+              {% if action is not none and action.type.enable_publications %}
                 <a href="#publications">{{ _('View') }}</a>
               {% endif %}
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA %}
               {% if object_log_entry.data['object_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].data['name']['text'] | get_translated_text, object_id=object_log_entry.data['object_id']) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].name | get_translated_text, object_id=object_log_entry.data['object_id']) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of another object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of another object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
               </td>
               {% endif %}
             {% elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> exported this object to a Dataverse.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> exported this object to a Dataverse.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
               {% if object_log_entry.data.get('dataverse_url') %}
@@ -967,14 +1029,14 @@
               {% with project = get_project(object_log_entry.data.project_id) %}
               {% if project is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
               </td>
               <td class="text-right">
               </td>
@@ -983,7 +1045,7 @@
             {% elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT %}
               {% if object_log_entry.data.project_deleted %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
                 </td>
                 <td class="text-right">
                 </td>
@@ -991,14 +1053,14 @@
                 {% with project = get_project(object_log_entry.data.project_id) %}
                 {% if project is not none %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
                 </td>
                 <td class="text-right">
                   <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
                 </td>
                 {% else %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
                 </td>
                 <td class="text-right">
                 </td>
@@ -1015,8 +1077,15 @@
     {% endif %}
   {% endif %}
 
+  {% if component %}
+    <h2>{{ _('Other Databases') }}</h2>
+    <div class="federation-information">
+      {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
+    </div>
+  {% endif %}
+
   {% if related_objects_tree %}
-    {% if not is_archived and action.type.enable_related_objects %}
+    {% if not is_archived and action is not none and action.type.enable_related_objects %}
       <h2>{{ _('Related Objects') }}</h2>
 
       <div class="related-objects">
@@ -1045,19 +1114,19 @@
             <div class="form-group" id="pdf–export-sections">
               <div>{{ _('PDF Export Sections') }}</div>
               <label><input type="checkbox" checked="checked" disabled="disabled" class="disabled"> {{ _('Information') }}</label>
-              {% if action.type.enable_activity_log %}
+              {% if action is not none and action.type.enable_activity_log %}
               <label><input type="checkbox" checked="checked" name="activity_log"> {{ _('Activity Log') }}</label>
               {% endif %}
-              {% if action.type.enable_locations %}
+              {% if action is not none and action.type.enable_locations %}
               <label><input type="checkbox" checked="checked" name="locations"> {{ _('Locations') }}</label>
               {% endif %}
-              {% if action.type.enable_publications %}
+              {% if action is not none and action.type.enable_publications %}
               <label><input type="checkbox" checked="checked" name="publications"> {{ _('Publications') }}</label>
               {% endif %}
-              {% if action.type.enable_files %}
+              {% if action is not none and action.type.enable_files %}
               <label><input type="checkbox" checked="checked" name="files"> {{ _('Files') }}</label>
               {% endif %}
-              {% if action.type.enable_comments %}
+              {% if action is not none and action.type.enable_comments %}
               <label><input type="checkbox" checked="checked" name="comments"> {{ _('Comments') }}</label>
               {% endif %}
               <div style="text-align: left">
@@ -1074,7 +1143,7 @@
               </div>
             </div>
 
-            {% if action.type.enable_related_objects %}
+            {% if action is not none and action.type.enable_related_objects %}
             <div class="related-objects">
               <div>{{ _('Objects') }}</div>
               {% set in_export_data_model = True %}
@@ -1083,7 +1152,7 @@
             {% endif %}
           </div>
           <div class="modal-footer">
-            {% if action.type.enable_related_objects %}
+            {% if action is not none and action.type.enable_related_objects %}
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">{{ _('Select All') }}</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">{{ _('Deselect All') }}</button>
             {% endif %}
@@ -1211,7 +1280,7 @@
         e.preventDefault();
         $(this).tab('show');
       });
-      {% if (not is_archived) and user_may_comment and action.type.enable_comments %}
+      {% if (not is_archived) and user_may_comment and action is not none and action.type.enable_comments %}
         var comment_form = $('#new-comment-form');
         var comment_textarea = comment_form.find('textarea');
         comment_textarea.on('input change propertychange', function () {
@@ -1229,7 +1298,7 @@
       $(function () {
         $('[data-toggle="popover"]').popover()
       });
-      {% if object_log_entries and action.type.enable_activity_log %}
+      {% if object_log_entries and action is not none and action.type.enable_activity_log %}
         var activity_log_filter_type_list = {
           "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
           "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
@@ -1288,7 +1357,7 @@
         };
       {% endif %}
       {% if not is_archived %}
-        {% if action.type.enable_files %}
+        {% if action is not none and action.type.enable_files %}
           window.file_table_toggle = function (should_show, category) {
             var file_table = $('#file_table').find('> tbody');
             var file_table_rows = file_table.find('tr[data-file-type=' + category + ']');
@@ -1330,7 +1399,7 @@
         $('#button-show-object-label-modal').click(function () {
           $('#objectLabelModal').modal('show');
         });
-        {% if action.type.enable_files %}
+        {% if action is not none and action.type.enable_files %}
           function changeHandler() {
             var files = $('#input-file-upload').get(0).files;
             if (files.length === 0) {
@@ -1362,7 +1431,7 @@
         {% endif %}
       {% endif %}
 
-      {% if action.type.enable_files %}
+      {% if action is not none and action.type.enable_files %}
         $('.button-file-info').on('click', function () {
           var file_id = $(this).attr('data-file_id');
           $('#fileInfoModal-' + file_id).modal('show');
@@ -1427,7 +1496,7 @@
           });
           var pdf_export_language = $('#pdf–export-sections select[name="language"]').selectpicker('val');
           var object_ids_to_export = [];
-          {% if action.type.enable_related_objects %}
+          {% if action is not none and action.type.enable_related_objects %}
             $('input[name^=data_export_object_]').each(function () {
               if ($(this).prop('checked')) {
                 object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
@@ -1471,7 +1540,6 @@
         updateDataExportLink();
       {% endif %}
       $('[data-toggle="tooltip"]').tooltip();
-    });
 
     function copyToClipboard(text) {
     var element = document.createElement('textarea');
@@ -1503,8 +1571,9 @@
     wrapper.tooltip('hide');
     }.bind(wrapper), 500);
     });
+  });
     {% if not is_archived %}
-    {% if action.type.enable_labels %}
+    {% if action is not none and action.type.enable_labels %}
     function validateLabelsForm() {
       const PAGE_SIZES = {
         {% for paper_format in PAGE_SIZES %}

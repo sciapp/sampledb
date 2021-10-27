@@ -16,6 +16,7 @@
       <h2>
         <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}"
            title="{{ instrument.translation.name }}">{{ instrument.translation.name }}</a>
+        {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
         <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>
@@ -29,10 +30,10 @@
       {% if instrument.short_description_is_markdown %}
         {{ instrument.translation.short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
       {% else %}<p>{{ instrument.translation.short_description }}</p>{% endif %}
-        </div>
-      {% endif %}
-      {% include "instruments/instrument_scientists.html" %}
-    {% endfor %}
+      </div>
+    {% endif %}
+    {% include "instruments/instrument_scientists.html" %}
+  {% endfor %}
 {% endblock %}
 
 {% block scripts %}

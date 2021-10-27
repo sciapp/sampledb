@@ -391,7 +391,7 @@ def get_sorted_actions_for_user(
     user_favorite_action_ids = favorites.get_user_favorite_action_ids(user_id)
     visible_actions.sort(key=lambda action: (
         0 if action.id in user_favorite_action_ids else 1,
-        action.user.name.lower() if action.user else '',
+        action.user.name.lower() if action.user and action.user.name is not None else '',
         action.instrument.translation.name.lower() if action.instrument else '',
         action.translation.name.lower()
     ))

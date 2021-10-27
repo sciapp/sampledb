@@ -1,7 +1,22 @@
-{% if data is not none and "user_id" in data %}
-{% with referenced_user = get_user(data.user_id) %}
-<a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.name }} (#{{ referenced_user.id }})</a>
-{% endwith %}
+{% if data is not none and "user_id" in data and data.user_id is not none %}
+  {% if "component_uuid" in data and "component_uuid" is not none %}
+    {% set component_uuid = data['component_uuid'] %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% with component_name, component_id, component_address = get_component_information_by_uuid(component_uuid) %}
+    {% with referenced_user = get_user(data.user_id, component_id) %}
+        {% if not referenced_user is none %}
+      <a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.get_name() }}</a>
+          {{ federation_information_symbol(referenced_user.component, referenced_user.fed_id, 'user') }}
+        {% elif component_id != 0 %}
+          #{{ data.user_id }} @ {{ component_name }}
+          {{ federation_information_symbol_data(component_name, component_address, data.user_id, 'user') }}
+        {% else %}
+          #{{ data.user_id }}
+        {% endif %}
+    {% endwith %}
+  {% endwith %}
 {% else %}
 &mdash;
 {% endif %}

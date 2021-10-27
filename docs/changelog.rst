@@ -7,6 +7,7 @@ Version 0.21
 Currently in development.
 
 - Improved user interface
+- Add basic federation feature
 
 Version 0.20
 ------------

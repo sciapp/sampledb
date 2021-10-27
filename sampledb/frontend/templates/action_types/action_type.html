@@ -3,7 +3,10 @@
 {% block title %}{{ _('Action Type') }} #{{ action_type.id }}: {{ action_type.translation.name }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1><a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a></h1>
+  <h1>
+    <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
+    {{ federation_information_symbol(component, action_type.fed_id, 'action_type') }}
+  </h1>
 
   <dl>
     <dt>{{ _('Description') }}</dt><dd>{{ action_type.translation.description or ('&mdash;' | safe) }}</dd>
@@ -25,7 +28,7 @@
     <dt>{{ _('Allow including as Schema Template') }}</dt><dd>{% if action_type.is_template %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, allow including actions of this type as schema templates in other actions') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, disable including actions of this type as schema templates in other actions') }}{% endif %}</dd>
   </dl>
   <a href="{{ url_for('.actions', t=action_type.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>
-  {% if current_user.is_admin and not current_user.is_readonly %}
+  {% if current_user.is_admin and not current_user.is_readonly and action_type.fed_id is none %}
     <a href="{{ url_for('.action_type', type_id=action_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this action type.') }}">{{ _('Edit Action Type') }}</a>
   {% endif %}
 {% endblock %}

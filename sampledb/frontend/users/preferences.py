@@ -158,7 +158,7 @@ def change_preferences(user, user_id):
         project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
     default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
 
-    users = get_users(exclude_hidden=True)
+    users = get_users(exclude_hidden=True, exclude_fed=True)
     users = [user for user in users if user.id not in user_permissions]
     groups = get_user_groups(flask_login.current_user.id)
     groups = [group for group in groups if group.id not in group_permissions]

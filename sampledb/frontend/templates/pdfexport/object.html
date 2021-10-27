@@ -1,5 +1,7 @@
 <ul class="object-property-list">
-{% if 'propertyOrder' not in schema %}
+{% if schema is none or data is none %}
+  <li>{{ _('This object has been imported without data.') }}</li>
+{% elif 'propertyOrder' not in schema %}
   {% for property_name in schema['properties'] %}
     {% if property_name not in schema['propertyOrder'] %}
       {% with schema = schema['properties'][property_name] %}

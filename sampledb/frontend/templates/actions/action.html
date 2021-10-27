@@ -7,12 +7,15 @@
   <h1>
     {{ _("Action") }} #{{ action.id }}:
     {% if action.user is not none %}
-    <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
+    <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.get_name() }}</a>
+      {{ federation_information_symbol(action.user.component, action.user.fed_id, 'user') }} /
     {% endif %}
     {% if action.instrument is not none %}
-      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ single_translation.instrument_translation.name }}">{{ single_translation.instrument_translation.name }}</a> &mdash;
+      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ single_translation.instrument_translation.name }}">{{ single_translation.instrument_translation.name }}</a>
+      {{ federation_information_symbol(action.instrument.component, action.instrument.fed_id, 'instrument') }} &mdash;
     {% endif %}
     {{ single_translation.name }}
+    {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
   </h1>
   {% if action.user_id is not none %}
     <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} {% if not is_public %} {{ _("This custom action is not public. ") }} {% else %}  {{ _("This custom action is public. ") }} {% endif %}</p>

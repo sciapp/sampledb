@@ -25,16 +25,18 @@ import os
 import typing
 
 from .. import db
-from . import user_log, object_log, objects, users
+from . import user_log, object_log, objects, users, components, errors
 from ..models import files
 from ..models.file_log import FileLogEntry, FileLogEntryType
+from .components import get_component
 from .errors import FileNameTooLongError, TooManyFilesForObjectError, FileDoesNotExistError, InvalidFileStorageError
+from .objects import get_object
 
 FILE_STORAGE_PATH: str = None
 MAX_NUM_FILES: int = 10000
 
 
-class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data', 'binary_data'])):
+class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data', 'binary_data', 'fed_id', 'component_id'])):
     """
     This class provides an immutable wrapper around models.files.File.
     """
@@ -46,11 +48,14 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             user_id: int,
             utc_datetime: typing.Optional[datetime.datetime] = None,
             data: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            binary_data: typing.Optional[bytes] = None
+            binary_data: typing.Optional[bytes] = None,
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None
     ):
-        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data, binary_data)
+        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data, binary_data, fed_id, component_id)
         self._is_hidden = None
         self._hide_reason = None
+        self._hide_datetime = None
         self._title = None
         self._description = None
         return self
@@ -62,7 +67,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
         else:
             data = {
                 'storage': 'local',
-                'original_file_name': file.original_file_name
+                'original_file_name': ''
             }
         return File(
             id=file.id,
@@ -70,7 +75,9 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             user_id=file.user_id,
             utc_datetime=file.utc_datetime,
             data=data,
-            binary_data=file.binary_data
+            binary_data=file.binary_data,
+            fed_id=file.fed_id,
+            component_id=file.component_id
         )
 
     @property
@@ -106,6 +113,8 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def uploader(self) -> users.User:
+        if self.user_id is None:
+            return None
         return users.get_user(self.user_id)
 
     @property
@@ -311,6 +320,63 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
     return file
 
 
+def get_file(file_id: int, object_id: int, component_id: typing.Optional[int] = None, get_db_file: bool = False):
+    """
+    :param file_id: the federated ID of the file
+    :param object_id: ID of the object the requested file is assigned to
+    :param component_id: the components ID (source)
+    :return: the file
+    """
+    if component_id is None:
+        db_file = files.File.query.filter_by(id=file_id, object_id=object_id).first()
+    else:
+        db_file = files.File.query.filter_by(fed_id=file_id, object_id=object_id, component_id=component_id).first()
+    if db_file is None:
+        get_object(object_id)
+        if component_id is not None:
+            get_component(component_id)
+        raise errors.FileDoesNotExistError
+    if get_db_file:
+        return db_file
+    return File.from_database(db_file)
+
+
+def create_fed_file(
+        object_id: int,
+        user_id: typing.Optional[int],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        save_content: typing.Optional[typing.Callable[[typing.BinaryIO], None]],
+        utc_datetime: datetime.datetime,
+        fed_id: int,
+        component_id: int
+) -> files.File:
+    """
+    Creates a new file referencing a federated file.
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user
+    :param data: data describing the file or file reference
+    :param save_content: a function which will save the file's content to the
+        given stream. The function will be called at most once.
+    :param utc_datetime: the time of file-creation
+    :param fed_id: the federated ID of the file
+    :param component_id: the components ID (source)
+    :return: the created File object
+    :raise errors.ComponentDoesNotExistError: when no component with the given
+        component ID exists
+    """
+    if fed_id is None or component_id is None:
+        raise TypeError('Missing federation reference.')
+    file = _create_db_file(object_id, user_id, data, utc_datetime, fed_id, component_id)
+    if save_content:
+        binary_data_file = io.BytesIO()
+        save_content(binary_data_file)
+        binary_data = binary_data_file.getvalue()
+        file.binary_data = binary_data
+        db.session.commit()
+    return file
+
+
 def _create_file_logs(file: File) -> None:
     """
     Create object and user logs for a new file.
@@ -326,8 +392,11 @@ def _create_file_logs(file: File) -> None:
 
 def _create_db_file(
         object_id: int,
-        user_id: int,
-        data: typing.Dict[str, typing.Any]
+        user_id: typing.Optional[int],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        fed_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None
 ) -> files.File:
     """
     Creates a new file in the database.
@@ -335,17 +404,32 @@ def _create_db_file(
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user
     :param data: the file storage data
+    :param utc_datetime: the time of file-creation, only if file
+        has been imported
+    :param fed_id: the federated ID of the file, only if file
+        has been imported
+    :param component_id: the components ID (source), only if file
+        has been imported
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     :raise errors.TooManyFilesForObjectError: when there are already 10000
         files for the object with the given id
+    :raise errors.ComponentDoesNotExistError: when there is no component with the
+        given ID
     """
+    if (component_id is not None and (fed_id is None or utc_datetime is None)) or (component_id is None and (user_id is None or data is None or fed_id is not None or utc_datetime is not None)):
+        raise TypeError('Invalid parameter combination.')
+
     # ensure that the object exists
     object = objects.get_object(object_id)
-    # ensure that the user exists
-    users.get_user(user_id)
+    if user_id is not None:
+        # ensure that the user exists
+        users.get_user(user_id)
+    if component_id is not None:
+        # ensure that the component exists
+        components.get_component(component_id)
     # calculate the next file id
     previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
     if previous_file_id is None:
@@ -358,7 +442,10 @@ def _create_db_file(
         file_id=file_id,
         object_id=object_id,
         user_id=user_id,
-        data=data
+        data=data,
+        utc_datetime=utc_datetime,
+        fed_id=fed_id,
+        component_id=component_id
     )
     db.session.add(db_file)
     db.session.commit()
@@ -399,7 +486,7 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
         db.session.commit()
 
 
-def hide_file(object_id: int, file_id: int, user_id: int, reason: str) -> None:
+def hide_file(object_id: int, file_id: int, user_id: int, reason: str, utc_datetime: typing.Optional[int] = None) -> None:
     """
     Hides a file.
 
@@ -417,7 +504,7 @@ def hide_file(object_id: int, file_id: int, user_id: int, reason: str) -> None:
         reason = ''
     log_entry = FileLogEntry(type=FileLogEntryType.HIDE_FILE, object_id=object_id, file_id=file_id, user_id=user_id, data={
         'reason': reason
-    })
+    }, utc_datetime=utc_datetime)
     db.session.add(log_entry)
     db.session.commit()
 

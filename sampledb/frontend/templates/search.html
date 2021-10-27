@@ -42,7 +42,7 @@
         <select name="t" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
           {% for action_type in action_types %}
-            <option value="{{ action_type.id }}">{{ action_type.translation.object_name_plural }}</option>
+            <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}">{{ action_type.translation.object_name_plural }}</option>
           {% endfor %}
         </select>
       </div>
@@ -54,7 +54,7 @@
           <option value="" selected="selected">&mdash;</option>
           {% for action in actions %}
             {% if not action.is_hidden %}
-              <option value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.translation.name }} &mdash; {% endif %}{{ action.translation.name }}</option>
+              <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument %}{{ action.instrument.translation.name }} &mdash; {% endif %}{{ action.translation.name }}</option>
             {% endif %}
           {% endfor %}
         </select>

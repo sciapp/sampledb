@@ -29,19 +29,35 @@ class Tag(collections.namedtuple('Tag', ['id', 'name', 'uses'])):
 
 
 def get_object_tags(object: objects.Object) -> typing.Sequence[str]:
-    if 'tags' in object.data:
+    if object.data is not None and 'tags' in object.data:
         tags_entry = object.data['tags']
         if tags_entry['_type'] == 'tags' and 'tags' in tags_entry:
             return [tag.strip() for tag in tags_entry["tags"]]
     return ()
 
 
-def update_object_tag_usage(object: objects.Object) -> None:
+def update_object_tag_usage(object: objects.Object, new_subversion=False) -> None:
     previous_tags = ()
     new_tags = get_object_tags(object)
-    if object.version_id > 0:
-        previous_object = objects.Objects.get_object_version(object.object_id, object.version_id - 1)
-        previous_tags = get_object_tags(previous_object)
+    if object.fed_version_id is None:
+        if object.version_id > 0:
+            previous_object = objects.Objects.get_object_version(object.object_id, object.version_id - 1)
+            previous_tags = get_object_tags(previous_object)
+    else:
+        current = objects.Objects.get_current_fed_object(object.component_id, object.fed_object_id)
+        if current.version_id != object.version_id:
+            return
+        if new_subversion:
+            previous_object = objects.Objects.get_previous_subversion(object.object_id, object.version_id)
+            previous_tags = get_object_tags(previous_object)
+        elif object.fed_version_id > 0:
+            previous_object = None
+            prev_version = object.fed_version_id - 1
+            while previous_object is None and prev_version >= 0:
+                previous_object = objects.Objects.get_fed_object_version(object.component_id, object.fed_object_id, prev_version)
+                prev_version -= 1
+            if previous_object is not None:
+                previous_tags = get_object_tags(previous_object)
     removed_tags = set(previous_tags) - set(new_tags)
     added_tags = set(new_tags) - set(previous_tags)
     for tag_name in added_tags:

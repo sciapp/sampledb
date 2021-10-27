@@ -67,12 +67,16 @@ class ActionTranslation(db.Model):
     action_id = db.Column(db.Integer, db.ForeignKey('actions.id'))
     action = db.relationship("Action")
 
-    name = db.Column(db.String, nullable=False)
-    description = db.Column(db.String, nullable=False, default='')
-    short_description = db.Column(db.String, nullable=False, default='')
+    name = db.Column(db.String, nullable=True)
+    description = db.Column(db.String, nullable=True, default='')
+    short_description = db.Column(db.String, nullable=True, default='')
 
     __table_args__ = (
         db.UniqueConstraint('language_id', 'action_id', name='_language_id_action_id_uc'),
+        db.CheckConstraint(
+            'NOT (name IS NULL AND description IS NULL AND short_description IS NULL)',
+            name='action_translations_not_empty_check'
+        )
     )
 
     def __init__(self,

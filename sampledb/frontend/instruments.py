@@ -19,6 +19,7 @@ from wtforms.validators import DataRequired, ValidationError
 from . import frontend
 from ..logic.action_translations import get_action_translation_for_action_in_language
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language
+from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language, get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation, get_instruments_with_translation_in_language
@@ -120,7 +121,8 @@ def instruments():
         'instruments/instruments.html',
         instruments=instruments,
         user_favorite_instrument_ids=user_favorite_instrument_ids,
-        toggle_favorite_instrument_form=toggle_favorite_instrument_form
+        toggle_favorite_instrument_form=toggle_favorite_instrument_form,
+        get_component=get_component
     )
 
 
@@ -356,7 +358,8 @@ def instrument(instrument_id):
         action_translations=action_translations,
         single_instrument_translation=single_instrument_translation,
         get_action_type_translation_for_action_type_in_language=get_action_type_translation_for_action_type_in_language,
-        ActionType=ActionType
+        ActionType=ActionType,
+        get_component=get_component
     )
 
 
@@ -533,6 +536,9 @@ def edit_instrument(instrument_id):
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
         return flask.abort(404)
+    if instrument.component_id is not None:
+        flask.flash(_('Editing imported instruments is not yet supported.'), 'error')
+        return flask.abort(403)
     check_current_user_is_not_readonly()
     if not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
         return flask.abort(403)
@@ -545,7 +551,7 @@ def edit_instrument(instrument_id):
     instrument_form = InstrumentForm()
 
     instrument_form.instrument_responsible_users.choices = [
-        (str(user.id), user.name)
+        (str(user.id), user.get_name())
         for user in get_users()
     ]
     instrument_form.instrument_responsible_users.default = [

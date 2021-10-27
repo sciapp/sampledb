@@ -1,7 +1,17 @@
 {% if id_prefix+'_oid' in form_data %}
   {% set selected_id = form_data[id_prefix+'_oid'] %}
 {% elif data is not none and "object_id" in data %}
-  {% set selected_id = data.object_id | string %}
+  {% if "component_uuid" in data and "component_uuid" is not none %}
+    {% set sel = namespace(selected_id=None) %}
+    {% for obj in referencable_objects %}
+      {% if obj.fed_object_id == data["object_id"] and obj.component.uuid == data["component_uuid"] %}
+        {% set sel.selected_id = obj.object_id %}
+      {% endif %}
+    {% endfor %}
+    {% set selected_id = sel.selected_id | string %}
+  {% else %}
+    {% set selected_id = data.object_id | string %}
+  {% endif %}
 {% else %}
   {% set selected_id = None %}
 {% endif %}
@@ -27,7 +37,7 @@
   {% endif %}
   {% for obj in referencable_objects %}
     {% if (obj is not none) and (valid_action_ids is none or obj.action_id in valid_action_ids) %}
-      <option value="{{ obj.object_id }}" data-action-id="{{ obj.action_id }}" {% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.data['name']['text'] | get_translated_text }}"{% endif %}>{% if obj.data['name']['text'] | get_translated_text == '' %}&mdash;{% else %}{{ obj.data['name']['text'] | get_translated_text }}{% endif %} (#{{ obj.object_id }})</option>
+      <option {% if obj.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ obj.object_id }}" data-action-id="{{ obj.action_id }}" {% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if obj.data and 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{{ obj.name | get_translated_text }}"{% endif %}>{% if obj.name | get_translated_text == '' %}&mdash;{% else %}{{ obj.name | get_translated_text }}{% endif %} (#{{ obj.object_id }}{% if obj.component_id is not none %}, #{{ obj.fed_object_id }} @ {{ obj.component.get_name() }}{% endif %})</option>
     {% endif %}
   {% endfor %}
   </select>
@@ -36,14 +46,14 @@
       <option selected="selected" value="">{{ _('All Actions') }}</option>
       {% for action in sorted_actions %}
         {% if valid_action_ids is none or action.id in valid_action_ids %}
-      <option value="{{ action.id }}">
+      <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}">
         {% if action.user is not none %}
           {{ action.user.name }} /
         {% endif %}
         {% if action.instrument is not none %}
           {{ action.instrument.translation.name }} &mdash;
         {% endif %}
-        {{ action.translation.name }} (#{{ action.id }})
+        {{ action.translation.name }} (#{{ action.id }}{% if action.component_id is not none %}, #{{action.fed_object_id}} @ {{ get_component(action.component_id).get_name() }}{% endif %})
         {% endif %}
       </option>
       {% endfor %}
