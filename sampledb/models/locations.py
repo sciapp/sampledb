@@ -55,4 +55,4 @@ class ObjectLocationAssignment(db.Model):
         self.confirmed = confirmed
 
     def __repr__(self):
-        return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.content}", confirmed={1.confirmed})>'.format(type(self).__name__, self)
+        return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed})>'.format(type(self).__name__, self)

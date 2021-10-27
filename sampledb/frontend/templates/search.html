@@ -189,20 +189,21 @@
 
     var action_select = $('select[name="action"]');
     var action_type_select = $('select[name="t"]');
-    action_select.change(function() {
-      if (action_select.selectpicker('val')) {
-        var selected_action_type_id = action_select.find('option:selected').data('actionTypeId');
-        action_type_select.selectpicker('val', selected_action_type_id);
-      }
-    });
-    action_type_select.change(function() {
+
+    function updateActionOptions() {
       action_select.find('option').show();
+      action_select[0].disabled = false;
       if (action_type_select.selectpicker('val')) {
         action_select.selectpicker('val', '');
-        action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"]').hide();
+        action_select.find('option[data-action-type-id!="' + action_type_select.selectpicker('val') + '"][value!=""]').hide();
+        if (action_select.find('option[data-action-type-id="' + action_type_select.selectpicker('val') + '"]').length == 0) {
+          action_select[0].disabled = true;
+        }
       }
       action_select.selectpicker('refresh');
-    });
+    }
+
+    action_type_select.change(updateActionOptions);
 
     function updateCondition(condition, search_paths) {
       var property_name = condition.find('.input-condition-property:visible').val();
@@ -403,6 +404,8 @@
       $('#search-field').val(query_state['q']);
       $('[name="action"]').selectpicker('val', query_state['action']);
       $('[name="t"]').selectpicker('val', query_state['t']);
+      updateActionOptions();
+      action_select.selectpicker('val', query_state['action']);
       if (query_state['v'].length > 0) {
         for (var i = 0; i < query_state['v'].length; i++) {
           var condition = addCondition();
