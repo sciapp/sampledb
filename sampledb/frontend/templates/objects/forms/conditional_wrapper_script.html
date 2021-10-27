@@ -78,8 +78,6 @@
           let object_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__oid' }}\"]");
 
           let evaluateCondition = function () {
-            console.log("{{ id_prefix }} evaluate");
-            console.log(object_element.selectpicker('val'));
             window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (object_element.selectpicker('val') === "{{ condition["object_id"] if condition["object_id"] is not none else '' }}");
             let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
             if (all_conditions_fulfilled) {
