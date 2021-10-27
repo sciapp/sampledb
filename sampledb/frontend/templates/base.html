@@ -72,9 +72,9 @@
               <li class="divider"></li>
               {% if project_id %}
                 <li>
-                  <a>
-                    <input type="radio" name="search-filter-selection" id="button-search-project-id">
-                    <label style="font-weight: normal" for="button-search-project-id">
+                  <a class="button-search-filter">
+                    <label>
+                      <input type="radio" name="search-filter-selection" id="button-search-project-id">
                       {% if action_type %}
                         {{ _('Search %(objects)s from this project group', objects=action_type.translation.object_name_plural) }}
                       {% else %}
@@ -86,9 +86,9 @@
               {% endif %}
               {% if action_id %}
                 <li>
-                  <a>
-                    <input type="radio" name="search-filter-selection" id="button-search-action-id">
-                    <label style="font-weight: normal" for="button-search-action-id">
+                  <a class="button-search-filter">
+                    <label>
+                      <input type="radio" name="search-filter-selection" id="button-search-action-id">
                       {% if action_type %}
                         {{ _('Search %(objects)s from this action', objects=action_type.translation.object_name_plural) }}
                       {% else %}
@@ -100,16 +100,20 @@
               {% endif %}
               {% if action_type %}
               <li>
-                <a>
-                  <input type="radio" name="search-filter-selection" id="button-search-action-type">
-                  <label style="font-weight: normal" for="button-search-action-type">{{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural)}}</label>
+                <a class="button-search-filter">
+                  <label>
+                    <input type="radio" name="search-filter-selection" id="button-search-action-type">
+                    {{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural)}}
+                  </label>
                 </a>
               </li>
               {% endif %}
               <li>
-                <a>
-                  <input type="radio" name="search-filter-selection" id="button-search-all" checked>
-                  <label style="font-weight: normal" for="button-search-all">{{ _('Search all objects') }}</li>
+                <a class="button-search-filter">
+                  <label>
+                    <input type="radio" name="search-filter-selection" id="button-search-all" checked>
+                    {{ _('Search all objects') }}
+                  </label>
                 </a>
               </li>
             {% endif %}

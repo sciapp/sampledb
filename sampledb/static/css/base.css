@@ -999,3 +999,19 @@ div.instrument-log-tree-container > h3 {
 .instrument-log-control-buttons button {
     margin-bottom: 10px;
 }
+
+.dropdown-menu > li > a.button-search-filter {
+    padding: 0;
+}
+
+.button-search-filter label {
+    padding: 3px 20px 8px 20px;
+    margin:0;
+    display: block;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.button-search-filter input {
+    cursor: pointer;
+}
