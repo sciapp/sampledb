@@ -14,8 +14,6 @@
 {% endblock %}
 
 {% block content %}
-  {# counter for plotly_chart_plots #}
-  {% set plot_counter = namespace(value=0) %}
 
   {% if is_archived %}
   <div class="alert alert-info alert-dismissible" role="alert">
@@ -38,8 +36,12 @@
     <label class="col-md-3" style="text-align: right">{{ _('Action') }} <a href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
     <div class="col-md-9"><a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
   </div>
-  {% include "objects/view/any.html" %}
-  <div class="object-button-bar">
+    {% block includes %}
+        {# counter for plotly_chart_plots #}
+        {% set plot_counter = namespace(value=0) %}
+        {% include "objects/view/any.html" %}
+    {% endblock %}
+    <div class="object-button-bar">
     {% if languages | length > 1 %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _("View object information in a different language.") }}">
@@ -1110,7 +1112,7 @@
     </script>
   {% endif %}
   <script type="text/javascript">
-  
+
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
 
 
@@ -1195,6 +1197,7 @@
       });
       $('#input-group-object_location-{{ ENGLISH.lang_code }}').change();
 
+    {% if template_mode == "view" %}
       $('.input-group.date').each(function () {
         $(this).datetimepicker({
           locale: "{{ get_user_language(current_user).lang_code }}",
@@ -1202,6 +1205,7 @@
           date: $(this).attr('data-datetime')
         });
       });
+    {% endif %}
       $('.nav-tabs a').click(function (e) {
         e.preventDefault();
         $(this).tab('show');

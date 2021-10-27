@@ -1,0 +1,35 @@
+<!-- array start -->
+<div class="row" style="padding-right: 0.75em">
+    {# Label #}
+    <div class="col-md-3" style="padding-right: 0px">
+        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+            <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+        </label>
+    </div>
+    {# Content #}
+    {% set is_required = False %}
+    {% set minItems = schema.get('minItems', 0) %}
+    {% set maxItems = schema.get('maxItems', None) %}
+    {% if data is not none %}
+        {% set numItems = (data | length) %}
+    {% else %}
+        {% set numItems = 0 %}
+    {% endif %}
+    {% set itemName = (schema['items'].title | get_translated_text) %}
+    <div class="col-md-9 array-style-list">
+        {% if data is not none %}
+            <ul style="padding-left: 1.25em">
+                {% for item in data %}
+                    {% set name = "item" %}
+                    {% set tmp_style = schema['style'] %}
+                    {% set schema = schema['items'] %}
+                    {% set z = schema.update({'parent_style': tmp_style}) %}
+                    {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                    {% set data = item %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+                    <li>{% include "objects/inline_edit/inline_edit_any.html" %}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</div>

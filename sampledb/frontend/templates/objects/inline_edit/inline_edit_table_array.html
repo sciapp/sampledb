@@ -1,0 +1,202 @@
+<!-- array start -->
+<div class="row" style="padding-right:0.75em">
+    {# Label #}
+    <div class="col-md-3" style="padding-right: 0px">
+        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+             <a class="search-helper" style="visibility: hidden"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+        </label>
+    </div>
+    {# Content #}
+    {% if search_query_attribute %}
+        {% set base_search_query_attribute = search_query_attribute %}
+    {% else %}
+        {% set base_search_query_attribute = "" %}
+    {% endif %}
+    {% set is_required = False %}
+    {% set minItems = schema.get('minItems', 0) %}
+    {% set maxItems = schema.get('maxItems', None) %}
+    {% if data is not none %}
+        {% set numItems = (data | length) %}
+    {% else %}
+        {% set numItems = 0 %}
+    {% endif %}
+</div>
+<div style="padding-left:2.5em;">
+    {% if schema['items']['type'] == 'object' %}
+        <table class="table">
+            <thead>
+            <tr>
+                {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
+                {% set item_property_names = schema["items"].properties.keys() %}
+                {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
+                {% for property_name in property_order %}
+                    {% if property_name in item_property_names %}
+                        <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+                            {% if schema["items"].properties[property_name].type == 'text' %}
+                                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}"
+                                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            {% elif schema["items"].properties[property_name].type == 'quantity' %}
+                                {% if schema["items"].properties[property_name].units.strip() != '1' %}
+                                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}"
+                                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                                {% else %}
+                                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}"
+                                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                                {% endif %}
+                            {% elif schema["items"].properties[property_name].type == 'bool' %}
+                                <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}"
+                                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            {% else %}
+                                <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}"
+                                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            {% endif %}
+                        </th>
+                    {% endif %}
+                {% endfor %}
+                {% for property_name in item_property_names %}
+                    {% if property_name not in property_order %}
+                        {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
+                        <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+                            {% if schema["items"].properties[property_name].type == 'text' %}
+                                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}"
+                                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            {% elif schema["items"].properties[property_name].type == 'quantity' %}
+                                {% if schema["items"].properties[property_name].units.strip() != '1' %}
+                                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}"
+                                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                                {% else %}
+                                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}"
+                                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                                {% endif %}
+                            {% elif schema["items"].properties[property_name].type == 'bool' %}
+                                <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}"
+                                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            {% else %}
+                                <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}"
+                                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            {% endif %}
+                        </th>
+                    {% endif %}
+                {% endfor %}
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if data is not none %}
+                {% for item in data %}
+                    {% set name = "item" %}
+                    {% set tmp_style = schema['style'] %}
+                    {% set schema = schema['items'] %}
+                    {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                    {% set entry_index = loop.index0 %}
+                    {% set data = item %}
+                    <tr>
+                        {% for property_name in property_order %}
+                            {% if property_name in item_property_names %}
+                                <td>
+                                    {% set name = property_name %}
+                                    {% set schema = schema.properties[property_name] %}
+                                    {% set z = schema.update({'parent_style': tmp_style}) %}
+                                    {% set id_prefix = id_prefix + '_' + name + '_' %}
+                                    {% if data is not none and property_name in data %}
+                                        {% set data = data[property_name] %}
+                                    {% else %}
+                                        {% set data = none %}
+                                    {% endif %}
+                                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                        {% for property_name in item_property_names %}
+                            {% if property_name not in property_order %}
+                                <td>
+                                    {% set name = property_name %}
+                                    {% set schema = schema.properties[property_name] %}
+                                    {% set z = schema.update({'parent_style': tmp_style}) %}
+                                    {% set id_prefix = id_prefix + '_' + name + '_' %}
+                                    {% if data is not none and property_name in data %}
+                                        {% set data = data[property_name] %}
+                                    {% else %}
+                                        {% set data = none %}
+                                    {% endif %}
+                                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% endif %}
+            </tbody>
+            <tfoot>
+            <tr>
+                {% for property_name in item_property_names %}
+                    <th scope="col"></th>
+                {% endfor %}
+            </tr>
+            </tfoot>
+        </table>
+    {% elif schema['items']['type'] == 'array' %}
+        <table class="table">
+            {% set max_used_fields = 0 %}
+            {% if data is not none %}
+                {% set max_used_fields = [0] %}
+                {% for item in data %}
+                    {% if (item | length) > max_used_fields[-1] %}
+                        {% set tmp = max_used_fields.append(item | length) %}
+                    {% endif %}
+                {% endfor %}
+                {% set max_used_fields = max_used_fields [-1] %}
+                <thead>
+                <tr>
+                    {% for i in range(max_used_fields) %}
+                        <th>{{ _('Field %(index)s', index=(i+1)) }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in data %}
+                    {% set item_index = loop.index0 %}
+                    <tr>
+                        {% for field in item %}
+                            <td>
+                                {% set name = "field_".format(loop.index0) %}
+                                {% set tmp_style = schema['style'] %}
+                                {% set schema = schema["items"]["items"] %}
+                                {% set z = schema.update({'parent_style': tmp_style}) %}
+                                {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
+                                {% set data = field %}
+                                {% set entry_index = loop.index0 %}
+                                {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                                {% include "objects/inline_edit/inline_edit_any.html" %}
+                            </td>
+                        {% endfor %}
+                        {% if (item | length) < max_used_fields %}
+                            {% for i in range((item | length), max_used_fields) %}
+                                <td>
+                                    {% set name ="field_".format(loop.index0) %}
+                                    {% set tmp_style = schema['style'] %}
+                                    {% set schema = schema["items"]["items"] %}
+                                    {% set z = schema.update({'parent_style': tmp_style}) %}
+                                    {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
+                                    {% set data = null %}
+                                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                                    {% include "objects/forms/form_any.html" %}
+                                </td>{% endfor %}
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            {% endif %}
+            <tfoot>
+            <tr>
+                {% for i in range(max_used_fields) %}
+                    <th>{{ _('Field %(index)s', index=(i+1)) }}</th>
+                {% endfor %}
+            </tr>
+            </tfoot>
+        </table>
+    {% endif %}
+</div>
+<!-- array end -->
