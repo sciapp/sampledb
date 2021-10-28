@@ -319,7 +319,7 @@
       </div>
       </form>
     {% endif %}
-    {% if projects_by_id %}
+    {% if projects_by_id and show_projects_form %}
       <h3>{{ _('Add Project Group') }}</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_project_permissions_form.csrf_token }}

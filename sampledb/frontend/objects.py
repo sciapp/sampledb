@@ -2242,6 +2242,7 @@ def object_permissions(object_id):
         groups=groups,
         projects_by_id=all_projects_by_id,
         project_id_hierarchy_list=project_id_hierarchy_list,
+        show_projects_form=len(acceptable_project_ids) > 0,
         add_user_permissions_form=add_user_permissions_form,
         add_group_permissions_form=add_group_permissions_form,
         get_group=get_group,
