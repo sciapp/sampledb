@@ -1,4 +1,4 @@
-{% if schema["type"] in ["object", "array", "text", "quantity", "bool", "datetime", "user", "object_reference", "sample", "measurement"] %}
+{% if schema["type"] in ["object", "array", "text", "quantity", "bool", "datetime", "user", "object_reference", "sample", "measurement", "hazards"] %}
     {% include get_inline_edit_template(schema) %}
 {% else %}
     <div class="hidden">
