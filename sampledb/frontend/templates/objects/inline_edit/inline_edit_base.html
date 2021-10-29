@@ -117,6 +117,7 @@
             var tagsinput = $(this);
             tagsinput.tagsinput({
                 trimValue: true,
+                confirmKeys: [13, 32],
                 typeaheadjs: {
                     name: 'Tags',
                     valueKey: 'name',
