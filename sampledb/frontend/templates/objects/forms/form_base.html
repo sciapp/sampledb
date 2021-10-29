@@ -124,6 +124,7 @@
   $('input[name^=\'object__\'][name$=\'__tags\']').each(function() {
     var tagsinput = $(this);
     tagsinput.tagsinput({
+      confirmKeys: [13, 32],
       trimValue: true,
       typeaheadjs: {
         name: 'Tags',
