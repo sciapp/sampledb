@@ -814,7 +814,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             )
                         flask.flash(_('The object was created successfully.'), 'success')
                 else:
-                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
+                    if object_data != object.data or schema != object.schema:
+                        update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
                     flask.flash(_('The object was updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
         elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
