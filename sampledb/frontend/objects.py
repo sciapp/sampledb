@@ -924,6 +924,26 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         )
 
 
+def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
+    confirmation_url = flask.url_for(
+        'frontend.accept_responsibility_for_object',
+        t=logic.security_tokens.generate_token(
+            object_location_assignment_id,
+            salt='confirm_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
+    return confirmation_url
+
+
+def get_project_if_it_exists(project_id):
+    try:
+        return get_project(project_id)
+    except logic.errors.ProjectDoesNotExistError:
+        return None
+
+
 def show_inline_edit(obj, action):
     # Set view attributes
     related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, flask_login.current_user.id)
@@ -1013,25 +1033,7 @@ def show_inline_edit(obj, action):
         user_id=flask_login.current_user.id
     )
 
-    def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
-        confirmation_url = flask.url_for(
-            'frontend.accept_responsibility_for_object',
-            t=logic.security_tokens.generate_token(
-                object_location_assignment_id,
-                salt='confirm_responsibility',
-                secret_key=flask.current_app.config['SECRET_KEY']
-            ),
-            _external=True
-        )
-        return confirmation_url
-
     linked_project = logic.projects.get_project_linked_to_object(object_id)
-
-    def get_project_if_it_exists(project_id):
-        try:
-            return get_project(project_id)
-        except logic.errors.ProjectDoesNotExistError:
-            return None
 
     object_languages = logic.languages.get_languages_in_object_data(obj.data)
     languages = []
@@ -1332,25 +1334,7 @@ def object(object_id):
             user_id=flask_login.current_user.id
         )
 
-        def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
-            confirmation_url = flask.url_for(
-                'frontend.accept_responsibility_for_object',
-                t=logic.security_tokens.generate_token(
-                    object_location_assignment_id,
-                    salt='confirm_responsibility',
-                    secret_key=flask.current_app.config['SECRET_KEY']
-                ),
-                _external=True
-            )
-            return confirmation_url
-
         linked_project = logic.projects.get_project_linked_to_object(object_id)
-
-        def get_project_if_it_exists(project_id):
-            try:
-                return get_project(project_id)
-            except logic.errors.ProjectDoesNotExistError:
-                return None
 
         object_languages = logic.languages.get_languages_in_object_data(object.data)
         languages = []
