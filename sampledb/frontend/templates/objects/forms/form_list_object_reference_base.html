@@ -13,7 +13,7 @@
   {% endif %}
   {% for obj in referencable_objects %}
     {% if (action_type_id_by_action_id is none or selected_action_type is none or action_type_id_by_action_id[obj.action_id] == selected_action_type) and (selected_action is none or obj.action_id == selected_action) %}
-      <option value="{{ obj.object_id }}" data-action-id="{{ obj.action_id }}" {% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.data['name']['text'] | get_translated_text }}"{% endif %}>{{ obj.data['name']['text'] | get_translated_text }} (#{{ obj.object_id }})</option>
+      <option value="{{ obj.object_id }}" data-action-id="{{ obj.action_id }}" {% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.data['name']['text'] | get_translated_text }}"{% endif %}>{% if obj.data['name']['text'] | get_translated_text == '' %}&mdash;{% else %}{{ obj.data['name']['text'] | get_translated_text }}{% endif %} (#{{ obj.object_id }})</option>
     {% endif %}
   {% endfor %}
   </select>

@@ -122,7 +122,7 @@ function setup(elem) {
     }
 
     function event_function(event) {
-        if (event.type == "click" && !elem.contains(event.target) || event.type == "keyup" && event.keyCode == 13) {
+        if ((event.type == "click" && !elem.contains(event.target) && !event.target.parentElement.classList.contains('tag')) || (event.type == "keyup" && event.keyCode == 13) && !event.target.classList.contains('tt-input')) {
             event.stopPropagation();
             if (document.activeElement.type != "textarea") {
                 // Hide all form elements
