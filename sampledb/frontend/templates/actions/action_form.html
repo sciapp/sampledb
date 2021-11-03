@@ -362,7 +362,7 @@
             </label>
           </div>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group"
           <label class="control-label schema-editor-root-object-hazards-label">{{ _('Hazards') }}</label>
           <div class="checkbox">
             <label>
@@ -412,6 +412,7 @@
             <option value="user">{{ _('User') }}</option>
             <option value="object_reference">{{ _('Object Reference') }}</option>
             <option value="plotly_chart">{{ _('Plotly Chart') }}</option>
+            <option value="template">{{ _('Template') }}</option>
           </select>
         </div>
         <div class="schema-editor-form-group">
@@ -539,9 +540,22 @@
           <span class="help-block"></span>
         </div>
       </div>
-    </div>
 
+    <div class="schema-editor-property-settings schema-editor-template-property-settings">
+        <div class="schema-editor-form-group">
+          <label class="schema-editor-generic-property-template-id-label">{{ _('Template') }}</label>
+            {% set counter = 1 %}
+          <select class="form-control schema-editor-generic-property-template-id-input template-select">
+              {% for template in get_templates(current_user.id) %}
+                <option value="{{ template.id }}">{{ template.translation.name }}</option>
+              {% endfor %}
+          </select>
+        </div>
+        </div>
+      </div>
+    </div>
   </div>
+
   <div class="modal fade" id="schemaEditorWarningModal" tabindex="-1" role="dialog" aria-labelledby="schemaEditorWarningModalLabel">
     <div class="modal-dialog" role="document">
       <div class="modal-content">

@@ -51,7 +51,10 @@ def create_object(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    actions.get_action(action_id)
+    action = actions.get_action(action_id)
+    action_type = actions.get_action_type(action.type_id)
+    if action_type.disable_create_objects:
+        raise
     users.get_user(user_id)
     try:
         object = Objects.create_object(data=data, schema=schema, user_id=user_id, action_id=action_id)

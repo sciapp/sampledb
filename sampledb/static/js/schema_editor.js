@@ -181,6 +181,8 @@ $(function() {
       schema['propertyOrder'] = [];
     }
     for (var name in schema['properties']) {
+      if('template' in schema['properties'][name]) {
+      }
       if (!properties_in_order.includes(name)) {
         properties_in_order.push(name);
         schema['propertyOrder'].push(name);
@@ -192,7 +194,20 @@ $(function() {
         var path = [name];
         var is_required = ('required' in schema && schema['required'].includes(name));
         var property_node = buildPropertyNode(schema['properties'][name], path, is_required);
-        if (property_node !== null) {
+
+        if (property_node !== null && 'template' in schema['properties'][name]) {
+          var select_input = $(property_node[0]).find('#schema-editor-object__' + name + '-template-id-input')[0];
+          var act_template = schema['properties'][name]['template'];
+          $(select_input.options).each(function() {
+            if(this.value == act_template) {
+              $(this).attr('selected', true);
+            } else {
+              $(this).attr('selected', false);
+            }
+          });
+          $(select_input).selectpicker('refresh');
+          properties_node[0].appendChild(property_node[0]);
+        } else if (property_node !== null) {
           properties_node[0].appendChild(property_node[0]);
         }
       }
@@ -288,7 +303,7 @@ $(function() {
     $('button[name="action_submit"]').prop('disabled', (JSON.stringify(window.schema_editor_errors) !== '{}'));
   }
 
-  function buildPropertyNode(schema, path, is_required) {
+  function buildPropertyNode(schema, path, is_required, template_id = null) {
     var type;
     if (schema['type'] === 'text') {
       if ('choices' in schema) {
@@ -320,6 +335,8 @@ $(function() {
       type = "user";
     } else if (schema['type'] === 'plotly_chart') {
       type = "plotly_chart";
+    } else if (schema['type'] === 'object') {
+      type = 'template'
     } else {
       window.schema_editor_missing_type_support = true;
       return null;
@@ -358,6 +375,8 @@ $(function() {
         updateDatetimeProperty(path, real_path);
       } else if (type === "plotly_chart") {
         updatePlotlyChartProperty(path, real_path);
+      } else if(type === 'template') {
+        updateTemplateObjectProperty(path, real_path, template_id);
       }
       globallyValidateSchema();
     }
@@ -479,6 +498,12 @@ $(function() {
       node.find('.schema-editor-' + type + '-property-settings').css('display', 'flex');
     });
     type_input.on('change', updateProperty.bind(path));
+
+    var template_id_input = node.find('.schema-editor-generic-property-template-id-input');
+    template_id_input.attr('id', 'schema-editor-object__' + path.join('__') + '-template-id-input');
+    template_id_input.val(type);
+    template_id_input.selectpicker();
+    template_id_input.on('change', updateProperty.bind(path));
 
     function setOptionalValueInPropertySchema(path, type, name, property_schema) {
       var has_value = $('#schema-editor-object__' + path.join('__') + '-' + type + '-' + name + '-checkbox').prop('checked');
@@ -794,6 +819,19 @@ $(function() {
       var schema = JSON.parse(input_schema.text());
       var property_schema = schema['properties'][real_path[real_path.length-1]];
       property_schema["type"] = "plotly_chart";
+
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
+    }
+
+    function updateTemplateObjectProperty(path, real_path, template_id) {
+      var has_error = false;
+      updateGenericProperty(path, real_path);
+      var schema = JSON.parse(input_schema.text());
+      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      property_schema["type"] = "object";
+      property_schema["properties"] = {};
+      var template_id = $('#schema-editor-object__' + path + '-template-id-input').val()
+      property_schema['template'] = template_id;
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }

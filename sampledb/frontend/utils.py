@@ -27,6 +27,8 @@ from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.settings import get_user_settings
+from ..logic.action_permissions import should_create_objects
+from ..logic.action_permissions import get_sorted_actions_for_user
 
 
 def jinja_filter(func):
@@ -238,7 +240,6 @@ _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
 _jinja_filters['to_string_if_dict'] = to_string_if_dict
 
-
 def get_template(template_folder, default_prefix, schema):
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = schema["type"] + ".html"
@@ -277,8 +278,18 @@ def get_local_month_names():
     ]
 
 
+def should_create_object(object_type_id):
+    return should_create_objects(object_type_id)
+
+
+def get_templates(user_id):
+    return get_sorted_actions_for_user(user_id=user_id, action_type_id=-96)
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
 _jinja_functions['get_local_month_names'] = get_local_month_names
 _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
+_jinja_functions['should_create_object'] = should_create_object
+_jinja_functions['get_templates'] = get_templates

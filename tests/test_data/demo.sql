@@ -1786,9 +1786,12 @@ INSERT INTO public.action_translations VALUES (14, -99, 14, 'choices translation
 INSERT INTO public.action_type_translations VALUES (1, -99, -99, 'Sample Creation', 'These Actions represent processes which create a sample.', 'Sample', 'Samples', 'View Samples', 'Create Sample');
 INSERT INTO public.action_type_translations VALUES (2, -99, -98, 'Measurement', 'These Actions represent processes which perform a measurement.', 'Measurement', 'Measurements', 'View Measurements', 'Perform Measurement');
 INSERT INTO public.action_type_translations VALUES (3, -99, -97, 'Simulation', 'These Actions represent processes which run a simulation.', 'Simulation', 'Simulations', 'View Simulations', 'Run Simulation');
+INSERT INTO public.action_type_translations VALUES (3, -99, -96, 'Template', 'These action type creates the possibility to create templates for creating other actions.', '', '', '', '');
 INSERT INTO public.action_type_translations VALUES (4, -98, -99, 'Probenerstellung', 'Diese Aktionen repräsentieren Prozesse, die Proben erstellen.', 'Probe', 'Proben', 'Proben anzeigen', 'Probe erstellen');
 INSERT INTO public.action_type_translations VALUES (5, -98, -98, 'Messung', 'Diese Aktionen repräsentieren Prozesse, die Messungen durchführen.', 'Messung', 'Messungen', 'Messungen anzeigen', 'Messung durchführen');
 INSERT INTO public.action_type_translations VALUES (6, -98, -97, 'Simulation', 'Diese Aktionen repräsentieren Prozesse, die Simulationen durchführen.', 'Simulation', 'Simulationen', 'Simulationen anzeigen', 'Simulation durchführen');
+INSERT INTO public.action_type_translations VALUES (6, -98, -96, 'Template', 'Diese Aktionen stellt eine Möglichkeit dar, Templates für andere Actions vor zu definieren.', '', '', '', '');
+
 
 
 --
@@ -1798,6 +1801,7 @@ INSERT INTO public.action_type_translations VALUES (6, -98, -97, 'Simulation', '
 INSERT INTO public.action_types VALUES (-99, false, true, true, true, true, true, true, true, true, true, false);
 INSERT INTO public.action_types VALUES (-98, false, true, true, false, true, true, true, true, true, true, false);
 INSERT INTO public.action_types VALUES (-97, false, true, true, false, true, true, true, true, true, true, false);
+INSERT INTO public.action_types VALUES (-96, false, true, true, false, true, true, true, true, true, true, false);
 
 
 --
