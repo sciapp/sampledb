@@ -30,9 +30,11 @@
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
-  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text }}</a>
-  {% if not current_user.is_readonly %}
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text}}</a>
+  {% if enabled_create_object(action.type.id) %}
+    <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text }}</a>
+    {% if not current_user.is_readonly %}
+      <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text}}</a>
+    {% endif %}
   {% endif %}
   {% if not current_user.is_readonly %}
     {% if may_edit %}

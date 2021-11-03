@@ -2015,6 +2015,33 @@ msgstr ""
 "Nein, zugehörige Objekte werden für Objekte nicht angezeigt, die mit "
 "Aktionen diesen Typs erstellt wurden"
 
+msgid "Disable Creating Objects"
+msgstr "Verhindere Erzeugen von Objekten"
+
+msgid "Disable creating objects of this action type"
+msgstr "Verhindere das Erzeugen von Objekten von diesem Aktionstypen"
+
+msgid "Yes, disable creating objects of this type"
+msgstr "Ja, verhindere das Erzeugen von Objekten von diesem Typen"
+
+msgid "No, allow creating objects of this type"
+msgstr "Nein, erlaube das Erzeugen von Objekten von diesem Typen"
+
+msgid "Creating objects of this action is disabled"
+msgstr "Das Erzeugen von Objekten dieses Typs ist deaktiviert"
+
+msgid "Mark action type as usable to include into other actions"
+msgstr "Markiere Aktionstyp als in andere Aktionen inkludierbar"
+
+msgid "Allow including as Schema Template"
+msgstr "Erlaube das Einbinden als Schema-Vorlage"
+
+msgid "Yes, allow inluding actions of this type as schema templates in other actions"
+msgstr "Ja, erlaube das Einbinden von Aktionen dieses Typs als in andere Aktionen"
+
+msgid "No, disable inluding actions of this type as schema templates in other actions"
+msgstr "Nein, verhindere das Einbinden von Aktionen dieses Typs als in andere Aktionen"
+
 msgid "View Actions"
 msgstr "Aktionen anzeigen"
 
@@ -2215,6 +2242,12 @@ msgstr "Bitte geben Sie den Standardwert (in Basis-Einheiten) als Zahl ein."
 msgid "Please enter valid units"
 msgstr "Bitte geben Sie gültige Einheiten ein."
 
+msgid "Schema Template input cannot be empty"
+msgstr "Schema Vorlagen Auswahl kann nicht leer sein"
+
+msgid "Using s the 'name' property will be removed by using the template in other actions."
+msgstr "Wenn Sie Vorlagen nutzen, werden die 'name'-Elemente nicht mit in die Aktionen eingefügt, die diese Vorlagen verwenden."
+
 #, python-format
 msgid ""
 "<strong>Warning:</strong> Custom Actions are an advanced feature that "
@@ -2345,6 +2378,9 @@ msgstr "Platzhalter"
 
 msgid "Default"
 msgstr "Standardwert"
+
+msgid "Schema Template"
+msgstr "Schema Vorlage"
 
 msgid ""
 "A regular expression to restrict what values are valid for the property. "

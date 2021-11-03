@@ -112,6 +112,10 @@ class SubprojectRelationshipDoesNotExistError(Exception):
     pass
 
 
+class CreatingObjectsDisabled(Exception):
+    pass
+
+
 class SchemaError(Exception):
     def __init__(self, message, path):
         if path:

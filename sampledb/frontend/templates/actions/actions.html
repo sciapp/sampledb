@@ -39,12 +39,14 @@
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_scientists.html" %}
     {% endwith %}
-    <p>
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.translation.view_text }}</a>
-      {% if not current_user.is_readonly %}
-      <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.translation.perform_text }}</a>
+      {% if enabled_create_object(action.type.id) %}
+        <p>
+          <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.translation.view_text }}</a>
+          {% if not current_user.is_readonly %}
+          <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.translation.perform_text }}</a>
+          {% endif %}
+        </p>
       {% endif %}
-    </p>
   {% endfor %}
 {% endblock %}
 

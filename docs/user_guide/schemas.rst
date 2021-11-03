@@ -62,6 +62,7 @@ Additionally, there are special data types:
     - Sample References
     - Measurement References
     - Generic Object References
+- Schema Templates
 
 In the following, each data type and the attributes in a schema of each type are listed.
 
@@ -887,6 +888,92 @@ Properties of this type are a special case of object reference, limited to refer
       "title": "Preparatory Measurement",
       "type": "measurement"
     }
+
+Schema Templates
+```````````````
+
+Schema Templates offer a way to reuse created actions easily.
+
+If an *action_type* is marked as includable into other actions it's possible to reuse the schema.
+
+A template action could look like
+
+.. code-block:: json
+   :caption: Minimal schema template
+
+    {
+      "title": "test",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "val": {
+          "title": "Value",
+          "type": "text"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "propertyOrder": [
+        "name"
+      ]
+    }
+
+As you can see, there is no difference to other actions.
+
+Schema templates can be included into other actions like
+
+.. code-block:: json
+   :caption: Minimal schema template include
+
+    "temp": {
+      "title": "Include Template",
+      "type": "object",
+      "template": "15",
+    }
+
+By saving this action the selected schema template will be included.
+The action that is saved in the background will look like
+
+.. code-block:: json
+   :caption: Saved action
+
+    {
+  "title": "testInclude",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "text"
+    },
+    "temp": {
+      "title": "Include Template",
+      "type": "object",
+      "properties": {
+        "val": {
+          "title": "Value",
+          "type": "text"
+        }
+      },
+      "template": "15",
+      "required": [],
+      "propertyOrder": []
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "propertyOrder": [
+    "name",
+    "temp"
+  ]
+}
+
+This schema will be used to create objects and an to store the action into the database.
+As to see the name will be removed from the the included schema template to remove redundancies.
 
 .. _conditions:
 

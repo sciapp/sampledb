@@ -10,6 +10,7 @@ from . import errors
 from . import actions
 from . import action_translations
 from . import action_type_translations
+from .actions import get_action_type
 from . import favorites
 from . import groups
 from . import languages
@@ -396,3 +397,8 @@ def get_sorted_actions_for_user(
         action.translation.name.lower()
     ))
     return visible_actions
+
+
+def enabled_create_objects(action_type_id):
+    action_type = get_action_type(action_type_id)
+    return not action_type.disable_create_objects

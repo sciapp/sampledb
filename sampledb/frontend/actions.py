@@ -18,7 +18,7 @@ import pygments.formatters
 from . import frontend
 from .. import models
 from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions, get_sorted_actions_for_user
-from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
+from ..logic.actions import Action, create_action, get_action, update_action, get_action_type, get_action_types
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
     get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
@@ -30,6 +30,7 @@ from ..logic.instrument_translations import get_instrument_translation_for_instr
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users, languages
 from ..logic.schemas.validate_schema import validate_schema
+from ..logic.schemas.validation_preprocessor import reverse_substitute_templates
 from ..logic.settings import get_user_settings
 from ..logic.users import get_users, get_user
 from ..logic.groups import get_groups, get_group
@@ -149,6 +150,10 @@ def actions():
         action_type_id=action_type_id,
         owner_id=user_id,
     )
+    if not action_type_id:
+        action_type_ids_show_in_navbar = [ac.id for ac in get_action_types() if ac.show_in_navbar]
+        changed_actions = [ac for ac in actions if ac.type_id in action_type_ids_show_in_navbar]
+        actions = changed_actions
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
@@ -182,6 +187,14 @@ def action(action_id):
     may_grant = Permissions.GRANT in permissions
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
+        original_schema = dict(action.schema)
+        try:
+            reverse_substitute_templates(action.schema)
+        except errors.ActionDoesNotExistError:
+            action.schema = original_schema
+            flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
+            if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
+                flask.abort(400)
         check_current_user_is_not_readonly()
         if not may_edit:
             return flask.abort(403)
@@ -432,6 +445,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         lexer = pygments.lexers.data.JsonLexer()
         formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines))
         pygments_output = pygments.highlight(schema_json, lexer, formatter)
+
     if schema is not None and error_message is None and form_is_valid:
         # First block for validation
         try:

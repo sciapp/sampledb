@@ -1790,7 +1790,6 @@ INSERT INTO public.action_type_translations VALUES (4, -98, -99, 'Probenerstellu
 INSERT INTO public.action_type_translations VALUES (5, -98, -98, 'Messung', 'Diese Aktionen repräsentieren Prozesse, die Messungen durchführen.', 'Messung', 'Messungen', 'Messungen anzeigen', 'Messung durchführen');
 INSERT INTO public.action_type_translations VALUES (6, -98, -97, 'Simulation', 'Diese Aktionen repräsentieren Prozesse, die Simulationen durchführen.', 'Simulation', 'Simulationen', 'Simulationen anzeigen', 'Simulation durchführen');
 
-
 --
 -- Data for Name: action_types; Type: TABLE DATA; Schema: public; Owner: -
 --

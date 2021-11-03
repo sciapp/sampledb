@@ -9,9 +9,10 @@ import typing
 import urllib.parse
 import re
 
-from ..errors import ValidationError
+from ..errors import ValidationError, ActionDoesNotExistError, InvalidNumberError
 from .utils import units_are_valid
 from .validate import validate
+from .validation_preprocessor import substitute_templates
 from .conditions import validate_condition_schema
 from ..languages import get_languages
 
@@ -233,7 +234,14 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style'}
+    try:
+        substitute_templates(schema)
+    except ActionDoesNotExistError:
+        raise ValidationError('Template does not exist', path)
+    except InvalidNumberError:
+        raise ValidationError('You have to give a valid number', path)
+
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
