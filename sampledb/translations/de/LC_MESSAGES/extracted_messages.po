@@ -186,6 +186,12 @@ msgstr "Dieses Token wurde bereits mit dieser Datenbank verknüpft."
 msgid "The database information has been added successfully"
 msgstr "Die Datenbank wurde erfolgreich angelegt"
 
+msgid "Please enter your name as: surname, given names."
+msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
+
+msgid "Please enter a valid ORCID iD."
+msgstr "Bitte geben Sie eine gültige ORCID iD ein."
+
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
 
@@ -728,9 +734,6 @@ msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
 msgid "Passwords must match"
 msgstr "Passwörter müssen übereinstimmen"
 
-msgid "Please enter your name as: surname, given names."
-msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vorname."
-
 msgid "Unknown Location"
 msgstr "Unbekannter Ort"
 
@@ -1174,6 +1177,9 @@ msgstr "Ihre Aktionen"
 
 msgid "Your Objects"
 msgstr "Ihre Objekte"
+
+msgid "Other Database Aliases"
+msgstr "Aliasse auf anderen Datenbanken"
 
 msgid "Invite a Guest"
 msgstr "Gast einladen"
@@ -4494,6 +4500,28 @@ msgstr "UUID von %(service_name)s: "
 
 msgid "Add Database"
 msgstr "Datenbank hinzufügen"
+
+msgid "User Alias"
+msgstr "Nutzer-Alias"
+
+msgid "E-Mail"
+msgstr "E-Mail"
+
+#, python-format
+msgid "Edit Alias for %(component_name)s"
+msgstr "Alias für %(component_name)s bearbeiten"
+
+msgid "Copy from"
+msgstr "Kopieren von"
+
+msgid "my user profile"
+msgstr "meinem Nutzerprofil"
+
+msgid "Clear form"
+msgstr "Formular leeren"
+
+msgid "Edit Alias:"
+msgstr "Alias bearbeiten:"
 
 msgid "Unable to export data of type:"
 msgstr "Exportieren nicht möglich für Typ:"

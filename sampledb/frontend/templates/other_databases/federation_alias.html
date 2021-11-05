@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('User Alias') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" class="fit">{{ _('Database') }}</th>
+          <th scope="col" class="fit"></th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alias in aliases %}
+        <tr>
+          <th rowspan="4" class="fit">{{ alias.component.get_name() }}<div style="margin-top: 2em;"><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#editAliasModal" aria-label="{{ _('Edit') }}" onclick="setEditAliasForm({{ alias.component.id }});"><span aria-hidden="true">{{ _('Edit') }}</span></button></div></th>
+          <th class="text-right fit">{{ _('Name') }}</th>
+          <td>{% if alias.name is none %}&mdash;{% else %}{{ alias.name }}{% endif %}</td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('E-Mail') }}</th>
+          <td>{% if alias.email is none %}&mdash;{% else %}{{ alias.email }}{% endif %}</td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('Affiliation') }}</th>
+          <td>{% if alias.affiliation is none %}&mdash;{% else %}{{ alias.affiliation }}{% endif %}</td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('Role') }}</th>
+          <td>{% if alias.role is none %}&mdash;{% else %}{{ alias.role }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if add_alias_form %}
+  <form class="form-horizontal" method="post" name="add-alias-form" action="{{ url_for('.user_alias') }}">
+    {{ add_alias_form.csrf_token() }}
+    <div class="form-group {% if add_alias_form.component.errors %} has-error{% endif %}">
+      <label for="input-component" class="col-sm-4 control-label">{{ _('Database') }}</label>
+      <div class="col-sm-8">
+        <select class="selectpicker" id="input-component" name="{{ add_alias_form.component.name }}" data-width="100%" data-live-search="true">
+          {% for component in addable_components %}
+            <option value="{{ component.id }}">{{ component.get_name() }}</option>
+          {% endfor %}
+        </select>
+        {% if add_alias_form.component.errors %}
+          <span class="help-block">{{ add_alias_form.component.errors[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group {% if add_alias_form.name.errors %} has-error{% endif %}">
+      <label for="input-username-add" class="col-sm-4 control-label">{{ _('Name') }}</label>
+      <div class="col-sm-8">
+        <input class="form-control" type="text" id="input-username-add" name="{{add_alias_form.name.name}}" value="{{ add_alias_form.name.data }}" placeholder="{{ _('Name') }}">
+        {% if add_alias_form.name.errors %}
+          <span class="help-block">{{ add_alias_form.name.errors[0] }}</span>
+        {% elif config['ENFORCE_SPLIT_NAMES'] and current_user.type.name.lower() == "person" and (add_alias_form.name.data is none or ', ' not in add_alias_form.name.data[1:-1]) %}
+          <span class="help-block">{{ _("Please enter your name as: surname, given names.") }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group{% if add_alias_form.email.errors %} has-error{% endif %}">
+      <label for="input-email-add" class="col-sm-4 control-label">{{ _('Email') }}</label>
+      <div class="col-sm-8">
+        <input class="form-control" type="text" id="input-email-add" name="{{add_alias_form.email.name}}" value="{{ add_alias_form.email.data }}" placeholder="{{ _('Email') }}">
+        {% if add_alias_form.email.errors %}
+          <span class="help-block">{{ _('Please enter your email address.') }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group {% if add_alias_form.orcid.errors %} has-error{% endif %}">
+      <label for="input-orcid-add" class="col-sm-4 control-label">ORCID iD</label>
+      <div class="col-sm-8">
+      <div class="input-group">
+        <span class="input-group-addon">https://orcid.org/</span>
+        <input class="form-control" type="text" id="input-orcid-add" name="{{add_alias_form.orcid.name}}" value="{{ add_alias_form.orcid.data or '' }}" placeholder="xxxx-xxxx-xxxx-xxxx">
+      </div>
+      {% if add_alias_form.orcid.errors %}
+        <span class="help-block">{{ _('Please enter your ORCID iD or leave this field blank.') }}</span>
+      {% endif %}
+      </div>
+    </div>
+    <div class="form-group {% if add_alias_form.affiliation.errors %} has-error{% endif %}">
+      <label for="input-affiliation-add" class="col-sm-4 control-label">{{ _('Affiliation') }}</label>
+      <div class="col-sm-8">
+        <input class="form-control" type="text" id="input-affiliation-add" name="{{add_alias_form.affiliation.name}}" value="{{ add_alias_form.affiliation.data or ''}}" placeholder="{{ _('Affiliation, e.g. your institute, company or department') }}">
+        {% if add_alias_form.affiliation.errors %}
+          <span class="help-block">{{ _('Please enter your affiliation or leave this field blank.') }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group {% if add_alias_form.role.errors %} has-error{% endif %}">
+      <label for="input-role-add" class="col-sm-4 control-label">{{ _('Role') }}</label>
+      <div class="col-sm-8">
+        <input class="form-control" type="text" id="input-role-add" name="{{add_alias_form.role.name}}" value="{{ add_alias_form.role.data or ''}}" placeholder="{{ _('Role, e.g. PhD student, principal investigator or technician') }}">
+        {% if add_alias_form.role.errors %}
+          <span class="help-block">{{ _('Please enter your role or leave this field blank.') }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add" value="Add">{{ _('Save') }}</button>
+    </div>
+  </form>
+  {% endif %}
+  {% if edit_alias_form %}
+    <div class="modal fade" id="editAliasModal" tabindex="-1" role="dialog" aria-labelledby="editAliasModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="editAliasModalLabel">{{ _('Edit Alias for %(component_name)s', component_name='') }}</h4>
+          </div>
+          <form method="post" action="{{ url_for('.user_alias') }}" class="form-horizontal">
+            {{ edit_alias_form.csrf_token() }}
+            <div class="modal-body">
+              <input class="form-control" type="hidden" name="{{ edit_alias_form.component.name }}" id="input-component-edit">
+              <div class="form-group {% if edit_alias_form.name.errors %} has-error{% endif %}">
+                <label for="input-username" class="col-sm-4 control-label">{{ _('Name') }}</label>
+                <div class="col-sm-8">
+                  <input class="form-control" type="text" id="input-username" name="{{edit_alias_form.name.name}}" value="{{ edit_alias_form.name.data }}" placeholder="{{ _('Name') }}">
+                  {% if edit_alias_form.name.errors %}
+                    <span class="help-block">{{ edit_alias_form.name.errors[0] }}</span>
+                  {% elif config['ENFORCE_SPLIT_NAMES'] and current_user.type.name.lower() == "person" and (edit_alias_form.name.data is none or ', ' not in edit_alias_form.name.data[1:-1]) %}
+                    <span class="help-block">{{ _("Please enter your name as: surname, given names.") }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="form-group{% if edit_alias_form.email.errors %} has-error{% endif %}">
+                <label for="input-email" class="col-sm-4 control-label">{{ _('Email') }}</label>
+                <div class="col-sm-8">
+                  <input class="form-control" type="text" id="input-email" name="{{edit_alias_form.email.name}}" value="{{ edit_alias_form.email.data }}" placeholder="{{ _('Email') }}">
+                  {% if edit_alias_form.email.errors %}
+                    <span class="help-block">{{ _('Please enter your email address.') }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="form-group {% if edit_alias_form.orcid.errors %} has-error{% endif %}">
+                <label for="input-orcid" class="col-sm-4 control-label">ORCID iD</label>
+                <div class="col-sm-8">
+                <div class="input-group">
+                  <span class="input-group-addon">https://orcid.org/</span>
+                  <input class="form-control" type="text" id="input-orcid" name="{{edit_alias_form.orcid.name}}" value="{{ edit_alias_form.orcid.data or '' }}" placeholder="xxxx-xxxx-xxxx-xxxx">
+                </div>
+                {% if edit_alias_form.orcid.errors %}
+                  <span class="help-block">{{ _('Please enter your ORCID iD or leave this field blank.') }}</span>
+                {% endif %}
+                </div>
+              </div>
+              <div class="form-group {% if edit_alias_form.affiliation.errors %} has-error{% endif %}">
+                <label for="input-affiliation" class="col-sm-4 control-label">{{ _('Affiliation') }}</label>
+                <div class="col-sm-8">
+                  <input class="form-control" type="text" id="input-affiliation" name="{{edit_alias_form.affiliation.name}}" value="{{ edit_alias_form.affiliation.data or ''}}" placeholder="{{ _('Affiliation, e.g. your institute, company or department') }}">
+                  {% if edit_alias_form.affiliation.errors %}
+                    <span class="help-block">{{ _('Please enter your affiliation or leave this field blank.') }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="form-group {% if edit_alias_form.role.errors %} has-error{% endif %}">
+                <label for="input-role" class="col-sm-4 control-label">{{ _('Role') }}</label>
+                <div class="col-sm-8">
+                  <input class="form-control" type="text" id="input-role" name="{{edit_alias_form.role.name}}" value="{{ edit_alias_form.role.data or ''}}" placeholder="{{ _('Role, e.g. PhD student, principal investigator or technician') }}">
+                  {% if edit_alias_form.role.errors %}
+                    <span class="help-block">{{ _('Please enter your role or leave this field blank.') }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-sm-4">
+                </div>
+                <div class="col-sm-8">
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary" onclick="copyAliasFromInput();" aria-label="{{ _('Copy from') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy from') }}</span></button>
+                    <select class="selectpicker" id="input-copy-from">
+                      <option value=-1 selected>{{ _('my user profile') }}</option>
+                      {% for alias in aliases %}
+                      <option value={{ alias.component_id }}>{{ alias.component.get_name() }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-sm-4">
+                </div>
+                <div class="col-sm-8">
+                  <button type="button" class="btn btn-danger" onclick="clearEditAliasForm();" aria-label="{{ _('Clear form') }}" name="clear" value="Clear"><span aria-hidden="true">{{ _('Clear form') }}</span></button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+              <button type="submit" class="btn btn-primary" name="edit" value="edit">{{ _('Save Changes') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script type="text/javascript">
+    var aliases_by_component = {{ aliases_by_component | tojson }};
+    var component_names = {{ component_names | tojson }}
+    var user_data = {{ user_data | tojson }};
+    function setEditAliasForm(component_id) {
+      copyAliasFrom(component_id);
+      $('#editAliasModalLabel').text('{{ _('Edit Alias:') }} ' + component_names[component_id]);
+      $('#input-component-edit').val(component_id);
+    }
+    function clearEditAliasForm() {
+      $('#input-username').val('');
+      $('#input-email').val('');
+      $('#input-orcid').val('');
+      $('#input-affiliation').val('');
+      $('#input-role').val('');
+    }
+    function copyAliasFromInput() {
+      copyAliasFrom($('#input-copy-from').val());
+    }
+    function copyAliasFrom(component_id) {
+      if (component_id == null || component_id == -1) {
+        $('#input-username').val(user_data['name']);
+        $('#input-email').val(user_data['email']);
+        $('#input-orcid').val(user_data['orcid']);
+        $('#input-affiliation').val(user_data['affiliation']);
+        $('#input-role').val(user_data['role']);
+      } else {
+        $('#input-username').val(aliases_by_component[component_id]['name']);
+        $('#input-email').val(aliases_by_component[component_id]['email']);
+        $('#input-orcid').val(aliases_by_component[component_id]['orcid']);
+        $('#input-affiliation').val(aliases_by_component[component_id]['affiliation']);
+        $('#input-role').val(aliases_by_component[component_id]['role']);
+      }
+    }
+  </script>
+{% endblock %}
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+{% endblock %}

@@ -10,12 +10,13 @@ import requests.exceptions
 from flask_babel import _
 
 from . import frontend
-from .federation_forms import AddComponentForm, EditComponentForm, SyncComponentForm, CreateAPITokenForm, AddOwnAPITokenForm, AuthenticationMethodForm
+from .federation_forms import AddComponentForm, EditComponentForm, SyncComponentForm, CreateAPITokenForm, AddOwnAPITokenForm, AuthenticationMethodForm, AddAliasForm, EditAliasForm
 from ..logic import errors
 from .utils import check_current_user_is_not_readonly
 from ..logic.component_authentication import remove_component_authentication_method, add_token_authentication, remove_own_component_authentication_method, add_own_token_authentication
 from ..logic.components import get_component, update_component, add_component, get_components
 from ..logic.federation import import_updates
+from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias
 from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication
 
 
@@ -214,3 +215,95 @@ def federation():
                 flask.flash(_('The database information has been added successfully'), 'success')
                 return flask.redirect(flask.url_for('.component', component_id=component_id))
     return flask.render_template("other_databases/federation.html", current_user=flask_login.current_user, components=components, add_component_form=add_component_form, show_add_form=show_add_form)
+
+
+@frontend.route('/other-databases/alias/', methods=['GET', 'POST'])
+@flask_login.login_required
+def user_alias():
+    user = flask_login.current_user
+    components = get_components()
+    aliases = get_user_aliases_for_user(user.id)
+    added_components = [alias.component_id for alias in aliases]
+    addable_components = [comp for comp in components if comp.id not in added_components]
+
+    add_alias_form = AddAliasForm()
+    add_alias_form.component.choices = [
+        (str(comp.id), comp.name)
+        for comp in components if comp.id not in added_components
+    ]
+
+    edit_alias_form = EditAliasForm()
+
+    if 'edit' in flask.request.form:
+        if edit_alias_form.validate_on_submit():
+            print(edit_alias_form.component.data)
+            update_user_alias(
+                user.id, edit_alias_form.component.data,
+                edit_alias_form.name.data if edit_alias_form.name.data != '' else None,
+                edit_alias_form.email.data if edit_alias_form.email.data != '' else None,
+                edit_alias_form.orcid.data if edit_alias_form.orcid.data != '' else None,
+                edit_alias_form.affiliation.data if edit_alias_form.affiliation.data != '' else None,
+                edit_alias_form.role.data if edit_alias_form.role.data != '' else None,
+            )
+    if 'add' in flask.request.form:
+        if add_alias_form.validate_on_submit():
+            create_user_alias(
+                user.id, add_alias_form.component.data,
+                add_alias_form.name.data if add_alias_form.name.data != '' else None,
+                add_alias_form.email.data if add_alias_form.email.data != '' else None,
+                add_alias_form.orcid.data if add_alias_form.orcid.data != '' else None,
+                add_alias_form.affiliation.data if add_alias_form.affiliation.data != '' else None,
+                add_alias_form.role.data if add_alias_form.role.data != '' else None,
+            )
+            aliases = get_user_aliases_for_user(user.id)
+            added_components = [alias.component_id for alias in aliases]
+            addable_components = [comp for comp in components if comp.id not in added_components]
+            add_alias_form.component.choices = [
+                (str(comp.id), comp.name)
+                for comp in components if comp.id not in added_components
+            ]
+
+    if len(addable_components) == 0:
+        add_alias_form = None
+    else:
+        if add_alias_form.name.data is None:
+            add_alias_form.name.data = user.name
+        if add_alias_form.email.data is None:
+            add_alias_form.email.data = user.email
+        if add_alias_form.orcid.data is None:
+            add_alias_form.orcid.data = user.orcid
+        if add_alias_form.affiliation.data is None:
+            add_alias_form.affiliation.data = user.affiliation
+        if add_alias_form.role.data is None:
+            add_alias_form.role.data = user.role
+
+    aliases_by_component = {
+        alias.component_id: {
+            'name': alias.name if alias.name is not None else '',
+            'email': alias.email if alias.email is not None else '',
+            'orcid': alias.orcid if alias.orcid is not None else '',
+            'affiliation': alias.affiliation if alias.affiliation is not None else '',
+            'role': alias.role if alias.role is not None else ''
+        } for alias in aliases}
+
+    user_data = {
+        'name': user.name if user.name is not None else '',
+        'email': user.email if user.email is not None else '',
+        'orcid': user.orcid if user.orcid is not None else '',
+        'affiliation': user.affiliation if user.affiliation is not None else '',
+        'role': user.role if user.role is not None else ''
+    }
+
+    component_names = {component.id: component.get_name() for component in components}
+
+    return flask.render_template(
+        "other_databases/federation_alias.html",
+        user=user,
+        addable_components=addable_components,
+        aliases=aliases,
+        add_alias_form=add_alias_form,
+        edit_alias_form=edit_alias_form,
+        aliases_by_component=aliases_by_component,
+        user_data=user_data,
+        component_names=component_names
+    )
