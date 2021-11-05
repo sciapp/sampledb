@@ -5,9 +5,11 @@ import sampledb.logic
 from sampledb import db
 from sampledb.logic import errors
 from sampledb.logic.components import add_component
-from sampledb.models import User, UserType
+from sampledb.logic.users import create_user_alias, get_user_alias, get_user_aliases_for_user, update_user_alias
+from sampledb.models import User, UserType, UserFederationAlias
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+UUID_2 = '1e59c517-bd11-4390-aeb4-971f20b06612'
 
 
 @pytest.fixture
@@ -171,3 +173,75 @@ def test_get_user_exceptions(component):
         sampledb.logic.users.get_user(1, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         sampledb.logic.users.get_user(1, component.id + 1)
+
+
+def test_create_user_alias(component, user):
+    assert len(UserFederationAlias.query.all()) == 0
+    alias = create_user_alias(user.id, component.id, 'Testuser', 'test@example.com', None, None, None)
+    assert len(UserFederationAlias.query.all()) == 1
+    assert alias.user_id == user.id
+    assert alias.component_id == component.id
+    assert alias.name == 'Testuser'
+    assert alias.email == 'test@example.com'
+    assert alias.orcid is None
+    assert alias.affiliation is None
+    assert alias.role is None
+
+
+def test_get_user_alias(component, user):
+    with pytest.raises(errors.UserAliasDoesNotExistError):
+        get_user_alias(user.id, component.id)
+    with pytest.raises(errors.UserDoesNotExistError):
+        get_user_alias(user.id + 1, component.id)
+    with pytest.raises(errors.ComponentDoesNotExistError):
+        get_user_alias(user.id, component.id + 1)
+    created_alias = create_user_alias(user.id, component.id, 'Testuser', 'test@example.com', None, None, None)
+    alias = get_user_alias(user.id, component.id)
+    assert alias.user_id == created_alias.user_id
+    assert alias.component_id == created_alias.component_id
+    assert alias.name == created_alias.name
+    assert alias.email == created_alias.email
+    assert alias.orcid == created_alias.orcid
+    assert alias.affiliation == created_alias.affiliation
+    assert alias.role == created_alias.role
+
+
+def test_get_user_aliases_for_user():
+    component1 = add_component(address=None, uuid=UUID_1, name='Example component 1', description='')
+    component2 = add_component(address=None, uuid=UUID_2, name='Example component 2', description='')
+    user1 = sampledb.models.User(name="Basic User 1", email="example1@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user1)
+    sampledb.db.session.commit()
+    user2 = sampledb.models.User(name="Basic User 2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user2)
+    sampledb.db.session.commit()
+    alias_user1_component1 = create_user_alias(user1.id, component1.id, 'B. User 1', None, None, None, None)
+    alias_user1_component2 = create_user_alias(user1.id, component2.id, None, None, None, None, None)
+    alias_user2_component1 = create_user_alias(user2.id, component1.id, 'B. User 2', None, None, None, None)
+    alias_user2_component2 = create_user_alias(user2.id, component2.id, 'B. User 2', 'contact@example.com', None, None, None)
+    user_aliases = get_user_aliases_for_user(user1.id)
+    assert alias_user1_component1 in user_aliases
+    assert alias_user1_component2 in user_aliases
+    assert len(user_aliases) == 2
+    user_aliases = get_user_aliases_for_user(user2.id)
+    assert alias_user2_component1 in user_aliases
+    assert alias_user2_component2 in user_aliases
+    assert len(user_aliases) == 2
+    with pytest.raises(errors.UserDoesNotExistError):
+        get_user_aliases_for_user(user2.id + 1)
+
+
+def test_update_user_alias(component, user):
+    created_alias = create_user_alias(user.id, component.id, 'Testuser', 'test@example.com', None, None, None)
+    update_user_alias(user.id, component.id, 'User', 'contact@example.com', None, 'Company ltd.', 'Scientist')
+    assert created_alias.user_id == user.id
+    assert created_alias.component_id == component.id
+    assert created_alias.name == 'User'
+    assert created_alias.email == 'contact@example.com'
+    assert created_alias.orcid is None
+    assert created_alias.affiliation == 'Company ltd.'
+    assert created_alias.role == 'Scientist'
+    with pytest.raises(errors.UserDoesNotExistError):
+        update_user_alias(user.id + 1, component.id, 'User', 'contact@example.com', None, 'Company ltd.', 'Scientist')
+    with pytest.raises(errors.ComponentDoesNotExistError):
+        update_user_alias(user.id, component.id + 1, 'User', 'contact@example.com', None, 'Company ltd.', 'Scientist')

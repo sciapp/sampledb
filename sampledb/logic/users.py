@@ -406,5 +406,46 @@ def get_user_alias(user_id: int, component_id: int):
     """
     alias = UserFederationAlias.query.get((user_id, component_id))
     if alias is None:
+        get_user(user_id)
+        get_component(component_id)
         raise errors.UserAliasDoesNotExistError()
     return alias
+
+
+def get_user_aliases_for_user(user_id: int):
+    """
+    Get all aliases for a user.
+
+    :param user_id: the ID of an existing user
+    :return: list of user aliases
+    :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
+    """
+    get_user(user_id)
+    alias = UserFederationAlias.query.filter_by(user_id=user_id).all()
+    return alias
+
+
+def create_user_alias(user_id: int, component_id: int, name: typing.Optional[str], email: typing.Optional[str], orcid: typing.Optional[str], affiliation: typing.Optional[str], role: typing.Optional[str]):
+    get_user(user_id)
+    get_component(component_id)
+    if get_user_alias(user_id, component_id):
+        raise errors.UserAliasAlreadyExistsError()
+    alias = UserFederationAlias(user_id, component_id, name, email, orcid, affiliation, role, {})
+    db.session.add(alias)
+    db.session.commit()
+    return alias
+
+
+def update_user_alias(user_id: int, component_id: int, name: typing.Optional[str], email: typing.Optional[str], orcid: typing.Optional[str], affiliation: typing.Optional[str], role: typing.Optional[str]):
+    get_user(user_id)
+    get_component(component_id)
+    alias = UserFederationAlias.query.get((user_id, component_id))
+    if alias is None:
+        raise errors.UserAliasDoesNotExistError()
+    alias.name = name
+    alias.email = email
+    alias.orcid = orcid
+    alias.affiliation = affiliation
+    alias.role = role
+    db.session.add(alias)
+    db.session.commit()
