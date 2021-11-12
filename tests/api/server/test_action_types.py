@@ -34,7 +34,8 @@ def test_get_action_type(flask_server, auth):
     for action_type in action_types:
         action_type_translation = sampledb.logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
             action_type.id,
-            language_id=sampledb.logic.languages.Language.ENGLISH
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            use_fallback=True
         )
         r = requests.get(flask_server.base_url + 'api/v1/action_types/{}'.format(action_type.id), auth=auth)
         assert r.status_code == 200
@@ -53,7 +54,8 @@ def test_get_action_types(flask_server, auth):
     for action_type in sampledb.logic.actions.get_action_types():
         action_type_translation = sampledb.logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
             action_type.id,
-            language_id=sampledb.logic.languages.Language.ENGLISH
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            use_fallback=True
         )
         expected_json.append({
             'type_id': action_type.id,
