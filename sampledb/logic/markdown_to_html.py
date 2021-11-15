@@ -8,6 +8,7 @@ from markdown import markdown as _markdown_to_html
 from markdown.extensions.toc import TocExtension, slugify_unicode
 
 from .. import db
+from ..logic import errors
 from ..models import MarkdownToHTMLCacheEntry
 
 
@@ -104,8 +105,14 @@ def get_markdown_from_object_data(data):
         return []
     for property in properties:
         if isinstance(property, dict) and '_type' in property:
-            if property['_type'] == 'text' and property.get('is_markdown') and isinstance(property.get('text'), str):
-                markdown_texts.append(property['text'])
+            if property['_type'] == 'text' and property.get('is_markdown'):
+                if isinstance(property.get('text'), str):
+                    markdown_texts.append(property['text'])
+                elif isinstance(property.get('text'), dict):
+                    for text in property['text'].values():
+                        markdown_texts.append(text)
+                else:
+                    raise errors.ValidationError('text must be str or a dictionary')
                 continue
         else:
             markdown_texts.extend(get_markdown_from_object_data(property))
