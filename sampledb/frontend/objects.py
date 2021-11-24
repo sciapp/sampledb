@@ -858,7 +858,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         flask.flash(_('Creating objects of this action is disabled'), 'error')
         flask.abort(400)
 
-
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
     users.sort(key=lambda user: user.id)

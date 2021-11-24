@@ -188,7 +188,7 @@ def action(action_id):
             reverse_substitute_templates(action.schema)
         except errors.ActionDoesNotExistError:
             action.schema = original_schema
-            flask.flash('The used template does not exist anymore. Use the json editor to edit the existing action.', 'error')
+            flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
             if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
                 flask.abort(400)
         check_current_user_is_not_readonly()

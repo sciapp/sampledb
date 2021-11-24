@@ -26,7 +26,7 @@ def run(db):
     action_type_template = {
         'id': ActionType.TEMPLATE,
         'admin_only': False,
-        'show_on_frontpage': True,
+        'show_on_frontpage': False,
         'show_in_navbar': True,
         'enable_labels': True,
         'enable_files': True,
@@ -37,7 +37,7 @@ def run(db):
         'enable_related_objects': True,
         'enable_project_link': False,
         'disable_create_objects': True
-        }
+    }
 
     db.session.execute("""
       INSERT INTO action_types (id, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects, disable_create_objects)
@@ -60,8 +60,8 @@ def run(db):
         {
             'action_type_id': ActionType.TEMPLATE,
             'language_id': Language.GERMAN,
-            'name': 'Template',
-            'description': 'Diese Actiontypen ermöglichen das Verwenden von Templates in anderen Actions.',
+            'name': 'Vorlage',
+            'description': 'Diese Aktionen können als Vorlagen für andere Aktionen verwendet werden.',
             'object_name': '',
             'object_name_plural': '',
             'view_text': '',
@@ -78,4 +78,4 @@ def run(db):
       """, params=template_translation)
         performed_migration_translation = True
 
-    return performed_migration_type == performed_migration_translation == True
+    return performed_migration_type and performed_migration_translation

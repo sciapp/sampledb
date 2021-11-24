@@ -2019,17 +2019,13 @@ msgid "Disable Creating Objects"
 msgstr "Verhindere Erzeugen von Objekten"
 
 msgid "Disable creating objects of this action type"
-msgstr "Verhindere das Erzeugen von Objekten von diesem Aktionstypen "
+msgstr "Verhindere das Erzeugen von Objekten von diesem Aktionstypen"
 
-msgid ""
-"Yes, disable creating objects of this type"
-msgstr ""
-"Ja, verhindere das Erzeugen von Objekten von diesem Typen"
+msgid "Yes, disable creating objects of this type"
+msgstr "Ja, verhindere das Erzeugen von Objekten von diesem Typen"
 
-msgid ""
-"No, allow creating objects of this type"
-msgstr ""
-"Nein, erlaube das Erzeugen von Objekten von diesem Typen"
+msgid "No, allow creating objects of this type"
+msgstr "Nein, erlaube das Erzeugen von Objekten von diesem Typen"
 
 msgid "Creating objects of this action is disabled"
 msgstr "Das Erzeugen von Objekten dieses Typs ist deaktiviert"

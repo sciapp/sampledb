@@ -181,8 +181,6 @@ $(function() {
       schema['propertyOrder'] = [];
     }
     for (var name in schema['properties']) {
-      if('template' in schema['properties'][name]) {
-      }
       if (!properties_in_order.includes(name)) {
         properties_in_order.push(name);
         schema['propertyOrder'].push(name);
@@ -336,7 +334,7 @@ $(function() {
     } else if (schema['type'] === 'plotly_chart') {
       type = "plotly_chart";
     } else if (schema['type'] === 'object') {
-      type = 'template'
+      type = 'template';
     } else {
       window.schema_editor_missing_type_support = true;
       return null;

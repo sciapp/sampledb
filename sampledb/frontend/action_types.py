@@ -69,7 +69,6 @@ def new_action_type():
 
 
 class ActionTypeForm(FlaskForm):
-
     translations = StringField(validators=[DataRequired()])
 
     admin_only = BooleanField()

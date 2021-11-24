@@ -9,8 +9,6 @@ import typing
 import urllib.parse
 import re
 
-# from ...models import ActionType
-# from ..actions import get_action_type
 from ..errors import ValidationError, ActionDoesNotExistError
 from .utils import units_are_valid
 from .validate import validate
@@ -24,7 +22,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def validate_schema(
         schema: dict,
         path: typing.Optional[typing.List[str]] = None,
-        parent_conditions: typing.Optional[typing.List[typing.Tuple]] = None,
+        parent_conditions: typing.Optional[typing.List[typing.Tuple]] = None
 ) -> None:
     """
     Validates the given schema and raises a ValidationError if it is invalid.

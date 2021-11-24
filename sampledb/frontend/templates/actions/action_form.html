@@ -362,7 +362,7 @@
             </label>
           </div>
         </div>
-        <div class="schema-editor-form-group"
+        <div class="schema-editor-form-group">
           <label class="control-label schema-editor-root-object-hazards-label">{{ _('Hazards') }}</label>
           <div class="checkbox">
             <label>
@@ -544,7 +544,6 @@
     <div class="schema-editor-property-settings schema-editor-template-property-settings">
         <div class="schema-editor-form-group">
           <label class="schema-editor-generic-property-template-id-label">{{ _('Template') }}</label>
-            {% set counter = 1 %}
           <select class="form-control schema-editor-generic-property-template-id-input template-select">
               {% for template in get_templates(current_user.id) %}
                 <option value="{{ template.id }}">{{ template.translation.name }}</option>

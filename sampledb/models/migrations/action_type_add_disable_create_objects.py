@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Create default action types.
+Add the disable_create_objects column to the action_types table.
 """
 
 import os

@@ -1,4 +1,3 @@
-from ...models import Action
 from .. import actions
 from ..errors import ActionDoesNotExistError
 
@@ -48,6 +47,3 @@ def reverse_substitute_templates(schema: dict):
         elif 'properties' in schema.keys():
             for key in schema['properties'].keys():
                 reverse_substitute_templates(schema['properties'][key])
-
-
-

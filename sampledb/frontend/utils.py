@@ -240,6 +240,7 @@ _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
 _jinja_filters['to_string_if_dict'] = to_string_if_dict
 
+
 def get_template(template_folder, default_prefix, schema):
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = schema["type"] + ".html"
