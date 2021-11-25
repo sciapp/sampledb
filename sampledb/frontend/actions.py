@@ -18,7 +18,7 @@ import pygments.formatters
 from . import frontend
 from .. import models
 from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions, get_sorted_actions_for_user
-from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
+from ..logic.actions import Action, create_action, get_action, update_action, get_action_type, get_action_types
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
     get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
@@ -150,6 +150,10 @@ def actions():
         action_type_id=action_type_id,
         owner_id=user_id,
     )
+    if not action_type_id:
+        action_type_ids_show_in_navbar = [ac.id for ac in get_action_types() if ac.show_in_navbar]
+        changed_actions = [ac for ac in actions if ac.type_id in action_type_ids_show_in_navbar]
+        actions = changed_actions
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
