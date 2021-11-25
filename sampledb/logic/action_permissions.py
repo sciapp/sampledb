@@ -399,6 +399,6 @@ def get_sorted_actions_for_user(
     return visible_actions
 
 
-def should_create_objects(action_type_id):
+def enabled_create_objects(action_type_id):
     action_type = get_action_type(action_type_id)
     return not action_type.disable_create_objects

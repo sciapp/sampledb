@@ -27,7 +27,8 @@ from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.settings import get_user_settings
-from ..logic.action_permissions import should_create_objects
+from ..logic.actions import get_action_types
+from ..logic.action_permissions import enabled_create_objects
 from ..logic.action_permissions import get_sorted_actions_for_user
 
 
@@ -279,12 +280,14 @@ def get_local_month_names():
     ]
 
 
-def should_create_object(object_type_id):
-    return should_create_objects(object_type_id)
+def enabled_create_object(object_type_id):
+    return enabled_create_objects(object_type_id)
 
 
 def get_templates(user_id):
-    return get_sorted_actions_for_user(user_id=user_id, action_type_id=-96)
+    template_action_ids = [type.id for type in get_action_types() if type.is_template]
+    template_actions = [action for action in get_sorted_actions_for_user(user_id=user_id) if action.type_id in template_action_ids]
+    return template_actions
 
 
 _jinja_functions = {}
@@ -292,5 +295,5 @@ _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
 _jinja_functions['get_local_month_names'] = get_local_month_names
 _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
-_jinja_functions['should_create_object'] = should_create_object
+_jinja_functions['enabled_create_object'] = enabled_create_object
 _jinja_functions['get_templates'] = get_templates

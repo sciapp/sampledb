@@ -41,7 +41,8 @@ class ActionType(collections.namedtuple('ActionType', [
     'enable_activity_log',
     'enable_related_objects',
     'enable_project_link',
-    'disable_create_objects'
+    'disable_create_objects',
+    'is_template'
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
@@ -61,7 +62,8 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_activity_log: bool,
             enable_related_objects: bool,
             enable_project_link: bool,
-            disable_create_objects: bool
+            disable_create_objects: bool,
+            is_template: bool
     ):
         self = super(ActionType, cls).__new__(
             cls,
@@ -77,7 +79,8 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_activity_log,
             enable_related_objects,
             enable_project_link,
-            disable_create_objects
+            disable_create_objects,
+            is_template
         )
         return self
 
@@ -96,7 +99,8 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_activity_log=action_type.enable_activity_log,
             enable_related_objects=action_type.enable_related_objects,
             enable_project_link=action_type.enable_project_link,
-            disable_create_objects=action_type.disable_create_objects
+            disable_create_objects=action_type.disable_create_objects,
+            is_template=action_type.is_template
         )
 
     def __repr__(self):
@@ -142,7 +146,8 @@ def create_action_type(
         enable_activity_log: bool,
         enable_related_objects: bool,
         enable_project_link: bool,
-        disable_create_objects: bool
+        disable_create_objects: bool,
+        is_template: bool
 ) -> ActionType:
     """
     Create a new action type.
@@ -172,7 +177,8 @@ def create_action_type(
         enable_activity_log=enable_activity_log,
         enable_related_objects=enable_related_objects,
         enable_project_link=enable_project_link,
-        disable_create_objects=disable_create_objects
+        disable_create_objects=disable_create_objects,
+        is_template=is_template
     )
     db.session.add(action_type)
     db.session.commit()
@@ -192,7 +198,8 @@ def update_action_type(
         enable_activity_log: bool,
         enable_related_objects: bool,
         enable_project_link: bool,
-        disable_create_objects: bool
+        disable_create_objects: bool,
+        is_template: bool
 ) -> ActionType:
     """
     Update an existing action type.
@@ -228,6 +235,7 @@ def update_action_type(
     action_type.enable_related_objects = enable_related_objects
     action_type.enable_project_link = enable_project_link
     action_type.disable_create_objects = disable_create_objects
+    action_type.is_template = is_template
     db.session.add(action_type)
     db.session.commit()
     return ActionType.from_database(action_type)

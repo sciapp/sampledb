@@ -83,6 +83,7 @@ class ActionTypeForm(FlaskForm):
     enable_related_objects = BooleanField()
     enable_project_link = BooleanField()
     disable_create_objects = BooleanField()
+    is_template = BooleanField()
 
 
 def show_action_type_form(type_id):
@@ -133,6 +134,7 @@ def show_action_type_form(type_id):
             action_type_form.enable_related_objects.data = action_type.enable_related_objects
             action_type_form.enable_project_link.data = action_type.enable_project_link
             action_type_form.disable_create_objects.data = action_type.disable_create_objects
+            action_type_form.is_template.data = action_type.is_template
 
     if action_type_form.validate_on_submit():
         if type_id is None:
@@ -186,7 +188,8 @@ def show_action_type_form(type_id):
                     enable_activity_log=action_type_form.enable_activity_log.data,
                     enable_related_objects=action_type_form.enable_related_objects.data,
                     enable_project_link=action_type_form.enable_project_link.data,
-                    disable_create_objects=action_type_form.disable_create_objects.data
+                    disable_create_objects=action_type_form.disable_create_objects.data,
+                    is_template=action_type_form.is_template.data
                 )
 
                 for translation in translation_data:
@@ -224,7 +227,8 @@ def show_action_type_form(type_id):
                 enable_activity_log=action_type_form.enable_activity_log.data,
                 enable_related_objects=action_type_form.enable_related_objects.data,
                 enable_project_link=action_type_form.enable_project_link.data,
-                disable_create_objects=action_type_form.disable_create_objects.data
+                disable_create_objects=action_type_form.disable_create_objects.data,
+                is_template=action_type_form.is_template.data
             )
 
             try:

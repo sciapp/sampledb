@@ -39,7 +39,7 @@
     {% with instrument = action.instrument %}
       {% include "instruments/instrument_scientists.html" %}
     {% endwith %}
-      {% if should_create_object(action.type.id) %}
+      {% if enabled_create_object(action.type.id) %}
         <p>
           <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.translation.view_text }}</a>
           {% if not current_user.is_readonly %}

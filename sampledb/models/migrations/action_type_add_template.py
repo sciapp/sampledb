@@ -7,7 +7,7 @@ import os
 from ..actions import ActionType
 from ..languages import Language
 
-MIGRATION_INDEX = 69
+MIGRATION_INDEX = 70
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
@@ -27,7 +27,7 @@ def run(db):
         'id': ActionType.TEMPLATE,
         'admin_only': False,
         'show_on_frontpage': False,
-        'show_in_navbar': True,
+        'show_in_navbar': False,
         'enable_labels': True,
         'enable_files': True,
         'enable_locations': True,
@@ -36,12 +36,13 @@ def run(db):
         'enable_activity_log': True,
         'enable_related_objects': True,
         'enable_project_link': False,
-        'disable_create_objects': True
+        'disable_create_objects': True,
+        'is_template': True
     }
 
     db.session.execute("""
-      INSERT INTO action_types (id, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects, disable_create_objects)
-      VALUES (:id, :admin_only, :show_on_frontpage, :show_in_navbar, :enable_labels, :enable_files, :enable_locations, :enable_publications, :enable_comments, :enable_activity_log, :enable_related_objects, :disable_create_objects)
+      INSERT INTO action_types (id, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects, disable_create_objects, is_template)
+      VALUES (:id, :admin_only, :show_on_frontpage, :show_in_navbar, :enable_labels, :enable_files, :enable_locations, :enable_publications, :enable_comments, :enable_activity_log, :enable_related_objects, :disable_create_objects, :is_template)
   """, params=action_type_template)
     performed_migration_type = True
 
