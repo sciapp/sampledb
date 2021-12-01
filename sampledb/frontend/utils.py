@@ -289,6 +289,7 @@ def get_templates(user_id):
     template_actions = [action for action in get_sorted_actions_for_user(user_id=user_id) if action.type_id in template_action_ids]
     return template_actions
 
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
