@@ -1,11 +1,14 @@
 from .. import actions
 from ..errors import ActionDoesNotExistError
+from ..errors import InvalidNumberError
 
 
 def substitute_templates(schema: dict):
     if 'template' in schema.keys():
         if 'properties' in schema.keys() and schema['properties'].keys():
             return
+        elif type(schema['template']) is not int:
+            raise InvalidNumberError()
         try:
             template_schema = actions.get_action(schema['template']).schema
         except ActionDoesNotExistError:

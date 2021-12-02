@@ -9,7 +9,7 @@ import typing
 import urllib.parse
 import re
 
-from ..errors import ValidationError, ActionDoesNotExistError
+from ..errors import ValidationError, ActionDoesNotExistError, InvalidNumberError
 from .utils import units_are_valid
 from .validate import validate
 from .validation_preprocessor import substitute_templates
@@ -238,6 +238,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
         substitute_templates(schema)
     except ActionDoesNotExistError:
         raise ValidationError('Template does not exist', path)
+    except InvalidNumberError:
+        raise ValidationError('You have to give a valid number', path)
 
     valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template'}
     if not path:
