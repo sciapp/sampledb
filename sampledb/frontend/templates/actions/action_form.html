@@ -291,10 +291,34 @@
         <select class="selectpicker form-control" id="input-type" name="{{ action_form.type.name }}" {% if not may_change_type %}disabled="disabled"{% endif %}>
           {% for action_type in action_types_with_translations%}
             {% if not action_type.admin_only or current_user.is_admin or action_form.type.data == action_type.id %}
-          <option value="{{ action_type.id }}" {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.translation.name}}</option>
+          <option value="{{ action_type.id }}" is_template={{ action_type.is_template }} {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.translation.name}}</option>
             {% endif %}
           {% endfor %}
         </select>
+      <div class="alert alert-warning alert-dismissible schema-editor-type-is-template" role="alert" style="margin-top: 5px">
+         <strong>Info</strong> {{ _("Using templates the 'name' property will be removed by using the template in other actions.") }}
+         <button type="button" id="schema-editor-type-is-template-close" class="close" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+      </div>
+      <script type="text/javascript">
+          window.onload = function() {
+              // Add function to hide alert onclick
+              $('#schema-editor-type-is-template-close').click(function() {
+                  $('.schema-editor-type-is-template').hide();
+              });
+              // Add function to show alert if action_type is_template on change
+              let type_input =  $('#input-type');
+              type_input.change(function() {
+                  let chosen_action_type = type_input.find('[value=' + type_input.val() + ']');
+                  if(chosen_action_type.attr('is_template') === "True") {
+                      $('.schema-editor-type-is-template').show();
+                  } else {
+                      $('.schema-editor-type-is-template').hide();
+                  }
+              })
+          };
+      </script>
         {% if action_form.type.name in action_form.errors %}
           <div class="help-block">{{ " ".join(action_form.errors[action_form.type.name]) }}</div>
         {% endif %}

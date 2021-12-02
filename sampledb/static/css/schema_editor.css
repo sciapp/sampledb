@@ -97,3 +97,7 @@
     border-radius: 4px;
     margin: 15px 0;
 }
+
+.schema-editor-type-is-template {
+    display: none;
+}
