@@ -11,7 +11,11 @@
 
   {% for action_type in action_types %}
     <h2>
-      <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
+      {% if current_user.is_admin and not current_user.is_readonly %}
+        <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
+      {% else %}
+        <span title="{{ action_type.translation.name }}" class="text-primary">{{ action_type.translation.name }}</span>
+      {% endif %}
     </h2>
     <p>
       <a href="{{ url_for('.actions', t=action_type.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>

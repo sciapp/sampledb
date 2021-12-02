@@ -153,9 +153,9 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
-            {% if current_user.is_admin %}
-              <li role="separator" class="divider"></li>
+            <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.action_types') }}">{{ _('Action Types') }}</a></li>
+            {% if current_user.is_admin %}
               <li><a href="{{ url_for('frontend.languages') }}">{{ _('Languages') }}</a></li>
             {% endif %}
           </ul>
