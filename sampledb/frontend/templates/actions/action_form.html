@@ -47,7 +47,7 @@
     'enter_units': "{{ _("Please enter units or 1.") }}",
     'enter_default_magnitude': "{{ _("Please enter the default magnitude (in base units) as a number.") }}",
     'enter_valid_units': "{{ _("Please enter valid units") }}",
-    'template_must_be_set': "{{ _("Template input cannot be empty") }}",
+    'schema_template_must_be_set': "{{ _("Schema Template input cannot be empty") }}",
   };
 
   {% set allowed_language_ids = [] %}
@@ -437,7 +437,7 @@
             <option value="user">{{ _('User') }}</option>
             <option value="object_reference">{{ _('Object Reference') }}</option>
             <option value="plotly_chart">{{ _('Plotly Chart') }}</option>
-            <option value="template">{{ _('Template') }}</option>
+            <option value="template">{{ _('Schema Template') }}</option>
           </select>
         </div>
         <div class="schema-editor-form-group">
@@ -568,7 +568,7 @@
 
     <div class="schema-editor-property-settings schema-editor-template-property-settings">
         <div class="schema-editor-form-group">
-          <label class="schema-editor-generic-property-template-id-label">{{ _('Template') }}</label>
+          <label class="schema-editor-generic-property-template-id-label">{{ _('Schema Template') }}</label>
           <select class="form-control schema-editor-generic-property-template-id-input template-select">
               <option value=""> - </option>
               {% for template in get_templates(current_user.id) %}

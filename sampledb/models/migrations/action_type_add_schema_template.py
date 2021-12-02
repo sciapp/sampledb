@@ -51,8 +51,8 @@ def run(db):
         {
             'action_type_id': ActionType.TEMPLATE,
             'language_id': Language.ENGLISH,
-            'name': 'Template',
-            'description': 'These Actions represent templates for other actions.',
+            'name': 'Schema Template',
+            'description': 'These Actions represent schema templates that can be included into other actions.',
             'object_name': '-',
             'object_name_plural': '-',
             'view_text': '-',
@@ -61,8 +61,8 @@ def run(db):
         {
             'action_type_id': ActionType.TEMPLATE,
             'language_id': Language.GERMAN,
-            'name': 'Vorlage',
-            'description': 'Diese Aktionen können als Vorlagen für andere Aktionen verwendet werden.',
+            'name': 'Schema Vorlage',
+            'description': 'Aktionen dieses Typs können in andere Aktionen als Vorlagen für Schemata eingebunden werden.',
             'object_name': '-',
             'object_name_plural': '-',
             'view_text': '-',

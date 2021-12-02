@@ -636,7 +636,7 @@ $(function() {
       var template_help = template_group.find('.help-block');
       if($(template_input).is(':visible')) {
         if($( template_input ).val() === "") {
-          template_help.text(window.schema_editor_translations['template_must_be_set']);
+          template_help.text(window.schema_editor_translations['schema_template_must_be_set']);
           template_group.addClass("has-error");
           has_error = true;
         } else {
