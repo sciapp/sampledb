@@ -250,7 +250,6 @@ $(function() {
 
   function globallyValidateSchema() {
     var schema = JSON.parse(input_schema.text());
-
     var help_block = $('#schema-editor .schema-editor-global-help');
     var help_parent = help_block.parent();
     help_block.text("");
@@ -631,6 +630,19 @@ $(function() {
       } else {
         title_help.text("");
         title_group.removeClass("has-error");
+      }
+      var template_input = $('#schema-editor-object__' + path.join('__') + '-template-id-input');
+      var template_group = template_input.closest('.schema-editor-property-settings.schema-editor-template-property-settings');
+      var template_help = template_group.find('.help-block');
+      if($(template_input).is(':visible')) {
+        if($( template_input ).val() === "") {
+          template_help.text(window.schema_editor_translations['template_must_be_set']);
+          template_group.addClass("has-error");
+          has_error = true;
+        } else {
+          template_help.text("");
+          template_group.removeClass("has-error");
+        }
       }
       var required = $('#schema-editor-object__' + path.join('__') + '-required-input').prop('checked');
       var has_note = $('#schema-editor-object__' + path.join('__') + '-note-checkbox').prop('checked');

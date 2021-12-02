@@ -2239,6 +2239,9 @@ msgstr "Bitte geben Sie den Standardwert (in Basis-Einheiten) als Zahl ein."
 msgid "Please enter valid units"
 msgstr "Bitte geben Sie gültige Einheiten ein."
 
+msgid "Template input cannot be empty"
+msgstr "Vorlagen Auswahl kann nicht leer sein"
+
 #, python-format
 msgid ""
 "<strong>Warning:</strong> Custom Actions are an advanced feature that "
