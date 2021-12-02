@@ -3,6 +3,10 @@ from ..errors import ActionDoesNotExistError
 from ..errors import InvalidNumberError
 
 
+# keys that only can be used in root objects
+skipped_template_keys = ['name', 'displayProperties', 'batch', 'batch_name_format', 'notebookTemplates', 'tags', 'hazards']
+
+
 def substitute_templates(schema: dict):
     if 'template' in schema.keys():
         if 'properties' in schema.keys() and schema['properties'].keys():
@@ -17,13 +21,13 @@ def substitute_templates(schema: dict):
             if key == 'title':
                 schema['title'] = schema['title'] if schema['title'] else template_schema['title']
             elif key == 'properties':
-                keys = set(template_schema['properties'].keys()) - set(['name'])
+                keys = set(template_schema['properties'].keys()) - set(skipped_template_keys)
                 schema['properties'] = {k: template_schema['properties'][k] for k in keys}
             elif key == 'required':
-                schema['required'] = [item for item in set(template_schema['required']) - set(['name'])]
+                schema['required'] = [item for item in set(template_schema['required']) - set(skipped_template_keys)]
             elif key == 'propertyOrder':
-                schema['propertyOrder'] = [item for item in set(template_schema['propertyOrder']) - set(['name'])]
-            else:
+                schema['propertyOrder'] = [item for item in set(template_schema['propertyOrder']) - set(skipped_template_keys)]
+            elif key not in skipped_template_keys:
                 schema[key] = template_schema[key]
 
 
