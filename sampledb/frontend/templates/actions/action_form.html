@@ -545,6 +545,7 @@
         <div class="schema-editor-form-group">
           <label class="schema-editor-generic-property-template-id-label">{{ _('Template') }}</label>
           <select class="form-control schema-editor-generic-property-template-id-input template-select">
+              <option value="-1"> - </option>
               {% for template in get_templates(current_user.id) %}
                 <option value="{{ template.id }}">{{ template.translation.name }}</option>
               {% endfor %}
