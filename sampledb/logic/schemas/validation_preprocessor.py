@@ -2,6 +2,8 @@ from .. import actions
 from ..errors import ActionDoesNotExistError
 from ..errors import InvalidNumberError
 
+import re
+
 
 # keys that only can be used in root objects
 skipped_template_keys = ['name', 'displayProperties', 'batch', 'batch_name_format', 'notebookTemplates', 'tags', 'hazards']
@@ -12,7 +14,10 @@ def substitute_templates(schema: dict):
         if 'properties' in schema.keys() and schema['properties'].keys():
             return
         elif type(schema['template']) is not int:
-            raise InvalidNumberError()
+            try:
+                int(schema['template'])
+            except:
+                raise InvalidNumberError()
         try:
             template_schema = actions.get_action(schema['template']).schema
         except ActionDoesNotExistError:
