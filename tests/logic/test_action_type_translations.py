@@ -257,6 +257,8 @@ def test_delete_action_translation():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        disable_create_objects=True,
+        is_template=True
     )
     action_type_translations.set_action_type_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
