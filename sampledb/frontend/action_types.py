@@ -21,6 +21,9 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 @frontend.route('/action_types/')
 @flask_login.login_required
 def action_types():
+    if not flask_login.current_user.is_admin:
+        return flask.abort(403)
+
     user_language_id = logic.languages.get_user_language(flask_login.current_user).id
     action_types_with_translations = logic.action_type_translations.get_action_types_with_translations_in_language(user_language_id)
     return flask.render_template(
