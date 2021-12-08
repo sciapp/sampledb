@@ -153,11 +153,16 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
-            <li role="separator" class="divider"></li>
+            <li role="separator" class="divider template-separator" style="display: none"></li>
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-                    {% if action_type.is_template %}
-                        <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
-                    {% endif %}
+                {% if action_type.is_template %}
+                    <script type="text/javascript">
+                        window.onload = function() {
+                            $('.template-separator').css('display', 'block');
+                        }
+                    </script>
+                    <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+                {% endif %}
             {% endfor %}
             {% if current_user.is_admin %}
               <li role="separator" class="divider"></li>
