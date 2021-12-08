@@ -131,12 +131,6 @@
                   <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
               {% endif %}
             {% endfor %}
-            <li role="separator" class="divider"></li>
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and action_type.is_template %}
-                  <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
-              {% endif %}
-            {% endfor %}
           </ul>
         </li>
         <li class="dropdown">
@@ -159,6 +153,12 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
+            <li role="separator" class="divider"></li>
+            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
+                    {% if action_type.is_template %}
+                        <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+                    {% endif %}
+            {% endfor %}
             {% if current_user.is_admin %}
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.action_types') }}">{{ _('Action Types') }}</a></li>
