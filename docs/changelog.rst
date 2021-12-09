@@ -4,7 +4,7 @@ Changelog
 Version 0.19
 ------------
 
-Currently in development.
+Released on December 9th, 2021.
 
 - Allow filtering instrument log entries by author
 - Allow sorting instrument log entries by author
