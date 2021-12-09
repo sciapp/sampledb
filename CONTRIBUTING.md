@@ -17,6 +17,14 @@ SampleDB is open source and we hope that ideas and improvements from different f
 - Set [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html). At the very least you will need to set a mail server and sender, e.g. by using `export SAMPLEDB_MAIL_SERVER=mail.example.com`, `export SAMPLEDB_MAIL_SENDER=sampledb@example.com` and `export SAMPLEDB_CONTACT_EMAIL=sampledb@example.com`. Depending on how you set up your database, you may have to set the `SAMPLEDB_SQLALCHEMY_DATABASE_URI`.
 - Start an instance using demo data from the `set_up_demo` script, using `python demo.py`. This way, you will have some example instruments, actions, objects and users. If you try to access a route that requires a user account, you will automatically be signed in.
 
+## Translating SampleDB
+
+- SampleDB was primarily developed in English, but can be translated using [Babel](http://babel.pocoo.org/en/latest/cmdline.html) and the *gettext* internationalization and localization system.
+- A new translation can be created using `pybabel extract -F babel.cfg -k lazy_gettext -o sampledb/messages.pot sampledb` followed by `pybabel init -i sampledb/messages.pot -d sampledb/translations -D extracted_messages -l <locale>`.
+- The locale for this translation also needs to be added to `sampledb.logic.locales.SUPPORTED_LOCALES`, so users will be able to select it.
+- Additionally, a language should be created for it, so user-generated content can be translated as well.
+- If you would like to translate SampleDB to a different language, please open up an [issue](https://github.com/sciapp/sampledb/issues/new/choose) to coordinate with us.
+
 ## Submitting Changes
 
 - We aim to support a wide variety of use cases from different fields. Please keep this in mind and prefer generic solutions to specialized ones.

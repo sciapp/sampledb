@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-RESTful API for iffSamples
+RESTful API for SampleDB
 """
 
 from flask_restful import Api

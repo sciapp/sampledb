@@ -7,6 +7,7 @@ import datetime
 
 import flask
 import flask_login
+from flask_babel import _
 
 from .. import frontend
 from ...logic.users import create_user, get_user_invitation, set_user_invitation_accepted
@@ -72,7 +73,7 @@ def registration():
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
     token_data = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
     if token_data is None:
-        flask.flash('Invalid invitation token. Please request a new invitation.', 'error')
+        flask.flash(_('Invalid invitation token. Please request a new invitation.'), 'error')
         return flask.abort(403)
     if isinstance(token_data, str):
         email = token_data
@@ -81,7 +82,7 @@ def registration():
         email = token_data['email']
         invitation_id = token_data['invitation_id']
         if get_user_invitation(invitation_id).accepted:
-            flask.flash('This invitation token has already been used. Please request a new invitation.', 'error')
+            flask.flash(_('This invitation token has already been used. Please request a new invitation.'), 'error')
             return flask.abort(403)
     registration_form = RegistrationForm()
     if registration_form.email.data is None or registration_form.email.data == "":
@@ -107,10 +108,10 @@ def registration():
                 add_email_authentication(user.id, email, password)
                 if invitation_id is not None:
                     set_user_invitation_accepted(invitation_id)
-                flask.flash('Your account has been created successfully.', 'success')
+                flask.flash(_('Your account has been created successfully.'), 'success')
                 flask_login.login_user(user)
                 return flask.redirect(flask.url_for('frontend.index'))
-            flask.flash('There already is an account with this email address. Please use this account or contact an administrator.', 'error')
+            flask.flash(_('There already is an account with this email address. Please use that account or contact an administrator.'), 'error')
             return flask.redirect(flask.url_for('frontend.sign_in'))
         else:
             return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)

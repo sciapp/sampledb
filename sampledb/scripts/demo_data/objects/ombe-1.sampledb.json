@@ -1,7 +1,7 @@
 {
   "name": {
     "_type": "text",
-    "text": "OMBE-1"
+    "text": {"en": "OMBE-1"}
   },
   "created": {
     "_type": "datetime",
@@ -9,7 +9,7 @@
   },
   "substrate": {
     "_type": "text",
-    "text": "GaAs"
+    "text": {"en": "GaAs"}
   },
   "checkbox": {
     "_type": "bool",
@@ -30,7 +30,7 @@
           {
               "name": {
                 "_type": "text",
-                "text": "Seed Layer"
+                "text": {"en": "Seed Layer"}
               },
               "thickness": {
                 "_type": "quantity",
@@ -77,7 +77,7 @@
           {
               "name": {
                 "_type": "text",
-                "text": "Buffer Layer"
+                "text": {"en": "Buffer Layer"}
               },
               "thickness": {
                 "_type": "quantity",
@@ -124,7 +124,7 @@
           {
               "name": {
                 "_type":"text",
-                "text": "Pd"
+                "text": {"en": "Pd"}
               },
               "thickness": {
                 "_type": "quantity",
@@ -161,7 +161,7 @@
           }, {
               "name": {
                 "_type":"text",
-                "text": "Fe"
+                "text": {"en": "Fe"}
               },
               "thickness": {
                 "_type": "quantity",
@@ -208,7 +208,7 @@
           {
               "name": {
                 "_type": "text",
-                "text": "Pd Layer"
+                "text": {"en": "Pd Layer"}
               },
               "thickness": {
                 "_type": "quantity",

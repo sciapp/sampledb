@@ -1,0 +1,40 @@
+<div class="input-list form-area">
+    {# View #}
+    <div class="view-switch">
+        {% if data is not none and "user_id" in data %}
+            {% with referenced_user = get_user(data.user_id) %}
+                <a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.name }}
+                    (#{{ referenced_user.id }})</a>
+            {% endwith %}
+        {% else %}
+            &mdash;
+        {% endif %}
+        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+        <div class="alert-upload-failed">
+            {{ _('Your input is not valid. Please check.') }}
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        <select class="form-control selectpicker" name="{{ id_prefix }}_uid" data-live-search="true">
+            <option value="">&mdash;</option>
+            {% for user in users %}
+                {% if id_prefix+'_uid' in form_data %}
+                    {% if form_data[id_prefix+'_uid'] == user.id | string %}
+                        <option value="{{ user.id }}" selected="selected">{{ user.name }} (#{{ user.id }})</option>
+                    {% else %}
+                        <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+                    {% endif %}
+                {% else %}
+                    {% if (data is not none and "user_id" in data and data.user_id == user.id) or (data is none and schema.default == "self" and user.id == current_user.id) %}
+                        <option value="{{ user.id }}" selected="selected">{{ user.name }} (#{{ user.id }})</option>
+                    {% else %}
+                        <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </select>
+        {% if id_prefix+'_uid' in object_errors %}
+            <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix+'_uid'] }}</span>{% endif %}
+    </div>
+</div>

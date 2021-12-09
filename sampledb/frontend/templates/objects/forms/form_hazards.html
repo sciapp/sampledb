@@ -1,17 +1,17 @@
 <div class="form-group{% if id_prefix+'_hidden' in errors %} has-error{% elif id_prefix+'_hidden' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
-  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title }}</label>
+  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title | get_translated_text }}</label>
   <div class="col-md-9">
     <input type="hidden" name="{{ id_prefix }}_hidden" value="field exists" />
     <div class="radio">
       <label>
         <input type="radio" name="{{ id_prefix }}_hasnohazards" onchange="setHasNoHazards(this)" value="true" {% if (data is not none and "hazards" in data and not data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'true') %}checked="checked"{% endif %}>
-        This object does not pose any of these hazards.
+        {{ _('This object does not pose any of these hazards.')}}
       </label>
     </div>
     <div class="radio">
       <label>
         <input type="radio" name="{{ id_prefix }}_hasnohazards" value="false" {% if (data is not none and "hazards" in data and data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'false') %}checked="checked"{% endif %}>
-        This object poses the following hazards:
+        {{ _('This object poses the following hazards:') }}
       </label>
     </div>
     <div class="ghs-hazards-selection">
@@ -22,8 +22,8 @@
         </label>
       {% endfor %}
     </div>
-    {% if id_prefix+'_hidden' in object_errors %}<span class="help-block"><strong>Error:</strong> {{ object_errors[id_prefix+'_hidden'] }}</span>{% endif %}
-    {% if 'note' in schema %}<span class="help-block"><strong>Note:</strong> {{ schema['note'] }}</span>{% endif %}
+    {% if id_prefix+'_hidden' in object_errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix+'_hidden'] }}</span>{% endif %}
+    {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     <script>
       function setHasNoHazards(checkbox) {
         if (checkbox.checked) {

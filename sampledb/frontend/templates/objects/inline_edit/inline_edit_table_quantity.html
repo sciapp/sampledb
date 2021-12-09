@@ -1,0 +1,49 @@
+<div class="form-area">
+    {# View #}
+    <div class="view-switch">
+        <div class="row" style="padding-right: 0.75em; padding-left: 15px">
+            {% if data is not none and data.magnitude %}
+                {% if schema['units'] == "1" %}
+                    {% if data is not none %}
+                        {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
+                {% else %}
+                    {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
+                        {{ (data | to_datatype).units | prettify_units }}{% endif %}
+                {% endif %}
+            {% else %}
+                -
+            {% endif %}
+            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+            <div class="alert-upload-failed">
+                {{ _('Your input is not valid. Please check.') }}
+            </div>
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        {% if schema['units'] == "1" %}
+            <div class="{% if id_prefix+'_magnitude' in errors %}has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}">
+                <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
+                       placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
+                       {% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units | babel_format_number }}"{% endif %}>
+            </div>
+        {% else %}
+            <div class="input-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}">
+                <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
+                       placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
+                       {% elif data is not none %}value="{{ (data | to_datatype).magnitude | babel_format_number }}"{% endif %}>
+                <input type="hidden" name="{{ id_prefix }}_units" value="
+
+                        {% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
+                <span class="input-group-addon">{% if data is not none %}
+                    {{ (data | to_datatype).units | prettify_units }}{% else %}
+                    {{ schema['units'] | prettify_units }}{% endif %}</span>
+            </div>
+        {% endif %}
+        {% if id_prefix+'_magnitude' in errors %}
+            <span class="has-error"><span class="help-block">{{ errors[id_prefix+'_magnitude'] }}</span></span>
+        {% endif %}
+    </div>
+</div>

@@ -27,7 +27,6 @@ def users():
 def independent_action():
     action = Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -39,7 +38,6 @@ def independent_action():
             },
             'required': ['name']
         },
-        description='',
         instrument_id=None
     )
     sampledb.db.session.add(action)
@@ -52,8 +50,6 @@ def independent_action():
 @pytest.fixture
 def instrument():
     instrument = Instrument(
-        name='Example Action',
-        description=''
     )
     sampledb.db.session.add(instrument)
     sampledb.db.session.commit()
@@ -66,7 +62,6 @@ def instrument():
 def instrument_action(instrument):
     action = Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -78,7 +73,6 @@ def instrument_action(instrument):
             },
             'required': ['name']
         },
-        description='',
         instrument_id=instrument.id
     )
     sampledb.db.session.add(action)

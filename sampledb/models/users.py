@@ -27,6 +27,8 @@ class User(db.Model, flask_login.UserMixin):
     orcid = db.Column(db.String, nullable=True)
     affiliation = db.Column(db.String, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    role = db.Column(db.String, nullable=True)
+    extra_fields = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
 
     def __init__(self, name, email, type):
         self.name = name

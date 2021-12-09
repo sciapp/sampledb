@@ -19,13 +19,13 @@ import datetime
 import typing
 
 import flask
-from sqlalchemy.exc import IntegrityError
 
 from .. import db
 from ..models import groups
 from .users import get_user
 from .security_tokens import generate_token
 from .notifications import create_notification_for_being_invited_to_a_group
+from ..logic.languages import get_language_by_lang_code, Language
 from . import errors
 
 
@@ -38,7 +38,7 @@ class Group(collections.namedtuple('Group', ['id', 'name', 'description'])):
     This class provides an immutable wrapper around models.groups.Group.
     """
 
-    def __new__(cls, id: int, name: str, description: str):
+    def __new__(cls, id: int, name: dict, description: dict):
         self = super(Group, cls).__new__(cls, id, name, description)
         return self
 
@@ -73,13 +73,15 @@ class GroupInvitation(collections.namedtuple('GroupInvitation', ['id', 'group_id
         return datetime.datetime.utcnow() >= expiration_datetime
 
 
-def create_group(name: str, description: str, initial_user_id: int) -> Group:
+def create_group(name: typing.Union[str, dict], description: typing.Union[str, dict], initial_user_id: int) -> Group:
     """
-    Creates a new group with the given name and description and adds an
+    Creates a new group with the given names and descriptions and adds an
     initial user to it.
 
-    :param name: the unique name of the group
-    :param description: a (possibly empty) description for the group
+    :param name: a dict containing unique names of the group. The keys are language codes of existing languages and the
+        values are the names for the corresponding languages.
+    :param description: a dict (possibly empty) containing descriptions for the group. The keys are language codes and
+        the values are descriptions
     :param initial_user_id: the user ID of the initial group member
     :return: the newly created group
     :raise errors.InvalidGroupNameError: when the group name is empty or more
@@ -88,54 +90,107 @@ def create_group(name: str, description: str, initial_user_id: int) -> Group:
         user ID exists
     :raise errors.GroupAlreadyExistsError: when another group with the given
         name already exists
+    :raise errors.LanguageDoesNotExistError: when there is no language for the given language code
+    :raise errors.MissingEnglishTranslationError: when the english translation is missing
     """
-    if not 1 <= len(name) <= MAX_GROUP_NAME_LENGTH:
+    if isinstance(name, str):
+        name = {
+            'en': name
+        }
+    if isinstance(description, str):
+        description = {
+            'en': description
+        }
+
+    try:
+        for language_code, name_text in list(name.items()):
+            # check language code
+            language = get_language_by_lang_code(language_code)
+            # Check name
+            if not 1 <= len(name_text) <= MAX_GROUP_NAME_LENGTH:
+                if language.id != Language.ENGLISH and not name_text:
+                    del name[language_code]
+                else:
+                    raise errors.InvalidGroupNameError()
+
+            existing_group = groups.Group.query.filter(groups.Group.name[language_code].astext.cast(db.Unicode) == name_text).first()
+            if existing_group is not None:
+                raise errors.GroupAlreadyExistsError()
+    except errors.LanguageDoesNotExistError:
+        raise errors.LanguageDoesNotExistError("There is no language for the given lang code")
+    except errors.GroupAlreadyExistsError:
+        raise errors.GroupAlreadyExistsError()
+    except errors.InvalidGroupNameError:
         raise errors.InvalidGroupNameError()
+    if 'en' not in name:
+        raise errors.MissingEnglishTranslationError()
+
+    for item in list(description.items()):
+        # delete empty descriptions
+        if item[1] == '':
+            del description[item[0]]
+
     user = get_user(initial_user_id)
     group = groups.Group(name=name, description=description)
     group.members.append(user)
     db.session.add(group)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        existing_group = groups.Group.query.filter_by(name=name).first()
-        if existing_group is not None:
-            raise errors.GroupAlreadyExistsError()
-        raise
+    db.session.commit()
     return group
 
 
-def update_group(group_id: int, name: str, description: str = '') -> None:
+def update_group(group_id: int, name: dict, description: dict) -> None:
     """
-    Updates the group's name and description.
+    Updates the group's names and descriptions.
 
     :param group_id: the ID of an existing group
-    :param name: the new unique group name
-    :param description: the new group description
+    :param name: the new dict containing unique group names. Keys are lang codes and values are names
+    :param description: the new group descriptions in a dict. Keys are lang codes and values are descriptions
     :raise errors.InvalidGroupNameError: when the group name is empty or more
         than MAX_GROUP_NAME_LENGTH characters long
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists
     :raise errors.GroupAlreadyExistsError: when another group with the given
         name already exists
+    :raise errors.LanguageDoesNotExistError: when there is no language with the given language code
+    :raise errors.MissingEnglishTranslationError: when the english translation is missing
     """
-    if not 1 <= len(name) <= MAX_GROUP_NAME_LENGTH:
+    try:
+        for language_code, name_text in list(name.items()):
+            # check language code
+            language = get_language_by_lang_code(language_code)
+            # Check name
+            if not 1 <= len(name_text) <= MAX_GROUP_NAME_LENGTH:
+                if language.id != Language.ENGLISH and not name_text:
+                    del name[language_code]
+                else:
+                    raise errors.InvalidGroupNameError()
+            existing_group = groups.Group.query.filter(
+                groups.Group.name[language_code].astext.cast(db.Unicode) == name_text
+            ).first()
+            if existing_group is not None and existing_group.id != group_id:
+                raise errors.GroupAlreadyExistsError()
+    except errors.LanguageDoesNotExistError:
+        raise errors.LanguageDoesNotExistError("There is no language for the given lang code")
+    except errors.GroupAlreadyExistsError:
+        raise errors.GroupAlreadyExistsError()
+    except errors.InvalidGroupNameError:
         raise errors.InvalidGroupNameError()
+    if 'en' not in name:
+        raise errors.MissingEnglishTranslationError()
+
     group = groups.Group.query.get(group_id)
     if group is None:
         raise errors.GroupDoesNotExistError()
+
+    for item in list(description.items()):
+        # deleted empty descriptions
+        if item[1] == '':
+            del description[item[0]]
+
     group.name = name
     group.description = description
     db.session.add(group)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        existing_group = groups.Group.query.filter_by(name=name).first()
-        if existing_group is not None:
-            raise errors.GroupAlreadyExistsError()
-        raise
+    db.session.commit()
 
 
 def delete_group(group_id: int) -> None:

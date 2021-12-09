@@ -13,7 +13,7 @@ import wtforms.validators
 from .authentication import object_permissions_required, Permissions
 from ...logic.actions import get_action
 from ...logic.objects import get_object
-from ...logic.files import File, get_file_for_object, get_files_for_object, create_local_file, create_url_file
+from ...logic.files import File, get_file_for_object, get_files_for_object, create_local_file, create_url_file, create_database_file
 from ...logic import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -25,7 +25,7 @@ def file_info_to_json(file_info: File, include_content: bool = True):
         'file_id': file_info.id,
         'storage': file_info.storage
     }
-    if file_info.storage == 'local':
+    if file_info.storage in {'local', 'database'}:
         file_json.update({
             'original_file_name': file_info.original_file_name
         })
@@ -84,11 +84,11 @@ class ObjectFiles(Resource):
                 "message": "storage must be set"
             }, 400
         storage = request_json['storage']
-        if storage not in ('local', 'url'):
+        if storage not in ('local', 'url', 'database'):
             return {
-                "message": "storage must be 'local' or 'url'"
+                "message": "storage must be 'local', 'database' or 'url'"
             }, 400
-        if storage == 'local':
+        if storage in {'local', 'database'}:
             for key in request_json:
                 if key not in {'object_id', 'storage', 'original_file_name', 'base64_content'}:
                     return {
@@ -96,12 +96,12 @@ class ObjectFiles(Resource):
                     }, 400
             if 'original_file_name' not in request_json or not request_json['original_file_name']:
                 return {
-                    "message": "original_file_name must be set for files with local storage"
+                    "message": "original_file_name must be set for files with local or database storage"
                 }, 400
             original_file_name = request_json['original_file_name']
             if 'base64_content' not in request_json:
                 return {
-                    "message": "base64_content must be set for files with local storage"
+                    "message": "base64_content must be set for files with local or database storage"
                 }, 400
             base64_content = request_json['base64_content']
             try:
@@ -110,12 +110,20 @@ class ObjectFiles(Resource):
                 return {
                     "message": "base64_content must be base64 encoded"
                 }, 400
-            file = create_local_file(
-                object_id=object_id,
-                user_id=flask.g.user.id,
-                file_name=original_file_name,
-                save_content=lambda stream: stream.write(content)
-            )
+            if storage == 'local':
+                file = create_local_file(
+                    object_id=object_id,
+                    user_id=flask.g.user.id,
+                    file_name=original_file_name,
+                    save_content=lambda stream: stream.write(content)
+                )
+            else:
+                file = create_database_file(
+                    object_id=object_id,
+                    user_id=flask.g.user.id,
+                    file_name=original_file_name,
+                    save_content=lambda stream: stream.write(content)
+                )
         if storage == 'url':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'url'}:

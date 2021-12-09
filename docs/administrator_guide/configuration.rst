@@ -185,5 +185,17 @@ Miscellaneous
      - If set, project groups cannot have child project groups assigned to them.
    * - SAMPLEDB_ENFORCE_SPLIT_NAMES
      - If set, force names to be entered as "surname, given names". **Note:** this will prevent users with a mononym from setting their name correctly!
+   * - SAMPLEDB_PYBABEL_PATH
+     - The path to the pybabel executable (default: ``pybabel``)
+   * - SAMPLEDB_EXTRA_USER_FIELDS
+     - A JSON-encoded dict containing extra user fields, e.g. ``{"phone": {"name": {"en": "Phone No."}, "placeholder": {"en": "Phone No."}}}`` (default: ``{}``)
+   * - SAMPLEDB_SHOW_PREVIEW_WARNING
+     - If set, a warning will be shown indicating that the instance is a preview installation and that data will be deleted.
+   * - SAMPLEDB_DISABLE_INLINE_EDIT
+     - If set, the inline edit mode will be disabled and users will not be able to edit individual fields.
+   * - SAMPLEDB_SHOW_OBJECT_TITLE
+     - If set, object schema titles will be shown when viewing metadata by default. Users may override this setting in their preferences.
+   * - SAMPLEDB_HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE
+     - If set, the object type and id, e.g. "Sample #4" will not be shown on the object page.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

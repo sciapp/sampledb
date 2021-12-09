@@ -7,7 +7,7 @@ import flask
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 
-from ...logic.authentication import login, login_via_api_token
+from ...logic.authentication import login, login_via_api_token, get_active_two_factor_authentication_method
 from ...logic.object_permissions import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic
 
@@ -35,6 +35,10 @@ def verify_password(username, password):
         return None
     user = login(username, password)
     if user is None or not user.is_active:
+        return None
+    two_factor_authentication_method = get_active_two_factor_authentication_method(user.id)
+    if two_factor_authentication_method is not None:
+        # two factor authentication is not supported for the HTTP API
         return None
     flask.g.user = user
     return user

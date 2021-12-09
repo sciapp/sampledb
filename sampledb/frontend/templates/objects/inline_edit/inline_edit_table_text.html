@@ -1,0 +1,59 @@
+<div class="form-area">
+    {# View #}
+    <div class="view-switch">
+        <div class="row" style="padding-right: 0.75em; padding-left: 15px">
+            {% if data is not none and data.text | get_translated_text(metadata_language) %}
+                {{ data.text | get_translated_text(metadata_language) }}
+            {% else %}
+                &mdash;
+            {% endif %}
+            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+            <div class="alert-upload-failed">
+                {{ _('Your input is not valid. Please check.') }}
+            </div>
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        <div class="row" style="padding-right: 0.75em">
+            {% if 'multiline' in schema and schema['multiline'] %}
+                <textarea class="form-control" style="resize: vertical;" rows="1" name="{{ id_prefix }}_text"
+                          placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text' in form_data %}{{ form_data[id_prefix+'_text'] }}{% elif data is not none and "text" in data %}{{ data.text }}{% endif %}</textarea>
+            {% elif 'choices' in schema %}
+                <select class="form-control selectpicker" name="{{ id_prefix }}_text">
+                    {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
+                        {% if not is_required %}
+                            <option value="">&mdash;</option>
+                        {% endif %}
+                    {% else %}
+                        <option selected="selected" value="">&mdash;</option>
+                    {% endif %}
+                    {% for option in schema.choices %}
+                        {% if id_prefix+'_text' in form_data %}
+                            {% if form_data[id_prefix+'_text'] == ( option | to_string_if_dict ) %}
+                                <option value="{{ option }}"
+                                        selected="selected">{{ option | get_translated_text }}</option>
+                            {% else %}
+                                <option value="{{ option }}">{{ option | get_translated_text }}</option>
+                            {% endif %}
+                        {% elif data is not none and "text" in data %}
+                            {% if data.text == option %}
+                                <option value="{{ option }}"
+                                        selected="selected">{{ option | get_translated_text }}</option>
+                            {% else %}
+                                <option value="{{ option }}">{{ option | get_translated_text }}</option>
+                            {% endif %}
+                        {% else %}
+                            <option value="{{ option }}">{{ option | get_translated_text }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            {% else %}
+                <input type="text" class="form-control" name="{{ id_prefix }}_text"
+                       placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+                       {% if id_prefix+'_text' in form_data %}value="{{ form_data[id_prefix+'_text'] }}"
+                       {% elif data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>
+            {% endif %}
+        </div>
+    </div>
+</div>

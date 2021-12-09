@@ -13,12 +13,16 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 def user_to_json(user: users.User):
-    return {
+    user_json = {
         'user_id': user.id,
         'name': user.name,
         'orcid': user.orcid if user.orcid else None,
-        'affiliation': user.affiliation if user.affiliation else None
+        'affiliation': user.affiliation if user.affiliation else None,
+        'role': user.role if user.role else None
     }
+    if flask.g.user.is_admin:
+        user_json['email'] = user.email
+    return user_json
 
 
 class User(Resource):

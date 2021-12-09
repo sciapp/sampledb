@@ -1,18 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Basic Groups — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Basic Groups') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Basic Groups</h1>
-  <p class="text-muted">A basic group consists of equal users which share the object permissions granted to it. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/groups.html">Read more.</a></p>
+  {% set allowed_language_ids = [] %}
+  {% for language in languages %}
+    {{ allowed_language_ids.append(language.id) or '' }}
+  {% endfor %}
+
+  <h1>{{ _('Basic Groups') }}</h1>
+  <p class="text-muted">{{ _('A basic group consists of equal users which share the object permissions granted to it.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/groups.html">{{ _('Read more.')}}</a></p>
   {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_GROUPS']) %}
   <p>
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">Create Basic Group</button>
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">{{ _('Create Basic Group') }}</button>
   </p>
   {% endif %}
   <ul id="groups_list">
     {% for group in groups %}
-    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name }}</a>{% if group.is_member %} <span class="label label-default">Member</span>{% endif %}</li>
+    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a>{% if group.is_member %} <span class="label label-default">{{ _('Member') }}</span>{% endif %}</li>
     {% endfor %}
   </ul>
   {% if not current_user.is_readonly %}
@@ -21,28 +26,79 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="createGroupModalLabel">Create Basic Group</h4>
+          <h4 class="modal-title" id="createGroupModalLabel">{{ _('Create Basic Group') }}</h4>
         </div>
-        <form method="post" action="{{ request.url }}" class="form-horizontal">
+
+          <div class="hidden" id="name-template">
+            <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
+                <input type="text" class="form-control" id="input-name-" placeholder="{{ _('Name') }}" data-name="input-name" value="" data-translation-attribute="name" data-empty-text="{{ _('Please enter a group name.') }}" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter group name (at most 100 characters).') }}">
+                {% if allowed_language_ids | length > 1 %}
+                  <span class="input-group-addon language-addon" data-name="language" style="margin-right: 5px"></span>
+                {% endif %}
+            </div>
+            <span class="help-block" data-name="name"></span>
+          </div>
+
+        <div class="hidden" id="description-template">
+            <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="" style="padding-bottom: 10px">
+                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+                {% if allowed_language_ids | length > 1 %}
+                  <span class="input-group-addon language-addon" data-name="language" style="margin-right: 5px"></span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post" action="{{ request.url }}">
           {{ create_group_form.csrf_token() }}
           <div class="modal-body">
-            <div class="form-group {% if create_group_form.name.errors %}has-error{% endif %}">
-              <label for="createGroupName" class="col-sm-2 control-label">Name</label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control" id="createGroupName" name="{{ create_group_form.name.name }}" placeholder="Name" value="{{ create_group_form.name.data }}">
-                {% for error_message in create_group_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+
+          <div class="form-group" data-name="input-names">
+                <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+                      <label for="select-language-name" class="control-label col-sm-8" style="margin-top: 5px">{{ _("Name") }}</label>
+                      <select class="selectpicker btn-xs select-language col-sm-4 {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs"
+                              id="select-language-name">
+                          {% for language in languages %}
+                              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected" {% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+                          {% endfor %}
+                      </select>
+                 </div>
+
+                  <div class="form-group">
+                    <div class="{% if allowed_language_ids | length > 1 %}input-group{% endif %} {% if create_group_form.translations.errors %}has-error{% endif %}" data-language-id="{{ ENGLISH.id }}">
+                      <input type="text" class="form-control" id="input-name-{{ ENGLISH.id}}" placeholder="{{ _('Name') }}" data-name="input-name" value="" data-translation-attribute="name" data-empty-text="{{ _('Please enter a group name.') }}" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter group name (at most 100 characters).') }}">
+                      {% if allowed_language_ids | length > 1 %}
+                        <span class="input-group-addon language-addon" data-name="language">{{ ENGLISH.names | get_translated_text }}</span>
+                      {% endif %}
+                    </div>
+                  <span class="help-block" data-name="name" style="margin-bottom: -5px"></span>
+                  {% for error_message in create_group_form.translations.errors %}<span class="help-block" style="color: red">{{ error_message }}</span>{% endfor %}
+                 </div>
+
+                </div>
+
+            <div class="form-group" data-name="input-descriptions" style="padding-top: 10px">
+                  <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+                      <label for="select-language-description" class="control-label col-sm-8" style="margin-top: 5px">{{ _("Description") }}</label>
+                      <select class="selectpicker btn-xs select-language col-sm-4 {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs"  id="select-language-description">
+                          {% for language in languages %}
+                              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %}  disabled="disabled" selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+
+              <div class="{% if allowed_language_ids | length > 1 %}input-group{% endif %}" data-name="description" data-language-id="{{ ENGLISH.id }}" style="margin-bottom: 10px">
+                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="input-description-{{ ENGLISH.id }}" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+                {% if allowed_language_ids | length > 1 %}
+                  <span class="input-group-addon language-addon" data-name="language">{{ ENGLISH.names | get_translated_text }}</span>
+                {% endif %}
               </div>
-            </div>
-            <div class="form-group">
-              <label for="createGroupDescription" class="col-sm-2 control-label">Description</label>
-              <div class="col-sm-10">
-                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="createGroupDescription" name="{{ create_group_form.description.name }}" placeholder="Description">{{ create_group_form.description.data }}</textarea>
-              </div>
-            </div>
+          </div>
+          <input type="hidden" id="input-translations" name="{{ create_group_form.translations.name }}" value="">
+
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" name="create" value="create">Create Basic Group</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="create" value="create">{{ _('Create Basic Group') }}</button>
           </div>
         </form>
       </div>
@@ -51,9 +107,61 @@
   {% endif %}
 {% endblock %}
 
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+{% endblock %}
 
 {% block scripts %}
   {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script>
+  window.translations = [];
+  window.languages = [
+    {% for lang in languages %}
+        {
+            'id': '{{ lang.id }}',
+            'name': '{{ lang.names | get_translated_text }}',
+            'name_english': '{{ lang.name_english }}',
+            'lang_code': '{{ lang.lang_code }}'
+        },
+    {% endfor %}
+  ];
+
+  $(function (){
+    updateTranslationJSON();
+
+    $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}'])
+
+    $('#select-language-name').on('change', function () {
+      updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
+    }).change();
+
+    $('#select-language-description').on('change', function () {
+      updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description']);
+    }).change();
+
+    $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id]').each(function () {
+      setTranslationHandler(this);
+    });
+
+    $('form').on('submit', function() {
+      $('input').change();
+      $('textarea').change();
+      window.translations = $.map(window.translations, function(translation, index){
+        if (translation.name  === '' && translation.description === '' && translation.language_id !== '{{ ENGLISH.id }}'){
+          return null;
+        }
+        return translation
+      });
+      updateTranslationJSON();
+      return $(this).find('.has-error').length === 0;
+    });
+  });
+  </script>
   {% if show_create_form %}
   <script>
     $(document).ready(function() {

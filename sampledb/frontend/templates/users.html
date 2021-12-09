@@ -1,39 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Users — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Users') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-<h1>Users</h1>
+<h1>{{ _('Users') }}</h1>
 
 {% if current_user.is_admin %}
-  <a href="{{ url_for('.create_other_user') }}" class="btn btn-default">Create Bot User</a>
+  <a href="{{ url_for('.create_other_user') }}" class="btn btn-default">{{ _('Create Bot User') }}</a>
 {% endif %}
 
 <table class="table">
   <thead>
     <tr>
-      <th scope="col">ID</th>
-      <th scope="col">Name</th>
-      <th scope="col">Profile</th>
+      <th scope="col">{{ _('ID') }}</th>
+      <th scope="col">{{ _('Name') }}</th>
+      <th scope="col">{{ _('Profile') }}</th>
     </tr>
   </thead>
   <tbody>
     {% for user in users %}
     <tr>
       <th scope="row">{{ user.id}}</th>
-      <td>{{ user.name}}{% if user.type.name.lower() == 'other' %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Bot users are meant for the automation of object creation and other tasks.">bot</span>{% endif %}{% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Accounts can be marked as read only if they should not create or change entries in SampleDB.">read only</span>{% endif %}{% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Accounts marked as hidden will not be shown in user lists.">hidden</span>{% endif %}{% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="Deactivated accounts cannot be used until they are activated again.">deactivated</span>{% endif %}</td>
-      <td><a href="{{ url_for('.user_profile', user_id=user.id) }}">View</a></td>
+      <td>{{ user.name}}{% if user.is_admin %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Administrators can manage actions, objects and other %(service_name)s content.', service_name=service_name) }}">{{ _('administrator') }}</span>{% endif %}{% if user.type.name.lower() == 'other' %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Bot users are meant for the automation of object creation and other tasks.') }}">{{ _('bot') }}</span>{% endif %}{% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts can be marked as read only if they should not create or change entries in %(service_name)s.', service_name=service_name) }}">{{ _('read only') }}</span>{% endif %}{% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as hidden will not be shown in user lists.') }}">{{ _('hidden') }}</span>{% endif %}{% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Deactivated accounts cannot be used until they are activated again.') }}">{{ _('deactivated') }}</span>{% endif %}</td>
+      <td><a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ _('View') }}</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip();
-});
-</script>
 {% endblock %}

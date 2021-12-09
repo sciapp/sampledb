@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Object #{{ object.id }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Object') }} #{{ object.id }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>{{ object.data['name']['text'] }}</h1>
-  <h2>Versions</h2>
+  <h1>{{ object.data['name']['text'] | get_translated_text }}</h1>
+  <h2>{{ _('Versions') }}</h2>
 
   <table class="table">
   <thead>
-    <tr><th scope="col">Date</th><th scope="col">User</th><th></th></tr>
+    <tr><th scope="col">{{ _('Date') }}</th><th scope="col">{{ _('User') }}</th><th></th></tr>
   </thead>
   <tbody>
   {% for object_version in object_versions %}
     {% set user = get_user(object_version.user_id) %}
     <tr>
-      <td>{{ object_version.utc_datetime }}</td>
+      <td>{{ object_version.utc_datetime | babel_format_date }}</td>
       <td><a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.name }}</a></td>
-      <td><a href="{{ url_for('.object_version', object_id=object.object_id, version_id=object_version.version_id) }}">View</a></td>
+      <td><a href="{{ url_for('.object_version', object_id=object.object_id, version_id=object_version.version_id) }}">{{ _('View') }}</a></td>
     </tr>
   {% endfor %}
   </tbody>

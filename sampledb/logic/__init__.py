@@ -5,6 +5,8 @@
 
 from . import actions
 from . import action_permissions
+from . import action_translations
+from . import action_type_translations
 from . import api_log
 from . import authentication
 from . import comments
@@ -17,7 +19,9 @@ from . import files
 from . import groups
 from . import instruments
 from . import instrument_log_entries
+from . import languages
 from . import ldap
+from . import locale
 from . import locations
 from . import markdown_images
 from . import markdown_to_html
@@ -50,6 +54,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 __all__ = [
     'actions',
     'action_permissions',
+    'action_translations',
+    'action_type_translations',
     'api_log',
     'authentication',
     'comments',
@@ -61,8 +67,11 @@ __all__ = [
     'files',
     'groups',
     'instruments',
+    'instrument_translations',
     'instrument_log_entries',
+    'languages',
     'ldap',
+    'locale',
     'locations',
     'markdown_images',
     'markdown_to_html',

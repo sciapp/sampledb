@@ -26,9 +26,13 @@ def user(flask_server):
 @pytest.fixture
 def instrument():
     instrument = sampledb.logic.instruments.create_instrument(
-        name='Example Instrument',
-        description='This is an example instrument',
         users_can_create_log_entries=True
+    )
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument.id,
+        name="Example Instrument",
+        description="This is an example instrument"
     )
     # force attribute refresh
     assert instrument.id is not None
@@ -39,7 +43,6 @@ def instrument():
 def action(instrument):
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -51,8 +54,13 @@ def action(instrument):
             },
             'required': ['name']
         },
-        description='',
         instrument_id=instrument.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
     )
     # force attribute refresh
     assert action.id is not None

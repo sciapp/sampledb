@@ -14,8 +14,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def location_to_json(location: locations.Location):
     return {
         'location_id': location.id,
-        'name': location.name,
-        'description': location.description,
+        'name': location.name['en'],
+        'description': location.description['en'],
         'parent_location_id': location.parent_location_id
     }
 
@@ -26,7 +26,7 @@ def object_location_assignment_to_json(object_location_assignment: locations.Obj
         'location_id': object_location_assignment.location_id,
         'responsible_user_id': object_location_assignment.responsible_user_id,
         'user_id': object_location_assignment.user_id,
-        'description': object_location_assignment.description,
+        'description': object_location_assignment.description['en'],
         'utc_datetime': object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
     }
 

@@ -1,0 +1,101 @@
+<!-- array start -->
+{% if search_query_attribute %}
+  {% set base_search_query_attribute = search_query_attribute %}
+{% else %}
+  {% set base_search_query_attribute = "" %}
+{% endif %}
+<div class="row" style="padding-right: 0.75em;">
+  <div class="col-md-3" style="text-align: right; margin-bottom: 5px;">
+<strong>{{ schema.title | get_translated_text }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></strong>
+  </div>
+</div>
+<div style="padding-left:2.5em;">
+  {% if schema["items"]["type"] == 'object' %}
+  <table class="table">
+    <tbody>
+        {% set item_property_names = schema["items"].properties.keys() %}
+        {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
+        {% for property_name in property_order %}
+          {% if property_name in item_property_names %}
+          {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
+      <tr>
+        <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+            {% if schema["items"].properties[property_name].type == 'text' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% elif schema["items"].properties[property_name].type == 'quantity' %}
+            {% if schema["items"].properties[property_name].units.strip() != '1' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+            {% elif schema["items"].properties[property_name].type == 'bool' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+            <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+        </th>
+      {% if data is not none %}
+        {% for item in data %}
+          <td>
+            {% set name = property_name %}
+            {% set schema = schema['items'].properties[property_name] %}
+            {% set z = schema.update({'parent_style': 'table'}) %}
+            {% if property_name in item %}
+            {% set data = item[property_name] %}
+            {% else %}
+            {% set data = none %}
+            {% endif %}
+            {% set entry_index = loop.index0 %}
+            {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+            {% include "objects/view/any.html" %}
+          </td>
+        {% endfor %}
+      {% endif %}
+      </tr>
+          {% endif %}
+        {% endfor %}
+        {% for property_name in item_property_names %}
+          {% if property_name not in property_order %}
+          {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
+      <tr>
+        <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+            {% if schema["items"].properties[property_name].type == 'text' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% elif schema["items"].properties[property_name].type == 'quantity' %}
+            {% if schema["items"].properties[property_name].units.strip() != '1' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+            {% elif schema["items"].properties[property_name].type == 'bool' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+            <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+        </th>
+        {% if data is not none %}
+          {% for item in data %}
+            <td>
+              {% set name = property_name %}
+              {% set schema = schema['items'].properties[property_name] %}
+              {% set z = schema.update({'parent_style': 'table'}) %}
+              {% if property_name in item %}
+              {% set data = item[property_name] %}
+              {% else %}
+              {% set data = none %}
+              {% endif %}
+              {% set entry_index = loop.index0 %}
+              {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+              {% include "objects/view/any.html" %}
+            </td>
+          {% endfor %}
+        {% endif %}
+      </tr>
+          {% endif %}
+        {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>{{ _('Unsupported item type for horizontal_table style.') }}</p>
+  {% endif %}
+</div>

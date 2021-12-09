@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>File Upload — {{ service_name }}</title>
+  <title>{{ _('Mobile File Upload') }} — {{ service_name }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
 </head>
 <body>
   <div class="container">
-    <h1>Mobile File Upload</h1>
+    <h1>{{ _('Mobile File Upload') }}</h1>
     <form method="post" enctype="multipart/form-data">
       <input type="file" id="input-file-upload" name="file_input" style="display: none" required="required"/>
-      <label class="btn btn-primary btn-block btn-lg" for="input-file-upload">Select file</label>
-      <button class="btn btn-primary btn-block btn-lg disabled" type="submit" disabled="disabled">Upload</button>
+      <label class="btn btn-primary btn-block btn-lg" for="input-file-upload">{{ _('Select file') }}</label>
+      <button class="btn btn-primary btn-block btn-lg disabled" type="submit" disabled="disabled">{{ _('Upload') }}</button>
     </form>
   </div>
   <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>

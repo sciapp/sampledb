@@ -6,6 +6,7 @@
 from http import HTTPStatus
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import Email, Length, InputRequired, ValidationError
@@ -21,11 +22,11 @@ class CreateOtherUserForm(FlaskForm):
 
     def validate_name(form, field):
         if len(field.data) < 1:
-            raise ValidationError('Please enter a valid user name.')
+            raise ValidationError(_('Please enter a valid user name.'))
         if not all(c in 'abcdefghijklmnopqrstuvwxyz0123456789_' for c in field.data):
-            raise ValidationError('The name may only contain lower case characters, digits and underscores.')
+            raise ValidationError(_('The name may only contain lower case characters, digits and underscores.'))
         if not authentication.is_login_available(field.data):
-            raise ValidationError('This name is already being used.')
+            raise ValidationError(_('This name is already being used.'))
 
 
 @frontend.route('/users/create_other_user', methods=['GET', 'POST'])
@@ -45,7 +46,7 @@ def create_other_user():
             name=create_other_user_form.name.data,
             password=create_other_user_form.password.data
         )
-        flask.flash('The user has been created successfully.', 'success')
+        flask.flash(_('The user has been created successfully.'), 'success')
         return flask.redirect(flask.url_for('.user_profile', user_id=user.id))
     return flask.render_template(
         'create_other_user.html',

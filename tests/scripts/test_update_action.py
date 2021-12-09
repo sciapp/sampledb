@@ -7,13 +7,13 @@ import json
 import os
 import pytest
 import sampledb
-from sampledb.logic import actions, instruments
+from sampledb.logic import actions, instruments, action_translations, languages
 import sampledb.__main__ as scripts
 
 
 @pytest.fixture
 def instrument():
-    return instruments.create_instrument('Example Instrument', 'Example Instrument Description')
+    return instruments.create_instrument()
 
 
 @pytest.fixture
@@ -25,13 +25,18 @@ def schema_file_name():
 def action(instrument, schema_file_name):
     with open(schema_file_name) as schema_file:
         schema = json.load(schema_file)
-    return actions.create_action(
+    action = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Example Action',
-        description='Example Action Description',
         schema=schema,
         instrument_id=instrument.id
     )
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description='Example Action Description'
+    )
+    return action
 
 
 def test_update_action(action, schema_file_name, capsys):
@@ -39,14 +44,18 @@ def test_update_action(action, schema_file_name, capsys):
     description = 'Example Action Description'
     assert len(actions.get_actions()) == 1
 
-    scripts.main([scripts.__file__, 'update_action', str(action.id), name, '', schema_file_name])
+    scripts.main([scripts.__file__, 'update_action', str(action.id), name, description, schema_file_name])
 
     assert 'Success' in capsys.readouterr()[0]
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == ''
     assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_update_action_missing_arguments(action, capsys):
@@ -61,9 +70,13 @@ def test_update_action_missing_arguments(action, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_update_action_invalid_action_id(action, schema_file_name, capsys):
@@ -78,9 +91,13 @@ def test_update_action_invalid_action_id(action, schema_file_name, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_update_action_missing_action(action, schema_file_name, capsys):
@@ -95,9 +112,13 @@ def test_update_action_missing_action(action, schema_file_name, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description
 
 
 def test_update_action_invalid_schema(action, capsys):
@@ -113,6 +134,10 @@ def test_update_action_invalid_schema(action, capsys):
 
     assert len(actions.get_actions()) == 1
     action = actions.get_actions()[0]
-    assert action.name == name
-    assert action.description == description
     assert action.type_id == sampledb.models.ActionType.SAMPLE_CREATION
+    action = action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=sampledb.logic.languages.Language.ENGLISH
+    )
+    assert action.translation.name == name
+    assert action.translation.description == description

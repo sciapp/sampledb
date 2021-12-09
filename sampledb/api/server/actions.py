@@ -7,8 +7,9 @@ import flask
 from flask_restful import Resource
 
 from .authentication import multi_auth
-from ...logic.actions import get_action
+from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
+from ...logic.languages import Language
 from ...logic import errors
 from ...models.actions import ActionType
 
@@ -26,8 +27,8 @@ def action_to_json(action):
             ActionType.SIMULATION: 'simulation'
         }.get(action.type_id, 'custom'),
         'type_id': action.type_id,
-        'name': action.name,
-        'description': action.description,
+        'name': action.translation.name,
+        'description': action.translation.description,
         'is_hidden': action.is_hidden,
         'schema': action.schema
     }
@@ -37,7 +38,10 @@ class Action(Resource):
     @multi_auth.login_required
     def get(self, action_id: int):
         try:
-            action = get_action(action_id=action_id)
+            action = get_action_with_translation_in_language(
+                action_id=action_id,
+                language_id=Language.ENGLISH
+            )
         except errors.ActionDoesNotExistError:
             return {
                 "message": "action {} does not exist".format(action_id)
@@ -53,4 +57,9 @@ class Actions(Resource):
     @multi_auth.login_required
     def get(self):
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
-        return [action_to_json(action) for action in actions]
+        return [
+            action_to_json(get_action_with_translation_in_language(
+                action_id=action.id,
+                language_id=Language.ENGLISH
+            )) for action in actions
+        ]

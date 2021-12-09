@@ -1,0 +1,153 @@
+{% extends "objects/view/base.html" %}
+
+{% block stylesheets %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inline-edit.css') }}"/>
+{% endblock %}
+
+{% set id_prefix = "object_" %}
+
+{% block includes %}
+    {# counter for plotly_chart_plots #}
+    {% set plot_counter = namespace(value=0) %}
+    <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form" autocomplete="off">
+        {{ form.csrf_token() }}
+        <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
+        {% set id_prefix = "object_" %}
+        {% include "objects/inline_edit/inline_edit_any.html" %}
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/inline-edit.js') }}"></script>
+    {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
+        <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+    {% endif %}
+    {% if get_user_language(current_user).lang_code == 'de' %}
+        <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>
+        <script type="text/javascript">
+            Plotly.setPlotConfig({locale: 'de'})
+        </script>
+    {% endif %}
+
+    <script type="text/javascript">
+        window.mde_fields = [];
+
+        $(function () {
+            $('.input-group.date').each(function () {
+                $(this).datetimepicker({
+                    locale: "{{ get_user_language(current_user).lang_code }}",
+                    format: "{{ get_user_language(current_user).datetime_format_moment }}",
+                    date: $(this).attr('data-datetime')
+                });
+            });
+
+            function updateSelectLanguage(selectpicker) {
+                var enabled_languages = $(selectpicker).selectpicker('val');
+                if (!Array.isArray(enabled_languages)) {
+                    return;
+                }
+                if (enabled_languages === '' || enabled_languages.length === 0) {
+                    enabled_languages = ['en'];
+                } else {
+                    enabled_languages.push('en');
+                }
+                var parent_form_group = $(selectpicker).closest('.form-group');
+                {% for language in languages %}
+                    if (enabled_languages.includes("{{ language.lang_code }}")) {
+                        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+                    } else {
+                        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+                    }
+                {% endfor %}
+            }
+
+            var select_language_selectpicker = $('.select-language')
+            select_language_selectpicker.on('changed.bs.select', function () {
+                updateSelectLanguage(this);
+            });
+            select_language_selectpicker.each(function (_, selectpicker) {
+                updateSelectLanguage(selectpicker);
+            });
+            $.each(window.conditional_wrapper_scripts, function () {
+                this();
+            });
+
+            $('div.objectpicker').each(function () {
+                let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
+                $(this).append(filter_button);
+                let objectpicker = $(this).find('.selectpicker');
+                let actionpicker = $(this).next('.objectpicker-actionpicker').find('.selectpicker');
+                filter_button.tooltip();
+                filter_button.on('click', function () {
+                    actionpicker.selectpicker('toggle');
+                });
+                actionpicker.on('hidden.bs.select', function () {
+                    let action_id = actionpicker.selectpicker('val');
+                    if (action_id === "") {
+                        objectpicker.find('option').prop('disabled', false);
+                    } else {
+                        objectpicker.find('option').prop('disabled', true);
+                        objectpicker.find('option[data-action-id="' + action_id + '"]').prop('disabled', false);
+                    }
+                    objectpicker.find('option[value=""]').prop('disabled', false);
+                    objectpicker.selectpicker('refresh');
+                    objectpicker.selectpicker('toggle');
+                    if (objectpicker.selectpicker('val') === null) {
+                        objectpicker.selectpicker('val', '');
+                    }
+                });
+            });
+        });
+
+        var tags = new Bloodhound({
+            initialize: true,
+            local: {{ tags | tojson }},
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace
+        });
+        $('input[name^=\'object__\'][name$=\'__tags\']').each(function () {
+            var tagsinput = $(this);
+            tagsinput.tagsinput({
+                trimValue: true,
+                confirmKeys: [13, 32],
+                typeaheadjs: {
+                    name: 'Tags',
+                    valueKey: 'name',
+                    displayKey: 'name',
+                    source: tags.ttAdapter(),
+                    templates: {
+                        'suggestion': function (item) {
+                            return '<div>' + item.name + ' (×' + item.uses + ')' + '</div>'
+                        }
+                    }
+                }
+            });
+            tagsinput.on('beforeItemAdd', function (event) {
+                var sanitized_tag = event.item.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9_\-äüöß]/g, '');
+                if (event.item !== sanitized_tag) {
+                    if (!event.options || !event.options.fromHandler) {
+                        event.cancel = true;
+                        $(this).tagsinput('add', sanitized_tag, {fromHandler: true});
+                    }
+                }
+            });
+            $(tagsinput.tagsinput('input')).on('blur', function () {
+                var item = $(this).tagsinput('input').val();
+                $(this).tagsinput('input').val('');
+                item = item.trim();
+                if (item) {
+                    $(this).tagsinput('add', item);
+                }
+            }.bind(tagsinput));
+        });
+
+    </script>
+{% endblock %}

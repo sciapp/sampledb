@@ -1,6 +1,31 @@
 Changelog
 =========
 
+Version 0.19
+------------
+
+Released on December 9th, 2021.
+
+- Allow filtering instrument log entries by author
+- Allow sorting instrument log entries by author
+- Added event datetime for instrument log entries
+- Added internationalization features
+- Added german localization
+- Store file contents in database by default
+- Allow setting a publicly visible user role
+- Added support for configurable user fields
+- Added label for administrators in user list
+- Allow individual exemptions for Use as Template
+- Allow setting a default number of items for arrays
+- Improved user interface
+- Added support for a custom CSS file
+- Added support for conditional properties
+- Allow filtering object references by action
+- Implemented TOTP-based two factor authentication
+- Added tree view for instrument log entries
+- Allow editing individual fields
+- Allow hiding object type and id on object page
+
 Version 0.18
 ------------
 

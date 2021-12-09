@@ -45,8 +45,6 @@ def user(auth_user):
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -59,15 +57,22 @@ def action():
             'required': ['name']
         }
     )
-    return action
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.action_translations.Language.ENGLISH,
+        action_id=action.id,
+        name="Example Action",
+        description="This is an example action"
+    )
+    return sampledb.logic.action_translations.get_action_with_translation_in_language(
+        action_id=action.id,
+        language_id=sampledb.logic.action_translations.Language.ENGLISH
+    )
 
 
 @pytest.fixture
 def other_action():
     other_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -106,6 +111,62 @@ def test_get_object_version(flask_server, auth, user, action):
     }
     r = requests.get(flask_server.base_url + 'api/v1/objects/1/versions/1', auth=auth)
     assert r.status_code == 404
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_user=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "user": {
+            'user_id': user.id,
+            'name': user.name,
+            'orcid': None,
+            'affiliation': None,
+            'role': None
+        },
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "action": None,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
+
+    sampledb.logic.action_permissions.set_action_public(action_id=object.action_id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "action": {
+            'action_id': action.id,
+            'instrument_id': None,
+            'user_id': None,
+            'type': 'sample',
+            'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
+            'name': action.translation.name,
+            'description': action.translation.description,
+            'is_hidden': action.is_hidden,
+            'schema': action.schema
+        },
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "data": object.data
+    }
 
 
 def test_get_object(flask_server, auth, user, action):
@@ -293,8 +354,6 @@ def test_post_object_version(flask_server, auth, user, action):
 
     sampledb.logic.actions.update_action(
         action_id=action.id,
-        name=action.name,
-        description=action.description,
         schema=new_schema
     )
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
@@ -458,8 +517,6 @@ def test_get_objects_with_limit_and_offset(flask_server, auth, user, action):
 def test_get_objects_with_name_only(flask_server, auth, user):
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',

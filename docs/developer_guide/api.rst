@@ -6,7 +6,7 @@ HTTP API
 Authentication
 --------------
 
-The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`.
+The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`. If you have a two factor authentication method enabled, you cannot use your user credentials to use the API and will have to use an API token instead.
 
 Please make sure to use HTTPS when accessing the API.
 
@@ -168,7 +168,9 @@ Reading an object version
     :>json number object_id: the object's ID
     :>json number version_id: the object version's ID
     :>json number action_id: the action's ID
+    :>json object action: the action (if the parameter embed_action is set to a non-empty value)
     :>json number user_id: the ID of the user who created this version
+    :>json object user: the user (if the parameter embed_user is set to a non-empty value)
     :>json string utc_datetime: the time and date when this version was created in UTC
     :>json object schema: the object's schema
     :>json object data: the object's data
@@ -1346,7 +1348,10 @@ Reading a list of all users
         [
             {
                 "user_id": 1,
-                "name": "Example User"
+                "name": "Example User",
+                "orcid": null,
+                "affiliation": null,
+                "role": null
             }
         ]
 
@@ -1378,11 +1383,18 @@ Reading a user
 
         {
             "user_id": 1,
-            "name": "Example User"
+            "name": "Example User",
+            "orcid": null,
+            "affiliation": null,
+            "role": null
         }
 
     :>json number user_id: the user's ID
     :>json string name: the user's name
+    :>json string orcid: the user's ORCid ID (optional)
+    :>json string affiliation: the user's affiliation (optional)
+    :>json string role: the user's role (optional)
+    :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
     :statuscode 404: the user does not exist
 
@@ -1412,11 +1424,18 @@ Reading the current user
 
         {
             "user_id": 1,
-            "name": "Example User"
+            "name": "Example User",
+            "orcid": null,
+            "affiliation": null,
+            "role": null
         }
 
     :>json number user_id: the user's ID
     :>json string name: the user's name
+    :>json string orcid: the user's ORCid ID (optional)
+    :>json string affiliation: the user's affiliation (optional)
+    :>json string role: the user's role (optional)
+    :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
 
 
@@ -1649,10 +1668,10 @@ Reading information for a file
 
     :>json number object_id: the object's ID
     :>json number file_id: the file's ID
-    :>json string storage: how the file is stored (local or url)
+    :>json string storage: how the file is stored (local, database or url)
     :>json string url: the URL of the file (for url storage)
-    :>json string original_file_name: the original name of the file (for local storage)
-    :>json string base64_content: the base64 encoded content of the file (for local storage)
+    :>json string original_file_name: the original name of the file (for local or database storage)
+    :>json string base64_content: the base64 encoded content of the file (for local or database storage)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or the file does not exist

@@ -8,7 +8,6 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 import requests
-from bs4 import BeautifulSoup
 
 
 @pytest.fixture
@@ -34,8 +33,10 @@ def test_create_group():
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
 
 def test_create_group_with_user_that_does_not_exist():
@@ -45,7 +46,7 @@ def test_create_group_with_user_that_does_not_exist():
     assert len(sampledb.models.groups.Group.query.all()) == 0
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.groups.create_group("Example Group", "", user.id+1)
+        sampledb.logic.groups.create_group("Example Group", "", user.id + 1)
 
     assert len(sampledb.models.groups.Group.query.all()) == 0
 
@@ -82,18 +83,20 @@ def test_create_group_with_long_name():
     assert len(sampledb.models.groups.Group.query.all()) == 0
 
     with pytest.raises(sampledb.logic.errors.InvalidGroupNameError):
-        sampledb.logic.groups.create_group("A"*101, "", user.id)
+        sampledb.logic.groups.create_group("A" * 101, "", user.id)
 
     assert len(sampledb.models.groups.Group.query.all()) == 0
 
-    group_id = sampledb.logic.groups.create_group("A"*100, "", user.id).id
+    group_id = sampledb.logic.groups.create_group("A" * 100, "", user.id).id
 
     assert len(sampledb.models.groups.Group.query.all()) == 1
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "A"*100
-    assert group.description == ""
+    assert group.name == {
+        'en': "A" * 100
+    }
+    assert group.description == {}
 
 
 def test_get_group():
@@ -106,8 +109,10 @@ def test_get_group():
     group = sampledb.logic.groups.get_group(group_id)
 
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
 
 def test_get_group_that_does_not_exist():
@@ -118,7 +123,7 @@ def test_get_group_that_does_not_exist():
     assert len(sampledb.models.groups.Group.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.groups.get_group(group_id+1)
+        sampledb.logic.groups.get_group(group_id + 1)
 
 
 def test_get_groups():
@@ -135,8 +140,10 @@ def test_get_groups():
     assert len(groups) == 1
     group = groups[0]
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
     sampledb.logic.groups.delete_group(group_id)
     groups = sampledb.logic.groups.get_groups()
@@ -146,7 +153,7 @@ def test_get_groups():
     sampledb.logic.groups.create_group("Example Group 2", "", user.id)
     groups = sampledb.logic.groups.get_groups()
     assert len(groups) == 2
-    assert {groups[0].name, groups[1].name} == {"Example Group 1", "Example Group 2"}
+    assert {groups[0].name['en'], groups[1].name['en']} == {"Example Group 1", "Example Group 2"}
 
 
 def test_update_group():
@@ -156,13 +163,25 @@ def test_update_group():
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
     assert len(sampledb.models.groups.Group.query.all()) == 1
 
-    sampledb.logic.groups.update_group(group_id, "Test Group", "Test Description")
+    sampledb.logic.groups.update_group(
+        group_id=group_id,
+        name={
+            'en': "Test Group"
+        },
+        description={
+            'en': "Test Description"
+        }
+    )
 
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Test Group"
-    assert group.description == "Test Description"
+    assert group.name == {
+        'en': "Test Group"
+    }
+    assert group.description == {
+        'en': "Test Description"
+    }
 
 
 def test_update_group_that_does_not_exist():
@@ -173,13 +192,23 @@ def test_update_group_that_does_not_exist():
     assert len(sampledb.models.groups.Group.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.groups.update_group(group_id+1, "Test Group", "Test Description")
+        sampledb.logic.groups.update_group(
+            group_id=group_id + 1,
+            name={
+                'en': "Test Group"
+            },
+            description={
+                'en': "Test Description"
+            }
+        )
 
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
 
 def test_update_group_with_existing_name():
@@ -191,13 +220,21 @@ def test_update_group_with_existing_name():
     assert len(sampledb.models.groups.Group.query.all()) == 2
 
     with pytest.raises(sampledb.logic.errors.GroupAlreadyExistsError):
-        sampledb.logic.groups.update_group(group_id, "Example Group", "")
+        sampledb.logic.groups.update_group(
+            group_id=group_id,
+            name={
+                'en': "Example Group"
+            },
+            description={}
+        )
 
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Example Group 2"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group 2"
+    }
+    assert group.description == {}
 
 
 def test_update_group_with_empty_name():
@@ -207,14 +244,26 @@ def test_update_group_with_empty_name():
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
     assert len(sampledb.models.groups.Group.query.all()) == 1
 
+    with pytest.raises(sampledb.logic.errors.MissingEnglishTranslationError):
+        sampledb.logic.groups.update_group(
+            group_id=group_id,
+            name={},
+            description={'en': "Test Description"}
+        )
     with pytest.raises(sampledb.logic.errors.InvalidGroupNameError):
-        sampledb.logic.groups.update_group(group_id, "", "Test Description")
+        sampledb.logic.groups.update_group(
+            group_id=group_id,
+            name={'en': ''},
+            description={'en': "Test Description"}
+        )
 
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
 
 def test_update_group_with_long_name():
@@ -225,21 +274,35 @@ def test_update_group_with_long_name():
     assert len(sampledb.models.groups.Group.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.InvalidGroupNameError):
-        sampledb.logic.groups.update_group(group_id, "A"*101, "")
+        sampledb.logic.groups.update_group(
+            group_id=group_id,
+            name={'en': "A" * 101},
+            description={}
+        )
 
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
-    sampledb.logic.groups.update_group(group_id, "A"*100, "")
+    sampledb.logic.groups.update_group(
+        group_id=group_id,
+        name={
+            'en': "A" * 100
+        },
+        description={}
+    )
 
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "A"*100
-    assert group.description == ""
+    assert group.name == {
+        'en': "A" * 100
+    }
+    assert group.description == {}
 
 
 def test_delete_group():
@@ -256,8 +319,12 @@ def test_delete_group():
     group = sampledb.models.groups.Group.query.first()
     assert group is not None
     assert group.id != group_id
-    assert group.name == "Test Group"
-    assert group.description == "Test Description"
+    assert group.name == {
+        'en': "Test Group"
+    }
+    assert group.description == {
+        'en': "Test Description"
+    }
 
 
 def test_delete_group_that_does_not_exist():
@@ -268,14 +335,18 @@ def test_delete_group_that_does_not_exist():
     assert len(sampledb.models.groups.Group.query.all()) == 1
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.groups.delete_group(group_id+1)
+        sampledb.logic.groups.delete_group(group_id + 1)
 
     assert len(sampledb.models.groups.Group.query.all()) == 1
     group = sampledb.models.groups.Group.query.get(group_id)
     assert group is not None
     assert group.id == group_id
-    assert group.name == "Test Group"
-    assert group.description == "Test Description"
+    assert group.name == {
+        'en': "Test Group"
+    }
+    assert group.description == {
+        'en': "Test Description"
+    }
 
 
 def test_add_user_to_group():
@@ -316,7 +387,7 @@ def test_invite_user_to_group_user_does_not_exist():
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.groups.invite_user_to_group(group_id, 2, user.id)
+        sampledb.logic.groups.invite_user_to_group(group_id, user.id + 1, user.id)
 
 
 def test_invite_user_that_is_already_a_member_to_group():
@@ -381,7 +452,7 @@ def test_add_user_to_group_that_does_not_exist():
     assert len(group.members) == 1
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.groups.add_user_to_group(group_id+1, user.id)
+        sampledb.logic.groups.add_user_to_group(group_id + 1, user.id)
 
     assert len(group.members) == 1
 
@@ -396,7 +467,7 @@ def test_add_user_that_does_not_exist_to_group():
     assert len(group.members) == 1
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.groups.add_user_to_group(group_id, user.id+1)
+        sampledb.logic.groups.add_user_to_group(group_id, user.id + 1)
 
     assert len(group.members) == 1
 
@@ -466,7 +537,7 @@ def test_remove_user_from_group_that_does_not_exist():
     assert user in group.members
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.groups.remove_user_from_group(group_id+1, user.id)
+        sampledb.logic.groups.remove_user_from_group(group_id + 1, user.id)
 
     assert len(group.members) == 1
     assert user in group.members
@@ -483,7 +554,7 @@ def test_remove_user_that_does_not_exist_from_group():
     assert user in group.members
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.groups.remove_user_from_group(group_id, user.id+1)
+        sampledb.logic.groups.remove_user_from_group(group_id, user.id + 1)
 
     assert len(group.members) == 1
     assert user in group.members
@@ -532,8 +603,10 @@ def test_get_user_groups():
     assert len(groups) == 1
     group = groups[0]
     assert group.id == group_id
-    assert group.name == "Example Group"
-    assert group.description == ""
+    assert group.name == {
+        'en': "Example Group"
+    }
+    assert group.description == {}
 
 
 def test_get_user_groups_for_user_that_does_not_exist():
@@ -542,7 +615,7 @@ def test_get_user_groups_for_user_that_does_not_exist():
     sampledb.db.session.commit()
 
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.groups.get_user_groups(user.id+1)
+        sampledb.logic.groups.get_user_groups(user.id + 1)
 
 
 def test_get_group_member_ids():
@@ -578,4 +651,169 @@ def test_get_group_member_ids_for_group_that_does_not_exist():
     sampledb.models.groups.Group.query.get(group_id)
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
-        sampledb.logic.groups.get_group_member_ids(group_id+1)
+        sampledb.logic.groups.get_group_member_ids(group_id + 1)
+
+
+def test_group_translations(user):
+    group = sampledb.logic.groups.create_group(
+        name="Example Group",
+        description="This is an example group",
+        initial_user_id=user.id
+    )
+    assert group.name == {
+        'en': 'Example Group'
+    }
+    assert group.description == {
+        'en': 'This is an example group'
+    }
+
+    with pytest.raises(Exception):
+        sampledb.logic.groups.update_group(
+            group_id=group.id,
+            name="Example Group 2",
+            description="This is an example group 2"
+        )
+    group = sampledb.logic.groups.get_group(group.id)
+    assert group.name == {
+        'en': 'Example Group'
+    }
+    assert group.description == {
+        'en': 'This is an example group'
+    }
+
+    sampledb.logic.groups.update_group(
+        group_id=group.id,
+        name={'en': "Example Group 2"},
+        description={'en': "This is an example group 2"},
+    )
+    group = sampledb.logic.groups.get_group(group.id)
+    assert group.name == {
+        'en': 'Example Group 2'
+    }
+    assert group.description == {
+        'en': 'This is an example group 2'
+    }
+
+    german = sampledb.logic.languages.get_language_by_lang_code('de')
+    sampledb.logic.languages.update_language(
+        language_id=german.id,
+        names=german.names,
+        lang_code=german.lang_code,
+        datetime_format_datetime=german.datetime_format_datetime,
+        datetime_format_moment=german.datetime_format_moment,
+        enabled_for_input=True,
+        enabled_for_user_interface=True
+    )
+
+    sampledb.logic.groups.update_group(
+        group_id=group.id,
+        name={
+            'en': "Example Group",
+            'de': "Beispielgruppe"
+        },
+        description={
+            'en': "This is an example group",
+            'de': "Dies ist eine Beispielgruppe"
+        }
+    )
+    group = sampledb.logic.groups.get_group(group.id)
+    assert group.name == {
+        'en': "Example Group",
+        'de': "Beispielgruppe"
+    }
+    assert group.description == {
+        'en': "This is an example group",
+        'de': "Dies ist eine Beispielgruppe"
+    }
+
+    with pytest.raises(sampledb.logic.errors.LanguageDoesNotExistError):
+        sampledb.logic.groups.update_group(
+            group_id=group.id,
+            name={
+                'en': "Example Group",
+                'xy': "Beispielgruppe"
+            },
+            description={
+                'en': "This is an example group",
+                'xy': "Dies ist eine Beispielgruppe"
+            }
+        )
+
+    group = sampledb.logic.groups.get_group(group.id)
+    assert group.name == {
+        'en': "Example Group",
+        'de': "Beispielgruppe"
+    }
+    assert group.description == {
+        'en': "This is an example group",
+        'de': "Dies ist eine Beispielgruppe"
+    }
+
+    with pytest.raises(sampledb.logic.errors.MissingEnglishTranslationError):
+        sampledb.logic.groups.update_group(
+            group_id=group.id,
+            name={
+                'de': "Beispielgruppe"
+            },
+            description={
+                'de': "Dies ist eine Beispielgruppe"
+            }
+        )
+
+    group = sampledb.logic.groups.get_group(group.id)
+    assert group.name == {
+        'en': "Example Group",
+        'de': "Beispielgruppe"
+    }
+    assert group.description == {
+        'en': "This is an example group",
+        'de': "Dies ist eine Beispielgruppe"
+    }
+
+    with pytest.raises(sampledb.logic.errors.MissingEnglishTranslationError):
+        sampledb.logic.groups.update_group(
+            group_id=group.id,
+            name={},
+            description={}
+        )
+
+    group = sampledb.logic.groups.get_group(group.id)
+    assert group.name == {
+        'en': "Example Group",
+        'de': "Beispielgruppe"
+    }
+    assert group.description == {
+        'en': "This is an example group",
+        'de': "Dies ist eine Beispielgruppe"
+    }
+
+    with pytest.raises(sampledb.logic.errors.LanguageDoesNotExistError):
+        sampledb.logic.groups.create_group(
+            name={
+                'en': "Example Group 2",
+                'xy': "Beispielgruppe 2"
+            },
+            description={
+                'en': "This is an example group",
+                'xy': "Dies ist eine Beispielgruppe"
+            },
+            initial_user_id=user.id
+        )
+
+    with pytest.raises(sampledb.logic.errors.MissingEnglishTranslationError):
+        sampledb.logic.groups.create_group(
+            name={
+                'de': "Beispielort 2"
+            },
+            description={
+                'de': "Dies ist eine Beispielgruppe"
+            },
+            initial_user_id=user.id
+        )
+
+    with pytest.raises(sampledb.logic.errors.MissingEnglishTranslationError):
+        sampledb.logic.groups.create_group(
+            name={},
+            description={},
+            initial_user_id=user.id
+        )

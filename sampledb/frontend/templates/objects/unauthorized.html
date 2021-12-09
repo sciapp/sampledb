@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Insufficient Permissions — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Insufficient Permissions') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Insufficient Permissions</h1>
-  <p>You do not have sufficient <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions">permissions</a> to access this object. {% if has_grant_user %}Would you like to request read permissions?</p>
+  <h1>{{ _('Insufficient Permissions') }}</h1>
+  <p>{{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }} {% if has_grant_user %}{{ _('Would you like to request read permissions?')}}</p>
   <form action="{{ url_for('.object_permissions_request', object_id=object_id) }}" method="post">
-    <button type="submit" class="btn btn-primary">Send Request</button>
+    <button type="submit" class="btn btn-primary">{{ _('Send Request') }}</button>
   </form>
   {% endif %}
 {% endblock %}

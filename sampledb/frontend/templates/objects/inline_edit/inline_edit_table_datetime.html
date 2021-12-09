@@ -1,0 +1,26 @@
+<div class="form-area">
+    {# View #}
+    <div class="view-switch">
+        <div class="row" style="padding-right:0.75em; padding-left: 15px">
+            {{ data.utc_datetime | babel_format_datetime }}
+            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+            <div class="alert-upload-failed">
+                {{ _('Your input is not valid. Please check.') }}
+            </div>
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        <div class="form-group" style="padding-right:0.75em">
+            <div class="input-group date" data-datetime="
+                    {% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | parse_datetime_string | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | parse_datetime_string | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
+                <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
+                <span class="input-group-addon">
+          <span class="glyphicon glyphicon-calendar"></span>
+      </span>
+            </div>
+            {% if id_prefix+'_datetime' in errors %}
+                <span class="help-block">{{ errors[id_prefix+'_datetime'] }}</span>{% endif %}
+        </div>
+    </div>
+</div>

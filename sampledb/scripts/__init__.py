@@ -3,7 +3,9 @@
 
 """
 
+from . import build_translations
 from . import create_instrument
+from . import disable_two_factor_authentication
 from . import update_instrument
 from . import list_instruments
 from . import update_instrument_responsible_users
@@ -12,6 +14,7 @@ from . import update_action
 from . import list_actions
 from . import export_action_schema
 from . import create_other_user
+from . import move_local_files_to_database
 from . import send_announcement
 from . import set_administrator
 from . import set_up_demo
@@ -22,7 +25,9 @@ from . import run
 script_modules = {
     module.__name__.split('.')[-1]: module
     for module in (
+        build_translations,
         create_instrument,
+        disable_two_factor_authentication,
         update_instrument,
         list_instruments,
         update_instrument_responsible_users,
@@ -31,6 +36,7 @@ script_modules = {
         list_actions,
         export_action_schema,
         create_other_user,
+        move_local_files_to_database,
         send_announcement,
         set_administrator,
         set_up_demo,

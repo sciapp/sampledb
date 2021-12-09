@@ -1,18 +1,26 @@
 <!-- object start -->
-<strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title }}</strong>
+<strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title | get_translated_text }}</strong>
 <div style="">
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}
     {% set is_required = ('required' in schema and property_name in schema['required']) %}
     {% set name = property_name %}
     {% set schema = property_schema %}
+      {% set parent_id_prefix = id_prefix %}
     {% set id_prefix = id_prefix + '_' + name + '_' %}
     {% if data is not none and property_name in data %}
     {% set data = data[property_name] %}
     {% else %}
     {% set data = none %}
     {% endif %}
-    {% include "objects/forms/form_any.html" %}
+      {% if 'conditions' in schema %}
+        <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+        {% include "objects/forms/form_any.html" %}
+        {% include "objects/forms/conditional_wrapper_script.html" %}
+        </div>
+      {% else %}
+        {% include "objects/forms/form_any.html" %}
+      {% endif %}
   {% endfor %}
 {% else %}
   {% for property_name in schema.propertyOrder %}
@@ -20,13 +28,21 @@
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
+      {% set parent_id_prefix = id_prefix %}
       {% set id_prefix = id_prefix + '_' + name + '_' %}
       {% if data is not none and property_name in data %}
       {% set data = data[property_name] %}
       {% else %}
       {% set data = none %}
       {% endif %}
-      {% include "objects/forms/form_any.html" %}
+      {% if 'conditions' in schema %}
+        <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+        {% include "objects/forms/form_any.html" %}
+        {% include "objects/forms/conditional_wrapper_script.html" %}
+        </div>
+      {% else %}
+        {% include "objects/forms/form_any.html" %}
+      {% endif %}
     {% endif %}
   {% endfor %}
   {% for property_name, property_schema in schema.properties.items() %}
@@ -34,13 +50,21 @@
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set name = property_name %}
       {% set schema = property_schema %}
+      {% set parent_id_prefix = id_prefix %}
       {% set id_prefix = id_prefix + '_' + name + '_' %}
       {% if data is not none and property_name in data %}
       {% set data = data[property_name] %}
       {% else %}
       {% set data = none %}
       {% endif %}
-      {% include "objects/forms/form_any.html" %}
+      {% if 'conditions' in schema %}
+        <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+        {% include "objects/forms/form_any.html" %}
+        {% include "objects/forms/conditional_wrapper_script.html" %}
+        </div>
+      {% else %}
+        {% include "objects/forms/form_any.html" %}
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% endif %}

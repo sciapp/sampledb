@@ -25,8 +25,6 @@ def user():
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -2456,8 +2454,14 @@ def test_with_name_collision(user) -> None:
         },
         'required': ['name']
     }
-    action1 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'a1', '', schema1)
-    action2 = sampledb.logic.actions.create_action(sampledb.models.ActionType.SAMPLE_CREATION, 'a2', '', schema2)
+    action1 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema1
+    )
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema2
+    )
 
     data1 = {
         'name': {

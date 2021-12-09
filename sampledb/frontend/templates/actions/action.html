@@ -1,55 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Action #{{ action.id }}: {{ action.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _("Action") }} #{{ action.id }}: {{ title }} — {{ service_name }}{% endblock %}
 
 {% block content %}
+
   <h1>
-    Action #{{ action.id }}:
+    {{ _("Action") }} #{{ action.id }}:
     {% if action.user is not none %}
     <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
     {% endif %}
     {% if action.instrument is not none %}
-    <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name }}">{{ action.instrument.name }}</a> &mdash;
+      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ single_translation.instrument_translation.name }}">{{ single_translation.instrument_translation.name }}</a> &mdash;
     {% endif %}
-    {{ action.name }}
+    {{ single_translation.name }}
   </h1>
   {% if action.user_id is not none %}
-  <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} This custom action is {% if not is_public %}not {% endif %}public.</p>
+    <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} {% if not is_public %} {{ _("This custom action is not public. ") }} {% else %}  {{ _("This custom action is public. ") }} {% endif %}</p>
   {% endif %}
   {% if action.is_hidden %}
-  <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This action has been hidden from action lists.</p>
+    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
   {% endif %}
-  {% if action.description %}
-  <div class="action-user-content">
-  {% if action.description_is_markdown %}{{ action.description | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description }}</p>{% endif %}
-  </div>
+
+  {% if single_translation.description %}
+    <div class="action-user-content">
+      {% if action.description_is_markdown %}{{ single_translation.description | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ single_translation.description }}</p>{% endif %}
+    </div>
   {% endif %}
+
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
-  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text }}</a>
+  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text }}</a>
   {% if not current_user.is_readonly %}
-  <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text}}</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text}}</a>
   {% endif %}
   {% if not current_user.is_readonly %}
-  {% if may_edit %}
-    <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Modify the settings for this action.">Edit Action</a>
+    {% if may_edit %}
+      <a href="{{ url_for('.action', action_id=action.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this action.') }}">{{ _("Edit Action") }}</a>
+    {% endif %}
+    {% if may_grant %}
+      <a href="{{ url_for('.action_permissions', action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Edit the permissions for this action.') }}">{{ _('Edit Permissions') }}</a>
+    {% endif %}
+    {% if not action.type.admin_only or current_user.is_admin %}
+      <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _("Create a new custom action based on the settings for this action.") }} ">{{ _("Use as Template") }}</a>
+    {% endif %}
   {% endif %}
-  {% if may_grant %}
-    <a href="{{ url_for('.action_permissions', action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Edit the permissions for this action.">Edit Permissions</a>
-  {% endif %}
-  {% if not action.type.admin_only or current_user.is_admin %}
-  <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Create a new custom action based on the settings for this action.">Use as Template</a>
-  {% endif %}
-  {% endif %}
+
 {% endblock %}
 
 {% block scripts %}
-{{ super() }}
+  {{ super() }}
   <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
-</script>
 {% endblock %}

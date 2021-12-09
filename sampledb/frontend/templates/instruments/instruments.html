@@ -1,32 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}Instruments — {{ service_name }}{% endblock %}
+{% block title %}{{ _("Instruments") }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Instruments</h1>
-  <p class="text-muted">Instruments in {{ service_name }} map real instruments to <a href="{{ url_for('.actions') }}">actions</a> performed with them. <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html">Read more.</a></p>
+  <h1>{{ _('Instruments') }}</h1>
+  <p class="text-muted">{{ _('Instruments in %(service_name)s map real instruments to <a href="%(actions_url)s">actions</a> performed with them.', service_name=service_name, actions_url=url_for('.actions')) }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html">{{ _('Read more.') }}</a></p>
+
   {% if current_user.is_admin and not current_user.is_readonly %}
-    <a href="{{ url_for('.new_instrument') }}" class="btn btn-default">Create Instrument</a>
+    <a href="{{ url_for('.new_instrument') }}" class="btn btn-default">{{ _('Create Instrument') }}</a>
   {% endif %}
   {% for instrument in instruments %}
     <form action="{{ url_for('.toggle_favorite_instrument') }}" method="post">
-    <input type="hidden" name="instrument_id" value="{{ instrument.id }}">
-    {{ toggle_favorite_instrument_form.csrf_token() }}
-    <h2>
-      <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name }}">{{ instrument.name }}</a>
-      <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
-    </h2>
+      <input type="hidden" name="instrument_id" value="{{ instrument.id }}">
+      {{ toggle_favorite_instrument_form.csrf_token() }}
+      <h2>
+        <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}"
+           title="{{ instrument.translation.name }}">{{ instrument.translation.name }}</a>
+        <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
+      </h2>
     </form>
     {% if instrument.is_hidden %}
-    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> This instrument has been hidden from instrument lists.</p>
+      <p class="text-muted">
+        <i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.') }}
+      </p>
     {% endif %}
-    {% if instrument.short_description %}
-    <div class="instrument-user-content">
-    {% if instrument.short_description_is_markdown %}{{ instrument.short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}{% else %}<p>{{ instrument.short_description }}</p>{% endif %}
-    </div>
-    {% endif %}
-    {% include "instruments/instrument_scientists.html" %}
-  {% endfor %}
+    {% if instrument.translation.short_description %}
+      <div class="instrument-user-content">
+      {% if instrument.short_description_is_markdown %}
+        {{ instrument.translation.short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
+      {% else %}<p>{{ instrument.translation.short_description }}</p>{% endif %}
+        </div>
+      {% endif %}
+      {% include "instruments/instrument_scientists.html" %}
+    {% endfor %}
 {% endblock %}
 
 {% block scripts %}

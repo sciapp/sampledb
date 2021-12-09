@@ -1,7 +1,7 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right">{{ schema.title }}
+  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
     {% if data.text %}
-    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' +data.text + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + data.text | get_translated_text(metadata_language) + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% else %}
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% endif %}
@@ -9,16 +9,16 @@
   <div class="col-md-9">
   {% if data %}
     {% if schema.markdown and data.is_markdown %}
-      <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | markdown_to_safe_html | safe }}</pre>
+      <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
     {% elif 'multiline' in schema and schema['multiline']  %}
-      {% if data.text %}
-<pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text }}</pre>
+      {% if data.text | get_translated_text(metadata_language)%}
+<pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
         {% else %}
           &mdash;
         {% endif %}
     {% else %}
-      {% if data.text %}
-        {{ data.text }}
+      {% if data.text | get_translated_text(metadata_language) %}
+        {{ data.text | get_translated_text(metadata_language) }}
       {% else %}
         &mdash;
       {% endif %}

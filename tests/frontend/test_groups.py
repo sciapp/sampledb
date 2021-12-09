@@ -3,10 +3,10 @@
 
 """
 
-import flask
+import json
+
 import requests
 import pytest
-import bcrypt
 from bs4 import BeautifulSoup
 
 import sampledb
@@ -113,8 +113,14 @@ def test_create_group(flask_server, user_session):
     r = user_session.post(flask_server.base_url + 'groups/', data={
         'create': 'create',
         'csrf_token': csrf_token,
-        'name': 'Example Group',
-        'description': 'Example Description'
+        'translations': json.dumps([
+            {
+                "language_id": -99,
+                "lang_name": "English",
+                "name": "Example Group",
+                "description": "Example Description"
+            }
+        ])
     }, allow_redirects=False)
     assert r.status_code == 302
     # Force reloading of objects
@@ -123,8 +129,8 @@ def test_create_group(flask_server, user_session):
     groups = sampledb.logic.groups.get_user_groups(user_session.user_id)
     assert len(groups) == 1
     group = groups[0]
-    assert group.name == 'Example Group'
-    assert group.description == 'Example Description'
+    assert group.name == {'en': 'Example Group'}
+    assert group.description == {'en': 'Example Description'}
 
     assert r.headers['Location'] == flask_server.base_url + 'groups/{}'.format(group.id)
 
@@ -161,16 +167,22 @@ def test_edit_group(flask_server, user_session):
     r = user_session.post(flask_server.base_url + 'groups/{}'.format(group_id), data={
         'edit': 'edit',
         'csrf_token': csrf_token,
-        'name': 'Test Group',
-        'description': 'Test Description'
+        'translations': json.dumps([
+            {
+                "language_id": -99,
+                "lang_name": "English",
+                "name": "Test Group",
+                "description": "Test Description"
+            }
+        ])
     })
     assert r.status_code == 200
     # Force reloading of objects
     sampledb.db.session.rollback()
 
     group = sampledb.logic.groups.get_group(group_id)
-    assert group.name == 'Test Group'
-    assert group.description == 'Test Description'
+    assert group.name == {'en': 'Test Group'}
+    assert group.description == {'en': 'Test Description'}
 
 
 def test_add_user(flask_server, user_session, user):

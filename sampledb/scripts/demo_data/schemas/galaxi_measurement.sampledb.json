@@ -7,7 +7,7 @@
       "type": "sample"
     },
     "name": {
-      "title": "Measurement Name",
+      "title": {"en": "Measurement Name", "de": "Messungsname"},
       "type": "text",
       "default": "GALAXI-",
       "minLength": 1,
@@ -15,7 +15,7 @@
       "pattern": "^GALAXI-.+_[0-9]+$"
     },
     "created": {
-      "title": "Creation Datetime",
+      "title": {"en": "Creation Datetime", "de": "Erstellungsdatum"},
       "type": "datetime"
     },
     "tags": {
@@ -23,44 +23,44 @@
       "type": "tags"
     },
     "measurement_type": {
-      "title": "Measurement Type",
+      "title": {"en": "Measurement Type", "de": "Messungstyp"},
       "type": "text",
       "choices": ["SAXS", "GISAXS", "Reflectometry"]
     },
     "temperature": {
-      "title": "Temperature",
+      "title": {"en": "Temperature"},
       "type": "quantity",
       "units": "degC",
       "default": 298.15
     },
     "magnetic_field": {
-      "title": "Magnetic Field",
+      "title": {"en": "Magnetic Field"},
       "type": "quantity",
       "units": "mT",
       "default": 0
     },
     "beam_center_x": {
-      "title": "Beam Center (X)",
+      "title": {"en": "Beam Center (X)"},
       "type": "quantity",
       "units": "1"
     },
     "beam_center_y": {
-      "title": "Beam Center (Y)",
+      "title": {"en": "Beam Center (Y)"},
       "type": "quantity",
       "units": "1"
     },
     "detector_z": {
-      "title": "Detector Z",
+      "title": {"en": "Detector Z"},
       "type": "quantity",
       "units": "mm"
     },
     "sample_detector_distance": {
-      "title": "Sample to Detector Distance",
+      "title": {"en": "Sample to Detector Distance"},
       "type": "quantity",
       "units": "mm"
     },
     "comment": {
-      "title": "Comment",
+      "title": {"en": "Comment"},
       "type": "text",
       "minLength": 0,
       "multiline": true

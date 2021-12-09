@@ -1,0 +1,28 @@
+<!-- array start -->
+{% if search_query_attribute %}
+  {% set base_search_query_attribute = search_query_attribute %}
+{% else %}
+  {% set base_search_query_attribute = "" %}
+{% endif %}
+<div class="row" style="padding-right: 0.75em;">
+  <div class="col-md-3" style="text-align: right; margin-bottom: 5px;">
+<strong>{{ schema.title | get_translated_text }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></strong>
+  </div>
+  <div class="col-md-9 array-style-list">
+  {% if data %}
+    <ul style="padding-left: 1.25em">
+    {% for item in data %}
+      {% set name = name ~ "_" ~ loop.index0 %}
+      {% set tmp_style = schema['style'] %}
+      {% set schema = schema['items'] %}
+      {% set z = schema.update({'parent_style': tmp_style}) %}
+      {% set data = item %}
+      {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+      <li>{% include "objects/view/any.html" %}</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    &mdash;
+  {% endif %}
+  </div>
+</div>

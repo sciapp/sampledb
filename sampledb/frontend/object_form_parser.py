@@ -3,9 +3,17 @@
 
 """
 
+import datetime
 import functools
+
+from flask_babel import _
+from babel.numbers import parse_number, parse_decimal
+from flask_login import current_user
 import pint
-from ..logic import schemas
+import pytz
+
+from ..logic import schemas, languages
+from ..logic.settings import get_user_settings
 from ..logic.units import ureg
 from ..logic.errors import ValidationError
 from ..logic.schemas.generate_placeholder import generate_placeholder
@@ -63,17 +71,40 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
 @form_data_parser
 def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
-    if keys != [id_prefix + '__text']:
-        raise ValueError('invalid text form data')
-    text = form_data.get(id_prefix + '__text', [None])[0]
-    if not text and not required:
-        return None
-    if text is None:
-        text = ""
-    data = {
-        '_type': 'text',
-        'text': str(text)
-    }
+    if keys == [id_prefix + '__text']:
+        text = form_data.get(id_prefix + '__text', [None])[0]
+        if not text and not required:
+            return None
+        if text is None:
+            text = ""
+        data = {
+            '_type': 'text',
+            'text': str(text)
+        }
+        # if choice was a dict turned to a string, restore it
+        for choice in schema.get('choices', []):
+            if str(choice) == data['text']:
+                data['text'] = choice
+                break
+    else:
+        if not all(key.startswith(id_prefix + '__text_') for key in keys):
+            raise ValueError('invalid text form data')
+        enabled_languages = form_data.get(id_prefix + '__text_languages', [])
+        if 'en' not in enabled_languages:
+            enabled_languages.append('en')
+        data = {
+            '_type': 'text',
+            'text': {}
+        }
+        for language in enabled_languages:
+            text = form_data.get(id_prefix + '__text_' + language, [None])[0]
+            if not text and not required:
+                continue
+            if text is None:
+                text = ""
+            data['text'][language] = text
+        if not data['text'] and not required:
+            return None
     if schema.get('markdown'):
         data['is_markdown'] = True
     schemas.validate(data, schema)
@@ -84,7 +115,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
 def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if id_prefix + '__hasnohazards' not in keys:
-        raise ValueError('Please select at least one hazard or confirm that the object poses no hazards.')
+        raise ValueError(_('Please select at least one hazard or confirm that the object poses no hazards.'))
     hasnohazards = form_data.get(id_prefix + '__hasnohazards', [''])[0]
     if hasnohazards == 'true':
         hasnohazards = True
@@ -107,7 +138,7 @@ def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False
         else:
             raise ValueError('invalid hazards form data')
     if hasnohazards != (len(hazards) == 0):
-        raise ValueError('Please select at least one hazard or confirm that the object poses no hazards.')
+        raise ValueError(_('Please select at least one hazard or confirm that the object poses no hazards.'))
     data = {
         '_type': 'hazards',
         'hazards': hazards
@@ -148,7 +179,7 @@ def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False)
         if not required:
             return None
         else:
-            raise ValueError('Please select a sample.')
+            raise ValueError(_('Please select a sample.'))
     try:
         object_id = int(object_id)
     except ValueError:
@@ -171,7 +202,7 @@ def parse_measurement_form_data(form_data, schema, id_prefix, errors, required=F
         if not required:
             return None
         else:
-            raise ValueError('Please select a measurement.')
+            raise ValueError(_('Please select a measurement.'))
     try:
         object_id = int(object_id)
     except ValueError:
@@ -194,7 +225,7 @@ def parse_object_reference_form_data(form_data, schema, id_prefix, errors, requi
         if not required:
             return None
         else:
-            raise ValueError('Please select an object reference.')
+            raise ValueError(_('Please select an object reference.'))
     try:
         object_id = int(object_id)
     except ValueError:
@@ -218,11 +249,20 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         if not required:
             return None
         else:
-            raise ValueError('Please enter a magnitude.')
+            raise ValueError(_('Please enter a magnitude.'))
     try:
+        if isinstance(magnitude, str):
+            user_locale = languages.get_user_language(current_user).lang_code
+            try:
+                magnitude = parse_number(magnitude, locale=user_locale)
+            except ValueError:
+                try:
+                    magnitude = parse_decimal(magnitude, locale=user_locale)
+                except ValueError:
+                    raise ValueError(_('Unable to parse magnitude.'))
         magnitude = float(magnitude)
     except ValueError:
-        raise ValueError('The magnitude must be a number.')
+        raise ValueError(_('The magnitude must be a number.'))
     if id_prefix + '__units' in form_data:
         units = form_data[id_prefix + '__units'][0]
         try:
@@ -250,7 +290,17 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=Fals
     # TODO: validate schema?
     if keys != [id_prefix + '__datetime']:
         raise ValueError('invalid datetime form data')
-    utc_datetime = form_data.get(id_prefix + '__datetime', [''])[0]
+    datetime_string = form_data.get(id_prefix + '__datetime', [''])[0]
+    try:
+        settings = get_user_settings(current_user.id)
+        language = languages.get_user_language(current_user)
+        parsed_datetime = datetime.datetime.strptime(datetime_string, language.datetime_format_datetime)
+        # convert datetime to utc
+        local_datetime = pytz.timezone(settings['TIMEZONE']).localize(parsed_datetime)
+        utc_datetime = local_datetime.astimezone(pytz.utc)
+        utc_datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        raise ValueError(_('Please enter a valid datetime.'))
     data = {
         '_type': 'datetime',
         'utc_datetime': utc_datetime
@@ -347,7 +397,7 @@ def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
         if not required:
             return None
         else:
-            raise ValueError('Please select a user.')
+            raise ValueError(_('Please select a user.'))
     try:
         user_id = int(user_id)
     except ValueError:

@@ -1,0 +1,63 @@
+<div class="row form-area" style="padding-right:0.75em">
+    {# Label #}
+    <div class="col-md-3" style="padding-right: 0px">
+            <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+                {% if data is not none and "value" in data %}
+                    {% if data.value %}
+                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}"
+                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+                    {% else %}
+                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == False', advanced='on') }}"
+                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}"
+                       class="search-helper"><i
+                            class="fa fa-search" aria-hidden="true"></i></a></label>
+                {% endif %}
+            </label>
+    </div>
+    {# View #}
+    <div class="view-switch col-md-9" style="padding-left: 15px">
+        <div class="container alert-upload-container">
+            {% if data is not none and "value" in data and not (data.value is none) %}
+                {% if data.value %}
+                    <i class="fa fa-check"></i>
+                    <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                    <div class="alert-upload-failed">
+                        {{ _('Your input is not valid. Please check.') }}
+                    </div>
+                {% else %}
+                    <i class="fa fa-times"></i>
+                    <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                    <div class="alert-upload-failed">
+                        {{ _('Your input is not valid. Please check.') }}
+                    </div>
+                {% endif %}
+            {% else %}
+                &mdash;
+                <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                <div class="alert-upload-failed">
+                    {{ _('Your input is not valid. Please check.') }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        <div class="col-md-9">
+            <div class="checkbox" style="">
+                <label>
+                    <span class="sr-only">{{ schema.title | get_translated_text }}</span>
+                    <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+                    <input type="checkbox" name="{{ id_prefix }}_value"
+                           {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data %}checked{% endif %}{% elif data is not none and "value" in data and data.value %}checked="checked"{% endif %}>
+                </label>
+                {% if id_prefix+'_hidden' in object_errors %}
+                    <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix+'_hidden'] }}</span>{% endif %}
+                {% if 'note' in schema %}
+                    <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>

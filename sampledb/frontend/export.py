@@ -5,6 +5,7 @@
 
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import SelectField
 from wtforms.validators import InputRequired
@@ -37,9 +38,9 @@ def export(user_id):
 
     create_export_form = CreateExportForm()
     create_export_form.file_extension.choices = [
-        ('.pdf', 'PDF file')
+        ('.pdf', _('PDF file'))
     ] + [
-        (file_extension, file_format_info[0])
+        (file_extension, _(file_format_info[0]))
         for file_extension, file_format_info in logic.export.FILE_FORMATS.items()
     ]
     if create_export_form.validate_on_submit():
@@ -58,7 +59,7 @@ def export(user_id):
             file_bytes = logic.export.FILE_FORMATS[file_extension][1](user_id)
             file_type = logic.export.FILE_FORMATS[file_extension][2]
         else:
-            flask.flash('Please select an export format.', 'warning')
+            flask.flash(_('Please select an export format.'), 'warning')
             file_bytes = None
             file_type = None
         if file_bytes:

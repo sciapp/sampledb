@@ -34,3 +34,12 @@ class Authentication(db.Model):
 
     def __repr__(self):
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+
+
+class TwoFactorAuthenticationMethod(db.Model):
+    __tablename__ = "two_factor_authentication_methods"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    active = db.Column(db.Boolean, default=False, nullable=False)
+    data = db.Column(postgresql.JSONB)

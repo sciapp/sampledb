@@ -15,15 +15,21 @@ import flask
 import flask_login
 import itsdangerous
 import werkzeug.utils
+from flask_babel import _
 
 from . import frontend
 from .. import logic
 from .. import models
+from .. import db
 from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
+from ..logic.action_type_translations import get_action_types_with_translations_in_language, \
+    get_action_type_with_translation_in_language
+from ..logic.action_translations import get_action_with_translation_in_language
 from ..logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
+from ..logic.instrument_translations import get_instrument_with_translation_in_language
 from ..logic.users import get_user, get_users, get_users_by_name
 from ..logic.schemas import validate, generate_placeholder
 from ..logic.settings import get_user_settings, set_user_settings
@@ -33,6 +39,7 @@ from ..logic.objects import create_object, create_object_batch, update_object, g
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
+from ..logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
 from ..logic.files import FileLogEntryType
 from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
 from ..logic.notebook_templates import get_notebook_templates
@@ -43,7 +50,7 @@ from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from . import pdfexport
 from .utils import check_current_user_is_not_readonly
-
+from ..logic.utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -64,6 +71,7 @@ def objects():
     objects = []
     display_properties = []
     display_property_titles = {}
+    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
     if 'display_properties' in flask.request.args:
         for property_info in flask.request.args.get('display_properties', '').split(','):
             if ':' in property_info:
@@ -156,8 +164,8 @@ def objects():
         except ValueError:
             action_id = None
         if action_id is not None:
-            action = get_action(action_id)
-            action_type = action.type
+            action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
+            action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
             action_schema = action.schema
             if not display_properties:
                 display_properties = action_schema.get('displayProperties', [])
@@ -178,7 +186,10 @@ def objects():
                     }.get(action_type_id, None)
             if action_type_id is not None:
                 try:
-                    action_type = get_action_type(action_type_id)
+                    action_type = get_action_type_with_translation_in_language(
+                        action_type_id=action_type_id,
+                        language_id=user_language_id
+                    )
                 except ActionTypeDoesNotExistError:
                     action_type = None
             else:
@@ -275,7 +286,6 @@ def objects():
             else:
                 sorting_order_name = 'asc'
                 sorting_order = object_sorting.ascending
-
         if sorting_property_name is None:
             sorting_property_name = '_object_id'
         else:
@@ -338,7 +348,7 @@ def objects():
         else:
             object_ids_for_doi = logic.publications.get_object_ids_linked_to_doi(doi)
         if use_advanced_search and not must_use_advanced_search:
-            search_notes.append(('info', "The advanced search was used automatically. Search for \"{}\" to use the simple search.".format(query_string), 0, 0))
+            search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
         try:
             object_ids = None
             if object_ids_at_location is not None:
@@ -407,9 +417,9 @@ def objects():
         objects[i] = {
             'object_id': obj.object_id,
             'created_by': cached_users[original_object.user_id],
-            'created_at': original_object.utc_datetime.strftime('%Y-%m-%d'),
+            'created_at': original_object.utc_datetime,
             'modified_by': cached_users[obj.user_id],
-            'last_modified_at': obj.utc_datetime.strftime('%Y-%m-%d'),
+            'last_modified_at': obj.utc_datetime,
             'data': obj.data,
             'schema': obj.schema,
             'action': cached_actions[obj.action_id],
@@ -432,6 +442,18 @@ def objects():
             **{k: v for k, v in flask.request.args.items() if k not in kwargs},
             **kwargs
         )
+
+    action_ids = {
+        object['action'].id for object in objects
+    }
+    action_translations = {}
+    for id in action_ids:
+        action_translations[id] = logic.action_translations.get_action_translation_for_action_in_language(
+            action_id=id,
+            language_id=user_language_id,
+            use_fallback=True
+        )
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -439,6 +461,7 @@ def objects():
         display_property_titles=display_property_titles,
         search_query=query_string,
         action=action,
+        action_translations=action_translations,
         action_id=action_id,
         action_type=action_type,
         project=project,
@@ -451,6 +474,7 @@ def objects():
         user=user,
         doi=doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
+        get_instrument_translation_for_instrument_in_language=logic.instrument_translations.get_instrument_translation_for_instrument_in_language,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
@@ -530,12 +554,18 @@ def apply_action_to_data(action, data, schema):
     if action_type == 'add':
         if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
             sub_data.append(generate_placeholder(sub_schema["items"]))
+            if isinstance(sub_data[-1], list) and sub_schema.get('style') == 'table':
+                num_existing_columns = sub_schema["items"].get("minItems", 0)
+                for row in sub_data:
+                    num_existing_columns = max(num_existing_columns, len(row))
+                while len(sub_data[-1]) < num_existing_columns:
+                    sub_data[-1].append(None)
     elif action_type == 'delete':
         action_index = int(action_index)
         if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
             del sub_data[action_index]
     else:
-        num_existing_columns = sub_schema["items"].get("minItems", 1)
+        num_existing_columns = sub_schema["items"].get("minItems", 0)
         for row in sub_data:
             num_existing_columns = max(num_existing_columns, len(row))
         if action_type == 'addcolumn':
@@ -545,7 +575,7 @@ def apply_action_to_data(action, data, schema):
                     while len(row) < num_existing_columns:
                         row.append(generate_placeholder(sub_schema["items"]["items"]))
         elif action_type == 'deletecolumn':
-            if num_existing_columns > sub_schema.get("minItems", 1):
+            if num_existing_columns > sub_schema.get("minItems", 0):
                 num_existing_columns -= 1
                 for row in sub_data:
                     while len(row) > num_existing_columns:
@@ -566,7 +596,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     # Ignore invalid placeholder data
                     pass
     elif object is None and previous_object is not None:
-        data = previous_object.data
+        data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
     else:
         data = object.data
     previous_object_schema = None
@@ -615,30 +645,30 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             try:
                 copy_permissions_object_id = int(copy_permissions_object_id)
                 if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
-                    flask.flash("Unable to copy permissions. Default permissions will be applied.", 'error')
+                    flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
                     copy_permissions_object_id = None
             except Exception:
-                flask.flash("Unable to copy permissions. Default permissions will be applied.", 'error')
+                flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
                 copy_permissions_object_id = None
         elif flask.request.form.get('permissions_method') == 'permissions_for_group' and flask.request.form.get('permissions_for_group_group_id'):
             permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
             try:
                 permissions_for_group_id = int(permissions_for_group_id)
                 if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
-                    flask.flash("Unable to grant permissions to basic group. Default permissions will be applied.", 'error')
+                    flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
                     permissions_for_group_id = None
             except Exception:
-                flask.flash("Unable to grant permissions to basic group. Default permissions will be applied.", 'error')
+                flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
                 permissions_for_group_id = None
         elif flask.request.form.get('permissions_method') == 'permissions_for_project' and flask.request.form.get('permissions_for_project_project_id'):
             permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
             try:
                 permissions_for_project_id = int(permissions_for_project_id)
                 if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
-                    flask.flash("Unable to grant permissions to project group. Default permissions will be applied.", 'error')
+                    flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
                     permissions_for_project_id = None
             except Exception:
-                flask.flash("Unable to grant permissions to project group. Default permissions will be applied.", 'error')
+                flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
                 permissions_for_project_id = None
 
     if previous_object is not None:
@@ -658,7 +688,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     if flask.request.method != 'GET' and form.validate_on_submit():
         raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
         form_data = {k: v[0] for k, v in raw_form_data.items()}
-
         if 'input_num_batch_objects' in form_data:
             try:
                 num_objects_in_batch = int(form_data['input_num_batch_objects'])
@@ -690,7 +719,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         if "action_submit" in form_data:
             # The object name might need the batch number to match the pattern
             if schema.get('batch', False) and num_objects_in_batch is not None:
-                batch_base_name = form_data['object__name__text']
                 name_suffix_format = schema.get('batch_name_format', '{:d}')
                 try:
                     name_suffix_format.format(1)
@@ -700,7 +728,16 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     example_name_suffix = name_suffix_format.format(1)
                 else:
                     example_name_suffix = ''
-                raw_form_data['object__name__text'] = [batch_base_name + example_name_suffix]
+                if 'object__name__text' in form_data:
+                    batch_base_name = form_data['object__name__text']
+                    raw_form_data['object__name__text'] = [batch_base_name + example_name_suffix]
+                else:
+                    enabled_languages = form_data.get('object__name__text_languages', [])
+                    if 'en' not in enabled_languages:
+                        enabled_languages.append('en')
+                    for language_code in enabled_languages:
+                        batch_base_name = form_data.get('object__name__text_' + language_code, '')
+                        raw_form_data['object__name__text_' + language_code] = [batch_base_name + example_name_suffix]
             else:
                 batch_base_name = None
                 name_suffix_format = None
@@ -751,7 +788,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                     instrument_log_entry_id=log_entry.id,
                                     object_id=object_id
                                 )
-                        flask.flash('The objects were created successfully.', 'success')
+                        flask.flash(_('The objects were created successfully.'), 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
                         object = create_object(
@@ -775,10 +812,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                 instrument_log_entry_id=log_entry.id,
                                 object_id=object.id
                             )
-                        flask.flash('The object was created successfully.', 'success')
+                        flask.flash(_('The object was created successfully.'), 'success')
                 else:
-                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
-                    flask.flash('The object was updated successfully.', 'success')
+                    if object_data != object.data or schema != object.schema:
+                        update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
+                    flask.flash(_('The object was updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
         elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
             action = [name for name in form_data if name.startswith('action_')][0]
@@ -807,6 +845,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     else:
         referencable_objects = []
         existing_objects = []
+    sorted_actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
 
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
@@ -816,6 +857,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
     users.sort(key=lambda user: user.id)
+
+    english = get_language(Language.ENGLISH)
+
     if object is None:
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
@@ -841,7 +885,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             user_groups=user_groups,
             user_projects=user_projects,
             referencable_objects=referencable_objects,
+            sorted_actions=sorted_actions,
             action_type_id_by_action_id=action_type_id_by_action_id,
+            get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
             ActionType=models.ActionType,
             datetime=datetime,
             tags=tags,
@@ -850,7 +896,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             instrument_log_categories=instrument_log_categories,
             create_log_entry_default=create_log_entry_default,
             previous_object_id=previous_object_id,
-            has_grant_for_previous_object=has_grant_for_previous_object
+            has_grant_for_previous_object=has_grant_for_previous_object,
+            languages=get_languages(only_enabled_for_input=True),
+            ENGLISH=english
         )
     else:
         return flask.render_template(
@@ -864,13 +912,316 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             previous_actions=serializer.dumps(previous_actions),
             form=form,
             referencable_objects=referencable_objects,
+            sorted_actions=sorted_actions,
+            get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
             action_type_id_by_action_id=action_type_id_by_action_id,
             ActionType=models.ActionType,
             datetime=datetime,
             tags=tags,
             users=users,
-            mode=mode
+            mode=mode,
+            languages=get_languages(),
+            ENGLISH=english
         )
+
+
+def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
+    confirmation_url = flask.url_for(
+        'frontend.accept_responsibility_for_object',
+        t=logic.security_tokens.generate_token(
+            object_location_assignment_id,
+            salt='confirm_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
+    return confirmation_url
+
+
+def get_project_if_it_exists(project_id):
+    try:
+        return get_project(project_id)
+    except logic.errors.ProjectDoesNotExistError:
+        return None
+
+
+def show_inline_edit(obj, action):
+    # Set view attributes
+    related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, flask_login.current_user.id)
+
+    user_language_id = get_user_language(flask_login.current_user).id
+    english = get_language(Language.ENGLISH)
+
+    object_id = obj.id
+
+    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
+    user_may_grant = Permissions.GRANT in user_permissions
+    user_may_use_as_template = Permissions.READ in get_user_action_permissions(obj.action_id, user_id=flask_login.current_user.id)
+
+    new_schema_available = True if action.schema != obj.schema else False
+
+    instrument = get_instrument_with_translation_in_language(action.instrument_id,
+                                                             user_language_id) if action.instrument else None
+    object_type = get_action_type_with_translation_in_language(
+        action_type_id=action.type_id,
+        language_id=user_language_id
+    ).translation.object_name
+    object_log_entries = object_log.get_object_log_entries(object_id=obj.id, user_id=flask_login.current_user.id)
+
+    dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
+    if dataverse_enabled:
+        dataverse_url = logic.dataverse_export.get_dataverse_url(obj.id)
+        show_dataverse_export = not dataverse_url
+    else:
+        dataverse_url = None
+        show_dataverse_export = False
+
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
+    token = serializer.dumps([flask_login.current_user.id, object_id])
+    mobile_upload_url = flask.url_for('.mobile_file_upload', object_id=object_id, token=token, _external=True)
+    mobile_upload_qrcode = generate_qrcode(mobile_upload_url, should_cache=False)
+    object_url = flask.url_for('.object', object_id=object_id, _external=True)
+    object_qrcode = generate_qrcode(object_url, should_cache=True)
+
+    location_form = ObjectLocationAssignmentForm()
+    locations_map, locations_tree = get_locations_tree()
+    locations = [('-1', '—')]
+    unvisited_location_ids_prefixes_and_subtrees = [(location_id, '', locations_tree[location_id]) for location_id in
+                                                    locations_tree]
+    while unvisited_location_ids_prefixes_and_subtrees:
+        location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
+        location = locations_map[location_id]
+        locations.append(
+            (str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name), location.id)))
+        for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name),
+                                  reverse=True):
+            unvisited_location_ids_prefixes_and_subtrees.insert(
+                0, (location_id, f'{prefix}{get_translated_text(location.name)} / ', subtree[location_id])
+            )
+
+    location_form.location.choices = locations
+    possible_responsible_users = [('-1', '—')]
+    for user in logic.users.get_users(exclude_hidden=True):
+        possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+    location_form.responsible_user.choices = possible_responsible_users
+
+    measurement_actions = logic.action_translations.get_actions_with_translation_in_language(user_language_id,
+                                                                                             models.ActionType.MEASUREMENT,
+                                                                                             use_fallback=True)
+    favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+    favorite_measurement_actions = [
+        action
+        for action in measurement_actions
+        if action.id in favorite_action_ids and not action.is_hidden
+    ]
+    # Sort by: instrument name (independent actions first), action name
+    favorite_measurement_actions.sort(key=lambda action: (
+        action.user.name.lower() if action.user else '',
+        get_instrument_with_translation_in_language(action.instrument_id,
+                                                    user_language_id).translation.name.lower() if action.instrument else '',
+        action.translation.name.lower()
+    ))
+
+    publication_form = ObjectPublicationForm()
+
+    object_publications = logic.publications.get_publications_for_object(object_id=obj.id)
+    user_may_link_publication = True
+
+    notebook_templates = get_notebook_templates(
+        object_id=obj.id,
+        data=obj.data,
+        schema=obj.schema,
+        user_id=flask_login.current_user.id
+    )
+
+    linked_project = logic.projects.get_project_linked_to_object(object_id)
+
+    object_languages = logic.languages.get_languages_in_object_data(obj.data)
+    languages = []
+    for lang_code in object_languages:
+        languages.append(get_language_by_lang_code(lang_code))
+
+    all_languages = get_languages()
+    metadata_language = flask.request.args.get('language', None)
+    if not any(
+            language.lang_code == metadata_language
+            for language in languages
+    ):
+        metadata_language = None
+
+    view_kwargs = {
+        "template_mode": "inline_edit",
+        "show_object_title": get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
+        "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
+            action_type_id=logic.actions.models.ActionType.MEASUREMENT,
+            language_id=logic.languages.get_user_language(flask_login.current_user).id,
+            use_fallback=True
+        ).name,
+        "metadata_language": metadata_language,
+        "languages": languages,
+        "all_languages": all_languages,
+        "SUPPORTED_LOCALES": logic.locale.SUPPORTED_LOCALES,
+        "ENGLISH": english,
+        "object_type": object_type,
+        "action": action,
+        "action_type": get_action_type_with_translation_in_language(action.type_id, user_language_id),
+        "instrument": instrument,
+        "schema": obj.schema,
+        "data": obj.data,
+        "object_log_entries": object_log_entries,
+        "ObjectLogEntryType": ObjectLogEntryType,
+        "last_edit_datetime": obj.utc_datetime,
+        "last_edit_user": get_user(obj.user_id),
+        "object_id": object_id,
+        "user_may_edit": True,
+        "user_may_comment": True,
+        "comments": comments.get_comments_for_object(object_id),
+        "comment_form": CommentForm(),
+        "files": logic.files.get_files_for_object(object_id),
+        "file_source_instrument_exists": False,
+        "file_source_jupyterhub_exists": False,
+        "file_form": FileForm(),
+        "external_link_form": ExternalLinkForm(),
+        "external_link_invalid": 'invalid_link' in flask.request.args,
+        "mobile_upload_url": mobile_upload_url,
+        "mobile_upload_qrcode": mobile_upload_qrcode,
+        "notebook_templates": notebook_templates,
+        "object_qrcode": object_qrcode,
+        "object_url": object_url,
+        "restore_form": None,
+        "version_id": obj.version_id,
+        "user_may_grant": user_may_grant,
+        "favorite_measurement_actions": favorite_measurement_actions,
+        "FileLogEntryType": FileLogEntryType,
+        "file_information_form": FileInformationForm(),
+        "file_hiding_form": FileHidingForm(),
+        "new_schema_available": new_schema_available,
+        "related_objects_tree": related_objects_tree,
+        "object_publications": object_publications,
+        "user_may_link_publication": user_may_link_publication,
+        "user_may_use_as_template": user_may_use_as_template,
+        "show_dataverse_export": show_dataverse_export,
+        "dataverse_url": dataverse_url,
+        "publication_form": publication_form,
+        "get_object": get_object,
+        "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
+        "get_object_location_assignment": get_object_location_assignment,
+        "get_user": get_user,
+        "get_location": get_location,
+        "PAGE_SIZES": PAGE_SIZES,
+        "HORIZONTAL_LABEL_MARGIN": HORIZONTAL_LABEL_MARGIN,
+        "VERTICAL_LABEL_MARGIN": VERTICAL_LABEL_MARGIN,
+        "mm": mm,
+        "object_location_assignments": get_object_location_assignments(object_id),
+        "build_object_location_assignment_confirmation_url": build_object_location_assignment_confirmation_url,
+        "user_may_assign_location": True,
+        "location_form": location_form,
+        "project": linked_project,
+        "get_project": get_project_if_it_exists,
+        "get_action_type": get_action_type,
+        "get_action_type_with_translation_in_language": get_action_type_with_translation_in_language,
+        "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language
+    }
+
+    # form kwargs
+    if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+        instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
+        if 'create_instrument_log_entry' in flask.request.form:
+            category_ids = []
+            for category_id in flask.request.form.getlist('instrument_log_categories'):
+                try:
+                    if int(category_id) in [category.id for category in instrument_log_categories]:
+                        category_ids.append(int(category_id))
+                except Exception:
+                    pass
+
+    errors = []
+    object_errors = {}
+    form_data = {}
+    previous_actions = []
+    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
+    form = ObjectForm()
+    if flask.request.method != 'GET' and form.validate_on_submit():
+        raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
+        form_data = {k: v[0] for k, v in raw_form_data.items()}
+        if 'input_num_batch_objects' in form_data:
+            try:
+                num_objects_in_batch = int(form_data['input_num_batch_objects'])
+            except ValueError:
+                try:
+                    # The form allows notations like '1.2e1' for '12', however
+                    # Python can only parse these as floats
+                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
+                    if num_objects_in_batch == int(num_objects_in_batch):
+                        num_objects_in_batch = int(num_objects_in_batch)
+                    else:
+                        raise
+                except ValueError:
+                    errors.append('input_num_batch_objects')
+                else:
+                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+            else:
+                form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+
+        if 'previous_actions' in flask.request.form:
+            try:
+                previous_actions = serializer.loads(flask.request.form['previous_actions'])
+            except itsdangerous.BadData:
+                flask.abort(400)
+
+    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+        referencable_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+        if object is not None:
+            referencable_objects = [
+                referencable_object
+                for referencable_object in referencable_objects
+                if referencable_object.object_id != object_id
+            ]
+
+    else:
+        referencable_objects = []
+
+    sorted_actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
+    for action in sorted_actions:
+        db.session.expunge(action)
+
+    action_type_id_by_action_id = {}
+    for action_type in get_action_types():
+        for action in get_actions(action_type.id):
+            action_type_id_by_action_id[action.id] = action_type.id
+
+    tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
+    users = get_users(exclude_hidden=True)
+    users.sort(key=lambda user: user.id)
+
+    english = get_language(Language.ENGLISH)
+
+    form_kwargs = {
+        "errors": errors,
+        "object_errors": object_errors,
+        "form_data": form_data,
+        "previous_actions": serializer.dumps(previous_actions),
+        "form": form,
+        "referencable_objects": referencable_objects,
+        "sorted_actions": sorted_actions,
+        "action_type_id_by_action_id": action_type_id_by_action_id,
+        "ActionType": models.ActionType,
+        "datetime": datetime,
+        "tags": tags,
+        "users": users,
+        "mode": 'edit',
+        "languages": get_languages(),
+        "ENGLISH": english
+    }
+
+    kwargs = {**view_kwargs, **form_kwargs}
+
+    return flask.render_template('objects/inline_edit/inline_edit_base.html', **kwargs)
 
 
 def get_object_if_current_user_has_read_permissions(object_id):
@@ -890,11 +1241,16 @@ def object(object_id):
     object = get_object(object_id=object_id)
     related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, flask_login.current_user.id)
 
+    user_language_id = get_user_language(flask_login.current_user).id
+    english = get_language(Language.ENGLISH)
+
+    object_languages = set()
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions
     user_may_grant = Permissions.GRANT in user_permissions
     user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
-    action = get_action(object.action_id)
+
+    action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
     if action.schema != object.schema:
         new_schema_available = True
     else:
@@ -903,9 +1259,17 @@ def object(object_id):
         return flask.abort(403)
     if not user_may_edit and flask.request.args.get('mode', '') == 'upgrade':
         return flask.abort(403)
+    if not flask.current_app.config['DISABLE_INLINE_EDIT']:
+        if not user_may_edit and flask.request.args.get('mode', '') == 'inline_edit':
+            return flask.abort(403)
+        if user_may_edit and flask.request.method == 'GET' and flask.request.args.get('mode', '') in {'', 'inline_edit'}:
+            return show_inline_edit(object, get_action(object.action_id))
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
-        instrument = action.instrument
-        object_type = action.type.object_name
+        instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument else None
+        object_type = get_action_type_with_translation_in_language(
+            action_type_id=action.type_id,
+            language_id=user_language_id
+        ).translation.object_name
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
 
         dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
@@ -935,9 +1299,9 @@ def object(object_id):
         while unvisited_location_ids_prefixes_and_subtrees:
             location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
             location = locations_map[location_id]
-            locations.append((str(location_id), '{}{} (#{})'.format(prefix, location.name, location.id)))
-            for location_id in sorted(subtree, key=lambda location_id: locations_map[location_id].name, reverse=True):
-                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, location.name), subtree[location_id]))
+            locations.append((str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name), location.id)))
+            for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name), reverse=True):
+                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, get_translated_text(location.name)), subtree[location_id]))
 
         location_form.location.choices = locations
         possible_responsible_users = [('-1', '—')]
@@ -945,7 +1309,7 @@ def object(object_id):
             possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
         location_form.responsible_user.choices = possible_responsible_users
 
-        measurement_actions = logic.actions.get_actions(models.ActionType.MEASUREMENT)
+        measurement_actions = logic.action_translations.get_actions_with_translation_in_language(user_language_id, models.ActionType.MEASUREMENT, use_fallback=True)
         favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
         favorite_measurement_actions = [
             action
@@ -955,8 +1319,8 @@ def object(object_id):
         # Sort by: instrument name (independent actions first), action name
         favorite_measurement_actions.sort(key=lambda action: (
             action.user.name.lower() if action.user else '',
-            action.instrument.name.lower() if action.instrument else '',
-            action.name.lower()
+            get_instrument_with_translation_in_language(action.instrument_id, user_language_id).translation.name.lower() if action.instrument else '',
+            action.translation.name.lower()
         ))
 
         publication_form = ObjectPublicationForm()
@@ -971,30 +1335,38 @@ def object(object_id):
             user_id=flask_login.current_user.id
         )
 
-        def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> None:
-            confirmation_url = flask.url_for(
-                'frontend.accept_responsibility_for_object',
-                t=logic.security_tokens.generate_token(
-                    object_location_assignment_id,
-                    salt='confirm_responsibility',
-                    secret_key=flask.current_app.config['SECRET_KEY']
-                ),
-                _external=True
-            )
-            return confirmation_url
-
         linked_project = logic.projects.get_project_linked_to_object(object_id)
 
-        def get_project_if_it_exists(project_id):
-            try:
-                return get_project(project_id)
-            except logic.errors.ProjectDoesNotExistError:
-                return None
+        object_languages = logic.languages.get_languages_in_object_data(object.data)
+        languages = []
+        for lang_code in object_languages:
+            languages.append(get_language_by_lang_code(lang_code))
 
+        all_languages = get_languages()
+        metadata_language = flask.request.args.get('language', None)
+        if not any(
+            language.lang_code == metadata_language
+            for language in languages
+        ):
+            metadata_language = None
         return flask.render_template(
             'objects/view/base.html',
+            template_mode="view",
+            show_object_type_and_id_on_object_page_text=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
+            show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
+            measurement_type_name=logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
+                action_type_id=logic.actions.models.ActionType.MEASUREMENT,
+                language_id=logic.languages.get_user_language(flask_login.current_user).id,
+                use_fallback=True
+            ).name,
+            metadata_language=metadata_language,
+            languages=languages,
+            all_languages=all_languages,
+            SUPPORTED_LOCALES=logic.locale.SUPPORTED_LOCALES,
+            ENGLISH=english,
             object_type=object_type,
             action=action,
+            action_type=get_action_type_with_translation_in_language(action.type_id, user_language_id),
             instrument=instrument,
             schema=object.schema,
             data=object.data,
@@ -1048,7 +1420,9 @@ def object(object_id):
             location_form=location_form,
             project=linked_project,
             get_project=get_project_if_it_exists,
-            get_action_type=get_action_type
+            get_action_type=get_action_type,
+            get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
+            get_instrument_with_translation_in_language=get_instrument_with_translation_in_language
         )
     check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
@@ -1153,14 +1527,14 @@ def print_object_label(object_id):
             creation_user = get_user(object_log_entry.user_id).name
             break
     else:
-        creation_date = 'Unknown'
-        creation_user = 'Unknown'
+        creation_date = _('Unknown')
+        creation_user = _('Unknown')
     if 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
         creation_date = object.data['created']['utc_datetime'].split(' ')[0]
     if 'name' in object.data and '_type' in object.data['name'] and object.data['name']['_type'] == 'text':
-        object_name = object.data['name']['text']
+        object_name = get_translated_text(object.data['name']['text'])
     else:
-        object_name = 'Unknown Sample'
+        object_name = _('Unknown Object')
 
     object_url = flask.url_for('.object', object_id=object_id, _external=True)
 
@@ -1202,9 +1576,9 @@ def post_object_comments(object_id):
     if comment_form.validate_on_submit():
         content = comment_form.content.data
         comments.create_comment(object_id=object_id, user_id=flask_login.current_user.id, content=content)
-        flask.flash('Successfully posted a comment.', 'success')
+        flask.flash(_('Successfully posted a comment.'), 'success')
     else:
-        flask.flash('Please enter a comment text.', 'error')
+        flask.flash(_('Please enter a comment text.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
@@ -1214,7 +1588,9 @@ def search():
     actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
-    action_types = get_action_types()
+    user_language_id = get_user_language(flask_login.current_user).id
+
+    action_types = get_action_types_with_translations_in_language(user_language_id)
     search_paths = {}
     search_paths_by_action = {}
     search_paths_by_action_type = {}
@@ -1279,7 +1655,7 @@ def referencable_objects():
     def dictify(x):
         return {
             'id': x.object_id,
-            'text': flask.escape('{} (#{})'.format(x.name_text, x.object_id)),
+            'text': flask.escape('{} (#{})'.format(get_translated_text(x.name_json), x.object_id)),
             'action_id': x.action_id,
             'max_permission': x.max_permission,
             'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
@@ -1293,10 +1669,10 @@ def referencable_objects():
 def object_permissions_request(object_id):
     current_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     if Permissions.READ in current_permissions:
-        flask.flash('You already have permissions to access this object.', 'error')
+        flask.flash(_('You already have permissions to access this object.'), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))
     request_object_permissions(flask_login.current_user.id, object_id)
-    flask.flash('Your request for permissions has been sent.', 'success')
+    flask.flash(_('Your request for permissions has been sent.'), 'success')
     return flask.redirect(flask.url_for('.objects'))
 
 
@@ -1321,13 +1697,29 @@ def post_object_location(object_id):
         if responsible_user_id < 0:
             responsible_user_id = None
         description = location_form.description.data
+        try:
+            description = json.loads(description)
+        except Exception:
+            description = {}
+        valid_description = {'en': ''}
+        for language_code, description_text in description.items():
+            if not isinstance(language_code, str):
+                continue
+            try:
+                language = get_language_by_lang_code(language_code)
+            except logic.errors.LanguageDoesNotExistError:
+                continue
+            if not language.enabled_for_input:
+                continue
+            valid_description[language_code] = description_text
+        description = valid_description
         if location_id is not None or responsible_user_id is not None:
             assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
-            flask.flash('Successfully assigned a new location to this object.', 'success')
+            flask.flash(_('Successfully assigned a new location to this object.'), 'success')
         else:
-            flask.flash('Please select a location or a responsible user.', 'error')
+            flask.flash(_('Please select a location or a responsible user.'), 'error')
     else:
-        flask.flash('Please select a location or a responsible user.', 'error')
+        flask.flash(_('Please select a location or a responsible user.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
@@ -1354,15 +1746,15 @@ def post_object_publication(object_id):
             if publication.doi == doi
         ] or [None])[0]
         if existing_publication is not None and existing_publication.title == title and existing_publication.object_name == object_name:
-            flask.flash('This object has already been linked to this publication.', 'info')
+            flask.flash(_('This object has already been linked to this publication.'), 'info')
         else:
             logic.publications.link_publication_to_object(user_id=flask_login.current_user.id, object_id=object_id, doi=doi, title=title, object_name=object_name)
             if existing_publication is None:
-                flask.flash('Successfully linked this object to a publication.', 'success')
+                flask.flash(_('Successfully linked this object to a publication.'), 'success')
             else:
-                flask.flash('Successfully updated the information for this publication.', 'success')
+                flask.flash(_('Successfully updated the information for this publication.'), 'success')
     else:
-        flask.flash('Please enter a valid DOI for the publication you want to link this object to.', 'error')
+        flask.flash(_('Please enter a valid DOI for the publication you want to link this object to.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
@@ -1390,7 +1782,19 @@ def export_data(object_id):
                 sections = sections.intersection(json.loads(flask.request.args['sections']))
             except Exception:
                 return flask.abort(400)
-        pdf_data = pdfexport.create_pdfexport(object_ids, sections)
+        if 'language' in flask.request.args:
+            try:
+                lang_code = flask.request.args['language']
+                if lang_code not in logic.locale.SUPPORTED_LOCALES:
+                    raise ValueError()
+                language = logic.languages.get_language_by_lang_code(lang_code)
+                if not language.enabled_for_user_interface:
+                    raise ValueError()
+            except Exception:
+                lang_code = 'en'
+        else:
+            lang_code = 'en'
+        pdf_data = pdfexport.create_pdfexport(object_ids, sections, lang_code)
         file_bytes = io.BytesIO(pdf_data)
     elif file_extension in logic.export.FILE_FORMATS:
         file_bytes = logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids)
@@ -1417,7 +1821,7 @@ def object_files(object_id):
         for file in files:
             if file.is_hidden:
                 continue
-            if file.storage == 'local':
+            if file.storage in {'local', 'database'}:
                 try:
                     file_bytes = file.open(read_only=True).read()
                 except Exception:
@@ -1442,7 +1846,7 @@ def object_file(object_id, file_id):
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if file.storage == 'local':
+    if file.storage in ('local', 'database'):
         if 'preview' in flask.request.args:
             file_extension = os.path.splitext(file.original_file_name)[1]
             mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
@@ -1492,7 +1896,7 @@ def hide_file(object_id, file_id):
         )
     except logic.errors.FileDoesNotExistError:
         return flask.abort(404)
-    flask.flash('The file was hidden successfully.', 'success')
+    flask.flash(_('The file was hidden successfully.'), 'success')
     return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
 
 
@@ -1536,7 +1940,7 @@ def post_mobile_file_upload(object_id: int, token: str):
         )
     for file_storage in files:
         file_name = werkzeug.utils.secure_filename(file_storage.filename)
-        logic.files.create_local_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
+        logic.files.create_database_file(object_id, user_id, file_name, lambda stream: file_storage.save(dst=stream))
     return flask.render_template('mobile_upload_success.html')
 
 
@@ -1552,19 +1956,19 @@ def post_object_files(object_id):
             files = flask.request.files.getlist(file_form.local_files.name)
             for file_storage in files:
                 file_name = werkzeug.utils.secure_filename(file_storage.filename)
-                logic.files.create_local_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
-            flask.flash('Successfully uploaded files.', 'success')
+                logic.files.create_database_file(object_id, flask_login.current_user.id, file_name, lambda stream: file_storage.save(dst=stream))
+            flask.flash(_('Successfully uploaded files.'), 'success')
         else:
-            flask.flash('Failed to upload files.', 'error')
+            flask.flash(_('Failed to upload files.'), 'error')
     elif external_link_form.validate_on_submit():
         url = external_link_form.url.data
         logic.files.create_url_file(object_id, flask_login.current_user.id, url)
-        flask.flash('Successfully posted link.', 'success')
+        flask.flash(_('Successfully posted link.'), 'success')
     elif external_link_form.errors:
-        flask.flash('Failed to post link.', 'error')
+        flask.flash(_('Failed to post link.'), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id, invalid_link=True, _anchor='anchor-post-link'))
     else:
-        flask.flash('Failed to upload files.', 'error')
+        flask.flash(_('Failed to upload files.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
 
 
@@ -1586,14 +1990,14 @@ def new_object():
         try:
             previous_object = get_object(previous_object_id)
         except ObjectDoesNotExistError:
-            flask.flash("This object does not exist.", 'error')
+            flask.flash(_("This object does not exist."), 'error')
             return flask.abort(404)
         if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
-            flask.flash("You do not have the required permissions to use this object as a template.", 'error')
+            flask.flash(_("You do not have the required permissions to use this object as a template."), 'error')
             return flask.abort(403)
         if action_id:
             if action_id != str(previous_object.action_id):
-                flask.flash("This object was created with a different action.", 'error')
+                flask.flash(_("This object was created with a different action."), 'error')
                 return flask.abort(400)
             else:
                 action_id = previous_object.action_id
@@ -1601,10 +2005,10 @@ def new_object():
         try:
             action = get_action(action_id)
         except ActionDoesNotExistError:
-            flask.flash("This action does not exist.", 'error')
+            flask.flash(_("This action does not exist."), 'error')
             return flask.abort(404)
         if Permissions.READ not in get_user_action_permissions(action_id, user_id=flask_login.current_user.id):
-            flask.flash("You do not have the required permissions to use this action.", 'error')
+            flask.flash(_("You do not have the required permissions to use this action."), 'error')
             return flask.abort(403)
 
     placeholder_data = {}
@@ -1646,6 +2050,8 @@ def object_versions(object_id):
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_version(object_id, version_id):
+    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
+    english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
     form = None
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
@@ -1654,13 +2060,33 @@ def object_version(object_id, version_id):
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
-    action = get_action(object.action_id)
-    instrument = action.instrument
+    action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
+    action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
+    instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id else None
+
+    object_languages = logic.languages.get_languages_in_object_data(object.data)
+    languages = []
+    for lang_code in object_languages:
+        languages.append(get_language_by_lang_code(lang_code))
+
+    metadata_language = flask.request.args.get('language', None)
+    if not any(
+        language.lang_code == metadata_language
+        for language in languages
+    ):
+        metadata_language = None
     return flask.render_template(
         'objects/view/base.html',
+        template_mode="view",
+        show_object_type_and_id_on_object_page_text=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
+        show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
+        languages=languages,
+        metadata_language=metadata_language,
+        ENGLISH=english,
         is_archived=True,
-        object_type=action.type.object_name,
+        object_type=action_type.translation.object_name,
         action=action,
+        action_type=action_type,
         instrument=instrument,
         schema=object.schema,
         data=object.data,
@@ -1673,7 +2099,8 @@ def object_version(object_id, version_id):
         restore_form=form,
         get_user=get_user,
         user_may_grant=user_may_grant,
-        get_action_type=get_action_type
+        get_action_type=get_action_type,
+        get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
     )
 
 
@@ -1784,7 +2211,6 @@ def object_permissions(object_id):
             (0, project.id, project.id in acceptable_project_ids)
             for project in sorted(all_projects, key=lambda project: project.id)
         ]
-
     return flask.render_template(
         'objects/object_permissions.html',
         instrument=instrument,
@@ -1801,6 +2227,7 @@ def object_permissions(object_id):
         groups=groups,
         projects_by_id=all_projects_by_id,
         project_id_hierarchy_list=project_id_hierarchy_list,
+        show_projects_form=len(acceptable_project_ids) > 0,
         add_user_permissions_form=add_user_permissions_form,
         add_group_permissions_form=add_group_permissions_form,
         get_group=get_group,
@@ -1835,7 +2262,7 @@ def update_object_permissions(object_id):
         if copy_permissions_form.validate_on_submit():
             logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
             logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)
-            flask.flash("Successfully copied object permissions.", 'success')
+            flask.flash(_("Successfully copied object permissions."), 'success')
     elif 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
         set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
         for user_permissions_data in edit_user_permissions_form.user_permissions.data:
@@ -1863,7 +2290,7 @@ def update_object_permissions(object_id):
             permissions = Permissions.from_name(project_permissions_data['permissions'])
             set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=permissions)
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
-        flask.flash("Successfully updated object permissions.", 'success')
+        flask.flash(_("Successfully updated object permissions."), 'success')
     elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
         user_id = add_user_permissions_form.user_id.data
         permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
@@ -1872,7 +2299,7 @@ def update_object_permissions(object_id):
         assert user_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
-        flask.flash("Successfully updated object permissions.", 'success')
+        flask.flash(_("Successfully updated object permissions."), 'success')
     elif 'add_group_permissions' in flask.request.form and add_group_permissions_form.validate_on_submit():
         group_id = add_group_permissions_form.group_id.data
         permissions = Permissions.from_name(add_group_permissions_form.permissions.data)
@@ -1881,7 +2308,7 @@ def update_object_permissions(object_id):
         assert group_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=permissions)
-        flask.flash("Successfully updated object permissions.", 'success')
+        flask.flash(_("Successfully updated object permissions."), 'success')
     elif 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
         project_id = add_project_permissions_form.project_id.data
         permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
@@ -1890,7 +2317,7 @@ def update_object_permissions(object_id):
         assert project_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=permissions)
-        flask.flash("Successfully updated object permissions.", 'success')
+        flask.flash(_("Successfully updated object permissions."), 'success')
     else:
-        flask.flash("A problem occurred while changing the object permissions. Please try again.", 'error')
+        flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
     return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))

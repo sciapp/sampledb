@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Instrument — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Instrument') }} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
@@ -15,7 +15,40 @@
   <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
   <script>
+  {% set allowed_language_ids = [] %}
+  window.languages = [
+    {% for language in languages %}
+      {
+        'id': '{{ language.id }}',
+        'name': '{{ language.names | get_translated_text }}',
+        'lang_code': '{{ language.lang_code }}'
+      },
+      {{ allowed_language_ids.append(language.id) or '' }}
+    {% endfor %}
+  ];
+
+  window.translations = [
+  {% for translation in instrument_translations.values() %}
+    {% if translation.language_id in allowed_language_ids %}
+    {
+      'language_id': "{{ translation.language_id }}",
+      'name': {{ translation.name | tojson }},
+      'description': {{ translation.description | tojson }},
+      'notes': {{ translation.notes | tojson }},
+      'short_description': {{ translation.short_description | tojson }},
+    },
+    {% endif %}
+  {% endfor %}
+  ];
+
+  window.mde_fields = {
+    'descriptions': [],
+    'short_descriptions': [],
+    'notes': []
+  };
+
   window.categories = [
     {% for category in instrument_log_categories %}
       {
@@ -27,12 +60,13 @@
   ];
   window.new_category_counter = -1;
   $(function() {
-    $('[data-toggle="tooltip"]').tooltip();
     function updateCategoryJSON() {
       var category_json = JSON.stringify(window.categories);
       $('#input-categories').val(category_json);
     }
+
     updateCategoryJSON();
+    updateTranslationJSON();
     function updateEventHandler() {
       $('[data-category-id][data-category-id!=""]').each(function() {
         $(this).find('input').on('change', function() {
@@ -40,9 +74,9 @@
           var category_id = category_element.attr('data-category-id');
           var category_title = category_element.find('input[type="text"]').val().trim();
           if (category_title === "") {
-            category_element.parent().addClass('has-error').find('.help-block').html("Please enter a category title.");
+            category_element.parent().addClass('has-error').find('.help-block').html("{{ _('Please enter a category title.') }}");
           } else if (category_title.length > 100) {
-            category_element.parent().addClass('has-error').find('.help-block').html("Please enter a shorter category title (at most 100 characters).");
+            category_element.parent().addClass('has-error').find('.help-block').html("{{ _('Please enter a shorter category title (at most 100 characters).') }}");
           } else {
             category_element.parent().removeClass('has-error').find('.help-block').html("");
           }
@@ -89,126 +123,246 @@
       updateEventHandler();
       updateCategoryJSON();
     });
+
+    {% if submit_text !=  _('Save') %}
+      $('.form-group[data-name="input-names"] .selectpicker, .form-group[data-name="input-descriptions"] .selectpicker, .form-group[data-name="input-short-descriptions"] .selectpicker, .form-group[data-name="input-notes"] .selectpicker').each(function () {
+        $(this).selectpicker('val', ['{{ ENGLISH.id }}']);
+      });
+    {% endif %}
+
+    $('#select-language-name').on('change', function () {
+      updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description', 'short_description', 'notes']);
+    }).change();
+
+    $('#select-language-description').on('change', function () {
+      updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description', 'short_description', 'notes']);
+      updateDescriptionMarkdown();
+    }).change();
+
+    $('#select-language-short-description').on('change', function () {
+      updateTranslationLanguages(this, 'short-description-template', 'input-short-description-', ['name', 'description', 'short_description', 'notes']);
+      updateShortDescriptionMarkdown();
+    }).change();
+
+    $('#select-language-notes').on('change', function () {
+      updateTranslationLanguages(this, 'notes-template', 'input-notes-', ['name', 'description', 'short_description', 'notes']);
+      updateNotesMarkdown();
+    }).change();
+
+    $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id], .form-group[data-name="input-short-descriptions"] [data-language-id], .form-group[data-name="input-notes"] [data-language-id]').each(function () {
+      setTranslationHandler(this);
+    });
     updateEventHandler();
+
     $('form').on('submit', function() {
-      console.log($(this).find('.has-error'));
+      $('input').change();
+      $('textarea').change();
+      updateTranslationJSON();
       return $(this).find('.has-error').length === 0;
     })
 
     function updateDescriptionMarkdown() {
-      if ($('#input-markdown').prop('checked')) {
-        window.mde_descrption = new InscrybMDE({
-          element: $("#input-description")[0],
-          indentWithTabs: false,
-          spellChecker: false,
-          status: false,
-          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-          showIcons: ["code", "table"],
-          minHeight: '300px',
-        });
-        setupImageDragAndDrop(window.mde_descrption);
-      } else {
-        if (window.mde_descrption) {
-          window.mde_descrption.toTextArea();
-          window.mde_descrption = null;
-        }
-      }
+      updateMarkdownField('input-markdown', 'descriptions', 'input-descriptions', '300px');
     }
+
     $('#input-markdown').change(updateDescriptionMarkdown);
     updateDescriptionMarkdown();
 
     function updateShortDescriptionMarkdown() {
-      if ($('#input-short-description-is-markdown').prop('checked')) {
-        window.mde_short_descrption = new InscrybMDE({
-          element: $("#input-short-description")[0],
-          indentWithTabs: false,
-          spellChecker: false,
-          status: false,
-          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-          showIcons: ["code", "table"],
-          minHeight: '100px',
-        });
-        setupImageDragAndDrop(window.mde_short_descrption);
-      } else {
-        if (window.mde_short_descrption) {
-          window.mde_short_descrption.toTextArea();
-          window.mde_short_descrption = null;
-        }
-      }
+      updateMarkdownField('input-short-description-is-markdown', 'short_descriptions', 'input-short-descriptions', '100px');
     }
     $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
     updateShortDescriptionMarkdown();
 
     function updateNotesMarkdown() {
-      if ($('#input-notes-are-markdown').prop('checked')) {
-        window.mde_notes = new InscrybMDE({
-          element: $("#input-notes")[0],
-          indentWithTabs: false,
-          spellChecker: false,
-          status: false,
-          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-          showIcons: ["code", "table"],
-          minHeight: '300px',
-        });
-        setupImageDragAndDrop(window.mde_notes);
-      } else {
-        if (window.mde_notes) {
-          window.mde_notes.toTextArea();
-          window.mde_notes = null;
-        }
-      }
+      updateMarkdownField('input-notes-is-markdown', 'notes', 'input-notes', '300px');
     }
-    $('#input-notes-are-markdown').change(updateNotesMarkdown);
+    $('#input-notes-is-markdown').change(updateNotesMarkdown);
     updateNotesMarkdown();
   });
+
   </script>
 {% endblock %}
 
 {% block content %}
+  {% set allowed_language_ids = [] %}
+  {% for language in languages %}
+    {{ allowed_language_ids.append(language.id) or '' }}
+  {% endfor %}
   <form method="post">
   {{ instrument_form.hidden_tag() }}
     <div class="col-md-12">
-      <div class="form-group {% if instrument_form.name.name in instrument_form.errors %}has-error{% endif %}">
-        <label for="input-name" class="control-label">Name</label>
-         <input type="text" class="form-control" id="input-name" placeholder="Name" name="{{ instrument_form.name.name }}" value="{{ instrument_form.name.data or instrument_form.name.default or '' }}">
+
+    <div class="hidden" id="name-template">
+      <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
+        <input type="text" class="form-control" id="input-name" placeholder="{{ _('Name') }}" data-name="input-name" data-translation-attribute="name" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter instrument name (at most 100 characters).') }}" data-empty-text="{{ _('Please enter an instrument name in English.') }}">
+        {% if allowed_language_ids | length > 1 %}
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        {% endif %}
       </div>
-      <div class="form-group {% if instrument_form.description.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 395px;">
-        <label for="input-description" class="control-label">Description <span class="text-muted" style="font-weight: normal">shown on the instrument site</span></label>
-        <label for="input-markdown" style="font-weight:400" class="pull-right">
-          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}> Use Markdown
-        </label>
-        <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" name="{{ instrument_form.description.name }}" placeholder="Description">{{ instrument_form.description.data or instrument_form.description.default or '' }}</textarea>
+      <span class="help-block"></span>
+    </div>
+
+    <div class="hidden" id="description-template">
+      <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
+      <textarea class="form-control input-description" style="resize: vertical; min-height: 371px" id="input-description" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+        {% if allowed_language_ids | length > 1 %}
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        {% endif %}
       </div>
-      <div class="form-group {% if instrument_form.short_description.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 195px;">
-        <label for="input-short-description" class="control-label">Short Description <span class="text-muted" style="font-weight: normal">shown in the instrument list</span></label>
-        <label for="input-short-description-is-markdown" style="font-weight:400" class="pull-right">
-          <input type="checkbox" id="input-short-description-is-markdown" name="{{ instrument_form.short_description_is_markdown.name }}" {% if instrument_form.short_description_is_markdown.data %}checked="checked"{% endif %}> Use Markdown
-        </label>
-        <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description" name="{{ instrument_form.short_description.name }}" placeholder="Short Description">{{ instrument_form.short_description.data or instrument_form.short_description.default or '' }}</textarea>
+      <span class="help-block"></span>
+    </div>
+
+    <div class="hidden" id="short-description-template">
+      <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
+        <textarea class="form-control input-short-description" style="resize: vertical; min-height: 171px" id="input-short-description" data-name="input-short-description" placeholder="{{_("Short Description") }}" data-translation-attribute="short_description"></textarea>
+        {% if allowed_language_ids | length > 1 %}
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        {% endif %}
       </div>
-      <div class="form-group {% if instrument_form.notes.name in instrument_form.errors %}has-error{% endif %}" style="min-height: 395px;">
-        <label for="input-notes" class="control-label">Instrument Scientist Notes</label>
-        <label for="input-notes-are-markdown" style="font-weight:400" class="pull-right">
-          <input type="checkbox" id="input-notes-are-markdown" name="{{ instrument_form.notes_are_markdown.name }}" {% if instrument_form.notes_are_markdown.data %}checked="checked"{% endif %}> Use Markdown syntax for Notes
-        </label>
-        <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-notes" name="{{ instrument_form.notes.name }}" placeholder="Instrument Scientist Notes">{{ instrument_form.notes.data or instrument_form.notes.default or '' }}</textarea>
+      <span class="help-block"></span>
+    </div>
+
+    <div class="hidden" id="notes-template">
+      <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
+        <textarea class="form-control" style="resize: vertical; min-height: 371px" data-name="input-notes" placeholder="{{ _('Instrument Scientist Notes') }}" data-translation-attribute="notes"></textarea>
+        {% if allowed_language_ids | length > 1 %}
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        {% endif %}
       </div>
-      <div class="form-group">
-        <label for="input-instrument_repsonsible_users" class="control-label">Instrument Scientists</label>
-        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true">
-          {% for choice in instrument_form.instrument_responsible_users.choices %}
-              <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
+      <span class="help-block"></span>
+    </div>
+
+    <input type="hidden" id="input-translations" name="{{ instrument_form.translations.name }}" value="">
+
+    <div class="form-group" data-name="input-names">
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0;">
+        <label for="input-name" class="control-label col-md-10" style="margin-top: 5px">{{ _('Name') }}</label>
+        <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-name">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+              {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].name)%} selected="selected"{% endif %}
+              data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
           {% endfor %}
         </select>
       </div>
-      <label>Instrument Log Categories</label>
+      <div class="input-group" hidden="hidden"></div>
+      {% for translation in instrument_translations.values() %}
+        {% if (translation.language_id == ENGLISH.id or translation.name) and translation.language_id in allowed_language_ids %}
+          <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
+          <input type="text" class="form-control" id="input-name-{{ translation.language.id }}" placeholder="{{ _('Name') }}" data-name="input-name" value="{{ translation.name }}" data-translation-attribute="name" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter instrument name (at most 100 characters).') }}" data-empty-text="{{ _('Please enter an instrument name in English.') }}">
+          {% if allowed_language_ids | length > 1 %}
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+          {% endif %}
+          </div>
+          <span class="help-block"></span>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="form-group" data-name="input-descriptions">
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+        <label for="input-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown on the instrument site') }}</span></label>
+        <label for="input-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
+          <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}>
+          {{ _('Use Markdown') }}
+        </label>
+          <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-description">
+            {% for language in languages %}
+              <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+                {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].description) %} selected="selected"{% endif %}
+                data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in instrument_translations.values() %}
+          {% if (translation.language_id == ENGLISH.id or translation.description) and translation.language_id in allowed_language_ids %}
+            <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
+              <textarea class="form-control input-description" style="resize: vertical; min-height: 371px" id="input-description-{{ translation.language.id }}" data-name="input-description"  placeholder="{{ _('Description') }}" data-translation-attribute="description">{{ translation.description }}</textarea>
+              {% if allowed_language_ids | length > 1 %}
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              {% endif %}
+            </div>
+            <span class="help-block"></span>
+          {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="form-group" data-name="input-short-descriptions">
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+        <label for="input-short-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the instrument list') }}</span></label>
+        <label for="input-short-description-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
+          <input type="checkbox" id="input-short-description-is-markdown" name="{{ instrument_form.short_description_is_markdown.name }}" {% if instrument_form.short_description_is_markdown.data %}checked="checked"{% endif %}>
+          {{ _('Use Markdown') }}
+        </label>
+        <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-short-description">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+              {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].short_description)%} selected="selected"{% endif %}
+              data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="input-group" hidden="hidden"></div>
+        {% for translation in instrument_translations.values() %}
+          {% if (translation.language_id == ENGLISH.id or translation.short_description) and translation.language_id in allowed_language_ids %}
+            <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
+              <textarea class="form-control input-short-description" style="resize: vertical; min-height: 171px" data-name="input-short-description" id="input-short-description-{{ translation.language.id }}" placeholder="{{ _('Short Description') }}" data-translation-attribute="short_description">{{ translation.short_description }}</textarea>
+              {% if allowed_language_ids | length > 1 %}<span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>{% endif %}
+            </div>
+            <span class="help-block"></span>
+          {% endif %}
+        {% endfor %}
+    </div>
+    
+    <div class="form-group" data-name="input-notes">
+      <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
+        <label for="input-notes" class="control-label col-md-8" style="margin-top: 5px">{{ _('Instrument Scientist Notes') }}</label>
+        <label for="input-notes-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
+          <input type="checkbox" id="input-notes-is-markdown" name="{{ instrument_form.notes_is_markdown.name }}" {% if instrument_form.notes_is_markdown.data %}checked="checked"{% endif %}>
+          {{ _('Use Markdown') }}
+        </label>
+        <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-notes">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
+              {% if language.id in instrument_language_ids and (language.id == ENGLISH.id or instrument_translations[language.id].notes)%} selected="selected"{% endif %}
+              data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+          {% endfor %}
+        </select>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in instrument_translations.values() %}
+          {% if (translation.language_id == ENGLISH.id or translation.notes) and translation.language_id in allowed_language_ids %}
+            <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="{{ translation.language.id }}">
+              <textarea class="form-control input-notes" style="resize: vertical; min-height: 371px" data-name="input-notes" id="input-notes-{{ translation.language.id }}" placeholder="{{ _('Instrument Scientist Notes') }}" data-translation-attribute="notes">{{ translation.notes }}</textarea>
+              {% if allowed_language_ids | length > 1 %}
+                <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+              {% endif %}
+            </div>
+            <span class="help-block"></span>
+          {% endif %}
+        {% endfor %}
+    </div>
+
+      <div class="form-group">
+        <label for="input-instrument_repsonsible_users" class="control-label">{{ _('Instrument Scientists')}}</label>
+        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No user selected') }}">
+          {% for choice in instrument_form.instrument_responsible_users.choices %}
+            <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <label>{{ _('Instrument Log Categories') }}</label>
       <div class="hidden" id="instrument-log-category-template">
         <div class="form-group">
           <div class="input-group" data-category-id="">
-            <input type="text" class="form-control" placeholder="Category Name">
+            <input type="text" class="form-control" placeholder="{{ _('Category Name') }}">
             <select data-style="btn-default instrument-log-category-theme-btn" data-width="20em">
               {% for theme in instrument_log_category_themes %}
-              <option {% if loop.index == 1 %}selected="selected"{% endif %} value="{{ theme.name.lower() }}">{{ theme.name.title() }}</option>
+              <option {% if loop.index == 1 %}selected="selected"{% endif %} value="{{ theme.name.lower() }}">{{ _(theme.name.title()) }}</option>
               {% endfor %}
             </select>
             <span class="input-group-btn">
@@ -221,10 +375,10 @@
       {% for category in instrument_log_categories %}
       <div class="form-group">
         <div class="input-group" data-category-id="{{ category.id }}">
-          <input type="text" class="form-control" placeholder="Category Name" value="{{ category.title }}">
+          <input type="text" class="form-control" placeholder="{{ _('Category Name')}}" value="{{ category.title }}">
           <select class="selectpicker" data-style="btn-default instrument-log-category-theme-btn" data-width="20em">
             {% for theme in instrument_log_category_themes %}
-            <option {% if category.theme == theme %}selected="selected"{% endif %} value="{{ theme.name.lower() }}">{{ theme.name.title() }}</option>
+            <option {% if category.theme == theme %}selected="selected"{% endif %} value="{{ theme.name.lower() }}">{{ _(theme.name.title()) }}</option>
             {% endfor %}
           </select>
           <span class="input-group-btn">
@@ -241,31 +395,31 @@
       <input type="hidden" id="input-categories" name="{{ instrument_form.categories.name }}" value="">
       <div class="checkbox">
         <label for="input-users_can_create_log_entries">
-          <input type="checkbox" id="input-users_can_create_log_entries" name="{{ instrument_form.users_can_create_log_entries.name }}" {% if instrument_form.users_can_create_log_entries.data %}checked="checked"{% endif %}> Users can create log entries
+          <input type="checkbox" id="input-users_can_create_log_entries" name="{{ instrument_form.users_can_create_log_entries.name }}" {% if instrument_form.users_can_create_log_entries.data %}checked="checked"{% endif %}> {{ _('Users can create log entries') }}
         </label>
       </div>
       <div class="checkbox">
         <label for="input-users_can_view_log_entries">
-          <input type="checkbox" id="input-users_can_view_log_entries" name="{{ instrument_form.users_can_view_log_entries.name }}" {% if instrument_form.users_can_view_log_entries.data %}checked="checked"{% endif %}> Users can view log entries
+          <input type="checkbox" id="input-users_can_view_log_entries" name="{{ instrument_form.users_can_view_log_entries.name }}" {% if instrument_form.users_can_view_log_entries.data %}checked="checked"{% endif %}> {{ _('Users can view log entries') }}
         </label>
       </div>
       <div class="checkbox">
         <label for="input-create_log_entry_default">
-          <input type="checkbox" id="input-create_log_entry_default" name="{{ instrument_form.create_log_entry_default.name }}" {% if instrument_form.create_log_entry_default.data %}checked="checked"{% endif %}> Create log entries for objects created by instrument scientists <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="This sets the default for whether or not an instrument log entry should be created or not. The user can manually toggle the checkbox during object creation to override this default."></i>
+          <input type="checkbox" id="input-create_log_entry_default" name="{{ instrument_form.create_log_entry_default.name }}" {% if instrument_form.create_log_entry_default.data %}checked="checked"{% endif %}> {{ _('Create log entries for objects created by instrument scientists') }} <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="{{ _('This sets the default for whether or not an instrument log entry should be created or not. The user can manually toggle the checkbox during object creation to override this default.') }}"></i>
         </label>
       </div>
       <div class="checkbox">
         <label for="input-is_hidden">
-          <input type="checkbox" id="input-is_hidden" name="{{ instrument_form.is_hidden.name }}" {% if instrument_form.is_hidden.data %}checked="checked"{% endif %}> Hide this instrument from instrument lists
+          <input type="checkbox" id="input-is_hidden" name="{{ instrument_form.is_hidden.name }}" {% if instrument_form.is_hidden.data %}checked="checked"{% endif %}> {{ _('Hide this instrument from instrument lists') }}
         </label>
       </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
-        <a href="{{ url_for('.instruments') }}" class="btn btn-default pull-right" style="width:20em">Cancel</a>
+        <a href="{{ url_for('.instruments') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }} </a>
       </div>
       <div class="col-md-3">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ _(submit_text) }}</button>
       </div>
     </div>
   </form>

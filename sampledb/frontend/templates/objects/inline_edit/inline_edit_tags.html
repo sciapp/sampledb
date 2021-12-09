@@ -1,0 +1,24 @@
+<div class="row form-area" style="padding-right: 0.75em">
+    {# Label #}
+    <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}</label>
+    {# View #}
+    <div class="view-switch col-md-9">
+        {% if data.tags %}
+            {% for tag in data.tags %}
+                <a href="{{ url_for('.objects', q='#'+tag, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>
+            {% endfor %}
+        {% else %}
+            &mdash;
+        {% endif %}
+        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+        <div class="alert-upload-failed">
+            {{ _('Your input is not valid. Please check.') }}
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch col-md-9">
+        <input type="text" class="form-control" {% if id_prefix+'_tags' in form_data %}value="{{ form_data[id_prefix+'_tags'] }}"{% elif data is not none and "tags" in data %}value="{{ data.tags | join(', ') }}"{% endif %} data-role="tagsinput" id="{{ id_prefix }}_input" name="{{ id_prefix }}_tags"/>
+        {% if id_prefix+'_tags' in errors %}<span class="help-block">{{ errors[id_prefix+'_tags'] }}</span>{% endif %}
+        {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
+    </div>
+</div>

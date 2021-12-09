@@ -28,7 +28,6 @@ def user_session(flask_server):
 def actions(flask_server):
     actions = [sampledb.models.Action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Action {}'.format(i + 1),
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -39,12 +38,17 @@ def actions(flask_server):
                 }
             }, 'required': ['name']
         },
-        description='',
         instrument_id=None
     ) for i in range(2)]
-    for action in actions:
+    for i, action in enumerate(actions, start=1):
         sampledb.db.session.add(action)
         sampledb.db.session.commit()
+        sampledb.logic.action_translations.set_action_translation(
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            action_id=action.id,
+            name=f'Action {i}',
+            description=''
+        )
         # force attribute refresh
         assert action.id is not None
         sampledb.logic.action_permissions.set_action_public(action.id)
@@ -53,12 +57,16 @@ def actions(flask_server):
 
 @pytest.fixture
 def instruments(flask_server):
-    instruments = [sampledb.models.Instrument(
-        'Instrument {}'.format(i + 1)
-    ) for i in range(2)]
-    for instrument in instruments:
+    instruments = [sampledb.models.Instrument() for i in range(2)]
+    for i, instrument in enumerate(instruments, start=1):
         sampledb.db.session.add(instrument)
         sampledb.db.session.commit()
+        sampledb.logic.instrument_translations.set_instrument_translation(
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            instrument_id=instrument.id,
+            name=f"Instrument {i}",
+            description=''
+        )
         # force attribute refresh
         assert instrument.id is not None
     return instruments

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %} {{ _('Language') }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+  {{ language_form.hidden_tag() }}
+    <div class="col-md-12">
+      <div class="form-group {% if language_form.name_english.name in language_form.errors %}has-error{% endif %}">
+        <label for="input-name_english" class="control-label">{{ _('Name (English)') }}</label>
+        <input type="text" class="form-control" id="input-name_english" placeholder="{{ _('Name (English)') }}" value="{{ language_form.name_english.data or '' }}" name="{{ language_form.name_english.name }}">
+      </div>
+      {% for language in all_languages %}
+        {% if language.id != language.ENGLISH %}
+          <div class="form-group">
+            <label for="input-name_{{ language.id }}" class="control-label">{{ _('Name (%(lang_name)s)', lang_name=language.names | get_translated_text) }}</label>
+            <input type="text" class="form-control" id="input-name_{{ language.id }}" placeholder="{{ _('Name (%(lang_name)s)', lang_name=language.names | get_translated_text) }}" value="{{ request.form.get("name_%d" | format(language.id)) or (existing_language.names.get(language.lang_code, '') if existing_language else '') }}" name="name_{{ language.id }}">
+          </div>
+        {% endif %}
+      {% endfor %}
+      {% if not existing_language %}
+        <div class="form-group">
+          <label for="input-name_new" class="control-label">{{ _('Name (native)') }}</label>
+          <input type="text" class="form-control" id="input-name_new" placeholder="{{ _('Name (native)') }}" value="{{ request.form.get("name_new") or '' }}" name="name_new">
+        </div>
+      {% endif %}
+      {% if keep_language_code %}
+        <div class="form-group {% if language_form.lang_code.name in language_form.errors %}has-error{% endif %}">
+          <label for="input-lang_code" class="control-label">{{ _('Language Code') }}</label>
+          <input type="text" class="form-control" id="input-lang_code" placeholder="{{ _('Language Code') }}" value="{{ language_form.lang_code.data or '' }}" disabled="disabled">
+        </div>
+      <input type="hidden" value="{{ language_form.lang_code.data }}" name="{{ language_form.lang_code.name }}">
+      {% else %}
+        <div class="form-group {% if language_form.lang_code.name in language_form.errors %}has-error{% endif %}">
+          <label for="input-lang_code" class="control-label">{{ _('Language Code') }}</label>
+          <input type="text" class="form-control" id="input-lang_code" placeholder="{{ _('Language Code') }}" value="{{ language_form.lang_code.data or '' }}" name="{{ language_form.lang_code.name }}">
+        </div>
+      {% endif %}
+      <div class="form-group {% if language_form.datetime_format_datetime.name in language_form.errors %}has-error{% endif %}">
+        <label for="input-datetime-format-datetime" class="control-label">{{ _('Datetime format for datetime') }}</label>
+        <input type="text" class="form-control" id="input-datetime-format-datetime" placeholder="{{ _('Datetime format for datetime') }}" value="{{ language_form.datetime_format_datetime.data or '' }}" name="{{ language_form.datetime_format_datetime.name }}">
+      </div>
+      <div class="form-group {% if language_form.datetime_format_moment.name in language_form.errors %}has-error{% endif %}">
+        <label for="input-datetime-format-moment" class="control-label">{{ _('Datetime format for moment') }}</label>
+        <input type="text" class="form-control" id="input-datetime-format-moment" placeholder="{{ _('Datetime format for moment') }}" value="{{ language_form.datetime_format_moment.data or '' }}" name="{{ language_form.datetime_format_moment.name }}">
+      </div>
+      <div class="form-group">
+        <div class="checkbox">
+          <label style="font-weight: bold">
+          {% if language_form.lang_code.data == 'en' %}
+            <input type="checkbox" checked="checked" disabled="disabled"><input type="hidden" value="{{ language_form.enabled_for_input.name }}" name="{{ language_form.enabled_for_input.name }}"/> {{ _('Enabled for input')}}
+          {% else %}
+            <input type="checkbox" {% if language_form.enabled_for_input.data %}checked="checked"{% endif %} name="{{ language_form.enabled_for_input.name }}"> {{ _('Enabled for input')}}
+          {% endif %}
+          </label>
+        </div>
+        <span class="text-muted">{{ _('<strong>Note</strong>: When disabling a language for input after it has already been used, any texts previously translated into this language will keep their translation until actively edited.')}}</span>
+      </div>
+      <div class="form-group">
+        <div class="checkbox">
+          <label style="font-weight: bold">
+          {% if language_form.lang_code.data == 'en' %}
+            <input type="checkbox" checked="checked" disabled="disabled"><input type="hidden" value="{{ language_form.enabled_for_user_interface.name }}" name="{{ language_form.enabled_for_user_interface.name }}"/> {{ _('Enabled for user interface')}}
+          {% else %}
+            <input type="checkbox" {% if language_form.enabled_for_user_interface.data %}checked="checked"{% endif %} name="{{ language_form.enabled_for_user_interface.name }}"> {{ _('Enabled for user interface')}}
+          {% endif %}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.languages') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" name="language_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Objects — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Object Permissions') }} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
@@ -13,16 +13,11 @@
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
     <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script>
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
 {% endblock %}
 
 {% block content %}
-  <h1>{{ instrument.name }}</h1>
-  <h2>Permissions</h2>
+  <h1>{{ _('Object') }} #{{ object.object_id }}: {{ object.data.name.text | get_translated_text }}</h1>
+  <h2>{{ _('Permissions') }}</h2>
   {% set user_may_edit = (form is not none) %}
   {% if user_may_edit %}
     <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
@@ -31,15 +26,15 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th scope="col" style="width: 40%">Special Groups</th>
-        <th scope="col" class="text-center">None</th>
-        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th></tr>
+        <th scope="col" style="width: 40%">{{ _('Special Groups') }}</th>
+        <th scope="col" class="text-center">{{ _('None') }}</th>
+        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th></tr>
     </thead>
     <tbody>
       <tr>
-        <td style="vertical-align: middle">Administrators</td>
+        <td style="vertical-align: middle">{{ _('Administrators') }}</td>
         <td></td>
         <td></td>
         <td></td>
@@ -52,7 +47,7 @@
       </tr>
       {% if instrument is not none %}
       <tr>
-        <td style="vertical-align: middle">Instrument Scientists</td>
+        <td style="vertical-align: middle">{{ _('Instrument Scientists') }}</td>
         <td></td>
         <td></td>
         <td></td>
@@ -66,7 +61,7 @@
       {% endif %}
       {% if user_may_edit %}
         <tr>
-          <td style="vertical-align: middle">Everyone</td>
+          <td style="vertical-align: middle">{{ _('Everyone') }}</td>
           {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
             <td class="text-center" style="vertical-align: middle">
               <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
@@ -78,7 +73,7 @@
         </tr>
         {% if form.project_permissions | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Project Groups</th>
+          <th scope="col" style="width: 40%">{{ _('Project Groups') }}</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -90,7 +85,7 @@
         {% set project = get_project(project_id) %}
           <tr>
             <td>
-              <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
+              <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>
               {{ project_permissions_form.csrf_token }}
               <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
             </td>
@@ -104,7 +99,7 @@
         {% endfor %}
         {% if form.group_permissions | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Basic Groups</th>
+          <th scope="col" style="width: 40%">{{ _('Basic Groups') }}</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -116,7 +111,7 @@
         {% set group = get_group(group_id) %}
           <tr>
             <td>
-              <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name }}</a>
+              <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }}</a>
               {{ group_permissions_form.csrf_token }}
               <input type="hidden" name="{{ group_permissions_form.group_id.name }}" value="{{ group_id }}">
             </td>
@@ -130,7 +125,7 @@
         {% endfor %}
         {% if form.user_permissions | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Users</th>
+          <th scope="col" style="width: 40%">{{ _('Users') }}</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -157,7 +152,7 @@
         {% endfor %}
       {% else %}
         <tr>
-          <td style="vertical-align: middle">Everyone</td>
+          <td style="vertical-align: middle">{{ _('Everyone') }}</td>
           {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
             <td class="text-center" style="vertical-align: middle">
               <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
@@ -169,7 +164,7 @@
         </tr>
         {% if group_permissions.items() | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Basic Groups</th>
+          <th scope="col" style="width: 40%">{{ _('Basic Groups') }}</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -194,7 +189,7 @@
         {% endfor %}
         {% if project_permissions.items() | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Project Groups</th>
+          <th scope="col" style="width: 40%">{{ _('Project Groups') }}</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -219,7 +214,7 @@
         {% endfor %}
         {% if user_permissions.items() | length > 0 %}
         <tr>
-          <th scope="col" style="width: 40%">Users</th>
+          <th scope="col" style="width: 40%">{{ _('Users') }}</th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
           <th scope="col" class="text-center"></th>
@@ -247,21 +242,21 @@
   </table>
   {% if user_may_edit %}
     <div class="container">
-      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_user_permissions" value="edit_user_permissions">Save</button>
+      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_user_permissions" value="edit_user_permissions">{{ _('Save') }}</button>
     </div>
     </form>
     {% if users %}
-      <h3 id="add_user">Add User</h3>
+      <h3 id="add_user">{{ _('Add User') }}</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_user_permissions_form.csrf_token }}
       <table class="table table-striped">
         <thead>
           <tr>
-            <th scope="col" style="width: 40%">User</th>
-            <th scope="col" class="text-center">None</th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" style="width: 40%">{{ _('User') }}</th>
+            <th scope="col" class="text-center">{{ _('None') }}</th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
           </tr>
         </thead>
         <tbody>
@@ -283,22 +278,22 @@
         </tbody>
       </table>
       <div class="container">
-        <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_user_permissions" value="add_user_permissions">Add</button>
+        <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_user_permissions" value="add_user_permissions">{{ _('Add') }}</button>
       </div>
       </form>
     {% endif %}
     {% if groups %}
-      <h3>Add Basic Group</h3>
+      <h3>{{ _('Add Basic Group') }}</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_group_permissions_form.csrf_token }}
       <table class="table table-striped">
         <thead>
           <tr>
-            <th scope="col" style="width: 40%">Basic Group</th>
-            <th scope="col" class="text-center">None</th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" style="width: 40%">{{ _('Basic Group') }}</th>
+            <th scope="col" class="text-center">{{ _('None') }}</th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
           </tr>
         </thead>
         <tbody>
@@ -306,7 +301,7 @@
           <td>
             <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
             {% for group in groups %}
-              <option value="{{ group.id }}">{{ group.name }} (#{{ group.id }})</option>
+              <option value="{{ group.id }}">{{ group.name | get_translated_text }} (#{{ group.id }})</option>
             {% endfor %}
             </select>
           </td>
@@ -320,22 +315,22 @@
         </tbody>
       </table>
       <div class="container">
-        <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">Add</button>
+        <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">{{ _('Add') }}</button>
       </div>
       </form>
     {% endif %}
-    {% if projects_by_id %}
-      <h3>Add Project Group</h3>
+    {% if projects_by_id and show_projects_form %}
+      <h3>{{ _('Add Project Group') }}</h3>
       <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
       {{ add_project_permissions_form.csrf_token }}
       <table class="table table-striped">
         <thead>
           <tr>
-            <th scope="col" style="width: 40%">Project Group</th>
-            <th scope="col" class="text-center">None</th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to view objects and their properties, files and comments.">Read <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to edit objects and their properties and add files and comments. Includes Read permissions.">Write <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="Permission to grant permissions to other users. Includes Write permissions.">Grant <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" style="width: 40%">{{ _('Project Group') }}</th>
+            <th scope="col" class="text-center">{{ _('None') }}</th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+            <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
           </tr>
         </thead>
         <tbody>
@@ -343,7 +338,7 @@
           <td>
             <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
             {% for level, project_id, enabled in project_id_hierarchy_list %}
-              <option value="{{ project_id }}" {% if not enabled %}disabled="disabled"{% endif %}>{{ ('&nbsp;' * (4 * level)) | safe }}{{ projects_by_id[project_id].name }} (#{{ project_id }})</option>
+              <option value="{{ project_id }}" {% if not enabled %}disabled="disabled"{% endif %}>{{ ('&nbsp;' * (4 * level)) | safe }}{{ projects_by_id[project_id].name | get_translated_text }} (#{{ project_id }})</option>
             {% endfor %}
             </select>
           </td>
@@ -357,7 +352,7 @@
         </tbody>
       </table>
       <div class="container">
-        <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">Add</button>
+        <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">{{ _('Add') }}</button>
       </div>
       </form>
     {% endif %}
@@ -365,17 +360,17 @@
     <div class="container text-right" id="copyPermissionsLoading" style="display: none;">
       <span class="btn btn-primary col-md-offset-9 col-md-3 disabled" style="margin-top: 1em;">
         <i class="fa fa-spinner fa-spin"></i>
-        <span class="sr-only">Loading...</span>
+        <span class="sr-only">{{ _('Loading...') }}</span>
       </span>
      </div>
     <div class="container text-right" id="copyPermissionsBtnDiv">
       <button type="button" class="btn btn-primary col-md-offset-9 col-md-3" id="copyPermissionsBtn" style="margin-top: 1em;" data-toggle="modal" data-target="#copyPermissionsModal">
-        Copy Permissions
+        {{ _('Copy Permissions') }}
       </button>
      </div>
     {% endif %}
     <div class="container">
-     <a href="{{ url_for('.object', object_id=object.object_id) }}" class="btn btn-default col-md-offset-9 col-md-3" style="margin-top: 1em; margin-bottom: 1em;">Cancel</a>
+     <a href="{{ url_for('.object', object_id=object.object_id) }}" class="btn btn-default col-md-offset-9 col-md-3" style="margin-top: 1em; margin-bottom: 1em;">{{ _('Cancel') }}</a>
     </div>
   {% endif %}
 
@@ -386,10 +381,10 @@
         <form method="post" action="{{ url_for('.object_permissions', object_id=object.id) }}">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="copyPermissionsModalLabel">Copy permissions from other Object</h4>
+            <h4 class="modal-title" id="copyPermissionsModalLabel">{{ _('Copy permissions from other Object') }}</h4>
           </div>
           <div class="modal-body">
-            <p class="text-muted">You can replace the current permissions by copying the permissions from another object.</p>
+            <p class="text-muted">{{ _('You can replace the current permissions by copying the permissions from another object.') }}</p>
               {{ copy_permissions_form.hidden_tag() }}
               <select class="selectpicker" name="{{ copy_permissions_form.object_id.name }}" data-live-search="true" data-width="100%" data-sampledb-remove="{{ object.id }}" data-sampledb-required-perm="3" data-sampledb-start-show="#copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsBtnDiv" data-sampledb-empty-disable="#copyPermissionsBtn" data-sampledb-stop-hide="#copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsBtnDiv">
                 {% for object_id, object_name in copy_permissions_form.object_id.choices %}
@@ -398,8 +393,8 @@
               </select>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <input type="submit" class="btn btn-primary" name="copy_permissions" value="Copy Permissions" />
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <input type="submit" class="btn btn-primary" name="copy_permissions" value="{{ _('Copy Permissions') }}" />
           </div>
         </form>
       </div>

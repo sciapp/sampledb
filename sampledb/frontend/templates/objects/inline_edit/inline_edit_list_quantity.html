@@ -1,0 +1,44 @@
+<div class="input-list form-area">
+    {# View #}
+    <div class="view-switch">
+            {% if data is none %}
+                &mdash;
+            {% else %}
+                {% if schema['units'] == "1" %}
+                    {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}
+                {% else %}
+                    {{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
+                    {{ (data | to_datatype).units | prettify_units }}
+                {% endif %}
+            {% endif %}
+            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+            <div class="alert-upload-failed">
+                {{ _('Your input is not valid. Please check.') }}
+            </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        {% if schema['units'] == "1" %}
+            <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
+                   placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+                   {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
+                   {% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units | babel_format_number }}"{% endif %}>
+            {% if id_prefix+'_text' in errors %}<span class="help-block">{{ errors[id_prefix+'_text'] }}</span>
+            {% endif %}
+        {% else %}
+            <input type="hidden" name="{{ id_prefix }}_units" value="
+                {% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ schema['units'] }}{% endif %}"/>
+            <div class="input-group">
+                <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
+                       placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
+                       {% elif data is not none %}value="{{ (data | to_datatype).magnitude | babel_format_number }}"{% endif %}>
+                <span class="input-group-addon" style="min-width: 100px; text-align:left">{% if data is not none %}
+                    {{ (data | to_datatype).units | prettify_units }}{% else %}
+                    {{ schema['units'] | prettify_units }}{% endif %}</span>
+            </div>
+        {% endif %}
+        {% if id_prefix+'_magnitude' in object_errors %}
+            <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix+'_magnitude'] }}</span>{% endif %}
+    </div>
+</div>

@@ -4,10 +4,13 @@
 """
 
 import smtplib
+import typing
 
 import flask
+import flask_login
 import flask_mail
 
+from .languages import get_user_language
 from .. import mail, db
 from .security_tokens import generate_token
 from ..models import Authentication, AuthenticationType, User
@@ -113,3 +116,30 @@ def build_confirm_url(authentication_method, salt='password'):
     token = generate_token(authentication_method.id, salt=salt,
                            secret_key=flask.current_app.config['SECRET_KEY'])
     return flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True)
+
+
+def get_translated_text(
+        text: typing.Union[str, typing.Dict[str, str]],
+        language_code: typing.Optional[str] = None) -> str:
+    """
+    Return the text in a given language from a translation dictionary.
+
+    If the language does not exist in text, the return value will fall back to
+    the english text if it does exist or to an empty string otherwise.
+
+    If text is a string instead of a dict, it will be returned as-is.
+
+    If no language code is provided, the current user's language will be used.
+
+    :param text: a dict mapping language codes to translations
+    :param language_code: a language code, or None
+    :return: the translation
+    """
+
+    if language_code is None:
+        language_code = get_user_language(flask_login.current_user).lang_code
+
+    if not isinstance(text, dict):
+        return str(text)
+
+    return str(text.get(language_code, text.get('en', '')))

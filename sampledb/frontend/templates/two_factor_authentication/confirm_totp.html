@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Enter TOTP Verification Code') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h1>{{ _('Enter TOTP Verification Code') }}</h1>
+  <form action="{{ url_for('frontend.confirm_totp_two_factor_authentication') }}" method="post">
+    {{ confirm_form.hidden_tag() }}
+    <p class="text-muted">
+      {% if reason == 'login' %}
+        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to complete the sign in process.') }}
+      {% elif reason == 'activate_two_factor_authentication_method' %}
+        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to activate this two factor authentication method.') }}
+      {% elif reason == 'deactivate_two_factor_authentication_method' %}
+        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to deactivate this two factor authentication method.') }}
+      {% endif %}
+    </p>
+    <div class="form-group {% if confirm_form.is_submitted() %}has-error{% endif %}">
+      <input type="text" autocomplete="off" placeholder="{{ _('Verification Code') }}" name="{{ confirm_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
+    </div>
+    <div>
+      <input type="submit" value="{% if reason == 'login' %}{{ _('Sign In') }}{% else %}{{ _('Confirm') }}{% endif %}" class="btn btn-primary" style="width:100px;" />
+      <a href="{{ url_for('.index') }}" class="btn btn-default" style="width:100px;">{{ _('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

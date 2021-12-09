@@ -172,6 +172,25 @@ def test_validate_text_schema():
     validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_text_schema_may_copy():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'may_copy': True
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_schema_may_copy_invalid_type():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'may_copy': 'all'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_text_schema_note():
     schema = {
         'title': 'Example',
@@ -243,6 +262,35 @@ def test_validate_text_with_empty_choices():
         'title': 'Example',
         'type': 'text',
         'choices': []
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_with_translated_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': [{'en': 'A', 'de': 'A2'}, {'en': 'B'}, {'en': 'C', 'de': 'C'}]
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_with_mixed_translated_choices():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': ['A', 'B', {'en': 'C'}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_with_translated_choices_without_english():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'choices': [{'en': 'A', 'de': 'A2'}, {'en': 'B'}, {'de': 'C'}]
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
@@ -412,6 +460,18 @@ def test_validate_text_with_placeholder_and_choices():
         'placeholder': 'Placeholder',
         'choices': ['A', 'B', 'C']
     }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_text_with_translated_placeholder():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'placeholder': {'en': 'Placeholder', 'de': 'Platzhalter'}
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['placeholder']['xy'] = 'Placeholder'
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
 
@@ -606,6 +666,48 @@ def test_validate_array_schema():
     validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_array_schema_default_items():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'defaultItems': 2
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_array_schema_invalid_default_items():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'defaultItems': '2'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['defaultItems'] = -1
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['defaultItems'] = 2
+    schema['minItems'] = 2
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['minItems'] = 3
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['minItems'] = 0
+    schema['maxItems'] = 2
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['maxItems'] = 1
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_array_schema_default():
     schema = {
         'title': 'Example',
@@ -748,7 +850,7 @@ def test_validate_array_schema_with_invalid_style():
             'title': 'Example Item',
             'type': 'text'
         },
-        'style': 'grid'
+        'style': 1
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
@@ -2016,3 +2118,142 @@ def test_validate_plotly_chart_schema_invalid_key():
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_unknown_condition_type():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'type': 'text',
+                'conditions': [
+                    {
+                        'type': 'choice_not_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_required_conditional():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'type': 'text',
+                'conditions': [
+                    {
+                        'type': 'choice_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name', 'conditional_property']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_choice_equals_conditions():
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'example_choice': {
+                'title': 'Example Choice',
+                'type': 'text',
+                'choices': [
+                    {
+                        'en': '1'
+                    },
+                    {
+                        'en': '2'
+                    }
+                ]
+            },
+            'conditional_property': {
+                'title': 'Conditional Property',
+                'conditions': [
+                    {
+                        'type': 'choice_equals',
+                        'property_name': 'example_choice',
+                        'choice': {
+                            'en': '1'
+                        }
+                    }
+                ]
+            }
+        },
+        'required': ['name']
+    }
+
+    for property_type in {'text', 'object_reference', 'sample', 'measurement', 'datetime', 'bool', 'user', 'plotly_chart'}:
+        schema['properties']['conditional_property']['type'] = property_type
+        validate_schema(schema)
+
+    schema['properties']['conditional_property']['type'] = 'quantity'
+    schema['properties']['conditional_property']['units'] = '1'
+    validate_schema(schema)
+    del schema['properties']['conditional_property']['units']
+
+    for property_type in {'hazards', 'tags'}:
+        schema['properties']['conditional_property']['type'] = property_type
+        with pytest.raises(ValidationError):
+            validate_schema(schema)
+
+    schema['properties']['conditional_property']['type'] = 'text'
+    schema['properties']['conditional_property']['conditions'][0]['choice']['en'] = '3'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

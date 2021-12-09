@@ -70,6 +70,7 @@ $(function() {
           }).filter(function (el) {
             return action_ids.length === 0 || $.inArray(el.action_id, action_ids) !== -1;
           });
+        $x.find( 'option[value != ""]' ).remove();
         $x.append(
           to_add.map(function (el) {
               var data_tokens = "";
@@ -80,7 +81,7 @@ $(function() {
                 }
                 data_tokens += el.text + '"';
               }
-              return '<option value="' + el.id + '" '+ data_tokens + '>' + el.text + '</option>';
+              return '<option value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
             }).join(""));
 
         $x.selectpicker('refresh').prop("disabled", false).selectpicker('refresh');
@@ -107,8 +108,10 @@ $(function() {
         }
 
         var data = $x.data('sampledbDefaultSelected');
-        if (data !== 'None')
+        if (data !== 'None') {
           $x.selectpicker('val', data);
+          $x.selectpicker('refresh');
+        }
       });
     });
   }

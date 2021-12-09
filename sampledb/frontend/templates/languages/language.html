@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Language') }} #{{ language.id }}: {{ language.names | get_translated_text }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <dl>
+    {% for lang in all_languages %}
+      {% if lang.lang_code in language.names %}
+        <dt>{{ _('Language in %(lang_name)s', lang_name=lang.names | get_translated_text) }}:</dt><dd>{{ language.names[lang.lang_code] }}</dd>
+      {% endif %}
+    {% endfor %}
+    <dt>{{ _('Language code') }}:</dt><dd>{{ language.lang_code }}</dd>
+    <dt>{{ _('Datetime format for datetime') }}:</dt><dd>{{ language.datetime_format_datetime }}</dd>
+    <dt>{{ _('Datetime format for moment') }}:</dt><dd>{{ language.datetime_format_moment }}</dd>
+    <dt>{{ _('Enabled for input') }}:</dt><dd>{% if language.enabled_for_input %}<i class="fa fa-check" aria-hidden="true"></i>{% else %}<i class="fa fa-times" aria-hidden="true"></i>{% endif %}</dd>
+    <dt>{{ _('Enabled for user interface') }}:</dt><dd>{% if language.enabled_for_user_interface %}<i class="fa fa-check" aria-hidden="true"></i>{% else %}<i class="fa fa-times" aria-hidden="true"></i>{% endif %}</dd>
+
+  </dl>
+
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    <a href="{{ url_for('.language', language_id=language.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify this language.') }}">{{ _('Edit language') }}</a>
+  {% endif %}
+{% endblock %}

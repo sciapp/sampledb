@@ -35,8 +35,6 @@ def user(auth_user):
 def object(user):
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -100,7 +98,7 @@ def test_create_invalid_file(flask_server, object, auth, tmpdir):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "storage must be 'local' or 'url'"
+        "message": "storage must be 'local', 'database' or 'url'"
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)
@@ -149,7 +147,7 @@ def test_create_invalid_local_file(flask_server, object, auth, tmpdir):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "original_file_name must be set for files with local storage"
+        "message": "original_file_name must be set for files with local or database storage"
     }
 
     data = {
@@ -159,7 +157,7 @@ def test_create_invalid_local_file(flask_server, object, auth, tmpdir):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "base64_content must be set for files with local storage"
+        "message": "base64_content must be set for files with local or database storage"
     }
 
     data = {
@@ -266,6 +264,24 @@ def test_get_local_file(flask_server, object, auth, user, tmpdir):
         'object_id': object.id,
         'file_id': 0,
         'storage': 'local',
+        'original_file_name': 'test.txt',
+        'base64_content': base64.b64encode('test'.encode('utf8')).decode('utf8')
+    }
+
+
+def test_get_database_file(flask_server, object, auth, user, tmpdir):
+    sampledb.logic.files.create_database_file(
+        object_id=object.id,
+        user_id=user.id,
+        file_name='test.txt',
+        save_content=lambda stream: stream.write('test'.encode('utf8'))
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'object_id': object.id,
+        'file_id': 0,
+        'storage': 'database',
         'original_file_name': 'test.txt',
         'base64_content': base64.b64encode('test'.encode('utf8')).decode('utf8')
     }

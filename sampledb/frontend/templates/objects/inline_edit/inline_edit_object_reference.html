@@ -1,0 +1,49 @@
+<div class="row form-area" style="padding-right: 0.75em">
+    {# Label #}
+    <label class="col-md-3"
+           style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}
+    </label>
+    {# View #}
+    <div class="view-switch">
+        <div class="col-md-9">
+            {% if data is not none and "object_id" in data %}
+                {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
+                    {% if not (obj is none) %}
+                        <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{% if obj.data['name']['text'] | get_translated_text(metadata_language) == '' %}&mdash;{% else %}{{ obj.data['name']['text'] | get_translated_text(metadata_language) }}{% endif %}
+                            (#{{ obj.object_id }})</a>
+                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                    {% else %}
+                        <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">&mdash; #{{ data.object_id }}</a>
+                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                &mdash;
+                <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+            {% endif %}
+            <div class="alert-upload-failed">
+                {{ _('Your input is not valid. Please check.') }}
+            </div>
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch ">
+            {% if not selected_action_type %}
+                {% if 'action_type_id' not in schema or schema['action_type_id'] is none %}
+                    {% set selected_action_type = none %}
+                {% else %}
+                    {% set selected_action_type = schema['action_type_id'] %}
+                {% endif %}
+            {% endif %}
+            {% if 'action_id' not in schema or schema['action_id'] is none %}
+                {% set selected_action = none %}
+            {% else %}
+                {% set selected_action = schema['action_id'] %}
+            {% endif %}
+        <div class="col-md-9">
+            <div class="container-fluid" style="padding-right: 15px">
+                {% include 'objects/forms/form_table_object_reference_base.html' %}
+            </div>
+        </div>
+    </div>
+</div>

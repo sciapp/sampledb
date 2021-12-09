@@ -13,7 +13,6 @@ Users at facilities which use LDAP for user management can use their **LDAP user
 Guests, or users at facilities without LDAP, should ask another user of |service_name| for an **invitation**, e.g. the scientist responsible for the instrument they will be using. Once they have confirmed their email address by clicking the confirmation link in the invitation email, they can then set a password for their new |service_name| account.
 
 .. figure:: ../static/img/generated/guest_invitation.png
-    :scale: 50 %
     :alt: User Invitation Form
 
     User Invitation Form
@@ -32,7 +31,7 @@ The preferences are split into the following sections:
 User Information
 ````````````````
 
-Users can update their user name displayed on |service_name|, e.g. in the event of a marriage. They can also change their email address, which will be updated once the new address has been confirmed, and set a publicly visible ORCID iD and affiliation.
+Users can update their user name displayed on |service_name|, e.g. in the event of a marriage. They can also change their email address, which will be updated once the new address has been confirmed, and set a publicly visible ORCID iD, affiliation and role.
 
 Authentication Methods
 ``````````````````````
@@ -61,7 +60,6 @@ Notifications
 Users will receive notifications whenever they need to be informed about an activity on |service_name|. Whenever a user has unread notifications, a bell with the number of unread notifications is shown in the navigation bar.
 
 .. figure:: ../static/img/generated/unread_notification_icon.png
-    :scale: 50 %
     :alt: Unread Notification Icon
 
     Unread Notification Icon

@@ -5,7 +5,7 @@ LABEL maintainer="f.rhiem@fz-juelich.de"
 # Install required system packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y curl python3.7-venv python3.7-distutils libpangocairo-1.0-0 && \
+    apt-get install -y curl python3.7-venv python3.7-distutils libpangocairo-1.0-0 gettext && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
@@ -31,6 +31,9 @@ ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5
 
 # Set default file storage path
 ENV SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files
+
+# Set the path for pybabel
+ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/env/bin/pybabel
 
 # The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
 ADD docker-entrypoint.sh docker-entrypoint.sh

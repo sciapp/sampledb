@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Unsupported Two Factor Authentication Method') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ _('Unsupported Two Factor Authentication Method') }}</h1>
+<p>{{ _('The two factor authentication method set up for your account is currently unsupported. Please <a href="mailto:%(contact_email)s?subject=%(service_name)s"> contact an administrator</a>.', contact_email=contact_email, service_name=service_name) }}</p>
+{% endblock %}

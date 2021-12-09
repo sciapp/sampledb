@@ -1,0 +1,26 @@
+<div class="form-area">
+    {# View #}
+    <div class="view-switch">
+        <div class="row" style="padding-right: 0.75em; padding-left: 15px">
+            {% if data is not none and "value" in data and not (data.value is none) %}
+                {% if data.value %}
+                    <i class="fa fa-check"></i>
+                {% else %}
+                    <i class="fa fa-times"></i>
+                {% endif %}
+            {% else %}
+                &mdash;
+            {% endif %}
+            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+            <div class="alert-upload-failed">
+                {{ _('Your input is not valid. Please check.') }}
+            </div>
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+        <input type="checkbox" name="{{ id_prefix }}_value"
+               {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data %}checked{% endif %}{% elif data is not none and "value" in data and data.value %}checked="checked"{% endif %}>
+    </div>
+</div>

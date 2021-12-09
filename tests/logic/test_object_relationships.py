@@ -15,8 +15,6 @@ from sampledb.models import User, UserType
 def sample_action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -40,8 +38,6 @@ def sample_action():
 def measurement_action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',

@@ -10,11 +10,16 @@ from flask_restful import Resource
 
 from ...api.server.authentication import multi_auth, object_permissions_required, Permissions
 from ...logic.actions import get_action, get_action_type
+from ...logic.action_translations import get_action_with_translation_in_language, Language
+from ...logic.action_permissions import get_user_action_permissions
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
-from ...logic import errors
+from ...logic import errors, users
 from ... import models
+
+from .users import user_to_json
+from .actions import action_to_json
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -28,7 +33,7 @@ class ObjectVersion(Resource):
             return {
                 "message": "version {} of object {} does not exist".format(version_id, object_id)
             }, 404
-        return {
+        object_version_json = {
             'object_id': object.object_id,
             'version_id': object.version_id,
             'action_id': object.action_id,
@@ -37,6 +42,26 @@ class ObjectVersion(Resource):
             'schema': object.schema,
             'data': object.data
         }
+        embed_action = bool(flask.request.args.get('embed_action'))
+        if embed_action:
+            object_version_json['action'] = None
+            try:
+                if Permissions.READ in get_user_action_permissions(action_id=object.action_id, user_id=flask.g.user.id):
+                    action = get_action_with_translation_in_language(
+                        action_id=object.action_id,
+                        language_id=Language.ENGLISH
+                    )
+                    object_version_json['action'] = action_to_json(action)
+            except errors.ActionDoesNotExistError:
+                pass
+        embed_user = bool(flask.request.args.get('embed_user'))
+        if embed_user:
+            try:
+                user = users.get_user(object.user_id)
+                object_version_json['user'] = user_to_json(user)
+            except errors.UserDoesNotExistError:
+                object_version_json['user'] = None
+        return object_version_json
 
 
 class ObjectVersions(Resource):

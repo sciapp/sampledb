@@ -25,11 +25,13 @@ from . import index
 from . import instruments
 from . import locations
 from . import markdown_images
+from . import languages
 from . import objects
 from . import objects_forms
 from . import projects
 from . import status
 from . import tags
+from . import timezone
 from . import users
 from . import users_forms
 from . import errors
@@ -47,11 +49,13 @@ __all__ = [
     'instruments',
     'locations',
     'markdown_images',
+    'languages',
     'objects',
     'objects_forms',
     'projects',
     'status',
     'tags',
+    'timezone',
     'users',
     'users_forms',
     'errors',

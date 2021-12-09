@@ -24,6 +24,7 @@ def user():
     db.session.commit()
     return user
 
+
 @pytest.fixture
 def user2():
     user = User(name="User 2", email="example@example.com", type=UserType.PERSON)
@@ -36,8 +37,6 @@ def user2():
 def action():
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -80,7 +79,7 @@ def test_create_object_with_missing_action(user, action) -> None:
         }
     }
     with pytest.raises(sampledb.logic.errors.ActionDoesNotExistError):
-        sampledb.logic.objects.create_object(action_id=action.id+1, data=data, user_id=user.id)
+        sampledb.logic.objects.create_object(action_id=action.id + 1, data=data, user_id=user.id)
 
 
 def test_create_object_with_missing_user(user, action) -> None:
@@ -91,7 +90,7 @@ def test_create_object_with_missing_user(user, action) -> None:
         }
     }
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
-        sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id+1)
+        sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id + 1)
 
 
 def test_update_object(user, action, user2) -> None:
@@ -135,8 +134,6 @@ def test_get_objects_action_filter(user, action) -> None:
     action1 = action
     action2 = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name="",
-        description="",
         schema={
             'title': 'Example Object',
             'type': 'object',
@@ -157,7 +154,7 @@ def test_get_objects_action_filter(user, action) -> None:
         }
     }
     object1 = sampledb.logic.objects.create_object(action_id=action1.id, data=data, user_id=user.id)
-    object2 = sampledb.logic.objects.create_object(action_id=action2.id, data=data, user_id=user.id)
+    _ = sampledb.logic.objects.create_object(action_id=action2.id, data=data, user_id=user.id)
 
     current_objects = sampledb.logic.objects.get_objects(action_filter=(db.cast(sampledb.models.Action.schema, postgresql.JSONB) == action1.schema))
     """{
@@ -187,7 +184,7 @@ def test_get_object(user, action) -> None:
     assert object1 == sampledb.logic.objects.get_object(object1.object_id)
     assert object2 == sampledb.logic.objects.get_object(object2.object_id)
     with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
-        assert object2 == sampledb.logic.objects.get_object(object2.object_id+1)
+        assert object2 == sampledb.logic.objects.get_object(object2.object_id + 1)
 
 
 def test_get_object_versions(user, action, user2) -> None:
@@ -269,7 +266,7 @@ def test_update_missing_object(user, action) -> None:
     }
     object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
-        sampledb.logic.objects.update_object(object1.object_id+1, data=data, user_id=user.id)
+        sampledb.logic.objects.update_object(object1.object_id + 1, data=data, user_id=user.id)
 
 
 def test_restore_object_version(user, action) -> None:
@@ -299,14 +296,12 @@ def test_restore_object_version_invalid_data(user, action) -> None:
     with pytest.raises(sampledb.logic.errors.ObjectVersionDoesNotExistError):
         sampledb.logic.objects.restore_object_version(object_id=object.object_id, version_id=1, user_id=user.id)
     with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
-        sampledb.logic.objects.restore_object_version(object_id=42, version_id=0, user_id=user.id)
+        sampledb.logic.objects.restore_object_version(object_id=object.object_id + 1, version_id=0, user_id=user.id)
 
 
 def test_measurement_referencing_sample(flask_server, user) -> None:
     sample_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        name='Sample Action',
-        description='',
         schema={
             'title': 'Sample',
             'type': 'object',
@@ -320,8 +315,6 @@ def test_measurement_referencing_sample(flask_server, user) -> None:
         })
     measurement_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
-        name='Measurement Action',
-        description='',
         schema={
             'title': 'Measurement',
             'type': 'object',

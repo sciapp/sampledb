@@ -21,27 +21,99 @@
   <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
 {% endif %}
 <script type="text/javascript">
-    $(function () {
-        $('.input-group.date').each(function() {
-          $(this).datetimepicker({
-            format: 'YYYY-MM-DD HH:mm:ss',
-            date: $(this).attr('data-datetime')
-          });
-        });
+  window.mde_fields = [];
 
-        $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
-            var mde_field = new InscrybMDE({
-                element: e,
-                indentWithTabs: false,
-                spellChecker: false,
-                status: false,
-                hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-                showIcons: ["code", "table"],
-                minHeight: '100px',
-            });
-            setupImageDragAndDrop(mde_field);
-        });
+  $(function () {
+    $('.input-group.date').each(function() {
+      $(this).datetimepicker({
+        locale: "{{ get_user_language(current_user).lang_code }}",
+        format: "{{ get_user_language(current_user).datetime_format_moment }}",
+        date: $(this).attr('data-datetime')
+      });
     });
+
+    $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
+      var mde_field = new InscrybMDE({
+        element: e,
+        indentWithTabs: false,
+        spellChecker: false,
+        status: false,
+        hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
+        showIcons: ["code", "table"],
+        minHeight: '100px',
+      });
+      setupImageDragAndDrop(mde_field);
+    });
+
+    $('textarea.plotly-chart-editor').each(function() {
+      var jsonStr = $( this ).text();
+      try {
+        var jsonObj = JSON.parse(jsonStr);
+        var jsonPretty = JSON.stringify(jsonObj, null, '\t');
+        $( this ).text(jsonPretty);
+      }
+      catch (e) {
+        return;
+      }
+    });
+
+    function updateSelectLanguage(selectpicker) {
+      var enabled_languages = $(selectpicker).selectpicker('val');
+      if (!Array.isArray(enabled_languages)) {
+        return;
+      }
+      if (enabled_languages === '' || enabled_languages.length === 0) {
+        enabled_languages = ['en'];
+      } else {
+        enabled_languages.push('en');
+      }
+      var parent_form_group = $(selectpicker).closest('.form-group');
+      {% for language in languages %}
+        if (enabled_languages.includes("{{ language.lang_code }}")) {
+          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+        } else {
+          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+        }
+      {% endfor %}
+    }
+
+    var select_language_selectpicker = $('.select-language')
+    select_language_selectpicker.on('changed.bs.select', function() {
+      updateSelectLanguage(this);
+    });
+    select_language_selectpicker.each(function(_, selectpicker) {
+      updateSelectLanguage(selectpicker);
+    });
+    $.each(window.conditional_wrapper_scripts, function () {
+      this();
+    });
+
+    $('div.objectpicker').each(function () {
+      let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
+      $(this).append(filter_button);
+      let objectpicker = $(this).find('.selectpicker');
+      let actionpicker = $(this).next('.objectpicker-actionpicker').find('.selectpicker');
+      filter_button.tooltip();
+      filter_button.on('click', function() {
+        actionpicker.selectpicker('toggle');
+      });
+      actionpicker.on('hidden.bs.select', function() {
+        let action_id = actionpicker.selectpicker('val');
+        if (action_id === "") {
+          objectpicker.find('option').prop('disabled', false);
+        } else {
+          objectpicker.find('option').prop('disabled', true);
+          objectpicker.find('option[data-action-id="' + action_id+ '"]').prop('disabled', false);
+        }
+        objectpicker.find('option[value=""]').prop('disabled', false);
+        objectpicker.selectpicker('refresh');
+        objectpicker.selectpicker('toggle');
+        if (objectpicker.selectpicker('val') === null) {
+          objectpicker.selectpicker('val', '');
+        }
+      });
+    });
+  });
 
   var tags = new Bloodhound({
     initialize: true,
@@ -52,6 +124,7 @@
   $('input[name^=\'object__\'][name$=\'__tags\']').each(function() {
     var tagsinput = $(this);
     tagsinput.tagsinput({
+      confirmKeys: [13, 32],
       trimValue: true,
       typeaheadjs: {
         name: 'Tags',

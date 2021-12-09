@@ -1,8 +1,11 @@
-<h4>Invitation Log</h4>
+<h4>{{ _('Invitations') }}</h4>
 {% if all_invitations %}
 <ul>
 {% for invitation in all_invitations %}
-  <li><a href="{{ url_for('.user_profile', user_id=invitation.user_id) }}">{{ get_user(invitation.user_id).name }} (#{{ invitation.user_id }})</a> has been invited by <a href="{{ url_for('.user_profile', user_id=invitation.inviter_id) }}">{{ get_user(invitation.inviter_id).name }} (#{{ invitation.inviter_id }})</a> on {{ invitation.utc_datetime.strftime('%Y-%m-%d') }} <span class="label label-default">{% if invitation.accepted %}accepted{% elif invitation.expired %}expired{% else %}pending{% endif %}</span></li>
+  <li>
+    {{ _('<a href="%(invitee_url)s">%(invitee_name)s (#%(invitee_id)s)</a> has been invited by <a href="%(inviter_url)s">%(inviter_name)s (#%(inviter_id)s)</a> on %(invitation_date)s.', invitee_url=url_for('.user_profile', user_id=invitation.user_id), invitee_name=get_user(invitation.user_id).name, invitee_id=invitation.user_id, inviter_url=url_for('.user_profile', user_id=invitation.inviter_id), inviter_name=get_user(invitation.inviter_id).name, inviter_id=invitation.inviter_id, invitation_date=invitation.utc_datetime | babel_format_datetime) }}
+    <span class="label label-default">{% if invitation.accepted %}{{ _('accepted') }}{% elif invitation.expired %}{{ _('expired') }}{% else %}{{ _('pending') }}{% endif %}</span>
+  </li>
 {% endfor %}
 </ul>
 {% else %}

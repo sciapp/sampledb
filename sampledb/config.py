@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Basic configuration for iffSamples
+Basic configuration for SampleDB
 
 This configuration is the pure base, representing defaults. These values may be altered or expanded in several ways:
 - For tests, the configuration is modified in tests/conftest.py.
@@ -10,6 +10,7 @@ This configuration is the pure base, representing defaults. These values may be 
 
 import base64
 import io
+import json
 import os
 import requests
 import typing
@@ -299,7 +300,34 @@ def check_config(
         print(
             ansi_color(
                 f'Expected INVITATION_TIME_LIMIT to be a positive integer, but got {config["INVITATION_TIME_LIMIT"]!r}\n',
-                color=33
+                color=31
+            ),
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
+
+    if not isinstance(config['EXTRA_USER_FIELDS'], dict):
+        print(
+            ansi_color(
+                f'Expected EXTRA_USER_FIELDS to be a dictionary, but got {config["EXTRA_USER_FIELDS"]!r}\n',
+                color=31
+            ),
+            file=sys.stderr
+        )
+        can_run = False
+        show_config_info = True
+    elif any(
+            not isinstance(value, dict) or
+            set(value.keys()) - {'name', 'placeholder'} or
+            not isinstance(value.get('name', ''), (dict, str)) or
+            not isinstance(value.get('placeholder', ''), (dict, str))
+            for key, value in config['EXTRA_USER_FIELDS'].items()
+    ):
+        print(
+            ansi_color(
+                'Invalid EXTRA_USER_FIELDS.\n',
+                color=31
             ),
             file=sys.stderr
         )
@@ -356,10 +384,13 @@ CONTACT_EMAIL = None
 
 # branding and legal info
 SERVICE_NAME = 'SampleDB'
-SERVICE_DESCRIPTION = SERVICE_NAME + ' is the sample and measurement metadata database at PGI and JCNS.'
+SERVICE_DESCRIPTION = {
+    'en': SERVICE_NAME + ' is a database for sample and measurement metadata developed at PGI and JCNS.',
+    'de': SERVICE_NAME + ' ist eine Datenbank für Proben- und Messungsmetadaten entwickelt am PGI und JCNS.'
+}
 SERVICE_IMPRINT = None
 SERVICE_PRIVACY_POLICY = None
-SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
+SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
 
 # location for storing files
 # in this directory, per-action subdirectories will be created, containing
@@ -413,6 +444,19 @@ LOAD_OBJECTS_IN_BACKGROUND = False
 
 ENFORCE_SPLIT_NAMES = False
 
+BUILD_TRANSLATIONS = True
+PYBABEL_PATH = 'pybabel'
+
+EXTRA_USER_FIELDS = {}
+
+SHOW_PREVIEW_WARNING = False
+
+DISABLE_INLINE_EDIT = False
+
+SHOW_OBJECT_TITLE = False
+
+HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -421,3 +465,40 @@ try:
     INVITATION_TIME_LIMIT = int(INVITATION_TIME_LIMIT)
 except ValueError:
     pass
+
+# parse values as integers
+for config_name in {'MAX_CONTENT_LENGTH', }:
+    value = globals().get(config_name)
+    if isinstance(value, str):
+        try:
+            globals()[config_name] = int(value)
+        except Exception:
+            pass
+
+# parse values as json
+for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS'}:
+    value = globals().get(config_name)
+    if isinstance(value, str) and value.startswith('{'):
+        try:
+            globals()[config_name] = json.loads(value)
+        except Exception:
+            pass
+
+# parse boolean values
+for config_name in {
+    'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
+    'ONLY_ADMINS_CAN_CREATE_GROUPS',
+    'ONLY_ADMINS_CAN_DELETE_GROUPS',
+    'ONLY_ADMINS_CAN_CREATE_PROJECTS',
+    'DISABLE_USE_IN_MEASUREMENT',
+    'DISABLE_SUBPROJECTS',
+    'LOAD_OBJECTS_IN_BACKGROUND',
+    'ENFORCE_SPLIT_NAMES',
+    'BUILD_TRANSLATIONS',
+    'SHOW_PREVIEW_WARNING',
+    'SHOW_OBJECT_TITLE',
+    'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+}:
+    value = globals().get(config_name)
+    if isinstance(value, str):
+        globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}

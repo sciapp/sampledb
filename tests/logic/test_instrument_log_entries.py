@@ -3,6 +3,8 @@
 
 """
 
+import datetime
+
 import pytest
 import sampledb
 from sampledb.logic import instruments, instrument_log_entries, errors
@@ -11,7 +13,7 @@ from sampledb.logic import instruments, instrument_log_entries, errors
 @pytest.fixture
 def instrument(flask_server):
     with flask_server.app.app_context():
-        instrument = instruments.create_instrument(name="Example Instrument", description="")
+        instrument = instruments.create_instrument()
         # force attribute refresh
         assert instrument.id is not None
     return instrument
@@ -45,17 +47,19 @@ def instrument_responsible_user(users, instrument):
 
 
 def test_create_log_entry(instrument, instrument_responsible_user, other_user):
-
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 0
     instrument_log_entries.create_instrument_log_entry(instrument.id, instrument_responsible_user.id, "test")
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 1
-    instrument_log_entries.create_instrument_log_entry(instrument.id, other_user.id, "test2")
+    event_utc_datetime = datetime.datetime.strptime("2021-02-21 02:21:20", "%Y-%m-%d %H:%M:%S")
+    instrument_log_entries.create_instrument_log_entry(instrument.id, other_user.id, "test2", event_utc_datetime=event_utc_datetime)
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 2
     log_entries = instrument_log_entries.get_instrument_log_entries(instrument.id)
     assert log_entries[0].author == instrument_responsible_user
     assert log_entries[0].versions[-1].content == "test"
+    assert log_entries[0].versions[-1].event_utc_datetime == None
     assert log_entries[1].author == other_user
     assert log_entries[1].versions[-1].content == "test2"
+    assert log_entries[1].versions[-1].event_utc_datetime == event_utc_datetime
     for i in range(2):
         assert log_entries[i].instrument_id == instrument.id
         assert instrument_log_entries.get_instrument_log_entry(log_entries[i].id) == log_entries[i]

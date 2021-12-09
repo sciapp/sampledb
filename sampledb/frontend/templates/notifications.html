@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Notifications — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Notifications') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>Notifications</h1>
+  <h1>{{ _('Notifications') }}</h1>
 
   {% if notifications | length == 0 %}
-    <p>You do not have any notifications.</p>
+    <p>{{ _('You do not have any notifications.') }}</p>
   {% else %}
     <table class="table" id="notifications-table">
       <thead>
       <tr>
         <th>
-          Date
+          {{ _('Date') }}
         </th>
         <th style="width: 100%">
-          Message
+          {{ _('Message') }}
         </th>
         <th>
         {% if num_unread_notifications > 0 %}
           <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
             {{ mark_all_notifications_as_read_form.hidden_tag() }}
             <input type="hidden" name="{{ mark_all_notifications_as_read_form.mark_all_notifications_as_read_up_to_id.name }}" value="{{ max_known_notification_id }}" />
-            <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="Mark all as Read"></button>
+            <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="{{ _('Mark all as Read') }}"></button>
           </form>
         {% endif %}
         </th>
@@ -30,7 +30,7 @@
           <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
             {{ delete_all_notifications_form.hidden_tag() }}
             <input type="hidden" name="{{ delete_all_notifications_form.delete_all_notifications_up_to_id.name }}" value="{{ max_known_notification_id }}" />
-            <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="Delete all"></button>
+            <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="{{ _('Delete all') }}"></button>
           </form>
         </th>
       </tr>
@@ -38,39 +38,40 @@
       <tbody>
         {% for notification in notifications %}
           <tr {% if not notification.was_read %}class="unread-notification"{% endif %}>
-            <td>{{ notification.utc_datetime.strftime('%Y-%m-%d') }}</td>
+            <td>{{ notification.utc_datetime | babel_format_date }}</td>
             <td>
               {% if notification.type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER %}
-                <a href="{{ url_for('.user_profile', user_id=notification.data['assigner_id']) }}">{{ get_user(notification.data['assigner_id']).name }}</a> assigned you as responsible user for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>. {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed(notification.data['object_location_assignment_id']) %}<a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">Confirm</a>{% endif %}
+                {{ _('<a href="%(assigner_url)s">%(assigner_name)s</a> assigned you as responsible user for <a href="%(object_url)s">object #%(object_id)s</a>.', assigner_url=url_for('.user_profile', user_id=notification.data['assigner_id']), assigner_name=get_user(notification.data['assigner_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
+                {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed(notification.data['object_location_assignment_id']) %}<a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">{{ _('Confirm') }}</a>{% endif %}
               {% elif notification.type == NotificationType.OTHER %}
                 {{ notification.data['message'] }}
               {% elif notification.type == NotificationType.INVITED_TO_GROUP %}
                 {% set group = get_group(notification.data['group_id']) %}
                 {% if group is not none %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to the basic group "<a href="{{ url_for('.group', group_id=notification.data['group_id']) }}">{{ get_group(notification.data['group_id']).name }}</a>":
+                  {{ _('<a href="%(inviter_url)s">%(inviter_name)s</a> has invited you to the basic group "<a href="%(group_url)s">%(group_name)s</a>":', inviter_url=url_for('.user_profile', user_id=notification.data['inviter_id']), inviter_name=get_user(notification.data['inviter_id']).name, group_url=url_for('.group', group_id=notification.data['group_id']), group_name=get_group(notification.data['group_id']).name | get_translated_text) }}
                   {% if is_group_member(current_user.id, notification.data['group_id']) %}
-                    You are already a member of this basic group.
+                    {{ _('You are already a member of this basic group.') }}
                   {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
-                    <a href="{{ notification.data['confirmation_url'] | safe }}">Join Basic Group</a>
+                    <a href="{{ notification.data['confirmation_url'] | safe }}">{{ _('Join Basic Group') }}</a>
                   {% else %}
-                    The invitation has expired at {{ notification.data['expiration_utc_datetime'] }}.
+                    {{ _('The invitation has expired at %(expiration_datetime)s.', expiration_datetime=notification.data['expiration_utc_datetime'] | babel_format_datetime) }}
                   {% endif %}
                 {% else %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a basic group, but it has been deleted already.
+                  {{ _('<a href="%(inviter_url)s">%(inviter_name)s</a> has invited you to a basic group, but it has been deleted already.', inviter_url=url_for('.user_profile', user_id=notification.data['inviter_id']), inviter_name=get_user(notification.data['inviter_id']).name) }}
                 {% endif %}
               {% elif notification.type == NotificationType.INVITED_TO_PROJECT %}
                 {% set project = get_project(notification.data['project_id']) %}
                 {% if project is not none %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to the project group "<a href="{{ url_for('.project', project_id=notification.data['project_id']) }}">{{ get_project(notification.data['project_id']).name }}</a>":
+                  {{ _('<a href="%(inviter_url)s">%(inviter_name)s</a> has invited you to the project group "<a href="%(project_url)s">%(project_name)s</a>":', inviter_url=url_for('.user_profile', user_id=notification.data['inviter_id']), inviter_name=get_user(notification.data['inviter_id']).name, project_url=url_for('.project', project_id=notification.data['project_id']), project_name=get_project(notification.data['project_id']).name | get_translated_text) }}
                   {% if is_project_member(current_user.id, notification.data['project_id']) %}
-                    You are already a member of this project group.
+                    {{ _('You are already a member of this project group.')}}
                   {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
-                    <a href="{{ notification.data['confirmation_url'] | safe }}">Join Project Group</a>
+                    <a href="{{ notification.data['confirmation_url'] | safe }}">{{ _('Join Project Group') }}</a>
                   {% else %}
-                    The invitation has expired at {{ notification.data['expiration_utc_datetime'] }}.
+                    {{ _('The invitation has expired at %(expiration_datetime)s.', expiration_datetime=notification.data['expiration_utc_datetime'] | babel_format_datetime) }}
                   {% endif %}
                 {% else %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['inviter_id']) }}">{{ get_user(notification.data['inviter_id']).name }}</a> has invited you to a project group, but it has been deleted already.
+                  {{ _('<a href="%(inviter_url)s">%(inviter_name)s</a> has invited you to a project group, but it has been deleted already.', inviter_url=url_for('.user_profile', user_id=notification.data['inviter_id']), inviter_name=get_user(notification.data['inviter_id']).name) }}
                 {% endif %}
               {% elif notification.type == NotificationType.ANNOUNCEMENT %}
                 {% if 'html' in notification.data and notification.data['html']  %}
@@ -81,22 +82,23 @@
               {% elif notification.type == NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST %}
                 {% set current_permissions = get_user_object_permissions(user_id=notification.data['requester_id'], object_id=notification.data['object_id']) %}
                 {% if Permissions.READ in current_permissions %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>, but has been granted {{ current_permissions.name.lower() }} permissions already.
+                  {{ _('<a href="%(requester_url)s">%(requester_name)s</a> has requested read permissions for <a href="%(object_url)s">object #%(object_id)s</a>, but has been granted %(permissions)s already.', requester_url=url_for('.user_profile', user_id=notification.data['requester_id']), requester_name=get_user(notification.data['requester_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id'], permissions=_(current_permissions.name.lower() + " permissions")) }}
                 {% elif current_user.is_readonly %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>, but your account has been marked as read only and you cannot grant permissions.
+                  {{ _('<a href="%(requester_url)s">%(requester_name)s</a> has requested read permissions for <a href="%(object_url)s">object #%(object_id)s</a>, but your account has been marked as read only and you cannot grant permissions.', requester_url=url_for('.user_profile', user_id=notification.data['requester_id']), requester_name=get_user(notification.data['requester_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
                 {% else %}
-                  <a href="{{ url_for('.user_profile', user_id=notification.data['requester_id']) }}">{{ get_user(notification.data['requester_id']).name }}</a> has requested read permissions for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>: <a href="{{ url_for('.object_permissions', object_id=notification.data['object_id'], add_user_id=notification.data['requester_id'], _anchor='add_user') }}">View object permissions</a>
+                  {{ _('<a href="%(requester_url)s">%(requester_name)s</a> has requested read permissions for <a href="%(object_url)s">object #%(object_id)s</a>:', requester_url=url_for('.user_profile', user_id=notification.data['requester_id']), requester_name=get_user(notification.data['requester_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
+                  <a href="{{ url_for('.object_permissions', object_id=notification.data['object_id'], add_user_id=notification.data['requester_id'], _anchor='add_user') }}">{{ _('View object permissions')}}</a>
                 {% endif %}
               {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_CREATED %}
                 {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
-                <a href="{{ url_for('.user_profile', user_id=instrument_log_entry.user_id) }}">{{ get_user(instrument_log_entry.user_id).name }}</a> has created a new <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)) }}">log entry</a> for the instrument <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id) }}">{{ get_instrument(instrument_log_entry.instrument_id).name }}</a>.
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> has created a new <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument_with_translation_in_language(instrument_log_entry.instrument_id, get_user_language(current_user).id).translation.name) }}
               {% elif notification.type == NotificationType.REFERENCED_BY_OBJECT_METADATA %}
-                You were referenced in the metadata for <a href="{{ url_for('.object', object_id=notification.data['object_id']) }}">object #{{ notification.data['object_id'] }}</a>.
+                {{ _('You were referenced in the metadata for <a href="%(object_url)s">object #%(object_id)s</a>.', object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
               {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED %}
                 {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
-                <a href="{{ url_for('.user_profile', user_id=instrument_log_entry.user_id) }}">{{ get_user(instrument_log_entry.user_id).name }}</a> has edited a <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)) }}">log entry</a> for the instrument <a href="{{ url_for('.instrument', instrument_id=instrument_log_entry.instrument_id) }}">{{ get_instrument(instrument_log_entry.instrument_id).name }}</a>.
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> has edited a <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument_with_translation_in_language(instrument_log_entry.instrument_id, get_user_language(current_user).id).translation.name) }}
               {% else %}
-                Unknown notification type.
+                {{ _('Unknown notification type.') }}
               {% endif %}
             </td>
             <td>
@@ -104,7 +106,7 @@
               <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
                 {{ mark_notification_as_read_form.hidden_tag() }}
                 <input type="hidden" name="{{ mark_notification_as_read_form.mark_notification_read.name }}" value="{{ notification.id }}" />
-                <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="Mark as Read"></button>
+                <button type="submit" class="fa fa-check" data-toggle="tooltip" data-placement="top" title="{{ _('Mark as Read') }}"></button>
               </form>
               {% endif %}
             </td>
@@ -112,7 +114,7 @@
               <form action="{{ url_for('.notifications', user_id=current_user.id) }}" method="post">
                 {{ delete_notification_form.hidden_tag() }}
                 <input type="hidden" name="{{ delete_notification_form.delete_notification.name }}" value="{{ notification.id }}" />
-                <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="Delete"></button>
+                <button type="submit" class="fa fa-trash" data-toggle="tooltip" data-placement="top" title="{{ _('Delete') }}"></button>
               </form>
             </td>
           </tr>
@@ -121,13 +123,4 @@
     </table>
   {% endif %}
 
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-});
-</script>
 {% endblock %}

@@ -1,0 +1,43 @@
+<div class="form-group form-area row" style="padding-right:0.75em">
+    {# Label #}
+    <div class="col-md-3" style="padding-right: 0px">
+        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
+            {% if data is not none %}
+                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ' + data.utc_datetime.split()[0], advanced='on') }}"
+                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% else %}
+                <a href="{{ url_for('.objects', q=search_query_attribute + ' == 2018-01-01', advanced='on') }}"
+                   class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% endif %}
+        </label>
+    </div>
+    {# View #}
+    <div class="view-switch">
+        <div class="col-md-9" style="padding-left: 15px">
+            <div class="container alert-upload-container">
+                {{ data.utc_datetime | babel_format_datetime }}
+                <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                <div class="alert-upload-failed">
+                    {{ _('Your input is not valid. Please check.') }}
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {# Form #}
+    <div class="form-switch">
+        <div class="col-md-9">
+            <div class="input-group date" data-datetime="
+                    {% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | parse_datetime_string | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | parse_datetime_string | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
+                <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
+                <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+            </div>
+            {% if id_prefix+'_datetime' in object_errors %}
+                <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ object_errors[id_prefix+'_datetime'] }}</span>{% endif %}
+            {% if 'note' in schema %}
+                <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
+        </div>
+    </div>
+</div>

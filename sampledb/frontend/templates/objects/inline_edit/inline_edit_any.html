@@ -1,0 +1,10 @@
+{% if schema["type"] in ["object", "array", "text", "quantity", "bool", "datetime", "user", "object_reference", "sample", "measurement", "hazards", "tags"] %}
+    {% include get_inline_edit_template(schema) %}
+{% else %}
+    <div class="hidden">
+        {% include get_form_template(schema) %}
+    </div>
+    <div style="padding-left: -15px">
+        {% include get_view_template(schema) %}
+    </div>
+{% endif %}

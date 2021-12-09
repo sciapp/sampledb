@@ -1,0 +1,37 @@
+<div class="input-list form-area">
+    {# View #}
+    <div class="view-switch">
+        {% if data is not none and "object_id" in data %}
+            {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
+                {% if not (obj is none) %}
+                    <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{% if obj.data['name']['text'] | get_translated_text(metadata_language) == '' %}&mdash;{% else %}{{ obj.data['name']['text'] | get_translated_text(metadata_language) }}{% endif %}
+                        (#{{ obj.object_id }})</a>
+                {% else %}
+                    <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">&mdash; #{{ data.object_id }}</a>
+                {% endif %}
+            {% endwith %}
+        {% else %}
+            &mdash;
+        {% endif %}
+        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+        <div class="alert-upload-failed">
+            {{ _('Your input is not valid. Please check.') }}
+        </div>
+    </div>
+    {# Form #}
+    <div class="container-fluid form-switch"style="margin-bottom: -15px">
+            {% if not selected_action_type %}
+                {% if 'action_type_id' not in schema or schema['action_type_id'] is none %}
+                    {% set selected_action_type = none %}
+                {% else %}
+                    {% set selected_action_type = schema['action_type_id'] %}
+                {% endif %}
+            {% endif %}
+            {% if 'action_id' not in schema or schema['action_id'] is none %}
+                {% set selected_action = none %}
+            {% else %}
+                {% set selected_action = schema['action_id'] %}
+            {% endif %}
+            {% include 'objects/forms/form_list_object_reference_base.html' %}
+    </div>
+</div>
