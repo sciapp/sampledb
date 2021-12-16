@@ -1014,4 +1014,47 @@ If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled
       'object_id': null
     }
 
+any / all
+`````````
+
+To denote that either only one or all of a list of conditions need to be fulfilled, the ``any`` or ``all`` condition type can be used, containing other conditions. An ``any`` condition is fulfilled, if any one of the conditions in it is fulfilled. If it does not contain any conditions, it will be considered as not being fulfilled. An ``all`` condition is fulfilled, if all of the conditions in it are fulfilled. If it does not contain any conditions, it will be considered as being fulfilled.
+
+.. code-block:: javascript
+    :caption: An any condition
+
+    {
+      'type': 'any',
+      'conditions': [
+        {
+          'type': 'bool_equals',
+          'property_name': 'example_bool_1',
+          'value': true
+        },
+        {
+          'type': 'bool_equals',
+          'property_name': 'example_bool_2',
+          'value': true
+        }
+      ]
+    }
+
+.. code-block:: javascript
+    :caption: An all condition
+
+    {
+      'type': 'all',
+      'conditions': [
+        {
+          'type': 'bool_equals',
+          'property_name': 'example_bool_1',
+          'value': true
+        },
+        {
+          'type': 'bool_equals',
+          'property_name': 'example_bool_2',
+          'value': true
+        }
+      ]
+    }
+
 .. note:: If you need a new type of conditions, please `open an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_ to let us know.

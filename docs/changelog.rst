@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.20
+------------
+
+Currently in development.
+
+- Added support for any and all conditions
+
 Version 0.19
 ------------
 

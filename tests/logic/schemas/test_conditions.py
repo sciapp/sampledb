@@ -466,3 +466,232 @@ def test_are_choice_equals_conditions_fulfilled():
         ],
         instance
     )
+
+
+def test_validate_any_condition():
+    property_schemas = {
+        'example_bool_1': {
+            'title': 'Example Bool 1',
+            'type': 'bool'
+        },
+        'example_bool_2': {
+            'title': 'Example Bool 2',
+            'type': 'bool'
+        },
+        'conditional_property': {
+            'title': 'Conditional Property',
+            'type': 'text',
+        }
+    }
+    validate_condition_schema(
+        {
+            'type': 'any',
+            'conditions': [
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_1',
+                    'value': True
+                },
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_2',
+                    'value': True
+                }
+            ]
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+
+    validate_condition_schema(
+        {
+            'type': 'any',
+            'conditions': []
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'any'
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'any',
+                'conditions': [
+                    {
+                        'type': 'bool_equals',
+                        'property_name': 'example_bool_1',
+                        'value': True
+                    },
+                    {
+                        'type': 'bool_equals',
+                        'property_name': 'example_bool_3',
+                        'value': True
+                    }
+                ]
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+
+def test_validate_all_condition():
+    property_schemas = {
+        'example_bool_1': {
+            'title': 'Example Bool 1',
+            'type': 'bool'
+        },
+        'example_bool_2': {
+            'title': 'Example Bool 2',
+            'type': 'bool'
+        },
+        'conditional_property': {
+            'title': 'Conditional Property',
+            'type': 'text',
+        }
+    }
+    validate_condition_schema(
+        {
+            'type': 'all',
+            'conditions': [
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_1',
+                    'value': True
+                },
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_2',
+                    'value': True
+                }
+            ]
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+
+    validate_condition_schema(
+        {
+            'type': 'all',
+            'conditions': []
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'all'
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'all',
+                'conditions': [
+                    {
+                        'type': 'bool_equals',
+                        'property_name': 'example_bool_1',
+                        'value': True
+                    },
+                    {
+                        'type': 'bool_equals',
+                        'property_name': 'example_bool_3',
+                        'value': True
+                    }
+                ]
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+def test_are_any_conditions_fulfilled():
+    instance = {
+        'example_bool_1': {
+            '_type': 'bool',
+            'value': True
+        },
+        'example_bool_2': {
+            '_type': 'bool',
+            'value': True
+        }
+    }
+    conditions = [
+        {
+            'type': 'any',
+            'conditions': [
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_1',
+                    'value': True
+                },
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_2',
+                    'value': True
+                }
+            ]
+        }
+    ]
+    assert are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_1']['value'] = False
+    assert are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_2']['value'] = False
+    assert not are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_1']['value'] = True
+    assert are_conditions_fulfilled(conditions, instance)
+    conditions[0]['conditions'] = []
+    assert not are_conditions_fulfilled(conditions, instance)
+
+
+def test_are_all_conditions_fulfilled():
+    instance = {
+        'example_bool_1': {
+            '_type': 'bool',
+            'value': True
+        },
+        'example_bool_2': {
+            '_type': 'bool',
+            'value': True
+        }
+    }
+    conditions = [
+        {
+            'type': 'all',
+            'conditions': [
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_1',
+                    'value': True
+                },
+                {
+                    'type': 'bool_equals',
+                    'property_name': 'example_bool_2',
+                    'value': True
+                }
+            ]
+        }
+    ]
+    assert are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_1']['value'] = False
+    assert not are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_2']['value'] = False
+    assert not are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_1']['value'] = True
+    assert not are_conditions_fulfilled(conditions, instance)
+    instance['example_bool_2']['value'] = True
+    assert are_conditions_fulfilled(conditions, instance)
+    conditions[0]['conditions'] = []
+    assert are_conditions_fulfilled(conditions, instance)

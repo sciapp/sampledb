@@ -58,6 +58,13 @@ def validate_condition_schema(
             raise ValidationError('property_name does not belong to a object_reference, sample or measurement property', path)
         if condition['object_id'] is not None and not isinstance(condition['object_id'], int):
             raise ValidationError('object_id must be integer or None', path)
+    elif condition['type'] in ('any', 'all'):
+        if set(condition.keys()) != {'type', 'conditions'}:
+            raise ValidationError('expected type and conditions in condition', path)
+        if not isinstance(condition['conditions'], list):
+            raise ValidationError('conditions must be list', path)
+        for i, sub_condition in enumerate(condition['conditions']):
+            validate_condition_schema(sub_condition, property_schemas, path + [str(i)])
     else:
         raise ValidationError('unknown condition type', path)
 
@@ -110,6 +117,18 @@ def is_condition_fulfilled(
             isinstance(instance[condition['property_name']], dict) and
             instance[condition['property_name']].get('object_id') == condition['object_id']
         )
+    if condition['type'] == 'any':
+        for sub_condition in condition['conditions']:
+            if is_condition_fulfilled(sub_condition, instance):
+                return True
+        # any without passing conditions is considered False
+        return False
+    if condition['type'] == 'all':
+        for sub_condition in condition['conditions']:
+            if not is_condition_fulfilled(sub_condition, instance):
+                return False
+        # all without failing conditions is considered True
+        return True
 
     # unknown or unfulfillable condition
     return False
