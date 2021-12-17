@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.19.1
+--------------
+
+Currently in development.
+
+- Fix missing object type and ID on object page when using inline edit mode
+
 Version 0.19
 ------------
 
