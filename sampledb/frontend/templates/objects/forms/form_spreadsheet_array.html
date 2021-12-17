@@ -125,7 +125,7 @@
       return false;
   }
 
-  var {{ id_prefix }} = jspreadsheet(document.getElementById('{{ id_prefix }}_spreadsheet'), {
+  var {{ id_prefix }}_config = {
       defaultColWidth: {{ (1055 / ordered_property_names|length) | int }},
       columnDrag: false,
       allowInsertColumn: false,
@@ -207,7 +207,7 @@
             }
           }
        },
-  });
+  };
   </script>
 {% else %}
 <div class="form-group row has-error">
