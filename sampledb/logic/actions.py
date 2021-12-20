@@ -19,6 +19,7 @@ As actions form the basis for objects, they cannot be deleted. However, an
 action can be altered as long as the type and instrument stay the same.
 """
 
+import copy
 import collections
 import typing
 
@@ -352,7 +353,7 @@ def update_action(
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
     """
-    schemas.validate_schema(schema)
+    schemas.validate_schema(schema, invalid_template_action_ids=[action_id])
     action = Action.query.get(action_id)
     if action is None:
         raise errors.ActionDoesNotExistError()
@@ -363,3 +364,35 @@ def update_action(
         action.is_hidden = is_hidden
     db.session.add(action)
     db.session.commit()
+    update_actions_using_template_action(action_id)
+
+
+def update_actions_using_template_action(
+        template_action_id: int
+) -> None:
+    """
+    Update the schemas of all actions using the given template action.
+
+    :param template_action_id: the ID of a template action
+    """
+    template_action_schema = get_action(template_action_id).schema
+    template_action_schema = schemas.templates.process_template_action_schema(template_action_schema)
+    actions = get_actions()
+    updated_template_action_ids = []
+    for action in actions:
+        if action.id == template_action_id:
+            continue
+        current_schema = copy.deepcopy(action.schema)
+        updated_schema = schemas.templates.update_schema_using_template_action(current_schema, template_action_id, template_action_schema)
+        if action.schema != updated_schema:
+            try:
+                schemas.validate_schema(updated_schema)
+            except errors.ValidationError:
+                continue
+            action.schema = updated_schema
+            db.session.add(action)
+            if action.type.is_template:
+                updated_template_action_ids.append(action.id)
+    db.session.commit()
+    for other_template_action_id in updated_template_action_ids:
+        update_actions_using_template_action(other_template_action_id)

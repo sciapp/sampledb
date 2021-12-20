@@ -22,6 +22,6 @@ def run(db):
     # Perform migration
     db.session.execute("""
         ALTER TABLE action_types
-        ADD disable_create_objects Boolean DEFAULT false
+        ADD disable_create_objects boolean NOT NULL DEFAULT(FALSE)
     """)
     return True

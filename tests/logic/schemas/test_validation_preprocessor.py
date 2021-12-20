@@ -2,7 +2,7 @@ import pytest
 import copy
 
 import sampledb
-from sampledb.logic.schemas.validation_preprocessor import reverse_substitute_templates
+from sampledb.logic.schemas.templates import reverse_substitute_templates
 from sampledb.logic import errors
 from sampledb.logic import actions
 
@@ -39,7 +39,7 @@ def test_substitute_templates_substitution_passes():
     template_include_schema = {
             "type": "object",
             "title": "Template Include",
-            "template": f"{example_template.id}"
+            "template": example_template.id
         }
     base_action_schema["properties"]["template_include"] = template_include_schema
     asserted_action_schema = {
@@ -53,7 +53,7 @@ def test_substitute_templates_substitution_passes():
             "template_include": {
                 "type": "object",
                 "title": "Template Include",
-                "template": f"{example_template.id}",
+                "template": example_template.id,
                 "properties": {
                     "value": {
                         "title": "Value",
@@ -88,7 +88,7 @@ def test_substitute_template_template_properties_not_empty():
     template_include_schema = {
         "title": "Template Include",
         "type": "object",
-        "template": f"{example_template.id}",
+        "template": example_template.id,
         "properties": {
             "val": {
                 "title": "Value",

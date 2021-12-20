@@ -13,7 +13,7 @@ in JSON schema, sampledb schemas can use the following types:
 - sample
 """
 
-from . import utils
+from . import utils, templates
 from .convert_to_schema import convert_to_schema
 from .copy_data import copy_data
 from .generate_placeholder import generate_placeholder
@@ -25,6 +25,7 @@ __all__ = [
     'convert_to_schema',
     'copy_data',
     'generate_placeholder',
+    'templates',
     'utils',
     'validate_schema',
     'validate'

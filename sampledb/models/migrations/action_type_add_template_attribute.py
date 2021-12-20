@@ -22,6 +22,6 @@ def run(db):
     # Perform migration
     db.session.execute("""
         ALTER TABLE action_types
-        ADD is_template Boolean DEFAULT false
+        ADD is_template boolean NOT NULL DEFAULT(FALSE)
     """)
     return True

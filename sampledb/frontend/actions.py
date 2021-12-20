@@ -2,7 +2,7 @@
 """
 
 """
-
+import copy
 import json
 import typing
 
@@ -18,7 +18,7 @@ import pygments.formatters
 from . import frontend
 from .. import models
 from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions, get_sorted_actions_for_user
-from ..logic.actions import Action, create_action, get_action, update_action, get_action_type, get_action_types
+from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
     get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
@@ -30,7 +30,7 @@ from ..logic.instrument_translations import get_instrument_translation_for_instr
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users, languages
 from ..logic.schemas.validate_schema import validate_schema
-from ..logic.schemas.validation_preprocessor import reverse_substitute_templates
+from ..logic.schemas.templates import reverse_substitute_templates, enforce_permissions
 from ..logic.settings import get_user_settings
 from ..logic.users import get_users, get_user
 from ..logic.groups import get_groups, get_group
@@ -151,9 +151,12 @@ def actions():
         owner_id=user_id,
     )
     if not action_type_id:
-        action_type_ids_show_in_navbar = [ac.id for ac in get_action_types() if ac.show_in_navbar]
-        changed_actions = [ac for ac in actions if ac.type_id in action_type_ids_show_in_navbar]
-        actions = changed_actions
+        # exclude actions of types that generally do not allow creating objects
+        actions = [
+            action
+            for action in actions
+            if not action.type.disable_create_objects
+        ]
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
@@ -187,7 +190,7 @@ def action(action_id):
     may_grant = Permissions.GRANT in permissions
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
-        original_schema = dict(action.schema)
+        original_schema = copy.deepcopy(action.schema)
         try:
             reverse_substitute_templates(action.schema)
         except errors.ActionDoesNotExistError:
@@ -422,7 +425,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 error_message = "Failed to parse as JSON: {}".format(str(e))
         if schema is not None:
             try:
-                validate_schema(schema)
+                invalid_template_paths = enforce_permissions(schema, flask_login.current_user.id)
+                if invalid_template_paths:
+                    raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
+                validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id])
             except errors.ValidationError as e:
                 error_message = e.message
                 if not e.paths:
@@ -445,7 +451,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         lexer = pygments.lexers.data.JsonLexer()
         formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines))
         pygments_output = pygments.highlight(schema_json, lexer, formatter)
-
     if schema is not None and error_message is None and form_is_valid:
         # First block for validation
         try:
@@ -454,6 +459,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             flask.flash(_("Something went wrong"), 'error')
             return flask.render_template(
                 'actions/action_form.html',
+                current_action=action,
                 action_form=action_form,
                 action_translations=action_translations,
                 action_language_ids=action_language_ids,
@@ -501,6 +507,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                     if error:
                         return flask.render_template(
                             'actions/action_form.html',
+                            current_action=action,
                             action_form=action_form,
                             action_translations=action_translations,
                             action_language_ids=action_language_ids,
@@ -615,6 +622,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             pass
     return flask.render_template(
         'actions/action_form.html',
+        current_action=action,
         action_form=action_form,
         action_translations=action_translations,
         action_language_ids=action_language_ids,

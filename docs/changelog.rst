@@ -7,6 +7,7 @@ Version 0.20
 Currently in development.
 
 - Added support for any and all conditions
+- Add schema templates
 
 Version 0.19.3
 --------------

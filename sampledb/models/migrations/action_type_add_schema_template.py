@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Create default action types.
+Create default action type for schema templates.
 """
 
 import os
@@ -27,7 +27,7 @@ def run(db):
         'id': ActionType.TEMPLATE,
         'admin_only': False,
         'show_on_frontpage': False,
-        'show_in_navbar': False,
+        'show_in_navbar': True,
         'enable_labels': True,
         'enable_files': True,
         'enable_locations': True,
@@ -61,7 +61,7 @@ def run(db):
         {
             'action_type_id': ActionType.TEMPLATE,
             'language_id': Language.GERMAN,
-            'name': 'Schema Vorlage',
+            'name': 'Schema-Vorlage',
             'description': 'Aktionen dieses Typs können in andere Aktionen als Vorlagen für Schemata eingebunden werden.',
             'object_name': '-',
             'object_name_plural': '-',

@@ -2259,4 +2259,3 @@ def test_validate_choice_equals_conditions():
     schema['properties']['conditional_property']['conditions'][0]['choice']['en'] = '3'
     with pytest.raises(ValidationError):
         validate_schema(schema)
-

@@ -112,7 +112,7 @@ class SubprojectRelationshipDoesNotExistError(Exception):
     pass
 
 
-class CreatingObjectsDisabled(Exception):
+class CreatingObjectsDisabledError(Exception):
     pass
 
 
@@ -263,6 +263,14 @@ class MissingEnglishTranslationError(Exception):
 
 
 class InvalidNumberError(Exception):
+    pass
+
+
+class InvalidTemplateIDError(Exception):
+    pass
+
+
+class RecursiveTemplateError(Exception):
     pass
 
 

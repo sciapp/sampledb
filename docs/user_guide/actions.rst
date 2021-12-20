@@ -12,8 +12,8 @@ You can view a list of actions at |service_actions_url|. Similar to instruments,
 Action Types
 ------------
 
-The type of an Action describes the general kind of process it represents, such as **Sample Creation**. There are four built-in action types for creating samples, performing a measurement, running a simulation or templating actions for other users, but administrators can create custom action types.
-Template actions have got a special role. Marking an action type as template will make it possible to use actions of this type to include them into other actions.
+The type of an Action describes the general kind of process it represents, such as **Sample Creation**. There are four built-in action types for creating samples, performing a measurement, running a simulation, and for use as schema templates. Administrators can create additional custom action types.
+Schema templates have a special role, as they are usually not used like other actions. Instead, actions marked for use as a schema template can be included in the schemas of other actions.
 
 Custom Actions
 --------------

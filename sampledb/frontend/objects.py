@@ -854,10 +854,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         for action in get_actions(action_type.id):
             action_type_id_by_action_id[action.id] = action_type.id
 
-    if get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:
-        flask.flash(_('Creating objects of this action is disabled'), 'error')
-        flask.abort(400)
-
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
     users.sort(key=lambda user: user.id)
@@ -865,6 +861,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     english = get_language(Language.ENGLISH)
 
     if object is None:
+        if get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:
+            flask.flash(_('Creating objects with this action has been disabled.'), 'error')
+            return flask.redirect(flask.url_for('.action', action_id=action_id))
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,

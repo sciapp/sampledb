@@ -892,11 +892,11 @@ Properties of this type are a special case of object reference, limited to refer
 Schema Templates
 ```````````````
 
-Schema Templates offer a way to reuse created actions easily.
+Schema Templates offer a way to easily reuse action schemas.
 
 If an *action_type* is marked as includable into other actions it's possible to reuse the schema.
 
-A template action could look like
+The schema for a template action could look like the following:
 
 .. code-block:: json
    :caption: Minimal schema template
@@ -909,7 +909,7 @@ A template action could look like
           "title": "Name",
           "type": "text"
         },
-        "val": {
+        "value": {
           "title": "Value",
           "type": "text"
         }
@@ -918,62 +918,77 @@ A template action could look like
         "name"
       ],
       "propertyOrder": [
-        "name"
+        "name",
+        "value"
       ]
     }
 
-As you can see, there is no difference to other actions.
+There is generally no difference to the schemas of other actions.
 
-Schema templates can be included into other actions like
-
-.. code-block:: json
-   :caption: Minimal schema template include
-
-    "temp": {
-      "title": "Include Template",
-      "type": "object",
-      "template": "15",
-    }
-
-By saving this action the selected schema template will be included.
-The action that is saved in the background will look like
+Schema templates can be included into other actions by providing a ``template`` for a property of type ``object``
 
 .. code-block:: json
-   :caption: Saved action
+   :caption: Action with included schema template
 
     {
-  "title": "testInclude",
-  "type": "object",
-  "properties": {
-    "name": {
-      "title": "Name",
-      "type": "text"
-    },
-    "temp": {
-      "title": "Include Template",
+      "title": "Action with included Schema Template",
       "type": "object",
       "properties": {
-        "val": {
-          "title": "Value",
+        "name": {
+          "title": "Name",
           "type": "text"
+        },
+        "included": {
+          "title": "Included Schema Template",
+          "type": "object",
+          "template": 15
         }
       },
-      "template": "15",
-      "required": [],
-      "propertyOrder": []
+      "required": [
+        "name"
+      ],
+      "propertyOrder": [
+        "name",
+        "included"
+      ]
     }
-  },
-  "required": [
-    "name"
-  ],
-  "propertyOrder": [
-    "name",
-    "temp"
-  ]
-}
 
-This schema will be used to create objects and an to store the action into the database.
-As to see the name will be removed from the the included schema template to remove redundancies.
+Internally, this will then be treated as if the schema template were used for the property ``included`` there, except that the ``name`` property will be removed to avoid redundancies. The resulting action will be equivalent to:
+
+.. code-block:: json
+   :caption: Action with schema template
+
+    {
+      "title": "Action with included Schema Template",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "included": {
+          "title": "Included Schema Template",
+          "type": "object",
+          "properties": {
+            "value": {
+              "title": "Value",
+              "type": "text"
+            }
+          },
+          "required": [],
+          "propertyOrder": ["value"]
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "propertyOrder": [
+        "name",
+        "included"
+      ]
+    }
+
+When the schema template action is updated, all actions using it will be updated as well, as long as the resulting schema is still valid.
 
 .. _conditions:
 
