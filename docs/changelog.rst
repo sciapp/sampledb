@@ -8,6 +8,13 @@ Currently in development.
 
 - Added support for any and all conditions
 
+Version 0.19.1
+--------------
+
+Released on December 20th, 2021.
+
+- Fix missing object type and ID on object page when using inline edit mode
+
 Version 0.19
 ------------
 
