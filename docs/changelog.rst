@@ -8,6 +8,13 @@ Currently in development.
 
 - Added support for any and all conditions
 
+Version 0.19.2
+--------------
+
+Released on January 7th, 2022.
+
+- Fix editing notes in schema editor
+
 Version 0.19.1
 --------------
 

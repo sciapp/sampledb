@@ -610,8 +610,8 @@ $(function() {
         title_group.removeClass("has-error");
       }
       var required = $('#schema-editor-object__' + path.join('__') + '-required-input').prop('checked');
-      var has_note = $('#schema-editor-object__' + path.join('__') + '-note-checkbox').prop('checked');
-      var note = $('#schema-editor-object__' + path.join('__') + '-note-input').val();
+      var has_note = $('#schema-editor-object__' + path.join('__') + '-generic-note-checkbox').prop('checked');
+      var note = $('#schema-editor-object__' + path.join('__') + '-generic-note-input').val();
       if (name !== real_path[real_path.length-1]) {
         delete schema['properties'][real_path[real_path.length-1]];
         if ('required' in schema) {
