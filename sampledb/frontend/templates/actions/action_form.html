@@ -83,7 +83,7 @@
     updateTranslationJSON();
 
     {% if load_translations == False %}
-      $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}']);
+      $('.select-language').selectpicker('val', ['{{ ENGLISH.id }}']);
     {% endif %}
 
     $('#select-language-name').on('change', function () {
