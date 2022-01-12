@@ -271,7 +271,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
                 raise ValidationError('unknown required property: {}'.format(property_name), path)
             if property_name in schema['required'][:i]:
                 raise ValidationError('duplicate required property: {}'.format(property_name), path)
-            if schema['properties'][property_name].get('conditions'):
+            # the name property in the root object is always required and may not be conditional
+            if schema['properties'][property_name].get('conditions') and property_name == 'name' and path == []:
                 raise ValidationError('conditional required property: {}'.format(property_name), path)
 
     if 'hazards' in schema['properties'] and schema['properties']['hazards']['type'] == 'hazards' and 'hazards' not in schema.get('required', []):
