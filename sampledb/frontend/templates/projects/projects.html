@@ -145,7 +145,7 @@
   $(function (){
     updateTranslationJSON();
 
-    $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}'])
+    $('.select-language').selectpicker('val', ['{{ ENGLISH.id }}'])
 
     $('#select-language-name').on('change', function () {
       updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);

@@ -99,9 +99,9 @@
       });
 
       {% if submit_text !=  _('Save') %}
-        $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}']);
+        $('#select-languages').selectpicker('val', ['{{ ENGLISH.id }}']);
       {% endif %}
-      $('.selectpicker').change();
+      $('#select-languages').change();
       $('.form-group[data-name="input-names"] .input-group[data-language-id], .form-group[data-name="input-descriptions"] .input-group[data-language-id], .form-group[data-name="input-object-names-singular"] .input-group[data-language-id], .form-group[data-name="input-object-names-plural"] .input-group[data-language-id], .form-group[data-name="input-view-texts"] .input-group[data-language-id], .form-group[data-name="input-perform-texts"] .input-group[data-language-id]').each(function(_, element) {
         setTranslationHandler(element);
       });
