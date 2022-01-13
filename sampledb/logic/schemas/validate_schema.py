@@ -258,10 +258,10 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
             raise ValidationError('invalid property name: {}'.format(property_name), path)
         validate_schema(property_schema, path + [property_name], property_conditions)
         property_schemas[property_name] = property_schema
-    for path, condition in property_conditions:
+    for condition_path, condition in property_conditions:
         if not isinstance(condition, dict) or not isinstance(condition.get('type'), str):
-            raise ValidationError('condition must be a dict containg the key type', path)
-        validate_condition_schema(condition, property_schemas, path)
+            raise ValidationError('condition must be a dict containg the key type', condition_path)
+        validate_condition_schema(condition, property_schemas, condition_path)
 
     if 'required' in schema:
         if not isinstance(schema['required'], list):
