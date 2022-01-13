@@ -197,14 +197,18 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> No
         raise ValidationError('instance must be dict', path)
     errors = []
 
+    properties_with_unfulfilled_conditions = []
     for property_name, property_schema in schema['properties'].items():
-        if property_name not in instance:
-            continue
         if not are_conditions_fulfilled(property_schema.get('conditions'), instance):
-            errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
+            properties_with_unfulfilled_conditions.append(property_name)
+            if property_name in instance or (property_name == 'name' and not path):
+                errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
 
     if 'required' in schema:
         for property_name in schema['required']:
+            if property_name in properties_with_unfulfilled_conditions:
+                # this property must not be included, as its conditions are not fulfilled
+                continue
             if property_name not in instance:
                 errors.append(ValidationError('missing required property "{}"'.format(property_name), path + [property_name]))
     for property_name, property_value in instance.items():
