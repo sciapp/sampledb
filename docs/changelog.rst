@@ -8,6 +8,13 @@ Currently in development.
 
 - Added support for any and all conditions
 
+Version 0.19.3
+--------------
+
+Released on January 19th, 2022.
+
+- Fix schema upgrade for multi language choices
+
 Version 0.19.2
 --------------
 

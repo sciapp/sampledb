@@ -2,7 +2,7 @@
 """
 Implementation of convert_to_schema(data, previous_schema, new_schema)
 """
-
+import copy
 import typing
 
 from flask_babel import _
@@ -88,6 +88,15 @@ def convert_to_schema(data: dict, previous_schema: dict, new_schema: dict) -> ty
                         return data, []
     if previous_schema['type'] != new_schema['type']:
         return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' from type '%(type1)s' to type '%(type2)s'.", title=new_schema['title'], type1=previous_schema['type'], type2=new_schema['type'])]
+    if new_schema['type'] == 'text' and 'choices' in new_schema:
+        if data['text'] in new_schema['choices']:
+            return data, []
+        if type(data['text']) is str:
+            for choice in new_schema['choices']:
+                if type(choice) is dict and choice.get('en') == data['text']:
+                    new_data = copy.deepcopy(data)
+                    new_data['text'] = choice
+                    return new_data, []
     if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user', 'plotly_chart'):
         return data, []
     if new_schema['type'] == 'object_reference':
