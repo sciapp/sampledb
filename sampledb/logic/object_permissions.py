@@ -266,9 +266,11 @@ def set_initial_permissions(obj):
 def get_object_info_with_permissions(
         user_id: int,
         permissions: Permissions,
+        *,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         action_id: typing.Optional[int] = None,
+        action_ids: typing.Optional[typing.Sequence[int]] = None,
         action_type_id: typing.Optional[int] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None
 ) -> typing.List[Object]:
@@ -279,12 +281,17 @@ def get_object_info_with_permissions(
     if user.is_readonly and permissions != Permissions.READ:
         return []
 
-    if action_type_id is not None and action_id is not None:
-        action_filter = db.and_(Action.type_id == action_type_id, Action.id == action_id)
-    elif action_type_id is not None:
-        action_filter = (Action.type_id == action_type_id)
-    elif action_id is not None:
-        action_filter = (Action.id == action_id)
+    action_filters = []
+    if action_type_id is not None:
+        action_filters.append(Action.type_id == action_type_id)
+    if action_id is not None:
+        action_filters.append(Action.id == action_id)
+    if action_ids is not None:
+        action_filters.append(Action.id.in_(tuple(action_ids)))
+    if action_filters:
+        action_filter = action_filters.pop(0)
+        for additional_action_filter in action_filters:
+            action_filter = db.and_(action_filter, additional_action_filter)
     else:
         action_filter = None
 

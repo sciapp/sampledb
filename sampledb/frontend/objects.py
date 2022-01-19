@@ -1651,9 +1651,25 @@ def referencable_objects():
                     "message": "argument {} is not a valid permission.".format(flask.request.args['required_perm'])
                 }, 400
 
+    action_ids = None
+    if 'action_ids' in flask.request.args:
+        action_ids = flask.request.args['action_ids']
+        try:
+            action_ids = json.loads(action_ids)
+        except Exception:
+            action_ids = None
+        else:
+            if type(action_ids) is not list:
+                action_ids = None
+            elif -1 in action_ids:
+                action_ids = None
+            elif not all(type(action_id) is int for action_id in action_ids):
+                action_ids = None
+
     referencable_objects = get_object_info_with_permissions(
         user_id=flask_login.current_user.id,
         permissions=required_perm,
+        action_ids=action_ids
     )
 
     def dictify(x):
@@ -1665,7 +1681,12 @@ def referencable_objects():
             'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
         }
 
-    return {'referencable_objects': [dictify(x) for x in referencable_objects]}
+    return {
+        'referencable_objects': [
+            dictify(object)
+            for object in referencable_objects
+        ]
+    }
 
 
 @frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])
