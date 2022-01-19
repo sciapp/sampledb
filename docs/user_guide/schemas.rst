@@ -1159,4 +1159,21 @@ To denote that either only one or all of a list of conditions need to be fulfill
       ]
     }
 
+not
+```
+
+To denote that a certain condition must not be met, the ``not`` condition type can be used together with that other condition.
+
+.. code-block:: javascript
+    :caption: A not condition
+
+    {
+      'type': 'not',
+      'condition': {
+        'type': 'object_equals',
+        'property_name': 'example_object',
+        'object_id': null
+      }
+    }
+
 .. note:: If you need a new type of conditions, please `open an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_ to let us know.
