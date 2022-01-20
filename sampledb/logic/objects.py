@@ -16,6 +16,7 @@ import typing
 from ..models import Objects, Object, Action, ActionType
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
 from .notifications import create_notification_for_being_referenced_by_object_metadata
+from .errors import CreatingObjectsDisabledError
 import sqlalchemy.exc
 
 
@@ -51,7 +52,9 @@ def create_object(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    actions.get_action(action_id)
+    action = actions.get_action(action_id)
+    if action.type.disable_create_objects:
+        raise CreatingObjectsDisabledError()
     users.get_user(user_id)
     try:
         object = Objects.create_object(data=data, schema=schema, user_id=user_id, action_id=action_id)

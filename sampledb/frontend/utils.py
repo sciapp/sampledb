@@ -27,6 +27,7 @@ from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.settings import get_user_settings
+from ..logic.action_permissions import get_sorted_actions_for_user
 
 
 def jinja_filter(func):
@@ -277,8 +278,17 @@ def get_local_month_names():
     ]
 
 
+def get_templates(user_id):
+    return [
+        action
+        for action in get_sorted_actions_for_user(user_id=user_id)
+        if action.type.is_template
+    ]
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
 _jinja_functions['get_local_month_names'] = get_local_month_names
 _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
+_jinja_functions['get_templates'] = get_templates

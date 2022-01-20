@@ -290,6 +290,10 @@ class Objects(Resource):
                 return {
                     "message": "action {} does not exist".format(action_id)
                 }, 400
+            if action.type.disable_create_objects:
+                return {
+                    "message": "creating objects with action {} is disabled".format(action_id)
+                }, 400
         else:
             return {
                 "message": "action_id must be set"

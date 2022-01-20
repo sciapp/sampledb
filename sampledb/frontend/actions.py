@@ -2,7 +2,7 @@
 """
 
 """
-
+import copy
 import json
 import typing
 
@@ -30,6 +30,7 @@ from ..logic.instrument_translations import get_instrument_translation_for_instr
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users, languages
 from ..logic.schemas.validate_schema import validate_schema
+from ..logic.schemas.templates import reverse_substitute_templates, enforce_permissions
 from ..logic.settings import get_user_settings
 from ..logic.users import get_users, get_user
 from ..logic.groups import get_groups, get_group
@@ -149,6 +150,13 @@ def actions():
         action_type_id=action_type_id,
         owner_id=user_id,
     )
+    if not action_type_id:
+        # exclude actions of types that generally do not allow creating objects
+        actions = [
+            action
+            for action in actions
+            if not action.type.disable_create_objects
+        ]
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
@@ -182,6 +190,14 @@ def action(action_id):
     may_grant = Permissions.GRANT in permissions
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
+        original_schema = copy.deepcopy(action.schema)
+        try:
+            reverse_substitute_templates(action.schema)
+        except errors.ActionDoesNotExistError:
+            action.schema = original_schema
+            flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
+            if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
+                flask.abort(400)
         check_current_user_is_not_readonly()
         if not may_edit:
             return flask.abort(403)
@@ -409,7 +425,10 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 error_message = "Failed to parse as JSON: {}".format(str(e))
         if schema is not None:
             try:
-                validate_schema(schema)
+                invalid_template_paths = enforce_permissions(schema, flask_login.current_user.id)
+                if invalid_template_paths:
+                    raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
+                validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id])
             except errors.ValidationError as e:
                 error_message = e.message
                 if not e.paths:
@@ -440,6 +459,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             flask.flash(_("Something went wrong"), 'error')
             return flask.render_template(
                 'actions/action_form.html',
+                current_action=action,
                 action_form=action_form,
                 action_translations=action_translations,
                 action_language_ids=action_language_ids,
@@ -487,6 +507,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                     if error:
                         return flask.render_template(
                             'actions/action_form.html',
+                            current_action=action,
                             action_form=action_form,
                             action_translations=action_translations,
                             action_language_ids=action_language_ids,
@@ -601,6 +622,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             pass
     return flask.render_template(
         'actions/action_form.html',
+        current_action=action,
         action_form=action_form,
         action_translations=action_translations,
         action_language_ids=action_language_ids,

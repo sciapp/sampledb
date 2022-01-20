@@ -330,6 +330,18 @@
                    {% if action_type_form.enable_related_objects.data %}checked="checked"{% endif %}> {{ _('Show related objects for objects created with actions of this type') }}
           </label>
         </div>
+        <div class="checkbox">
+          <label for="input-disable_create_objects" style="font-weight:400">
+            <input type="checkbox" id="input-disable_create_objects" name="{{ action_type_form.disable_create_objects.name }}"
+                 {% if action_type_form.disable_create_objects.data %}checked="checked"{% endif %}> {{ _('Disable creating objects of this action type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-is_template" style="font-weight:400">
+            <input type="checkbox" id="input-is_template" name="{{ action_type_form.is_template.name }}"
+                 {% if action_type_form.is_template.data %}checked="checked"{% endif %}> {{ _('Allow actions of this type as schema templates in other actions') }}
+          </label>
+        </div>
       </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
