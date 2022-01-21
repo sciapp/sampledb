@@ -265,7 +265,7 @@
                   <label for="textarea-log-entry-event_utc_datetime-{{ log_entry.id }}">{{ _('Set event datetime') }}</label>
                   <label class="pull-right" style="font-weight: normal"><input type="checkbox" id="input-has-event-datetime-{{ log_entry.id }}" name="{{ instrument_log_entry_form.has_event_utc_datetime.name }}" {% if log_entry.versions[-1].event_utc_datetime %}checked="checked"{% endif %}> {{ _('Has event datetime') }}</label>
                   <div class="input-group log_entry_date_picker">
-                    <input type="text" class="form-control" id="textarea-log-entry-event_utc_datetime-{{ log_entry.id }}" disabled="disabled" name="{{ instrument_log_entry_form.event_utc_datetime.name }}" value="{% if log_entry.versions[-1].event_utc_datetime %}{{ log_entry.versions[-1].event_utc_datetime.strftime(instrument_log_entry_form.event_utc_datetime.format) }}{% endif %}">
+                    <input type="text" class="form-control" id="textarea-log-entry-event_utc_datetime-{{ log_entry.id }}" disabled="disabled" name="{{ instrument_log_entry_form.event_utc_datetime.name }}" value="{% if log_entry.versions[-1].event_utc_datetime %}{{ log_entry.versions[-1].event_utc_datetime | babel_format_datetime(format=instrument_log_entry_form.event_utc_datetime.format) }}{% endif %}">
                     <span class="input-group-addon">
                       <span class="glyphicon glyphicon-calendar"></span>
                     </span>

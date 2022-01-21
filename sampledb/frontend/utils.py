@@ -127,7 +127,7 @@ def to_json_no_extra_escapes(json_object, indent=None):
     return json.dumps(json_object, indent=indent)
 
 
-def custom_format_datetime(date, format='%Y-%m-%d %H:%M:%S'):
+def custom_format_datetime(date, format=None):
     """
     Returns a reformatted date in the given format.
 
@@ -139,12 +139,15 @@ def custom_format_datetime(date, format='%Y-%m-%d %H:%M:%S'):
         if isinstance(date, datetime):
             datetime_obj = date
         else:
-            datetime_obj = datetime.strptime(date, format)
-        if format == '%Y-%m-%d %H:%M:%S':
+            datetime_obj = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        if format is None:
             format2 = 'medium'
             return format_datetime(datetime_obj, format=format2)
         else:
-            return format_date(datetime_obj.date())
+            settings = get_user_settings(flask_login.current_user.id)
+            utc_datetime = pytz.utc.localize(datetime_obj)
+            local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
+            return local_datetime.strftime(format)
     except ValueError:
         return date
 
@@ -184,10 +187,7 @@ def parse_datetime_string(datetime_string):
 
 @jinja_filter
 def default_format_datetime(utc_datetime):
-    settings = get_user_settings(flask_login.current_user.id)
-    utc_datetime = pytz.utc.localize(utc_datetime)
-    local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
-    return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    return custom_format_datetime(utc_datetime, format='%Y-%m-%d %H:%M:%S')
 
 
 @jinja_filter
