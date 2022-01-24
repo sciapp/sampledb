@@ -139,9 +139,9 @@ def enforce_permissions(
                         if logic.action_permissions.Permissions.READ not in template_action_permissions:
                             invalid_template_paths.append(path + [property_name])
                 else:
-                    invalid_template_paths.extend(enforce_permissions(schema, user_id, path + [property_name]))
+                    invalid_template_paths.extend(enforce_permissions(property_schema, user_id, path + [property_name]))
             elif property_schema.get('type') == 'array':
-                invalid_template_paths.extend(enforce_permissions(schema, user_id, path + [property_name]))
+                invalid_template_paths.extend(enforce_permissions(property_schema, user_id, path + [property_name]))
     if schema.get('type') == 'array' and schema.get('items'):
         invalid_template_paths.extend(enforce_permissions(schema['items'], user_id, path + ['[?]']))
 
