@@ -86,25 +86,20 @@ $(function() {
               return '<option value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
             }).join(""));
 
-        $x.selectpicker('refresh').prop("disabled", false).selectpicker('refresh');
+        $x.prop("disabled", false);
 
-        function refreshIfSame (x2) {
-          if (x2 === x)
-            $x.selectpicker('refresh');
-        }
-
-        $($x.data('sampledbStopEnable')).prop('disabled', false).each(refreshIfSame);
-        $($x.data('sampledbStopDisable')).prop('disabled', true).each(refreshIfSame);
+        $($x.data('sampledbStopEnable')).prop('disabled', false);
+        $($x.data('sampledbStopDisable')).prop('disabled', true);
         $($x.data('sampledbStopShow')).show();
         $($x.data('sampledbStopHide')).hide();
-        if (to_add.length != 0) {
-          $($x.data('sampledbNonemptyEnable')).prop('disabled', false).each(refreshIfSame);
-          $($x.data('sampledbNonemptyDisable')).prop('disabled', true).each(refreshIfSame);
+        if (to_add.length !== 0) {
+          $($x.data('sampledbNonemptyEnable')).prop('disabled', false);
+          $($x.data('sampledbNonemptyDisable')).prop('disabled', true);
           $($x.data('sampledbNonemptyShow')).show();
           $($x.data('sampledbNonemptyHide')).hide();
         } else {
-          $($x.data('sampledbEmptyEnable')).prop('disabled', false).each(refreshIfSame);
-          $($x.data('sampledbEmptyDisable')).prop('disabled', true).each(refreshIfSame);
+          $($x.data('sampledbEmptyEnable')).prop('disabled', false);
+          $($x.data('sampledbEmptyDisable')).prop('disabled', true);
           $($x.data('sampledbEmptyShow')).show();
           $($x.data('sampledbEmptyHide')).hide();
         }
@@ -112,8 +107,8 @@ $(function() {
         var data = $x.data('sampledbDefaultSelected');
         if (data !== 'None') {
           $x.selectpicker('val', data);
-          $x.selectpicker('refresh');
         }
+        $x.selectpicker('refresh');
       });
     });
   }
