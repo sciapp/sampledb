@@ -617,6 +617,7 @@ def test_validate_all_condition():
             ['conditional_property', '0']
         )
 
+
 def test_are_any_conditions_fulfilled():
     instance = {
         'example_bool_1': {
@@ -695,3 +696,25 @@ def test_are_all_conditions_fulfilled():
     assert are_conditions_fulfilled(conditions, instance)
     conditions[0]['conditions'] = []
     assert are_conditions_fulfilled(conditions, instance)
+
+
+def test_are_not_conditions_fulfilled():
+    instance = {
+        'example_object': {
+            '_type': 'object_reference',
+            'object_id': 1
+        }
+    }
+    conditions = [
+        {
+            'type': 'not',
+            'condition': {
+                'type': 'object_equals',
+                'property_name': 'example_object',
+                'object_id': None
+            }
+        }
+    ]
+    assert are_conditions_fulfilled(conditions, instance)
+    del instance['example_object']
+    assert not are_conditions_fulfilled(conditions, instance)

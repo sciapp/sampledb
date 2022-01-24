@@ -65,6 +65,10 @@ def validate_condition_schema(
             raise ValidationError('conditions must be list', path)
         for i, sub_condition in enumerate(condition['conditions']):
             validate_condition_schema(sub_condition, property_schemas, path + [str(i)])
+    elif condition['type'] == 'not':
+        if set(condition.keys()) != {'type', 'condition'}:
+            raise ValidationError('expected type and condition in condition', path)
+        validate_condition_schema(condition['condition'], property_schemas, path + ['condition'])
     else:
         raise ValidationError('unknown condition type', path)
 
@@ -129,6 +133,8 @@ def is_condition_fulfilled(
                 return False
         # all without failing conditions is considered True
         return True
+    if condition['type'] == 'not':
+        return not is_condition_fulfilled(condition['condition'], instance)
 
     # unknown or unfulfillable condition
     return False
