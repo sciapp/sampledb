@@ -5,6 +5,7 @@
 
 import json
 import base64
+import typing
 from io import BytesIO
 import os
 from urllib.parse import quote_plus
@@ -127,26 +128,30 @@ def to_json_no_extra_escapes(json_object, indent=None):
     return json.dumps(json_object, indent=indent)
 
 
-def custom_format_datetime(date, format='%Y-%m-%d %H:%M:%S'):
+def custom_format_datetime(
+        utc_datetime: typing.Union[str, datetime],
+        format: typing.Optional[str] = None
+) -> str:
     """
     Returns a reformatted date in the given format.
 
-    :param date: a string representing a date in the given format
-    :param format: a string for the format of the given date
-    :return: the reformatted date or in case of an error the input date
+    :param utc_datetime: a datetime string or object in UTC
+    :param format: the target format or None for the user's medium-length format
+    :return: the reformatted datetime or utc_datetime in case of an error
     """
     try:
-        if isinstance(date, datetime):
-            datetime_obj = date
-        else:
-            datetime_obj = datetime.strptime(date, format)
-        if format == '%Y-%m-%d %H:%M:%S':
+        if not isinstance(utc_datetime, datetime):
+            utc_datetime = parse_datetime_string(utc_datetime)
+        if format is None:
             format2 = 'medium'
-            return format_datetime(datetime_obj, format=format2)
+            return format_datetime(utc_datetime, format=format2)
         else:
-            return format_date(datetime_obj.date())
+            settings = get_user_settings(flask_login.current_user.id)
+            utc_datetime = pytz.utc.localize(utc_datetime)
+            local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
+            return local_datetime.strftime(format)
     except ValueError:
-        return date
+        return utc_datetime
 
 
 def custom_format_date(date, format='%Y-%m-%d'):
@@ -183,11 +188,8 @@ def parse_datetime_string(datetime_string):
 
 
 @jinja_filter
-def default_format_datetime(utc_datetime):
-    settings = get_user_settings(flask_login.current_user.id)
-    utc_datetime = pytz.utc.localize(utc_datetime)
-    local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
-    return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
+def default_format_datetime(utc_datetime: typing.Union[str, datetime]) -> str:
+    return custom_format_datetime(utc_datetime, format='%Y-%m-%d %H:%M:%S')
 
 
 @jinja_filter
