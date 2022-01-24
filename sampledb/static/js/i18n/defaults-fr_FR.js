@@ -1,11 +1,12 @@
 /*!
- * Bootstrap-select v1.12.2 (http://silviomoreto.github.io/bootstrap-select)
+ * Bootstrap-select v1.13.14 (https://developer.snapappointments.com/bootstrap-select)
  *
- * Copyright 2013-2017 bootstrap-select
- * Licensed under MIT (https://github.com/silviomoreto/bootstrap-select/blob/master/LICENSE)
+ * Copyright 2012-2020 SnapAppointments, LLC
+ * Licensed under MIT (https://github.com/snapappointments/bootstrap-select/blob/master/LICENSE)
  */
 
 (function (root, factory) {
+  if (root === undefined && window !== undefined) root = window;
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module unless amdModuleId is set
     define(["jquery"], function (a0) {
@@ -26,7 +27,7 @@
     noneSelectedText: 'Aucune sélection',
     noneResultsText: 'Aucun résultat pour {0}',
     countSelectedText: function (numSelected, numTotal) {
-      return (numSelected > 1) ? "{0} éléments sélectionnés" : "{0} élément sélectionné";
+      return (numSelected > 1) ? '{0} éléments sélectionnés' : '{0} élément sélectionné';
     },
     maxOptionsText: function (numAll, numGroup) {
       return [
@@ -35,10 +36,11 @@
       ];
     },
     multipleSeparator: ', ',
-    selectAllText: 'Tout Sélectionner',
-    deselectAllText: 'Tout Dé-selectionner',
+    selectAllText: 'Tout sélectionner',
+    deselectAllText: 'Tout désélectionner'
   };
 })(jQuery);
 
 
 }));
+//# sourceMappingURL=defaults-fr_FR.js.map
