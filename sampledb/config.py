@@ -140,6 +140,20 @@ def check_config(
         )
         show_config_info = True
 
+    if config.get('USE_TYPEAHEAD_FOR_OBJECTS') and not config.get('LOAD_OBJECTS_IN_BACKGROUND'):
+        print(
+            ansi_color(
+                'Typeahead can only be used for objects when loading in '
+                'background is enabled, so USE_TYPEAHEAD_FOR_OBJECTS can '
+                'only be true if LOAD_OBJECTS_IN_BACKGROUND is also true.\n',
+                color=31
+            ),
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+        can_run = False
+
     if 'DATAVERSE_URL' not in defined_config_keys:
         print(
             'Dataverse export will be disabled, because the configuration '
@@ -551,6 +565,8 @@ DISABLE_SUBPROJECTS = False
 
 LOAD_OBJECTS_IN_BACKGROUND = True
 
+USE_TYPEAHEAD_FOR_OBJECTS = False
+
 ENFORCE_SPLIT_NAMES = False
 
 BUILD_TRANSLATIONS = True
@@ -636,6 +652,7 @@ for config_name in {
     'ENABLE_NUMERIC_TAGS',
     'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
     'SHOW_LAST_PROFILE_UPDATE',
+    'USE_TYPEAHEAD_FOR_OBJECTS',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

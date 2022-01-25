@@ -1203,6 +1203,18 @@ msgstr "Tabelle einfügen"
 msgid "Toggle Preview"
 msgstr "Vorschau ein-/ausschalten"
 
+msgid "Please select an object."
+msgstr "Bitte wählen Sie ein Objekt aus."
+
+msgid "Clear"
+msgstr "Leeren"
+
+msgid "Showing 0 results."
+msgstr "Zeige 0 Ergebnisse."
+
+msgid "Showing PLACEHOLDER1 of PLACEHOLDER2 results."
+msgstr "Zeige PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen."
+
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
 
@@ -4184,9 +4196,6 @@ msgstr "Instrument anzeigen"
 
 msgid "Show Action"
 msgstr "Aktion anzeigen"
-
-msgid "Clear"
-msgstr "Zurücksetzen"
 
 msgid "Filters"
 msgstr "Filter"

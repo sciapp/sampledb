@@ -133,6 +133,9 @@ body > footer {
 .user-activity-log li time {
     font-weight: 600;
 }
+.twitter-typeahead {
+    width:100%;
+}
 .bootstrap-tagsinput {
     width:100%;
 }
@@ -183,6 +186,17 @@ body > footer {
   text-decoration: none;
   outline: 0;
   background-color: #428bca;
+}
+
+.tt-footer {
+    text-align: center;
+    padding: 3px 20px;
+    cursor: default;
+}
+
+#copyPermissionsSelect ~ .tt-menu {
+    top: initial !important;
+    bottom: 100%;
 }
 
 .tag-link > .tag {
