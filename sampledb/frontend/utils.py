@@ -242,23 +242,33 @@ _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
 _jinja_filters['to_string_if_dict'] = to_string_if_dict
 
 
+def get_style_aliases(style):
+    return {
+        'horizontal_table': ['table', 'horizontal_table']
+    }.get(style, [style])
+
+
 def get_template(template_folder, default_prefix, schema):
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = schema["type"] + ".html"
 
     file_order = [(default_prefix + base_file)]
     if schema.get('parent_style'):
-        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + base_file))
+        for parent_style in get_style_aliases(schema['parent_style']):
+            file_order.insert(0, (default_prefix + parent_style + "_" + base_file))
     if schema.get('style'):
-        file_order.insert(0, (default_prefix + schema["style"] + "_" + base_file))
+        for style in get_style_aliases(schema['style']):
+            file_order.insert(0, (default_prefix + style + "_" + base_file))
     if schema.get('parent_style') and schema.get('style'):
-        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + schema.get('style') + "_" + base_file))
+        for style in get_style_aliases(schema['style']):
+            for parent_style in get_style_aliases(schema['parent_style']):
+                file_order.insert(0, (default_prefix + parent_style + "_" + style + "_" + base_file))
 
     for file in file_order:
         if os.path.exists(os.path.join(system_path, file)):
-            return (template_folder + file)
+            return template_folder + file
 
-    return (template_folder + default_prefix + base_file)
+    return template_folder + default_prefix + base_file
 
 
 def get_form_template(schema):
