@@ -134,7 +134,7 @@ $(function (){
         <label for="input-parent-location" class="control-label">{{ _('Parent Location') }}</label>
           <select class="selectpicker form-control" id="input-parent-location" name="{{ location_form.parent_location.name }}" data-none-selected-text="{{ _('No location selected') }}">
           {% for location_id, location_name in location_form.parent_location.choices %}
-          <option value="{{ location_id }}" {% if location_form.parent_location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name | get_translated_text }} - {{ location_name | get_translated_text(ENGLISH.lang_code) }}{% endif %}</option>
+          <option value="{{ location_id }}" {% if location_form.parent_location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name | get_translated_text }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
