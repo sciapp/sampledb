@@ -697,6 +697,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     num_objects_in_batch = int(num_objects_in_batch)
                 else:
                     raise ValueError()
+                if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE'] or num_objects_in_batch <= 0:
+                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+                    raise ValueError()
             except ValueError:
                 errors.append('input_num_batch_objects')
                 num_objects_in_batch = None
