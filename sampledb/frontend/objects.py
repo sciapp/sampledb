@@ -690,21 +690,19 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         form_data = {k: v[0] for k, v in raw_form_data.items()}
         if 'input_num_batch_objects' in form_data:
             try:
-                num_objects_in_batch = int(form_data['input_num_batch_objects'])
-            except ValueError:
-                try:
-                    # The form allows notations like '1.2e1' for '12', however
-                    # Python can only parse these as floats
-                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
-                    if num_objects_in_batch == int(num_objects_in_batch):
-                        num_objects_in_batch = int(num_objects_in_batch)
-                    else:
-                        raise
-                except ValueError:
-                    errors.append('input_num_batch_objects')
-                    num_objects_in_batch = None
+                # The form allows notations like '1.2e1' for '12', however
+                # Python can only parse these as floats
+                num_objects_in_batch = float(form_data['input_num_batch_objects'])
+                if num_objects_in_batch == int(num_objects_in_batch):
+                    num_objects_in_batch = int(num_objects_in_batch)
                 else:
+                    raise ValueError()
+                if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE'] or num_objects_in_batch <= 0:
                     form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+                    raise ValueError()
+            except ValueError:
+                errors.append('input_num_batch_objects')
+                num_objects_in_batch = None
             else:
                 form_data['input_num_batch_objects'] = str(num_objects_in_batch)
         else:
@@ -1142,36 +1140,10 @@ def show_inline_edit(obj, action):
     errors = []
     object_errors = {}
     form_data = {}
-    previous_actions = []
-    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
         raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
         form_data = {k: v[0] for k, v in raw_form_data.items()}
-        if 'input_num_batch_objects' in form_data:
-            try:
-                num_objects_in_batch = int(form_data['input_num_batch_objects'])
-            except ValueError:
-                try:
-                    # The form allows notations like '1.2e1' for '12', however
-                    # Python can only parse these as floats
-                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
-                    if num_objects_in_batch == int(num_objects_in_batch):
-                        num_objects_in_batch = int(num_objects_in_batch)
-                    else:
-                        raise
-                except ValueError:
-                    errors.append('input_num_batch_objects')
-                else:
-                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-            else:
-                form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-
-        if 'previous_actions' in flask.request.form:
-            try:
-                previous_actions = serializer.loads(flask.request.form['previous_actions'])
-            except itsdangerous.BadData:
-                flask.abort(400)
 
     if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
         referencable_objects = get_objects_with_permissions(
@@ -1209,7 +1181,6 @@ def show_inline_edit(obj, action):
         "errors": errors,
         "object_errors": object_errors,
         "form_data": form_data,
-        "previous_actions": serializer.dumps(previous_actions),
         "form": form,
         "referencable_objects": referencable_objects,
         "sorted_actions": sorted_actions,
