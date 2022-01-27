@@ -1,11 +1,11 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
 
 # Install required system packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y curl python3.7-venv python3.7-distutils libpangocairo-1.0-0 gettext && \
+    apt-get install -y curl python3-venv python3-distutils libpangocairo-1.0-0 gettext python3-dev libpython3-dev gcc && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
@@ -14,7 +14,7 @@ USER sampledb
 WORKDIR /home/sampledb
 
 # Set up Python virtual environment
-RUN python3.7 -m venv --without-pip env && \
+RUN python3 -m venv --without-pip env && \
     curl -sLO https://bootstrap.pypa.io/get-pip.py && \
     env/bin/python get-pip.py && \
     rm get-pip.py
