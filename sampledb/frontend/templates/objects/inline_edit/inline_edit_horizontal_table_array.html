@@ -47,8 +47,19 @@
                   {% endif %}
                   {% set entry_index = loop.index0 %}
                   {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                  {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) + '_' + name + '_' %}
-                  {% include "objects/inline_edit/inline_edit_any.html" %}
+                  {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                  {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
+                  {% if 'conditions' in schema %}
+                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                      {% include "objects/forms/conditional_wrapper_script.html" %}
+                    </div>
+                    <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                      &mdash;
+                    </div>
+                  {% else %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                  {% endif %}
                 </td>
               {% endfor %}
             {% endif %}
@@ -87,8 +98,19 @@
                   {% endif %}
                   {% set entry_index = loop.index0 %}
                   {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                  {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) + '_' + name + '_' %}
-                  {% include "objects/inline_edit/inline_edit_any.html" %}
+                  {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                  {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
+                  {% if 'conditions' in schema %}
+                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                      {% include "objects/forms/conditional_wrapper_script.html" %}
+                    </div>
+                    <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                      &mdash;
+                    </div>
+                  {% else %}
+                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                  {% endif %}
                 </td>
               {% endfor %}
             {% endif %}

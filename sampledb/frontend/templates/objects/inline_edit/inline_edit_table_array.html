@@ -97,6 +97,7 @@
                                     {% set name = property_name %}
                                     {% set schema = schema.properties[property_name] %}
                                     {% set z = schema.update({'parent_style': tmp_style}) %}
+                                    {% set parent_id_prefix = id_prefix %}
                                     {% set id_prefix = id_prefix + '_' + name + '_' %}
                                     {% if data is not none and property_name in data %}
                                         {% set data = data[property_name] %}
@@ -104,7 +105,17 @@
                                         {% set data = none %}
                                     {% endif %}
                                     {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                                    {% if 'conditions' in schema %}
+                                      <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                                      {% include "objects/forms/conditional_wrapper_script.html" %}
+                                      </div>
+                                      <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                                        &mdash;
+                                      </div>
+                                    {% else %}
+                                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                                    {% endif %}
                                 </td>
                             {% endif %}
                         {% endfor %}
@@ -114,6 +125,7 @@
                                     {% set name = property_name %}
                                     {% set schema = schema.properties[property_name] %}
                                     {% set z = schema.update({'parent_style': tmp_style}) %}
+                                    {% set parent_id_prefix = id_prefix %}
                                     {% set id_prefix = id_prefix + '_' + name + '_' %}
                                     {% if data is not none and property_name in data %}
                                         {% set data = data[property_name] %}
@@ -121,7 +133,17 @@
                                         {% set data = none %}
                                     {% endif %}
                                     {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                                    {% if 'conditions' in schema %}
+                                      <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                                      {% include "objects/forms/conditional_wrapper_script.html" %}
+                                      </div>
+                                      <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                                        &mdash;
+                                      </div>
+                                    {% else %}
+                                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                                    {% endif %}
                                 </td>
                             {% endif %}
                         {% endfor %}
