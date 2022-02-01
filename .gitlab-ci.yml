@@ -13,7 +13,7 @@ variables:
 
 test:
   stage: test
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   services:
     - postgres:12
   tags:
@@ -21,7 +21,7 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0 gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0 gettext
     - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
@@ -42,7 +42,7 @@ test:
 
 analyze:
   stage: test
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   script:
     - apt-get update
     # set up Python 3
@@ -54,7 +54,7 @@ analyze:
 
 documentation:
   stage: test
-  image: ubuntu:18.04
+  image: debian:11
   services:
     - postgres:latest
   tags:
@@ -62,7 +62,7 @@ documentation:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip chromium-browser libpangocairo-1.0-0 gettext
+    - apt-get install -y git python3-pip libpython3-dev chromium libpangocairo-1.0-0 gettext
     # install dependencies
     - python3 -m pip install -r requirements.txt
     # generate documentation images using current version
@@ -90,7 +90,7 @@ build:
 
 pages:
   stage: deploy
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   only:
     - master
     - tags
@@ -104,7 +104,7 @@ pages:
 
 deploy-to-dev:
   stage: deploy
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   environment: staging
   only:
     - develop@Scientific-IT-Systems/SampleDB
@@ -122,7 +122,7 @@ deploy-to-dev:
 
 deploy-to-github:
   stage: deploy
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   variables:
     GIT_STRATEGY: none
   only:
