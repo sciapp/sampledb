@@ -640,35 +640,47 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     permissions_for_project_id = None
     copy_permissions_object_id = None
     if object is None:
-        if flask.request.form.get('permissions_method') == 'copy_permissions' and flask.request.form.get('copy_permissions_object_id'):
-            copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
-            try:
-                copy_permissions_object_id = int(copy_permissions_object_id)
-                if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+        if flask.request.form.get('permissions_method') == 'copy_permissions':
+            if flask.request.form.get('copy_permissions_object_id'):
+                copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
+                try:
+                    copy_permissions_object_id = int(copy_permissions_object_id)
+                    if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+                        flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
+                        copy_permissions_object_id = None
+                except Exception:
                     flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
                     copy_permissions_object_id = None
-            except Exception:
-                flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
+            else:
+                flask.flash(_("No object selected. Default permissions will be applied."), 'error')
                 copy_permissions_object_id = None
-        elif flask.request.form.get('permissions_method') == 'permissions_for_group' and flask.request.form.get('permissions_for_group_group_id'):
-            permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
-            try:
-                permissions_for_group_id = int(permissions_for_group_id)
-                if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
+        elif flask.request.form.get('permissions_method') == 'permissions_for_group':
+            if flask.request.form.get('permissions_for_group_group_id'):
+                permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
+                try:
+                    permissions_for_group_id = int(permissions_for_group_id)
+                    if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
+                        flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
+                        permissions_for_group_id = None
+                except Exception:
                     flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
                     permissions_for_group_id = None
-            except Exception:
-                flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
+            else:
+                flask.flash(_("No basic group selected. Default permissions will be applied."), 'error')
                 permissions_for_group_id = None
-        elif flask.request.form.get('permissions_method') == 'permissions_for_project' and flask.request.form.get('permissions_for_project_project_id'):
-            permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
-            try:
-                permissions_for_project_id = int(permissions_for_project_id)
-                if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+        elif flask.request.form.get('permissions_method') == 'permissions_for_project':
+            if flask.request.form.get('permissions_for_project_project_id'):
+                permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
+                try:
+                    permissions_for_project_id = int(permissions_for_project_id)
+                    if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+                        flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
+                        permissions_for_project_id = None
+                except Exception:
                     flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
                     permissions_for_project_id = None
-            except Exception:
-                flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
+            else:
+                flask.flash(_("No project group selected. Default permissions will be applied."), 'error')
                 permissions_for_project_id = None
 
     if previous_object is not None:
