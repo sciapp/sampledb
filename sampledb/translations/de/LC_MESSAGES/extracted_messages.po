@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-12-21 12:53+0100\n"
+"POT-Creation-Date: 2022-02-02 16:10+0100\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -232,6 +232,9 @@ msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
 "werden angewandt."
 
+msgid "No object selected. Default permissions will be applied."
+msgstr "Kein Objekt ausgewählt. Standardberechtigungen werden angewandt."
+
 msgid ""
 "Unable to grant permissions to basic group. Default permissions will be "
 "applied."
@@ -239,12 +242,18 @@ msgstr ""
 "Rechtevergabe-Berechtigungen konnten nicht an die einfache Gruppe "
 "vergeben werden. Standardberechtigungen werden angewandt."
 
+msgid "No basic group selected. Default permissions will be applied."
+msgstr "Keine einfache Gruppe ausgewählt. Standardberechtigungen werden angewandt."
+
 msgid ""
 "Unable to grant permissions to project group. Default permissions will be"
 " applied."
 msgstr ""
 "Rechtevergabe-Berechtigungen konnten nicht an die Projektgruppe vergeben "
 "werden. Standardberechtigungen werden angewandt."
+
+msgid "No project group selected. Default permissions will be applied."
+msgstr "Keine Projektgruppe asugewählt. Standardberechtigungen werden angewandt."
 
 msgid "The objects were created successfully."
 msgstr "Die Objekte wurden erfolgreich erstellt."
@@ -2301,11 +2310,11 @@ msgid "Public"
 msgstr "Öffentlich"
 
 msgid ""
-"The 'name', 'tags', and 'hazards' properties will be removed when using this schema template in "
-"other actions."
+"The 'name', 'tags', and 'hazards' properties will be removed when using "
+"this schema template in other actions."
 msgstr ""
-"Wenn Sie diese Schema-Vorlage nutzen, werden die Eigenschaften 'name', 'tags' und 'hazards' "
-"entfernt."
+"Wenn Sie diese Schema-Vorlage nutzen, werden die Eigenschaften 'name', "
+"'tags' und 'hazards' entfernt."
 
 msgid "Instrument"
 msgstr "Instrument"
@@ -3211,6 +3220,19 @@ msgstr "Keine Kategorie ausgewählt"
 msgid "required"
 msgstr "erforderlich"
 
+msgid "Please select an object to copy the permissions from."
+msgstr "Bitte wählen Sie eine Objekt aus, um dessen Berechtigungen zu kopieren."
+
+msgid "Please select a project group to give permissions to."
+msgstr ""
+"Bitte wählen Sie eine Projektgruppe aus, um dieser Berechtigungen zu "
+"geben."
+
+msgid "Please select a basic group to give permissions to."
+msgstr ""
+"Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
+"geben."
+
 msgid "This object does not pose any of these hazards."
 msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
 
@@ -3226,6 +3248,9 @@ msgstr "Feld %(index)s"
 
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
+
+msgid "Unsupported item type for horizontal_table style."
+msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
 #, python-format
 msgid ""
@@ -3813,9 +3838,6 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
 msgid "files selected"
 msgstr "Dateien ausgewählt"
-
-msgid "Unsupported item type for horizontal_table style."
-msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
 msgid "hide plot"
 msgstr "Plot ausblenden"

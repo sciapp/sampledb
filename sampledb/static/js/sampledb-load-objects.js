@@ -104,11 +104,13 @@ $(function() {
           $($x.data('sampledbEmptyHide')).hide();
         }
 
+        $x.selectpicker('refresh');
         var data = $x.data('sampledbDefaultSelected');
         if (data !== 'None') {
           $x.selectpicker('val', data);
+        } else {
+          $x.selectpicker('val', null);
         }
-        $x.selectpicker('refresh');
       });
     });
   }

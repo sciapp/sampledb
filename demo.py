@@ -58,6 +58,6 @@ try:
     print("or visit any other site that requires being signed in.")
     print()
 
-    app.run(debug=True)
+    app.run(debug=True, host=os.environ.get('SAMPLEDB_DEMO_HOST'))
 finally:
     shutil.rmtree(temp_dir)
