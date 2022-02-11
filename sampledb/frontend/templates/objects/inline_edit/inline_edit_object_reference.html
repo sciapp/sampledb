@@ -13,7 +13,7 @@
                             (#{{ obj.object_id }})</a>
                         <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                     {% else %}
-                        <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">&mdash; #{{ data.object_id }}</a>
+                        <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
                         <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                     {% endif %}
                 {% endwith %}
