@@ -7,7 +7,7 @@
                     <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{% if obj.data['name']['text'] | get_translated_text(metadata_language) == '' %}&mdash;{% else %}{{ obj.data['name']['text'] | get_translated_text(metadata_language) }}{% endif %}
                         (#{{ obj.object_id }})</a>
                 {% else %}
-                    <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">&mdash; #{{ data.object_id }}</a>
+                    <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
                 {% endif %}
             {% endwith %}
         {% else %}
