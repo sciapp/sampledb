@@ -1658,7 +1658,7 @@ def referencable_objects():
     def dictify(x):
         return {
             'id': x.object_id,
-            'text': flask.escape('{} (#{})'.format(get_translated_text(x.name_json), x.object_id)),
+            'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '&mdash;', x.object_id),
             'action_id': x.action_id,
             'max_permission': x.max_permission,
             'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
