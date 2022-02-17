@@ -500,6 +500,7 @@ for config_name in {
     'SHOW_PREVIEW_WARNING',
     'SHOW_OBJECT_TITLE',
     'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+    'DISABLE_INLINE_EDIT',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):
