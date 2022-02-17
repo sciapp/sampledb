@@ -12,6 +12,7 @@
       <label class="control-label col-md-3 required-label">{{ _('Number of Objects in Batch') }}</label>
       <div class="col-md-9">
         <input type="number" min="1" max="{{ config['MAX_BATCH_SIZE'] }}" step="1" value="{% if 'input_num_batch_objects' in form_data %}{{ form_data['input_num_batch_objects'] }}{% else %}1{% endif %}" class="form-control" name="input_num_batch_objects" />
+        {% if 'input_num_batch_objects' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors['input_num_batch_objects'] }}</span>{% endif %}
       </div>
     </div>
     {% endif %}

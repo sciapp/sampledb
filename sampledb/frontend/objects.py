@@ -691,8 +691,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         action_id = action.id
         previous_object_id = None
         has_grant_for_previous_object = False
-    errors = []
-    object_errors = {}
+    errors = {}
     form_data = {}
     previous_actions = []
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
@@ -710,10 +709,12 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                 else:
                     raise ValueError()
                 if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE'] or num_objects_in_batch <= 0:
+                    if num_objects_in_batch <= 0:
+                        raise ValueError()
                     form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-                    raise ValueError()
+                    errors['input_num_batch_objects'] = _('The maximum number of objects in one batch is %(max_batch_size)s.', max_batch_size=flask.current_app.config['MAX_BATCH_SIZE'])
             except ValueError:
-                errors.append('input_num_batch_objects')
+                errors['input_num_batch_objects'] = _('The number of objects in batch must be an positive integer.')
                 num_objects_in_batch = None
             else:
                 form_data['input_num_batch_objects'] = str(num_objects_in_batch)
@@ -751,8 +752,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             else:
                 batch_base_name = None
                 name_suffix_format = None
-            object_data, object_errors = parse_form_data(raw_form_data, schema)
-            errors += object_errors
+            object_data, parsing_errors = parse_form_data(raw_form_data, schema)
+            errors.update(parsing_errors)
             if object_data is not None and not errors:
                 try:
                     validate(object_data, schema)
@@ -889,7 +890,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             schema=schema,
             data=data,
             errors=errors,
-            object_errors=object_errors,
             form_data=form_data,
             previous_actions=serializer.dumps(previous_actions),
             form=form,
@@ -920,7 +920,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             data=data,
             object_id=object.object_id,
             errors=errors,
-            object_errors=object_errors,
             form_data=form_data,
             previous_actions=serializer.dumps(previous_actions),
             form=form,
@@ -1149,8 +1148,7 @@ def show_inline_edit(obj, action):
                 except Exception:
                     pass
 
-    errors = []
-    object_errors = {}
+    errors = {}
     form_data = {}
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
@@ -1191,7 +1189,7 @@ def show_inline_edit(obj, action):
 
     form_kwargs = {
         "errors": errors,
-        "object_errors": object_errors,
+        "errors": errors,
         "form_data": form_data,
         "form": form,
         "referencable_objects": referencable_objects,
