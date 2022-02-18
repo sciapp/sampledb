@@ -3,9 +3,10 @@ import typing
 from .. import actions
 from ... import logic
 from ..errors import ActionDoesNotExistError, InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
-
+from ...models import ActionType
 
 # keys and properties that only can be used in root objects
+
 SKIPPED_TEMPLATE_KEYS = {
     'displayProperties',
     'batch',
@@ -52,6 +53,9 @@ def substitute_templates(
         invalid_template_action_ids: typing.Sequence[int] = ()
 ) -> None:
     if 'template' in schema.keys():
+        if type(schema['template']) is dict and 'action_id' in schema['template'] and 'component_uuid' in schema['template']\
+                and type(schema['template']['action_id']) is int and type(schema['template']['component_uuid']) is str:
+            return
         if type(schema['template']) is not int:
             raise InvalidNumberError()
         if schema['template'] in invalid_template_action_ids:
@@ -63,7 +67,7 @@ def substitute_templates(
             template_action = actions.get_action(schema['template'])
         except ActionDoesNotExistError:
             raise
-        if not template_action.type.is_template:
+        if not template_action.type.is_template and not template_action.type.fed_id == ActionType.TEMPLATE:
             raise InvalidTemplateIDError()
         template_schema = template_action.schema
         template_schema = process_template_action_schema(template_schema)

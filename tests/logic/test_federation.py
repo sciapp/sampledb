@@ -45,7 +45,7 @@ ARRAY_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "", "type": "objec
 ARRAY_DATA: typing.Dict[typing.Any, typing.Any] = {"name": {"text": {"en": ""}, "_type": "text"}, "array": [[{"text": {"en": "Entry 1.1"}, "_type": "text"}, {"text": {"en": "Entry 1.2"}, "_type": "text"}, {"text": {"en": "Entry 1.3"}, "_type": "text"}], [{"text": {"en": "Entry 2.1"}, "_type": "text"}, {"text": {"en": "Entry 2.2"}, "_type": "text"}], [{"text": {"en": "Entry 3.1"}, "_type": "text"}]]}
 ARRAY_OBJECT_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "object": {"title": "Object", "type": "object", "properties": {"object_name": {"title": "Name", "type": "text"}, "text_array": {"type": "array", "title": "Text Array", "items": {"type": "text", "title": "Text"}}, "array": {"type": "array", "title": "Object Array", "items": {"type": "object", "title": "Object", "properties": {"subobject_name": {"title": "Name", "type": "text"}}}}}}}, "required": ["name"]}
 ARRAY_OBJECT_DATA: typing.Dict[typing.Any, typing.Any] = {"name": {"text": {"en": "Name"}, "_type": "text"}, "object": {"array": [{"subobject_name": {"text": {"en": "Subobject Name"}, "_type": "text"}}], "text_array": [{"text": {"en": "Text 1"}, "_type": "text"}, {"text": {"en": "Text 2"}, "_type": "text"}], "object_name": {"text": {"en": "Object Name"}, "_type": "text"}}}
-ACTION_DATA: typing.Dict[typing.Any, typing.Any] = {'action_id': 2, 'component_uuid': UUID_1, 'action_type': {'action_type_id': -99, 'component_uuid': UUID_1}, 'description_is_markdown': False, 'short_description_is_markdown': False, 'instrument': {'instrument_id': 4, 'component_uuid': UUID_1}, 'schema': {'title': 'Example Action', 'type': 'object', 'properties': {'name': {'title': 'Example Attribute', 'type': 'text'}}, 'required': ['name']}, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'is_hidden': False, 'translations': {'en': {'name': 'Example Action', 'description': 'Test Action', 'short_description': ''}, 'de': {'name': 'Beispielaktion', 'description': 'Aktion für Tests', 'short_description': ''}}}
+ACTION_DATA: typing.Dict[typing.Any, typing.Any] = {'action_id': 2, 'component_uuid': UUID_1, 'action_type': {'action_type_id': -96, 'component_uuid': UUID_1}, 'description_is_markdown': False, 'short_description_is_markdown': False, 'instrument': {'instrument_id': 4, 'component_uuid': UUID_1}, 'schema': {'title': 'Example Action', 'type': 'object', 'properties': {'name': {'title': 'Example Attribute', 'type': 'text'}}, 'required': ['name']}, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'is_hidden': False, 'translations': {'en': {'name': 'Example Action', 'description': 'Test Action', 'short_description': ''}, 'de': {'name': 'Beispielaktion', 'description': 'Aktion für Tests', 'short_description': ''}}}
 ACTION_TYPE_DATA: typing.Dict[typing.Any, typing.Any] = {'action_type_id': 1, 'component_uuid': UUID_1, 'admin_only': False, 'show_in_navbar': True, 'show_on_frontpage': False, 'enable_labels': True, 'enable_files': True, 'enable_locations': True, 'enable_publications': False, 'enable_comments': True, 'enable_activity_log': True, 'enable_related_objects': True, 'enable_project_link': False, 'translations': {'en': {'name': 'Action Type', 'description': 'Description', 'object_name': 'Action Object', 'object_name_plural': 'Action Objects', 'view_text': 'Show Action Objects', 'perform_text': 'Perform Action Type Action'}, 'de': {'name': 'Aktionstyp', 'description': 'Beschreibung', 'object_name': 'Aktionsobjekt', 'object_name_plural': 'Aktionsobjekte', 'view_text': 'Zeige Aktionsobjekte', 'perform_text': 'Führe Aktionstyp-Aktion aus'}}}
 INSTRUMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'instrument_id': 4, 'component_uuid': UUID_1, 'description_is_markdown': False, 'short_description_is_markdown': False, 'notes_is_markdown': False, 'is_hidden': False, 'translations': {'en': {'name': 'Example Instrument', 'description': 'Test instrument description', 'short_description': 'Test instrument short description', 'notes': 'Notes'}, 'de': {'name': 'Beispielinstrument', 'description': 'Beschreibung des Testinstrumentes', 'short_description': 'Kurzbeschreibung eines Beispielinstrumentes', 'notes': 'Notizen'}}}
 USER_DATA: typing.Dict[typing.Any, typing.Any] = {'user_id': 3, 'component_uuid': UUID_1, 'name': 'Example User', 'email': 'example@example.com', 'orcid': '0000-0002-1825-0097', 'affiliation': 'FZJ', 'role': 'Role', 'extra_fields': {'website': 'example.com'}}
@@ -1496,6 +1496,82 @@ def test_import_action(component):
 
     log_entries = get_fed_action_log_entries_for_action(action.id)
     assert len(FedActionLogEntry.query.all()) == 1
+    assert len(log_entries) == 1
+    assert log_entries[0].type == FedActionLogEntryType.IMPORT_ACTION
+    assert log_entries[0].component_id == action.component.id
+    assert log_entries[0].action_id == action.id
+    assert log_entries[0].utc_datetime >= start_datetime
+    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+
+
+def test_import_template_action_without_template(component):
+    action_data = deepcopy(ACTION_DATA)
+    action_data['schema']['properties']['template'] = {
+        'type': 'object',
+        'title': 'Template',
+        'template': {'action_id': 123, 'component_uuid': UUID_1},
+        'properties': {'text': {'title': 'Template Text', 'type': 'text'}}
+    }
+    start_datetime = datetime.datetime.utcnow()
+    action = parse_import_action(action_data, component)
+    _check_action(action_data)
+
+    assert len(actions.get_actions()) == 1
+
+    log_entries = get_fed_action_log_entries_for_action(action.id)
+    assert len(FedActionLogEntry.query.all()) == 1
+    assert len(log_entries) == 1
+    assert log_entries[0].type == FedActionLogEntryType.IMPORT_ACTION
+    assert log_entries[0].component_id == action.component.id
+    assert log_entries[0].action_id == action.id
+    assert log_entries[0].utc_datetime >= start_datetime
+    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+
+
+def test_import_template_action_with_template(component):
+    template_data = deepcopy(ACTION_DATA)
+    template_data['action_id'] = 123
+    template_data['schema'] = {
+        'type': 'object',
+        'title': 'Template',
+        'properties': {'name': {'type': 'text', 'title': 'Name'}, 'text': {'title': 'Template Text', 'type': 'text'}},
+        'required': ['name']
+    }
+    action_data = deepcopy(ACTION_DATA)
+    action_data['schema']['properties']['template'] = {
+        'type': 'object',
+        'title': 'Template',
+        'template': {'action_id': 123, 'component_uuid': UUID_1},
+        'properties': {'text': {'title': 'Template Text', 'type': 'text'}}
+    }
+    start_datetime = datetime.datetime.utcnow()
+    template_action = parse_import_action(template_data, component)
+    action = parse_import_action(action_data, component)
+    # resolve template reference for _check_action
+    action_data['schema']['properties']['template'] = {
+        'type': 'object',
+        'title': 'Template',
+        'template': template_action.id,
+        'properties': {'text': {'title': 'Template Text', 'type': 'text'}},
+        'required': []
+    }
+    _check_action(action_data)
+    _check_action(template_data)
+
+    assert action.schema['properties']['template']['template'] == template_action.id
+
+    assert len(actions.get_actions()) == 2
+    assert len(FedActionLogEntry.query.all()) == 2
+
+    log_entries = get_fed_action_log_entries_for_action(template_action.id)
+    assert len(log_entries) == 1
+    assert log_entries[0].type == FedActionLogEntryType.IMPORT_ACTION
+    assert log_entries[0].component_id == template_action.component.id
+    assert log_entries[0].action_id == template_action.id
+    assert log_entries[0].utc_datetime >= start_datetime
+    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+
+    log_entries = get_fed_action_log_entries_for_action(action.id)
     assert len(log_entries) == 1
     assert log_entries[0].type == FedActionLogEntryType.IMPORT_ACTION
     assert log_entries[0].component_id == action.component.id

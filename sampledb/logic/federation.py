@@ -559,17 +559,38 @@ def _get_or_create_location_id(location_data):
 
 
 def import_action(action_data, component):
+    def _import_schema(schema, path=[]):
+        if schema is None:
+            return None
+        if schema.get('type') == 'array' and 'items' in schema:
+            _import_schema(schema['items'], path + ['[?]'])
+        if schema.get('type') == 'object':
+            if isinstance(schema.get('properties'), dict):
+                for property_name, property_schema in schema['properties'].items():
+                    _import_schema(property_schema, path + [property_name])
+                    if 'template' in property_schema:
+                        try:
+                            c = get_component_by_uuid(property_schema['template']['component_uuid'])
+                            property_schema['template'] = get_action(property_schema['template']['action_id'], c.id).id
+                        except errors.ActionDoesNotExistError:
+                            pass
+                        except errors.ComponentDoesNotExistError:
+                            pass
+        return schema
+
     component_id = _get_or_create_component_id(action_data['component_uuid'])
 
     action_type_id = _get_or_create_action_type_id(action_data['action_type'])
     instrument_id = _get_or_create_instrument_id(action_data['instrument'])
     user_id = _get_or_create_user_id(action_data['user'])
 
+    schema = _import_schema(action_data['schema'])
+
     try:
         action = get_action(action_data['fed_id'], component_id)
         if action.type_id != action_type_id or action.schema != action_data['schema'] or action.instrument_id != instrument_id or action.user_id != user_id or action.description_is_markdown != action_data['description_is_markdown'] or action.is_hidden != action_data['is_hidden'] or action.short_description_is_markdown != action_data['short_description_is_markdown']:
             action.action_type_id = action_type_id
-            action.schema = action_data['schema']
+            action.schema = schema
             action.instrument_id = instrument_id
             action.user_id = user_id
             action.description_is_markdown = action_data['description_is_markdown']
@@ -582,7 +603,7 @@ def import_action(action_data, component):
             fed_id=action_data['fed_id'],
             component_id=component_id,
             action_type_id=action_type_id,
-            schema=action_data['schema'],
+            schema=schema,
             instrument_id=instrument_id,
             user_id=user_id,
             description_is_markdown=action_data['description_is_markdown'],
@@ -814,7 +835,7 @@ def _parse_action_ref(action_data):
 
 
 def _parse_action_type_ref(action_type_data):
-    action_type_id = _get_id(action_type_data.get('action_type_id'), special_values=[ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION])
+    action_type_id = _get_id(action_type_data.get('action_type_id'), special_values=[ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION, ActionType.TEMPLATE])
     component_uuid = _get_uuid(action_type_data.get('component_uuid'))
 
     return {'action_type_id': action_type_id, 'component_uuid': component_uuid}
@@ -848,9 +869,14 @@ def _parse_schema(schema, path=[]):
                         del choice[lang_code]
     if schema.get('type') == 'array' and 'items' in schema:
         _parse_schema(schema['items'], path + ['[?]'])
-    if schema.get('type') == 'object' and isinstance(schema.get('properties'), dict):
-        for property_name, property_schema in schema['properties'].items():
-            _parse_schema(property_schema, path + [property_name])
+    if schema.get('type') == 'object':
+        if isinstance(schema.get('properties'), dict):
+            for property_name, property_schema in schema['properties'].items():
+                _parse_schema(property_schema, path + [property_name])
+                template = _get_dict(property_schema.get('template'))
+                if template:
+                    template_action = _parse_action_ref(template)
+                    property_schema['template'] = template_action
 
 
 def parse_markdown_image(markdown_image_data, component):
@@ -873,8 +899,8 @@ def parse_action(action_data):
     if schema is not None:
         try:
             validate_schema(schema)
-        except errors.ValidationError:
-            raise errors.InvalidDataExportError('Invalid schema in action #{} @ {}'.format(fed_id, uuid))
+        except errors.ValidationError as e:
+            raise errors.InvalidDataExportError('Invalid schema in action #{} @ {} ({})'.format(fed_id, uuid, e))
 
     result = {
         'fed_id': fed_id,
@@ -912,7 +938,7 @@ def parse_action(action_data):
 
 
 def parse_action_type(action_type_data):
-    fed_id = _get_id(action_type_data.get('action_type_id'), special_values=[ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION])
+    fed_id = _get_id(action_type_data.get('action_type_id'), special_values=[ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION, ActionType.TEMPLATE])
     uuid = _get_uuid(action_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
@@ -932,7 +958,7 @@ def parse_action_type(action_type_data):
         'enable_related_objects': _get_bool(action_type_data.get('enable_related_objects'), default=False),
         'enable_project_link': _get_bool(action_type_data.get('enable_project_link'), default=False),
         'disable_create_objects': _get_bool(action_type_data.get('disable_create_objects'), default=False),
-        'is_template': _get_bool(action_type_data.get('enable_project_link'), default=False),
+        'is_template': _get_bool(action_type_data.get('is_template'), default=False),
         'translations': []
     }
 
@@ -1313,6 +1339,34 @@ def entry_preprocessor(data, refs, markdown_images):
                                 markdown_images[file_name] = base64.b64encode(markdown_image_b).decode('utf-8')
 
 
+def schema_entry_preprocessor(schema, refs):
+    if type(schema) == list:
+        for entry in schema:
+            schema_entry_preprocessor(entry, refs)
+    elif type(schema) == dict:
+        if 'type' not in schema.keys():
+            for key in schema:
+                schema_entry_preprocessor(schema[key], refs)
+        if schema.get('type') == 'object':
+            if schema.get('template'):
+                if ('actions', schema.get('template')) not in refs:
+                    refs.append(('actions', schema.get('template')))
+                action = get_action(schema.get('template'))
+                if action.component_id is not None:
+                    comp = get_component(action.component_id)
+                    schema['template'] = {
+                        'action_id': action.fed_id,
+                        'component_uuid': comp.uuid
+                    }
+                else:
+                    schema['template'] = {
+                        'action_id': action.id,
+                        'component_uuid': flask.current_app.config['FEDERATION_UUID']
+                    }
+            for property in schema.get('properties'):
+                schema_entry_preprocessor(schema['properties'][property], refs)
+
+
 def shared_object_preprocessor(object_id, policy, refs, markdown_images):
     result = {
         'object_id': object_id,
@@ -1509,6 +1563,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                 result['versions'][-1]['data'] = version.data.copy()
                 result['versions'][-1]['schema'] = version.schema.copy()
                 entry_preprocessor(result['versions'][-1]['data'], refs, markdown_images)
+                schema_entry_preprocessor(result['versions'][-1]['schema'], refs)
             if 'users' in policy['access'] and policy['access']['users']:
                 if ('users', version.user_id) not in refs:
                     refs.append(('users', version.user_id))
@@ -1528,6 +1583,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
             result['versions'][-1]['data'] = object.data.copy()
             result['versions'][-1]['schema'] = object.schema.copy()
             entry_preprocessor(result['versions'][-1]['data'], refs, markdown_images)
+            schema_entry_preprocessor(result['versions'][-1]['schema'], refs)
         if 'modification' in policy:
             modification = policy['modification']
             if 'insert' in modification:
@@ -1636,12 +1692,14 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
                 'user_id': u.fed_id,
                 'component_uuid': comp.uuid
             }
+    schema = action.schema.copy()
+    schema_entry_preprocessor(schema, refs)
     return {
         'action_id': action.id if action.fed_id is None else action.fed_id,
         'component_uuid': flask.current_app.config['FEDERATION_UUID'] if action.component_id is None else get_component(action.component_id).uuid,
         'action_type': action_type,
         'instrument': instrument,
-        'schema': action.schema,
+        'schema': schema,
         'user': user,
         'description_is_markdown': action.description_is_markdown,
         'is_hidden': action.is_hidden,
