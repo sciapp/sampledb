@@ -959,6 +959,8 @@ div.objectpicker > .dropdown-toggle {
 div.objectpicker > .objectpicker-filter-button {
     margin-bottom: 2px;
     min-width: 39px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
 
 div.objectpicker-actionpicker > .dropdown-toggle {

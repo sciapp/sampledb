@@ -632,10 +632,22 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
 
-    if 'action_type_id' in schema and not isinstance(schema['action_type_id'], (int, type(None))):
-        raise ValidationError('action_type_id must be int or None', path)
-    if 'action_id' in schema and not isinstance(schema['action_id'], (int, type(None))):
-        raise ValidationError('action_id must be int or None', path)
+    if 'action_type_id' in schema and not (
+            schema['action_type_id'] is None or
+            type(schema['action_type_id']) == int or
+            type(schema['action_type_id']) == list and all(
+                type(action_type_id) == int for action_type_id in schema['action_type_id']
+            )
+    ):
+        raise ValidationError('action_type_id must be int, None or a list of ints', path)
+    if 'action_id' in schema and not (
+            schema['action_id'] is None or
+            type(schema['action_id']) == int or
+            type(schema['action_id']) == list and all(
+                type(action_type_id) == int for action_type_id in schema['action_id']
+            )
+    ):
+        raise ValidationError('action_id must be int, None or a list of ints', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     _validate_note_in_schema(schema, path)

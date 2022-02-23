@@ -8,6 +8,8 @@ Currently in development.
 
 - Added support for any, all and not conditions
 - Add schema templates
+- Support multiple action IDs or action type IDs for object reference schemas
+- Improved user interface
 
 Version 0.19.3
 --------------

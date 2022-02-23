@@ -856,12 +856,12 @@ A note to display below the field when creating or editing an object using this 
 action_type_id
 ^^^^^^^^^^^^^^
 
-This attribute is a number that sets the ID of an action type to limit which actions an object referenced by this property may have been created with, e.g. ``-99`` to limit the property to samples.
+This attribute is a number or list of numbers that sets the IDs of action types to limit which actions an object referenced by this property may have been created with, e.g. ``-99`` to limit the property to samples or ``[-99, -98]`` to allow samples and measurements.
 
 action_id
 ^^^^^^^^^
 
-This attribute is a number that sets the ID of an action to limit that only objects created with that action may be referenced by this property, e.g. ``1``.
+This attribute is a number or list of numbers that sets the IDs of actions to limit that only objects created with these actions may be referenced by this property, e.g. ``1`` or ``[1, 3]``.
 
 Sample References
 ^^^^^^^^^^^^^^^^^
