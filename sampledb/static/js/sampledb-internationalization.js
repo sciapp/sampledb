@@ -1,6 +1,5 @@
 const ENGLISH_ID = -99;
 
-
 function updateTranslationJSON() {
   let translation_json = JSON.stringify(window.translations);
   $('#input-translations').val(translation_json);
@@ -77,6 +76,103 @@ function updateTranslationLanguages(language_select, template_id, input_id_prefi
   }
 }
 
+function getMarkdownButtonTranslation(button_text) {
+  if (window.markdown_button_translations && window.markdown_button_translations.hasOwnProperty(button_text)) {
+    return window.markdown_button_translations[button_text];
+  }
+  return button_text;
+}
+
+function initMarkdownField(element, height) {
+  let mde_field = new InscrybMDE({
+    element: element,
+    indentWithTabs: false,
+    spellChecker: false,
+    status: false,
+    minHeight: height,
+    forceSync: true,
+    toolbar: [
+        {
+          name: "bold",
+          action: InscrybMDE.toggleBold,
+          className: "fa fa-bold",
+          title: getMarkdownButtonTranslation("Bold"),
+        },
+        {
+          name: "italic",
+          action: InscrybMDE.toggleItalic,
+          className: "fa fa-italic",
+          title: getMarkdownButtonTranslation("Italic"),
+        },
+        {
+          name: "heading",
+          action: InscrybMDE.toggleHeadingSmaller,
+          className: "fa fa-header",
+          title: getMarkdownButtonTranslation("Heading"),
+        },
+        "|",
+        {
+          name: "code",
+          action: InscrybMDE.toggleCodeBlock,
+          className: "fa fa-code",
+          title: getMarkdownButtonTranslation("Code"),
+        },
+        {
+          name: "unordered-list",
+          action: InscrybMDE.toggleUnorderedList,
+          className: "fa fa-list-ul",
+          title: getMarkdownButtonTranslation("Generic List"),
+        },
+        {
+          name: "ordered-list",
+          action: InscrybMDE.toggleOrderedList,
+          className: "fa fa-list-ol",
+          title: getMarkdownButtonTranslation("Numbered List"),
+        },
+        "|",
+        {
+          name: "link",
+          action: InscrybMDE.drawLink,
+          className: "fa fa-link",
+          title: getMarkdownButtonTranslation("Create Link"),
+        },
+        {
+          name: "image",
+          action: function uploadImage(editor) {
+            let file_input = document.createElement("input");
+            file_input.setAttribute("type", "file");
+            file_input.setAttribute("accept", ".png,.jpg,.jpeg");
+            file_input.addEventListener("change", function() {
+              element.mde_field.codemirror.fileHandler(file_input.files);
+            });
+            file_input.click();
+          },
+          className: "fa fa-picture-o",
+          title: getMarkdownButtonTranslation("Upload Image"),
+        },
+        {
+          name: "table",
+          action: InscrybMDE.drawTable,
+          className: "fa fa-table",
+          title: getMarkdownButtonTranslation("Insert Table"),
+        },
+        "|",
+        {
+          name: "preview",
+          action: InscrybMDE.togglePreview,
+          className: "fa fa-eye no-disable",
+          title: getMarkdownButtonTranslation("Toggle Preview"),
+          noDisable: true,
+        }
+    ]
+  });
+  element.mde_field = mde_field;
+  mde_field.codemirror.on('change', function() {
+    $(element).change();
+  });
+  return mde_field;
+}
+
 function updateMarkdownField(checkbox_id, mde_attribute, data_name, height) {
   window.mde_fields[mde_attribute].forEach(function (item){
     item.toTextArea();
@@ -85,20 +181,7 @@ function updateMarkdownField(checkbox_id, mde_attribute, data_name, height) {
   if ($('#' + checkbox_id).prop('checked')) {
     $('.form-group[data-name="' +data_name + '"] [data-language-id]').each(function() {
       const textarea = $(this).find('textarea.form-control')[0];
-      const mde_field = new InscrybMDE({
-        element: textarea,
-        indentWithTabs: false,
-        spellChecker: false,
-        status: false,
-        hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-        showIcons: ["code", "table"],
-        minHeight: height,
-        forceSync: true,
-      });
-      window.mde_fields[mde_attribute].push(mde_field);
-      mde_field.codemirror.on('change', function() {
-        $(textarea).change();
-      });
+      window.mde_fields[mde_attribute].push(initMarkdownField(textarea, height));
     });
     window.mde_fields[mde_attribute].forEach(function (item){
       setupImageDragAndDrop(item);
