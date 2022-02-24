@@ -15,7 +15,8 @@ from math import log10
 import flask
 import flask_babel
 import flask_login
-from flask_babel import format_number, format_datetime, format_date, format_decimal, format_scientific
+from flask_babel import format_datetime, format_date, get_locale
+from babel import numbers
 import qrcode
 import qrcode.image.svg
 import plotly
@@ -174,12 +175,11 @@ def custom_format_number(number):
         float(number)
     except ValueError:
         return number
+    locale = get_locale()
     if float(number) != 0:
-        if log10(abs(float(number))) <= -5.0 or int(log10(abs(float(number)))) >= 6:
-            return format_scientific(number)
-    if type(number) is int:
-        return format_number(number)
-    return format_decimal(number)
+        if not -5 < int(log10(abs(float(number)))) < 6:
+            return numbers.format_scientific(number, locale=locale, decimal_quantization=False)
+    return numbers.format_decimal(number, locale=locale, decimal_quantization=False, group_separator=False)
 
 
 @jinja_filter

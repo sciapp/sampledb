@@ -23,7 +23,7 @@
                 <div class="container alert-upload-container">
                     <div class="col-md-9" style="padding-left: 0px">
                         {% if data is not none %}
-                            {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}
+                            {{ data.magnitude_in_base_units | babel_format_number }}
                         {% else %}
                             &mdash;
                         {% endif %}
@@ -37,7 +37,7 @@
                 <div class="container alert-upload-container">
                     <div class="col-md-9" style="padding-left: 0px">
                         {% if data is not none %}
-                            {{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
+                            {{ (data | to_datatype).magnitude | babel_format_number }}
                             {{ (data | to_datatype).units | prettify_units }}
                         {% else %}
                             &mdash;
@@ -66,7 +66,7 @@
                     <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
                            placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
                            {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
-                           {% elif data is not none %}value="{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}"{% endif %}>
+                           {% elif data is not none %}value="{{ (data | to_datatype).magnitude | babel_format_number }}"{% endif %}>
                     <span class="input-group-addon"
                           style="min-width: 100px; text-align:left">{% if data is not none %}
                         {{ (data | to_datatype).units | prettify_units }}{% else %}
