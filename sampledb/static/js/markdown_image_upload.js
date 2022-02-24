@@ -1,13 +1,7 @@
 function setupImageDragAndDrop(element) {
-  element.codemirror.on('drop', function(data, e) {
-    var file;
-    var files;
-    // Check if files were dropped
-    files = e.dataTransfer.files;
+  element.codemirror.fileHandler = function(files) {
     if (files.length > 0) {
-      e.preventDefault();
-      e.stopPropagation();
-      file = files[0];
+      let file = files[0];
 
       if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
         var reader = new FileReader();
@@ -22,7 +16,12 @@ function setupImageDragAndDrop(element) {
         }, false);
         reader.readAsDataURL(file);
       }
-      return false;
     }
+  };
+  element.codemirror.on('drop', function(data, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    element.codemirror.fileHandler(e.dataTransfer.files);
+    return false;
   });
 }

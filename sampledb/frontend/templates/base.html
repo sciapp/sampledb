@@ -18,6 +18,18 @@
   {% endblock %}
   <script type="text/javascript">
     window.application_root_path = '{{ url_for('frontend.index') }}';
+    window.markdown_button_translations = {
+        "Bold": "{{ _("Bold") }}",
+        "Italic": "{{ _("Italic") }}",
+        "Heading": "{{ _("Heading") }}",
+        "Code": "{{ _("Code") }}",
+        "Generic List": "{{ _("Generic List") }}",
+        "Numbered List": "{{ _("Numbered List") }}",
+        "Create Link": "{{ _("Create Link") }}",
+        "Upload Image": "{{ _("Upload Image") }}",
+        "Insert Table": "{{ _("Insert Table") }}",
+        "Toggle Preview": "{{ _("Toggle Preview") }}",
+    };
   </script>
 {% endblock %}
 </head>

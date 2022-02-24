@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-02-17 13:12+0100\n"
+"POT-Creation-Date: 2022-02-23 14:21+0100\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -260,7 +260,9 @@ msgid "The maximum number of objects in one batch is %(max_batch_size)s."
 msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
 
 msgid "The number of objects in batch must be an positive integer."
-msgstr "Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl sein."
+msgstr ""
+"Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl "
+"sein."
 
 msgid "The objects were created successfully."
 msgstr "Die Objekte wurden erfolgreich erstellt."
@@ -827,6 +829,36 @@ msgstr "Endpunkt"
 
 msgid "This API token has not been used so far."
 msgstr "Dieses API Token ist noch nicht benutzt worden."
+
+msgid "Bold"
+msgstr "Fettdruck"
+
+msgid "Italic"
+msgstr "Kursiv"
+
+msgid "Heading"
+msgstr "Überschrift"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Generic List"
+msgstr "Liste"
+
+msgid "Numbered List"
+msgstr "Nummerierte Liste"
+
+msgid "Create Link"
+msgstr "Link erstellen"
+
+msgid "Upload Image"
+msgstr "Bild hochladen"
+
+msgid "Insert Table"
+msgstr "Tabelle einfügen"
+
+msgid "Toggle Preview"
+msgstr "Vorschau ein-/ausschalten"
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"

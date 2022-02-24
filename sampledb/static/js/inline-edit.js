@@ -83,24 +83,12 @@ function send_data(elem, act_vals) {
     xml_request.send(data_string);
 }
 
+
 function setup_markdown(elem) {
     $(elem).find('textarea[data-markdown-textarea="true"]').each(function (_, e) {
-        if ($(this).attr("markdown-editor-initialized") != "true") {
+        if ($(this).attr("markdown-editor-initialized") !== "true") {
             $(this).attr("markdown-editor-initialized", "true");
-            let act_textarea = this
-            let mde_field = new InscrybMDE({
-                element: act_textarea,
-                indentWithTabs: false,
-                spellChecker: false,
-                status: false,
-                hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-                showIcons: ["code", "table"],
-                minHeight: '100px',
-            });
-            mde_field._rendered.parentNode.addEventListener("keyup", function () {
-                $(act_textarea).html(mde_field.value());
-            });
-            setupImageDragAndDrop(mde_field);
+            setupImageDragAndDrop(initMarkdownField(this, '100px'));
         }
     });
 
