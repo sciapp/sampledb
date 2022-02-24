@@ -11,6 +11,7 @@ Currently in development.
 - Add schema templates
 - Support multiple action IDs or action type IDs for object reference schemas
 - Improved user interface
+- Fix number rounding
 
 Version 0.19.3
 --------------
