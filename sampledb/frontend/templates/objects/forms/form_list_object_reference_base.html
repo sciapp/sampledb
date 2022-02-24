@@ -20,7 +20,7 @@
 {% endif %}
 
 <div class="form-group{% if id_prefix+'_oid' in errors %} has-error{% elif id_prefix+'_oid' in form_data %} has-success{% endif %} row" style="padding-right:0.75em; flex-grow: 1">
-  <select class="form-control selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %}" name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[-1]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
+  <select class="form-control selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %}" name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
     <option value="">&mdash;</option>
    {% if not referencable_objects and selected_id %}
         {% set referencable_objects = [get_object_if_current_user_has_read_permissions(selected_id | int)] %}
