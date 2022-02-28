@@ -15,7 +15,7 @@
   </div>
   {% if config['SHOW_PREVIEW_WARNING'] or (service_name == 'iffSamples' and config['SERVER_NAME'] != 'iffsamples.fz-juelich.de') %}
     <div class="alert alert-danger">
-      <p><strong>{{ _('Warning:')}}</strong> {{ _('This is a preview installation of %(service_name)s, the sample and measurement metadata database at PGI / JCNS. It is used for development, may be offline at any time and the <strong>data will be deleted!</strong>', service_name=service_name) }}</p>
+      <p><strong>{{ _('Warning:')}}</strong> {{ _('This is a preview installation of %(service_name)s. It is used for testing, may be offline at any time and the <strong>data will be deleted!</strong>', service_name=service_name) }}</p>
     </div>
   {% endif %}
 {% if not current_user.is_authenticated %}
