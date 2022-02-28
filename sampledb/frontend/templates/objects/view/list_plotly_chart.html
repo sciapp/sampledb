@@ -1,4 +1,4 @@
-{% if 'plotly' in data %}
+{% if data is not none and 'plotly' in data %}
 {% set plot_counter.value = plot_counter.value + 1 %}
 {% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
 <div>
