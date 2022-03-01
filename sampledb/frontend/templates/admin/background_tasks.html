@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Background Tasks') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ _('Background Tasks') }}</h1>
+
+{% if config['ENABLE_BACKGROUND_TASKS'] %}
+  <p class="help-block">{{ _('Background tasks are currently enabled.') }}</p>
+{% else %}
+  <p class="help-block">{{ _('Background tasks are currently disabled.') }}</p>
+{% endif %}
+
+{% if tasks %}
+<p class="help-block">{{ _('This table shows a list of pending or failed tasks.') }} {{ _('Some tasks will be deleted automatically once they are completed or fail.') }}</p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">{{ _('ID') }}</th>
+      <th scope="col">{{ _('Type') }}</th>
+      <th scope="col">{{ _('Status') }}</th>
+      <th scope="col">{{ _('Data') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in tasks %}
+    <tr>
+      <td>{{ task.id }}</td>
+      <td>{{ task.type }}</td>
+      <td>{{ task.status.name }}</td>
+      <td style="min-width: 100%;"><textarea style="width: 100%; resize: vertical; min-height: 5em; font-family: monospace; font-size: 0.8em" readonly="readonly">{{ task.data | tojson(indent=2) }}</textarea></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+  {% else %}
+  <p class="help-block">{{ _('There are no pending or failed tasks.') }} {{ _('Some tasks will be deleted automatically once they are completed or fail.') }}</p>
+  {% endif %}
+{% endblock %}

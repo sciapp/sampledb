@@ -4,6 +4,7 @@
 """
 
 from . import authentication
+from . import background_tasks
 from . import dataverse_export
 from . import favorites
 from . import files
@@ -25,6 +26,7 @@ from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod
+from .background_tasks import BackgroundTask, BackgroundTaskStatus
 from .comments import Comment
 from .components import Component
 from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
@@ -57,6 +59,7 @@ from .user_log import UserLogEntry, UserLogEntryType
 __all__ = [
     'api_log',
     'authentication',
+    'background_tasks',
     'dataverse_export',
     'favorites',
     'files',
@@ -76,6 +79,8 @@ __all__ = [
     'ActionType',
     'ActionTranslation',
     'ActionTypeTranslation',
+    'BackgroundTask',
+    'BackgroundTaskStatus',
     'UserActionPermissions',
     'GroupActionPermissions',
     'ProjectActionPermissions',
