@@ -106,7 +106,7 @@ $(function() {
 
         $x.selectpicker('refresh');
         var data = $x.data('sampledbDefaultSelected');
-        if (data !== 'None') {
+        if (typeof(data) !== 'undefined' && data !== 'None') {
           $x.selectpicker('val', data);
         } else {
           $x.selectpicker('val', null);
