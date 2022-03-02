@@ -167,6 +167,45 @@ def test_file_information(user: User, object: Object, tmpdir):
     assert len(file.log_entries) == 3
 
 
+def test_url_file_information(user: User, object: Object):
+    assert len(files.get_files_for_object(object_id=object.object_id)) == 0
+
+    files.create_url_file(object_id=object.object_id, user_id=user.id, url='http://example.com/example')
+
+    file = files.get_file_for_object(object.object_id, 0)
+
+    assert file.title == file.url
+    assert file.description is None
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='Title', description='')
+    file = files.get_file_for_object(object.object_id, 0)
+    assert file.title == 'Title'
+    assert file.description is None
+    assert len(file.log_entries) == 1
+    log_entry = file.log_entries[0]
+    assert log_entry.type == files.FileLogEntryType.EDIT_TITLE
+    assert log_entry.data == {'title': 'Title'}
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='Title', description='Description')
+    file = files.get_file_for_object(object.object_id, 0)
+    assert file.title == 'Title'
+    assert file.description == 'Description'
+    assert len(file.log_entries) == 2
+    log_entry = file.log_entries[1]
+    assert log_entry.type == files.FileLogEntryType.EDIT_DESCRIPTION
+    assert log_entry.data == {'description': 'Description'}
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='', description='Description')
+    file = files.get_file_for_object(object.object_id, 0)
+    assert file.title == file.url
+    assert file.description == 'Description'
+    assert len(file.log_entries) == 3
+    log_entry = file.log_entries[2]
+    assert log_entry.type == files.FileLogEntryType.EDIT_TITLE
+    assert log_entry.data == {'title': file.url}
+
+    with pytest.raises(files.FileDoesNotExistError):
+        files.update_file_information(object_id=object.object_id, file_id=file.id + 1, user_id=user.id, title='Title', description='Description')
+    assert len(file.log_entries) == 3
+
+
 def test_invalid_file_storage(user: User, object: Object, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 

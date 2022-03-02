@@ -381,7 +381,10 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
     if file is None:
         raise FileDoesNotExistError()
     if not title:
-        title = file.original_file_name
+        if file.storage == 'url':
+            title = file.url
+        else:
+            title = file.original_file_name
     if title != file.title:
         log_entry = FileLogEntry(type=FileLogEntryType.EDIT_TITLE, object_id=object_id, file_id=file_id, user_id=user_id, data={
             'title': title
