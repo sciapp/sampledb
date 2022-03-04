@@ -40,8 +40,8 @@
         <td></td>
         {% for possible_permissions in [Permissions.GRANT] %}
           <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_instrument_responsible_users_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" id="permissions_instrument_responsible_users_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" checked disabled />
+            <label for="permission_administrators_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" id="permission_administrators_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" checked disabled />
           </td>
         {% endfor %}
       </tr>
