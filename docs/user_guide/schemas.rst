@@ -62,6 +62,7 @@ Additionally, there are special data types:
     - Sample References
     - Measurement References
     - Generic Object References
+- Schema Templates
 
 In the following, each data type and the attributes in a schema of each type are listed.
 
@@ -855,12 +856,12 @@ A note to display below the field when creating or editing an object using this 
 action_type_id
 ^^^^^^^^^^^^^^
 
-This attribute is a number that sets the ID of an action type to limit which actions an object referenced by this property may have been created with, e.g. ``-99`` to limit the property to samples.
+This attribute is a number or list of numbers that sets the IDs of action types to limit which actions an object referenced by this property may have been created with, e.g. ``-99`` to limit the property to samples or ``[-99, -98]`` to allow samples and measurements.
 
 action_id
 ^^^^^^^^^
 
-This attribute is a number that sets the ID of an action to limit that only objects created with that action may be referenced by this property, e.g. ``1``.
+This attribute is a number or list of numbers that sets the IDs of actions to limit that only objects created with these actions may be referenced by this property, e.g. ``1`` or ``[1, 3]``.
 
 Sample References
 ^^^^^^^^^^^^^^^^^
@@ -888,6 +889,107 @@ Properties of this type are a special case of object reference, limited to refer
       "type": "measurement"
     }
 
+Schema Templates
+```````````````
+
+Schema Templates offer a way to easily reuse action schemas.
+
+If an *action_type* is marked as includable into other actions it's possible to reuse the schema.
+
+The schema for a template action could look like the following:
+
+.. code-block:: json
+   :caption: Minimal schema template
+
+    {
+      "title": "test",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "value": {
+          "title": "Value",
+          "type": "text"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "propertyOrder": [
+        "name",
+        "value"
+      ]
+    }
+
+There is generally no difference to the schemas of other actions.
+
+Schema templates can be included into other actions by providing a ``template`` for a property of type ``object``
+
+.. code-block:: json
+   :caption: Action with included schema template
+
+    {
+      "title": "Action with included Schema Template",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "included": {
+          "title": "Included Schema Template",
+          "type": "object",
+          "template": 15
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "propertyOrder": [
+        "name",
+        "included"
+      ]
+    }
+
+Internally, this will then be treated as if the schema template were used for the property ``included`` there, except that the ``name`` property will be removed to avoid redundancies. The resulting action will be equivalent to:
+
+.. code-block:: json
+   :caption: Action with schema template
+
+    {
+      "title": "Action with included Schema Template",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "included": {
+          "title": "Included Schema Template",
+          "type": "object",
+          "properties": {
+            "value": {
+              "title": "Value",
+              "type": "text"
+            }
+          },
+          "required": [],
+          "propertyOrder": ["value"]
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "propertyOrder": [
+        "name",
+        "included"
+      ]
+    }
+
+When the schema template action is updated, all actions using it will be updated as well, as long as the resulting schema is still valid.
+
 .. _conditions:
 
 Conditional Properties
@@ -899,40 +1001,40 @@ Some properties might only sometimes be needed, based on some conditions, such a
     :caption: A schema with a conditional property
 
     {
-      'title': 'Example Object',
-      'type': 'object',
-      'properties': {
-        'name': {
-          'title': 'Object Name',
-          'type': 'text',
-          'languages': ['en', 'de']
+      "title": "Example Object",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Object Name",
+          "type": "text",
+          "languages": ["en", "de"]
         },
-        'dropdown': {
-          'title': 'Dropdown',
-          'type': 'text',
-          'choices': [
-            {'en': 'A'},
-            {'en': 'B'},
+        "dropdown": {
+          "title": "Dropdown",
+          "type": "text",
+          "choices": [
+            {"en": "A"},
+            {"en": "B"},
           ],
-          'default': {'en': 'A'}
+          "default": {"en": "A"}
         },
-        'conditional_text': {
-          'title': 'Conditional Text',
-          'type': 'text',
-          'markdown': true,
-          'conditions': [
+        "conditional_text": {
+          "title": "Conditional Text",
+          "type": "text",
+          "markdown": true,
+          "conditions": [
             {
-              'type': 'choice_equals',
-              'property_name': 'dropdown',
-              'choice': {'en': 'B'}
+              "type": "choice_equals",
+              "property_name": "dropdown",
+              "choice": {"en": "B"}
             }
           ]
         }
       },
-      'required': ['name']
+      "required": ["name"]
     }
 
-In the example schema above the property ``conditional_text`` will only be enabled if its ``choice_equals`` condition is fulfilled, that is if the ``dropdown`` property has the value ``{'en': 'B'}`` selected.
+In the example schema above the property ``conditional_text`` will only be enabled if its ``choice_equals`` condition is fulfilled, that is if the ``dropdown`` property has the value ``{"en": "B"}`` selected.
 
 The following types of conditions are supported by SampleDB:
 
@@ -945,9 +1047,9 @@ For this type of condition, the ``property_name`` attribute must be the name of 
     :caption: A choice_equals condition
 
     {
-      'type': 'choice_equals',
-      'property_name': 'dropdown',
-      'choice': {'en': 'B'}
+      "type": "choice_equals",
+      "property_name": "dropdown",
+      "choice": {"en": "B"}
     }
 
 user_equals
@@ -959,9 +1061,9 @@ For this type of condition, the ``property_name`` attribute must be the name of 
     :caption: A user_equals condition
 
     {
-      'type': 'user_equals',
-      'property_name': 'client',
-      'user_id': 1
+      "type": "user_equals",
+      "property_name": "client",
+      "user_id": 1
     }
 
 If the ``user_id`` is set to ``null`` instead, the condition will be fulfilled if no user has been selected.
@@ -970,9 +1072,9 @@ If the ``user_id`` is set to ``null`` instead, the condition will be fulfilled i
     :caption: A user_equals condition for not having selected a user
 
     {
-      'type': 'user_equals',
-      'property_name': 'client',
-      'user_id': null
+      "type": "user_equals",
+      "property_name": "client",
+      "user_id": null
     }
 
 bool_equals
@@ -984,9 +1086,9 @@ For this type of condition, the ``property_name`` attribute must be the name of 
     :caption: A bool_equals condition
 
     {
-      'type': 'bool_equals',
-      'property_name': 'heating_on',
-      'value': true
+      "type": "bool_equals",
+      "property_name": "heating_on",
+      "value": true
     }
 
 object_equals
@@ -998,9 +1100,9 @@ For this type of condition, the ``property_name`` attribute must be the name of 
     :caption: An object_equals condition
 
     {
-      'type': 'object_equals',
-      'property_name': 'precursor',
-      'object_id': 1
+      "type": "object_equals",
+      "property_name": "precursor",
+      "object_id": 1
     }
 
 If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled if no user has been selected.
@@ -1009,9 +1111,69 @@ If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled
     :caption: An object_equals condition for not having selected an object
 
     {
-      'type': 'object_equals',
-      'property_name': 'precursor',
-      'object_id': null
+      "type": "object_equals",
+      "property_name": "precursor",
+      "object_id": null
+    }
+
+any / all
+`````````
+
+To denote that either only one or all of a list of conditions need to be fulfilled, the ``any`` or ``all`` condition type can be used, containing other conditions. An ``any`` condition is fulfilled, if any one of the conditions in it is fulfilled. If it does not contain any conditions, it will be considered as not being fulfilled. An ``all`` condition is fulfilled, if all of the conditions in it are fulfilled. If it does not contain any conditions, it will be considered as being fulfilled.
+
+.. code-block:: javascript
+    :caption: An any condition
+
+    {
+      "type": "any",
+      "conditions": [
+        {
+          "type": "bool_equals",
+          "property_name": "example_bool_1",
+          "value": true
+        },
+        {
+          "type": "bool_equals",
+          "property_name": "example_bool_2",
+          "value": true
+        }
+      ]
+    }
+
+.. code-block:: javascript
+    :caption: An all condition
+
+    {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "bool_equals",
+          "property_name": "example_bool_1",
+          "value": true
+        },
+        {
+          "type": "bool_equals",
+          "property_name": "example_bool_2",
+          "value": true
+        }
+      ]
+    }
+
+not
+```
+
+To denote that a certain condition must not be met, the ``not`` condition type can be used together with that other condition.
+
+.. code-block:: javascript
+    :caption: A not condition
+
+    {
+      "type": "not",
+      "condition": {
+        "type": "object_equals",
+        "property_name": "example_object",
+        "object_id": null
+      }
     }
 
 .. note:: If you need a new type of conditions, please `open an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_ to let us know.

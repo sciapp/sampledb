@@ -5,6 +5,7 @@
 
 import json
 import base64
+import typing
 from io import BytesIO
 import os
 from urllib.parse import quote_plus
@@ -14,7 +15,8 @@ from math import log10
 import flask
 import flask_babel
 import flask_login
-from flask_babel import format_number, format_datetime, format_date, format_decimal, format_scientific
+from flask_babel import format_datetime, format_date, get_locale
+from babel import numbers
 import qrcode
 import qrcode.image.svg
 import plotly
@@ -27,6 +29,7 @@ from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.settings import get_user_settings
+from ..logic.action_permissions import get_sorted_actions_for_user
 
 
 def jinja_filter(func):
@@ -126,26 +129,30 @@ def to_json_no_extra_escapes(json_object, indent=None):
     return json.dumps(json_object, indent=indent)
 
 
-def custom_format_datetime(date, format='%Y-%m-%d %H:%M:%S'):
+def custom_format_datetime(
+        utc_datetime: typing.Union[str, datetime],
+        format: typing.Optional[str] = None
+) -> str:
     """
     Returns a reformatted date in the given format.
 
-    :param date: a string representing a date in the given format
-    :param format: a string for the format of the given date
-    :return: the reformatted date or in case of an error the input date
+    :param utc_datetime: a datetime string or object in UTC
+    :param format: the target format or None for the user's medium-length format
+    :return: the reformatted datetime or utc_datetime in case of an error
     """
     try:
-        if isinstance(date, datetime):
-            datetime_obj = date
-        else:
-            datetime_obj = datetime.strptime(date, format)
-        if format == '%Y-%m-%d %H:%M:%S':
+        if not isinstance(utc_datetime, datetime):
+            utc_datetime = parse_datetime_string(utc_datetime)
+        if format is None:
             format2 = 'medium'
-            return format_datetime(datetime_obj, format=format2)
+            return format_datetime(utc_datetime, format=format2)
         else:
-            return format_date(datetime_obj.date())
+            settings = get_user_settings(flask_login.current_user.id)
+            utc_datetime = pytz.utc.localize(utc_datetime)
+            local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
+            return local_datetime.strftime(format)
     except ValueError:
-        return date
+        return utc_datetime
 
 
 def custom_format_date(date, format='%Y-%m-%d'):
@@ -168,12 +175,11 @@ def custom_format_number(number):
         float(number)
     except ValueError:
         return number
+    locale = get_locale()
     if float(number) != 0:
-        if log10(abs(float(number))) <= -5.0 or int(log10(abs(float(number)))) >= 6:
-            return format_scientific(number)
-    if type(number) is int:
-        return format_number(number)
-    return format_decimal(number)
+        if not -5 < int(log10(abs(float(number)))) < 6:
+            return numbers.format_scientific(number, locale=locale, decimal_quantization=False)
+    return numbers.format_decimal(number, locale=locale, decimal_quantization=False, group_separator=False)
 
 
 @jinja_filter
@@ -182,11 +188,8 @@ def parse_datetime_string(datetime_string):
 
 
 @jinja_filter
-def default_format_datetime(utc_datetime):
-    settings = get_user_settings(flask_login.current_user.id)
-    utc_datetime = pytz.utc.localize(utc_datetime)
-    local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
-    return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
+def default_format_datetime(utc_datetime: typing.Union[str, datetime]) -> str:
+    return custom_format_datetime(utc_datetime, format='%Y-%m-%d %H:%M:%S')
 
 
 @jinja_filter
@@ -239,23 +242,33 @@ _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
 _jinja_filters['to_string_if_dict'] = to_string_if_dict
 
 
+def get_style_aliases(style):
+    return {
+        'horizontal_table': ['table', 'horizontal_table']
+    }.get(style, [style])
+
+
 def get_template(template_folder, default_prefix, schema):
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = schema["type"] + ".html"
 
     file_order = [(default_prefix + base_file)]
     if schema.get('parent_style'):
-        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + base_file))
+        for parent_style in get_style_aliases(schema['parent_style']):
+            file_order.insert(0, (default_prefix + parent_style + "_" + base_file))
     if schema.get('style'):
-        file_order.insert(0, (default_prefix + schema["style"] + "_" + base_file))
+        for style in get_style_aliases(schema['style']):
+            file_order.insert(0, (default_prefix + style + "_" + base_file))
     if schema.get('parent_style') and schema.get('style'):
-        file_order.insert(0, (default_prefix + schema["parent_style"] + "_" + schema.get('style') + "_" + base_file))
+        for style in get_style_aliases(schema['style']):
+            for parent_style in get_style_aliases(schema['parent_style']):
+                file_order.insert(0, (default_prefix + parent_style + "_" + style + "_" + base_file))
 
     for file in file_order:
         if os.path.exists(os.path.join(system_path, file)):
-            return (template_folder + file)
+            return template_folder + file
 
-    return (template_folder + default_prefix + base_file)
+    return template_folder + default_prefix + base_file
 
 
 def get_form_template(schema):
@@ -277,8 +290,17 @@ def get_local_month_names():
     ]
 
 
+def get_templates(user_id):
+    return [
+        action
+        for action in get_sorted_actions_for_user(user_id=user_id)
+        if action.type.is_template
+    ]
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
 _jinja_functions['get_local_month_names'] = get_local_month_names
 _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
+_jinja_functions['get_templates'] = get_templates

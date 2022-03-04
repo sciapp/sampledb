@@ -640,35 +640,47 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     permissions_for_project_id = None
     copy_permissions_object_id = None
     if object is None:
-        if flask.request.form.get('permissions_method') == 'copy_permissions' and flask.request.form.get('copy_permissions_object_id'):
-            copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
-            try:
-                copy_permissions_object_id = int(copy_permissions_object_id)
-                if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+        if flask.request.form.get('permissions_method') == 'copy_permissions':
+            if flask.request.form.get('copy_permissions_object_id'):
+                copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
+                try:
+                    copy_permissions_object_id = int(copy_permissions_object_id)
+                    if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+                        flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
+                        copy_permissions_object_id = None
+                except Exception:
                     flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
                     copy_permissions_object_id = None
-            except Exception:
-                flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
+            else:
+                flask.flash(_("No object selected. Default permissions will be applied."), 'error')
                 copy_permissions_object_id = None
-        elif flask.request.form.get('permissions_method') == 'permissions_for_group' and flask.request.form.get('permissions_for_group_group_id'):
-            permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
-            try:
-                permissions_for_group_id = int(permissions_for_group_id)
-                if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
+        elif flask.request.form.get('permissions_method') == 'permissions_for_group':
+            if flask.request.form.get('permissions_for_group_group_id'):
+                permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
+                try:
+                    permissions_for_group_id = int(permissions_for_group_id)
+                    if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
+                        flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
+                        permissions_for_group_id = None
+                except Exception:
                     flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
                     permissions_for_group_id = None
-            except Exception:
-                flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
+            else:
+                flask.flash(_("No basic group selected. Default permissions will be applied."), 'error')
                 permissions_for_group_id = None
-        elif flask.request.form.get('permissions_method') == 'permissions_for_project' and flask.request.form.get('permissions_for_project_project_id'):
-            permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
-            try:
-                permissions_for_project_id = int(permissions_for_project_id)
-                if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+        elif flask.request.form.get('permissions_method') == 'permissions_for_project':
+            if flask.request.form.get('permissions_for_project_project_id'):
+                permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
+                try:
+                    permissions_for_project_id = int(permissions_for_project_id)
+                    if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+                        flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
+                        permissions_for_project_id = None
+                except Exception:
                     flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
                     permissions_for_project_id = None
-            except Exception:
-                flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
+            else:
+                flask.flash(_("No project group selected. Default permissions will be applied."), 'error')
                 permissions_for_project_id = None
 
     if previous_object is not None:
@@ -679,8 +691,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         action_id = action.id
         previous_object_id = None
         has_grant_for_previous_object = False
-    errors = []
-    object_errors = {}
+    errors = {}
     form_data = {}
     previous_actions = []
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
@@ -690,21 +701,21 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         form_data = {k: v[0] for k, v in raw_form_data.items()}
         if 'input_num_batch_objects' in form_data:
             try:
-                num_objects_in_batch = int(form_data['input_num_batch_objects'])
-            except ValueError:
-                try:
-                    # The form allows notations like '1.2e1' for '12', however
-                    # Python can only parse these as floats
-                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
-                    if num_objects_in_batch == int(num_objects_in_batch):
-                        num_objects_in_batch = int(num_objects_in_batch)
-                    else:
-                        raise
-                except ValueError:
-                    errors.append('input_num_batch_objects')
-                    num_objects_in_batch = None
+                # The form allows notations like '1.2e1' for '12', however
+                # Python can only parse these as floats
+                num_objects_in_batch = float(form_data['input_num_batch_objects'])
+                if num_objects_in_batch == int(num_objects_in_batch):
+                    num_objects_in_batch = int(num_objects_in_batch)
                 else:
+                    raise ValueError()
+                if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE'] or num_objects_in_batch <= 0:
+                    if num_objects_in_batch <= 0:
+                        raise ValueError()
                     form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+                    errors['input_num_batch_objects'] = _('The maximum number of objects in one batch is %(max_batch_size)s.', max_batch_size=flask.current_app.config['MAX_BATCH_SIZE'])
+            except ValueError:
+                errors['input_num_batch_objects'] = _('The number of objects in batch must be an positive integer.')
+                num_objects_in_batch = None
             else:
                 form_data['input_num_batch_objects'] = str(num_objects_in_batch)
         else:
@@ -741,8 +752,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             else:
                 batch_base_name = None
                 name_suffix_format = None
-            object_data, object_errors = parse_form_data(raw_form_data, schema)
-            errors += object_errors
+            object_data, parsing_errors = parse_form_data(raw_form_data, schema)
+            errors.update(parsing_errors)
             if object_data is not None and not errors:
                 try:
                     validate(object_data, schema)
@@ -861,6 +872,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     english = get_language(Language.ENGLISH)
 
     if object is None:
+        if get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:
+            flask.flash(_('Creating objects with this action has been disabled.'), 'error')
+            return flask.redirect(flask.url_for('.action', action_id=action_id))
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
@@ -876,7 +890,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             schema=schema,
             data=data,
             errors=errors,
-            object_errors=object_errors,
             form_data=form_data,
             previous_actions=serializer.dumps(previous_actions),
             form=form,
@@ -907,7 +920,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             data=data,
             object_id=object.object_id,
             errors=errors,
-            object_errors=object_errors,
             form_data=form_data,
             previous_actions=serializer.dumps(previous_actions),
             form=form,
@@ -1136,39 +1148,12 @@ def show_inline_edit(obj, action):
                 except Exception:
                     pass
 
-    errors = []
-    object_errors = {}
+    errors = {}
     form_data = {}
-    previous_actions = []
-    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
         raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
         form_data = {k: v[0] for k, v in raw_form_data.items()}
-        if 'input_num_batch_objects' in form_data:
-            try:
-                num_objects_in_batch = int(form_data['input_num_batch_objects'])
-            except ValueError:
-                try:
-                    # The form allows notations like '1.2e1' for '12', however
-                    # Python can only parse these as floats
-                    num_objects_in_batch = float(form_data['input_num_batch_objects'])
-                    if num_objects_in_batch == int(num_objects_in_batch):
-                        num_objects_in_batch = int(num_objects_in_batch)
-                    else:
-                        raise
-                except ValueError:
-                    errors.append('input_num_batch_objects')
-                else:
-                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-            else:
-                form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-
-        if 'previous_actions' in flask.request.form:
-            try:
-                previous_actions = serializer.loads(flask.request.form['previous_actions'])
-            except itsdangerous.BadData:
-                flask.abort(400)
 
     if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
         referencable_objects = get_objects_with_permissions(
@@ -1204,9 +1189,8 @@ def show_inline_edit(obj, action):
 
     form_kwargs = {
         "errors": errors,
-        "object_errors": object_errors,
+        "errors": errors,
         "form_data": form_data,
-        "previous_actions": serializer.dumps(previous_actions),
         "form": form,
         "referencable_objects": referencable_objects,
         "sorted_actions": sorted_actions,
@@ -1648,21 +1632,42 @@ def referencable_objects():
                     "message": "argument {} is not a valid permission.".format(flask.request.args['required_perm'])
                 }, 400
 
+    action_ids = None
+    if 'action_ids' in flask.request.args:
+        action_ids = flask.request.args['action_ids']
+        try:
+            action_ids = json.loads(action_ids)
+        except Exception:
+            action_ids = None
+        else:
+            if type(action_ids) is not list:
+                action_ids = None
+            elif -1 in action_ids:
+                action_ids = None
+            elif not all(type(action_id) is int for action_id in action_ids):
+                action_ids = None
+
     referencable_objects = get_object_info_with_permissions(
         user_id=flask_login.current_user.id,
         permissions=required_perm,
+        action_ids=action_ids
     )
 
     def dictify(x):
         return {
             'id': x.object_id,
-            'text': flask.escape('{} (#{})'.format(get_translated_text(x.name_json), x.object_id)),
+            'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '&mdash;', x.object_id),
             'action_id': x.action_id,
             'max_permission': x.max_permission,
             'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
         }
 
-    return {'referencable_objects': [dictify(x) for x in referencable_objects]}
+    return {
+        'referencable_objects': [
+            dictify(object)
+            for object in referencable_objects
+        ]
+    }
 
 
 @frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])

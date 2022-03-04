@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2021-10-28 15:17+0200\n"
+"POT-Creation-Date: 2022-02-28 09:32+0100\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -47,6 +47,13 @@ msgstr ""
 
 msgid "Invalid user ID."
 msgstr "Ungültige Nutzer-ID."
+
+msgid ""
+"The used template does not exist anymore. Use the JSON editor to edit the"
+" existing action."
+msgstr ""
+"Die verwendete Schema-Vorlage existiert nicht mehr. Bitte verwenden Sie "
+"den JSON-Editor um die Aktion zu bearbeiten."
 
 msgid "Insufficient permissions to use the requested action as a template."
 msgstr ""
@@ -225,6 +232,9 @@ msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
 "werden angewandt."
 
+msgid "No object selected. Default permissions will be applied."
+msgstr "Kein Objekt ausgewählt. Standardberechtigungen werden angewandt."
+
 msgid ""
 "Unable to grant permissions to basic group. Default permissions will be "
 "applied."
@@ -232,12 +242,27 @@ msgstr ""
 "Rechtevergabe-Berechtigungen konnten nicht an die einfache Gruppe "
 "vergeben werden. Standardberechtigungen werden angewandt."
 
+msgid "No basic group selected. Default permissions will be applied."
+msgstr "Keine einfache Gruppe ausgewählt. Standardberechtigungen werden angewandt."
+
 msgid ""
 "Unable to grant permissions to project group. Default permissions will be"
 " applied."
 msgstr ""
 "Rechtevergabe-Berechtigungen konnten nicht an die Projektgruppe vergeben "
 "werden. Standardberechtigungen werden angewandt."
+
+msgid "No project group selected. Default permissions will be applied."
+msgstr "Keine Projektgruppe asugewählt. Standardberechtigungen werden angewandt."
+
+#, python-format
+msgid "The maximum number of objects in one batch is %(max_batch_size)s."
+msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
+
+msgid "The number of objects in batch must be an positive integer."
+msgstr ""
+"Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl "
+"sein."
 
 msgid "The objects were created successfully."
 msgstr "Die Objekte wurden erfolgreich erstellt."
@@ -247,6 +272,9 @@ msgstr "Das Objekt wurde erfolgreich erstellt."
 
 msgid "The object was updated successfully."
 msgstr "Das Objekt wurde erfolgreich aktualisiert."
+
+msgid "Creating objects with this action has been disabled."
+msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
 
 msgid "Unknown"
 msgstr "Unbekannt"
@@ -802,6 +830,36 @@ msgstr "Endpunkt"
 msgid "This API token has not been used so far."
 msgstr "Dieses API Token ist noch nicht benutzt worden."
 
+msgid "Bold"
+msgstr "Fettdruck"
+
+msgid "Italic"
+msgstr "Kursiv"
+
+msgid "Heading"
+msgstr "Überschrift"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Generic List"
+msgstr "Liste"
+
+msgid "Numbered List"
+msgstr "Nummerierte Liste"
+
+msgid "Create Link"
+msgstr "Link erstellen"
+
+msgid "Upload Image"
+msgstr "Bild hochladen"
+
+msgid "Insert Table"
+msgstr "Tabelle einfügen"
+
+msgid "Toggle Preview"
+msgstr "Vorschau ein-/ausschalten"
+
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
 
@@ -1034,13 +1092,12 @@ msgstr ""
 
 #, python-format
 msgid ""
-"This is a preview installation of %(service_name)s, the sample and "
-"measurement metadata database at PGI / JCNS. It is used for development, "
-"may be offline at any time and the <strong>data will be deleted!</strong>"
+"This is a preview installation of %(service_name)s. It is used for "
+"testing, may be offline at any time and the <strong>data will be "
+"deleted!</strong>"
 msgstr ""
-"Dies ist eine Vorschauinstallation von %(service_name)s, der Datenbank "
-"für Proben- und Messungsmetadaten an PGI / JCNS. Sie wird zur Entwicklung"
-" genutzt und kann daher jederzeit ausfallen und <strong>die hier "
+"Dies ist eine Vorschauinstallation von %(service_name)s. Sie wird für Tests"
+" genutzt, daher kann sie jederzeit ausfallen und <strong>die hier "
 "gespeicherten Daten werden gelöscht werden!</strong>"
 
 #, python-format
@@ -1493,6 +1550,9 @@ msgstr "Ja &mdash; Zeige Objekttyp und -ID, z.B. \"Probe #4\""
 msgid "No &mdash; Hide object type and id"
 msgstr "Nein &mdash; Verstecke Objekttyp und -ID"
 
+msgid "Default &mdash; Use the site-wide default setting"
+msgstr "Standard &mdash; Verwende die dienstweite Standardeinstellung"
+
 msgid "Show object schema titles"
 msgstr "Zeige Objekt-Schema Titel"
 
@@ -1501,9 +1561,6 @@ msgstr "Ja &mdash; Zeige Objekt-Schema Titel beim Betrachten von Metadaten"
 
 msgid "No &mdash; Hide object schema titles when viewing metadata"
 msgstr "Nein &mdash; Verstecke Objekt-Schema Titel beim Betrachten von Metadaten"
-
-msgid "Default &mdash; Use the site-wide default setting"
-msgstr "Standard &mdash; Verwende die dienstweite Standardeinstellung"
 
 msgid "Language"
 msgstr "Sprache"
@@ -1722,11 +1779,11 @@ msgstr "Wiederherstellungs-E-Mail senden"
 msgid ""
 "For information on the search function, see the <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/user_guide/objects.html#search\">User Guide</a>."
+"juelich.de/SampleDB/user_guide/search.html\">User Guide</a>."
 msgstr ""
 "Informationen zur Suchfunktion finden Sie im <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/user_guide/objects.html#search\">Benutzerhandbuch</a>."
+"juelich.de/SampleDB/user_guide/search.html\">Benutzerhandbuch</a>."
 
 msgid "Search..."
 msgstr "Suche..."
@@ -2015,6 +2072,32 @@ msgstr ""
 "Nein, zugehörige Objekte werden für Objekte nicht angezeigt, die mit "
 "Aktionen diesen Typs erstellt wurden"
 
+msgid "Disable Creating Objects"
+msgstr "Verhindere Erzeugen von Objekten"
+
+msgid "Yes, disable creating objects of this type"
+msgstr "Ja, verhindere das Erzeugen von Objekten dieses Typs"
+
+msgid "No, allow creating objects of this type"
+msgstr "Nein, erlaube das Erzeugen von Objekten dieses Typs"
+
+msgid "Allow including as Schema Template"
+msgstr "Erlaube das Einbinden als Schema-Vorlage"
+
+msgid ""
+"Yes, allow including actions of this type as schema templates in other "
+"actions"
+msgstr ""
+"Ja, erlaube das Einbinden von Aktionen dieses Typs als Schema-Vorlage in "
+"anderen Aktionen"
+
+msgid ""
+"No, disable including actions of this type as schema templates in other "
+"actions"
+msgstr ""
+"Nein, verhindere das Einbinden von Aktionen dieses Typs als Schema-"
+"Vorlage in anderen Aktionen"
+
 msgid "View Actions"
 msgstr "Aktionen anzeigen"
 
@@ -2070,7 +2153,7 @@ msgstr ""
 "Zeichen)."
 
 msgid "Only administrators can create actions of this type"
-msgstr "Nur Administratoren können Aktionen diesen Typs erstellen"
+msgstr "Nur Administratoren können Aktionen dieses Typs erstellen"
 
 msgid "Show this action type on the frontpage"
 msgstr "Aktionstyp auf Startseite anzeigen"
@@ -2080,12 +2163,12 @@ msgstr "Aktionen dieses Typs in der Navigationsleiste anzeigen"
 
 msgid "Enable labels for objects created with actions of this type"
 msgstr ""
-"Etiketterstellung für Objekte aktivieren, die mit Aktionen diesen Typs "
+"Etiketterstellung für Objekte aktivieren, die mit Aktionen dieses Typs "
 "erstellt wurden"
 
 msgid "Enable files for objects created with actions of this type"
 msgstr ""
-"Dateien für Objekte aktivieren, die mit Aktionen diesen Typs erstellt "
+"Dateien für Objekte aktivieren, die mit Aktionen dieses Typs erstellt "
 "wurden"
 
 msgid ""
@@ -2093,27 +2176,35 @@ msgid ""
 "of this type"
 msgstr ""
 "Orte und verantwortliche Nutzer für Objekte aktivieren, die mit Aktionen "
-"diesen Typs erstellt wurden"
+"dieses Typs erstellt wurden"
 
 msgid "Enable publications for objects created with actions of this type"
 msgstr ""
-"Publikationen für Objekte aktivieren, die mit Aktionen diesen Typs "
+"Publikationen für Objekte aktivieren, die mit Aktionen dieses Typs "
 "erstellt wurden"
 
 msgid "Enable comments for objects created with actions of this type"
 msgstr ""
-"Kommentare für Objekte aktivieren, die mit Aktionen diesen Typs erstellt "
+"Kommentare für Objekte aktivieren, die mit Aktionen dieses Typs erstellt "
 "wurden"
 
 msgid "Enable the activity log for objects created with actions of this type"
 msgstr ""
-"Aktivitäts-Log für Objekte aktivieren, die mit Aktionen diesen Typs "
+"Aktivitäts-Log für Objekte aktivieren, die mit Aktionen dieses Typs "
 "erstellt wurden"
 
 msgid "Show related objects for objects created with actions of this type"
 msgstr ""
-"Zugehörige Objekte für Objekte anzeigen, die mit Aktionen diesen Typs "
+"Zugehörige Objekte für Objekte anzeigen, die mit Aktionen dieses Typs "
 "erstellt wurden"
+
+msgid "Disable creating objects of this action type"
+msgstr "Verhindere das Erzeugen von Objekten dieses Aktionstyps"
+
+msgid "Allow actions of this type as schema templates in other actions"
+msgstr ""
+"Erlaube das Einbinden von Aktionen dieses Typs als Schema-Vorlage in "
+"anderen Aktionen"
 
 msgid ""
 "Action Types represent different kinds of actions, such as sample "
@@ -2215,6 +2306,9 @@ msgstr "Bitte geben Sie den Standardwert (in Basis-Einheiten) als Zahl ein."
 msgid "Please enter valid units"
 msgstr "Bitte geben Sie gültige Einheiten ein."
 
+msgid "Schema Template input must not be empty"
+msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
+
 #, python-format
 msgid ""
 "<strong>Warning:</strong> Custom Actions are an advanced feature that "
@@ -2252,6 +2346,13 @@ msgstr "Nutzerspezifische Aktion"
 
 msgid "Public"
 msgstr "Öffentlich"
+
+msgid ""
+"The 'name', 'tags', and 'hazards' properties will be removed when using "
+"this schema template in other actions."
+msgstr ""
+"Wenn Sie diese Schema-Vorlage nutzen, werden die Eigenschaften 'name', "
+"'tags' und 'hazards' entfernt."
 
 msgid "Instrument"
 msgstr "Instrument"
@@ -2324,6 +2425,9 @@ msgstr "Objektreferenz"
 
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
+
+msgid "Schema Template"
+msgstr "Schema-Vorlage"
 
 msgid "Required"
 msgstr "Erforderlich"
@@ -3154,6 +3258,19 @@ msgstr "Keine Kategorie ausgewählt"
 msgid "required"
 msgstr "erforderlich"
 
+msgid "Please select an object to copy the permissions from."
+msgstr "Bitte wählen Sie eine Objekt aus, um dessen Berechtigungen zu kopieren."
+
+msgid "Please select a project group to give permissions to."
+msgstr ""
+"Bitte wählen Sie eine Projektgruppe aus, um dieser Berechtigungen zu "
+"geben."
+
+msgid "Please select a basic group to give permissions to."
+msgstr ""
+"Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
+"geben."
+
 msgid "This object does not pose any of these hazards."
 msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
 
@@ -3169,6 +3286,9 @@ msgstr "Feld %(index)s"
 
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
+
+msgid "Unsupported item type for horizontal_table style."
+msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
 #, python-format
 msgid ""
@@ -3756,9 +3876,6 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
 msgid "files selected"
 msgstr "Dateien ausgewählt"
-
-msgid "Unsupported item type for horizontal_table style."
-msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
 msgid "hide plot"
 msgstr "Plot ausblenden"

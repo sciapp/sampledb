@@ -22,6 +22,8 @@ def test_set_action_type_translation():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False
     )
     action_type_translations.set_action_type_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
@@ -102,6 +104,8 @@ def test_get_action_translations_for_action():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False
     )
     assert not action_type_translations.get_action_type_translations_for_action_type(action_type.id)
 
@@ -154,6 +158,8 @@ def test_get_action_translation_for_action_in_language():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False
     )
     with pytest.raises(errors.ActionTypeTranslationDoesNotExistError):
         action_type_translations.get_action_type_translation_for_action_type_in_language(
@@ -257,6 +263,8 @@ def test_delete_action_translation():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        disable_create_objects=True,
+        is_template=True
     )
     action_type_translations.set_action_type_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,

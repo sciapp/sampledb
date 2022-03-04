@@ -197,14 +197,18 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str]) -> No
         raise ValidationError('instance must be dict', path)
     errors = []
 
+    properties_with_unfulfilled_conditions = []
     for property_name, property_schema in schema['properties'].items():
-        if property_name not in instance:
-            continue
         if not are_conditions_fulfilled(property_schema.get('conditions'), instance):
-            errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
+            properties_with_unfulfilled_conditions.append(property_name)
+            if property_name in instance or (property_name == 'name' and not path):
+                errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
 
     if 'required' in schema:
         for property_name in schema['required']:
+            if property_name in properties_with_unfulfilled_conditions:
+                # this property must not be included, as its conditions are not fulfilled
+                continue
             if property_name not in instance:
                 errors.append(ValidationError('missing required property "{}"'.format(property_name), path + [property_name]))
     for property_name, property_value in instance.items():
@@ -551,11 +555,19 @@ def _validate_object_reference(instance: dict, schema: dict, path: typing.List[s
         object = objects.get_object(object_id=instance['object_id'])
     except ObjectDoesNotExistError:
         raise ValidationError('object does not exist', path)
-    if 'action_id' in schema and isinstance(schema['action_id'], int) and object.action_id != schema['action_id']:
-        raise ValidationError('object has wrong action', path)
-    if 'action_type_id' in schema and isinstance(schema['action_type_id'], int):
-        action = actions.get_action(object.action_id)
-        if action.type_id != schema['action_type_id']:
+    if 'action_id' in schema:
+        if type(schema['action_id']) == int:
+            valid_action_ids = [schema['action_id']]
+        else:
+            valid_action_ids = schema['action_id']
+        if valid_action_ids is not None and object.action_id not in valid_action_ids:
+            raise ValidationError('object has wrong action', path)
+    if 'action_type_id' in schema:
+        if type(schema['action_type_id']) == int:
+            valid_action_type_ids = [schema['action_type_id']]
+        else:
+            valid_action_type_ids = schema['action_type_id']
+        if valid_action_type_ids is not None and actions.get_action(object.action_id).type_id not in valid_action_type_ids:
             raise ValidationError('object has wrong action type', path)
 
 

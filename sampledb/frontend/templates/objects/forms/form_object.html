@@ -1,5 +1,6 @@
 <!-- object start -->
 <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title | get_translated_text }}</strong>
+{% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
 <div style="">
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}

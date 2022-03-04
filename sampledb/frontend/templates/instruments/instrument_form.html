@@ -195,7 +195,7 @@
 
     <div class="hidden" id="name-template">
       <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
-        <input type="text" class="form-control" id="input-name" placeholder="{{ _('Name') }}" data-name="input-name" data-translation-attribute="name" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter instrument name (at most 100 characters).') }}" data-empty-text="{{ _('Please enter an instrument name in English.') }}">
+        <input type="text" class="form-control" placeholder="{{ _('Name') }}" data-name="input-name" data-translation-attribute="name" data-max-length="100" data-max-length-text="{{ _('Please enter a shorter instrument name (at most 100 characters).') }}" data-empty-text="{{ _('Please enter an instrument name in English.') }}">
         {% if allowed_language_ids | length > 1 %}
           <span class="input-group-addon language-addon" data-name="language"></span>
         {% endif %}
@@ -205,7 +205,7 @@
 
     <div class="hidden" id="description-template">
       <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
-      <textarea class="form-control input-description" style="resize: vertical; min-height: 371px" id="input-description" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
+      <textarea class="form-control input-description" style="resize: vertical; min-height: 371px" data-name="input-description" placeholder="{{ _('Description') }}" data-translation-attribute="description"></textarea>
         {% if allowed_language_ids | length > 1 %}
           <span class="input-group-addon language-addon" data-name="language"></span>
         {% endif %}
@@ -215,7 +215,7 @@
 
     <div class="hidden" id="short-description-template">
       <div {% if allowed_language_ids | length > 1 %}class="input-group"{% endif %} data-language-id="">
-        <textarea class="form-control input-short-description" style="resize: vertical; min-height: 171px" id="input-short-description" data-name="input-short-description" placeholder="{{_("Short Description") }}" data-translation-attribute="short_description"></textarea>
+        <textarea class="form-control input-short-description" style="resize: vertical; min-height: 171px" data-name="input-short-description" placeholder="{{_("Short Description") }}" data-translation-attribute="short_description"></textarea>
         {% if allowed_language_ids | length > 1 %}
           <span class="input-group-addon language-addon" data-name="language"></span>
         {% endif %}
@@ -237,7 +237,7 @@
 
     <div class="form-group" data-name="input-names">
       <div class="form-group row" style="padding-right: 10px; margin-bottom: 0;">
-        <label for="input-name" class="control-label col-md-10" style="margin-top: 5px">{{ _('Name') }}</label>
+        <label for="input-name-{{ ENGLISH.id }}" class="control-label col-md-10" style="margin-top: 5px">{{ _('Name') }}</label>
         <select class="selectpicker btn-xs col-md-2 select-language {% if allowed_language_ids | length <= 1 %}hidden{% endif %}" multiple="multiple" data-style="btn-default btn-xs" id="select-language-name">
           {% for language in languages %}
             <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" {% endif %}
@@ -262,7 +262,7 @@
 
     <div class="form-group" data-name="input-descriptions">
       <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
-        <label for="input-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown on the instrument site') }}</span></label>
+        <label for="input-description-{{ ENGLISH.id }}" class="control-label col-md-8" style="margin-top: 5px">{{ _("Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown on the instrument site') }}</span></label>
         <label for="input-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
           <input type="checkbox" id="input-markdown" name="{{ instrument_form.is_markdown.name }}" {% if instrument_form.is_markdown.data %}checked="checked"{% endif %}>
           {{ _('Use Markdown') }}
@@ -292,7 +292,7 @@
 
     <div class="form-group" data-name="input-short-descriptions">
       <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
-        <label for="input-short-description" class="control-label col-md-8" style="margin-top: 5px">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the instrument list') }}</span></label>
+        <label for="input-short-description-{{ ENGLISH.id }}" class="control-label col-md-8" style="margin-top: 5px">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the instrument list') }}</span></label>
         <label for="input-short-description-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
           <input type="checkbox" id="input-short-description-is-markdown" name="{{ instrument_form.short_description_is_markdown.name }}" {% if instrument_form.short_description_is_markdown.data %}checked="checked"{% endif %}>
           {{ _('Use Markdown') }}
@@ -319,7 +319,7 @@
     
     <div class="form-group" data-name="input-notes">
       <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
-        <label for="input-notes" class="control-label col-md-8" style="margin-top: 5px">{{ _('Instrument Scientist Notes') }}</label>
+        <label for="input-notes-{{ ENGLISH.id }}" class="control-label col-md-8" style="margin-top: 5px">{{ _('Instrument Scientist Notes') }}</label>
         <label for="input-notes-is-markdown" style="font-weight:400; padding-left: 10px; margin-top: 5px" class="text-right {% if allowed_language_ids | length <= 1 %}col-md-offset-2{% endif %} col-md-2">
           <input type="checkbox" id="input-notes-is-markdown" name="{{ instrument_form.notes_is_markdown.name }}" {% if instrument_form.notes_is_markdown.data %}checked="checked"{% endif %}>
           {{ _('Use Markdown') }}
@@ -347,8 +347,8 @@
     </div>
 
       <div class="form-group">
-        <label for="input-instrument_repsonsible_users" class="control-label">{{ _('Instrument Scientists')}}</label>
-        <select name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No user selected') }}">
+        <label for="input-instrument-responsible-users" class="control-label">{{ _('Instrument Scientists')}}</label>
+        <select id="input-instrument-responsible-users" name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No user selected') }}">
           {% for choice in instrument_form.instrument_responsible_users.choices %}
             <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }} (#{{ choice[0] }})</option>
           {% endfor %}

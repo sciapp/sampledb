@@ -1,6 +1,18 @@
 Changelog
 =========
 
+Version 0.20
+------------
+
+Released on March 4th, 2022.
+
+- Added support for any, all and not conditions
+- Improve Markdown field image uploads
+- Add schema templates
+- Support multiple action IDs or action type IDs for object reference schemas
+- Improved user interface
+- Fix number rounding
+
 Version 0.19.3
 --------------
 

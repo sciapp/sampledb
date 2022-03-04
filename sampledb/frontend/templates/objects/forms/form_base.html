@@ -17,6 +17,7 @@
   <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
 {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
   <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
 {% endif %}
@@ -32,17 +33,8 @@
       });
     });
 
-    $('textarea[data-markdown-textarea="true"]').each(function(_, e) {
-      var mde_field = new InscrybMDE({
-        element: e,
-        indentWithTabs: false,
-        spellChecker: false,
-        status: false,
-        hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-        showIcons: ["code", "table"],
-        minHeight: '100px',
-      });
-      setupImageDragAndDrop(mde_field);
+    $('textarea[data-markdown-textarea="true"]').each(function(_, element) {
+      setupImageDragAndDrop(initMarkdownField(element, '100px'));
     });
 
     $('textarea.plotly-chart-editor').each(function() {

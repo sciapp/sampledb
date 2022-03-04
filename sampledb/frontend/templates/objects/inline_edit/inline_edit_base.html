@@ -14,7 +14,6 @@
     {% set plot_counter = namespace(value=0) %}
     <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form" autocomplete="off">
         {{ form.csrf_token() }}
-        <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
         {% set id_prefix = "object_" %}
         {% include "objects/inline_edit/inline_edit_any.html" %}
     </form>

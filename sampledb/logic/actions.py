@@ -19,6 +19,7 @@ As actions form the basis for objects, they cannot be deleted. However, an
 action can be altered as long as the type and instrument stay the same.
 """
 
+import copy
 import collections
 import typing
 
@@ -40,7 +41,9 @@ class ActionType(collections.namedtuple('ActionType', [
     'enable_comments',
     'enable_activity_log',
     'enable_related_objects',
-    'enable_project_link'
+    'enable_project_link',
+    'disable_create_objects',
+    'is_template'
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
@@ -59,7 +62,9 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_comments: bool,
             enable_activity_log: bool,
             enable_related_objects: bool,
-            enable_project_link: bool
+            enable_project_link: bool,
+            disable_create_objects: bool,
+            is_template: bool
     ):
         self = super(ActionType, cls).__new__(
             cls,
@@ -74,7 +79,9 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_comments,
             enable_activity_log,
             enable_related_objects,
-            enable_project_link
+            enable_project_link,
+            disable_create_objects,
+            is_template
         )
         return self
 
@@ -92,7 +99,9 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_comments=action_type.enable_comments,
             enable_activity_log=action_type.enable_activity_log,
             enable_related_objects=action_type.enable_related_objects,
-            enable_project_link=action_type.enable_project_link
+            enable_project_link=action_type.enable_project_link,
+            disable_create_objects=action_type.disable_create_objects,
+            is_template=action_type.is_template
         )
 
     def __repr__(self):
@@ -137,7 +146,9 @@ def create_action_type(
         enable_comments: bool,
         enable_activity_log: bool,
         enable_related_objects: bool,
-        enable_project_link: bool
+        enable_project_link: bool,
+        disable_create_objects: bool,
+        is_template: bool
 ) -> ActionType:
     """
     Create a new action type.
@@ -166,7 +177,9 @@ def create_action_type(
         enable_comments=enable_comments,
         enable_activity_log=enable_activity_log,
         enable_related_objects=enable_related_objects,
-        enable_project_link=enable_project_link
+        enable_project_link=enable_project_link,
+        disable_create_objects=disable_create_objects,
+        is_template=is_template
     )
     db.session.add(action_type)
     db.session.commit()
@@ -185,7 +198,9 @@ def update_action_type(
         enable_comments: bool,
         enable_activity_log: bool,
         enable_related_objects: bool,
-        enable_project_link: bool
+        enable_project_link: bool,
+        disable_create_objects: bool,
+        is_template: bool
 ) -> ActionType:
     """
     Update an existing action type.
@@ -220,6 +235,8 @@ def update_action_type(
     action_type.enable_activity_log = enable_activity_log
     action_type.enable_related_objects = enable_related_objects
     action_type.enable_project_link = enable_project_link
+    action_type.disable_create_objects = disable_create_objects
+    action_type.is_template = is_template
     db.session.add(action_type)
     db.session.commit()
     return ActionType.from_database(action_type)
@@ -336,7 +353,7 @@ def update_action(
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
     """
-    schemas.validate_schema(schema)
+    schemas.validate_schema(schema, invalid_template_action_ids=[action_id])
     action = Action.query.get(action_id)
     if action is None:
         raise errors.ActionDoesNotExistError()
@@ -347,3 +364,35 @@ def update_action(
         action.is_hidden = is_hidden
     db.session.add(action)
     db.session.commit()
+    update_actions_using_template_action(action_id)
+
+
+def update_actions_using_template_action(
+        template_action_id: int
+) -> None:
+    """
+    Update the schemas of all actions using the given template action.
+
+    :param template_action_id: the ID of a template action
+    """
+    template_action_schema = get_action(template_action_id).schema
+    template_action_schema = schemas.templates.process_template_action_schema(template_action_schema)
+    actions = get_actions()
+    updated_template_action_ids = []
+    for action in actions:
+        if action.id == template_action_id:
+            continue
+        current_schema = copy.deepcopy(action.schema)
+        updated_schema = schemas.templates.update_schema_using_template_action(current_schema, template_action_id, template_action_schema)
+        if action.schema != updated_schema:
+            try:
+                schemas.validate_schema(updated_schema)
+            except errors.ValidationError:
+                continue
+            action.schema = updated_schema
+            db.session.add(action)
+            if action.type.is_template:
+                updated_template_action_ids.append(action.id)
+    db.session.commit()
+    for other_template_action_id in updated_template_action_ids:
+        update_actions_using_template_action(other_template_action_id)

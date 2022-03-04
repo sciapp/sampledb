@@ -18,6 +18,18 @@
   {% endblock %}
   <script type="text/javascript">
     window.application_root_path = '{{ url_for('frontend.index') }}';
+    window.markdown_button_translations = {
+        "Bold": "{{ _("Bold") }}",
+        "Italic": "{{ _("Italic") }}",
+        "Heading": "{{ _("Heading") }}",
+        "Code": "{{ _("Code") }}",
+        "Generic List": "{{ _("Generic List") }}",
+        "Numbered List": "{{ _("Numbered List") }}",
+        "Create Link": "{{ _("Create Link") }}",
+        "Upload Image": "{{ _("Upload Image") }}",
+        "Insert Table": "{{ _("Insert Table") }}",
+        "Toggle Preview": "{{ _("Toggle Preview") }}",
+    };
   </script>
 {% endblock %}
 </head>
@@ -127,7 +139,7 @@
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar %}
+              {% if action_type.show_in_navbar and not action_type.disable_create_objects %}
               <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
               {% endif %}
             {% endfor %}
@@ -137,7 +149,7 @@
           <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">{{ _('Objects') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar %}
+              {% if action_type.show_in_navbar and not action_type.disable_create_objects %}
               <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.translation.object_name_plural }}</a></li>
               {% endif %}
             {% endfor %}
@@ -153,6 +165,17 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
+            <li role="separator" class="divider template-separator" style="display: none"></li>
+            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
+              {% if action_type.show_in_navbar and action_type.disable_create_objects %}
+                <script type="text/javascript">
+                    window.onload = function() {
+                        $('.template-separator').css('display', 'block');
+                    }
+                </script>
+                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+              {% endif %}
+            {% endfor %}
             {% if current_user.is_admin %}
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.action_types') }}">{{ _('Action Types') }}</a></li>

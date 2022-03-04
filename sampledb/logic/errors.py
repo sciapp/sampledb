@@ -112,6 +112,10 @@ class SubprojectRelationshipDoesNotExistError(Exception):
     pass
 
 
+class CreatingObjectsDisabledError(Exception):
+    pass
+
+
 class SchemaError(Exception):
     def __init__(self, message, path):
         if path:
@@ -259,6 +263,14 @@ class MissingEnglishTranslationError(Exception):
 
 
 class InvalidNumberError(Exception):
+    pass
+
+
+class InvalidTemplateIDError(Exception):
+    pass
+
+
+class RecursiveTemplateError(Exception):
     pass
 
 

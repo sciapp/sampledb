@@ -75,6 +75,10 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
         text = form_data.get(id_prefix + '__text', [None])[0]
         if not text and not required:
             return None
+        # an empty text should get a min length error from validation, but a
+        # missing text can be omitted if there is a non-zero min length
+        if text is None and schema.get('minLength', 0) > 0:
+            return None
         if text is None:
             text = ""
         data = {
@@ -89,6 +93,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
     else:
         if not all(key.startswith(id_prefix + '__text_') for key in keys):
             raise ValueError('invalid text form data')
+        if not keys:
+            return None
         enabled_languages = form_data.get(id_prefix + '__text_languages', [])
         if 'en' not in enabled_languages:
             enabled_languages.append('en')
@@ -100,6 +106,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
             text = form_data.get(id_prefix + '__text_' + language, [None])[0]
             if not text and not required:
                 continue
+            if text is None and schema.get('minLength', 0) > 0:
+                return None
             if text is None:
                 text = ""
             data['text'][language] = text

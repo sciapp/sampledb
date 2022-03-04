@@ -11,7 +11,8 @@
     <div class="form-group row{% if 'input_num_batch_objects' in errors %} has-error{% elif 'input_num_batch_objects' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
       <label class="control-label col-md-3 required-label">{{ _('Number of Objects in Batch') }}</label>
       <div class="col-md-9">
-        <input type="number" min="1" max="100" step="1" value="{% if 'input_num_batch_objects' in form_data %}{{ form_data['input_num_batch_objects'] }}{% else %}1{% endif %}" class="form-control" name="input_num_batch_objects" />
+        <input type="number" min="1" max="{{ config['MAX_BATCH_SIZE'] }}" step="1" value="{% if 'input_num_batch_objects' in form_data %}{{ form_data['input_num_batch_objects'] }}{% else %}1{% endif %}" class="form-control" name="input_num_batch_objects" />
+        {% if 'input_num_batch_objects' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors['input_num_batch_objects'] }}</span>{% endif %}
       </div>
     </div>
     {% endif %}
@@ -77,6 +78,10 @@
         </select>
       </div>
       {% endif %}
+        <div class="col-md-offset-3 col-md-9">
+            <span class="help-block" id="permissionsHelpBlock">
+            </span>
+        </div>
     </div>
     {% if may_create_log_entry%}
     <div class="form-group clearfix" style="padding:0 0.75em">
@@ -122,19 +127,59 @@
     $('form').on('submit', function() {
       $('input').change();
       $('textarea').change();
+      let permissions_method = $('[name="permissions_method"]:checked').val();
+      let permissions_help_block = $('#permissionsHelpBlock');
+      permissions_help_block.text('');
+      permissions_help_block.parent().parent().find('.has-error').removeClass('has-error');
+      if (permissions_method === 'copy_permissions') {
+          let permissions_object_id_select = $('[name="copy_permissions_object_id"]');
+          if (permissions_object_id_select.selectpicker().val() === null) {
+              permissions_help_block.text('{{ _("Please select an object to copy the permissions from.") }}');
+              permissions_help_block.parent().addClass('has-error');
+              permissions_object_id_select.parent().parent().addClass('has-error');
+              return false;
+          }
+      } else if (permissions_method === 'permissions_for_project') {
+          let permissions_project_id_select = $('[name="permissions_for_project_project_id"]');
+          if (permissions_project_id_select.selectpicker().val() === null) {
+              permissions_help_block.text('{{ _("Please select a project group to give permissions to.") }}');
+              permissions_help_block.parent().addClass('has-error');
+              permissions_project_id_select.parent().parent().addClass('has-error');
+              return false;
+          }
+      } else if (permissions_method === 'permissions_for_group') {
+          let permissions_group_id_select = $('[name="permissions_for_group_group_id"]');
+          if (permissions_group_id_select.selectpicker().val() === null) {
+              permissions_help_block.text('{{ _("Please select a basic group to give permissions to.") }}');
+              permissions_help_block.parent().addClass('has-error');
+              permissions_group_id_select.parent().parent().addClass('has-error');
+              return false;
+          }
+      }
 
       return ($('[data-name="help-block-pattern"]').length === 0);
     });
-
+    {% if user_groups %}
     $('select[name="permissions_for_group_group_id"]').on('show.bs.select', function () {
       $('input[name="permissions_method"][value="permissions_for_group"]').prop('checked', true);
-    });
+    }).selectpicker('val', {{ request.form.get('permissions_for_group_group_id', 'null') }});
+    {% endif %}
+    {% if user_projects %}
     $('select[name="permissions_for_project_project_id"]').on('show.bs.select', function () {
       $('input[name="permissions_method"][value="permissions_for_project"]').prop('checked', true);
-    });
-    $('select[name="copy_permissions_object_id"]').on('show.bs.select', function () {
+    }).selectpicker('val', {{ request.form.get('permissions_for_project_project_id', 'null') }});
+    {% endif %}
+    {% if can_copy_permissions %}
+    let permissions_object_id_select = $('select[name="copy_permissions_object_id"]');
+    permissions_object_id_select.on('show.bs.select', function () {
       $('input[name="permissions_method"][value="copy_permissions"]').prop('checked', true);
     });
+    if (permissions_object_id_select.data('sampledbDefaultSelected')) {
+        permissions_object_id_select.selectpicker('val', permissions_object_id_select.data('sampledbDefaultSelected'));
+    } else {
+        permissions_object_id_select.selectpicker('val', null);
+    }
+    {% endif %}
   });
   </script>
 {% endblock%}

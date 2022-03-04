@@ -11,25 +11,58 @@
     {% endfor %}
   ];
   window.conditional_wrapper_scripts.push(function () {
-    {% for condition in schema['conditions'] %}
+    function update_conditions_result() {
+      function check_condition_fulfilled(condition) {
+        if (condition === true) {
+          return true
+        } else if (condition === false) {
+          return false;
+        } else if (condition.type === 'not') {
+          return !check_condition_fulfilled(condition.condition);
+        } else if (condition.type === 'all') {
+          return check_all_conditions_fulfilled(condition.conditions);
+        } else if (condition.type === 'any') {
+          return check_any_conditions_fulfilled(condition.conditions);
+        }
+      }
+      function check_all_conditions_fulfilled(conditions) {
+        for (let i = 0; i < conditions.length; i++) {
+          if (!check_condition_fulfilled(conditions[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      function check_any_conditions_fulfilled(conditions) {
+        for (let i = 0; i < conditions.length; i++) {
+          if (check_condition_fulfilled(conditions[i])) {
+            return true;
+          }
+        }
+        return false;
+      }
+      let all_conditions_fulfilled = check_all_conditions_fulfilled(window.conditional_wrapper_conditions["{{ id_prefix }}"]);
+      if (all_conditions_fulfilled) {
+        $('[data-condition-wrapper-for="{{ id_prefix }}"]').show();
+        $('[data-condition-replacement-for="{{ id_prefix }}"]').hide();
+      } else {
+        $('[data-condition-wrapper-for="{{ id_prefix }}"]').hide();
+        $('[data-condition-replacement-for="{{ id_prefix }}"]').show();
+      }
+      $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
+    }
+    {% macro handle_condition(condition, index) -%}
       {% if condition['type'] == 'choice_equals' %}
         {
           let choice_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__text' }}\"]");
 
           let evaluateCondition = function () {
             {% if condition['choice'] is none %}
-            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (choice_element.selectpicker('val')  === "");
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = (choice_element.selectpicker('val')  === "");
             {% else %}
-            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (!!choice_element.selectpicker('val') && choice_element.find('option:selected').data('valueBase64') === "{{ condition["choice"] | base64encode }}");
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = (!!choice_element.selectpicker('val') && choice_element.find('option:selected').data('valueBase64') === "{{ condition["choice"] | base64encode }}");
             {% endif %}
-
-            let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
-            if (all_conditions_fulfilled) {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').show();
-            } else {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').hide();
-            }
-            $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
+            update_conditions_result();
           }
 
           choice_element.on('changed.bs.select', evaluateCondition);
@@ -42,14 +75,8 @@
           let user_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__uid' }}\"]");
 
           let evaluateCondition = function () {
-            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (user_element.selectpicker('val') === "{{ condition["user_id"] if condition["user_id"] is not none else '' }}");
-            let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
-            if (all_conditions_fulfilled) {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').show();
-            } else {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').hide();
-            }
-            $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = (user_element.selectpicker('val') === "{{ condition["user_id"] if condition["user_id"] is not none else '' }}");
+            update_conditions_result();
           }
           user_element.on('changed.bs.select', evaluateCondition);
           user_element.on('loaded.bs.select', evaluateCondition);
@@ -61,14 +88,8 @@
           let bool_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__value' }}\"]");
 
           let evaluateCondition = function () {
-            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (bool_element.prop('checked') === {{ "true" if condition["value"] else "false" }});
-            let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
-            if (all_conditions_fulfilled) {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').show();
-            } else {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').hide();
-            }
-            $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = (bool_element.prop('checked') === {{ "true" if condition["value"] else "false" }});
+            update_conditions_result();
           }
           bool_element.on('change', evaluateCondition);
           evaluateCondition();
@@ -78,21 +99,33 @@
           let object_element = $("[name=\"{{ parent_id_prefix + '_' + condition['property_name'] + '__oid' }}\"]");
 
           let evaluateCondition = function () {
-            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ loop.index0 }}] = (object_element.selectpicker('val') === "{{ condition["object_id"] if condition["object_id"] is not none else '' }}");
-            let all_conditions_fulfilled = !window.conditional_wrapper_conditions["{{ id_prefix }}"].includes(false);
-            if (all_conditions_fulfilled) {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').show();
-            } else {
-              $('[data-condition-wrapper-for="{{ id_prefix }}"]').hide();
-            }
-            $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled);
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = (object_element.selectpicker('val') === "{{ condition["object_id"] if condition["object_id"] is not none else '' }}");
+            update_conditions_result();
           }
           object_element.on('changed.bs.select', evaluateCondition);
           object_element.on('loaded.bs.select', evaluateCondition);
           object_element.on('refreshed.bs.select', evaluateCondition);
           evaluateCondition();
         }
+      {% elif condition['type'] == 'any' %}
+        window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = {'type': 'any', 'conditions': []};
+        {% for sub_condition in condition.conditions %}
+          window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}]["conditions"][{{ loop.index0 }}] = false;
+          {{ handle_condition(sub_condition, index + ']["conditions"][' + (loop.index0 | string)) }}
+        {% endfor %}
+      {% elif condition['type'] == 'all' %}
+        window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = {'type': 'all', 'conditions': []};
+        {% for sub_condition in condition.conditions %}
+          window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}]["conditions"][{{ loop.index0 }}] = false;
+          {{ handle_condition(sub_condition, index + ']["conditions"][' + (loop.index0 | string)) }}
+        {% endfor %}
+      {% elif condition['type'] == 'not' %}
+        window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = {'type': 'not', 'condition': false};
+        {{ handle_condition(condition['condition'], index + ']["condition"') }}
       {% endif %}
+    {%- endmacro %}
+    {% for condition in schema['conditions'] %}
+      {{ handle_condition(condition, loop.index0 | string) }}
     {% endfor %}
   });
 </script>

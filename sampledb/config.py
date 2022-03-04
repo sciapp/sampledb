@@ -457,6 +457,8 @@ SHOW_OBJECT_TITLE = False
 
 HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
 
+MAX_BATCH_SIZE = 100
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -467,7 +469,7 @@ except ValueError:
     pass
 
 # parse values as integers
-for config_name in {'MAX_CONTENT_LENGTH', }:
+for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE'}:
     value = globals().get(config_name)
     if isinstance(value, str):
         try:
@@ -498,6 +500,7 @@ for config_name in {
     'SHOW_PREVIEW_WARNING',
     'SHOW_OBJECT_TITLE',
     'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+    'DISABLE_INLINE_EDIT',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

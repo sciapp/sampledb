@@ -827,6 +827,49 @@ def test_validate_object_required_missing():
         validate(instance, schema)
 
 
+def test_validate_object_required_conditional():
+    schema = {
+        'title': 'Example',
+        'type': 'object',
+        'properties': {
+            'example': {
+                'title': 'Example Item',
+                'type': 'text'
+            },
+            'test': {
+                'title': 'Example Bool',
+                'type': 'bool'
+            }
+        },
+        'required': ['example']
+    }
+    instance = {
+        'test': {
+            '_type': 'bool',
+            'value': True
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+    schema['properties']['example']['conditions'] = [
+        {
+            'type': 'bool_equals',
+            'property_name': 'test',
+            'value': True
+        }
+    ]
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+    schema['properties']['example']['conditions'] = [
+        {
+            'type': 'bool_equals',
+            'property_name': 'test',
+            'value': False
+        }
+    ]
+    validate(instance, schema)
+
+
 def test_validate_object_unknown_property():
     schema = {
         'title': 'Example',

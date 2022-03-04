@@ -557,7 +557,9 @@ This example shows how Markdown can be used for instrument Notes.
                     'object': {
                         'title': {'en': 'Object', 'de': 'Objekt'},
                         'type': 'object_reference',
-                        'note': 'Select object #1.'
+                        'note': 'Select object #1.',
+                        'action_type_id': [-99, -98],
+                        'action_id': [1, 3]
                     },
                     'conditional_text': {
                         'title': 'Conditional Name',

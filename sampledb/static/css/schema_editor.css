@@ -83,6 +83,7 @@
     display: none;
 }
 
+.schema-editor-template-property-settings,
 .schema-editor-quantity-property-settings,
 .schema-editor-bool-property-settings,
 .schema-editor-text-property-settings,

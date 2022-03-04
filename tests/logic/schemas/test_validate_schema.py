@@ -2198,6 +2198,8 @@ def test_validate_required_conditional():
         },
         'required': ['name', 'conditional_property']
     }
+    validate_schema(schema)
+    schema['properties']['name']['conditions'] = schema['properties']['conditional_property']['conditions']
     with pytest.raises(ValidationError):
         validate_schema(schema)
 

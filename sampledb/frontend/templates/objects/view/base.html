@@ -79,7 +79,7 @@
           <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.translation.object_name) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
       {% endif %}
-      {% if user_may_use_as_template %}
+      {% if user_may_use_as_template and not action.type.disable_create_objects %}
         <div class="form-group">
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
@@ -1104,6 +1104,7 @@
   <script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/js.cookie.js') }}"></script>
   <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
   <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>

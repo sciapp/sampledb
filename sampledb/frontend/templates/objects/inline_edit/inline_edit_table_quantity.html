@@ -5,9 +5,9 @@
             {% if data is not none and data.magnitude %}
                 {% if schema['units'] == "1" %}
                     {% if data is not none %}
-                        {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}{% endif %}
+                        {{ data.magnitude_in_base_units | babel_format_number }}{% endif %}
                 {% else %}
-                    {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number }}
+                    {% if data is not none %}{{ (data | to_datatype).magnitude | babel_format_number }}
                         {{ (data | to_datatype).units | prettify_units }}{% endif %}
                 {% endif %}
             {% else %}

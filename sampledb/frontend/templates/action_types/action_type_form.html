@@ -99,9 +99,9 @@
       });
 
       {% if submit_text !=  _('Save') %}
-        $('.selectpicker').selectpicker('val', ['{{ ENGLISH.id }}']);
+        $('#select-languages').selectpicker('val', ['{{ ENGLISH.id }}']);
       {% endif %}
-      $('.selectpicker').change();
+      $('#select-languages').change();
       $('.form-group[data-name="input-names"] .input-group[data-language-id], .form-group[data-name="input-descriptions"] .input-group[data-language-id], .form-group[data-name="input-object-names-singular"] .input-group[data-language-id], .form-group[data-name="input-object-names-plural"] .input-group[data-language-id], .form-group[data-name="input-view-texts"] .input-group[data-language-id], .form-group[data-name="input-perform-texts"] .input-group[data-language-id]').each(function(_, element) {
         setTranslationHandler(element);
       });
@@ -127,7 +127,7 @@
           <input type="text" class="form-control" id="input-name" placeholder="{{ _("Name") }}" data-name="input-name" data-translation-attribute="name" data-empty-text="{{ _("Please enter a name.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter name (at most 100 characters).") }}" data-required-in-all-languages="1">
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
-        <span class="help-block" id="" data-name="name"></span>
+        <span class="help-block" data-name="name"></span>
       </div>
 
       <div class="hidden" id="description-template">
@@ -135,7 +135,7 @@
           <input type="text" class="form-control" id="input-description" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description">
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
-        <span class="help-block" id="" data-name="description"></span>
+        <span class="help-block" data-name="description"></span>
       </div>
 
       <div class="hidden" id="object-name-singular-template">
@@ -143,7 +143,7 @@
           <input type="text" class="form-control" id="input-object-name-singular" placeholder="{{ _("Object Name (singular)") }}" data-name="input-object-name-singular" data-translation-attribute="object_name" data-empty-text="{{ _("Please enter an object name (singular).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (singular) (at most 100 characters).") }}" data-required-in-all-languages="1">
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
-        <span class="help-block" id="" data-name="object-name-singular"></span>
+        <span class="help-block" data-name="object-name-singular"></span>
       </div>
 
       <div class="hidden" id="object-name-plural-template">
@@ -151,7 +151,7 @@
           <input type="text" class="form-control" id="input-object-name-plural" placeholder="{{ _("Object Name (plural)") }}" data-name="input-object-name-plural" data-translation-attribute="object_name_plural" data-empty-text="{{ _("Please enter an object name (plural).") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter object name (plural) (at most 100 characters).") }}" data-required-in-all-languages="1">
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
-        <span class="help-block" id="" data-name="object-name-plural"></span>
+        <span class="help-block" data-name="object-name-plural"></span>
       </div>
 
       <div class="hidden" id="view-text-template">
@@ -159,7 +159,7 @@
           <input type="text" class="form-control" id="input-view-text" placeholder="{{ _("View text") }}" data-name="input-view-text" data-translation-attribute="view_text" data-empty-text="{{ _("Please enter a view text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter view text (at most 100 characters).") }}" data-required-in-all-languages="1">
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
-        <span class="help-block" id="" data-name="view-text"></span>
+        <span class="help-block" data-name="view-text"></span>
       </div>
 
       <div class="hidden" id="perform-text-template">
@@ -167,7 +167,7 @@
           <input type="text" class="form-control" id="input-perform-text" placeholder="{{ _("Perform Text") }}" data-name="input-perform-text" data-translation-attribute="perform_text" data-empty-text="{{ _("Please enter a perform text.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter perform text (at most 100 characters).") }}" data-required-in-all-languages="1">
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
-        <span class="help-block" id="" data-name="perform-text"></span>
+        <span class="help-block" data-name="perform-text"></span>
       </div>
 
       <div class="form-group row" style="padding-right: 10px">
@@ -328,6 +328,18 @@
             <input type="checkbox" id="input-enable_related_objects"
                    name="{{ action_type_form.enable_related_objects.name }}"
                    {% if action_type_form.enable_related_objects.data %}checked="checked"{% endif %}> {{ _('Show related objects for objects created with actions of this type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-disable_create_objects" style="font-weight:400">
+            <input type="checkbox" id="input-disable_create_objects" name="{{ action_type_form.disable_create_objects.name }}"
+                 {% if action_type_form.disable_create_objects.data %}checked="checked"{% endif %}> {{ _('Disable creating objects of this action type') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-is_template" style="font-weight:400">
+            <input type="checkbox" id="input-is_template" name="{{ action_type_form.is_template.name }}"
+                 {% if action_type_form.is_template.data %}checked="checked"{% endif %}> {{ _('Allow actions of this type as schema templates in other actions') }}
           </label>
         </div>
       </div>

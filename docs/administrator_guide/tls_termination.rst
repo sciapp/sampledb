@@ -118,7 +118,7 @@ With these files in place, you can start the nginx container:
         -v `pwd`/certificate.crt:/etc/nginx/certificate.crt:ro \
         -v `pwd`/certificate.key:/etc/nginx/certificate.key:ro \
         -v `pwd`/dhparam.pem:/etc/nginx/dhparam.pem:ro \
-        -v `pwd`/sampledb.conf:/etc/nginx/conf/default.conf:ro \
+        -v `pwd`/sampledb.conf:/etc/nginx/conf.d/default.conf:ro \
         --network=sampledb-network \
         --ip=172.24.0.3 \
         --restart=always \

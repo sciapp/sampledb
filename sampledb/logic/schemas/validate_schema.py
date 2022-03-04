@@ -9,9 +9,10 @@ import typing
 import urllib.parse
 import re
 
-from ..errors import ValidationError
+from ..errors import ValidationError, ActionDoesNotExistError, InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
 from .utils import units_are_valid
 from .validate import validate
+from .templates import substitute_templates
 from .conditions import validate_condition_schema
 from ..languages import get_languages
 
@@ -21,13 +22,16 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def validate_schema(
         schema: dict,
         path: typing.Optional[typing.List[str]] = None,
-        parent_conditions: typing.Optional[typing.List[typing.Tuple]] = None
+        *,
+        parent_conditions: typing.Optional[typing.List[typing.Tuple]] = None,
+        invalid_template_action_ids: typing.Sequence[int] = ()
 ) -> None:
     """
     Validates the given schema and raises a ValidationError if it is invalid.
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
+    :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
@@ -71,9 +75,9 @@ def validate_schema(
     if path == [] and schema['type'] != 'object':
         raise ValidationError('invalid schema (root must be an object)', path)
     if schema['type'] == 'array':
-        return _validate_array_schema(schema, path)
+        return _validate_array_schema(schema, path, invalid_template_action_ids)
     elif schema['type'] == 'object':
-        return _validate_object_schema(schema, path)
+        return _validate_object_schema(schema, path, invalid_template_action_ids)
     elif schema['type'] == 'text':
         return _validate_text_schema(schema, path)
     elif schema['type'] == 'datetime':
@@ -143,12 +147,17 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_array_schema(
+        schema: dict,
+        path: typing.List[str],
+        invalid_template_action_ids: typing.Sequence[int] = ()
+) -> None:
     """
     Validates the given array schema and raises a ValidationError if it is invalid.
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
+    :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
     :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy'}
@@ -193,7 +202,7 @@ def _validate_array_schema(schema: dict, path: typing.List[str]) -> None:
     if has_default_items and has_max_items:
         if schema['defaultItems'] > schema['maxItems']:
             raise ValidationError('defaultItems must be less than or equal to maxItems', path)
-    validate_schema(schema['items'], path + ['[?]'])
+    validate_schema(schema['items'], path + ['[?]'], invalid_template_action_ids=invalid_template_action_ids)
     if 'default' in schema:
         if has_default_items:
             raise ValidationError('default and defaultItems are mutually exclusive', path)
@@ -225,15 +234,34 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('Tags must be a top-level entry named "tags"', path)
 
 
-def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_object_schema(
+        schema: dict,
+        path: typing.List[str],
+        invalid_template_action_ids: typing.Sequence[int] = ()
+) -> None:
     """
     Validates the given object schema and raises a ValidationError if it is invalid.
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
+    :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style'}
+    try:
+        substitute_templates(schema, invalid_template_action_ids)
+    except ActionDoesNotExistError:
+        raise ValidationError('schema template action does not exist', path)
+    except InvalidNumberError:
+        raise ValidationError('template must be an integer', path)
+    except RecursiveTemplateError:
+        raise ValidationError('template must not recursively include itself', path)
+    except InvalidTemplateIDError:
+        raise ValidationError('template must be the ID of a template action', path)
+
+    if schema.get('template') is not None:
+        invalid_template_action_ids = list(invalid_template_action_ids) + [schema.get('template')]
+
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'note'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
@@ -256,12 +284,17 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
     for property_name, property_schema in schema['properties'].items():
         if '__' in property_name:
             raise ValidationError('invalid property name: {}'.format(property_name), path)
-        validate_schema(property_schema, path + [property_name], property_conditions)
+        validate_schema(
+            property_schema,
+            path + [property_name],
+            parent_conditions=property_conditions,
+            invalid_template_action_ids=invalid_template_action_ids
+        )
         property_schemas[property_name] = property_schema
-    for path, condition in property_conditions:
+    for condition_path, condition in property_conditions:
         if not isinstance(condition, dict) or not isinstance(condition.get('type'), str):
-            raise ValidationError('condition must be a dict containg the key type', path)
-        validate_condition_schema(condition, property_schemas, path)
+            raise ValidationError('condition must be a dict containg the key type', condition_path)
+        validate_condition_schema(condition, property_schemas, condition_path)
 
     if 'required' in schema:
         if not isinstance(schema['required'], list):
@@ -271,7 +304,8 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
                 raise ValidationError('unknown required property: {}'.format(property_name), path)
             if property_name in schema['required'][:i]:
                 raise ValidationError('duplicate required property: {}'.format(property_name), path)
-            if schema['properties'][property_name].get('conditions'):
+            # the name property in the root object is always required and may not be conditional
+            if schema['properties'][property_name].get('conditions') and property_name == 'name' and path == []:
                 raise ValidationError('conditional required property: {}'.format(property_name), path)
 
     if 'hazards' in schema['properties'] and schema['properties']['hazards']['type'] == 'hazards' and 'hazards' not in schema.get('required', []):
@@ -322,6 +356,7 @@ def _validate_object_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'notebookTemplates' in schema:
         _validate_notebook_templates(schema['notebookTemplates'])
+    _validate_note_in_schema(schema, path)
 
 
 def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
@@ -597,10 +632,22 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
 
-    if 'action_type_id' in schema and not isinstance(schema['action_type_id'], (int, type(None))):
-        raise ValidationError('action_type_id must be int or None', path)
-    if 'action_id' in schema and not isinstance(schema['action_id'], (int, type(None))):
-        raise ValidationError('action_id must be int or None', path)
+    if 'action_type_id' in schema and not (
+            schema['action_type_id'] is None or
+            type(schema['action_type_id']) == int or
+            type(schema['action_type_id']) == list and all(
+                type(action_type_id) == int for action_type_id in schema['action_type_id']
+            )
+    ):
+        raise ValidationError('action_type_id must be int, None or a list of ints', path)
+    if 'action_id' in schema and not (
+            schema['action_id'] is None or
+            type(schema['action_id']) == int or
+            type(schema['action_id']) == list and all(
+                type(action_type_id) == int for action_type_id in schema['action_id']
+            )
+    ):
+        raise ValidationError('action_id must be int, None or a list of ints', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     _validate_note_in_schema(schema, path)
