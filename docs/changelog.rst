@@ -4,7 +4,7 @@ Changelog
 Version 0.20
 ------------
 
-Currently in development.
+Released on March 4th, 2022.
 
 - Added support for any, all and not conditions
 - Improve Markdown field image uploads
