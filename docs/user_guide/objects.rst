@@ -140,6 +140,16 @@ To modify the permissions of an object, any user with **Grant** permissions can 
 
 Although administrators are shown to have **Grant** permissions for all objects, this only reflects their access to the database mentioned above. At this time, administrators do not automatically have **Grant** permissions for all objects.
 
+.. _federation_share:
+
+Sharing with other databases
+````````````````````````````
+
+Objects can be shared with other databases after an administrator configured the connection (see: :ref:`Managing other databases <federation_managing_databases>`).
+Access permissions can be granted to users of other databases individually by user id or imported user information, if available.
+Permissions to access data, referenced users, action, comments, locations, and files can be set individually.
+This allows sharing an object without data to use it by reference or without user information to protect data privacy rights.
+
 .. _default_permissions:
 
 Default Permissions

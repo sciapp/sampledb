@@ -40,6 +40,7 @@ Administrator Guide
     administrator_guide/jupyterhub_support.rst
     administrator_guide/dataverse_export.rst
     administrator_guide/languages.rst
+    administrator_guide/federation.rst
 
 Developer Guide
 ---------------

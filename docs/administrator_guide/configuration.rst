@@ -149,6 +149,23 @@ If no users exist yet and the ``SAMPLEDB_ADMIN_PASSWORD`` variable is set, a new
 
 If another user already exists, these variables will have no effect. It is meant for creating an administrator account as part of the initial setup.
 
+.. _federation_configuration:
+
+Federation
+----------
+
+.. list-table:: Federation Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_FEDERATION_UUID
+     - This instance's federation UUID. See :ref:`federation` for details
+   * - SAMPLEDB_ALLOW_HTTP
+     - If set, insecure communication to other databases via HTTP will be allowed.
+   * - SAMPLEDB_VALID_TIME_DELTA
+     - Valid time delta between SampleDB instances in a federation in seconds (default: ``300``)
+
 Miscellaneous
 -------------
 
