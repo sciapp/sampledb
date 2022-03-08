@@ -20,6 +20,7 @@ from . import set_administrator
 from . import set_up_demo
 from . import set_user_readonly
 from . import set_user_hidden
+from . import generate_uuid
 from . import run
 
 script_modules = {
@@ -42,6 +43,7 @@ script_modules = {
         set_up_demo,
         set_user_readonly,
         set_user_hidden,
+        generate_uuid,
         run
     )
 }
