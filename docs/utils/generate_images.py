@@ -523,6 +523,7 @@ try:
 
         os.makedirs('docs/static/img/generated', exist_ok=True)
         options = Options()
+        options.add_argument("--lang=en-US")
         # disable Chrome sandbox for root in GitLab CI
         if 'CI' in os.environ and getpass.getuser() == 'root':
             options.add_argument('--headless')
