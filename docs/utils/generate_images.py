@@ -14,6 +14,7 @@ import flask
 from PIL import Image
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 import chromedriver_binary
 
@@ -77,6 +78,18 @@ def resize_for_screenshot(driver, width, height):
     previous_height_correction = requested_height - height
 
 
+def wait_until_visible(element):
+    NUM_RETRIES = 30
+    for wait_time in range(NUM_RETRIES):
+        if element.rect['width'] > 0 and element.rect['height'] > 0:
+            if wait_time >= 5:
+                print('element visible after', wait_time, 'seconds', file=sys.stderr)
+            return element
+        time.sleep(1)
+    # maximum number of retries exhausted
+    assert False
+
+
 # Cached values for resize_for_screenshot()
 previous_height_correction = 0
 previous_width_correction = 0
@@ -88,12 +101,12 @@ def guest_invitation(base_url, driver):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'users/invitation')
-    for heading in driver.find_elements_by_tag_name('h1'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h1'):
         if 'Invite' in heading.text:
             break
     else:
         assert False
-    container = driver.find_element_by_id('main').find_elements_by_class_name('container')[-1]
+    container = driver.find_element(By.ID, 'main').find_elements(By.CLASS_NAME, 'container')[-1]
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/guest_invitation.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, container.location['y'] + container.rect['height'])))
 
 
@@ -103,12 +116,12 @@ def default_permissions(base_url, driver):
     resize_for_screenshot(driver, width, min_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'users/me/preferences')
-    for heading in driver.find_elements_by_tag_name('h2'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Default Permissions' in heading.text:
             break
     else:
         assert False
-    for next_heading in driver.find_elements_by_tag_name('h2'):
+    for next_heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Other Settings' in next_heading.text:
             break
     else:
@@ -124,9 +137,9 @@ def action(base_url, driver, action):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'actions/{}'.format(action.id))
-    heading = driver.find_elements_by_tag_name('h1')[0]
+    heading = driver.find_elements(By.TAG_NAME, 'h1')[0]
 
-    for anchor in driver.find_elements_by_tag_name('a'):
+    for anchor in driver.find_elements(By.TAG_NAME, 'a'):
         if 'Create Sample' in anchor.text:
             break
     else:
@@ -140,7 +153,7 @@ def tags_input(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for row in driver.find_elements_by_class_name('row'):
+    for row in driver.find_elements(By.CLASS_NAME, 'row'):
         if 'Tags' in row.text:
             break
     else:
@@ -157,13 +170,13 @@ def comments(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h2'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Comments' in heading.text:
             break
     else:
         assert False
     y_offset = scroll_to(driver, 0, heading.location['y'])
-    comment_form = driver.find_element_by_id('new-comment-form')
+    comment_form = driver.find_element(By.ID, 'new-comment-form')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/comments.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, comment_form.location['y'] + comment_form.rect['height']) - y_offset))
 
 
@@ -177,13 +190,13 @@ def activity_log(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h2'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Activity Log' in heading.text:
             break
     else:
         assert False
     y_offset = scroll_to(driver, 0, heading.location['y'])
-    activity_log = driver.find_element_by_id('activity_log')
+    activity_log = driver.find_element(By.ID, 'activity_log')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log_dontblock.png', (0, heading.location['y'] - y_offset, width, min(activity_log.location['y'] - y_offset + activity_log.rect['height'], max_height)))
 
 
@@ -199,13 +212,13 @@ def locations(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h2'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Location' in heading.text:
             break
     else:
         assert False
     y_offset = scroll_to(driver, 0, heading.location['y'])
-    location_form = driver.find_element_by_id('assign-location-form')
+    location_form = driver.find_element(By.ID, 'assign-location-form')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height']) - y_offset))
 
 
@@ -217,7 +230,7 @@ def unread_notification_icon(base_url, driver):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url)
-    navbar = driver.find_element_by_class_name('navbar-static-top')
+    navbar = driver.find_element(By.CLASS_NAME, 'navbar-static-top')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/unread_notification_icon.png', (0, navbar.location['y'], width, min(navbar.location['y'] + max_height, navbar.location['y'] + navbar.rect['height'])))
     notification = sampledb.logic.notifications.get_notifications(user_id=user.id)[0]
     sampledb.logic.notifications.delete_notification(notification.id)
@@ -235,12 +248,12 @@ def files(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for heading in driver.find_elements_by_tag_name('h2'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Files' in heading.text:
             break
     else:
         assert False
-    for form_group in driver.find_elements_by_class_name('form-group'):
+    for form_group in driver.find_elements(By.CLASS_NAME, 'form-group'):
         if 'Upload' in form_group.text:
             break
     else:
@@ -259,13 +272,10 @@ def file_information(base_url, driver, object):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/{}'.format(object.id))
-    file_table = driver.find_element_by_id('file_table')
-    file_table.find_elements_by_class_name('button-file-info')[0].click()
+    file_table = driver.find_element(By.ID, 'file_table')
+    file_table.find_elements(By.CLASS_NAME, 'button-file-info')[0].click()
 
-    modal = driver.find_element_by_id('fileInfoModal-0').find_element_by_class_name('modal-content')
-
-    # Wait for modal to be visible
-    time.sleep(10)
+    modal = wait_until_visible(driver.find_element(By.ID, 'fileInfoModal-0').find_element(By.CLASS_NAME, 'modal-content'))
 
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/file_information.png', (0, modal.rect['y'], width, min(modal.rect['y'] + max_height, modal.rect['y'] + modal.rect['height'])))
 
@@ -289,18 +299,18 @@ def hazards_input(base_url, driver, action):
     resize_for_screenshot(driver, width, max_height)
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
     driver.get(base_url + 'objects/new?action_id={}'.format(action.id))
-    for form_group in driver.find_elements_by_class_name('form-group'):
-        if len(form_group.find_elements_by_class_name('ghs-hazards-selection')) > 0:
+    for form_group in driver.find_elements(By.CLASS_NAME, 'form-group'):
+        if len(form_group.find_elements(By.CLASS_NAME, 'ghs-hazards-selection')) > 0:
             break
     else:
         assert False
-    for label in form_group.find_elements_by_tag_name('label'):
+    for label in form_group.find_elements(By.TAG_NAME, 'label'):
         if 'Environmental' in label.text:
             break
     else:
         assert False
     label.click()
-    for label in form_group.find_elements_by_tag_name('label'):
+    for label in form_group.find_elements(By.TAG_NAME, 'label'):
         if 'Corrosive' in label.text:
             break
     else:
@@ -317,13 +327,13 @@ def object_permissions(base_url, driver):
 
     driver.get(base_url + 'objects/{}/permissions'.format(object.object_id))
     resize_for_screenshot(driver, width, min_height)
-    for heading in driver.find_elements_by_tag_name('h2'):
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
         if 'Permissions' in heading.text:
             break
     else:
         assert False
     scroll_to(driver, 0, heading.location['y'])
-    footer = driver.find_elements_by_tag_name('footer')[-1]
+    footer = driver.find_elements(By.TAG_NAME, 'footer')[-1]
     resize_for_screenshot(driver, width, footer.location['y'] - heading.location['y'])
     driver.get_screenshot_as_file('docs/static/img/generated/object_permissions.png')
 
@@ -335,7 +345,7 @@ def advanced_search_by_property(base_url, driver, object):
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
 
     driver.get(base_url + 'objects/{}'.format(object.id))
-    for row in driver.find_elements_by_class_name('row'):
+    for row in driver.find_elements(By.CLASS_NAME, 'row'):
         if 'Name' in row.text:
             break
     else:
@@ -352,7 +362,7 @@ def advanced_search_visualization(base_url, driver):
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
 
     driver.get(base_url + 'objects/?q=%22Sb%22+in+substance+and+%28temperature+%3C+110degC+or+temperature+%3E+120degC%29&advanced=on')
-    search_tree = driver.find_element_by_id('search-tree')
+    search_tree = driver.find_element(By.ID, 'search-tree')
 
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/advanced_search_visualization.png', (0, search_tree.location['y'], width, min(search_tree.location['y'] + max_height, search_tree.location['y'] + search_tree.rect['height'])))
 
@@ -364,7 +374,7 @@ def schema_editor(base_url, driver):
     driver.get(base_url + 'users/{}/autologin'.format(user.id))
 
     driver.get(base_url + 'actions/new/')
-    form = driver.find_element_by_id('schema-editor')
+    form = wait_until_visible(driver.find_element(By.ID, 'schema-editor'))
     y_offset = scroll_to(driver, 0, form.location['y'])
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
@@ -376,14 +386,14 @@ def disable_schema_editor(base_url, driver):
     driver.get(base_url + f'users/{user.id}/autologin')
 
     driver.get(base_url + f'users/{user.id}/preferences')
-    radio_button = driver.find_element_by_id('input-use-schema-editor-yes')
-    parent = radio_button.find_element_by_xpath('./..')
+    radio_button = driver.find_element(By.ID, 'input-use-schema-editor-yes')
+    parent = radio_button.find_element(By.XPATH, './..')
     while parent is not None:
         if parent.get_attribute('class') == 'form-group':
             form = parent
             break
         else:
-            parent = parent.find_element_by_xpath('./..')
+            parent = parent.find_element(By.XPATH, './..')
     else:
         assert False
     y_offset = scroll_to(driver, 0, form.location['y'])
@@ -412,7 +422,7 @@ def translations(base_url, driver):
     $('[data-name="input-names"] .selectpicker').selectpicker('val', ['-99', '-98']);
     $('[data-name="input-names"] .selectpicker').change();
     """)
-    form = driver.find_element_by_css_selector('[data-name="input-names"]')
+    form = driver.find_element(By.CSS_SELECTOR, '[data-name="input-names"]')
     y_offset = scroll_to(driver, 0, form.location['y'])
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/translations.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
@@ -421,7 +431,10 @@ def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
     if box:
+        assert box[0] >= 0 and box[1] >= 0 and box[2] > 0 and box[3] > 0
         image = image.crop([c * DEVICE_PIXEL_RATIO for c in box])
+        print('cropped screenshot size:', image.size, file=sys.stderr)
+    print(f'saving {file_name} (cropped size: {image.size})', file=sys.stderr)
     image.save(file_name)
 
 
@@ -527,6 +540,8 @@ try:
         if 'CI' in os.environ and getpass.getuser() == 'root':
             options.add_argument('--headless')
             options.add_argument('--no-sandbox')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--disable-dev-shm-usage')
         with contextlib.contextmanager(tests.conftest.create_flask_server)(app) as flask_server:
             with contextlib.closing(Chrome(options=options)) as driver:
                 time.sleep(5)
