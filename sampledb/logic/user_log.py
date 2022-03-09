@@ -8,7 +8,7 @@ import typing
 from .errors import ObjectDoesNotExistError
 from .users import get_user
 from .object_permissions import get_user_object_permissions, Permissions
-from ..models import UserLogEntry, UserLogEntryType
+from ..models import UserLogEntry, UserLogEntryType, ObjectLocationAssignment
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -48,11 +48,25 @@ def get_user_related_object_ids(user_id: int) -> typing.Set[int]:
     """
     user_log_entries = UserLogEntry.query.filter_by(user_id=user_id).all()
     user_related_object_ids = set()
+    object_location_assignment_ids = set()
     for user_log_entry in user_log_entries:
         if 'object_id' in user_log_entry.data:
             user_related_object_ids.add(user_log_entry.data['object_id'])
         elif 'object_ids' in user_log_entry.data:
             user_related_object_ids.update(set(user_log_entry.data['object_ids']))
+        elif 'object_location_assignment_id' in user_log_entry.data:
+            object_location_assignment_ids.add(user_log_entry.data['object_location_assignment_id'])
+    if object_location_assignment_ids:
+        object_location_assignment_object_ids = db.session.query(
+            ObjectLocationAssignment.object_id
+        ).filter(
+            ObjectLocationAssignment.id.in_(object_location_assignment_ids)
+        ).distinct().all()
+        object_location_assignment_object_ids = set(
+            object_location_assignment_object_id[0]
+            for object_location_assignment_object_id in object_location_assignment_object_ids
+        )
+        user_related_object_ids.update(object_location_assignment_object_ids)
     return user_related_object_ids
 
 
