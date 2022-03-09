@@ -154,6 +154,10 @@
               {% endif %}
             {% endfor %}
             <li role="separator" class="divider nav-search-link"></li>
+            <li><a href="{{ url_for('frontend.objects', user=current_user.id, user_permissions='READ') }}">{{ _('Objects with <b>READ</b> permissions') }}</a></li>
+            <li><a href="{{ url_for('frontend.objects', user=current_user.id, user_permissions='WRITE') }}">{{ _('Objects with <b>WRITE</b> permissions') }}</a></li>
+            <li><a href="{{ url_for('frontend.objects', user=current_user.id, user_permissions='GRANT') }}">{{ _('Objects with <b>GRANT</b> permissions') }}</a></li>
+            <li role="separator" class="divider nav-search-link"></li>
             <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">{{ _('Search') }}</a></li>
           </ul>
         </li>
@@ -200,6 +204,7 @@
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">{{ _('Your Basic Groups') }}</a></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">{{ _('Your Project Groups') }}</a></li>
               <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">{{ _('Your Actions') }}</a></li>
+              <li><a href="{{ url_for('frontend.objects', user=current_user.id) }}">{{ _('Your Objects') }}</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>

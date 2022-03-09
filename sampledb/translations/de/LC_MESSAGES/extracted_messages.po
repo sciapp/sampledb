@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-02-28 09:32+0100\n"
+"POT-Creation-Date: 2022-03-09 10:19+0100\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -911,6 +911,15 @@ msgstr "Aktionen"
 msgid "Objects"
 msgstr "Objekte"
 
+msgid "Objects with <b>READ</b> permissions"
+msgstr "Objekte mit <b>LESE</b>-Berechtigungen"
+
+msgid "Objects with <b>WRITE</b> permissions"
+msgstr "Objekte mit <b>SCHREIB</b>-Berechtigungen"
+
+msgid "Objects with <b>GRANT</b> permissions"
+msgstr "Objekte mit <b>RECHTEVERGABE</b>-Berechtigungen"
+
 msgid "More"
 msgstr "Mehr"
 
@@ -949,6 +958,9 @@ msgstr "Ihre Projektgruppen"
 
 msgid "Your Actions"
 msgstr "Ihre Aktionen"
+
+msgid "Your Objects"
+msgstr "Ihre Objekte"
 
 msgid "Invite a Guest"
 msgstr "Gast einladen"
@@ -1096,8 +1108,8 @@ msgid ""
 "testing, may be offline at any time and the <strong>data will be "
 "deleted!</strong>"
 msgstr ""
-"Dies ist eine Vorschauinstallation von %(service_name)s. Sie wird für Tests"
-" genutzt, daher kann sie jederzeit ausfallen und <strong>die hier "
+"Dies ist eine Vorschauinstallation von %(service_name)s. Sie wird für "
+"Tests genutzt, daher kann sie jederzeit ausfallen und <strong>die hier "
 "gespeicherten Daten werden gelöscht werden!</strong>"
 
 #, python-format
