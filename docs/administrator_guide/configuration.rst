@@ -142,7 +142,7 @@ Administrator Account
    * - SAMPLEDB_ADMIN_USERNAME
      - The username for the admin account (default: ``admin``)
    * - SAMPLEDB_ADMIN_EMAIL
-     - See email address for the admin account (default: SAMPLEDB_CONTACT_EMAIL)
+     - The email address for the admin account (default: SAMPLEDB_CONTACT_EMAIL)
 
 
 If no users exist yet and the ``SAMPLEDB_ADMIN_PASSWORD`` variable is set, a new user will be created with this password. This user will be a SampleDB admin. The username for this user will be set to value of ``SAMPLEDB_ADMIN_USERNAME`` and the email address for this user will be set to the value of ``SAMPLEDB_ADMIN_EMAIL``.

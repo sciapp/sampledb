@@ -3,14 +3,12 @@
 import contextlib
 import getpass
 import io
-import json
 import os
 import shutil
 import sys
 import tempfile
 import time
 
-import flask
 from PIL import Image
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
@@ -536,6 +534,7 @@ try:
 
         os.makedirs('docs/static/img/generated', exist_ok=True)
         options = Options()
+        options.add_argument("--lang=en-US")
         # disable Chrome sandbox for root in GitLab CI
         if 'CI' in os.environ and getpass.getuser() == 'root':
             options.add_argument('--headless')
