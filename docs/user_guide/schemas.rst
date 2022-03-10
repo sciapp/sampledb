@@ -890,7 +890,7 @@ Properties of this type are a special case of object reference, limited to refer
     }
 
 Schema Templates
-```````````````
+````````````````
 
 Schema Templates offer a way to easily reuse action schemas.
 
