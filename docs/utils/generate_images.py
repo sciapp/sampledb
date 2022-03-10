@@ -3,14 +3,12 @@
 import contextlib
 import getpass
 import io
-import json
 import os
 import shutil
 import sys
 import tempfile
 import time
 
-import flask
 from PIL import Image
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
