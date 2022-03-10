@@ -1653,7 +1653,7 @@ def print_object_label(object_id):
     return flask.send_file(
         io.BytesIO(pdf_data),
         mimetype='application/pdf',
-        cache_timeout=-1
+        max_age=-1
     )
 
 
@@ -1964,7 +1964,7 @@ def object_file(object_id, file_id):
             mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
             if mime_type is not None:
                 return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)
-        return flask.send_file(file.open(), as_attachment=True, attachment_filename=file.original_file_name, last_modified=file.utc_datetime)
+        return flask.send_file(file.open(), as_attachment=True, download_name=file.original_file_name, last_modified=file.utc_datetime)
     # TODO: better error handling
     return flask.abort(404)
 
