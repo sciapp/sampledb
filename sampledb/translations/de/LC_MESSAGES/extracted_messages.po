@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-03-09 10:19+0100\n"
+"POT-Creation-Date: 2022-03-11 16:34+0100\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -60,7 +60,6 @@ msgstr ""
 
 msgid "Editing imported actions is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionen wird noch nicht unterstützt."
-
 
 msgid "Insufficient permissions to use the requested action as a template."
 msgstr ""
@@ -4059,6 +4058,15 @@ msgstr "UUID"
 
 msgid "Edit Database"
 msgstr "Datenbank bearbeiten"
+
+msgid "Add import token to sync"
+msgstr "Import Token hinzufügen, um zu synchronisieren"
+
+msgid "Set address to sync"
+msgstr "Adresse angeben, um zu synchronisieren"
+
+msgid "Set address and import token to sync"
+msgstr "Adresse und Import Token angeben, um zu synchronisieren"
 
 msgid "Authentication Tokens"
 msgstr "Authentifizierungs-Tokens"
