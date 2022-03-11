@@ -11,6 +11,7 @@ import random
 import threading
 import time
 
+import cherrypy
 import flask
 import flask_login
 import pytest
@@ -44,15 +45,25 @@ def create_flask_server(app):
     if not getattr(app, 'has_shutdown_route', False):
         @app.route('/shutdown', methods=['POST'])
         def shutdown():
-            func = flask.request.environ.get('werkzeug.server.shutdown')
-            if func is None:
-                raise RuntimeError('Not running with the Werkzeug Server')
-            func()
+            cherrypy.engine.exit()
             return 'Server shutting down...'
         app.has_shutdown_route = True
 
+    def run_server():
+        cherrypy.engine.start()
+        cherrypy.engine.block()
+
+    app.debug = True
     port = random.randint(10000, 20000)
-    server_thread = threading.Thread(target=lambda: app.run(port=port, debug=True, use_reloader=False), daemon=True)
+    cherrypy.tree.graft(app, '/')
+    cherrypy.config.update({
+        'environment': 'test_suite',
+        'server.socket_host': '127.0.0.1',
+        'server.socket_port': port,
+        'server.thread_pool': 4,
+        'log.screen': True
+    })
+    server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
     server_thread.app = app
     server_thread.initial_config = copy.deepcopy(server_thread.app.config)
