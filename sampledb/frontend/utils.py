@@ -310,6 +310,22 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None):
         return None
 
 
+_application_root_url: typing.Optional[str] = None
+
+
+def relative_url_for(route: str, **kwargs) -> str:
+    global _application_root_url
+    if _application_root_url is None:
+        _application_root_url = flask.url_for('frontend.index')
+    kwargs['_external'] = False
+    url = flask.url_for(route, **kwargs)
+    if url.startswith(_application_root_url):
+        url = url[len(_application_root_url):]
+    elif url.startswith('/'):
+        url = url[1:]
+    return url
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
@@ -317,3 +333,4 @@ _jinja_functions['get_local_month_names'] = get_local_month_names
 _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
 _jinja_functions['get_templates'] = get_templates
 _jinja_functions['get_component_or_none'] = get_component_or_none
+_jinja_functions['relative_url_for'] = relative_url_for
