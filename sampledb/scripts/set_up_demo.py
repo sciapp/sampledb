@@ -4,7 +4,7 @@ Script for setting up demo data in a previously unused SampleDB installation.
 
 Usage: python -m sampledb set_up_demo
 """
-
+import datetime
 import json
 import os
 import sys
@@ -594,4 +594,191 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, action.id, name="Conditions Demo Action", description="")
         sampledb.logic.action_permissions.set_action_public(action.id)
+
+        UUID = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+        component = sampledb.logic.components.add_component(UUID, 'Example SampleDB', None, 'Example component database for demonstration purposes. Do not expect it to function.')
+        sampledb.logic.federation.parse_import_location({
+            'location_id': 1,
+            'component_uuid': UUID,
+            'name': {'en': 'Collaborating Institute', 'de': 'Partnerinstitut'},
+            'description': {'en': 'A collaborating partner’s site.',
+                            'de': 'Gelände eines Kooperationspartners.'},
+        }, component)
+        sampledb.logic.federation.parse_import_location({
+            'location_id': 2,
+            'component_uuid': UUID,
+            'name': {'en': 'Room 123', 'de': 'Raum 123'},
+            'description': {'en': 'Room 123 on a collaborating partner’s site.',
+                            'de': 'Raum 123 auf dem Gelände eines Kooperationspartners'},
+            'parent_location': {'location_id': 1, 'component_uuid': UUID}
+        }, component)
+        sampledb.logic.federation.parse_import_user({
+            'user_id': 1,
+            'component_uuid': UUID,
+            'name': 'Partnering User',
+            'email': 'partner@example.com',
+            'affiliation': 'Collaborating Partner LLC',
+        }, component)
+        sampledb.logic.federation.parse_import_user({
+            'user_id': 2,
+            'component_uuid': UUID,
+            'name': None,
+            'email': None,
+            'affiliation': 'Collaborating Partner LLC',
+        }, component)
+        sampledb.logic.federation.parse_import_instrument({
+            'instrument_id': 1,
+            'component_uuid': UUID,
+            'description_is_markdown': False,
+            'short_description_is_markdown': False,
+            'notes_is_markdown': False,
+            'is_hidden': False,
+            'translations': {'en': {'name': 'Collaborating Partner’s Measurement Instrument',
+                                    'description': '',
+                                    'short_description': '',
+                                    'notes': ''},
+                             'de': {'name': 'Messinstrument des Kooperationspartner',
+                                    'description': '',
+                                    'short_description': '',
+                                    'notes': ''}}
+        }, component)
+        sampledb.logic.federation.parse_import_action_type({
+            'action_type_id': ActionType.SAMPLE_CREATION,
+            'component_uuid': UUID,
+            'admin_only': False,
+            'enable_labels': True,
+            'enable_files': True,
+            'enable_locations': True,
+            'enable_publications': True,
+            'enable_comments': True,
+            'enable_activity_log': True,
+            'enable_related_objects': True,
+            'enable_project_link': True,
+            'translations': {'en': {'name': 'Sample Creation',
+                                    'description': 'These Actions represent processes which create a sample.',
+                                    'object_name': 'Sample',
+                                    'object_name_plural': 'Samples',
+                                    'view_text': 'View Samples',
+                                    'perform_text': 'Create Sample'},
+                             'de': {'name': 'Probenerstellung',
+                                    'description': 'Diese Aktionen repräsentieren Prozesse, die Proben erstellen.',
+                                    'object_name': 'Probe',
+                                    'object_name_plural': 'Proben',
+                                    'view_text': 'Proben anzeigen',
+                                    'perform_text': 'Probe erstellen'}}
+        }, component)
+        sampledb.logic.federation.parse_import_action({
+            'action_id': 1,
+            'component_uuid': UUID,
+            'action_type': {'action_type_id': ActionType.SAMPLE_CREATION, 'component_uuid': UUID},
+            'description_is_markdown': False,
+            'short_description_is_markdown': False,
+            'instrument': None,
+            'schema': {'title': 'Sampling', 'type': 'object', 'properties': {'name': {'title': 'Additional Note', 'type': 'text'}}, 'required': ['name']},
+            'translations': {'en': {'name': 'Sampling',
+                                    'description': 'Sample creation.',
+                                    'short_description': 'Sample creation.'},
+                             'de': {'name': 'Probenentnahme',
+                                    'description': 'Probenentnahmeverfahren.',
+                                    'short_description': 'Probenentnahmeverfahren.'}}
+        }, component)
+        sampledb.logic.federation.parse_import_action({
+            'action_id': 2,
+            'component_uuid': UUID,
+            'action_type': {'action_type_id': ActionType.MEASUREMENT, 'component_uuid': UUID},
+            'description_is_markdown': False,
+            'short_description_is_markdown': False,
+            'instrument': {'instrument_id': 1, 'component_uuid': UUID},
+            'schema': {'title': 'Special Measurement', 'type': 'object', 'properties': {'name': {'title': 'Additional Note', 'type': 'text'}, 'sample1': {'title': 'Sample 1', 'type': 'sample'}, 'sample2': {'title': 'Sample 2', 'type': 'sample'}}, 'required': ['name']},
+            'translations': {'en': {'name': 'Special Measurement',
+                                    'description': 'A special measurement only performed at the collaborating partner.',
+                                    'short_description': 'A special measurement only performed at the collaborating partner.'},
+                             'de': {'name': 'Spezielle Messung',
+                                    'description': 'Eine spezielle Messung, die nur beim Kooperationspartner ausgeführt werden kann.',
+                                    'short_description': 'Eine spezielle Messung, die nur beim Kooperationspartner ausgeführt werden kann.'}}
+        }, component)
+        sampledb.logic.federation.parse_import_object({
+            'object_id': 1,
+            'versions': [{
+                'version_id': 0,
+                'data': {'name': {'_type': 'text', 'text': 'Shared Sample'}},
+                'schema': {'title': 'Sampling', 'type': 'object', 'properties': {'name': {'title': 'Additional Note', 'type': 'text'}}, 'required': ['name']},
+                'user': {'user_id': 2, 'component_uuid': UUID},
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+            }],
+            'action': {'action_id': 1, 'component_uuid': UUID},
+            'policy': {
+                'access': {'data': True, 'files': True, 'action': True, 'comments': True, 'user_ids': True, 'user_data': True, 'object_location_assignments': True},
+                'permissions': {'users': {basic_user.id: 'read'}, 'groups': {group_id: 'read'}, 'projects': {project_id: 'read'}}
+            }
+        }, component)
+        sampledb.logic.federation.parse_import_object({
+            'object_id': 2,
+            'versions': [{
+                'version_id': 0,
+                'data': {'name': {'_type': 'text', 'text': 'Shared Measurement'}, 'sample1': {'_type': 'sample', 'object_id': 1, 'component_uuid': UUID}, 'sample2': {'_type': 'sample', 'object_id': 3, 'component_uuid': UUID, 'export_edit_note': 'This internal sample was not exported.'}},
+                'schema': {'title': 'Special Measurement', 'type': 'object', 'properties': {'name': {'title': 'Additional Note', 'type': 'text'}, 'sample1': {'title': 'Sample 1', 'type': 'sample'}, 'sample2': {'title': 'Sample 2', 'type': 'sample'}}, 'required': ['name']},
+                'user': {'user_id': 1, 'component_uuid': UUID},
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+            }],
+            'action': {'action_id': 1, 'component_uuid': UUID},
+            'policy': {
+                'access': {'data': True, 'files': True, 'action': True, 'comments': True, 'user_ids': True, 'user_data': True, 'object_location_assignments': True},
+                'permissions': {'users': {basic_user.id: 'read'}, 'groups': {group_id: 'read'}, 'projects': {project_id: 'read'}}
+            },
+            'comments': [
+                {
+                    'comment_id': 1,
+                    'component_uuid': UUID,
+                    'user': {'user_id': 1, 'component_uuid': UUID},
+                    'content': 'I want to comment here.',
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                },
+                {
+                    'comment_id': 2,
+                    'component_uuid': UUID,
+                    'user': None,
+                    'content': 'Another important comment by an anonymous user.',
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                },
+                {
+                    'comment_id': 3,
+                    'component_uuid': UUID,
+                    'user': {'user_id': 4, 'component_uuid': UUID},
+                    'content': 'You might be interested in my specific comment regarding this object.',
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                }
+            ],
+            'object_location_assignments': [
+                {
+                    'id': 1,
+                    'component_uuid': UUID,
+                    'user': {'user_id': 1, 'component_uuid': UUID},
+                    'responsible_user': {'user_id': 1, 'component_uuid': UUID},
+                    'location': {'location_id': 1, 'component_uuid': UUID},
+                    'description': {'en': ''},
+                    'confirmed': True,
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                },
+                {
+                    'id': 2,
+                    'component_uuid': UUID,
+                    'user': {'user_id': 1, 'component_uuid': UUID},
+                    'responsible_user': {'user_id': 3, 'component_uuid': UUID},
+                    'location': {'location_id': 2, 'component_uuid': UUID},
+                    'description': {'en': ''},
+                    'confirmed': False,
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                }
+            ],
+            'files': [
+                {
+                    'file_id': 1,
+                    'component_uuid': UUID,
+                    'user': {'user_id': 3, 'component_uuid': UUID},
+                    'data': {"storage": "url", "url": "https://example.com/file"},
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                }
+            ]
+        }, component)
     print("Success: set up demo data")

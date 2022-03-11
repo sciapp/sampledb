@@ -13,6 +13,7 @@ from wtforms import validators
 
 from .. import frontend
 from ...logic import users, errors
+from ...logic.components import get_component
 
 
 class UserReadOnlyForm(FlaskForm):
@@ -84,4 +85,5 @@ def user_profile(user_id):
         user_active_form=user_active_form,
         user=user,
         EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+        get_component=get_component
     )

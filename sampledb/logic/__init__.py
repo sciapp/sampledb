@@ -10,11 +10,15 @@ from . import action_type_translations
 from . import api_log
 from . import authentication
 from . import comments
+from . import components
+from . import component_authentication
 from . import datatypes
 from . import dataverse_export
 from . import errors
 from . import export
 from . import favorites
+from . import federation
+from . import fed_logs
 from . import files
 from . import groups
 from . import instruments
@@ -64,6 +68,10 @@ __all__ = [
     'errors',
     'export',
     'favorites',
+    'components',
+    'component_authentication',
+    'federation',
+    'fed_logs',
     'files',
     'groups',
     'instruments',

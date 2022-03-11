@@ -14,38 +14,41 @@ import zipfile
 import flask
 import flask_login
 import itsdangerous
+import requests
 import werkzeug.utils
 from flask_babel import _
 
+from ..logic.federation import update_poke_component
 from . import frontend
 from .. import logic
 from .. import models
 from .. import db
 from ..logic import user_log, object_log, comments, object_sorting
 from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
-from ..logic.action_type_translations import get_action_types_with_translations_in_language, \
-    get_action_type_with_translation_in_language
+from ..logic.action_type_translations import get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
 from ..logic.action_translations import get_action_with_translation_in_language
 from ..logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.instrument_translations import get_instrument_with_translation_in_language
-from ..logic.users import get_user, get_users, get_users_by_name
+from ..logic.shares import get_shares_for_object, add_object_share, update_object_share
+from ..logic.users import get_user, get_users, get_users_by_name, get_users_for_component
 from ..logic.schemas import validate, generate_placeholder
 from ..logic.settings import get_user_settings, set_user_settings
 from ..logic.object_search import generate_filter_func, wrap_filter_func
 from ..logic.groups import get_group, get_user_groups
-from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
+from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions, get_fed_object
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
 from ..logic.files import FileLogEntryType
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
+from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError, ComponentDoesNotExistError
+from ..logic.components import get_component, get_component_by_uuid, get_components
 from ..logic.notebook_templates import get_notebook_templates
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm
+from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..utils import object_permissions_required
-from .utils import jinja_filter, generate_qrcode
+from .utils import jinja_filter, generate_qrcode, get_user_if_exists
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from . import pdfexport
@@ -400,19 +403,19 @@ def objects():
             objects = []
             advanced_search_had_error = True
 
-    cached_actions = {}
-    cached_users = {}
+    cached_actions = {None: None}
+    cached_users = {None: None}
 
     for i, obj in enumerate(objects):
         if obj.version_id == 0:
             original_object = obj
         else:
             original_object = get_object(object_id=obj.object_id, version_id=0)
-        if obj.action_id not in cached_actions:
+        if obj.action_id is not None and obj.action_id not in cached_actions:
             cached_actions[obj.action_id] = get_action(obj.action_id)
-        if obj.user_id not in cached_users:
+        if obj.user_id is not None and obj.user_id not in cached_users:
             cached_users[obj.user_id] = get_user(obj.user_id)
-        if original_object.user_id not in cached_users:
+        if obj.user_id is not None and original_object.user_id not in cached_users:
             cached_users[original_object.user_id] = get_user(original_object.user_id)
         objects[i] = {
             'object_id': obj.object_id,
@@ -422,8 +425,12 @@ def objects():
             'last_modified_at': obj.utc_datetime,
             'data': obj.data,
             'schema': obj.schema,
+            'name': obj.name,
             'action': cached_actions[obj.action_id],
-            'display_properties': {}
+            'fed_object_id': obj.fed_object_id,
+            'component_id': obj.component_id,
+            'display_properties': {},
+            'component': obj.component
         }
 
         for property_name in display_properties:
@@ -444,7 +451,7 @@ def objects():
         )
 
     action_ids = {
-        object['action'].id for object in objects
+        object['action'].id for object in objects if object['action'] is not None
     }
     action_translations = {}
     for id in action_ids:
@@ -487,7 +494,8 @@ def objects():
         must_use_advanced_search=must_use_advanced_search,
         advanced_search_had_error=advanced_search_had_error,
         search_notes=search_notes,
-        search_tree=search_tree
+        search_tree=search_tree,
+        get_component=get_component
     )
 
 
@@ -863,7 +871,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
         for action in get_actions(action_type.id):
-            action_type_id_by_action_id[action.id] = action_type.id
+            if action_type.component_id is not None and action_type.fed_id < 0:
+                action_type_id_by_action_id[action.id] = action_type.fed_id
+            else:
+                action_type_id_by_action_id[action.id] = action_type.id
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=True)
@@ -911,6 +922,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             previous_object_id=previous_object_id,
             has_grant_for_previous_object=has_grant_for_previous_object,
             languages=get_languages(only_enabled_for_input=True),
+            get_component=get_component,
             ENGLISH=english
         )
     else:
@@ -933,6 +945,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             users=users,
             mode=mode,
             languages=get_languages(),
+            get_component=get_component,
             ENGLISH=english
         )
 
@@ -959,7 +972,7 @@ def get_project_if_it_exists(project_id):
 
 def show_inline_edit(obj, action):
     # Set view attributes
-    related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, flask_login.current_user.id)
+    related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, user_id=flask_login.current_user.id)
 
     user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
@@ -1013,8 +1026,10 @@ def show_inline_edit(obj, action):
 
     location_form.location.choices = locations
     possible_responsible_users = [('-1', '—')]
+    user_is_fed = {}
     for user in logic.users.get_users(exclude_hidden=True):
         possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+        user_is_fed[str(user.id)] = user.fed_id is not None
     location_form.responsible_user.choices = possible_responsible_users
 
     measurement_actions = logic.action_translations.get_actions_with_translation_in_language(user_language_id,
@@ -1081,6 +1096,7 @@ def show_inline_edit(obj, action):
         "instrument": instrument,
         "schema": obj.schema,
         "data": obj.data,
+        "name": obj.name,
         "object_log_entries": object_log_entries,
         "ObjectLogEntryType": ObjectLogEntryType,
         "last_edit_datetime": obj.utc_datetime,
@@ -1133,7 +1149,14 @@ def show_inline_edit(obj, action):
         "get_project": get_project_if_it_exists,
         "get_action_type": get_action_type,
         "get_action_type_with_translation_in_language": get_action_type_with_translation_in_language,
-        "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language
+        "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language,
+        "get_component_information_by_uuid": get_component_information_by_uuid,
+        "component": obj.component,
+        "fed_object_id": obj.fed_object_id,
+        "fed_version_id": obj.fed_version_id,
+        "get_component": get_component,
+        "location_is_fed": {str(loc.id): loc.fed_id is not None for loc in locations_map.values()},
+        "user_is_fed": user_is_fed
     }
 
     # form kwargs
@@ -1209,40 +1232,99 @@ def show_inline_edit(obj, action):
     return flask.render_template('objects/inline_edit/inline_edit_base.html', **kwargs)
 
 
-def get_object_if_current_user_has_read_permissions(object_id):
+def get_object_if_current_user_has_read_permissions(object_id, component_uuid=None):
     user_id = flask_login.current_user.id
+    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            permissions = get_user_object_permissions(object_id, user_id)
+            if Permissions.READ not in permissions:
+                return None
+            else:
+                return get_object(object_id)
+        except ObjectDoesNotExistError:
+            return None
+    else:
+        try:
+            component = get_component_by_uuid(component_uuid)
+        except ComponentDoesNotExistError:
+            return None
+        try:
+            object = get_fed_object(object_id, component.id)
+            permissions = get_user_object_permissions(object.id, user_id)
+            if Permissions.READ not in permissions:
+                return None
+        except ObjectDoesNotExistError:
+            return None
+        return object
+
+
+def get_fed_object_if_current_user_has_read_permissions(fed_object_id, component_uuid):
+    user_id = flask_login.current_user.id
+    component = get_component_by_uuid(component_uuid)
     try:
-        permissions = get_user_object_permissions(object_id, user_id)
+        fed_object = get_fed_object(fed_object_id, component_id=component.id)
+        permissions = get_user_object_permissions(fed_object.id, user_id)
     except ObjectDoesNotExistError:
         return None
     if Permissions.READ not in permissions:
         return None
-    return get_object(object_id)
+    return fed_object
+
+
+def get_component_information_by_uuid(component_uuid: str):
+    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
+        return None, 0, None
+    else:
+        try:
+            component = get_component_by_uuid(component_uuid)
+            return component.get_name(), component.id, component.address
+        except ComponentDoesNotExistError:
+            return _('Unknown database (%(uuid)s)', uuid=component_uuid[:8]), -1, None
+
+
+def get_component_information(component_id: int):
+    try:
+        component = get_component(component_id)
+        component_name = component.name
+        component_id = component.id
+    except ComponentDoesNotExistError:
+        component_name = None
+        component_id = -1
+    return component_name, component_id
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object(object_id):
     object = get_object(object_id=object_id)
-    related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, flask_login.current_user.id)
+
+    related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, user_id=flask_login.current_user.id)
 
     user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
 
     object_languages = set()
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
-    user_may_edit = Permissions.WRITE in user_permissions
+    user_may_edit = Permissions.WRITE in user_permissions and object.fed_object_id is None
     user_may_grant = Permissions.GRANT in user_permissions
-    user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
-
-    action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
-    if action.schema != object.schema:
-        new_schema_available = True
+    if object.action_id is not None:
+        user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
+        action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
+        if action.schema != object.schema:
+            new_schema_available = True
+        else:
+            new_schema_available = False
     else:
+        action = None
         new_schema_available = False
+        user_may_use_as_template = False
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
+        if object.fed_object_id is not None:
+            flask.flash(_('Editing imported objects is not yet supported.'), 'error')
         return flask.abort(403)
     if not user_may_edit and flask.request.args.get('mode', '') == 'upgrade':
+        if object.fed_object_id is not None:
+            flask.flash(_('Editing imported objects is not yet supported.'), 'error')
         return flask.abort(403)
     if not flask.current_app.config['DISABLE_INLINE_EDIT']:
         if not user_may_edit and flask.request.args.get('mode', '') == 'inline_edit':
@@ -1250,11 +1332,15 @@ def object(object_id):
         if user_may_edit and flask.request.method == 'GET' and flask.request.args.get('mode', '') in {'', 'inline_edit'}:
             return show_inline_edit(object, get_action(object.action_id))
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
-        instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument else None
-        object_type = get_action_type_with_translation_in_language(
-            action_type_id=action.type_id,
-            language_id=user_language_id
-        ).translation.object_name
+        if action is not None:
+            instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument else None
+            object_type = get_action_type_with_translation_in_language(
+                action_type_id=action.type_id,
+                language_id=user_language_id
+            ).translation.object_name
+        else:
+            instrument = None
+            object_type = None
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
 
         dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
@@ -1284,14 +1370,16 @@ def object(object_id):
         while unvisited_location_ids_prefixes_and_subtrees:
             location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
             location = locations_map[location_id]
-            locations.append((str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name), location.id)))
+            locations.append((str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name, default=_('Unnamed Location')), location.id)))
             for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name), reverse=True):
-                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, get_translated_text(location.name)), subtree[location_id]))
+                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, get_translated_text(location.name, default=_('Unnamed Location'))), subtree[location_id]))
 
         location_form.location.choices = locations
         possible_responsible_users = [('-1', '—')]
+        user_is_fed = {}
         for user in logic.users.get_users(exclude_hidden=True):
-            possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+            possible_responsible_users.append((str(user.id), user.get_name()))
+            user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_responsible_users
 
         measurement_actions = logic.action_translations.get_actions_with_translation_in_language(user_language_id, models.ActionType.MEASUREMENT, use_fallback=True)
@@ -1313,12 +1401,15 @@ def object(object_id):
         object_publications = logic.publications.get_publications_for_object(object_id=object.id)
         user_may_link_publication = Permissions.WRITE in user_permissions
 
-        notebook_templates = get_notebook_templates(
-            object_id=object.id,
-            data=object.data,
-            schema=object.schema,
-            user_id=flask_login.current_user.id
-        )
+        if object.schema is not None and object.data is not None:
+            notebook_templates = get_notebook_templates(
+                object_id=object.id,
+                data=object.data,
+                schema=object.schema,
+                user_id=flask_login.current_user.id
+            )
+        else:
+            notebook_templates = []
 
         linked_project = logic.projects.get_project_linked_to_object(object_id)
 
@@ -1334,6 +1425,12 @@ def object(object_id):
             for language in languages
         ):
             metadata_language = None
+
+        if object.user_id is not None:
+            last_edit_user = get_user(object.user_id)
+        else:
+            last_edit_user = None
+
         return flask.render_template(
             'objects/view/base.html',
             template_mode="view",
@@ -1351,14 +1448,15 @@ def object(object_id):
             ENGLISH=english,
             object_type=object_type,
             action=action,
-            action_type=get_action_type_with_translation_in_language(action.type_id, user_language_id),
+            action_type=get_action_type_with_translation_in_language(action.type_id, user_language_id) if action is not None else None,
             instrument=instrument,
             schema=object.schema,
             data=object.data,
+            name=object.name,
             object_log_entries=object_log_entries,
             ObjectLogEntryType=ObjectLogEntryType,
             last_edit_datetime=object.utc_datetime,
-            last_edit_user=get_user(object.user_id),
+            last_edit_user=last_edit_user,
             object_id=object_id,
             user_may_edit=user_may_edit,
             user_may_comment=user_may_edit,
@@ -1392,9 +1490,12 @@ def object(object_id):
             publication_form=publication_form,
             get_object=get_object,
             get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
+            get_fed_object_if_current_user_has_read_permissions=get_fed_object_if_current_user_has_read_permissions,
             get_object_location_assignment=get_object_location_assignment,
-            get_user=get_user,
+            get_user=get_user_if_exists,
             get_location=get_location,
+            get_component_information_by_uuid=get_component_information_by_uuid,
+            get_component_information=get_component_information,
             PAGE_SIZES=PAGE_SIZES,
             HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
             VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
@@ -1407,7 +1508,13 @@ def object(object_id):
             get_project=get_project_if_it_exists,
             get_action_type=get_action_type,
             get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
-            get_instrument_with_translation_in_language=get_instrument_with_translation_in_language
+            get_instrument_with_translation_in_language=get_instrument_with_translation_in_language,
+            component=object.component,
+            fed_object_id=object.fed_object_id,
+            fed_version_id=object.fed_version_id,
+            get_component=get_component,
+            location_is_fed={str(loc.id): loc.fed_id is not None for loc in locations_map.values()},
+            user_is_fed=user_is_fed
         )
     check_current_user_is_not_readonly()
     if flask.request.args.get('mode', '') == 'upgrade':
@@ -1516,10 +1623,7 @@ def print_object_label(object_id):
         creation_user = _('Unknown')
     if 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
         creation_date = object.data['created']['utc_datetime'].split(' ')[0]
-    if 'name' in object.data and '_type' in object.data['name'] and object.data['name']['_type'] == 'text':
-        object_name = get_translated_text(object.data['name']['text'])
-    else:
-        object_name = _('Unknown Object')
+    object_name = get_translated_text(object.name)
 
     object_url = flask.url_for('.object', object_id=object_id, _external=True)
 
@@ -1575,7 +1679,7 @@ def search():
     )
     user_language_id = get_user_language(flask_login.current_user).id
 
-    action_types = get_action_types_with_translations_in_language(user_language_id)
+    action_types = get_action_types_with_translations_in_language(user_language_id, filter_fed_defaults=True)
     search_paths = {}
     search_paths_by_action = {}
     search_paths_by_action_type = {}
@@ -1656,10 +1760,12 @@ def referencable_objects():
     def dictify(x):
         return {
             'id': x.object_id,
-            'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '&mdash;', x.object_id),
+            'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '&mdash;', x.object_id) if x.component_name is None
+            else flask.escape('{} (#{}, #{} @ {})'.format(get_translated_text(x.name_json) or '&mdash;', x.object_id, x.fed_object_id, x.component_name)),
             'action_id': x.action_id,
             'max_permission': x.max_permission,
-            'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else []
+            'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else [],
+            'is_fed': x.fed_object_id is not None
         }
 
     return {
@@ -2050,7 +2156,7 @@ def object_versions(object_id):
         return flask.abort(404)
     object_versions = get_object_versions(object_id=object_id)
     object_versions.sort(key=lambda object_version: -object_version.version_id)
-    return flask.render_template('objects/object_versions.html', get_user=get_user, object=object, object_versions=object_versions)
+    return flask.render_template('objects/object_versions.html', get_user=get_user_if_exists, object=object, object_versions=object_versions)
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
@@ -2096,6 +2202,7 @@ def object_version(object_id, version_id):
         instrument=instrument,
         schema=object.schema,
         data=object.data,
+        name=object.name,
         last_edit_datetime=object.utc_datetime,
         last_edit_user=get_user(object.user_id),
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
@@ -2103,10 +2210,15 @@ def object_version(object_id, version_id):
         version_id=version_id,
         link_version_specific_rdf=True,
         restore_form=form,
-        get_user=get_user,
+        get_user=get_user_if_exists,
         user_may_grant=user_may_grant,
         get_action_type=get_action_type,
         get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
+        get_component_information_by_uuid=get_component_information_by_uuid,
+        component=object.component,
+        fed_object_id=object.fed_object_id,
+        fed_version_id=object.fed_version_id,
+        get_component=get_component
     )
 
 
@@ -2133,12 +2245,19 @@ def restore_object_version(object_id, version_id):
 def object_permissions(object_id):
     check_current_user_is_not_readonly()
     object = get_object(object_id)
-    action = get_action(object.action_id)
-    instrument = action.instrument
+    components = get_components()
+    if object.action_id is not None:
+        action = get_action(object.action_id)
+        instrument = action.instrument
+    else:
+        action = None
+        instrument = None
     user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False, include_admin_permissions=False)
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
+    component_policies = {share.component_id: share for share in get_shares_for_object(object_id)}
+    policies = {share.component_id: share.policy for share in get_shares_for_object(object_id)}
     suggested_user_id = flask.request.args.get('add_user_id', '')
     try:
         suggested_user_id = int(suggested_user_id)
@@ -2160,8 +2279,11 @@ def object_permissions(object_id):
             if project_id is None:
                 continue
             project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
-        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
-        users = get_users(exclude_hidden=True)
+        component_policies_form_data = []
+        for share in component_policies.values():
+            component_policies_form_data.append({'component_id': share.component_id, 'policy': share.policy})
+        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data, component_permissions=component_policies_form_data)
+        users = get_users(exclude_hidden=True, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         add_user_permissions_form = ObjectUserPermissionsForm()
         groups = get_user_groups(flask_login.current_user.id)
@@ -2170,6 +2292,28 @@ def object_permissions(object_id):
         projects = get_user_projects(flask_login.current_user.id, include_groups=True)
         projects = [project for project in projects if project.id not in project_permissions]
         add_project_permissions_form = ObjectProjectPermissionsForm()
+        possible_new_components = [component for component in components if component.id not in component_policies.keys()]
+        component_users = {
+            component.id: {
+                user.fed_id: user.get_name(include_ref=True)
+                for user in get_users_for_component(component.id, exclude_hidden=True)
+            }
+            for component in components
+        }
+        add_component_policy_form = ObjectNewShareAccessForm()
+        add_component_policy_form.data.data = True
+        add_component_policy_form.action.data = True
+        add_component_policy_form.users.data = True
+        add_component_policy_form.files.data = True
+        add_component_policy_form.comments.data = True
+        add_component_policy_form.object_location_assignments.data = True
+        edit_component_policy_form = ObjectEditShareAccessForm()
+        edit_component_policy_form.data.data = True
+        edit_component_policy_form.action.data = True
+        edit_component_policy_form.users.data = True
+        edit_component_policy_form.files.data = True
+        edit_component_policy_form.comments.data = True
+        edit_component_policy_form.object_location_assignments.data = True
         copy_permissions_form = CopyPermissionsForm()
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
@@ -2177,7 +2321,7 @@ def object_permissions(object_id):
                 permissions=Permissions.GRANT
             )
             copy_permissions_form.object_id.choices = [
-                (str(existing_object.id), existing_object.data['name']['text'])
+                (str(existing_object.id), existing_object.name)
                 for existing_object in existing_objects
                 if existing_object.id != object_id
             ]
@@ -2190,10 +2334,15 @@ def object_permissions(object_id):
         add_user_permissions_form = None
         add_group_permissions_form = None
         add_project_permissions_form = None
+        add_component_policy_form = None
         copy_permissions_form = None
+        edit_component_policy_form = None
+
         users = []
         groups = []
         projects = []
+        possible_new_components = None
+        component_users = []
 
     acceptable_project_ids = {
         project.id
@@ -2226,7 +2375,9 @@ def object_permissions(object_id):
         group_permissions=group_permissions,
         project_permissions=project_permissions,
         public_permissions=public_permissions,
-        get_user=get_user,
+        federation_shares=component_policies,
+        get_user=get_user_if_exists,
+        get_component=get_component,
         Permissions=Permissions,
         form=edit_user_permissions_form,
         users=users,
@@ -2234,13 +2385,19 @@ def object_permissions(object_id):
         projects_by_id=all_projects_by_id,
         project_id_hierarchy_list=project_id_hierarchy_list,
         show_projects_form=len(acceptable_project_ids) > 0,
+        edit_component_policy_form=edit_component_policy_form,
+        component_users=component_users,
+        copy_permissions_form=copy_permissions_form,
+        add_component_policy_form=add_component_policy_form,
+        possible_new_components=possible_new_components,
         add_user_permissions_form=add_user_permissions_form,
         add_group_permissions_form=add_group_permissions_form,
         get_group=get_group,
         add_project_permissions_form=add_project_permissions_form,
-        copy_permissions_form=copy_permissions_form,
         get_project=get_project,
-        suggested_user_id=suggested_user_id
+        suggested_user_id=suggested_user_id,
+        json_dumps=json.dumps,
+        policies=policies
     )
 
 
@@ -2251,6 +2408,8 @@ def update_object_permissions(object_id):
     add_user_permissions_form = ObjectUserPermissionsForm()
     add_group_permissions_form = ObjectGroupPermissionsForm()
     add_project_permissions_form = ObjectProjectPermissionsForm()
+    add_component_policy_form = ObjectNewShareAccessForm()
+    edit_component_policy_form = ObjectEditShareAccessForm()
     copy_permissions_form = CopyPermissionsForm()
     if 'copy_permissions' in flask.request.form:
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
@@ -2259,7 +2418,7 @@ def update_object_permissions(object_id):
                 permissions=Permissions.GRANT
             )
             copy_permissions_form.object_id.choices = [
-                (str(existing_object.id), existing_object.data['name']['text'])
+                (str(existing_object.id), existing_object.name)
                 for existing_object in existing_objects
                 if existing_object.id != object_id
             ]
@@ -2323,6 +2482,78 @@ def update_object_permissions(object_id):
         assert project_id not in object_permissions
         user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
         set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=permissions)
+        flask.flash(_("Successfully updated object permissions."), 'success')
+    elif 'add_component_policy' in flask.request.form and add_component_policy_form.validate_on_submit():
+        component_id = add_component_policy_form.component_id.data
+        component = get_component(component_id)
+        policy = {
+            'access': {
+                'data': add_component_policy_form.data.data,
+                'action': add_component_policy_form.action.data,
+                'users': add_component_policy_form.users.data,
+                'files': add_component_policy_form.files.data,
+                'comments': add_component_policy_form.comments.data,
+                'object_location_assignments': add_component_policy_form.object_location_assignments.data,
+            },
+            'permissions': {'users': {}, 'groups': {}, 'projects': {}}
+        }
+        allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+        for attr_name, value in flask.request.form.items():
+            if attr_name[:len('permissions_add_policy_user_')] == 'permissions_add_policy_user_':
+                user_id = attr_name[len('permissions_add_policy_user_'):]
+                try:
+                    user_id = int(user_id)
+                except ValueError:
+                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+                if value not in allowed_permissions:
+                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+                policy['permissions']['users'][user_id] = value
+        add_object_share(object_id, component_id, policy)
+        try:
+            update_poke_component(component)
+        except logic.errors.MissingComponentAddressError:
+            flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
+        except logic.errors.NoAuthenticationMethodError:
+            flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        except requests.ConnectionError:
+            flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        flask.flash(_("Successfully updated object permissions."), 'success')
+    elif 'edit_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
+        component_id = edit_component_policy_form.component_id.data
+        component = get_component(component_id)
+        policy = {
+            'access': {
+                'data': edit_component_policy_form.data.data,
+                'action': edit_component_policy_form.action.data,
+                'users': edit_component_policy_form.users.data,
+                'files': edit_component_policy_form.files.data,
+                'comments': edit_component_policy_form.comments.data,
+                'object_location_assignments': edit_component_policy_form.object_location_assignments.data,
+            },
+            'permissions': {'users': {}, 'groups': {}, 'projects': {}}
+        }
+        allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+        for attr_name, value in flask.request.form.items():
+            if attr_name[:len('permissions_edit_policy_user_')] == 'permissions_edit_policy_user_':
+                user_id = attr_name[len('permissions_edit_policy_user_'):]
+                try:
+                    user_id = int(user_id)
+                except ValueError:
+                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+                    return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
+                if value not in allowed_permissions:
+                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+                    return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
+                policy['permissions']['users'][user_id] = value
+        update_object_share(object_id, component_id, policy)
+        try:
+            update_poke_component(component)
+        except logic.errors.MissingComponentAddressError:
+            flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
+        except logic.errors.NoAuthenticationMethodError:
+            flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        except requests.ConnectionError:
+            flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
         flask.flash(_("Successfully updated object permissions."), 'success')
     else:
         flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')

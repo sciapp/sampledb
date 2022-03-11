@@ -9,9 +9,10 @@ import typing
 
 import flask
 
+from .components import get_component
 from .. import db
 from . import errors
-from .. models import users, User, UserType
+from .. models import users, User, UserType, UserFederationAlias
 
 
 class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id', 'utc_datetime', 'accepted'])):
@@ -38,16 +39,21 @@ class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id
         return datetime.datetime.utcnow() >= expiration_datetime
 
 
-def get_user(user_id: int) -> User:
+def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:
     if user_id is None:
         raise TypeError("user_id must be int")
-    user = User.query.get(user_id)
+    if component_id is None or component_id == 0:
+        user = User.query.get(user_id)
+    else:
+        user = User.query.filter_by(fed_id=user_id, component_id=component_id).first()
     if user is None:
+        if component_id is not None:
+            get_component(component_id)
         raise errors.UserDoesNotExistError()
     return user
 
 
-def get_users(exclude_hidden: bool = False, order_by: typing.Optional[db.Column] = User.name) -> typing.List[User]:
+def get_users(exclude_hidden: bool = False, order_by: typing.Optional[db.Column] = User.name, exclude_fed: bool = False) -> typing.List[User]:
     """
     Returns all users.
 
@@ -56,6 +62,17 @@ def get_users(exclude_hidden: bool = False, order_by: typing.Optional[db.Column]
     :return: the list of users
     """
     user_query = User.query
+    if exclude_hidden:
+        user_query = user_query.filter_by(is_hidden=False)
+    if order_by is not None:
+        user_query = user_query.order_by(order_by)
+    if exclude_fed:
+        user_query = user_query.filter(User.type != UserType.FEDERATION_USER)
+    return user_query.all()
+
+
+def get_users_for_component(component_id: int, exclude_hidden: bool = False, order_by: typing.Optional[db.Column] = User.name):
+    user_query = User.query.filter_by(component_id=component_id)
     if exclude_hidden:
         user_query = user_query.filter_by(is_hidden=False)
     if order_by is not None:
@@ -82,7 +99,17 @@ def get_users_by_name(name: str) -> typing.List[User]:
     return User.query.filter_by(name=name).all()
 
 
-def create_user(name: str, email: str, type: UserType) -> User:
+def create_user(
+        name: typing.Optional[str],
+        email: typing.Optional[str],
+        type: UserType,
+        orcid: typing.Optional[str] = None,
+        affiliation: typing.Optional[str] = None,
+        role: typing.Optional[str] = None,
+        extra_fields: typing.Optional[dict] = None,
+        fed_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None
+) -> User:
     """
     Create a new user.
 
@@ -95,7 +122,14 @@ def create_user(name: str, email: str, type: UserType) -> User:
     :param type: the user's type
     :return: the newly created user
     """
-    user = User(name=name, email=email, type=type)
+
+    if (component_id is None) != (fed_id is None) or (component_id is None and (name is None or email is None)):
+        raise TypeError('Invalid parameter combination.')
+
+    if component_id is not None:
+        get_component(component_id)
+
+    user = User(name=name, email=email, type=type, orcid=orcid, affiliation=affiliation, role=role, extra_fields=extra_fields, fed_id=fed_id, component_id=component_id)
     db.session.add(user)
     db.session.commit()
     return user
@@ -194,3 +228,18 @@ def set_user_invitation_accepted(invitation_id: int) -> None:
     invitation.accepted = True
     db.session.add(invitation)
     db.session.commit()
+
+
+def get_user_alias(user_id: int, component_id: int):
+    """
+    Get an existing user alias.
+
+    :param user_id: the ID of an existing user
+    :param component_id: the ID of an existing component
+    :return: the user alias
+    :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
+    """
+    alias = UserFederationAlias.query.get((user_id, component_id))
+    if alias is None:
+        raise errors.UserAliasDoesNotExistError()
+    return alias

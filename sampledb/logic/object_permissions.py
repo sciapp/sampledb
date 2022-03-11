@@ -299,13 +299,22 @@ def get_object_info_with_permissions(
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
-        o.object_id, o.data -> 'name' -> 'text' as name_json, o.action_id, 3 as max_permission, o.data -> 'tags' as tags
+        o.object_id, o.data -> 'name' -> 'text' as name_json, o.action_id, 3 as max_permission, o.data -> 'tags' as tags, o.fed_object_id,
+            CASE WHEN c.name IS NULL
+                THEN c.uuid
+                ELSE c.name
+            END AS component_name
         FROM objects_current AS o
+        LEFT JOIN components AS c ON c.id = o.component_id
         """)
     else:
         stmt = db.text("""
         SELECT
-        o.object_id, o.data -> 'name' -> 'text' as name_json, o.action_id, p.max_permission, o.data -> 'tags' as tags
+            o.object_id, o.data -> 'name' -> 'text' as name_json, o.action_id, p.max_permission, o.data -> 'tags' as tags, o.fed_object_id,
+            CASE WHEN c.name IS NULL
+                THEN c.uuid
+                ELSE c.name
+            END AS component_name
         FROM (
             SELECT
             object_id, MAX(permissions_int) AS max_permission
@@ -315,6 +324,7 @@ def get_object_info_with_permissions(
             HAVING MAX(permissions_int) >= :min_permissions_int
         ) AS p
         JOIN objects_current AS o ON o.object_id = p.object_id
+        LEFT JOIN components AS c ON c.id = o.component_id
         """)
 
     stmt = stmt.columns(
@@ -322,7 +332,9 @@ def get_object_info_with_permissions(
         sqlalchemy.sql.expression.column('name_json'),
         objects.Objects._current_table.c.action_id,
         sqlalchemy.sql.expression.column('max_permission'),
-        sqlalchemy.sql.expression.column('tags')
+        sqlalchemy.sql.expression.column('tags'),
+        sqlalchemy.sql.expression.column('fed_object_id'),
+        sqlalchemy.sql.expression.column('component_name')
     )
 
     parameters = {
@@ -381,7 +393,12 @@ def get_objects_with_permissions(
     if action_type_id is not None and action_id is not None:
         action_filter = db.and_(Action.type_id == action_type_id, Action.id == action_id)
     elif action_type_id is not None:
-        action_filter = (Action.type_id == action_type_id)
+        if action_type_id <= 0:
+            # merge with default types of other databases
+            action_filter = (db.or_(Action.type_id == action_type_id, Action.type.has(fed_id=action_type_id)))
+        else:
+            action_filter = (Action.type_id == action_type_id)
+        # action_filter = (Action.type_id == action_type_id)
     elif action_id is not None:
         action_filter = (Action.id == action_id)
     else:
@@ -395,13 +412,13 @@ def get_objects_with_permissions(
     if name_only:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.data -> 'name' -> 'text') as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime
+        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.data -> 'name' -> 'text') as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id
         FROM objects_current AS o
         """
     else:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime
+        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id
         FROM objects_current AS o
         """
 
@@ -476,7 +493,10 @@ def get_objects_with_permissions(
         objects.Objects._current_table.c.data,
         objects.Objects._current_table.c.schema,
         objects.Objects._current_table.c.user_id,
-        objects.Objects._current_table.c.utc_datetime
+        objects.Objects._current_table.c.utc_datetime,
+        objects.Objects._current_table.c.fed_object_id,
+        objects.Objects._current_table.c.fed_version_id,
+        objects.Objects._current_table.c.component_id
     ))
 
     return objects.get_objects(

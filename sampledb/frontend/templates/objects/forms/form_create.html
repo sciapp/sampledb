@@ -73,7 +73,7 @@
         {% endif %}
         <select id="copyPermissionsSelect" class="selectpicker pull-right" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" data-none-selected-text="{{ _("No object selected") }}">
           {% for object in existing_objects %}
-          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.data['name']['text'] | get_translated_text }} (#{{ object.id }})</option>
+          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.name | get_translated_text }} (#{{ object.id }})</option>
           {% endfor %}
         </select>
       </div>

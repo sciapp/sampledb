@@ -5,8 +5,17 @@
 
 import pytest
 import sampledb
+from sampledb.logic.components import add_component
 from sampledb.models import User, UserType
 from sampledb.logic import instruments, errors
+
+UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+
+
+@pytest.fixture
+def component():
+    component = add_component(address=None, uuid=UUID_1, name='Example component', description='')
+    return component
 
 
 def test_create_instrument():
@@ -106,3 +115,37 @@ def test_set_instrument_responsible_users():
     assert user2 in instrument.responsible_users
     instruments.set_instrument_responsible_users(instrument.id, [])
     assert len(instrument.responsible_users) == 0
+
+
+def test_create_instrument_fed(component):
+    assert len(instruments.get_instruments()) == 0
+    instrument = instruments.create_instrument(fed_id=1, component_id=component.id)
+    assert len(instruments.get_instruments()) == 1
+    assert instrument == instruments.get_instrument(instrument_id=instrument.id)
+    assert len(instrument.responsible_users) == 0
+    assert instrument.fed_id == 1
+    assert instrument.component_id == component.id
+
+
+def test_create_instrument_fed_exceptions(component):
+    assert len(instruments.get_instruments()) == 0
+    with pytest.raises(errors.ComponentDoesNotExistError):
+        instruments.create_instrument(fed_id=1, component_id=component.id + 1)
+    with pytest.raises(TypeError):
+        instruments.create_instrument(component_id=component.id)
+    with pytest.raises(TypeError):
+        instruments.create_instrument(fed_id=1)
+    assert len(instruments.get_instruments()) == 0
+
+
+def test_get_instrument_fed(component):
+    created_instrument = instruments.create_instrument(fed_id=1, component_id=component.id)
+    instrument = instruments.get_instrument(1, component.id)
+    assert created_instrument == instrument
+
+
+def test_get_instrument_fed_exceptions(component):
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.get_instrument(1, component.id)
+    with pytest.raises(errors.ComponentDoesNotExistError):
+        instruments.get_instrument(1, component.id + 1)

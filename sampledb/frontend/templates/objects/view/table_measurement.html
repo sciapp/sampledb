@@ -1,7 +1,8 @@
 {% if data is not none and "object_id" in data %}
   {% with obj = get_object_if_current_user_has_read_permissions(data.object_id) %}
     {% if not (obj is none) %}
-      <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.data['name']['text'] | get_translated_text(metadata_language) }} (#{{ obj.object_id }})</a>
+      <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{{ obj.name | get_translated_text(metadata_language) }} (#{{ obj.object_id }})</a>
+      {{ federation_information_symbol(obj.component, obj.fed_object_id, 'object') }}
     {% else %}
       <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
     {% endif %}

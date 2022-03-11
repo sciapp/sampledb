@@ -3,7 +3,7 @@
 {% block title %}{{ _('Object') }} #{{ object.id }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>{{ object.data['name']['text'] | get_translated_text }}</h1>
+  <h1>{{ object.name | get_translated_text }}</h1>
   <h2>{{ _('Versions') }}</h2>
 
   <table class="table">
@@ -15,7 +15,10 @@
     {% set user = get_user(object_version.user_id) %}
     <tr>
       <td>{{ object_version.utc_datetime | babel_format_date }}</td>
-      <td><a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.name }}</a></td>
+      <td>
+        <a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.get_name() }}</a>
+        {{ federation_information_symbol(user.component, user.fed_id, 'user') }}
+      </td>
       <td><a href="{{ url_for('.object_version', object_id=object.object_id, version_id=object_version.version_id) }}">{{ _('View') }}</a></td>
     </tr>
   {% endfor %}

@@ -26,7 +26,7 @@ import typing
 from .. import db
 from .. import models
 from ..models import Action
-from . import errors, instruments, users, schemas
+from . import errors, instruments, users, schemas, components
 
 
 class ActionType(collections.namedtuple('ActionType', [
@@ -43,7 +43,9 @@ class ActionType(collections.namedtuple('ActionType', [
     'enable_related_objects',
     'enable_project_link',
     'disable_create_objects',
-    'is_template'
+    'is_template',
+    'fed_id',
+    'component_id'
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
@@ -64,7 +66,9 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_related_objects: bool,
             enable_project_link: bool,
             disable_create_objects: bool,
-            is_template: bool
+            is_template: bool,
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None
     ):
         self = super(ActionType, cls).__new__(
             cls,
@@ -81,7 +85,9 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_related_objects,
             enable_project_link,
             disable_create_objects,
-            is_template
+            is_template,
+            fed_id,
+            component_id
         )
         return self
 
@@ -101,26 +107,34 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_related_objects=action_type.enable_related_objects,
             enable_project_link=action_type.enable_project_link,
             disable_create_objects=action_type.disable_create_objects,
-            is_template=action_type.is_template
+            is_template=action_type.is_template,
+            fed_id=action_type.fed_id,
+            component_id=action_type.component_id,
         )
 
     def __repr__(self):
         return f"<{type(self).__name__}(id={self.id!r})>"
 
 
-def get_action_types() -> typing.List[ActionType]:
+def get_action_types(filter_fed_defaults: bool = False) -> typing.List[ActionType]:
     """
     Return the list of all existing action types.
 
     :return: the action types
     """
-    return [
-        ActionType.from_database(action_type)
-        for action_type in models.ActionType.query.order_by(models.ActionType.id).all()
-    ]
+    if filter_fed_defaults:
+        return [
+            ActionType.from_database(action_type)
+            for action_type in models.ActionType.query.filter(db.or_(models.ActionType.fed_id > 0, models.ActionType.fed_id.is_(None))).order_by(models.ActionType.id).all()
+        ]
+    else:
+        return [
+            ActionType.from_database(action_type)
+            for action_type in models.ActionType.query.order_by(models.ActionType.id).all()
+        ]
 
 
-def get_action_type(action_type_id: int) -> ActionType:
+def get_action_type(action_type_id: int, component_id: typing.Optional[int] = None) -> ActionType:
     """
     Returns the action type with the given action type ID.
 
@@ -129,7 +143,12 @@ def get_action_type(action_type_id: int) -> ActionType:
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     """
-    action_type = models.ActionType.query.get(action_type_id)
+    if component_id is None:
+        action_type = models.ActionType.query.get(action_type_id)
+    else:
+        # ensure that the component can be found
+        components.get_component(component_id)
+        action_type = models.ActionType.query.filter_by(fed_id=action_type_id, component_id=component_id).first()
     if action_type is None:
         raise errors.ActionTypeDoesNotExistError()
     return ActionType.from_database(action_type)
@@ -148,7 +167,9 @@ def create_action_type(
         enable_related_objects: bool,
         enable_project_link: bool,
         disable_create_objects: bool,
-        is_template: bool
+        is_template: bool,
+        fed_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None
 ) -> ActionType:
     """
     Create a new action type.
@@ -166,6 +187,13 @@ def create_action_type(
     :param enable_project_link: objects created with actions of this type can be linked to a project group
     :return: the created action type
     """
+    if (component_id is None) != (fed_id is None):
+        raise TypeError('Invalid parameter combination.')
+
+    if component_id is not None:
+        # ensure that the component can be found
+        components.get_component(component_id)
+
     action_type = models.ActionType(
         admin_only=admin_only,
         show_on_frontpage=show_on_frontpage,
@@ -179,7 +207,9 @@ def create_action_type(
         enable_related_objects=enable_related_objects,
         enable_project_link=enable_project_link,
         disable_create_objects=disable_create_objects,
-        is_template=is_template
+        is_template=is_template,
+        fed_id=fed_id,
+        component_id=component_id
     )
     db.session.add(action_type)
     db.session.commit()
@@ -244,13 +274,15 @@ def update_action_type(
 
 def create_action(
         *,
-        action_type_id: int,
-        schema: dict,
+        action_type_id: typing.Optional[int],
+        schema: typing.Optional[dict],
         instrument_id: typing.Optional[int] = None,
         user_id: typing.Optional[int] = None,
         description_is_markdown: bool = False,
         is_hidden: bool = False,
-        short_description_is_markdown: bool = False
+        short_description_is_markdown: bool = False,
+        fed_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None
 ) -> Action:
     """
     Creates a new action with the given type and schema. If
@@ -265,6 +297,8 @@ def create_action(
     :param is_hidden: None or whether or not the action should be hidden
     :param short_description_is_markdown: whether the short description
         contains Markdown
+    :param fed_id: the ID of the related action at the exporting component
+    :param component_id: the ID of the exporting component
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -274,16 +308,25 @@ def create_action(
     :raise errors.UserDoesNotExistError: when user_id is not None and no user
         with the given user ID exists
     """
-    # ensure the action type exists
-    get_action_type(action_type_id)
+    if (component_id is None) != (fed_id is None) or (component_id is None and (action_type_id is None or schema is None)):
+        raise TypeError('Invalid parameter combination.')
 
-    schemas.validate_schema(schema)
+    if action_type_id is not None:
+        # ensure the action type exists
+        get_action_type(action_type_id)
+
+    if schema is not None:
+        schemas.validate_schema(schema)
     if instrument_id is not None:
         # ensure that the instrument can be found
         instruments.get_instrument(instrument_id)
     if user_id is not None:
         # ensure that the user can be found
         users.get_user(user_id)
+
+    if component_id is not None:
+        # ensure that the component can be found
+        components.get_component(component_id)
 
     action = Action(
         action_type_id=action_type_id,
@@ -292,7 +335,9 @@ def create_action(
         schema=schema,
         instrument_id=instrument_id,
         user_id=user_id,
-        short_description_is_markdown=short_description_is_markdown
+        short_description_is_markdown=short_description_is_markdown,
+        fed_id=fed_id,
+        component_id=component_id
     )
     db.session.add(action)
     db.session.commit()
@@ -317,7 +362,7 @@ def get_actions(action_type_id: typing.Optional[int] = None) -> typing.List[Acti
     return Action.query.all()
 
 
-def get_action(action_id: int) -> Action:
+def get_action(action_id: int, component_id: typing.Optional[int] = None) -> Action:
     """
     Returns the action with the given action ID.
 
@@ -326,7 +371,12 @@ def get_action(action_id: int) -> Action:
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
-    action = Action.query.get(action_id)
+    if component_id is None:
+        action = Action.query.get(action_id)
+    else:
+        # ensure that the component can be found
+        components.get_component(component_id)
+        action = Action.query.filter_by(fed_id=action_id, component_id=component_id).first()
     if action is None:
         raise errors.ActionDoesNotExistError()
     return action

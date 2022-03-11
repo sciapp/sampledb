@@ -3,7 +3,10 @@
 {% block title %}{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }}</h1>
+  <h1>
+    {{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }}
+    {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
+  </h1>
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.')}}</p>
   {% endif %}
@@ -14,7 +17,7 @@
   {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
-    {% if current_user.is_admin or current_user in instrument.responsible_users %}
+    {% if (current_user.is_admin or current_user in instrument.responsible_users) and instrument.fed_id is none %}
       <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">{{ _('Edit Instrument') }}</a>
     {% endif %}
   {% endif %}
@@ -22,7 +25,10 @@
   <h2>{{ _('Actions') }}</h2>
   {% for action in instrument.actions %}
     {% if not action.is_hidden or current_user.is_admin %}
-      <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action_translations[action.id].name }}"> {{ action_translations[action.id].name }}</a></h3>
+      <h3>
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action_translations[action.id].name }}"> {{ action_translations[action.id].name }}</a>
+        {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
+      </h3>
       {% if action_translations[action.id].short_description %}
         <div class="action-user-content">
           {% if action.short_description_is_markdown %}{{ action_translations[action.id].short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action_translations[action.id].short_description }}</p>{% endif %}
@@ -124,17 +130,17 @@
               <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> {{ _('Uncategorized') }}</label><br />
               <hr />
               <div class='input-group date'>
-                  <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
-                  <span class='input-group-addon'>
-                      <span class='glyphicon glyphicon-calendar'></span>
-                  </span>
+                <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
+                <span class='input-group-addon'>
+                    <span class='glyphicon glyphicon-calendar'></span>
+                </span>
               </div>
               <hr />
               <div class='form-group'>
               <select class='selectpicker' id='input-instrument-log-filter-user' data-width='100%'>
               <option value='' selected='selected'>{{ _('All users') }}</option>
               {% for user in instrument_log_users %}
-                <option value='{{ user.id }}'>{{ user.name }} (#{{ user.id }})</option>
+                <option value='{{ user.id }}'>{{ user.get_name() }}</option>
               {% endfor %}
               </select>
               </div>
@@ -152,7 +158,7 @@
           <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ (log_entry.versions[-1].event_utc_datetime or log_entry.versions[0].utc_datetime).strftime("%Y-%m") }}" data-instrument-log-datetime="{{ (log_entry.versions[-1].event_utc_datetime or log_entry.versions[0].utc_datetime).isoformat() }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }} (#{{ log_entry.author.id }})" style="position: relative">
             <div class="instrument-log-categories">
               {% for category in log_entry.versions[-1].categories %}
-                  <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
+                <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
               {% endfor %}
             </div>
             {% if log_entry.versions[-1].event_utc_datetime %}
@@ -271,14 +277,14 @@
                     </span>
                   </div>
                 </div>
-                  <label for="input-file-upload-{{ log_entry.id }}">{{ _('Add file attachments') }}</label>
-                 <div class="input-group" id="upload-area-{{ log_entry.id }}">
-                    <span class="input-group-addon"><i class="fa fa-file"></i></span>
-                    <input id="input-file-text-{{ log_entry.id }}" type="text" class="form-control disabled" disabled placeholder="{{ _('No files selected') }}" />
-                    <div class="input-group-btn">
-                      <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>{{ _('Browse...') }}<input id="input-file-upload-{{ log_entry.id }}" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
-                    </div>
+                <label for="input-file-upload-{{ log_entry.id }}">{{ _('Add file attachments') }}</label>
+                <div class="input-group" id="upload-area-{{ log_entry.id }}">
+                  <span class="input-group-addon"><i class="fa fa-file"></i></span>
+                  <input id="input-file-text-{{ log_entry.id }}" type="text" class="form-control disabled" disabled placeholder="{{ _('No files selected') }}" />
+                  <div class="input-group-btn">
+                    <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>{{ _('Browse...') }}<input id="input-file-upload-{{ log_entry.id }}" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
                   </div>
+                </div>
                   {% if instrument_log_entry_form.objects.choices or config["LOAD_OBJECTS_IN_BACKGROUND"] %}
                   <div class="form-group" style="margin: 15px 0" id="wrapper-object-attachments-{{ log_entry.id }}">
                     <label for="select-object-attachments-{{ log_entry.id }}">{{ _('Add object attachments') }}</label>

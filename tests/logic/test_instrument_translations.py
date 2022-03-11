@@ -71,7 +71,7 @@ def test_get_instrument_translations_for_instrument():
 
     assert len(instrument_translations.get_instrument_translations_for_instrument(instrument.id, use_fallback=True)) == 1
     instrument_translation = instrument_translations.get_instrument_translations_for_instrument(instrument.id, use_fallback=True)[0]
-    assert instrument_translation.name == f"#{instrument.id}"
+    assert instrument_translation.name == f'Unnamed Instrument (#{instrument.id})'
 
     instrument_translations.set_instrument_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
@@ -110,7 +110,7 @@ def test_get_instrument_translation_for_instrument_in_language():
         use_fallback=True
     )
     assert instrument_translation.language.lang_code == 'en'
-    assert instrument_translation.name == f'#{instrument.id}'
+    assert instrument_translation.name == f'Unnamed Instrument (#{instrument.id})'
     assert instrument_translation.description == ''
     assert instrument_translation.short_description == ''
     assert instrument_translation.notes == ''

@@ -5,14 +5,254 @@
 {% block stylesheets %}
   {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
     <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
   {% endif %}
+  <script>
+    let new_policy_selected_users = {};
+    let edit_policy_selected_users = {};
+    let users = {{ component_users | tojson }};
+    let policies = {{ policies | tojson }};
+    let add_selected_component_id = undefined;
+    let edit_selected_component_id = undefined;
+
+    function setNewPolicyData() {
+      if ($('#add_share_component_picker').val() != add_selected_component_id) {
+        $('#new_policy_users_tbody').empty();
+        new_policy_selected_users = {};
+        add_selected_component_id = $('#add_share_component_picker').val();
+        updateAddSelect();
+      }
+    }
+
+    function setEditPolicyData() {
+      if ($('#edit-share-component-picker').val() != edit_selected_component_id) {
+        edit_policy_selected_users = {};
+        edit_selected_component_id = $('#edit-share-component-picker').val();
+        $('#policy-edit-data').prop('checked', policies[edit_selected_component_id]['access']['data']).change();
+        $('#policy-edit-action').prop('checked', policies[edit_selected_component_id]['access']['action']).change();
+        $('#policy-edit-users').prop('checked', policies[edit_selected_component_id]['access']['users']).change();
+        $('#policy-edit-files').prop('checked', policies[edit_selected_component_id]['access']['files']).change();
+        $('#policy-edit-comments').prop('checked', policies[edit_selected_component_id]['access']['comments']).change();
+        $('#policy-edit-object-location-assignments').prop('checked', policies[edit_selected_component_id]['access']['object_location_assignments']).change();
+        $('#edit_policy_users_tbody').empty();
+        for (let user_id in policies[edit_selected_component_id]['permissions']['users']) {
+          permission = policies[edit_selected_component_id]['permissions']['users'][user_id];
+          if (user_id in users[edit_selected_component_id]) {
+            edit_policy_selected_users[user_id] = users[edit_selected_component_id][user_id];
+          } else {
+            edit_policy_selected_users[user_id] = "{{ _('User') }} #" + user_id;
+          }
+          $('#edit_policy_users_tbody').append('<tr id="edit_policy_users_' + user_id + '">\
+            <form action="#">\
+              <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+              <td>' + edit_policy_selected_users[user_id] + '</td>\
+              {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
+                <td class="text-center" style="vertical-align: middle">\
+                  <label for="permissions_edit_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>\
+                  <input type="radio" name="permissions_edit_policy_user_' + user_id + '" id="permissions_edit_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" ' + ((permission == '{{ possible_permissions.name.lower()}}') ? 'checked' : '') + '/>\
+                </td>\
+              {% endfor %}\
+            </form>\
+          </tr>');
+        }
+        updateEditSelect();
+      }
+    }
+
+    function newPolicyAddUserSelect() {
+      let $select = $('#add_share_user_picker');
+      let user_id = $select.val();
+      if (!(user_id in new_policy_selected_users)) {
+        new_policy_selected_users[user_id] = users[add_selected_component_id][user_id];
+        $('#new_policy_users_tbody').append('<tr id="new_policy_users_' + user_id + '">\
+          <form action="#">\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="newPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td>' + new_policy_selected_users[user_id] + '</td>\
+            {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
+              <td class="text-center" style="vertical-align: middle">\
+                <label for="permissions_add_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>\
+                <input type="radio" name="permissions_add_policy_user_' + user_id + '" id="permissions_add_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %} />\
+              </td>\
+            {% endfor %}\
+          </form>\
+        </tr>');
+      }
+      updateAddSelect();
+    }
+
+    function editPolicyAddUserSelect() {
+      let $select = $('#edit_share_user_picker');
+      let user_id = $select.val();
+      if (!(user_id in new_policy_selected_users)) {
+        edit_policy_selected_users[user_id] = users[edit_selected_component_id][user_id];
+        $('#edit_policy_users_tbody').append('<tr id="edit_policy_users_' + user_id + '">\
+          <form action="#">\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td>' + edit_policy_selected_users[user_id] + '</td>\
+            {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
+              <td class="text-center" style="vertical-align: middle">\
+                <label for="permissions_edit_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>\
+                <input type="radio" name="permissions_edit_policy_user_' + user_id + '" id="permissions_add_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %} />\
+              </td>\
+            {% endfor %}\
+          </form>\
+        </tr>');
+      }
+      updateEditSelect();
+    }
+
+    $('#add_share_user_text').keydown(function (evt) {
+      if (evt.key == 'Enter' || evt.keyCode == 13) {
+        newPolicyAddUserText();
+        evt.preventDefault();
+        return false;
+      }
+    });
+
+    $('#edit_share_user_text').keydown(function (evt) {
+      if (evt.key == 'Enter' || evt.keyCode == 13) {
+        editPolicyAddUserText();
+        evt.preventDefault();
+        return false;
+      }
+    });
+
+    function newPolicyAddUserText() {
+      let $input = $('#add_share_user_text');
+      let $err = $('#add_share_user_text_help_block');
+      let user_id = parseInt($input.val());
+      if(isNaN(user_id) || user_id < 1 || user_id > 2147483647) {
+        $err.text("{{ _('Not a valid user-ID. Expected a positive integer.') }}");
+        $input.parent().parent().addClass('has-error');
+        $err.show();
+      } else if (user_id in new_policy_selected_users) {
+        $err.text("{{ _('User has already been added.') }}");
+        $input.parent().parent().addClass('has-error');
+        $err.show();
+      } else {
+        $input.parent().parent().removeClass('has-error');
+        $err.hide();
+        if (user_id in users[add_selected_component_id]) {
+          new_policy_selected_users[user_id] = users[add_selected_component_id][user_id];
+        } else {
+          new_policy_selected_users[user_id] = "{{ _('User') }} #" + user_id;
+        }
+        $input.val('');
+        $('#new_policy_users_tbody').append('<tr id="new_policy_users_' + user_id + '">\
+          <form action="#">\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="newPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td>' + new_policy_selected_users[user_id] + '</td>\
+            {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
+              <td class="text-center" style="vertical-align: middle">\
+                <label for="permissions_add_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>\
+                <input type="radio" name="permissions_add_policy_user_' + user_id + '" id="permissions_add_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %} />\
+              </td>\
+            {% endfor %}\
+          </form>\
+        </tr>');
+        updateAddSelect();
+      }
+    }
+
+    function editPolicyAddUserText() {
+      let $input = $('#edit_share_user_text');
+      let $err = $('#edit_share_user_text_help_block');
+      let user_id = parseInt($input.val());
+      if(isNaN(user_id) || user_id < 1 || user_id > 2147483647) {
+        $err.text("{{ _('Not a valid user-ID. Expected a positive integer.') }}");
+        $input.parent().parent().addClass('has-error');
+        $err.show();
+      } else if (user_id in edit_policy_selected_users) {
+        $err.text("{{ _('User has already been added.') }}");
+        $input.parent().parent().addClass('has-error');
+        $err.show();
+      } else {
+        $input.parent().parent().removeClass('has-error');
+        $err.hide();
+        if (user_id in users[edit_selected_component_id]) {
+          edit_policy_selected_users[user_id] = users[edit_selected_component_id][user_id];
+        } else {
+          edit_policy_selected_users[user_id] = "{{ _('User') }} #" + user_id;
+        }
+        $input.val('');
+        $('#edit_policy_users_tbody').append('<tr id="edit_policy_users_' + user_id + '">\
+          <form action="#">\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td>' + edit_policy_selected_users[user_id] + '</td>\
+            {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
+              <td class="text-center" style="vertical-align: middle">\
+                <label for="permissions_edit_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>\
+                <input type="radio" name="permissions_edit_policy_user_' + user_id + '" id="permissions_edit_policy_user_' + user_id + '_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %} />\
+              </td>\
+            {% endfor %}\
+          </form>\
+        </tr>');
+        updateEditSelect();
+      }
+    }
+
+    function newPolicyRemoveUser(user_id) {
+      if (user_id in new_policy_selected_users) {
+        delete new_policy_selected_users[user_id];
+        $('#new_policy_users_' + user_id).remove();
+      }
+      updateAddSelect();
+    }
+
+    function editPolicyRemoveUser(user_id) {
+      if (user_id in edit_policy_selected_users) {
+        delete edit_policy_selected_users[user_id];
+        $('#edit_policy_users_' + user_id).remove();
+      }
+      updateEditSelect();
+    }
+
+    function updateAddSelect() {
+      let $select = $('#add_share_user_picker');
+      $select.empty();
+      let no_users = true;
+      for (let user_id in users[add_selected_component_id]) {
+        if (!(user_id in new_policy_selected_users)) {
+          no_users = false;
+          $select.append($("<option></option>").attr("value", user_id).text(users[add_selected_component_id][user_id]));
+        }
+      }
+      $select.prop('disabled', no_users);
+      $('#add_component_policy_user_select_btn').prop('disabled', no_users);
+      $select.selectpicker('refresh');
+      $select.change();
+    }
+
+    function updateEditSelect() {
+      let $select = $('#edit_share_user_picker');
+      $select.empty();
+      let no_users = true;
+      for (let user_id in users[edit_selected_component_id]) {
+        if (!(user_id in edit_policy_selected_users)) {
+          no_users = false;
+          $select.append($("<option></option>").attr("value", user_id).text(users[edit_selected_component_id][user_id]));
+        }
+      }
+      $select.prop('disabled', no_users);
+      $('#edit_component_policy_user_select_btn').prop('disabled', no_users);
+      $select.selectpicker('refresh');
+      $select.change();
+    }
+
+    $(function () {
+      setNewPolicyData();
+      setEditPolicyData();
+      $(".select-group-button").css("margin-top", "-=2px");
+    });
+  </script>
 {% endblock %}
 
 {% block content %}
@@ -71,7 +311,7 @@
           <td></td>
           <td></td>
         </tr>
-        {% if form.project_permissions | length > 0 %}
+        {% if form.project_permissions %}
         <tr>
           <th scope="col" style="width: 40%">{{ _('Project Groups') }}</th>
           <th scope="col" class="text-center"></th>
@@ -97,7 +337,7 @@
             {% endfor %}
           </tr>
         {% endfor %}
-        {% if form.group_permissions | length > 0 %}
+        {% if form.group_permissions %}
         <tr>
           <th scope="col" style="width: 40%">{{ _('Basic Groups') }}</th>
           <th scope="col" class="text-center"></th>
@@ -123,7 +363,7 @@
             {% endfor %}
           </tr>
         {% endfor %}
-        {% if form.user_permissions | length > 0 %}
+        {% if form.user_permissions %}
         <tr>
           <th scope="col" style="width: 40%">{{ _('Users') }}</th>
           <th scope="col" class="text-center"></th>
@@ -138,7 +378,7 @@
           {% set permissions = user_permissions.get(user_id, Permissions.NONE) %}
           <tr>
             <td>
-              <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>
+              <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
               {{ user_permissions_form.csrf_token }}
               <input type="hidden" name="{{ user_permissions_form.user_id.name }}" value="{{ user_id }}">
             </td>
@@ -226,7 +466,7 @@
             {% set user = get_user(user_id) %}
             <tr>
               <td style="vertical-align: middle">
-                <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>
+                <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
               </td>
               {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
                 <td class="text-center" style="vertical-align: middle">
@@ -264,7 +504,7 @@
           <td>
             <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
             {% for user in users %}
-              <option value="{{ user.id }}" {% if suggested_user_id == user.id %}selected="selected"{% endif %}>{{ user.name }} (#{{ user.id }})</option>
+              <option value="{{ user.id }}" {% if suggested_user_id == user.id %}selected="selected"{% endif %}>{{ user.get_name(include_ref=True) }}</option>
             {% endfor %}
             </select>
           </td>
@@ -355,6 +595,235 @@
         <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">{{ _('Add') }}</button>
       </div>
       </form>
+    {% endif %}
+    {% if object.component_id is none and (possible_new_components or federation_shares)%}
+      <h3>{{ _('Other databases') }}</h3>
+      {% if federation_shares %}
+      <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
+        {{ edit_component_policy_form.csrf_token }}
+        <div class="well">
+          <label class="control-label">{{ _('Database') }}</label>
+          <select class="selectpicker" id="edit-share-component-picker" onchange="setEditPolicyData();" name="{{ edit_component_policy_form.component_id.name }}" data-width="100%" data-live-search="true">
+          {% for _, share in federation_shares.items() %}
+            <option value="{{ share.component.id }}">{{ share.component.get_name() }} {% if share.component.address is not none %}({{ share.component.address }}){% endif %}</option>
+          {% endfor %}
+          </select>
+          <label class="control-label" style="margin-top: 20px;">{{ _('Access') }}</label>
+          <div class="well" style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: left;">
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Data') }}</label>
+              <div class="checkbox" style="">
+                <label>
+                  <input type="checkbox" name="{{ edit_component_policy_form.data.name }}" id="policy-edit-data" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if edit_component_policy_form.data.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Data') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Action') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ edit_component_policy_form.action.name }}" id="policy-edit-action" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if edit_component_policy_form.action.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Action') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Users') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ edit_component_policy_form.users.name }}" id="policy-edit-users" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if edit_component_policy_form.users.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Users') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Comments') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ edit_component_policy_form.comments.name }}" id="policy-edit-comments" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if edit_component_policy_form.comments.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Comments') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Locations') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ edit_component_policy_form.object_location_assignments.name }}" id="policy-edit-object-location-assignments" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if edit_component_policy_form.object_location_assignments.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Locations') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Files') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ edit_component_policy_form.files.name }}" id="policy-edit-files" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if edit_component_policy_form.files.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Files') }}</span>
+                </label>
+              </div>
+              <span class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Currently limited to sharing links.') }}</span>
+            </div>
+          </div>
+          <label class="control-label">{{ _('Permissions') }}</label>
+          <div class="well">
+            <label class="control-label">{{ _('Users') }}</label>
+            <div class="well">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col" class="text-center"></th>
+                    <th scope="col" style="width: 40%">{{ _('User') }}</th>
+                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  </tr>
+                </thead>
+                <tbody id="edit_policy_users_tbody">
+                </tbody>
+              </table>
+              <div class="row">
+                <div class="form-group col-md-7">
+                  <div class="input-group">
+                    <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true"></select>
+                    <span class="input-group-btn">
+                      <button onclick="editPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
+                    </span>
+                  </div>
+                </div>
+                <div class="form-group col-md-5">
+                  <div class="input-group">
+                    <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User-ID') }}">
+                    <span class="input-group-btn">
+                      <button onclick="editPolicyAddUserText();" type="button" class="btn btn-success" name="edit_share_user_input_btn">{{ _('Add') }}</button>
+                    </span>
+                  </div>
+                  <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="edit_component_policy" value="edit_component_policy">{{ _('Save') }}</button>
+        </div>
+      </form>
+      {% endif %}
+      {% if possible_new_components %}
+      <h4>{{ _('Add database') }}</h4>
+      <form action="{{ url_for('.update_object_permissions', object_id=object.object_id) }}" method="post">
+        {{ add_component_policy_form.csrf_token }}
+        <div class="well">
+          <label class="control-label">{{ _('Database') }}</label>
+          <select class="selectpicker" id="add_share_component_picker" name="{{ add_component_policy_form.component_id.name }}" data-width="100%" data-live-search="true" onchange="setNewPolicyData();">
+          {% for component in possible_new_components %}
+            <option value="{{ component.id }}">{{ component.get_name() }}{% if component.address is not none %} ({{ component.address }}){% endif %}</option>
+          {% endfor %}
+          </select>
+          <label class="control-label" style="margin-top: 20px;">{{ _('Access') }}</label>
+          <div class="well" style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: left;">
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Data') }}</label>
+              <div class="checkbox" style="">
+                <label>
+                  <input type="checkbox" name="{{ add_component_policy_form.data.name }}" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if add_component_policy_form.data.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Data') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Action') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ add_component_policy_form.action.name }}" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if add_component_policy_form.action.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Action') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Users') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ add_component_policy_form.users.name }}" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if add_component_policy_form.users.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Users') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Comments') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ add_component_policy_form.comments.name }}" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if add_component_policy_form.comments.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Comments') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Locations') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ add_component_policy_form.object_location_assignments.name }}" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if add_component_policy_form.object_location_assignments.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Locations') }}</span>
+                </label>
+              </div>
+            </div>
+            <div style="width: 155px; padding: 7px;">
+              <label class="control-label">{{ _('Files') }}</label>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ add_component_policy_form.files.name }}" data-onstyle="default" data-toggle="toggle" data-width="130" data-on="{{ _('Share') }}" data-off="{{ _('Do not share') }}"{% if add_component_policy_form.files.data %} checked{% endif %}>
+                  <span class="sr-only">{{ _('Files') }}</span>
+                </label>
+              </div>
+              <span class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Currently limited to sharing links.') }}</span>
+            </div>
+          </div>
+          <label class="control-label">{{ _('Permissions') }}</label>
+          <div class="well">
+            <label class="control-label">{{ _('Users') }}</label>
+            <div class="well">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col" class="text-center"></th>
+                    <th scope="col" style="width: 40%">{{ _('User') }}</th>
+                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  </tr>
+                </thead>
+                <tbody id="new_policy_users_tbody">
+                </tbody>
+              </table>
+              <div class="row">
+                <div class="form-group col-md-7">
+                  <div class="input-group">
+                    <select class="selectpicker" id="add_share_user_picker" data-live-search="true">
+                    </select>
+                    <span class="input-group-btn">
+                      <button onclick="newPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
+                    </span>
+                  </div>
+                </div>
+                <div class="form-group col-md-5">
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="add_share_user_text" placeholder="{{ _('User-ID') }}">
+                    <span class="input-group-btn">
+                      <button onclick="newPolicyAddUserText();" type="button" class="btn btn-success" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
+                    </span>
+                  </div>
+                  <span id="add_share_user_text_help_block" style="display: none;" class="help-block"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_component_policy" value="add_component_policy">{{ _('Add') }}</button>
+        </div>
+      </form>
+      {% endif %}
     {% endif %}
     {% if copy_permissions_form %}
     <div class="container text-right" id="copyPermissionsLoading" style="display: none;">

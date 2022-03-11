@@ -62,7 +62,7 @@
     <div class="form-group">
         <label for="extra_field_{{ extra_field_id }}" class="col-sm-4 control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ user.extra_fields.get(extra_field_id) or '' }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (user.extra_fields or {}).get(extra_field_id, '') }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
         </div>
     </div>
     {% endfor %}
@@ -415,7 +415,7 @@
         <td>
           <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
           {% for user in users %}
-            <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
+            <option value="{{ user.id }}">{{ user.get_name() }}</option>
           {% endfor %}
           </select>
         </td>

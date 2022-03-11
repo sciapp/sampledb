@@ -11,7 +11,6 @@ import sampledb.logic
 def users():
     names = ['User 1', 'User 2']
     users = [User(name=name, email="example@example.com", type=UserType.PERSON) for name in names]
-    confirmed = False
     for user in users:
         sampledb.db.session.add(user)
         sampledb.db.session.commit()

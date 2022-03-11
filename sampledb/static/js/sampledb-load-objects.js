@@ -83,7 +83,11 @@ $(function() {
                 }
                 data_tokens += el.text + '"';
               }
-              return '<option value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
+              var is_fed = ' ';
+              if (el.is_fed) {
+                is_fed = ' data-icon="fa fa-share-alt" ';
+              }
+              return '<option' + is_fed + 'value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
             }).join(""));
 
         $x.prop("disabled", false);

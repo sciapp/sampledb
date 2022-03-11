@@ -21,6 +21,9 @@
       <li>{% include "objects/view/any.html" %}</li>
     {% endfor %}
     </ul>
+    {% if data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> _('Note:') {{ data.export_edit_note }}</p>
+    {% endif %}
   {% else %}
     &mdash;
   {% endif %}

@@ -54,8 +54,8 @@ def test_get_location(flask_server, auth, user):
     assert r.status_code == 404
 
     location = sampledb.logic.locations.create_location(
-        name="Example Location",
-        description="This is an example location",
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
         parent_location_id=None,
         user_id=user.id
     )
@@ -69,8 +69,8 @@ def test_get_location(flask_server, auth, user):
     }
 
     parent_location = sampledb.logic.locations.create_location(
-        name="Example Location",
-        description="This is an example location",
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
         parent_location_id=None,
         user_id=user.id
     )
@@ -97,8 +97,8 @@ def test_get_locations(flask_server, auth, user):
     assert r.json() == []
 
     location = sampledb.logic.locations.create_location(
-        name="Example Location",
-        description="This is an example location",
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
         parent_location_id=None,
         user_id=user.id
     )
@@ -129,12 +129,12 @@ def test_get_location_assignment(flask_server, auth, user, action):
     assert r.status_code == 404
 
     location = sampledb.logic.locations.create_location(
-        name="Example Location",
-        description="This is an example location",
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
         parent_location_id=None,
         user_id=user.id
     )
-    sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, "This is an example description")
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, {'en': "This is an example description"})
 
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/0'.format(object.id), auth=auth)
     assert r.status_code == 200
@@ -164,12 +164,12 @@ def test_get_location_assignments(flask_server, auth, user, action):
     assert r.json() == []
 
     location = sampledb.logic.locations.create_location(
-        name="Example Location",
-        description="This is an example location",
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
         parent_location_id=None,
         user_id=user.id
     )
-    sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, "This is an example description")
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, {'en': "This is an example description"})
 
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/'.format(object.id), auth=auth)
     assert r.status_code == 200

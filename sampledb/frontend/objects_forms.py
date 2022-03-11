@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField
+from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField, BooleanField
 from wtforms.validators import InputRequired, ValidationError, url
 
 from ..logic.object_permissions import Permissions
@@ -109,3 +109,25 @@ class ObjectPublicationForm(FlaskForm):
 
 class CopyPermissionsForm(FlaskForm):
     object_id = SelectField(validators=[ObjectIdValidator(Permissions.GRANT), InputRequired()], validate_choice=False)
+
+
+class ObjectNewShareAccessForm(FlaskForm):
+    component_id = IntegerField(validators=[InputRequired()])
+
+    data = BooleanField()
+    action = BooleanField()
+    users = BooleanField()
+    files = BooleanField()
+    comments = BooleanField()
+    object_location_assignments = BooleanField()
+
+
+class ObjectEditShareAccessForm(FlaskForm):
+    component_id = IntegerField(validators=[InputRequired()])
+
+    data = BooleanField()
+    action = BooleanField()
+    users = BooleanField()
+    files = BooleanField()
+    comments = BooleanField()
+    object_location_assignments = BooleanField()

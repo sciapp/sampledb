@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 import datetime
 import flask
 
+from .components import get_component
 from .users import get_user
 from ..models.markdown_images import MarkdownImage
 from .. import db
@@ -59,7 +60,7 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     return file_name
 
 
-def get_markdown_image(file_name: str, user_id: int) -> typing.Optional[bytes]:
+def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_id: typing.Optional[int] = None) -> typing.Optional[bytes]:
     """
     Return the content of a Markdown image, if it is found.
 
@@ -69,8 +70,10 @@ def get_markdown_image(file_name: str, user_id: int) -> typing.Optional[bytes]:
     :param user_id:
     :return: the binary file content or None
     """
-    image = MarkdownImage.query.filter_by(file_name=file_name).first()
+    image = MarkdownImage.query.filter_by(file_name=file_name, component_id=component_id).first()
     if image is None:
+        if component_id is not None:
+            get_component(component_id)
         return None
     if image.user_id != user_id and not image.permanent:
         return None

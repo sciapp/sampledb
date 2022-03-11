@@ -40,7 +40,10 @@ class ObjectVersion(Resource):
             'user_id': object.user_id,
             'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'schema': object.schema,
-            'data': object.data
+            'data': object.data,
+            'fed_object_id': object.fed_object_id,
+            'fed_version_id': object.fed_version_id,
+            'component_id': object.component_id
         }
         embed_action = bool(flask.request.args.get('embed_action'))
         if embed_action:
@@ -248,7 +251,10 @@ class Objects(Resource):
                     'version_id': object.version_id,
                     'action_id': object.action_id,
                     'schema': object.schema,
-                    'data': object.data
+                    'data': object.data,
+                    'fed_object_id': object.fed_object_id,
+                    'fed_version_id': object.fed_version_id,
+                    'component_id': object.component_id
                 }
                 for object in objects
             ], 200

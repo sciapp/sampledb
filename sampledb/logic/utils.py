@@ -119,8 +119,10 @@ def build_confirm_url(authentication_method, salt='password'):
 
 
 def get_translated_text(
-        text: typing.Union[str, typing.Dict[str, str]],
-        language_code: typing.Optional[str] = None) -> str:
+        text: typing.Optional[typing.Union[str, typing.Dict[str, str]]],
+        language_code: typing.Optional[str] = None,
+        default: str = ''
+) -> str:
     """
     Return the text in a given language from a translation dictionary.
 
@@ -133,13 +135,17 @@ def get_translated_text(
 
     :param text: a dict mapping language codes to translations
     :param language_code: a language code, or None
+    :param default: a text to return if the input text is None or empty
     :return: the translation
     """
 
     if language_code is None:
         language_code = get_user_language(flask_login.current_user).lang_code
 
-    if not isinstance(text, dict):
-        return str(text)
+    if isinstance(text, str):
+        return text
 
-    return str(text.get(language_code, text.get('en', '')))
+    if isinstance(text, dict):
+        return str(text.get(language_code, text.get('en', default)))
+
+    return default

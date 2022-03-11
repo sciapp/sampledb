@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+{% from 'macros.j2' import federation_information_symbol, federation_information_symbol_data %}
 <head>
 {% block head %}
   <meta charset="UTF-8">
@@ -115,7 +116,7 @@
                 <a class="button-search-filter">
                   <label>
                     <input type="radio" name="search-filter-selection" id="button-search-action-type">
-                    {{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural)}}
+                    {{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}
                   </label>
                 </a>
               </li>
@@ -139,8 +140,8 @@
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and not action_type.disable_create_objects %}
-              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+              {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
           </ul>
@@ -149,8 +150,8 @@
           <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">{{ _('Objects') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and not action_type.disable_create_objects %}
-              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.translation.object_name_plural }}</a></li>
+              {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.translation.object_name_plural }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
             <li role="separator" class="divider nav-search-link"></li>
@@ -169,6 +170,9 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
+            {% if config['FEDERATION_UUID'] is not none %}
+            <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
+            {% endif %}
             <li role="separator" class="divider template-separator" style="display: none"></li>
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
               {% if action_type.show_in_navbar and action_type.disable_create_objects %}

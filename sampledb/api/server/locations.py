@@ -14,7 +14,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def location_to_json(location: locations.Location):
     return {
         'location_id': location.id,
-        'name': location.name['en'],
+        'name': location.name.get('en', None) if location.name else None,
         'description': location.description['en'],
         'parent_location_id': location.parent_location_id
     }

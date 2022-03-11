@@ -155,6 +155,7 @@ def create_app():
     db.init_app(app)
     babel.init_app(app)
     sampledb.api.server.api.init_app(app)
+    sampledb.api.federation.api.init_app(app)
 
     app.register_blueprint(sampledb.frontend.frontend)
 

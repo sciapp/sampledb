@@ -12,6 +12,7 @@ about an instrument may be altered.
 
 import typing
 
+from .components import get_component
 from .. import db
 from ..models import Instrument
 from ..models.instruments import instrument_user_association_table
@@ -26,7 +27,9 @@ def create_instrument(
         notes_is_markdown: bool = False,
         create_log_entry_default: bool = False,
         is_hidden: bool = False,
-        short_description_is_markdown: bool = False
+        short_description_is_markdown: bool = False,
+        fed_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None
 ) -> Instrument:
     """
     Creates a new instrument.
@@ -44,6 +47,13 @@ def create_instrument(
         contains Markdown
     :return: the new instrument
     """
+
+    if (component_id is None) != (fed_id is None):
+        raise TypeError('Invalid parameter combination.')
+
+    if component_id is not None:
+        get_component(component_id)
+
     instrument = Instrument(
         description_is_markdown=description_is_markdown,
         users_can_create_log_entries=users_can_create_log_entries,
@@ -51,7 +61,9 @@ def create_instrument(
         notes_is_markdown=notes_is_markdown,
         create_log_entry_default=create_log_entry_default,
         is_hidden=is_hidden,
-        short_description_is_markdown=short_description_is_markdown
+        short_description_is_markdown=short_description_is_markdown,
+        fed_id=fed_id,
+        component_id=component_id
     )
     db.session.add(instrument)
     db.session.commit()
@@ -67,7 +79,7 @@ def get_instruments() -> typing.List[Instrument]:
     return Instrument.query.all()
 
 
-def get_instrument(instrument_id: int) -> Instrument:
+def get_instrument(instrument_id: int, component_id: typing.Optional[int] = None) -> Instrument:
     """
     Returns the instrument with the given instrument ID.
 
@@ -76,8 +88,13 @@ def get_instrument(instrument_id: int) -> Instrument:
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
-    instrument = Instrument.query.get(instrument_id)
+    if component_id is None:
+        instrument = Instrument.query.get(instrument_id)
+    else:
+        instrument = Instrument.query.filter_by(fed_id=instrument_id, component_id=component_id).first()
     if instrument is None:
+        if component_id is not None:
+            get_component(component_id)
         raise errors.InstrumentDoesNotExistError()
     return instrument
 

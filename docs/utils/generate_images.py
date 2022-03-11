@@ -4,6 +4,7 @@ import contextlib
 import getpass
 import io
 import os
+import secrets
 import shutil
 import sys
 import tempfile
@@ -12,9 +13,9 @@ import time
 from PIL import Image
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 
 import chromedriver_binary
+from selenium.webdriver.common.by import By
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -425,6 +426,24 @@ def translations(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/translations.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
+def other_database(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(admin.id))
+    driver.get(base_url + 'other-databases/' + str(component.id))
+    for heading in driver.find_elements(By.TAG_NAME, 'h3'):
+        print(heading.text)
+        if 'Database #' + str(component.id) + ': ' + component.name in heading.text:
+            break
+    else:
+        assert False
+    y_offset = scroll_to(driver, 0, heading.location['y'])
+    last_table = driver.find_elements(By.TAG_NAME, 'table')[-1]
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/other_database.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, last_table.location['y'] + last_table.rect['height'])))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -448,6 +467,16 @@ try:
             type=sampledb.models.UserType.PERSON
         )
         sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        assert user.id is not None
+
+        admin = sampledb.models.User(
+            name="Administrator",
+            email="admin@example.com",
+            type=sampledb.models.UserType.PERSON
+        )
+        admin.is_admin = True
+        sampledb.db.session.add(admin)
         sampledb.db.session.commit()
         assert user.id is not None
 
@@ -532,6 +561,10 @@ try:
             schema=schema
         )
 
+        component = sampledb.logic.components.add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', 'Example SampleDB', 'https://example.com', 'Example SampleDB instance.')
+        sampledb.logic.component_authentication.add_token_authentication(component.id, secrets.token_hex(32), 'Export Token')
+        sampledb.logic.component_authentication.add_own_token_authentication(component.id, secrets.token_hex(32), 'Import Token')
+
         os.makedirs('docs/static/img/generated', exist_ok=True)
         options = Options()
         options.add_argument("--lang=en-US")
@@ -562,5 +595,6 @@ try:
                 unread_notification_icon(flask_server.base_url, driver)
                 disable_schema_editor(flask_server.base_url, driver)
                 translations(flask_server.base_url, driver)
+                other_database(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

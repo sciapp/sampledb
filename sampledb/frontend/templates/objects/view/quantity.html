@@ -10,20 +10,21 @@
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% endif %}
   </label>
-  {% if schema['units'] == "1" %}
-    <div class="col-md-9">
+  <div class="col-md-9">
+    {% if schema['units'] == "1" %}
       {% if data is not none %}
         {{ '%g'| format(data.magnitude_in_base_units) | babel_format_number }}
       {% else %}
           &mdash;
       {% endif %}
-    </div>
-  {% else %}
-    <div class="col-md-9">
+    {% else %}
       {% if data is not none %}{{ '%g'| format((data | to_datatype).magnitude) | babel_format_number}} {{ (data | to_datatype).units | prettify_units }}
       {% else %}
-          &mdash;
+        &mdash;
       {% endif %}
-    </div>
-  {% endif %}
+    {% endif %}
+    {% if data and data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
+    {% endif %}
+  </div>
 </div>
