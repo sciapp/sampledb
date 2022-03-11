@@ -175,13 +175,13 @@
             {% endif %}
             <li role="separator" class="divider template-separator" style="display: none"></li>
             {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and action_type.disable_create_objects %}
+              {% if action_type.show_in_navbar and action_type.disable_create_objects and ((not action_type.fed_id) or action_type.fed_id > 0) %}
                 <script type="text/javascript">
                     window.onload = function() {
                         $('.template-separator').css('display', 'block');
                     }
                 </script>
-                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}{{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
             {% if current_user.is_admin %}
