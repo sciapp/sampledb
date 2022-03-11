@@ -21,8 +21,8 @@
     {% if edit_component_form %}
       <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editComponentModal">{{ _('Edit Database') }}</button>
     {% endif %}
-    {% if sync_component_form and component.address is not none %}
-      <button form="syncComponentForm" type="submit" class="btn btn-primary" name="sync" value="sync"><i class="fa fa-refresh"></i></button>
+    {% if sync_component_form %}
+      <button form="syncComponentForm" type="submit" class="btn btn-primary" name="sync" value="sync" {% if component.address is none or not own_api_tokens %} data-toggle="tooltip" data-placement="top" title="{% if component.address %}{{ _('Add import token to sync') }}{% elif own_api_tokens %}{{ _('Set address to sync') }}{% else %}{{ _('Set address and import token to sync') }}{% endif %}" disabled{% endif %}><i class="fa fa-refresh"></i></button>
     {% endif %}
     <div id="apiTokenDiv">
     <h3>{{ _('Authentication Tokens') }}</h3>
