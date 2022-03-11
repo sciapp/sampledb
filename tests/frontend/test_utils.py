@@ -1,3 +1,7 @@
+import json
+
+import requests
+
 import sampledb.frontend.utils as utils
 
 
@@ -31,3 +35,10 @@ def test_custom_format_number():
     assert utils.custom_format_number(100000) == "100000"
     assert utils.custom_format_number(1000000) == "1E6"
     assert utils.custom_format_number(1234567) == "1.234567E6"
+
+
+def test_relative_url_for(app):
+    app.config['SERVER_NAME'] = 'https://localhost'
+    with app.app_context():
+        assert utils.relative_url_for('frontend.object', object_id=1) == 'objects/1'
+        assert utils.relative_url_for('frontend.object', object_id=1, _external=True) == 'objects/1'
