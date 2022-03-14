@@ -45,26 +45,15 @@
     {# View #}
     <div class="view-switch">
         <div class="col-md-9" style="padding-left: 15px; position: relative;">
-            {% if data %}
+            {% if data and data.text | get_translated_text(metadata_language) %}
                 {% if schema.markdown and data.is_markdown %}
-                    <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"
-                         class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
-                    <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i
-                            class="fa fa-pencil-square-o"></i></a>
-                {% elif 'multiline' in schema and schema['multiline'] %}
-                    {% if data.text | get_translated_text(metadata_language) %}
-                        <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
-                        <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i class="fa fa-pencil-square-o"></i></a>
-                    {% else %}
-                        &mdash;
-                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
-                    {% endif %}
+                    <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;" class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
+                    <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i class="fa fa-pencil-square-o"></i></a>
+                {% elif schema.multiline %}
+                    <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
+                    <a class="edit-helper" style="position: absolute; bottom: 10px; right: 20px;"><i class="fa fa-pencil-square-o"></i></a>
                 {% else %}
-                    {% if data.text | get_translated_text(metadata_language) %}
-                        {{ data.text | get_translated_text(metadata_language) }}
-                    {% else %}
-                        &mdash;
-                    {% endif %}
+                    {{ data.text | get_translated_text(metadata_language) }}
                     <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                 {% endif %}
             {% else %}

@@ -7,27 +7,19 @@
     {% endif %}
   </label>
   <div class="col-md-9">
-  {% if data %}
+  {% if data and data.text | get_translated_text(metadata_language) %}
     {% if schema.markdown and data.is_markdown %}
       <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
-    {% elif 'multiline' in schema and schema['multiline']  %}
-      {% if data.text | get_translated_text(metadata_language)%}
-<pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
-        {% else %}
-          &mdash;
-        {% endif %}
+    {% elif schema.multiline %}
+      <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
     {% else %}
-      {% if data.text | get_translated_text(metadata_language) %}
-        {{ data.text | get_translated_text(metadata_language) }}
-      {% else %}
-        &mdash;
-      {% endif %}
-    {% endif %}
-    {% if data.export_edit_note %}
-      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
+      {{ data.text | get_translated_text(metadata_language) }}
     {% endif %}
   {% else %}
     &mdash;
+  {% endif %}
+  {% if data and data.export_edit_note %}
+    <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
   {% endif %}
   </div>
 </div>
