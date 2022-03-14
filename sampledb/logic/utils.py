@@ -3,20 +3,22 @@
 
 """
 
-import smtplib
 import typing
 
 import flask
 import flask_login
-import flask_mail
 
 from .languages import get_user_language
-from .. import mail, db
+from .. import db
+from .background_tasks.send_mail import post_send_mail_task, BackgroundTaskStatus
 from .security_tokens import generate_token
 from ..models import Authentication, AuthenticationType, User
 
 
-def send_user_invitation_email(email, invitation_id):
+def send_user_invitation_email(
+        email: str,
+        invitation_id: int
+) -> BackgroundTaskStatus:
     token_data = {
         'email': email,
         'invitation_id': invitation_id
@@ -34,16 +36,12 @@ def send_user_invitation_email(email, invitation_id):
     text = flask.render_template('mails/user_invitation.txt', confirm_url=confirm_url)
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
-    try:
-        mail.send(flask_mail.Message(
-            subject,
-            sender=flask.current_app.config['MAIL_SENDER'],
-            recipients=[email],
-            body=text,
-            html=html
-        ))
-    except smtplib.SMTPRecipientsRefused:
-        pass
+    return post_send_mail_task(
+        subject=subject,
+        recipients=[email],
+        text=text,
+        html=html
+    )[0]
 
 
 def send_email_confirmation_email(email, user_id, salt):
@@ -64,16 +62,12 @@ def send_email_confirmation_email(email, user_id, salt):
     text = flask.render_template('mails/email_confirmation.txt', confirm_url=confirm_url)
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
-    try:
-        mail.send(flask_mail.Message(
-            subject,
-            sender=flask.current_app.config['MAIL_SENDER'],
-            recipients=[email],
-            body=text,
-            html=html
-        ))
-    except smtplib.SMTPRecipientsRefused:
-        pass
+    return post_send_mail_task(
+        subject=subject,
+        recipients=[email],
+        text=text,
+        html=html
+    )
 
 
 def send_recovery_email(email):
@@ -97,16 +91,12 @@ def send_recovery_email(email):
     text = flask.render_template('mails/account_recovery.txt', email=email, users=users, password_reset_urls=password_reset_urls)
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
-    try:
-        mail.send(flask_mail.Message(
-            subject,
-            sender=flask.current_app.config['MAIL_SENDER'],
-            recipients=[email],
-            body=text,
-            html=html
-        ))
-    except smtplib.SMTPRecipientsRefused:
-        pass
+    return post_send_mail_task(
+        subject=subject,
+        recipients=[email],
+        text=text,
+        html=html
+    )
 
 
 def build_confirm_url(authentication_method, salt='password'):

@@ -36,19 +36,21 @@ def invitation_route():
 def invitation():
     invitation_form = InvitationForm()
     if flask.request.method == "GET":
-        #  GET (invitation dialog )
-        has_success = False
-        return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success)
+        #  GET (invitation dialog)
+        return flask.render_template(
+            'invitation.html',
+            invitation_form=invitation_form,
+            mail_send_status=None
+        )
     if flask.request.method == "POST":
         # POST (send invitation)
-        has_success = False
         has_error = False
+        mail_send_status = None
         if invitation_form.validate_on_submit():
             email = invitation_form.email.data
             if '@' not in email:
                 has_error = True
             else:
-                has_success = True
 
                 user_invitation = users.UserInvitation(
                     inviter_id=flask_login.current_user.id,
@@ -58,14 +60,18 @@ def invitation():
                 db.session.commit()
 
                 # send confirm link
-                send_user_invitation_email(
+                mail_send_status = send_user_invitation_email(
                     email=email,
                     invitation_id=user_invitation.id
                 )
         else:
             has_error = True
-        return flask.render_template('invitation.html', invitation_form=invitation_form, has_success=has_success,
-                                     has_error=has_error)
+        return flask.render_template(
+            'invitation.html',
+            invitation_form=invitation_form,
+            has_error=has_error,
+            mail_send_status=mail_send_status
+        )
 
 
 def registration():

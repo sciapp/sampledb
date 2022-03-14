@@ -26,6 +26,7 @@ def main(arguments):
             exit(1)
     else:
         port = 8000
+
     app = create_app()
     cherrypy.tree.graft(app, app.config['SERVER_PATH'])
     cherrypy.config.update({

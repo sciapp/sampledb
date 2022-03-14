@@ -781,4 +781,4 @@ This example shows how Markdown can be used for instrument Notes.
                 }
             ]
         }, component)
-    print("Success: set up demo data")
+    print("Success: set up demo data", flush=True)

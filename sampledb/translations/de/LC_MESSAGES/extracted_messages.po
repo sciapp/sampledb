@@ -1237,8 +1237,20 @@ msgid "another user"
 msgstr "einen anderen Nutzer"
 
 #, python-format
-msgid "The invitation to %(email)s has been sent."
-msgstr "Die Einladung an %(email)s wurde versandt."
+msgid "An invitation has been sent to %(email)s."
+msgstr "Eine Einladung wurde an %(email)s versendet."
+
+#, python-format
+msgid ""
+"Sending an invitation to %(email)s failed. Please verify that the email "
+"address is correct."
+msgstr ""
+"Das Senden einer Einladung an %(email)s is fehlgeschlagen. Bitte "
+"überprüfen Sie die E-Mail-Adresse."
+
+#, python-format
+msgid "An invitation will be sent to %(email)s."
+msgstr "Eine Einladung wird an %(email)s versendet werden."
 
 msgid "Invite"
 msgstr "Einladen"
@@ -2663,6 +2675,34 @@ msgstr ""
 msgid "Create Action"
 msgstr "Aktion erstellen"
 
+msgid "Background Tasks"
+msgstr "Hintergrund-Aufgaben"
+
+msgid "Background tasks are currently enabled."
+msgstr "Hintergrund-Aufgaben sind aktuell aktiviert."
+
+msgid "Background tasks are currently disabled."
+msgstr "Hintergrund-Aufgaben sind aktuell deaktiviert."
+
+msgid "This table shows a list of pending or failed tasks."
+msgstr ""
+"Diese Tabelle zeigt eine List aller ausstehenden oder fehlgeschlagenen "
+"Aufgaben."
+
+msgid "Some tasks will be deleted automatically once they are completed or fail."
+msgstr ""
+"Manche Aufgaben werden automatisch gelöscht, sobald Sie abgeschlossen "
+"oder fehlgeschlagen sind."
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Data"
+msgstr "Daten"
+
+msgid "There are no pending or failed tasks."
+msgstr "Aktuell gibt es keine ausstehenden oder fehlgeschlagenen Aufgaben."
+
 #, python-format
 msgid "%(dataverse_name)s not reachable"
 msgstr "%(dataverse_name)s nicht erreichbar"
@@ -3255,9 +3295,6 @@ msgstr "Datenbank"
 
 msgid "Access"
 msgstr "Zugriff"
-
-msgid "Data"
-msgstr "Daten"
 
 msgid "Share"
 msgstr "Teilen"
@@ -4469,6 +4506,13 @@ msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 
 msgid "Successfully updated your user name."
 msgstr "Der Nutzername wurde erfolgreich geändert."
+
+msgid ""
+"Sending an email failed. Please try again later or contact an "
+"administrator."
+msgstr ""
+"Das Senden einer E-Mail ist fehlgeschlagen. Bitte versuchen Sie es später"
+" erneut oder kontaktieren Sie einen Administrator."
 
 msgid "Please see your email to confirm this change."
 msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."

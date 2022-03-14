@@ -368,3 +368,7 @@ class TokenExistsError(Exception):
 
 class MissingComponentAddressError(Exception):
     pass
+
+
+class BackgroundTaskDoesNotExistError(Exception):
+    pass

@@ -245,12 +245,15 @@ def change_preferences(user, user_id):
                 flask.flash(_("Successfully updated your user name."), 'success')
             if change_user_form.email.data != user.email:
                 # send confirm link
-                send_email_confirmation_email(
+                mail_send_status = send_email_confirmation_email(
                     email=change_user_form.email.data,
                     user_id=user.id,
                     salt='edit_profile'
-                )
-                flask.flash(_("Please see your email to confirm this change."), 'success')
+                )[0]
+                if mail_send_status == mail_send_status.FAILED:
+                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+                else:
+                    flask.flash(_("Please see your email to confirm this change."), 'success')
             if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation or change_user_form.role.data != user.role:
                 if change_user_form.orcid.data and change_user_form.orcid.data.strip():
                     orcid = change_user_form.orcid.data.strip()
@@ -660,9 +663,15 @@ def email_for_resetting_password():
             if '@' not in email:
                 has_error = True
             else:
-                send_recovery_email(email)
-                return flask.render_template('recovery_email_send.html',
-                                             email=email, has_error=has_error)
+                mail_send_status = send_recovery_email(email)[0]
+                if mail_send_status == mail_send_status.FAILED:
+                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+                else:
+                    return flask.render_template(
+                        'recovery_email_send.html',
+                        email=email,
+                        has_error=has_error
+                    )
         return flask.render_template('reset_password_by_email.html',
                                      request_password_reset_form=request_password_reset_form,
                                      has_error=has_error)

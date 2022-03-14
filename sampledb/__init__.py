@@ -1,13 +1,16 @@
+import json
+import os
+import signal
+import subprocess
+import sys
+
 import flask
 from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, current_user
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
-import os
-import subprocess
 from bs4 import BeautifulSoup
-import json
 
 login_manager = LoginManager()
 login_manager.session_protection = 'basic'
@@ -168,5 +171,16 @@ def create_app():
     setup_jinja_environment(app)
     if app.config['BUILD_TRANSLATIONS']:
         build_translations(app.config['PYBABEL_PATH'])
+
+    if app.config['ENABLE_BACKGROUND_TASKS']:
+        app.before_first_request(lambda: sampledb.logic.background_tasks.start_handler_threads(app))
+
+    def signal_handler(sig, _):
+        if sig == signal.SIGTERM:
+            if app.config['ENABLE_BACKGROUND_TASKS']:
+                sampledb.logic.background_tasks.stop_handler_threads(app)
+            sys.exit(0)
+
+    signal.signal(signal.SIGTERM, signal_handler)
 
     return app

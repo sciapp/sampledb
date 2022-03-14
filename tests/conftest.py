@@ -97,9 +97,9 @@ def flask_server(worker_id):
 def create_app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
     os.environ['FLASK_ENV'] = 'development'
-    os.environ['FLASK_TESTING'] = 'True'
     sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     sampledb_app = sampledb.create_app()
+    sampledb_app.config['TESTING'] = True
 
     @sampledb_app.route('/users/me/loginstatus')
     def check_login():

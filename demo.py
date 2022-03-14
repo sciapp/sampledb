@@ -56,7 +56,7 @@ try:
     print("To sign in as instrument scientist, visit:")
     print("http://localhost:5000/users/me/autologin")
     print("or visit any other site that requires being signed in.")
-    print()
+    print(flush=True)
 
     app.run(debug=True, host=os.environ.get('SAMPLEDB_DEMO_HOST'))
 finally:

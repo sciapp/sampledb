@@ -8,6 +8,7 @@ Currently in development.
 
 - Improved user interface
 - Add basic federation feature
+- Added optional support for background tasks
 
 Version 0.20
 ------------

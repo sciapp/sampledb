@@ -44,7 +44,7 @@ script_modules = {
         set_user_readonly,
         set_user_hidden,
         generate_uuid,
-        run
+        run,
     )
 }
 

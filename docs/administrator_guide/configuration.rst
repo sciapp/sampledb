@@ -216,5 +216,7 @@ Miscellaneous
      - If set, the object type and id, e.g. "Sample #4" will not be shown on the object page.
    * - SAMPLEDB_MAX_BATCH_SIZE
      - Maximum number of objects that can be created in one batch (default: 100)
+   * - SAMPLEDB_ENABLE_BACKGROUND_TASKS
+     - If set, some potentially time consuming tasks such as sending emails will be performed in the background to reduce frontend latency or timeouts.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.
