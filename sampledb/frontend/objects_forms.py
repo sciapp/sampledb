@@ -5,13 +5,15 @@
 
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField, BooleanField
-from wtforms.validators import InputRequired, ValidationError, url
+from wtforms.validators import InputRequired, ValidationError
 
+from ..logic import errors
 from ..logic.object_permissions import Permissions
 from ..logic.publications import simplify_doi
 from ..logic.errors import InvalidDOIError
 
 from .validators import ObjectIdValidator
+from ..logic.utils import parse_url
 
 
 class ObjectUserPermissionsForm(FlaskForm):
@@ -77,7 +79,13 @@ class FileForm(FlaskForm):
 
 
 class ExternalLinkForm(FlaskForm):
-    url = StringField(validators=[url()])
+    url = StringField()
+
+    def validate_url(form, field):
+        try:
+            parse_url(field.data)
+        except errors.InvalidURLError:
+            raise ValidationError('Invalid URL')
 
 
 class FileInformationForm(FlaskForm):

@@ -252,7 +252,11 @@
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download file') }}"><i class="fa fa-download"></i></a>
                   {% elif file.storage == 'url' %}
                   <span data-placement="top" data-trigger="manual" title="Copied successfully"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
-                  <a href="{{ file.data['url'] }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                    {% if file.data['url'].split(':')[0].lower() in ['http', 'https'] %}
+                      <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                    {% else %}
+                      <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                    {% endif %}
                   {% endif %}
                 </span>
               </td>

@@ -3,11 +3,13 @@
 
 """
 
+import re
 import typing
 
 import flask
 import flask_login
 
+from . import errors
 from .languages import get_user_language
 from .. import db
 from .background_tasks.send_mail import post_send_mail_task, BackgroundTaskStatus
@@ -139,3 +141,66 @@ def get_translated_text(
         return str(text.get(language_code, text.get('en', default)))
 
     return default
+
+
+def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
+    """
+    Validate and parse a given URI/URL.
+
+    In case of file-URIs a hostname is required, so local references
+    like file:///path and file:/path are considered invalid.
+
+    :param url: string representing the URI to validate
+    :param max_length: the URI strings maximum allowed length.
+    :param valid_schemes: valid URI schemes
+    :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
+    :raises: InvalidURIError if the given URI is invalid
+    """
+    if not 1 <= len(url) <= max_length:
+        raise errors.InvalidURLError()
+
+    regex = re.compile(
+        # schemes
+        r'^(?P<scheme>' + r'|'.join(valid_schemes) + r')://'
+        # IP address and port
+        r'(?:(?P<ip_address>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|'
+        # IP address and port
+        r'\[(?P<ipv6_address>'
+        r'[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){7}|'
+        r'(?:[0-9a-fA-F]{1,4}:){1,7}:|'
+        r'(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]|'
+        r'(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|'
+        r'(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|'
+        r'(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|'
+        r'(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|'
+        r'[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|'
+        r':(?::[0-9a-fA-F]{1,4}){1,7}'
+        r')]|'
+        # fqdn
+        r'(?P<domain>(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9]{2,}\.?))|'
+        # hostname
+        r'(?P<host>[A-Z0-9-]+))'
+        # port
+        r'(?::(?P<port>\d+))?'
+        # path
+        r'(?P<path>/?|[/?]\S+)'
+        # query
+        r'(?P<query>\?\S*)?$', re.IGNORECASE)
+    match = re.match(regex, url)
+
+    if match is None:
+        raise errors.InvalidURLError()
+
+    match_dict = match.groupdict()
+    if match_dict['ip_address']:
+        for block in match_dict['ip_address'].split('.'):
+            num = int(block)
+            if num < 0 or num > 225:
+                raise errors.InvalidURLError()
+
+    if match_dict['port']:
+        num = int(match_dict['port'])
+        if num < 1 or num > 65535:
+            raise errors.InvalidURLError()
+
+    return match_dict

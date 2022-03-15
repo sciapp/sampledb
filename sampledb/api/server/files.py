@@ -3,17 +3,16 @@
 RESTful API for SampleDB
 """
 
-import collections
 import base64
 import flask
 
 from flask_restful import Resource
-import wtforms.validators
 
 from .authentication import object_permissions_required, Permissions
 from ...logic.actions import get_action
 from ...logic.objects import get_object
 from ...logic.files import File, get_file_for_object, get_files_for_object, create_local_file, create_url_file, create_database_file
+from ...logic.utils import parse_url
 from ...logic import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -135,7 +134,9 @@ class ObjectFiles(Resource):
                     "message": "url must be set for files with url storage"
                 }, 400
             url = request_json['url']
-            if not _validate_url(url):
+            try:
+                parse_url(url)
+            except errors.InvalidURLError:
                 return {
                     "message": "url must be a valid url"
                 }, 400
@@ -158,19 +159,3 @@ class ObjectFiles(Resource):
             for file_info in get_files_for_object(object_id)
             if not file_info.is_hidden
         ]
-
-
-def _validate_url(url: str) -> bool:
-    """
-    Validate a URL using the wtforms.validators.url validator.
-
-    :param url: the URL to validate
-    :return: whether or not the URL is valid
-    """
-    PseudoField = collections.namedtuple('PseudoField', ['data'])
-    field = PseudoField(data=url)
-    try:
-        wtforms.validators.url(message="")(None, field)
-    except wtforms.validators.ValidationError:
-        return False
-    return True

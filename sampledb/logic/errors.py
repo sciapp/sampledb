@@ -372,3 +372,7 @@ class MissingComponentAddressError(Exception):
 
 class BackgroundTaskDoesNotExistError(Exception):
     pass
+
+
+class InvalidURLError(Exception):
+    pass
