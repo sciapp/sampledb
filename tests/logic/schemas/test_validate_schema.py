@@ -654,6 +654,30 @@ def test_validate_quantity_schema_with_invalid_placeholder():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_quantity_with_display_digits():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'display_digits': 2
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_with_invalid_display_digits():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'display_digits': .2
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['display_digits'] = -1
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_array_schema():
     schema = {
         'title': 'Example',

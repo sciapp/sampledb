@@ -19,36 +19,15 @@
     {# View #}
     <div class="view-switch">
         <div class="col-md-9">
-            {% if schema['units'] == "1" %}
-                <div class="container alert-upload-container">
-                    <div class="col-md-9" style="padding-left: 0px">
-                        {% if data is not none %}
-                            {{ data.magnitude_in_base_units | babel_format_number }}
-                        {% else %}
-                            &mdash;
-                        {% endif %}
-                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
-                        <div class="alert-upload-failed">
-                            {{ _('Your input is not valid. Please check.') }}
-                        </div>
+            <div class="container alert-upload-container">
+                <div class="col-md-9" style="padding-left: 0px">
+                    {{ data | format_quantity(schema) }}
+                    <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+                    <div class="alert-upload-failed">
+                        {{ _('Your input is not valid. Please check.') }}
                     </div>
                 </div>
-            {% else %}
-                <div class="container alert-upload-container">
-                    <div class="col-md-9" style="padding-left: 0px">
-                        {% if data is not none %}
-                            {{ (data | to_datatype).magnitude | babel_format_number }}
-                            {{ (data | to_datatype).units | prettify_units }}
-                        {% else %}
-                            &mdash;
-                        {% endif %}
-                        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
-                        <div class="alert-upload-failed">
-                            {{ _('Your input is not valid. Please check.') }}
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
     {# Form #}

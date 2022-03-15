@@ -567,6 +567,11 @@ A JSON string containing the units for this property, e.g. ``nm`` or ``degC``.
 
 .. note:: These units will be parsed using the `pint Python Package <https://pint.readthedocs.io/en/latest/index.html>`_ with additional `units defined by SampleDB <https://github.com/sciapp/sampledb/blob/develop/sampledb/logic/unit_definitions.txt>`_.
 
+display_digits
+^^^^^^^^^^^^^^
+
+This attribute is the number of decimal places to be shown when displaying the magnitude, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitude will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
+
 Datetimes
 `````````
 

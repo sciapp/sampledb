@@ -2,17 +2,7 @@
     {# View #}
     <div class="view-switch">
         <div class="row" style="padding-right: 0.75em; padding-left: 15px">
-            {% if data is not none and data.magnitude %}
-                {% if schema['units'] == "1" %}
-                    {% if data is not none %}
-                        {{ data.magnitude_in_base_units | babel_format_number }}{% endif %}
-                {% else %}
-                    {% if data is not none %}{{ (data | to_datatype).magnitude | babel_format_number }}
-                        {{ (data | to_datatype).units | prettify_units }}{% endif %}
-                {% endif %}
-            {% else %}
-                -
-            {% endif %}
+            {{ data | format_quantity(schema) }}
             <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
             <div class="alert-upload-failed">
                 {{ _('Your input is not valid. Please check.') }}

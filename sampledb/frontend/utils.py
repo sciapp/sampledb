@@ -10,7 +10,7 @@ from io import BytesIO
 import os
 from urllib.parse import quote_plus
 from datetime import datetime
-from math import log10
+from math import log10, floor
 
 import flask
 import flask_babel
@@ -24,6 +24,7 @@ import pytz
 
 from ..logic import errors
 from ..logic.components import get_component_or_none
+from ..logic.datatypes import Quantity
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
@@ -166,23 +167,84 @@ def custom_format_date(date, format='%Y-%m-%d'):
     return format_date(datetime_obj)
 
 
-def custom_format_number(number):
+def custom_format_number(number: typing.Union[str, int, float], display_digits: typing.Optional[int] = None) -> str:
     """
     Return the formatted number.
 
-    :param number: either an int or a float
-    :return: the reformatted number
+    :param number: either an int or a float, or a string representation of either
+    :param display_digits: number of decimals to use, or None
+    :return: the formatted number
     """
     try:
         # if number is a string that can not be formatted. Wrong inputs...
-        float(number)
+        number = float(number)
     except ValueError:
         return number
+    if type(display_digits) is not int:
+        display_digits = None
+    else:
+        # there cannot be a negative number of digits
+        if display_digits < 0:
+            display_digits = 0
+
+        # explicitly round the number, as that might change the exponent
+        number = round(number, display_digits)
+
     locale = get_locale()
-    if float(number) != 0:
-        if not -5 < int(log10(abs(float(number)))) < 6:
-            return numbers.format_scientific(number, locale=locale, decimal_quantization=False)
-    return numbers.format_decimal(number, locale=locale, decimal_quantization=False, group_separator=False)
+    if number == 0:
+        exponent = 0
+    else:
+        exponent = int(floor(log10(abs(number))))
+
+    # for very small or very large absolute numbers, the exponential format should be used
+    use_exponential_format = not -5 < exponent < 6
+
+    format = None
+    if display_digits is not None:
+        if use_exponential_format:
+            display_digits += exponent
+
+        if display_digits < 0:
+            display_digits = 0
+        if display_digits > 27:
+            display_digits = 27
+
+        positive_format = '0.' + '0' * display_digits
+        if use_exponential_format:
+            # including E will enable exponential format, 0 means the exponent should be shown even if 0
+            positive_format += 'E0'
+        negative_format = '-' + positive_format
+        format = positive_format + ';' + negative_format
+
+    if use_exponential_format:
+        return numbers.format_scientific(
+            number,
+            locale=locale,
+            format=format,
+            decimal_quantization=False
+        )
+    else:
+        return numbers.format_decimal(
+            number,
+            locale=locale,
+            format=format,
+            decimal_quantization=False,
+            group_separator=False
+        )
+
+
+def custom_format_quantity(
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        schema: typing.Dict[str, typing.Any]
+) -> str:
+    if data is None:
+        mdash = '\u2014'
+        return mdash
+    if schema.get('units', '1') == '1':
+        return custom_format_number(data.get('magnitude_in_base_units', 0), schema.get('display_digits', None))
+    quantity = Quantity.from_json(data)
+    narrow_non_breaking_space = '\u202f'
+    return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 
 
 @jinja_filter
@@ -240,6 +302,7 @@ _jinja_filters['get_translated_text'] = get_translated_text
 _jinja_filters['babel_format_datetime'] = custom_format_datetime
 _jinja_filters['babel_format_date'] = custom_format_date
 _jinja_filters['babel_format_number'] = custom_format_number
+_jinja_filters['format_quantity'] = custom_format_quantity
 _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
 _jinja_filters['to_string_if_dict'] = to_string_if_dict

@@ -1,16 +1,7 @@
 <div class="input-list form-area">
     {# View #}
     <div class="view-switch">
-            {% if data is none %}
-                &mdash;
-            {% else %}
-                {% if schema['units'] == "1" %}
-                    {{ data.magnitude_in_base_units | babel_format_number }}
-                {% else %}
-                    {{ (data | to_datatype).magnitude | babel_format_number }}
-                    {{ (data | to_datatype).units | prettify_units }}
-                {% endif %}
-            {% endif %}
+            {{ data | format_quantity(schema) }}
             <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
             <div class="alert-upload-failed">
                 {{ _('Your input is not valid. Please check.') }}
