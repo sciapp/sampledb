@@ -10,6 +10,7 @@ Currently in development.
 - Add basic federation feature
 - Added optional support for background tasks
 - Allow ftp, file, sftp and smb scheme and IPv6 addresses in URLs
+- Improve display of quantities
 
 Version 0.20
 ------------

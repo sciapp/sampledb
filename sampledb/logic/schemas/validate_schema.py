@@ -530,7 +530,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy', 'style', 'display_digits'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -565,6 +565,8 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
         for placeholder_text in schema['placeholder'].values():
             if not isinstance(placeholder_text, str):
                 raise ValidationError('placeholder must only contain text', path)
+    if 'display_digits' in schema and (type(schema['display_digits']) is not int or schema['display_digits'] < 0):
+        raise ValidationError('display_digits must be a non-negative int', path)
     _validate_note_in_schema(schema, path)
 
 

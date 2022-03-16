@@ -35,6 +35,43 @@ def test_custom_format_number():
     assert utils.custom_format_number(100000) == "100000"
     assert utils.custom_format_number(1000000) == "1E6"
     assert utils.custom_format_number(1234567) == "1.234567E6"
+    assert utils.custom_format_number(0.123, 0) == "0"
+    assert utils.custom_format_number(0.123, 2) == "0.12"
+    assert utils.custom_format_number(0.123, 4) == "0.1230"
+    assert utils.custom_format_number(0.126, 2) == "0.13"
+    assert utils.custom_format_number(100, 0) == "100"
+    assert utils.custom_format_number(100, 2) == "100.00"
+    assert utils.custom_format_number(0.001, 2) == "0.00"
+    assert utils.custom_format_number(0.001, 4) == "0.0010"
+    assert utils.custom_format_number(0.000001, 5) == "0.00000"
+    assert utils.custom_format_number(0.000001, 8) == "1.00E-6"
+    assert utils.custom_format_number(123456789, 2) == "1.2345678900E8"
+    assert utils.custom_format_number(1E27) == "1E27"
+    assert utils.custom_format_number(1E27, 0) == "1.000000000000000000000000000E27"
+    # 27 display digits is the maximum, independent of the exponent
+    assert utils.custom_format_number(1E27, 1) == "1.000000000000000000000000000E27"
+    assert utils.custom_format_number(1E25, 5) == "1.000000000000000000000000000E25"
+    assert utils.custom_format_number(1E-127, 154) == "1.000000000000000000000000000E-127"
+    assert utils.custom_format_number(1E-127, 155) == "1.000000000000000000000000000E-127"
+
+
+def test_custom_format_quantity():
+    assert utils.custom_format_quantity(
+        data={
+            '_type': 'quantity',
+            'units': 'km',
+            'magnitude_in_base_units': 1234,
+            'magnitude': 1.234,
+            'dimensionality': '[length]'
+        },
+        schema={
+            'type': 'quantity',
+            'title': 'example',
+            'units': 'km',
+            'dimensionality': '[length]',
+            'display_digits': 2
+        }
+    ) == '1.23\u202fkm'
 
 
 def test_relative_url_for(app):
