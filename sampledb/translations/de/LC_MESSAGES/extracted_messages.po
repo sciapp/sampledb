@@ -2703,6 +2703,57 @@ msgstr "Daten"
 msgid "There are no pending or failed tasks."
 msgstr "Aktuell gibt es keine ausstehenden oder fehlgeschlagenen Aufgaben."
 
+msgid "Bad Request"
+msgstr "Fehlerhafte Anfrage"
+
+#, python-format
+msgid ""
+"An error occurred while handling this request. Please try again later and"
+" if the issue persists, please <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">contact an "
+"administrator</a>."
+msgstr ""
+"Bei der Bearbeitung dieser Anfrage ist ein Fehler aufgetreten. Bitte "
+"versuchen Sie es später erneut und <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
+"Sie einen Administrator</a> falls das Problem weiterhin besteht."
+
+msgid "Forbidden"
+msgstr "Verboten"
+
+msgid "You are not authorized to view the page you tried to open."
+msgstr "Sie sind nicht berechtigt, die Seite, die Sie öffnen wollten, anzuzeigen."
+
+msgid "Not Found"
+msgstr "Nicht gefunden"
+
+#, python-format
+msgid ""
+"The page you tried to open could not be found. If you think it should be "
+"available, please <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">contact an "
+"administrator</a>."
+msgstr ""
+"Die Seite, die Sie öffnen wollten, konnte nicht gefunden werden. Wenn Sie"
+" glauben, dass sie verfügbar sein sollte, <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
+"Sie einen Administrator</a>."
+
+msgid "Internal Server Error"
+msgstr "Interner Server-Fehler"
+
+#, python-format
+msgid ""
+"An error occurred in %(service_name)s while handling this request. Please"
+" try again later and if the issue persists, please <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">contact an "
+"administrator</a>."
+msgstr ""
+"Bei der Bearbeitung Ihrer Anfrage ist ein Fehler innerhalb von "
+"%(service_name)s aufgetreten. Bitte versuchen Sie es später erneut und <a"
+" href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
+"Sie einen Administrator</a> falls das Problem weiterhin besteht."
+
 #, python-format
 msgid "%(dataverse_name)s not reachable"
 msgstr "%(dataverse_name)s nicht erreichbar"

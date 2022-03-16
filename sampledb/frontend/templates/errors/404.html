@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}File Not Found — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Not Found') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-<h1>404 &mdash; File Not Found</h1>
+<h1>404 &mdash; {{ _('Not Found') }}</h1>
+<p>{{ _('The page you tried to open could not be found. If you think it should be available, please <a href="mailto:%(contact_email)s?subject=%(service_name)s">contact an administrator</a>.', service_name=service_name, contact_email=contact_email) }}</p>
 {% endblock %}
