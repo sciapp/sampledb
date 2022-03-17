@@ -192,6 +192,15 @@ msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
 msgid "Please enter a valid ORCID iD."
 msgstr "Bitte geben Sie eine gültige ORCID iD ein."
 
+msgid "That database does not exist."
+msgstr "Diese Datenbank existiert nicht."
+
+msgid "There is no alias for this database."
+msgstr "Es gibt keinen Nutzer-Alias für diese Datenbank."
+
+msgid "The alias for this database has already been deleted."
+msgstr "Der Nutzer-Alias für diese Datenbank wurde bereits gelöscht."
+
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
 
@@ -1178,8 +1187,8 @@ msgstr "Ihre Aktionen"
 msgid "Your Objects"
 msgstr "Ihre Objekte"
 
-msgid "Other Database Aliases"
-msgstr "Aliasse auf anderen Datenbanken"
+msgid "User Alias Settings"
+msgstr "Nutzer-Alias Einstellungen"
 
 msgid "Invite a Guest"
 msgstr "Gast einladen"
@@ -4501,24 +4510,37 @@ msgstr "UUID von %(service_name)s: "
 msgid "Add Database"
 msgstr "Datenbank hinzufügen"
 
-msgid "User Alias"
-msgstr "Nutzer-Alias"
+#, python-format
+msgid ""
+"When an object is shared by %(service_name)s with other databases, by "
+"default no information about you except for your user ID will be shared. "
+"You can define a user alias for each database and control what "
+"information may be shared."
+msgstr ""
+"Wenn ein Objekt von %(service_name)s mit einer anderen Datenbank geteilt "
+"wird, werden standardmäßig bis auf Ihre Nutzer-ID keine weiteren "
+"Informationen über Sie ausgetauscht. Sie können für jede Datenbank einen Nutzer-"
+"Alias definieren und einstellen, welche Informationen geteilt werden "
+"dürfen."
 
 msgid "E-Mail"
 msgstr "E-Mail"
 
-#, python-format
-msgid "Edit Alias for %(component_name)s"
-msgstr "Alias für %(component_name)s bearbeiten"
+msgid "Add User Alias"
+msgstr "Nutzer-Alias hinzufügen"
 
 msgid "Copy from"
 msgstr "Kopieren von"
 
-msgid "my user profile"
-msgstr "meinem Nutzerprofil"
+msgid "user profile"
+msgstr "Nutzerprofil"
 
-msgid "Clear form"
-msgstr "Formular leeren"
+msgid "Copy"
+msgstr "Kopieren"
+
+#, python-format
+msgid "Edit Alias for %(component_name)s"
+msgstr "Alias für %(component_name)s bearbeiten"
 
 msgid "Edit Alias:"
 msgstr "Alias bearbeiten:"

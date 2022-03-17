@@ -1090,3 +1090,20 @@ code {
     white-space: nowrap;
     width: 1%;
 }
+
+/* combined selectpicker and button for user alias form */
+.div-copy-from {
+    display: flex;
+}
+
+.div-copy-from .bootstrap-select .dropdown-toggle {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.div-copy-from button[name="copy"] {
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-bottom: 2px;
+}

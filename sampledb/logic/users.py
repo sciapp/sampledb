@@ -449,3 +449,13 @@ def update_user_alias(user_id: int, component_id: int, name: typing.Optional[str
     alias.role = role
     db.session.add(alias)
     db.session.commit()
+
+
+def delete_user_alias(user_id: int, component_id: int):
+    get_user(user_id)
+    get_component(component_id)
+    alias = UserFederationAlias.query.get((user_id, component_id))
+    if alias is None:
+        raise errors.UserAliasDoesNotExistError()
+    db.session.delete(alias)
+    db.session.commit()

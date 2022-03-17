@@ -45,7 +45,7 @@ class SyncComponentForm(FlaskForm):
 
 
 class EditAliasForm(FlaskForm):
-    component = IntegerField('Component')
+    component = IntegerField('Component', validators=[InputRequired()])
     name = StringField('Full Name')
     email = StringField('Contact Email')
     orcid = StringField('ORCID iD')
@@ -87,7 +87,7 @@ class AddAliasForm(FlaskForm):
     email = StringField('Contact Email')
     orcid = StringField('ORCID iD')
     affiliation = StringField('Affiliation')
-    role = StringField('Role')
+    role = StringField()
     submit = SubmitField('Add Alias')
 
     def __init_(self, name=None, email=None):
@@ -116,3 +116,7 @@ class AddAliasForm(FlaskForm):
             raise ValidationError(_('Please enter a valid ORCID iD.'))
         # keep sanitized ORCID iD on success
         field.data = orcid
+
+
+class DeleteAliasForm(FlaskForm):
+    component = IntegerField('Component', validators=[InputRequired()])
