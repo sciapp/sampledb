@@ -35,6 +35,14 @@ class Tag(Literal):
         return '<Tag(#{})>'.format(self.value)
 
 
+class Reference(Literal):
+    def __init__(self, input_text: str, start_position: int, value: int) -> None:
+        super(Reference, self).__init__(input_text, start_position, value)
+
+    def __repr__(self) -> str:
+        return '<Reference(#{})>'.format(self.value)
+
+
 class Boolean(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Boolean) -> None:
         super(Boolean, self).__init__(input_text, start_position, value)
@@ -359,6 +367,18 @@ def parse_tag(text: str) -> typing.Optional[str]:
     return None
 
 
+def parse_reference(text: str) -> typing.Optional[int]:
+    text = text.strip()
+    if text.startswith('#') and all(c in '0123456789' for c in text[1:]):
+        try:
+            value = int(text[1:])
+        except ValueError:
+            return None
+        if str(value) == text[1:]:
+            return value
+    return None
+
+
 def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.List[str]]:
     if text.strip()[:1] not in 'abcdefghijklmnopqrstuvwxyz':
         return None
@@ -381,6 +401,10 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator, lis
         end = token.start_position + len(token.input_text)
         if not isinstance(token, Token):
             tokens.append(token)
+            continue
+        reference = parse_reference(token.input_text)
+        if reference is not None:
+            tokens.append(Reference(token.input_text, token.start_position, reference))
             continue
         tag = parse_tag(token.input_text)
         if tag is not None:

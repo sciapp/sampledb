@@ -56,6 +56,11 @@ Date comparisons
 
 Datetime properties can be compared using the basic mathematical comparison operators or the operators ``before``, ``after`` and ``on``. Dates to compare with must be entered using the format ``YYYY-MM-DD``.
 
+Object or User References
+`````````````````````````
+
+To search for references to an object or user ID, ``==`` and `!=` are supported with the ID starting with ``#``, e.g. ``operator == #15``.
+
 Tag search
 ``````````
 

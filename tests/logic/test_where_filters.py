@@ -218,3 +218,21 @@ def test_sample_equals(objects):
     object1 = objects.create_object(action_id=0, data={}, schema={}, user_id=0)
     object2 = objects.create_object(action_id=0, data={'t': {'_type': 'sample', 'object_id': object1.object_id}}, schema={}, user_id=0)
     assert [object2] == objects.get_current_objects(lambda data: where_filters.sample_equals(data['t'], object1.object_id))
+
+
+def test_reference_equals(objects):
+    object1 = objects.create_object(action_id=0, data={}, schema={}, user_id=0)
+    object2 = objects.create_object(action_id=0, data={'t': {'_type': 'sample', 'object_id': object1.object_id}}, schema={}, user_id=0)
+    object3 = objects.create_object(action_id=0, data={'t': {'_type': 'measurement', 'object_id': object1.object_id}}, schema={}, user_id=0)
+    object4 = objects.create_object(action_id=0, data={'t': {'_type': 'object_reference', 'object_id': object1.object_id}}, schema={}, user_id=0)
+    object5 = objects.create_object(action_id=0, data={'t': {'_type': 'user', 'user_id': object1.object_id}}, schema={}, user_id=0)
+    object6 = objects.create_object(action_id=0, data={'t': {'_type': 'object_reference', 'object_id': object1.object_id + 1}}, schema={}, user_id=0)
+    object7 = objects.create_object(action_id=0, data={'t': {'_type': 'user', 'user_id': object1.object_id + 1}}, schema={}, user_id=0)
+    found_objects = objects.get_current_objects(lambda data: where_filters.reference_equals(data['t'], object1.object_id))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {
+        object2.id, object3.id, object4.id, object5.id
+    }
