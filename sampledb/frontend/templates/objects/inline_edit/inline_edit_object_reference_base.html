@@ -1,7 +1,11 @@
 <div class="row form-area" style="padding-right: 0.75em">
     {# Label #}
-    <label class="col-md-3"
-           style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}
+    <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
+      {% if data is not none %}
+        <a href="{{ url_for('.objects', q=search_query_attribute + ' == #%d'| format(data.object_id), advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+      {% else %}
+        <a href="{{ url_for('.objects', q=search_query_attribute + ' == #0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+      {% endif %}
     </label>
     {# View #}
     <div class="view-switch">
