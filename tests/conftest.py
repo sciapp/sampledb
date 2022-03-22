@@ -60,7 +60,7 @@ def create_flask_server(app):
         'environment': 'test_suite',
         'server.socket_host': '127.0.0.1',
         'server.socket_port': port,
-        'server.thread_pool': 4,
+        'server.socket_queue_size': 20,
         'log.screen': True
     })
     server_thread = threading.Thread(target=run_server, daemon=True)
