@@ -8,7 +8,7 @@
                 <div class="ghs-hazards">
                 {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
                 {% for hazard_index in data["hazards"] %}
-                    <img src="{{ url_for('static', filename='img/ghs0{}.png'.format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
+                    <img src="{{ fingerprinted_static('img/ghs0{}.png'.format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
                 {% endfor %}
                     <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
                 </div>
@@ -42,7 +42,7 @@
             {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
             {% for hazard_index in hazard_titles.keys() | sort %}
                 <label>
-                    <input type="checkbox" name="{{ id_prefix }}_ghs0{{ hazard_index }}" onchange="setHasHazard(this)" {% if (data is not none and "hazards" in data and hazard_index in data["hazards"]) or (id_prefix+('_ghs0%d' | format(hazard_index)) in form_data) %}checked="checked"{% endif %}><span>{{ hazard_titles[hazard_index] }}</span><img src="{{ url_for('static', filename='img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
+                    <input type="checkbox" name="{{ id_prefix }}_ghs0{{ hazard_index }}" onchange="setHasHazard(this)" {% if (data is not none and "hazards" in data and hazard_index in data["hazards"]) or (id_prefix+('_ghs0%d' | format(hazard_index)) in form_data) %}checked="checked"{% endif %}><span>{{ hazard_titles[hazard_index] }}</span><img src="{{ fingerprinted_static('img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
                 </label>
             {% endfor %}
         </div>

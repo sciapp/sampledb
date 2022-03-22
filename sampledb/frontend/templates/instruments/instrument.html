@@ -463,10 +463,10 @@
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-datetimepicker.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('css/inscrybmde.min.css') }}" />
 <style>
 label.instrument-log-show-versions:before {
     content: '{{ _('Show previous versions') }}';
@@ -485,16 +485,16 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/markdown_image_viewer.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/bootstrap-toggle.min.js') }}"></script>
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-    <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/markdown_image_upload.js') }}"></script>
   <script type="text/javascript">
     window.categoriesShown = {
       {% for category in instrument_log_categories %}
