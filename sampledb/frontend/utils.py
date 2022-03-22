@@ -5,6 +5,8 @@
 
 import json
 import base64
+import functools
+import hashlib
 import typing
 from io import BytesIO
 import os
@@ -389,6 +391,39 @@ def relative_url_for(route: str, **kwargs) -> str:
     return url
 
 
+@functools.lru_cache(maxsize=None)
+def get_fingerprint(file_path: str) -> str:
+    """
+    Calculate a fingerprint for a given file.
+
+    :param file_path: path to the file that should be fingerprinted
+    :return: the file fingerprint, or an empty string
+    """
+    try:
+        block_size = 65536
+        hash_method = hashlib.md5()
+        with open(file_path, 'rb') as input_file:
+            buf = input_file.read(block_size)
+            while buf:
+                hash_method.update(buf)
+                buf = input_file.read(block_size)
+        return hash_method.hexdigest()
+    except Exception:
+        # if the file cannot be hashed for any reason, return an empty fingerprint
+        return ''
+
+
+STATIC_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
+
+
+def fingerprinted_static(filename: str) -> str:
+    return flask.url_for(
+        'static',
+        filename=filename,
+        v=get_fingerprint(os.path.join(STATIC_DIRECTORY, filename))
+    )
+
+
 _jinja_functions = {}
 _jinja_functions['get_view_template'] = get_view_template
 _jinja_functions['get_form_template'] = get_form_template
@@ -397,3 +432,4 @@ _jinja_functions['get_inline_edit_template'] = get_inline_edit_template
 _jinja_functions['get_templates'] = get_templates
 _jinja_functions['get_component_or_none'] = get_component_or_none
 _jinja_functions['relative_url_for'] = relative_url_for
+_jinja_functions['fingerprinted_static'] = fingerprinted_static
