@@ -299,22 +299,14 @@ def get_object_info_with_permissions(
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
-        o.object_id, o.data -> 'name' -> 'text' as name_json, o.action_id, 3 as max_permission, o.data -> 'tags' as tags, o.fed_object_id,
-            CASE WHEN c.name IS NULL
-                THEN c.uuid
-                ELSE c.name
-            END AS component_name
+            o.object_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.uuid) AS component_name
         FROM objects_current AS o
         LEFT JOIN components AS c ON c.id = o.component_id
         """)
     else:
         stmt = db.text("""
         SELECT
-            o.object_id, o.data -> 'name' -> 'text' as name_json, o.action_id, p.max_permission, o.data -> 'tags' as tags, o.fed_object_id,
-            CASE WHEN c.name IS NULL
-                THEN c.uuid
-                ELSE c.name
-            END AS component_name
+            o.object_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.uuid) AS component_name
         FROM (
             SELECT
             object_id, MAX(permissions_int) AS max_permission
@@ -412,7 +404,7 @@ def get_objects_with_permissions(
     if name_only:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.data -> 'name' -> 'text') as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id
+        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id
         FROM objects_current AS o
         """
     else:

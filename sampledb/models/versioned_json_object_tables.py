@@ -94,6 +94,8 @@ class VersionedJSONSerializableObjectTables(object):
             db.Column('fed_object_id', db.Integer),
             db.Column('fed_version_id', db.Integer),
             db.Column('component_id', db.Integer),
+            db.Column('name_cache', db.JSON),
+            db.Column('tags_cache', db.JSON),
             db.CheckConstraint(
                 '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
                 name=table_name_prefix + '_current_not_null_check'
@@ -205,6 +207,8 @@ class VersionedJSONSerializableObjectTables(object):
                 version_id=version_id,
                 action_id=action_id,
                 data=data,
+                name_cache=data.get('name', {}).get('text') if data else None,
+                tags_cache=data.get('tags') if data else None,
                 schema=schema,
                 user_id=user_id,
                 utc_datetime=utc_datetime,
@@ -269,6 +273,18 @@ class VersionedJSONSerializableObjectTables(object):
                 ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime', 'fed_object_id', 'fed_version_id', 'component_id'],
                 self._current_table
                 .select()
+                .with_only_columns([
+                    self._current_table.c.object_id,
+                    self._current_table.c.version_id,
+                    self._current_table.c.action_id,
+                    self._current_table.c.data,
+                    self._current_table.c.schema,
+                    self._current_table.c.user_id,
+                    self._current_table.c.utc_datetime,
+                    self._current_table.c.fed_object_id,
+                    self._current_table.c.fed_version_id,
+                    self._current_table.c.component_id
+                ])
                 .where(self._current_table.c.object_id == db.bindparam('oid'))
             ),
             [{'oid': object_id}]
@@ -282,6 +298,8 @@ class VersionedJSONSerializableObjectTables(object):
             .values(
                 version_id=self._current_table.c.version_id + 1,
                 data=data,
+                name_cache=data.get('name', {}).get('text') if data else None,
+                tags_cache=data.get('tags') if data else None,
                 schema=schema,
                 user_id=user_id,
                 utc_datetime=utc_datetime
@@ -329,6 +347,18 @@ class VersionedJSONSerializableObjectTables(object):
                     ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime', 'fed_object_id', 'fed_version_id', 'component_id'],
                     self._current_table
                     .select()
+                    .with_only_columns([
+                        self._current_table.c.object_id,
+                        self._current_table.c.version_id,
+                        self._current_table.c.action_id,
+                        self._current_table.c.data,
+                        self._current_table.c.schema,
+                        self._current_table.c.user_id,
+                        self._current_table.c.utc_datetime,
+                        self._current_table.c.fed_object_id,
+                        self._current_table.c.fed_version_id,
+                        self._current_table.c.component_id
+                    ])
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
                 ),
                 [{'oid': current.object_id}]
@@ -343,6 +373,8 @@ class VersionedJSONSerializableObjectTables(object):
                     object_id=current.object_id,
                     version_id=self._current_table.c.version_id + 1,
                     data=data,
+                    name_cache=data.get('name', {}).get('text') if data else None,
+                    tags_cache=data.get('tags') if data else None,
                     schema=schema,
                     action_id=action_id,
                     user_id=user_id,
@@ -475,6 +507,13 @@ class VersionedJSONSerializableObjectTables(object):
             return None
 
         # Update current version to new version
+        if selected_table == self._current_table:
+            cache_values = {
+                'name_cache': data.get('name', {}).get('text') if data else None,
+                'tags_cache': data.get('tags') if data else None,
+            }
+        else:
+            cache_values = {}
         connection.execute(
             selected_table
             .update()
@@ -484,7 +523,8 @@ class VersionedJSONSerializableObjectTables(object):
                 data=data,
                 schema=schema,
                 user_id=user_id,
-                utc_datetime=utc_datetime
+                utc_datetime=utc_datetime,
+                **cache_values
             ),
             [{'oid': object_id, 'vid': version_id}]
         )
