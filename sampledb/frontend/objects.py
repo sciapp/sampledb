@@ -1691,12 +1691,24 @@ def search():
             search_paths_by_action_type[action.type_id] = {}
         for property_path, property_type in logic.schemas.utils.get_property_paths_for_schema(
                 schema=action.schema,
-                valid_property_types={'text', 'bool', 'quantity', 'datetime'}
+                valid_property_types={
+                    'text',
+                    'bool',
+                    'quantity',
+                    'datetime',
+                    'user',
+                    'object_reference',
+                    'sample',
+                    'measurement',
+                }
         ).items():
             property_path = '.'.join(
                 key if key is not None else '?'
                 for key in property_path
             )
+            if property_type in {'object_reference', 'sample', 'measurement'}:
+                # unify object_reference, sample and measurement
+                property_type = 'object_reference'
             search_paths_by_action[action.id][property_path] = [property_type]
             if property_path not in search_paths_by_action_type[action.type_id]:
                 search_paths_by_action_type[action.type_id][property_path] = [property_type]
@@ -1706,6 +1718,14 @@ def search():
                 search_paths[property_path] = [property_type]
             elif property_type not in search_paths[property_path]:
                 search_paths[property_path].append(property_type)
+
+    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+        referencable_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+    else:
+        referencable_objects = []
     return flask.render_template(
         'search.html',
         search_paths=search_paths,
@@ -1713,7 +1733,9 @@ def search():
         search_paths_by_action_type=search_paths_by_action_type,
         actions=actions,
         action_types=action_types,
-        datetime=datetime
+        datetime=datetime,
+        users=get_users(exclude_hidden=True),
+        referencable_objects=referencable_objects
     ), 200, {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',

@@ -220,6 +220,23 @@ def sample_equals(db_obj, object_id):
     )
 
 
+def reference_equals(db_obj, reference_id):
+    return db.or_(
+        db.and_(
+            db.or_(
+                db_obj['_type'].astext == 'object_reference',
+                db_obj['_type'].astext == 'sample',
+                db_obj['_type'].astext == 'measurement'
+            ),
+            db_obj['object_id'].astext.cast(db.Integer) == reference_id
+        ),
+        db.and_(
+            db_obj['_type'].astext == 'user',
+            db_obj['user_id'].astext.cast(db.Integer) == reference_id
+        ),
+    )
+
+
 def tags_contain(db_obj, tag):
     tag = tag.strip().lower()
     return db.and_(

@@ -27,6 +27,11 @@ class Expression:
         self.end_position = self.start_position + len(self.input_text)
 
 
+class Reference:
+    def __init__(self, value: int):
+        self.value = value
+
+
 unary_operator_handlers = {}
 binary_operator_handlers = {}
 
@@ -514,6 +519,42 @@ def _(left_operand, right_operand, outer_filter, search_notes, input_text, start
         return outer_filter(false()), None
 
 
+@binary_operator_handler(Reference, Reference, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.value == right_operand.value:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(Attribute, Reference, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.reference_equals(left_operand, right_operand)), None
+
+
+@binary_operator_handler(Reference, Attribute, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.reference_equals(right_operand, left_operand)), None
+
+
+@binary_operator_handler(Reference, Reference, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    if left_operand.value != right_operand.value:
+        return outer_filter(true()), None
+    else:
+        return outer_filter(false()), None
+
+
+@binary_operator_handler(Attribute, Reference, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(not_(where_filters.reference_equals(left_operand, right_operand))), None
+
+
+@binary_operator_handler(Reference, Attribute, '!=')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(not_(where_filters.reference_equals(right_operand, left_operand))), None
+
+
 def transform_literal_to_query(data, literal: object_search_parser.Literal, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable]]:
     if isinstance(literal, object_search_parser.Tag):
         return Expression(literal.input_text, literal.start_position, where_filters.tags_contain(data[('tags',)], literal.value)), None
@@ -558,6 +599,9 @@ def transform_literal_to_query(data, literal: object_search_parser.Literal, sear
     if isinstance(literal, object_search_parser.Text):
         return literal, None
 
+    if isinstance(literal, object_search_parser.Reference):
+        return literal, None
+
     search_notes.append(('error', "Invalid search query", 0, None))
     return false(), None
 
@@ -589,6 +633,8 @@ def transform_unary_operation_to_query(data, operator, operand, search_notes: ty
         operand_type = datatypes.Quantity
     elif isinstance(operand, object_search_parser.Text):
         operand_type = datatypes.Text
+    elif isinstance(operand, object_search_parser.Reference):
+        operand_type = Reference
     elif isinstance(operand, Attribute):
         operand_type = Attribute
     else:
@@ -642,6 +688,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
         left_operand_type = datatypes.Quantity
     elif isinstance(left_operand, object_search_parser.Text):
         left_operand_type = datatypes.Text
+    elif isinstance(left_operand, object_search_parser.Reference):
+        left_operand_type = Reference
     elif isinstance(left_operand, Attribute):
         left_operand_type = Attribute
     else:
@@ -655,6 +703,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
         right_operand_type = datatypes.Quantity
     elif isinstance(right_operand, object_search_parser.Text):
         right_operand_type = datatypes.Text
+    elif isinstance(right_operand, object_search_parser.Reference):
+        right_operand_type = Reference
     elif isinstance(right_operand, Attribute):
         right_operand_type = Attribute
     else:

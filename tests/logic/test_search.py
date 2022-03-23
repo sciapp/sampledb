@@ -62,6 +62,14 @@ def action():
                     'type': 'quantity',
                     'units': 'm'
                 },
+                'object_reference_attr': {
+                    'title': 'Object Reference',
+                    'type': 'object_reference'
+                },
+                'user_reference_attr': {
+                    'title': 'User Reference',
+                    'type': 'user'
+                },
                 'array_attr': {
                     'title': 'Array Attribute',
                     'type': 'array',
@@ -2502,4 +2510,58 @@ def test_with_name_collision(user) -> None:
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(objects) == 1
     assert objects[0].data == data2
+    assert len(search_notes) == 0
+
+
+def test_find_by_reference(user, action) -> None:
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        },
+        'user_reference_attr': {
+            '_type': 'user',
+            'user_id': user.id
+        }
+    }
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'object_reference_attr': {
+            '_type': 'object_reference',
+            'object_id': object1.id
+        }
+    }
+    object2 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 3'
+        },
+        'object_reference_attr': {
+            '_type': 'object_reference',
+            'object_id': object2.id
+        }
+    }
+    object3 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'object_reference_attr == #{object1.id}', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object2.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('object_reference_attr != #0', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 2 and {object.id for object in objects} == {object2.id, object3.id}
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'user_reference_attr == #{user.id}', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object1.id
     assert len(search_notes) == 0
