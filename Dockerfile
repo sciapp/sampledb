@@ -35,6 +35,10 @@ ENV SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files
 # Set the path for pybabel
 ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/env/bin/pybabel
 
+# Write Docker build arg SAMPLEDB_VERSION to environment to be read by sampledb/version.py.
+ARG SAMPLEDB_VERSION
+ENV SAMPLEDB_VERSION=$SAMPLEDB_VERSION
+
 # The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
 ADD docker-entrypoint.sh docker-entrypoint.sh
 USER root
