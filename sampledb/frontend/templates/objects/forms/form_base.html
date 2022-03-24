@@ -67,6 +67,23 @@
           parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
         }
       {% endfor %}
+
+      let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
+      if (disabled_languages_error.length === 1) {
+          let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
+          let all_disabled_languages_removed = true;
+          for (let i = 0; i < disabled_language_codes.length; i++) {
+              if (enabled_languages.includes(disabled_language_codes[i])) {
+                  all_disabled_languages_removed = false;
+                  break;
+              }
+          }
+          if (all_disabled_languages_removed) {
+              disabled_languages_error.hide();
+          } else {
+              disabled_languages_error.show();
+          }
+      }
     }
 
     var select_language_selectpicker = $('.select-language')

@@ -27,7 +27,7 @@ def validate(
         instance: typing.Union[dict, list],
         schema: dict,
         path: typing.Optional[typing.List[str]] = None,
-        allow_disabled_languages: bool = True
+        allow_disabled_languages: bool = False
 ) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
@@ -35,6 +35,7 @@ def validate(
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
+    :param allow_disabled_languages: whether disabled languages are allowed
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
@@ -73,7 +74,7 @@ def validate(
         raise ValidationError('invalid type', path)
 
 
-def _validate_array(instance: list, schema: dict, path: typing.List[str], allow_disabled_languages: bool = True) -> None:
+def _validate_array(instance: list, schema: dict, path: typing.List[str], allow_disabled_languages: bool = False) -> None:
     """
     Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
 
@@ -188,7 +189,7 @@ def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None
         raise ValidationMultiError(errors)
 
 
-def _validate_object(instance: dict, schema: dict, path: typing.List[str], allow_disabled_languages: bool = True) -> None:
+def _validate_object(instance: dict, schema: dict, path: typing.List[str], allow_disabled_languages: bool = False) -> None:
     """
     Validates the given instance using the given object schema and raises a ValidationError if it is invalid.
 
@@ -229,7 +230,7 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str], allow
         raise ValidationMultiError(errors)
 
 
-def _validate_text(instance: dict, schema: dict, path: typing.List[str], allow_disabled_languages: bool = True) -> None:
+def _validate_text(instance: dict, schema: dict, path: typing.List[str], allow_disabled_languages: bool = False) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
 

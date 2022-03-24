@@ -2257,8 +2257,12 @@ def restore_object_version(object_id, version_id):
         return flask.abort(404)
     form = ObjectVersionRestoreForm()
     if form.validate_on_submit():
-        logic.objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
-        return flask.redirect(flask.url_for('.object', object_id=object_id))
+        try:
+            logic.objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
+        except logic.errors.ValidationError:
+            flask.flash(_('This version contains invalid data and cannot be restored.'), 'error')
+        else:
+            return flask.redirect(flask.url_for('.object', object_id=object_id))
     return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
 
 
