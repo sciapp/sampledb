@@ -3,6 +3,7 @@
 
 """
 import datetime
+import string
 import typing
 
 from . import datatypes
@@ -380,14 +381,33 @@ def parse_reference(text: str) -> typing.Optional[int]:
 
 
 def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.List[str]]:
-    if text.strip()[:1] not in 'abcdefghijklmnopqrstuvwxyz':
+    text = text.strip()
+    if text[:1] not in string.ascii_letters:
         return None
-    attributes = text.lower().strip().split('.')
+    attributes = text.split('.')
     for attribute in attributes:
-        if not all(character in 'abcdefghijklmnopqrstuvwxyz0123456789_?' for character in attribute):
+        # empty attributes
+        if not attribute:
             raise ParseError("Invalid attribute name", start, end)
-        if '?' in attribute and attribute != '?':
-            raise ParseError("Invalid array placeholder", start, end)
+        # array placeholder
+        if '?' in attribute:
+            if attribute == '?':
+                continue
+            else:
+                raise ParseError("Invalid array placeholder", start, end)
+        # array indices
+        if attribute[0] in string.digits:
+            if all(character in string.digits for character in attribute):
+                continue
+            else:
+                raise ParseError("Invalid array index", start, end)
+        # attribute name
+        if attribute[0] in string.ascii_letters:
+            if all(character in (string.ascii_letters + string.digits + '_') for character in attribute):
+                continue
+            else:
+                raise ParseError("Invalid attribute name", start, end)
+        raise ParseError("Invalid attribute name", start, end)
     if attributes.count('?') > 1:
         raise ParseError("Multiple array placeholders", start, end)
     return attributes
