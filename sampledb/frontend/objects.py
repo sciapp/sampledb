@@ -1783,7 +1783,7 @@ def referencable_objects():
         return {
             'id': x.object_id,
             'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '&mdash;', x.object_id) if x.component_name is None
-            else flask.escape('{} (#{}, #{} @ {})'.format(get_translated_text(x.name_json) or '&mdash;', x.object_id, x.fed_object_id, x.component_name)),
+            else '{} (#{}, #{} @ {})'.format(flask.escape(get_translated_text(x.name_json)) or '&mdash;', x.object_id, x.fed_object_id, flask.escape(x.component_name)),
             'action_id': x.action_id,
             'max_permission': x.max_permission,
             'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else [],
