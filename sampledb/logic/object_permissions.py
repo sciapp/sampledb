@@ -299,14 +299,14 @@ def get_object_info_with_permissions(
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
-            o.object_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.uuid) AS component_name
+            o.object_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name
         FROM objects_current AS o
         LEFT JOIN components AS c ON c.id = o.component_id
         """)
     else:
         stmt = db.text("""
         SELECT
-            o.object_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.uuid) AS component_name
+            o.object_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name
         FROM (
             SELECT
             object_id, MAX(permissions_int) AS max_permission
