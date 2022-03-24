@@ -126,7 +126,7 @@ This attribute is a boolean that sets whether or not the data for the given obje
 properties
 ^^^^^^^^^^
 
-This JSON object maps names to the subschemas for other properties. The names may consist of lowercase characters, digits and underscores, but must not begin or end with an underscore. These names are, for example, used for the advanced search.
+This JSON object maps names to the subschemas for other properties. The names may consist of latin characters (a-z and A-Z), digits (0-9) and underscores, but must begin with a character and must not end with an underscore. These names are, for example, used for the advanced search.
 
 .. code-block:: json
     :caption: The properties attribute from the example above.
