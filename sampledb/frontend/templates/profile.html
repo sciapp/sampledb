@@ -33,7 +33,7 @@
   <dt>ORCID iD</dt>
   <dd>
     {% if user.orcid %}
-      <div itemscope itemtype="https://schema.org/Person"><a itemprop="sameAs" content="https://orcid.org/{{ user.orcid }}" href="https://orcid.org/{{ user.orcid }}" target="orcid.widget" rel="me noopener noreferrer" style="vertical-align:top;"><img src="{{ url_for('static', filename='img/orcid_16x16.png') }}" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">https://orcid.org/{{ user.orcid }}</a></div>
+      <div itemscope itemtype="https://schema.org/Person"><a itemprop="sameAs" content="https://orcid.org/{{ user.orcid }}" href="https://orcid.org/{{ user.orcid }}" target="orcid.widget" rel="me noopener noreferrer" style="vertical-align:top;"><img src="{{ fingerprinted_static('img/orcid_16x16.png') }}" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">https://orcid.org/{{ user.orcid }}</a></div>
     {% else %}
       &mdash;
     {% endif %}

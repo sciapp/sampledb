@@ -166,6 +166,17 @@ def create_app():
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
 
+    def custom_send_static_file(filename: str) -> flask.Response:
+        response = flask.make_response(
+            flask.send_from_directory(app.static_folder, filename)
+        )
+        if 'v' in flask.request.args:
+            # fingerprinted URLs for static files can be cached as immutable
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        return response
+
+    app.send_static_file = custom_send_static_file
+
     setup_database(app)
     setup_admin_account_from_config(app)
     setup_jinja_environment(app)
