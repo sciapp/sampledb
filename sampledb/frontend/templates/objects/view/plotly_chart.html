@@ -1,12 +1,12 @@
 <div class="row" style="padding-right:0.75em">
-{% if data is not none and 'plotly' in data %}
+{% if data is not none and 'plotly' in data and data.plotly != {} %}
   {% set plot_counter.value = plot_counter.value + 1 %}
   {% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
   <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
   {% if plotly_chart_title %}
     <a href="{{ url_for('.objects', q=search_query_attribute + ' == "' + plotly_chart_title + '"', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
   {% else %}
-    &mdash;
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
   {% endif %}
   {% if data and data.export_edit_note %}
     <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
@@ -21,7 +21,10 @@
     </script>
   {% endif %}
 {% else %}
-  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}</label>
+  <label class="col-md-3" style="text-align: right">
+    {{ schema.title | get_translated_text }}
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+  </label>
   <div class="col-md-9">
     &mdash;
   </div>
