@@ -2,11 +2,7 @@
     {# View #}
     <div class="view-switch">
         <div class="row" style="padding-right: 0.75em; padding-left: 15px">
-            {% if data is not none and data.text | get_translated_text(metadata_language) %}
-                {{ data.text | get_translated_text(metadata_language) }}
-            {% else %}
-                &mdash;
-            {% endif %}
+            {% include "objects/view/text_base.html" %}
             <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
             <div class="alert-upload-failed">
                 {{ _('Your input is not valid. Please check.') }}

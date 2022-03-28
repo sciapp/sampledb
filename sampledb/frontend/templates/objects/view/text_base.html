@@ -1,0 +1,11 @@
+{% if data and data.text | get_translated_text(metadata_language) %}
+  {% if schema.markdown and data.is_markdown %}
+    <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
+  {% elif schema.multiline %}
+    <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
+  {% else %}
+    {{ data.text | get_translated_text(metadata_language) }}
+  {% endif %}
+{% else %}
+  &mdash;
+{% endif %}
