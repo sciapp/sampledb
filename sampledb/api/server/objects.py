@@ -76,7 +76,7 @@ class ObjectVersions(Resource):
                 "message": "JSON object body required"
             }, 400
         for key in request_json:
-            if key not in {'object_id', 'version_id', 'action_id', 'schema', 'data'}:
+            if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data'}:
                 return {
                     "message": "invalid key '{}'".format(key)
                 }, 400
@@ -86,6 +86,21 @@ class ObjectVersions(Resource):
             if request_json['object_id'] != object.object_id:
                 return {
                     "message": "object_id must be {}".format(object.object_id)
+                }, 400
+        if 'component_id' in request_json:
+            if request_json['component_id'] != object.component_id:
+                return {
+                    "message": "component_id must be {}".format(object.component_id)
+                }, 400
+        if 'fed_version_id' in request_json:
+            if request_json['fed_version_id'] != object.fed_version_id:
+                return {
+                    "message": "fed_version_id must be {}".format(object.fed_version_id)
+                }, 400
+        if 'fed_object_id' in request_json:
+            if request_json['fed_object_id'] != object.fed_object_id:
+                return {
+                    "message": "fed_object_id must be {}".format(object.fed_object_id)
                 }, 400
         if 'version_id' in request_json:
             if request_json['version_id'] != object.version_id + 1:
@@ -271,7 +286,7 @@ class Objects(Resource):
                 "message": "JSON object body required"
             }, 400
         for key in request_json:
-            if key not in {'object_id', 'version_id', 'action_id', 'schema', 'data'}:
+            if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data'}:
                 return {
                     "message": "invalid key '{}'".format(key)
                 }, 400
@@ -279,6 +294,21 @@ class Objects(Resource):
             return {
                 "message": "object_id cannot be set"
             }, 400
+        if 'fed_object_id' in request_json:
+            if request_json['fed_object_id'] is not None:
+                return {
+                    "message": "fed_object_id must be null"
+                }, 400
+        if 'fed_version_id' in request_json:
+            if request_json['fed_version_id'] is not None:
+                return {
+                    "message": "fed_version_id must be null"
+                }, 400
+        if 'component_id' in request_json:
+            if request_json['component_id'] is not None:
+                return {
+                    "message": "component_id must be null"
+                }, 400
         if 'version_id' in request_json:
             if request_json['version_id'] != 0:
                 return {
