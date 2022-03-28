@@ -602,7 +602,7 @@ msgid ""
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
 "Metadaten von <a href=\"(object_url)s\">%(object_name)s "
-"#%(other_object_id)s</a> referenziert."
+"(#%(other_object_id)s)</a> referenziert."
 
 #, python-format
 msgid ""

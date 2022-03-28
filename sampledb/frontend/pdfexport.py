@@ -154,7 +154,7 @@ def create_pdfexport(
                             object_url = markupsafe.escape(flask.url_for('.object', object_id=other_object_id, _external=True))
                             permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['object_id'], flask_login.current_user.id)
                             if logic.object_permissions.Permissions.READ in permissions:
-                                object_name = markupsafe.escape(get_object(object_log_entry.data['object_id']).name)
+                                object_name = markupsafe.escape(get_translated_text(get_object(object_log_entry.data['object_id']).name))
                                 text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object %(object_name)s (#%(other_object_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, object_name=object_name, other_object_id=other_object_id)
                             else:
                                 text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object #%(other_object_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, other_object_id=other_object_id)
