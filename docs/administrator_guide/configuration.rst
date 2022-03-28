@@ -166,6 +166,21 @@ Federation
    * - SAMPLEDB_VALID_TIME_DELTA
      - Valid time delta between SampleDB instances in a federation in seconds (default: ``300``)
 
+.. _monitoring_dashboard_configuration:
+
+Monitoring Dashboard
+--------------------
+
+.. list-table:: Monitoring Dashboard Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_ENABLE_MONITORINGDASHBOARD
+     - If set, the monitoring dashboard will be enabled.
+   * - SAMPLEDB_MONITORINGDASHBOARD_DATABASE
+     - The database URL for the monitoring dashboard (default: ``sqlite:///flask_monitoringdashboard.db``)
+
 Miscellaneous
 -------------
 

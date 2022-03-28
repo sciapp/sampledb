@@ -430,6 +430,10 @@ WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
 # invitation link time limit
 INVITATION_TIME_LIMIT = 7 * 24 * 60 * 60
 
+# Flask-MonitoringDashboard settings
+ENABLE_MONITORINGDASHBOARD = False
+MONITORINGDASHBOARD_DATABASE = 'sqlite:///flask_monitoringdashboard.db'
+
 # other settings
 ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 ONLY_ADMINS_CAN_CREATE_GROUPS = False
@@ -508,6 +512,7 @@ for config_name in {
     'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
     'DISABLE_INLINE_EDIT',
     'ENABLE_BACKGROUND_TASKS',
+    'ENABLE_MONITORINGDASHBOARD',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

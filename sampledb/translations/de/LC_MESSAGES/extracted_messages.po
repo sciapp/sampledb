@@ -1045,6 +1045,9 @@ msgstr "Aktionstypen"
 msgid "Languages"
 msgstr "Sprachen"
 
+msgid "Monitoring Dashboard"
+msgstr "Monitoring Dashboard"
+
 msgid "Preferences"
 msgstr "Einstellungen"
 
