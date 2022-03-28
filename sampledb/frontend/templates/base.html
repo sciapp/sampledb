@@ -188,6 +188,9 @@
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.action_types') }}">{{ _('Action Types') }}</a></li>
               <li><a href="{{ url_for('frontend.languages') }}">{{ _('Languages') }}</a></li>
+              {% if config['ENABLE_MONITORINGDASHBOARD'] %}
+              <li><a href="{{ url_for('dashboard.index') }}">{{ _('Monitoring Dashboard') }}</a></li>
+              {% endif %}
             {% endif %}
           </ul>
         </li>

@@ -20,6 +20,7 @@ db = SQLAlchemy()
 babel = Babel()
 
 
+import sampledb.dashboard
 import sampledb.frontend
 import sampledb.api
 import sampledb.logic
@@ -157,6 +158,8 @@ def create_app():
     mail.init_app(app)
     db.init_app(app)
     babel.init_app(app)
+    sampledb.dashboard.init_app(app)
+
     sampledb.api.server.api.init_app(app)
     sampledb.api.federation.api.init_app(app)
 

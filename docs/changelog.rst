@@ -12,6 +12,7 @@ Currently in development.
 - Allow ftp, file, sftp and smb scheme and IPv6 addresses in URLs
 - Improve display of quantities
 - Improve static file caching
+- Added support for a monitoring dashboard (experimental)
 
 Version 0.20
 ------------
