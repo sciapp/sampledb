@@ -414,6 +414,17 @@ def test_post_object_version(flask_server, auth, user, action):
     assert r.json()['message'] == """validation failed:
  - unexpected keys in schema: {'value'} (at name)"""
 
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}'.format(object.object_id), auth=auth)
+    assert r.status_code == 200
+    object_json = r.json()
+    # remove keys that must not be copied
+    del object_json['user_id']
+    del object_json['utc_datetime']
+    # update version_id
+    object_json['version_id'] += 1
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+
 
 def test_get_objects(flask_server, auth, user, other_user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)
