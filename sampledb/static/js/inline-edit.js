@@ -14,29 +14,46 @@ function send_data(elem, act_vals) {
     // Read out all form 'key - value' pairs out of the 'form-horizontal' element in the actual document
     let data_list = $($(".form-horizontal")[0]).serializeArray();
 
-    // Search for 'key - value' pairs in the given list and the list that has been read out of the actual document to check if there are different entries
-    let found = false;
-    if (data_list.length != act_vals.length) {
-        found = true;
-    } else {
-        for (let i = 0; i < data_list.length; i++) {
-            if (data_list[i]["name"] != act_vals[i]["name"] || data_list[i]["value"] != act_vals[i]["value"]) {
-                found = true;
-                break;
-            }
+    // Determine edited fields and properties
+    let previous_data = {};
+    for (let i = 0; i < act_vals.length; i++) {
+        previous_data[act_vals[i]["name"]] = act_vals[i]["value"];
+    }
+    let new_data = {};
+    for (let i = 0; i < data_list.length; i++) {
+        new_data[data_list[i]["name"]] = data_list[i]["value"];
+    }
+    let edited_fields= [];
+    for (let i = 0; i < act_vals.length; i++) {
+        let field_name = act_vals[i]["name"];
+        if (!new_data.hasOwnProperty(field_name) || (new_data[field_name] !== act_vals[i]["value"])) {
+            edited_fields.push(field_name);
         }
     }
-    if (!found) {
+    for (let i = 0; i < data_list.length; i++) {
+        let field_name = data_list[i]["name"];
+        if (!previous_data.hasOwnProperty(field_name)) {
+            edited_fields.push(field_name);
+        }
+    }
+    let edited_properties = []
+    for (let i = 0; i < edited_fields.length; i++) {
+        let field_name = edited_fields[i];
+        let property_name = field_name.split('__').slice(0, -1).join('__');
+        if (!edited_properties.includes(property_name)) {
+            edited_properties.push(property_name);
+        }
+    }
+    form_changed = edited_properties.length > 0;
+
+    if (!form_changed) {
         is_editing = false;
         document.body.style.cursor = "default";
         return;
-    } else {
-        // Actual form changed
-        form_changed = true;
     }
 
     let data = {
-        "action_submit": ""
+        "action_submit": "inline_edit"
     }
     for (let i = 0; i < data_list.length; i++) {
         let key = data_list[i]["name"].replaceAll(/\s/g);
@@ -48,25 +65,47 @@ function send_data(elem, act_vals) {
     }
 
     // POST the data to SampleDB
-    $.post(window.location.href.split("?")[0] + "?mode=edit", data, function(res_html) {
-        // Read out the replied html
-        res_html = $.parseHTML(res_html);
-        for (let i = 0; i < res_html.length; i++) {
-            if ($(res_html[i]).attr("id") == "main") {
-                let main_html = $(res_html[i])
-                // Check if the 'edit-website' has been replied to check if an error occurred
-                if (main_html.find(".form-horizontal[method=post]").length > 0) {
-                    form_error_edit = true;
-                    // Message user using alert div
-                    $(selected_element).find(".alert-upload-failed").show();
-                    $(selected_element).addClass("alert alert-danger");
-                    document.body.style = "default";
-                    is_editing = false;
-                } else {
-                    // Reload website to show that the change has been successful and to being able to edit the new object
-                    window.location.reload();
-                }
+    $.post(window.location.href.split("?")[0] + "?mode=edit", data, function() {
+        // Reload website to show that the change has been successful and to being able to edit the new object
+        window.location.reload();
+    }).fail(function(response) {
+        form_error_edit = true;
+        document.body.style = "default";
+        is_editing = false;
+        let errors = {};
+        let has_unexpected_errors = false;
+        try {
+            errors = JSON.parse(response.responseText)['errors'];
+        } catch (e) {
+            // SampleDB did not return the expected JSON response containing errors
+            has_unexpected_errors = true;
+        }
+        let error_fields = Object.keys(errors);
+        if (error_fields.length === 0) {
+            // something broke without reporting errors
+            has_unexpected_errors = true;
+        }
+        for (let i = 0; i < error_fields.length && !has_unexpected_errors; i++) {
+            let field_name = error_fields[i];
+            let property_name = field_name.split('__').slice(0, -1).join('__');
+            if (!edited_properties.includes(property_name)) {
+                has_unexpected_errors = true;
+                break;
             }
+        }
+        if (has_unexpected_errors) {
+            // show generic error, independent of the changed field
+            $('#inline-edit-alert').show();
+        } else {
+            // display error messages for changed field
+            let error_messages = Object.values(errors);
+            // remove duplicate error messages
+            var seen = {};
+            error_messages = error_messages.filter(function(item) {
+                return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+            });
+            $(selected_element).find(".alert-upload-failed").text(error_messages.join(' ')).show();
+            $(selected_element).addClass("alert alert-danger");
         }
     });
 }
