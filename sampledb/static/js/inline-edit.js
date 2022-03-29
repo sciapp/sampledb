@@ -35,24 +35,22 @@ function send_data(elem, act_vals) {
         form_changed = true;
     }
 
-    // Create new string which contains the 'key - value' pairs
-    let data_string = "";
-
-    for (let i = 0; i < data_list.length; i++) {
-        let name = data_list[i]["name"].replaceAll(/\s/g);
-        let value = (name.endsWith("__units")) ? data_list[i]["value"].replaceAll(/\s/g, "") : data_list[i]["value"];
-        data_string += name + "=" + value + "&";
+    let data = {
+        "action_submit": ""
     }
-    data_string += "action_submit="
-    data_string = encodeURI(data_string);
+    for (let i = 0; i < data_list.length; i++) {
+        let key = data_list[i]["name"].replaceAll(/\s/g);
+        let value = data_list[i]["value"];
+        if (key.endsWith("__units")) {
+            value = value.replaceAll(/\s/g, "");
+        }
+        data[key] = value;
+    }
 
-    // Create new HTTP-Request to POST the data to SampleDB
-    let xml_request = new XMLHttpRequest();
-
-    // Add listener to request to being able to react on the finish of the POST
-    xml_request.addEventListener("load", function () {
+    // POST the data to SampleDB
+    $.post(window.location.href.split("?")[0] + "?mode=edit", data, function(res_html) {
         // Read out the replied html
-        let res_html = ($.parseHTML(xml_request.responseText));
+        res_html = $.parseHTML(res_html);
         for (let i = 0; i < res_html.length; i++) {
             if ($(res_html[i]).attr("id") == "main") {
                 let main_html = $(res_html[i])
@@ -71,16 +69,6 @@ function send_data(elem, act_vals) {
             }
         }
     });
-
-    // Open request
-    xml_request.open("POST", window.location.href.split("?")[0] + "?mode=edit");
-
-    // Set headers
-    xml_request.setRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-    xml_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-    // Send request
-    xml_request.send(data_string);
 }
 
 
