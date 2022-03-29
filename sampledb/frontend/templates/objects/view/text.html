@@ -7,19 +7,9 @@
     {% endif %}
   </label>
   <div class="col-md-9">
-  {% if data and data.text | get_translated_text(metadata_language) %}
-    {% if schema.markdown and data.is_markdown %}
-      <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="object-user-content">{{ data.text | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
-    {% elif schema.multiline %}
-      <pre style="font-family: inherit; word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</pre>
-    {% else %}
-      {{ data.text | get_translated_text(metadata_language) }}
+    {% include "objects/view/text_base.html" %}
+    {% if data and data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
     {% endif %}
-  {% else %}
-    &mdash;
-  {% endif %}
-  {% if data and data.export_edit_note %}
-    <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
-  {% endif %}
   </div>
 </div>

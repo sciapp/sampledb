@@ -1,5 +1,1 @@
-{% if data is not none and data.text | get_translated_text(metadata_language) %}
-  {{ data.text | get_translated_text(metadata_language) }}
-{% else %}
-  &mdash;
-{% endif %}
+{% include "objects/view/text_base.html" %}
