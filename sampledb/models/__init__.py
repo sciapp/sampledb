@@ -23,7 +23,7 @@ from . import users
 
 from .actions import Action, ActionType
 from .action_translations import ActionTranslation, ActionTypeTranslation
-from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions
+from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod
 from .background_tasks import BackgroundTask, BackgroundTaskStatus
@@ -84,7 +84,7 @@ __all__ = [
     'UserActionPermissions',
     'GroupActionPermissions',
     'ProjectActionPermissions',
-    'PublicActions',
+    'AllUserActionPermissions',
     'APILogEntry',
     'Authentication',
     'AuthenticationType',

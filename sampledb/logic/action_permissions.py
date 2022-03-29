@@ -18,30 +18,66 @@ from . import projects
 from . import instruments
 from . import instrument_translations
 from . import settings
-from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions, Action
+from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions, Action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+def get_action_permissions_for_all_users(action_id: int) -> Permissions:
+    """
+    Return the permissions all users have for a specific action.
+
+    :param action_id: the ID of an existing action
+    :return: the permissions for all users
+    :raise errors.ActionDoesNotExistError: if no action with the given action
+        ID exists
+    """
+    all_user_action_permissions = AllUserActionPermissions.query.filter_by(action_id=action_id).first()
+    if all_user_action_permissions is None:
+        # ensure that the action can be found
+        actions.get_action(action_id)
+        return Permissions.NONE
+    return all_user_action_permissions.permissions
+
+
+def set_action_permissions_for_all_users(action_id: int, permissions: Permissions) -> None:
+    """
+    Set the permissions all users have for a specific action.
+
+    :param action_id: the ID of an existing action
+    :param permissions: the permissions for all users
+    :raise errors.ActionDoesNotExistError: if no action with the given action
+        ID exists
+    """
+    # ensure that the action can be found
+    actions.get_action(action_id)
+    if permissions == Permissions.NONE:
+        AllUserActionPermissions.query.filter_by(action_id=action_id).delete()
+    else:
+        all_user_action_permissions = AllUserActionPermissions.query.filter_by(action_id=action_id).first()
+        if all_user_action_permissions is None:
+            all_user_action_permissions = AllUserActionPermissions(action_id=action_id, permissions=permissions)
+        else:
+            all_user_action_permissions.permissions = permissions
+        db.session.add(all_user_action_permissions)
+    db.session.commit()
+
+
 def action_is_public(action_id: int) -> bool:
     """
-    Return whether an action is public or not.
+    Return whether an action is readable for all users.
 
     :param action_id: the ID of an existing action
     :return: whether the action is public or not
     :raise errors.ActionDoesNotExistError: if no action with the given action
         ID exists
     """
-    is_public = PublicActions.query.filter_by(action_id=action_id).first() is not None
-    if not is_public:
-        # ensure that the action can be found
-        actions.get_action(action_id)
-    return is_public
+    return Permissions.READ in get_action_permissions_for_all_users(action_id)
 
 
 def set_action_public(action_id: int, is_public: bool = True) -> None:
     """
-    Set that in action is public or not.
+    Set that an action is readable for all users.
 
     :param action_id: the ID of an existing action
     :param is_public: whether the action should be public or not
@@ -49,12 +85,7 @@ def set_action_public(action_id: int, is_public: bool = True) -> None:
         ID exists
     """
     # ensure that the action can be found
-    actions.get_action(action_id)
-    if not is_public:
-        PublicActions.query.filter_by(action_id=action_id).delete()
-    elif not action_is_public(action_id):
-        db.session.add(PublicActions(action_id=action_id))
-    db.session.commit()
+    set_action_permissions_for_all_users(action_id, Permissions.READ if is_public else Permissions.NONE)
 
 
 def get_action_permissions_for_users(action_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True) -> typing.Dict[int, Permissions]:
