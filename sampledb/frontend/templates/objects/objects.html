@@ -2,7 +2,31 @@
 
 {% block title %}{{ _('Objects') }} — {{ service_name }}{% endblock %}
 
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('js/plotly-latest.min.js') }}"></script>
+  {% if get_user_language(current_user).lang_code == 'de' %}
+    <script src="{{ fingerprinted_static('js/plotly-locale-de.js') }}"></script>
+    <script type="text/javascript">
+      Plotly.setPlotConfig({locale: 'de'})
+    </script>
+  {% endif %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $(plotly_charts).each(function(index, element) {
+        Plotly.newPlot(element[0], element[1]);
+      });
+    });
+  </script>
+{% endblock %}
+
 {% block content %}
+  {# counter for plotly_chart_plots #}
+  {% set plot_counter = namespace(value=0) %}
+  <script type="text/javascript">
+  window.plotly_charts = [];
+  </script>
   {% if search_notes is defined %}
   {% for category, note, start, end in search_notes %}
     {% if category == "error" %}

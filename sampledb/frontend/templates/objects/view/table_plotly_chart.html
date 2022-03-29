@@ -7,7 +7,7 @@
   {% else %}
     {{ schema.title | get_translated_text }} #{{ loop.index }}
   {% endif %}
-  <button id="plotly_info_button_{{ name }}_{{ plot_counter.value }}" type="button" class="btn btn-link" data-toggle="modal" data-target="#plotly_modal_{{ name }}_{{ plot_counter.value }}">[{{ _('show plot') }}]</button>
+  <button id="plotly_info_button_{{ name }}_{{ plot_counter.value }}" type="button" class="btn btn-link" style="vertical-align: initial; padding: 0; line-height: 1" data-toggle="modal" data-target="#plotly_modal_{{ name }}_{{ plot_counter.value }}">[{{ _('show plot') }}]</button>
   <div class="modal fade bd-example-modal-lg" id="plotly_modal_{{ name }}_{{ plot_counter.value }}" tabindex="-1" aria-labelledby="plotly_modal_title_{{ name }}_{{ plot_counter.value }}" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
