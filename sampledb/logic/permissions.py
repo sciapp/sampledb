@@ -22,7 +22,10 @@ class ResourcePermissions(object):
         self._project_permissions_table = project_permissions_table
         self._check_resource_exists = check_resource_exists
 
-    def get_permission_for_all_users(self, resource_id: int) -> Permissions:
+    def get_permission_for_all_users(
+            self,
+            resource_id: int
+    ) -> Permissions:
         """
         Return the permissions all users have for a specific resource.
 
@@ -37,7 +40,11 @@ class ResourcePermissions(object):
             return Permissions.NONE
         return all_user_permissions.permissions
 
-    def set_permissions_for_all_users(self, resource_id: int, permissions: Permissions) -> None:
+    def set_permissions_for_all_users(
+            self,
+            resource_id: int,
+            permissions: Permissions
+    ) -> None:
         """
         Set the permissions all users have for a specific resource.
 
@@ -57,25 +64,83 @@ class ResourcePermissions(object):
             db.session.add(all_user_permissions)
         db.session.commit()
 
-    def get_permissions_for_users(self, resource_id: int) -> typing.Dict[int, Permissions]:
+    def get_permissions_for_users(
+            self,
+            resource_id: int,
+            *,
+            include_all_users: bool = False,
+            include_groups: bool = False,
+            include_projects: bool = False,
+            include_admin_permissions: bool = False,
+            limit_readonly_users: bool = False,
+            additional_permissions: typing.Optional[typing.Dict[int, Permissions]] = None
+    ) -> typing.Dict[int, Permissions]:
         """
-        Get explicitly granted permissions for users for a specific resource.
+        Get permissions for users for a specific resource.
 
-        This does not consider readonly users, groups, projects, admins or
-        other modifications to user permissions.
+        This does not consider modifications to user permissions other than
+        those explicitly included using the function parameters.
 
         :param resource_id: the ID of an existing resource
+        :param include_all_users: whether permissions for all users should be included
+        :param include_groups: whether groups that the users are members of should be included
+        :param include_projects: whether projects that the users are members of should be included
+        :param include_admin_permissions: whether admin permissions should be included
+        :param limit_readonly_users: whether readonly users should be limited to READ permissions
+        :param additional_permissions: additional permissions to assume
         :return: a dict mapping users IDs to permissions
         """
         self._check_resource_exists(resource_id)
 
         permissions_for_users = {}
-        for user_permissions in self._user_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).all():
-            if user_permissions.permissions != Permissions.NONE:
-                permissions_for_users[user_permissions.user_id] = user_permissions.permissions
-        return permissions_for_users
+        if additional_permissions is not None:
+            permissions_for_users = additional_permissions.copy()
 
-    def set_permissions_for_user(self, resource_id: int, user_id: int, permissions: Permissions) -> None:
+        for user_permissions in self._user_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).all():
+            permissions_for_users[user_permissions.user_id] = max(permissions_for_users.get(user_permissions.user_id, Permissions.NONE), user_permissions.permissions)
+
+        if include_all_users:
+            permissions_for_all_users = self.get_permission_for_all_users(resource_id=resource_id)
+            if permissions_for_all_users != Permissions.NONE:
+                for user in users.get_users():
+                    permissions_for_users[user.id] = max(permissions_for_users.get(user.id, Permissions.NONE), permissions_for_all_users)
+
+        if include_groups:
+            permissions_for_groups = self.get_permissions_for_groups(resource_id=resource_id, include_projects=include_projects)
+            for group_id, group_permissions in permissions_for_groups.items():
+                for user_id in groups.get_group_member_ids(group_id):
+                    permissions_for_users[user_id] = max(permissions_for_users.get(user_id, Permissions.NONE), group_permissions)
+
+        if include_projects:
+            permissions_for_projects = self.get_permissions_for_projects(resource_id=resource_id)
+            for project_id, project_permissions in permissions_for_projects.items():
+                for user_id, member_permissions in projects.get_project_member_user_ids_and_permissions(project_id, include_groups=include_groups).items():
+                    permissions_for_users[user_id] = max(permissions_for_users.get(user_id, Permissions.NONE), min(member_permissions, project_permissions))
+
+        if include_admin_permissions:
+            for user in users.get_administrators():
+                if not settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+                    # skip admins who do not use admin permissions
+                    continue
+                permissions_for_users[user.id] = Permissions.GRANT
+
+        if limit_readonly_users:
+            for user in users.get_users():
+                if user.is_readonly and user.id in permissions_for_users:
+                    permissions_for_users[user.id] = min(Permissions.READ, permissions_for_users[user.id])
+
+        return {
+            user_id: permissions
+            for user_id, permissions in permissions_for_users.items()
+            if permissions != Permissions.NONE
+        }
+
+    def set_permissions_for_user(
+            self,
+            resource_id: int,
+            user_id: int,
+            permissions: Permissions
+    ) -> None:
         """
         Set the permissions for a user for a specific resource.
 
@@ -100,25 +165,45 @@ class ResourcePermissions(object):
             db.session.add(user_permissions)
         db.session.commit()
 
-    def get_permissions_for_groups(self, resource_id: int) -> typing.Dict[int, Permissions]:
+    def get_permissions_for_groups(
+            self,
+            resource_id: int,
+            *,
+            include_projects: bool = False
+    ) -> typing.Dict[int, Permissions]:
         """
-        Get explicitly granted permissions for groups for a specific resource.
+        Get permissions for groups for a specific resource.
 
-        This does not consider projects or other modifications to user
-        permissions.
+        This does not consider modifications to user permissions other than
+        those explicitly included using the function parameters.
 
         :param resource_id: the ID of an existing resource
+        :param include_projects: whether projects that the groups are members of should be included
         :return: a dict mapping group IDs to permissions
         """
         self._check_resource_exists(resource_id)
 
         permissions_for_groups = {}
         for group_permissions in self._group_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).all():
-            if group_permissions.permissions != Permissions.NONE:
-                permissions_for_groups[group_permissions.group_id] = group_permissions.permissions
-        return permissions_for_groups
+            permissions_for_groups[group_permissions.group_id] = group_permissions.permissions
 
-    def set_permissions_for_group(self, resource_id: int, group_id: int, permissions: Permissions) -> None:
+        if include_projects:
+            permissions_for_projects = self.get_permissions_for_projects(resource_id=resource_id)
+            for project_id, project_permissions in permissions_for_projects.items():
+                for group_id, member_permissions in projects.get_project_member_group_ids_and_permissions(project_id).items():
+                    permissions_for_groups[group_id] = max(permissions_for_groups.get(group_id, Permissions.NONE), min(member_permissions, project_permissions))
+        return {
+            group_id: permissions
+            for group_id, permissions in permissions_for_groups.items()
+            if permissions != Permissions.NONE
+        }
+
+    def set_permissions_for_group(
+            self,
+            resource_id: int,
+            group_id: int,
+            permissions: Permissions
+    ) -> None:
         """
         Set the permissions for a group for a specific resource.
 
@@ -143,9 +228,12 @@ class ResourcePermissions(object):
             db.session.add(group_permissions)
         db.session.commit()
 
-    def get_permissions_for_projects(self, resource_id: int) -> typing.Dict[int, Permissions]:
+    def get_permissions_for_projects(
+            self,
+            resource_id: int
+    ) -> typing.Dict[int, Permissions]:
         """
-        Get explicitly granted permissions for projects for a specific resource.
+        Get permissions for projects for a specific resource.
 
         :param resource_id: the ID of an existing resource
         :return: a dict mapping project IDs to permissions
@@ -154,11 +242,19 @@ class ResourcePermissions(object):
 
         permissions_for_projects = {}
         for project_permissions in self._project_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).all():
-            if project_permissions.permissions != Permissions.NONE:
-                permissions_for_projects[project_permissions.project_id] = project_permissions.permissions
-        return permissions_for_projects
+            permissions_for_projects[project_permissions.project_id] = project_permissions.permissions
+        return {
+            project_id: permissions
+            for project_id, permissions in permissions_for_projects.items()
+            if permissions != Permissions.NONE
+        }
 
-    def set_permissions_for_project(self, resource_id: int, project_id: int, permissions: Permissions) -> None:
+    def set_permissions_for_project(
+            self,
+            resource_id: int,
+            project_id: int,
+            permissions: Permissions
+    ) -> None:
         """
         Set the permissions for a project for a specific resource.
 
@@ -183,16 +279,16 @@ class ResourcePermissions(object):
             db.session.add(project_permissions)
         db.session.commit()
 
-    def get_combined_permissions_for_user(
+    def get_permissions_for_user(
             self,
             resource_id: int,
             user_id: int,
             *,
-            include_all_users: bool = True,
-            include_groups: bool = True,
-            include_projects: bool = True,
-            include_admin_permissions: bool = True,
-            limit_readonly_users: bool = True,
+            include_all_users: bool = False,
+            include_groups: bool = False,
+            include_projects: bool = False,
+            include_admin_permissions: bool = False,
+            limit_readonly_users: bool = False,
             additional_permissions: Permissions = Permissions.NONE
     ) -> Permissions:
         """

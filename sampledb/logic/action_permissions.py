@@ -84,12 +84,14 @@ def get_user_action_permissions(
             additional_permissions = max(additional_permissions, Permissions.GRANT)
 
     # resource independent permissions
-    return action_permissions.get_combined_permissions_for_user(
+    return action_permissions.get_permissions_for_user(
         resource_id=action_id,
         user_id=user_id,
+        include_all_users=True,
         include_groups=include_groups,
         include_projects=include_projects,
         include_admin_permissions=include_admin_permissions,
+        limit_readonly_users=True,
         additional_permissions=additional_permissions
     )
 
