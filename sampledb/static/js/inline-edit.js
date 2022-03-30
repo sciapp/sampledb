@@ -14,73 +14,100 @@ function send_data(elem, act_vals) {
     // Read out all form 'key - value' pairs out of the 'form-horizontal' element in the actual document
     let data_list = $($(".form-horizontal")[0]).serializeArray();
 
-    // Search for 'key - value' pairs in the given list and the list that has been read out of the actual document to check if there are different entries
-    let found = false;
-    if (data_list.length != act_vals.length) {
-        found = true;
-    } else {
-        for (let i = 0; i < data_list.length; i++) {
-            if (data_list[i]["name"] != act_vals[i]["name"] || data_list[i]["value"] != act_vals[i]["value"]) {
-                found = true;
-                break;
-            }
+    // Determine edited fields and properties
+    let previous_data = {};
+    for (let i = 0; i < act_vals.length; i++) {
+        previous_data[act_vals[i]["name"]] = act_vals[i]["value"];
+    }
+    let new_data = {};
+    for (let i = 0; i < data_list.length; i++) {
+        new_data[data_list[i]["name"]] = data_list[i]["value"];
+    }
+    let edited_fields= [];
+    for (let i = 0; i < act_vals.length; i++) {
+        let field_name = act_vals[i]["name"];
+        if (!new_data.hasOwnProperty(field_name) || (new_data[field_name] !== act_vals[i]["value"])) {
+            edited_fields.push(field_name);
         }
     }
-    if (!found) {
+    for (let i = 0; i < data_list.length; i++) {
+        let field_name = data_list[i]["name"];
+        if (!previous_data.hasOwnProperty(field_name)) {
+            edited_fields.push(field_name);
+        }
+    }
+    let edited_properties = []
+    for (let i = 0; i < edited_fields.length; i++) {
+        let field_name = edited_fields[i];
+        let property_name = field_name.split('__').slice(0, -1).join('__');
+        if (!edited_properties.includes(property_name)) {
+            edited_properties.push(property_name);
+        }
+    }
+    form_changed = edited_properties.length > 0;
+
+    if (!form_changed) {
         is_editing = false;
         document.body.style.cursor = "default";
         return;
-    } else {
-        // Actual form changed
-        form_changed = true;
     }
 
-    // Create new string which contains the 'key - value' pairs
-    let data_string = "";
-
+    let data = {
+        "action_submit": "inline_edit"
+    }
     for (let i = 0; i < data_list.length; i++) {
-        let name = data_list[i]["name"].replaceAll(/\s/g);
-        let value = (name.endsWith("__units")) ? data_list[i]["value"].replaceAll(/\s/g, "") : data_list[i]["value"];
-        data_string += name + "=" + value + "&";
+        let key = data_list[i]["name"].replaceAll(/\s/g);
+        let value = data_list[i]["value"];
+        if (key.endsWith("__units")) {
+            value = value.replaceAll(/\s/g, "");
+        }
+        data[key] = value;
     }
-    data_string += "action_submit="
-    data_string = encodeURI(data_string);
 
-    // Create new HTTP-Request to POST the data to SampleDB
-    let xml_request = new XMLHttpRequest();
-
-    // Add listener to request to being able to react on the finish of the POST
-    xml_request.addEventListener("load", function () {
-        // Read out the replied html
-        let res_html = ($.parseHTML(xml_request.responseText));
-        for (let i = 0; i < res_html.length; i++) {
-            if ($(res_html[i]).attr("id") == "main") {
-                let main_html = $(res_html[i])
-                // Check if the 'edit-website' has been replied to check if an error occurred
-                if (main_html.find(".form-horizontal[method=post]").length > 0) {
-                    form_error_edit = true;
-                    // Message user using alert div
-                    $(selected_element).find(".alert-upload-failed").show();
-                    $(selected_element).addClass("alert alert-danger");
-                    document.body.style = "default";
-                    is_editing = false;
-                } else {
-                    // Reload website to show that the change has been successful and to being able to edit the new object
-                    window.location.reload();
-                }
+    // POST the data to SampleDB
+    $.post(window.location.href.split("?")[0] + "?mode=edit", data, function() {
+        // Reload website to show that the change has been successful and to being able to edit the new object
+        window.location.reload();
+    }).fail(function(response) {
+        form_error_edit = true;
+        document.body.style = "default";
+        is_editing = false;
+        let errors = {};
+        let has_unexpected_errors = false;
+        try {
+            errors = JSON.parse(response.responseText)['errors'];
+        } catch (e) {
+            // SampleDB did not return the expected JSON response containing errors
+            has_unexpected_errors = true;
+        }
+        let error_fields = Object.keys(errors);
+        if (error_fields.length === 0) {
+            // something broke without reporting errors
+            has_unexpected_errors = true;
+        }
+        for (let i = 0; i < error_fields.length && !has_unexpected_errors; i++) {
+            let field_name = error_fields[i];
+            let property_name = field_name.split('__').slice(0, -1).join('__');
+            if (!edited_properties.includes(property_name)) {
+                has_unexpected_errors = true;
+                break;
             }
         }
+        if (has_unexpected_errors) {
+            // show generic error, independent of the changed field
+            $('#inline-edit-alert').show();
+        } else {
+            // display error messages for changed field
+            let error_messages = Object.values(errors);
+            // remove duplicate error messages
+            var seen = {};
+            error_messages = error_messages.filter(function(item) {
+                return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+            });
+            $(selected_element).find(".alert-upload-failed").text(error_messages.join(' ')).show();
+            $(selected_element).addClass("alert alert-danger");
+        }
     });
-
-    // Open request
-    xml_request.open("POST", window.location.href.split("?")[0] + "?mode=edit");
-
-    // Set headers
-    xml_request.setRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-    xml_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-    // Send request
-    xml_request.send(data_string);
 }
 
 

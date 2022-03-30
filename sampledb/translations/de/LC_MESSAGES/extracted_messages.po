@@ -3555,6 +3555,12 @@ msgstr "Feld %(index)s"
 msgid "The following languages have been disabled for input:"
 msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
 
+msgid ""
+"There are errors in other fields. Please click \"Edit Object\" to perform"
+" this change."
+msgstr "Es sind Fehler in anderen Feldern aufgetreten. Bitte klicken Sie auf"
+" \"Objekt bearbeiten\", um die Änderung durchzuführen."
+
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 

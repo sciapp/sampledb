@@ -762,6 +762,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                 name_suffix_format = None
             object_data, parsing_errors = parse_form_data(raw_form_data, schema)
             errors.update(parsing_errors)
+            if form_data['action_submit'] == 'inline_edit' and errors:
+                return flask.jsonify({
+                    'errors': errors
+                }), 400
             if object_data is not None and not errors:
                 try:
                     validate(object_data, schema)
