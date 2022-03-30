@@ -678,8 +678,7 @@ def action_permissions(action_id):
         else:
             user_permissions[action_owner.id] = Permissions.GRANT
     group_permissions = get_action_permissions_for_groups(
-        action_id=action.id,
-        include_projects=False
+        action_id=action.id
     )
     project_permissions = get_action_permissions_for_projects(
         action_id=action.id

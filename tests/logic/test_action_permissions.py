@@ -363,47 +363,6 @@ def test_group_permissions(users, user_action):
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.READ
 
 
-def test_action_permissions_for_groups_with_project(users, user_action):
-    user, creator = users
-    action_id = user_action.id
-    group_id = groups.create_group("Example Group", "", creator.id).id
-
-    action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.READ)
-
-    assert action_permissions.get_action_permissions_for_groups(action_id) == {
-        group_id: Permissions.READ
-    }
-
-    project_id = sampledb.logic.projects.create_project("Example Project", "", creator.id).id
-    action_permissions.set_project_action_permissions(action_id=action_id, project_id=project_id, permissions=Permissions.GRANT)
-
-    assert action_permissions.get_action_permissions_for_groups(action_id) == {
-        group_id: Permissions.READ
-    }
-
-    sampledb.logic.projects.add_group_to_project(project_id=project_id, group_id=group_id, permissions=Permissions.WRITE)
-
-    assert action_permissions.get_action_permissions_for_groups(action_id) == {
-        group_id: Permissions.READ
-    }
-
-    assert action_permissions.get_action_permissions_for_groups(action_id, include_projects=True) == {
-        group_id: Permissions.WRITE
-    }
-
-    sampledb.logic.projects.update_group_project_permissions(project_id=project_id, group_id=group_id, permissions=Permissions.GRANT)
-
-    assert action_permissions.get_action_permissions_for_groups(action_id, include_projects=True) == {
-        group_id: Permissions.GRANT
-    }
-
-    sampledb.logic.projects.remove_group_from_project(project_id=project_id, group_id=group_id)
-
-    assert action_permissions.get_action_permissions_for_groups(action_id, include_projects=True) == {
-        group_id: Permissions.READ
-    }
-
-
 def test_action_permissions_for_groups(users, user_action):
     user, creator = users
     action_id = user_action.id

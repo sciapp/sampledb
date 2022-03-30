@@ -104,7 +104,8 @@ def get_action_permissions_for_users(action_id) -> typing.Dict[int, Permissions]
     actions.get_action(action_id)
     action_permissions = {}
     for user_action_permissions in UserActionPermissions.query.filter_by(action_id=action_id).all():
-        action_permissions[user_action_permissions.user_id] = user_action_permissions.permissions
+        if user_action_permissions.permissions != Permissions.NONE:
+            action_permissions[user_action_permissions.user_id] = user_action_permissions.permissions
     return action_permissions
 
 
@@ -119,12 +120,11 @@ def _get_action_responsible_user_ids(action_id: int) -> typing.List[int]:
     return [user.id for user in instrument.responsible_users]
 
 
-def get_action_permissions_for_groups(action_id: int, include_projects=False) -> typing.Dict[int, Permissions]:
+def get_action_permissions_for_groups(action_id: int) -> typing.Dict[int, Permissions]:
     """
     Get permissions for a specific action for groups.
 
     :param action_id: the ID of an existing action
-    :param include_projects: whether projects that the groups are members of should be included
     :return: a dict mapping group IDs to permissions
     :raise errors.ActionDoesNotExistError: if no action with the given action
         ID exists
@@ -135,12 +135,6 @@ def get_action_permissions_for_groups(action_id: int, include_projects=False) ->
     for group_action_permissions in GroupActionPermissions.query.filter_by(action_id=action_id).all():
         if group_action_permissions.permissions != Permissions.NONE:
             action_permissions[group_action_permissions.group_id] = group_action_permissions.permissions
-    if include_projects:
-        for project_action_permissions in ProjectActionPermissions.query.filter_by(action_id=action_id).all():
-            for group_id, permissions in projects.get_project_member_group_ids_and_permissions(project_action_permissions.project_id).items():
-                permissions = min(permissions, project_action_permissions.permissions)
-                previous_permissions = action_permissions.get(group_id, Permissions.NONE)
-                action_permissions[group_id] = max(previous_permissions, permissions)
     return action_permissions
 
 
