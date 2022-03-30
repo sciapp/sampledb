@@ -234,7 +234,7 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return obj
 
-    def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None):
+    def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None, validate_schema=True, validate_data=True):
         """
         Updates an existing object using the given data, user id and datetime.
 
@@ -247,6 +247,8 @@ class VersionedJSONSerializableObjectTables(object):
         :param user_id: the ID of the user who updated the object
         :param utc_datetime: the datetime (in UTC) when the object was updated (optional, defaults to utcnow())
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :param validate_schema: whether the schema should be validated
+        :param validate_data: whether the data should be validated
         :return: the updated object as object_type or None, if the object does not exist
         """
         if connection is None:
@@ -260,9 +262,9 @@ class VersionedJSONSerializableObjectTables(object):
             if schema is None:
                 return None
             schema = schema[0]
-        if self._schema_validator:
+        if validate_schema and self._schema_validator:
             self._schema_validator(schema)
-        if self._data_validator:
+        if validate_data and self._data_validator:
             self._data_validator(data, schema)
 
         # Copy current version to previous versions
@@ -307,6 +309,26 @@ class VersionedJSONSerializableObjectTables(object):
             [{'oid': object_id}]
         )
         return self.get_current_object(object_id, connection=connection)
+
+    def restore_object_version(self, object_id, version_id, user_id, utc_datetime=None, connection=None):
+        object_version = self.get_object_version(object_id=object_id, version_id=version_id, connection=connection)
+        if object_version is None:
+            return
+        if self._schema_validator:
+            self._schema_validator(object_version.schema)
+        if self._data_validator:
+            # allow disabled languages, as they were enabled when the version was created
+            self._data_validator(object_version.data, object_version.schema, allow_disabled_languages=True)
+        return self.update_object(
+            object_id=object_id,
+            data=object_version.data,
+            schema=object_version.schema,
+            user_id=user_id,
+            utc_datetime=utc_datetime,
+            connection=connection,
+            validate_schema=False,
+            validate_data=False
+        )
 
     def insert_fed_object_version(self, fed_object_id, fed_version_id, component_id, action_id, data, schema, user_id, utc_datetime, connection=None, allow_disabled_languages: bool = False):
         if connection is None:

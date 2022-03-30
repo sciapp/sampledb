@@ -122,6 +122,19 @@ def app(flask_server):
     app.config = copy.deepcopy(flask_server.initial_config)
     sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     sampledb.setup_database(app)
+
+    # enable german language for input by default during testing
+    with app.app_context():
+        german = sampledb.logic.languages.get_language_by_lang_code('de')
+        sampledb.logic.languages.update_language(
+            language_id=german.id,
+            names=german.names,
+            lang_code=german.lang_code,
+            datetime_format_datetime=german.datetime_format_datetime,
+            datetime_format_moment=german.datetime_format_moment,
+            enabled_for_input=True,
+            enabled_for_user_interface=german.enabled_for_user_interface
+        )
     return app
 
 

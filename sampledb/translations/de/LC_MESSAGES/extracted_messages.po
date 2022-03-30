@@ -442,6 +442,9 @@ msgstr "Diese Aktion existiert nicht."
 msgid "You do not have the required permissions to use this action."
 msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
 
+msgid "This version contains invalid data and cannot be restored."
+msgstr "Diese Version enthält ungültige Daten und kann nicht wiederhergestellt werden."
+
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
 
@@ -1989,11 +1992,26 @@ msgstr "ist kleiner als Größe"
 msgid "is not equal to quantity"
 msgstr "ist nicht gleich zu Größe"
 
+msgid "is object reference equal to"
+msgstr "ist eine Referenz zu dem Objekt"
+
+msgid "is object reference not equal to"
+msgstr "ist eine Referenz zu einem anderen Objekt als"
+
+msgid "is user reference equal to"
+msgstr "ist eine Referenz zu dem Nutzer"
+
+msgid "is user reference not equal to"
+msgstr "ist eine Referenz zu einem anderen Nutzer als"
+
 msgid "Text"
 msgstr "Text"
 
 msgid "Quantity"
 msgstr "Physikalische Größe"
+
+msgid "Object Reference"
+msgstr "Objektreferenz"
 
 msgid "Object must meet all conditions (and)"
 msgstr "Objekt muss alle Bedingungen erfüllen (and)"
@@ -2559,9 +2577,6 @@ msgstr "Text (Auswahl)"
 
 msgid "Boolean"
 msgstr "Wahrheitswert"
-
-msgid "Object Reference"
-msgstr "Objektreferenz"
 
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
@@ -3536,6 +3551,9 @@ msgstr "Alle Aktionen"
 #, python-format
 msgid "Field %(index)s"
 msgstr "Feld %(index)s"
+
+msgid "The following languages have been disabled for input:"
+msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
 
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."

@@ -60,16 +60,6 @@ REFERENCES_TABLE_LIST_DATA_FRAME: typing.Dict[typing.Any, typing.Any] = {'name':
 
 
 @pytest.fixture
-def app(flask_server):
-    app = flask_server.app
-    # reset config and database before each test
-    app.config = copy.deepcopy(flask_server.initial_config)
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
-    sampledb.setup_database(app)
-    return app
-
-
-@pytest.fixture
 def user():
     user = User(name='User', email='example@example.com', affiliation='FZJ', type=UserType.PERSON)
     db.session.add(user)

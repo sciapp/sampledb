@@ -232,13 +232,14 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = get_object(object_id=object_id, version_id=version_id)
-    object = Objects.update_object(
+    object = Objects.restore_object_version(
         object_id=object_id,
-        data=object.data,
-        schema=object.schema,
+        version_id=version_id,
         user_id=user_id
     )
+    if object is None:
+        # ensure the object actually exists
+        get_object(object_id=object_id, version_id=version_id)
     user_log.restore_object_version(user_id=user_id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
     object_log.restore_object_version(object_id=object_id, user_id=user_id, restored_version_id=version_id, version_id=object.version_id)
     tags.update_object_tag_usage(object)
