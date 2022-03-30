@@ -668,11 +668,15 @@ def action_permissions(action_id):
     user_may_edit = Permissions.GRANT in permissions
     public_permissions = Permissions.READ if action_is_public(action_id) else Permissions.NONE
     user_permissions = get_action_permissions_for_users(
-        action_id=action.id,
-        include_instrument_responsible_users=False,
-        include_groups=False,
-        include_projects=False
+        action_id=action.id
     )
+    if action.user_id is not None:
+        # action owner has implicit GRANT permissions
+        action_owner = get_user(action.user_id)
+        if action_owner.is_readonly:
+            user_permissions[action_owner.id] = Permissions.READ
+        else:
+            user_permissions[action_owner.id] = Permissions.GRANT
     group_permissions = get_action_permissions_for_groups(
         action_id=action.id,
         include_projects=False

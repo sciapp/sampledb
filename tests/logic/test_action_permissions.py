@@ -212,36 +212,27 @@ def test_get_user_public_action_permissions(user, user_action, independent_actio
     assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.READ
 
 
-def test_get_action_permissions(users, user_action):
+def test_get_action_permissions_for_users(users, user_action):
     user_id = users[0].id
     action_id = user_action.id
 
-    # by default, only the user who created an action has access to it
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        users[1].id: Permissions.GRANT
-    }
-    assert not action_permissions.action_is_public(action_id)
-
-    action_permissions.set_action_public(action_id)
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        users[1].id: Permissions.GRANT
-    }
-    assert action_permissions.action_is_public(action_id)
-
+    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {}
     sampledb.db.session.add(UserActionPermissions(user_id=user_id, action_id=action_id, permissions=Permissions.WRITE))
     sampledb.db.session.commit()
     assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        user_id: Permissions.WRITE,
-        users[1].id: Permissions.GRANT
+        user_id: Permissions.WRITE
     }
-    assert action_permissions.action_is_public(action_id)
 
 
 def test_get_action_permissions_with_projects(users, user_action):
     user_id = users[0].id
     action_id = user_action.id
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id)
+        for user in users
+    } == {
+        users[0].id: Permissions.NONE,
         users[1].id: Permissions.GRANT
     }
 
@@ -249,17 +240,28 @@ def test_get_action_permissions_with_projects(users, user_action):
 
     action_permissions.set_project_action_permissions(action_id=action_id, project_id=project_id, permissions=Permissions.WRITE)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id)
+        for user in users
+    } == {
+        users[0].id: Permissions.NONE,
         users[1].id: Permissions.GRANT
     }
 
     sampledb.logic.projects.add_user_to_project(project_id, user_id, Permissions.READ)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id, include_projects=False) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id, include_projects=False)
+        for user in users
+    } == {
+        users[0].id: Permissions.NONE,
         users[1].id: Permissions.GRANT
     }
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id)
+        for user in users
+    } == {
         user_id: Permissions.READ,
         users[1].id: Permissions.GRANT
     }
@@ -268,48 +270,60 @@ def test_get_action_permissions_with_projects(users, user_action):
 
     sampledb.logic.projects.add_group_to_project(project_id=project_id, group_id=group_id, permissions=Permissions.WRITE)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id)
+        for user in users
+    } == {
         user_id: Permissions.READ,
         users[1].id: Permissions.GRANT
     }
 
     sampledb.logic.groups.add_user_to_group(group_id=group_id, user_id=user_id)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id, include_groups=False) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id, include_groups=False)
+        for user in users
+    } == {
         user_id: Permissions.READ,
         users[1].id: Permissions.GRANT
     }
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id)
+        for user in users
+    } == {
         user_id: Permissions.WRITE,
         users[1].id: Permissions.GRANT
     }
 
     sampledb.logic.groups.remove_user_from_group(group_id=group_id, user_id=user_id)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+    assert {
+        user.id: action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id)
+        for user in users
+    } == {
         user_id: Permissions.READ,
         users[1].id: Permissions.GRANT
     }
 
 
-def test_update_action_permissions(users, user_action):
+def test_set_user_action_permissions(users, user_action):
     user_id = users[0].id
     action_id = user_action.id
 
-    assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.NONE
+    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {}
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user_id, permissions=Permissions.WRITE)
-    assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.WRITE
+    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+        user_id: Permissions.WRITE
+    }
 
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user_id, permissions=Permissions.READ)
-    assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.READ
+    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
+        user_id: Permissions.READ
+    }
 
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user_id, permissions=Permissions.NONE)
-    assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.NONE
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        users[1].id: Permissions.GRANT
-    }
-    assert not action_permissions.action_is_public(action_id)
+    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {}
 
 
 def test_group_permissions(users, user_action):
@@ -317,45 +331,27 @@ def test_group_permissions(users, user_action):
     action_id = user_action.id
     group_id = groups.create_group("Example Group", "", creator.id).id
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        creator.id: Permissions.GRANT
-    }
     assert not action_permissions.action_is_public(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.NONE
 
     action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.WRITE)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        creator.id: Permissions.GRANT
-    }
     assert not action_permissions.action_is_public(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.NONE
 
     groups.add_user_to_group(group_id=group_id, user_id=user.id)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        creator.id: Permissions.GRANT,
-        user.id: Permissions.WRITE
-    }
     assert not action_permissions.action_is_public(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.WRITE
 
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user.id, permissions=Permissions.READ)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        creator.id: Permissions.GRANT,
-        user.id: Permissions.WRITE
-    }
     assert not action_permissions.action_is_public(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.WRITE
 
     action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.READ)
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user.id, permissions=Permissions.WRITE)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        creator.id: Permissions.GRANT,
-        user.id: Permissions.WRITE
-    }
     assert not action_permissions.action_is_public(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.WRITE
 
@@ -363,10 +359,6 @@ def test_group_permissions(users, user_action):
     action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.GRANT)
     groups.remove_user_from_group(group_id=group_id, user_id=user.id)
 
-    assert action_permissions.get_action_permissions_for_users(action_id=action_id) == {
-        creator.id: Permissions.GRANT,
-        user.id: Permissions.READ
-    }
     assert not action_permissions.action_is_public(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.READ
 

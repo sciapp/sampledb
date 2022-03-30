@@ -88,43 +88,23 @@ def set_action_public(action_id: int, is_public: bool = True) -> None:
     set_action_permissions_for_all_users(action_id, Permissions.READ if is_public else Permissions.NONE)
 
 
-def get_action_permissions_for_users(action_id, include_instrument_responsible_users=True, include_groups=True, include_projects=True) -> typing.Dict[int, Permissions]:
+def get_action_permissions_for_users(action_id) -> typing.Dict[int, Permissions]:
     """
-    Get permissions for users for a specific action.
+    Get explicitly granted permissions for users for a specific action.
+
+    This does not consider readonly users, instrument responsible users,
+    groups, projects, admins or other modifications to user permissions.
 
     :param action_id: the ID of an existing action
-    :param include_instrument_responsible_users: whether instrument responsible user status should be included
-    :param include_groups: whether groups that the users are members of should be included
-    :param include_projects: whether projects that the users are members of should be included
     :return: a dict mapping users IDs to permissions
     :raise errors.ActionDoesNotExistError: if no action with the given action
         ID exists
     """
     # ensure that the action can be found
-    action = actions.get_action(action_id)
+    actions.get_action(action_id)
     action_permissions = {}
     for user_action_permissions in UserActionPermissions.query.filter_by(action_id=action_id).all():
         action_permissions[user_action_permissions.user_id] = user_action_permissions.permissions
-    if include_instrument_responsible_users:
-        for user_id in _get_action_responsible_user_ids(action_id):
-            action_permissions[user_id] = Permissions.GRANT
-    if include_groups:
-        for group_action_permissions in GroupActionPermissions.query.filter_by(action_id=action_id).all():
-            for user_id in groups.get_group_member_ids(group_action_permissions.group_id):
-                if user_id not in action_permissions or action_permissions[user_id] in group_action_permissions.permissions:
-                    action_permissions[user_id] = group_action_permissions.permissions
-    if include_projects:
-        for project_action_permissions in ProjectActionPermissions.query.filter_by(action_id=action_id).all():
-            for user_id, permissions in projects.get_project_member_user_ids_and_permissions(project_action_permissions.project_id, include_groups=include_groups).items():
-                permissions = min(permissions, project_action_permissions.permissions)
-                previous_permissions = action_permissions.get(user_id, Permissions.NONE)
-                action_permissions[user_id] = max(previous_permissions, permissions)
-    if action.user_id is not None:
-        action_permissions[action.user_id] = Permissions.GRANT
-    for user_id in action_permissions:
-        user = users.get_user(user_id)
-        if user.is_readonly:
-            action_permissions[user_id] = min(action_permissions[user_id], Permissions.READ)
     return action_permissions
 
 
