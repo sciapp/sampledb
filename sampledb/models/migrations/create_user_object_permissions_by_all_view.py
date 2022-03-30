@@ -11,6 +11,17 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db):
+    # Skip migration by condition
+    table_exists = db.session.execute("""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_name = 'public_objects'
+    """).fetchall()
+    if not table_exists:
+        # the view as defined below depends on the removed public_objects table
+        # see migration 97: replace_user_object_permissions_by_all_view.py
+        return False
+
     # Perform migration
     db.engine.execute("""
     CREATE OR REPLACE VIEW user_object_permissions_by_all

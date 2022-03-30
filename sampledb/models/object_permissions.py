@@ -51,10 +51,11 @@ class ProjectObjectPermissions(db.Model):
     )
 
 
-class PublicObjects(db.Model):
-    __tablename__ = 'public_objects'
+class AllUserObjectPermissions(db.Model):
+    __tablename__ = 'all_user_object_permissions'
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
 
 
 class DefaultUserPermissions(db.Model):

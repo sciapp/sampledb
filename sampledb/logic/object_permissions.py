@@ -27,7 +27,7 @@ from .groups import get_user_groups, get_group_member_ids
 from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, Action, Object, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from . import projects
 from . import settings
 from .users import get_user, get_administrators
@@ -37,14 +37,22 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 def object_is_public(object_id: int):
-    return PublicObjects.query.filter_by(object_id=object_id).first() is not None
+    all_user_object_permissions = AllUserObjectPermissions.query.filter_by(object_id=object_id).first()
+    if all_user_object_permissions is None:
+        return False
+    return Permissions.READ in all_user_object_permissions.permissions
 
 
 def set_object_public(object_id: int, is_public: bool = True):
     if not is_public:
-        PublicObjects.query.filter_by(object_id=object_id).delete()
-    elif not object_is_public(object_id):
-        db.session.add(PublicObjects(object_id=object_id))
+        AllUserObjectPermissions.query.filter_by(object_id=object_id).delete()
+    else:
+        all_user_object_permissions = AllUserObjectPermissions.query.filter_by(object_id=object_id).first()
+        if all_user_object_permissions is None:
+            all_user_object_permissions = AllUserObjectPermissions(object_id=object_id, permissions=Permissions.READ)
+        else:
+            all_user_object_permissions.permissions = Permissions.READ
+        db.session.add(all_user_object_permissions)
     db.session.commit()
 
 
@@ -599,13 +607,14 @@ def request_object_permissions(requester_id: int, object_id: int) -> None:
 
 
 def copy_permissions(target_object_id: int, source_object_id: int) -> None:
-    PublicObjects.query.filter_by(object_id=target_object_id).delete()
+    AllUserObjectPermissions.query.filter_by(object_id=target_object_id).delete()
     UserObjectPermissions.query.filter_by(object_id=target_object_id).delete()
     GroupObjectPermissions.query.filter_by(object_id=target_object_id).delete()
     ProjectObjectPermissions.query.filter_by(object_id=target_object_id).delete()
 
-    if PublicObjects.query.filter_by(object_id=source_object_id).first() is not None:
-        db.session.add(PublicObjects(object_id=target_object_id))
+    all_user_object_permissions = AllUserObjectPermissions.query.filter_by(object_id=source_object_id).first()
+    if all_user_object_permissions is not None:
+        db.session.add(AllUserObjectPermissions(object_id=target_object_id, permissions=all_user_object_permissions.permissions))
     for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=source_object_id).all():
         db.session.add(UserObjectPermissions(
             object_id=target_object_id,
