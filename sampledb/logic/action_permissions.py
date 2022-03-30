@@ -5,62 +5,93 @@
 
 import typing
 
-from .. import db
 from . import errors
 from . import actions
 from . import action_translations
 from . import action_type_translations
 from . import favorites
-from . import groups
 from . import languages
 from . import users
-from . import projects
 from . import instruments
 from . import instrument_translations
-from . import settings
+from .permissions import ResourcePermissions
 from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions, Action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def get_action_permissions_for_all_users(action_id: int) -> Permissions:
-    """
-    Return the permissions all users have for a specific action.
+action_permissions = ResourcePermissions(
+    resource_id_name='action_id',
+    all_user_permissions_table=AllUserActionPermissions,
+    user_permissions_table=UserActionPermissions,
+    group_permissions_table=GroupActionPermissions,
+    project_permissions_table=ProjectActionPermissions,
+    check_resource_exists=lambda resource_id: actions.get_action(action_id=resource_id)
+)
 
-    :param action_id: the ID of an existing action
-    :return: the permissions for all users
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    all_user_action_permissions = AllUserActionPermissions.query.filter_by(action_id=action_id).first()
-    if all_user_action_permissions is None:
-        # ensure that the action can be found
-        actions.get_action(action_id)
-        return Permissions.NONE
-    return all_user_action_permissions.permissions
+
+def get_action_permissions_for_all_users(action_id: int) -> Permissions:
+    return action_permissions.get_permission_for_all_users(resource_id=action_id)
 
 
 def set_action_permissions_for_all_users(action_id: int, permissions: Permissions) -> None:
-    """
-    Set the permissions all users have for a specific action.
+    action_permissions.set_permissions_for_all_users(resource_id=action_id, permissions=permissions)
 
-    :param action_id: the ID of an existing action
-    :param permissions: the permissions for all users
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    if permissions == Permissions.NONE:
-        AllUserActionPermissions.query.filter_by(action_id=action_id).delete()
-    else:
-        all_user_action_permissions = AllUserActionPermissions.query.filter_by(action_id=action_id).first()
-        if all_user_action_permissions is None:
-            all_user_action_permissions = AllUserActionPermissions(action_id=action_id, permissions=permissions)
-        else:
-            all_user_action_permissions.permissions = permissions
-        db.session.add(all_user_action_permissions)
-    db.session.commit()
+
+def get_action_permissions_for_users(action_id) -> typing.Dict[int, Permissions]:
+    return action_permissions.get_permissions_for_users(resource_id=action_id)
+
+
+def set_user_action_permissions(action_id: int, user_id: int, permissions: Permissions):
+    action_permissions.set_permissions_for_user(resource_id=action_id, user_id=user_id, permissions=permissions)
+
+
+def get_action_permissions_for_groups(action_id: int) -> typing.Dict[int, Permissions]:
+    return action_permissions.get_permissions_for_groups(resource_id=action_id)
+
+
+def set_group_action_permissions(action_id: int, group_id: int, permissions: Permissions):
+    action_permissions.set_permissions_for_group(resource_id=action_id, group_id=group_id, permissions=permissions)
+
+
+def get_action_permissions_for_projects(action_id: int) -> typing.Dict[int, Permissions]:
+    return action_permissions.get_permissions_for_projects(resource_id=action_id)
+
+
+def set_project_action_permissions(action_id: int, project_id: int, permissions: Permissions) -> None:
+    action_permissions.set_permissions_for_project(resource_id=action_id, project_id=project_id, permissions=permissions)
+
+
+def get_user_action_permissions(
+        action_id,
+        user_id,
+        *,
+        include_groups: bool = True,
+        include_projects: bool = True,
+        include_admin_permissions: bool = True,
+        include_instrument_responsible_users: bool = True
+) -> Permissions:
+    additional_permissions = Permissions.NONE
+
+    # users have GRANT permissions for actions they own
+    action = actions.get_action(action_id)
+    if action.user_id == user_id:
+        additional_permissions = Permissions.GRANT
+
+    if Permissions.GRANT not in additional_permissions and include_instrument_responsible_users:
+        # instrument responsible users have GRANT permissions for actions of their instrument
+        if user_id in _get_action_responsible_user_ids(action_id):
+            additional_permissions = max(additional_permissions, Permissions.GRANT)
+
+    # resource independent permissions
+    return action_permissions.get_combined_permissions_for_user(
+        resource_id=action_id,
+        user_id=user_id,
+        include_groups=include_groups,
+        include_projects=include_projects,
+        include_admin_permissions=include_admin_permissions,
+        additional_permissions=additional_permissions
+    )
 
 
 def action_is_public(action_id: int) -> bool:
@@ -88,27 +119,6 @@ def set_action_public(action_id: int, is_public: bool = True) -> None:
     set_action_permissions_for_all_users(action_id, Permissions.READ if is_public else Permissions.NONE)
 
 
-def get_action_permissions_for_users(action_id) -> typing.Dict[int, Permissions]:
-    """
-    Get explicitly granted permissions for users for a specific action.
-
-    This does not consider readonly users, instrument responsible users,
-    groups, projects, admins or other modifications to user permissions.
-
-    :param action_id: the ID of an existing action
-    :return: a dict mapping users IDs to permissions
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    action_permissions = {}
-    for user_action_permissions in UserActionPermissions.query.filter_by(action_id=action_id).all():
-        if user_action_permissions.permissions != Permissions.NONE:
-            action_permissions[user_action_permissions.user_id] = user_action_permissions.permissions
-    return action_permissions
-
-
 def _get_action_responsible_user_ids(action_id: int) -> typing.List[int]:
     try:
         action = actions.get_action(action_id)
@@ -118,199 +128,6 @@ def _get_action_responsible_user_ids(action_id: int) -> typing.List[int]:
         return []
     instrument = instruments.get_instrument(action.instrument_id)
     return [user.id for user in instrument.responsible_users]
-
-
-def get_action_permissions_for_groups(action_id: int) -> typing.Dict[int, Permissions]:
-    """
-    Get permissions for a specific action for groups.
-
-    :param action_id: the ID of an existing action
-    :return: a dict mapping group IDs to permissions
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    action_permissions = {}
-    for group_action_permissions in GroupActionPermissions.query.filter_by(action_id=action_id).all():
-        if group_action_permissions.permissions != Permissions.NONE:
-            action_permissions[group_action_permissions.group_id] = group_action_permissions.permissions
-    return action_permissions
-
-
-def get_action_permissions_for_projects(action_id: int) -> typing.Dict[int, Permissions]:
-    """
-    Get permissions for a specific action for projects.
-
-    :param action_id: the ID of an existing action
-    :return: a dict mapping project IDs to permissions
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    action_permissions = {}
-    for project_action_permissions in ProjectActionPermissions.query.filter_by(action_id=action_id).all():
-        if project_action_permissions.permissions != Permissions.NONE:
-            action_permissions[project_action_permissions.project_id] = project_action_permissions.permissions
-    return action_permissions
-
-
-def get_user_action_permissions(action_id, user_id, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_admin_permissions: bool = True) -> Permissions:
-    """
-    Get permissions for a specific action for a specific user.
-
-    :param action_id: the ID of an existing action
-    :param user_id: the ID of an existing user
-    :param include_instrument_responsible_users: whether instrument responsible user status should be included
-    :param include_groups: whether groups that the users are members of should be included
-    :param include_projects: whether projects that the users are members of should be included
-    :param include_admin_permissions: whether admin permissions should be included
-    :return: the user's permissions for this action
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    :raise errors.UserDoesNotExistError: if no user with the given user ID
-        exists
-    """
-    # ensure that the action can be found
-    action = actions.get_action(action_id)
-    # ensure that the user can be found
-    user = users.get_user(user_id)
-
-    if user.is_readonly:
-        max_permissions = Permissions.READ
-    else:
-        max_permissions = Permissions.GRANT
-
-    # administrators have GRANT permissions if they use admin permissions
-    if include_admin_permissions and user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
-        return min(Permissions.GRANT, max_permissions)
-    # action owners always have GRANT permissions
-    if action.user_id == user_id:
-        return min(Permissions.GRANT, max_permissions)
-    if include_instrument_responsible_users:
-        # instrument responsible users always have GRANT permissions for an action
-        if user_id in _get_action_responsible_user_ids(action_id):
-            return min(Permissions.GRANT, max_permissions)
-    # other users might have been granted permissions, either individually or as group or project members
-    user_action_permissions = UserActionPermissions.query.filter_by(action_id=action_id, user_id=user_id).first()
-    if user_action_permissions is None:
-        permissions = Permissions.NONE
-    else:
-        permissions = user_action_permissions.permissions
-    if Permissions.GRANT in permissions:
-        return min(permissions, max_permissions)
-    if include_groups:
-        for group in groups.get_user_groups(user_id):
-            group_action_permissions = GroupActionPermissions.query.filter_by(action_id=action_id, group_id=group.id).first()
-            if group_action_permissions is not None and permissions in group_action_permissions.permissions:
-                permissions = group_action_permissions.permissions
-    if Permissions.GRANT in permissions:
-        return min(permissions, max_permissions)
-    if include_projects:
-        for user_project in projects.get_user_projects(user_id, include_groups=include_groups):
-            user_project_permissions = projects.get_user_project_permissions(user_project.id, user_id, include_groups=include_groups)
-            if user_project_permissions not in permissions:
-                project_action_permissions = ProjectActionPermissions.query.filter_by(action_id=action_id, project_id=user_project.id).first()
-                if project_action_permissions is not None:
-                    permissions = min(user_project_permissions, project_action_permissions.permissions)
-    if Permissions.READ in permissions:
-        return min(permissions, max_permissions)
-    # lastly, the action may be public, so all users have READ permissions
-    if action_is_public(action_id):
-        return min(Permissions.READ, max_permissions)
-    # otherwise the user has no permissions for this action
-    return Permissions.NONE
-
-
-def set_user_action_permissions(action_id: int, user_id: int, permissions: Permissions):
-    """
-    Set the action permissions for a user.
-
-    Clear the permissions if called with Permissions.NONE
-
-    :param action_id: the ID of an existing action
-    :param user_id: the ID of an existing user
-    :param permissions: the new permissions
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    :raise errors.UserDoesNotExistError: if no user with the given user ID
-        exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    # ensure that the user can be found
-    users.get_user(user_id)
-    if permissions == Permissions.NONE:
-        UserActionPermissions.query.filter_by(action_id=action_id, user_id=user_id).delete()
-    else:
-        user_action_permissions = UserActionPermissions.query.filter_by(action_id=action_id, user_id=user_id).first()
-        if user_action_permissions is None:
-            user_action_permissions = UserActionPermissions(user_id=user_id, action_id=action_id, permissions=permissions)
-        else:
-            user_action_permissions.permissions = permissions
-        db.session.add(user_action_permissions)
-    db.session.commit()
-
-
-def set_group_action_permissions(action_id: int, group_id: int, permissions: Permissions):
-    """
-    Set the action permissions for a group.
-
-    Clear the permissions if called with Permissions.NONE
-
-    :param action_id: the ID of an existing action
-    :param group_id: the ID of an existing group
-    :param permissions: the new permissions
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    :raise errors.GroupDoesNotExistError: if no group with the given group ID
-        exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    # ensure that the group can be found
-    groups.get_group(group_id)
-    if permissions == Permissions.NONE:
-        GroupActionPermissions.query.filter_by(action_id=action_id, group_id=group_id).delete()
-    else:
-        group_action_permissions = GroupActionPermissions.query.filter_by(action_id=action_id, group_id=group_id).first()
-        if group_action_permissions is None:
-            group_action_permissions = GroupActionPermissions(action_id=action_id, group_id=group_id, permissions=permissions)
-        else:
-            group_action_permissions.permissions = permissions
-        db.session.add(group_action_permissions)
-    db.session.commit()
-
-
-def set_project_action_permissions(action_id: int, project_id: int, permissions: Permissions) -> None:
-    """
-    Set the action permissions for a group.
-
-    Clear the permissions if called with Permissions.NONE.
-
-    :param action_id: the ID of an existing action
-    :param group_id: the ID of an existing group
-    :param permissions: the new permissions
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    :raise errors.ProjectDoesNotExistError: if no project with the given
-        project ID exists
-    """
-    # ensure that the action can be found
-    actions.get_action(action_id)
-    # ensure that the project can be found
-    projects.get_project(project_id)
-    if permissions == Permissions.NONE:
-        ProjectActionPermissions.query.filter_by(action_id=action_id, project_id=project_id).delete()
-    else:
-        project_action_permissions = ProjectActionPermissions.query.filter_by(action_id=action_id, project_id=project_id).first()
-        if project_action_permissions is None:
-            project_action_permissions = ProjectActionPermissions(project_id=project_id, action_id=action_id, permissions=permissions)
-        else:
-            project_action_permissions.permissions = permissions
-        db.session.add(project_action_permissions)
-    db.session.commit()
 
 
 def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
