@@ -20,6 +20,7 @@ import typing
 
 import sqlalchemy
 
+from .errors import InvalidDefaultPermissionsError
 from .. import db
 from . import errors
 from . import actions
@@ -422,10 +423,6 @@ def get_objects_with_permissions(
         num_objects_found=num_objects_found,
         **kwargs
     )
-
-
-class InvalidDefaultPermissionsError(Exception):
-    pass
 
 
 def get_default_permissions_for_users(creator_id: int) -> typing.Dict[int, Permissions]:

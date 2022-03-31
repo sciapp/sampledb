@@ -7,7 +7,7 @@ import pytest
 
 import sampledb
 import sampledb.logic
-from sampledb.logic import object_permissions, groups
+from sampledb.logic import object_permissions, groups, errors
 from sampledb.models import User, UserType, Action, Instrument, Permissions, UserObjectPermissions
 
 
@@ -494,7 +494,7 @@ def test_default_permissions_for_creator(users):
     }
 
     # the creator cannot receive less than GRANT default permissions
-    with pytest.raises(object_permissions.InvalidDefaultPermissionsError):
+    with pytest.raises(errors.InvalidDefaultPermissionsError):
         object_permissions.set_default_permissions_for_user(creator_id=creator.id, user_id=creator.id, permissions=Permissions.WRITE)
 
     # setting the creator's default permissions to GRANT does nothing, but is acceptable
