@@ -15,6 +15,7 @@ from . import components
 from . import component_authentication
 from . import datatypes
 from . import dataverse_export
+from . import default_permissions
 from . import errors
 from . import export
 from . import favorites
@@ -67,6 +68,7 @@ __all__ = [
     'comments',
     'datatypes',
     'dataverse_export',
+    'default_permissions',
     'errors',
     'export',
     'favorites',

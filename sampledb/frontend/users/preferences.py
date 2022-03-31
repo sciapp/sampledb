@@ -26,14 +26,14 @@ from ...logic.authentication import add_authentication_method, remove_authentica
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
-from ...logic.object_permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
+from ...logic.default_permissions import get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
 from ...logic.projects import get_user_projects, get_project
 from ...logic.groups import get_user_groups, get_group
 from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
-from ...models import Authentication, AuthenticationType
+from ...models import Authentication, AuthenticationType, Permissions
 
 
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])

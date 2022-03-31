@@ -6,6 +6,7 @@
 from . import authentication
 from . import background_tasks
 from . import dataverse_export
+from . import default_permissions
 from . import favorites
 from . import files
 from . import groups
@@ -31,6 +32,7 @@ from .comments import Comment
 from .components import Component
 from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
 from .dataverse_export import DataverseExport
+from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
 from .favorites import FavoriteAction, FavoriteInstrument
 from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType
 from .files import File
@@ -45,7 +47,7 @@ from .markdown_images import MarkdownImage
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
-from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions
 from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
@@ -61,6 +63,7 @@ __all__ = [
     'authentication',
     'background_tasks',
     'dataverse_export',
+    'default_permissions',
     'favorites',
     'files',
     'groups',
