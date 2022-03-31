@@ -1,3 +1,32 @@
+# coding: utf-8
+"""
+Permissions
+
+Various resources in SampleDB, such as objects and actions, have a unified
+permission system that controls how each user can interact with them.
+
+There are three general types of permissions for each resource:
+ - READ, being able to access the resource and its information,
+ - WRITE, being able to make changes to the resources, and
+ - GRANT, being able to grant permissions to other users.
+
+A user may get permissions in several ways:
+- they may be implicitly granted permissions along with all other users
+- they may be explicitly granted permissions as individual users
+- they may be transitively granted permissions as member of a group
+- they may be transitively granted permissions as member of a project
+- they may be an administrator utilizing administrator permissions
+
+Depending on the type of resource, there may be additional ways of getting
+permissions, e.g. by being an instrument responsible user.
+
+Even if a user has been granted WRITE or GRANT permissions in some of the ways
+listed above, they might be limited to READ permissions only if they have been
+marked as read only users.
+
+The ResourcePermissions class in this module is meant to be used by modules
+for the individual resource types, as a base to avoid code duplication.
+"""
 import typing
 
 from . import settings, users, groups, projects
@@ -345,3 +374,25 @@ class ResourcePermissions(object):
                 permissions = max(permissions, min(max_project_permissions, project_permissions.get(project.id, Permissions.NONE)))
 
         return permissions
+
+    def copy_permissions(self, source_resource_id: int, target_resource_id: int) -> None:
+        self._check_resource_exists(source_resource_id)
+        self._check_resource_exists(target_resource_id)
+
+        # clear current permissions for the target resource
+        self._all_user_permissions_table.query.filter_by(**{self._resource_id_name: target_resource_id}).delete()
+        self._user_permissions_table.query.filter_by(**{self._resource_id_name: target_resource_id}).delete()
+        self._group_permissions_table.query.filter_by(**{self._resource_id_name: target_resource_id}).delete()
+        self._project_permissions_table.query.filter_by(**{self._resource_id_name: target_resource_id}).delete()
+
+        permissions_for_all_users = self.get_permissions_for_all_users(source_resource_id)
+        self.set_permissions_for_all_users(target_resource_id, permissions_for_all_users)
+        permissions_for_users = self.get_permissions_for_users(source_resource_id)
+        for user_id, permissions in permissions_for_users.items():
+            self.set_permissions_for_user(target_resource_id, user_id, permissions)
+        permissions_for_groups = self.get_permissions_for_groups(source_resource_id)
+        for group_id, permissions in permissions_for_groups.items():
+            self.set_permissions_for_group(target_resource_id, group_id, permissions)
+        permissions_for_projects = self.get_permissions_for_projects(source_resource_id)
+        for project_id, permissions in permissions_for_projects.items():
+            self.set_permissions_for_project(target_resource_id, project_id, permissions)

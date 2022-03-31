@@ -1,19 +1,6 @@
 # coding: utf-8
 """
-Object Permissions
 
-There are three types of permissions for each object:
- - READ, being able to access all information on an object,
- - WRITE, being able to update an object, and
- - GRANT, being able to grant permissions to other users.
-
-When an object is created, its creator initially gets GRANT permissions for the object. In addition, if the object
-was created performing an instrument action, the instrument responsible users will have GRANT access rights, not as
-individuals, but in their role of responsible users. So even when a user becomes responsible user AFTER an object was
-created using an instrument, this user will then have GRANT rights, until he is removed from the list of responsible
-users for the instrument.
-
-Objects can be made public, which grants READ permissions to any logged-in user trying to access the object.
 """
 
 import typing
@@ -23,7 +10,7 @@ import sqlalchemy
 from .. import db
 from . import errors
 from . import actions
-from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, default_is_public
+from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
 from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
@@ -96,11 +83,11 @@ def set_project_object_permissions(object_id: int, project_id: int, permissions:
     object_permissions.set_permissions_for_project(resource_id=object_id, project_id=project_id, permissions=permissions)
 
 
-def object_is_public(object_id: int):
+def object_is_public(object_id: int) -> bool:
     return Permissions.READ in get_object_permissions_for_all_users(object_id=object_id)
 
 
-def set_object_public(object_id: int, is_public: bool = True):
+def set_object_public(object_id: int, is_public: bool = True) -> None:
     set_object_permissions_for_all_users(object_id, Permissions.READ if is_public else Permissions.NONE)
 
 
@@ -180,8 +167,8 @@ def set_initial_permissions(obj):
     default_project_permissions = get_default_permissions_for_projects(creator_id=obj.user_id)
     for project_id, permissions in default_project_permissions.items():
         set_project_object_permissions(object_id=obj.object_id, project_id=project_id, permissions=permissions)
-    should_be_public = default_is_public(creator_id=obj.user_id)
-    set_object_public(object_id=obj.object_id, is_public=should_be_public)
+    permissions_for_all_users = get_default_permissions_for_all_users(creator_id=obj.user_id)
+    set_object_permissions_for_all_users(object_id=obj.object_id, permissions=permissions_for_all_users)
 
 
 def get_object_info_with_permissions(
@@ -439,30 +426,4 @@ def request_object_permissions(requester_id: int, object_id: int) -> None:
 
 
 def copy_permissions(target_object_id: int, source_object_id: int) -> None:
-    AllUserObjectPermissions.query.filter_by(object_id=target_object_id).delete()
-    UserObjectPermissions.query.filter_by(object_id=target_object_id).delete()
-    GroupObjectPermissions.query.filter_by(object_id=target_object_id).delete()
-    ProjectObjectPermissions.query.filter_by(object_id=target_object_id).delete()
-
-    all_user_object_permissions = AllUserObjectPermissions.query.filter_by(object_id=source_object_id).first()
-    if all_user_object_permissions is not None:
-        db.session.add(AllUserObjectPermissions(object_id=target_object_id, permissions=all_user_object_permissions.permissions))
-    for user_object_permissions in UserObjectPermissions.query.filter_by(object_id=source_object_id).all():
-        db.session.add(UserObjectPermissions(
-            object_id=target_object_id,
-            user_id=user_object_permissions.user_id,
-            permissions=user_object_permissions.permissions
-        ))
-    for group_object_permissions in GroupObjectPermissions.query.filter_by(object_id=source_object_id).all():
-        db.session.add(GroupObjectPermissions(
-            object_id=target_object_id,
-            group_id=group_object_permissions.group_id,
-            permissions=group_object_permissions.permissions
-        ))
-    for project_object_permissions in ProjectObjectPermissions.query.filter_by(object_id=source_object_id).all():
-        db.session.add(ProjectObjectPermissions(
-            object_id=target_object_id,
-            project_id=project_object_permissions.project_id,
-            permissions=project_object_permissions.permissions
-        ))
-    db.session.commit()
+    object_permissions.copy_permissions(source_resource_id=source_object_id, target_resource_id=target_object_id)

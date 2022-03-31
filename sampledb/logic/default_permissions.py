@@ -71,11 +71,11 @@ def set_default_permissions_for_all_users(creator_id: int, permissions: Permissi
     return default_permissions.set_permissions_for_all_users(resource_id=creator_id, permissions=permissions)
 
 
-def default_is_public(creator_id: int):
+def default_is_public(creator_id: int) -> bool:
     return Permissions.READ in get_default_permissions_for_all_users(creator_id=creator_id)
 
 
-def set_default_public(creator_id: int, is_public: bool = True):
+def set_default_public(creator_id: int, is_public: bool = True) -> None:
     set_default_permissions_for_all_users(
         creator_id=creator_id,
         permissions=Permissions.READ if is_public else Permissions.NONE
