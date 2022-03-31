@@ -145,7 +145,7 @@ def object_permissions(object_id):
         component_users = {
             component.id: {
                 user.fed_id: user.get_name(include_ref=True)
-                for user in get_users_for_component(component.id, exclude_hidden=True)
+                for user in get_users_for_component(component.id, exclude_hidden=False)
             }
             for component in components
         }
