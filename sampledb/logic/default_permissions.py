@@ -2,8 +2,7 @@ import typing
 
 from .. import db
 from .errors import InvalidDefaultPermissionsError
-from ..models import Permissions, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, \
-    DefaultPublicPermissions
+from ..models import Permissions, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
 
 
 def get_default_permissions_for_users(creator_id: int) -> typing.Dict[int, Permissions]:
@@ -67,17 +66,20 @@ def set_default_permissions_for_project(creator_id: int, project_id: int, permis
 
 
 def default_is_public(creator_id: int) -> bool:
-    public_permissions = DefaultPublicPermissions.query.filter_by(creator_id=creator_id).first()
+    public_permissions = AllUserDefaultPermissions.query.filter_by(creator_id=creator_id).first()
     if public_permissions is None:
         return False
-    return public_permissions.is_public
+    return Permissions.READ in public_permissions.permissions
 
 
 def set_default_public(creator_id: int, is_public: bool = True) -> None:
-    public_permissions = DefaultPublicPermissions.query.filter_by(creator_id=creator_id).first()
-    if public_permissions is None:
-        public_permissions = DefaultPublicPermissions(creator_id=creator_id, is_public=is_public)
+    if is_public:
+        public_permissions = AllUserDefaultPermissions.query.filter_by(creator_id=creator_id).first()
+        if public_permissions is None:
+            public_permissions = AllUserDefaultPermissions(creator_id=creator_id, permissions=Permissions.READ)
+        else:
+            public_permissions.permissions = Permissions.READ
+        db.session.add(public_permissions)
     else:
-        public_permissions.is_public = is_public
-    db.session.add(public_permissions)
+        AllUserDefaultPermissions.query.filter_by(creator_id=creator_id).delete()
     db.session.commit()

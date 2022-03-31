@@ -50,8 +50,8 @@ class DefaultProjectPermissions(db.Model):
     )
 
 
-class DefaultPublicPermissions(db.Model):
-    __tablename__ = 'default_public_permissions'
+class AllUserDefaultPermissions(db.Model):
+    __tablename__ = 'all_user_default_permissions'
 
     creator_id = db.Column(db.Integer, db.ForeignKey(User.id), primary_key=True)
-    is_public = db.Column(db.Boolean, default=False, nullable=False)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
