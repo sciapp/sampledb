@@ -22,7 +22,7 @@ class ResourcePermissions(object):
         self._project_permissions_table = project_permissions_table
         self._check_resource_exists = check_resource_exists
 
-    def get_permission_for_all_users(
+    def get_permissions_for_all_users(
             self,
             resource_id: int
     ) -> Permissions:
@@ -100,7 +100,7 @@ class ResourcePermissions(object):
             permissions_for_users[user_permissions.user_id] = max(permissions_for_users.get(user_permissions.user_id, Permissions.NONE), user_permissions.permissions)
 
         if include_all_users:
-            permissions_for_all_users = self.get_permission_for_all_users(resource_id=resource_id)
+            permissions_for_all_users = self.get_permissions_for_all_users(resource_id=resource_id)
             if permissions_for_all_users != Permissions.NONE:
                 for user in users.get_users():
                     permissions_for_users[user.id] = max(permissions_for_users.get(user.id, Permissions.NONE), permissions_for_all_users)
@@ -326,7 +326,7 @@ class ResourcePermissions(object):
                 permissions = max(permissions, Permissions.GRANT)
 
         if max_permissions not in permissions and include_all_users:
-            permissions = max(permissions, self.get_permission_for_all_users(resource_id))
+            permissions = max(permissions, self.get_permissions_for_all_users(resource_id))
 
         if max_permissions not in permissions:
             user_permissions = self._user_permissions_table.query.filter_by(user_id=user_id, **{self._resource_id_name: resource_id}).first()

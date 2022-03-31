@@ -47,7 +47,7 @@ object_permissions = ResourcePermissions(
 
 
 def get_object_permissions_for_all_users(object_id: int) -> Permissions:
-    return object_permissions.get_permission_for_all_users(resource_id=object_id)
+    return object_permissions.get_permissions_for_all_users(resource_id=object_id)
 
 
 def set_object_permissions_for_all_users(object_id: int, permissions: Permissions) -> None:

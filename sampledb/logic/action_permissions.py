@@ -31,7 +31,7 @@ action_permissions = ResourcePermissions(
 
 
 def get_action_permissions_for_all_users(action_id: int) -> Permissions:
-    return action_permissions.get_permission_for_all_users(resource_id=action_id)
+    return action_permissions.get_permissions_for_all_users(resource_id=action_id)
 
 
 def set_action_permissions_for_all_users(action_id: int, permissions: Permissions) -> None:
