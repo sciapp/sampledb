@@ -254,7 +254,7 @@
       copy_from_select.selectpicker('refresh');
     }
     function copyAliasFromInput(suffix) {
-      copyAliasFrom($('#input-copy-from-edit').val(), suffix);
+      copyAliasFrom($('#input-copy-from' + suffix).val(), suffix);
     }
     function copyAliasFrom(component_id, suffix) {
       if (component_id == null || component_id == -1) {
