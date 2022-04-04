@@ -226,13 +226,15 @@ def custom_format_number(number: typing.Union[str, int, float], display_digits: 
             decimal_quantization=False
         )
     else:
-        return numbers.format_decimal(
-            number,
-            locale=locale,
-            format=format,
-            decimal_quantization=False,
-            group_separator=False
-        )
+        with numbers.decimal.localcontext() as ctx:
+            ctx.prec = 15
+            return numbers.format_decimal(
+                numbers.decimal.Decimal(number),
+                locale=locale,
+                format=format,
+                decimal_quantization=False,
+                group_separator=False
+            )
 
 
 def custom_format_quantity(
