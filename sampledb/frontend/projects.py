@@ -579,12 +579,12 @@ def project_permissions(project_id):
     group_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id)
     if Permissions.GRANT in logic.projects.get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
         user_permission_form_data = []
-        for user_id, permissions in user_permissions.items():
+        for user_id, permissions in sorted(user_permissions.items()):
             if user_id is None:
                 continue
             user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
         group_permission_form_data = []
-        for group_id, permissions in group_permissions.items():
+        for group_id, permissions in sorted(group_permissions.items()):
             if group_id is None:
                 continue
             group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})

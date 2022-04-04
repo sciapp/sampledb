@@ -119,7 +119,7 @@
           <th scope="col" class="text-center"></th>
         </tr>
         {% endif %}
-        {% for group_id, permissions in group_permissions.items() %}
+        {% for group_id, permissions in group_permissions.items() | sort %}
           {% if group_id is not none %}
             {% set group = get_group(group_id) %}
             <tr>
@@ -144,7 +144,7 @@
           <th scope="col" class="text-center"></th>
         </tr>
         {% endif %}
-        {% for user_id, permissions in user_permissions.items() %}
+        {% for user_id, permissions in user_permissions.items() | sort %}
           {% if user_id is not none %}
             {% set user = get_user(user_id) %}
             <tr>
