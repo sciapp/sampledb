@@ -18,4 +18,7 @@
     {% endfor %}
     </ul>
   {% endif %}
+  {% if has_hidden_locations %}
+    <p class="text-muted">{{ _('Some locations have been hidden because you lack the required permissions to access them.')}}</p>
+  {% endif %}
 {% endblock %}

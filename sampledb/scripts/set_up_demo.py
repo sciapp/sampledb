@@ -516,6 +516,10 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo.")
         sampledb.logic.object_permissions.set_user_object_permissions(independent_object.id, instrument_responsible_user.id, sampledb.models.Permissions.GRANT)
         sampledb.logic.notifications.create_notification_for_having_received_an_objects_permissions_request(instrument_responsible_user.id, independent_object.id, admin.id)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(campus.id, sampledb.logic.location_permissions.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(building_a.id, sampledb.logic.location_permissions.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42a.id, sampledb.logic.location_permissions.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42b.id, sampledb.logic.location_permissions.Permissions.WRITE)
 
         for object in sampledb.logic.objects.get_objects():
             sampledb.logic.instrument_log_entries.create_instrument_log_object_attachment(

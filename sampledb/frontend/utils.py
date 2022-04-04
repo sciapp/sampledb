@@ -36,6 +36,8 @@ from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.settings import get_user_settings
 from ..logic.action_permissions import get_sorted_actions_for_user
+from ..logic.locations import Location, get_location
+from ..logic.location_permissions import get_user_location_permissions, Permissions
 
 
 def jinja_filter(func):
@@ -291,6 +293,39 @@ def to_string_if_dict(data) -> str:
         return data
 
 
+def get_location_name(
+        location_or_location_id: typing.Union[int, Location],
+        include_id: bool = False,
+        language_code: typing.Optional[str] = None
+) -> str:
+    location: typing.Optional[Location]
+    location_id: int
+    if type(location_or_location_id) is int:
+        location_id = location_or_location_id
+        try:
+            location = get_location(location_id)
+        except errors.LocationDoesNotExistError:
+            location = None
+    elif isinstance(location_or_location_id, Location):
+        location = location_or_location_id
+        location_id = location.id
+    else:
+        return flask_babel.gettext("Unknown Location")
+
+    if location is None or Permissions.READ not in get_user_location_permissions(location_id, flask_login.current_user.id):
+        # location ID is always included when the location cannot be accessed
+        location_name = flask_babel.gettext("Location") + f' #{location_id}'
+    else:
+        location_name = get_translated_text(
+            location.name,
+            language_code=language_code,
+            default=flask_babel.gettext('Unnamed Location')
+        )
+        if include_id:
+            location_name += f' (#{location_id})'
+    return location_name
+
+
 _jinja_filters['prettify_units'] = prettify_units
 _jinja_filters['has_preview'] = has_preview
 _jinja_filters['is_image'] = is_image
@@ -310,6 +345,7 @@ _jinja_filters['format_quantity'] = custom_format_quantity
 _jinja_filters['base64encode'] = base64encode
 _jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
 _jinja_filters['to_string_if_dict'] = to_string_if_dict
+_jinja_filters['get_location_name'] = get_location_name
 
 
 def get_style_aliases(style):

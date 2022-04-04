@@ -1513,6 +1513,7 @@ Reading a location
     :>json string description: the locations's description
     :>json number parent_location_id: the parent location's ID
     :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this location
     :statuscode 404: the location does not exist
 
 

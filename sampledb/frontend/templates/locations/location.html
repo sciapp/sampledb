@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Location') }} #{{ location.id }}: {{ location.name | get_translated_text(default=_('Unnamed Location')) }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Location') }} #{{ location.id }}: {{ location | get_location_name(False) }} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <h1>
     {{ _('Location') }} #{{ location.id }}:
     {% for ancestor in ancestors %}
-      <a href="{{ url_for('.location', location_id=ancestor.id) }}">{{ ancestor.name | get_translated_text(default=_('Unnamed Location')) }}</a>
+      <a href="{{ url_for('.location', location_id=ancestor.id) }}">{{ ancestor | get_location_name(False) }}</a>
       {{ federation_information_symbol(ancestor.component, ancestor.fed_id, 'location') }} /
     {% endfor %}
-    {{ location.name | get_translated_text(default=_('Unnamed Location')) }}
+    {{ location | get_location_name(False) }}
     {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
   </h1>
   {% if locations_tree %}
@@ -32,11 +32,14 @@
 
   <div class="button-row">
   <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
-  {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
+  {% if Permissions.WRITE in permissions %}
     {% if location.fed_id is none %}
   <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">{{ _('Edit Location')}}</a>
     {% endif %}
   <a href="{{ url_for('.new_location', parent_location_id=location.id) }}" class="btn btn-default">{{ _('Create Sub-Location')}}</a>
+  {% endif %}
+  {% if Permissions.GRANT in permissions %}
+  <a href="{{ url_for('.location_permissions', location_id=location.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Edit the permissions for this location.') }}">{{ _('Edit Permissions') }}</a>
   {% endif %}
   </div>
 {% endblock %}

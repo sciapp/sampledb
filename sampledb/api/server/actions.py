@@ -47,9 +47,7 @@ class Action(Resource):
                 "message": "action {} does not exist".format(action_id)
             }, 404
         if Permissions.READ not in get_user_action_permissions(action_id=action_id, user_id=flask.g.user.id):
-            return {
-                "message": "insufficient permissions to access action {}".format(action_id)
-            }, 403
+            return flask.abort(403)
         return action_to_json(action)
 
 

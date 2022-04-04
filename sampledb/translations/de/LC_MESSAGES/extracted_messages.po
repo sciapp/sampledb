@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-04-19 08:16+0200\n"
+"POT-Creation-Date: 2022-04-26 15:05+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
-"Last-Translator: Nicolas CARPi\n"
+"Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
@@ -243,11 +243,33 @@ msgstr "Nur Administratoren können Orte bearbeiten."
 msgid "Editing imported locations is not yet supported."
 msgstr "Das Bearbeiten importierter Orte wird noch nicht unterstützt."
 
+msgid "You do not have permissions to edit this location."
+msgstr "Ihnen fehlen die Berechtigungen um diesen Ort zu bearbeiten."
+
+msgid "You do not have permissions to view this location."
+msgstr "Ihnen fehlen die Berechtigungen um diesen Ort anzuzeigen."
+
+msgid "You need GRANT permissions to edit the permissions for this location."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Orts zu bearbeiten."
+
+msgid "Successfully updated location permissions."
+msgstr "Die Ortsberechtigungen wurden erfolgreich aktualisiert."
+
+msgid "Failed to update location permissions."
+msgstr "Das Bearbeiten der Ortsberechtigungen ist fehlgeschlagen."
+
 msgid "Only administrators can create locations."
 msgstr "Nur Administratoren können Orte erstellen."
 
 msgid "The requested parent location does not exist."
 msgstr "Dieser Eltern-Ort existiert nicht."
+
+msgid ""
+"You do not have the required permissions for the requested parent "
+"location."
+msgstr "Ihnen fehlen die Berechtigungen um den gewünschten Eltern-Ort zu nutzen."
 
 msgid "The confirmation token is missing."
 msgstr "Das Bestätigungstoken fehlt."
@@ -309,6 +331,12 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
+
+msgid "You do not have the required permissions to access this location."
+msgstr "Ihnen fehlen die Berechtigungen um auf diesen Ort zuzugreifen."
+
+msgid "No location with the given ID exists."
+msgstr "Es existiert kein Ort mit dieser ID."
 
 #, python-format
 msgid ""
@@ -373,9 +401,6 @@ msgstr "Unbekannte Datenbank (%(uuid)s)"
 
 msgid "Editing imported objects is not yet supported."
 msgstr "Das Bearbeiten importierter Objekte wird noch nicht unterstützt."
-
-msgid "Unnamed Location"
-msgstr "Unbenannter Ort"
 
 msgid "Unknown"
 msgstr "Unbekannt"
@@ -566,21 +591,21 @@ msgstr ""
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
-"href=\"%(location_url)s\">location #%(location_id)s</a> and <a "
+"href=\"%(location_url)s\">%(location_name)s</a> and <a "
 "href=\"%(other_user_url)s\">user #%(responsible_user_id)s</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem <a "
-"href=\"%(location_url)s\">Ort #%(location_id)s</a> und <a "
+"href=\"%(location_url)s\">%(location_name)s</a> und <a "
 "href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
 "zugeweisen."
 
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
-"href=\"%(location_url)s\">location #%(location_id)s</a>."
+"href=\"%(location_url)s\">%(location_name)s</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> das Objekt dem <a "
-"href=\"%(location_url)s\">Ort %(location_id)s</a> zugewiesen."
+"href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
@@ -906,6 +931,15 @@ msgstr "Passwörter müssen übereinstimmen"
 
 msgid "Please enter your name as: surname, given names."
 msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vorname."
+
+msgid "Unknown Location"
+msgstr "Unbekannter Ort"
+
+msgid "Location"
+msgstr "Ort"
+
+msgid "Unnamed Location"
+msgstr "Unbenannter Ort"
 
 msgid "API Log"
 msgstr "API Log"
@@ -3159,9 +3193,6 @@ msgstr "Eine neue Sprache hinzufügen"
 msgid "Disabled for input"
 msgstr "Für Eingabe deaktiviert"
 
-msgid "Location"
-msgstr "Ort"
-
 msgid "Sub-Locations"
 msgstr "Unter-Orte"
 
@@ -3174,6 +3205,9 @@ msgstr "Ort bearbeiten"
 
 msgid "Create Sub-Location"
 msgstr "Unter-Ort erstellen"
+
+msgid "Edit the permissions for this location."
+msgstr "Berechtigungen für diesen Ort bearbeiten."
 
 msgid ""
 "Please verify that the location you want to create does not exist already"
@@ -3194,11 +3228,34 @@ msgstr "Eltern-Ort"
 msgid "No location selected"
 msgstr "Kein Ort ausgewählt"
 
+msgid "Location Permissions"
+msgstr "Ortsberechtigungen"
+
+msgid "Only administrators can manage locations."
+msgstr "Nur Administratoren können Orte verwalten."
+
+msgid "Permission to view location information."
+msgstr "Berechtigungen um Ortsinformationen anzuzeigen."
+
+msgid ""
+"Permission to edit locations and create sub-locations for them. Includes "
+"Read permissions."
+msgstr ""
+"Berechtigung um Orte zu bearbeiten und Unter-Orte für sie zu erstellen. "
+"Beinhaltet Lese-Berechtigungen."
+
 msgid "Locations allow users to track where an object can be found."
 msgstr "Orte ermöglichen es Nutzern nachzuverfolgen, wo sich ein Objekt befindet."
 
 msgid "Create Location"
 msgstr "Ort erstellen"
+
+msgid ""
+"Some locations have been hidden because you lack the required permissions"
+" to access them."
+msgstr ""
+"Manche Orte werden nicht angezeigt, weil Ihnen die benötigten "
+"Berechtigungen fehlen, um diese zu betrachten."
 
 #, python-format
 msgid "Export to %(dataverse_name)s"

@@ -1,10 +1,15 @@
 {% set location = locations_map[location_id] %}
 {% set locations_tree = locations_tree[location_id] %}
+{% set location_permissions = permissions_by_id[location_id] %}
 <li>
-<a href="{{ url_for('.location', location_id=location.id) }}">{{ location.name | get_translated_text(default=_('Unnamed Location')) }}</a>
+{% if Permissions.READ in location_permissions %}
+<a href="{{ url_for('.location', location_id=location.id) }}">{{ location | get_location_name(False) }}</a>
 {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
 {% if location.description %}
   <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description | get_translated_text }}</pre>
+{% endif %}
+{% else %}
+  {{ _('Location') }} #{{ location_id }}
 {% endif %}
 {% if locations_tree %}
   <ul>

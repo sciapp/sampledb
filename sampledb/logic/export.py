@@ -262,15 +262,28 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
         all_relevant_location_ids.update(relevant_location_ids)
         relevant_location_ids = new_relevant_location_ids - all_relevant_location_ids
 
+    readable_location_ids = [
+        location.id
+        for location in logic.location_permissions.get_locations_with_user_permissions(
+            user_id=user_id,
+            permissions=logic.location_permissions.Permissions.READ
+        )
+    ]
     location_infos = []
     for location_info in locations:
         if location_info.id in all_relevant_location_ids:
-            location_infos.append({
-                'id': location_info.id,
-                'parent_id': location_info.parent_location_id,
-                'name': location_info.name,
-                'description': location_info.description
-            })
+            if location_info.id in readable_location_ids:
+                location_infos.append({
+                    'id': location_info.id,
+                    'parent_id': location_info.parent_location_id,
+                    'name': location_info.name,
+                    'description': location_info.description
+                })
+            else:
+                location_infos.append({
+                    'id': location_info.id,
+                    'parent_id': location_info.parent_location_id,
+                })
     infos['locations'] = location_infos
 
     for file_name in relevant_markdown_images:

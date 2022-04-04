@@ -41,7 +41,8 @@ from ..logic.groups import get_group, get_user_groups
 from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions, get_fed_object
 from ..logic.object_log import ObjectLogEntryType
 from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
-from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
+from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree
+from ..logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
 from ..logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
 from ..logic.files import FileLogEntryType
 from ..logic.errors import ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, LocationDoesNotExistError, ActionTypeDoesNotExistError, ComponentDoesNotExistError
@@ -54,7 +55,7 @@ from .utils import jinja_filter, generate_qrcode, get_user_if_exists
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from . import pdfexport
-from .utils import check_current_user_is_not_readonly
+from .utils import check_current_user_is_not_readonly, get_location_name
 from ..logic.utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -155,7 +156,13 @@ def objects():
         try:
             location_id = int(flask.request.args.get('location', ''))
             location = get_location(location_id)
-            object_ids_at_location = get_object_ids_at_location(location_id)
+            if Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id):
+                object_ids_at_location = get_object_ids_at_location(location_id)
+            else:
+                location_id = None
+                location = None
+                object_ids_at_location = []
+                flask.flash(_('You do not have the required permissions to access this location.'), 'error')
         except ValueError:
             location_id = None
             location = None
@@ -163,7 +170,8 @@ def objects():
         except LocationDoesNotExistError:
             location_id = None
             location = None
-            object_ids_at_location = None
+            object_ids_at_location = []
+            flask.flash(_('No location with the given ID exists.'), 'error')
         try:
             action_id = int(flask.request.args.get('action', ''))
         except ValueError:
@@ -1014,6 +1022,10 @@ def show_inline_edit(obj, action):
     object_url = flask.url_for('.object', object_id=object_id, _external=True)
     object_qrcode = generate_qrcode(object_url, should_cache=True)
 
+    readable_location_ids = [
+        location.id
+        for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+    ]
     location_form = ObjectLocationAssignmentForm()
     locations_map, locations_tree = get_locations_tree()
     locations = [('-1', '—')]
@@ -1022,12 +1034,14 @@ def show_inline_edit(obj, action):
     while unvisited_location_ids_prefixes_and_subtrees:
         location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
         location = locations_map[location_id]
-        locations.append(
-            (str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name), location.id)))
-        for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name),
-                                  reverse=True):
+        # skip unreadable locations, but allow processing their child locations
+        # in case any of them are readable
+        if location_id in readable_location_ids:
+            locations.append((str(location_id), prefix + get_location_name(location, include_id=True)))
+        prefix = f'{prefix}{get_location_name(location)} / '
+        for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
             unvisited_location_ids_prefixes_and_subtrees.insert(
-                0, (location_id, f'{prefix}{get_translated_text(location.name)} / ', subtree[location_id])
+                0, (location_id, prefix, subtree[location_id])
             )
 
     location_form.location.choices = locations
@@ -1369,6 +1383,11 @@ def object(object_id):
         object_url = flask.url_for('.object', object_id=object_id, _external=True)
         object_qrcode = generate_qrcode(object_url, should_cache=True)
 
+        readable_location_ids = [
+            location.id
+            for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+        ]
+
         location_form = ObjectLocationAssignmentForm()
         locations_map, locations_tree = get_locations_tree()
         locations = [('-1', '—')]
@@ -1376,9 +1395,11 @@ def object(object_id):
         while unvisited_location_ids_prefixes_and_subtrees:
             location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
             location = locations_map[location_id]
-            locations.append((str(location_id), '{}{} (#{})'.format(prefix, get_translated_text(location.name, default=_('Unnamed Location')), location.id)))
-            for location_id in sorted(subtree, key=lambda location_id: get_translated_text(locations_map[location_id].name), reverse=True):
-                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, '{}{} / '.format(prefix, get_translated_text(location.name, default=_('Unnamed Location'))), subtree[location_id]))
+            if Permissions.READ in readable_location_ids:
+                locations.append((str(location_id), prefix + get_location_name(location, include_id=True)))
+            prefix = '{}{} / '.format(prefix, get_location_name(location))
+            for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
+                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, prefix, subtree[location_id]))
 
         location_form.location.choices = locations
         possible_responsible_users = [('-1', '—')]
@@ -1834,8 +1855,8 @@ def post_object_location(object_id):
     check_current_user_is_not_readonly()
     location_form = ObjectLocationAssignmentForm()
     location_form.location.choices = [('-1', '—')] + [
-        (str(location.id), '{} (#{})'.format(location.name, location.id))
-        for location in get_locations()
+        (str(location.id), get_location_name(location, include_id=True))
+        for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
     ]
     possible_responsible_users = [('-1', '—')]
     for user in logic.users.get_users(exclude_hidden=True):
