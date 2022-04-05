@@ -682,17 +682,17 @@ def action_permissions(action_id):
     )
     if user_may_edit:
         user_permission_form_data = []
-        for user_id, permissions in user_permissions.items():
+        for user_id, permissions in sorted(user_permissions.items()):
             if user_id is None:
                 continue
             user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
         group_permission_form_data = []
-        for group_id, permissions in group_permissions.items():
+        for group_id, permissions in sorted(group_permissions.items()):
             if group_id is None:
                 continue
             group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
         project_permission_form_data = []
-        for project_id, permissions in project_permissions.items():
+        for project_id, permissions in sorted(project_permissions.items()):
             if project_id is None:
                 continue
             project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
@@ -704,9 +704,11 @@ def action_permissions(action_id):
         )
         users = get_users(exclude_hidden=True, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
+        users.sort(key=lambda user: user.id)
         add_user_permissions_form = ActionUserPermissionsForm()
         groups = get_groups()
         groups = [group for group in groups if group.id not in group_permissions]
+        groups.sort(key=lambda group: group.id)
         add_group_permissions_form = ActionGroupPermissionsForm()
         projects = get_projects()
         projects_by_id = {
@@ -714,6 +716,7 @@ def action_permissions(action_id):
             for project in projects
         }
         projects = [project for project in projects if project.id not in project_permissions]
+        projects.sort(key=lambda project: project.id)
 
         if not flask.current_app.config['DISABLE_SUBPROJECTS']:
             project_id_hierarchy_list = get_project_id_hierarchy_list(list(projects_by_id))

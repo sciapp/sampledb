@@ -142,17 +142,17 @@ def change_preferences(user, user_id):
     project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
     public_permissions = Permissions.READ if default_is_public(creator_id=flask_login.current_user.id) else Permissions.NONE
     user_permission_form_data = []
-    for user_id, permissions in user_permissions.items():
+    for user_id, permissions in sorted(user_permissions.items()):
         if user_id is None:
             continue
         user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
     group_permission_form_data = []
-    for group_id, permissions in group_permissions.items():
+    for group_id, permissions in sorted(group_permissions.items()):
         if group_id is None:
             continue
         group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
     project_permission_form_data = []
-    for project_id, permissions in project_permissions.items():
+    for project_id, permissions in sorted(project_permissions.items()):
         if project_id is None:
             continue
         project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
@@ -160,10 +160,13 @@ def change_preferences(user, user_id):
 
     users = get_users(exclude_hidden=True, exclude_fed=True)
     users = [user for user in users if user.id not in user_permissions]
+    users.sort(key=lambda user: user.id)
     groups = get_user_groups(flask_login.current_user.id)
     groups = [group for group in groups if group.id not in group_permissions]
+    groups.sort(key=lambda group: group.id)
     projects = get_user_projects(flask_login.current_user.id)
     projects = [project for project in projects if project.id not in project_permissions]
+    projects.sort(key=lambda project: project.id)
 
     if 'change' not in flask.request.form:
         if change_user_form.name.data is None or change_user_form.name.data == "":

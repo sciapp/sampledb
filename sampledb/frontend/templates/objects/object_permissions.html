@@ -411,12 +411,12 @@
           <th scope="col" class="text-center"></th>
         </tr>
         {% endif %}
-        {% for group_id, permissions in group_permissions.items() %}
+        {% for group_id, permissions in group_permissions.items() | sort %}
           {% if group_id is not none %}
             {% set group = get_group(group_id) %}
             <tr>
               <td style="vertical-align: middle">
-                <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name }}</a>
+                <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }}</a>
               </td>
               {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
                 <td class="text-center" style="vertical-align: middle">
@@ -436,12 +436,12 @@
           <th scope="col" class="text-center"></th>
         </tr>
         {% endif %}
-        {% for project_id, permissions in project_permissions.items() %}
+        {% for project_id, permissions in project_permissions.items() | sort %}
           {% if project_id is not none %}
             {% set project = get_project(project_id) %}
             <tr>
               <td style="vertical-align: middle">
-                <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name }}</a>
+                <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>
               </td>
               {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
                 <td class="text-center" style="vertical-align: middle">
@@ -461,7 +461,7 @@
           <th scope="col" class="text-center"></th>
         </tr>
         {% endif %}
-        {% for user_id, permissions in user_permissions.items() %}
+        {% for user_id, permissions in user_permissions.items() | sort %}
           {% if user_id is not none %}
             {% set user = get_user(user_id) %}
             <tr>
