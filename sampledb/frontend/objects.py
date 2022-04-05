@@ -2399,6 +2399,10 @@ def object_permissions(object_id):
             (0, project.id, project.id in acceptable_project_ids)
             for project in sorted(all_projects, key=lambda project: project.id)
         ]
+    show_projects_form = any(
+        enabled
+        for level, project_id, enabled in project_id_hierarchy_list
+    )
     return flask.render_template(
         'objects/object_permissions.html',
         instrument=instrument,
@@ -2417,7 +2421,7 @@ def object_permissions(object_id):
         groups=groups,
         projects_by_id=all_projects_by_id,
         project_id_hierarchy_list=project_id_hierarchy_list,
-        show_projects_form=len(acceptable_project_ids) > 0,
+        show_projects_form=show_projects_form,
         edit_component_policy_form=edit_component_policy_form,
         component_users=component_users,
         copy_permissions_form=copy_permissions_form,
@@ -2461,7 +2465,7 @@ def update_object_permissions(object_id):
             logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
             logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)
             flask.flash(_("Successfully copied object permissions."), 'success')
-    elif 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+    elif 'edit_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
         set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
         for user_permissions_data in edit_user_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']

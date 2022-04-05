@@ -1,0 +1,393 @@
+{% if user_may_edit %}
+  <form action="{{ form_url }}" method="post" id="form-permissions">
+  {{ permissions_form.csrf_token }}
+{% endif %}
+<table class="table table-striped">
+  {% set show_special_groups = show_administrators or show_instrument_scientists or show_all_users %}
+  {% if show_special_groups %}
+  <thead>
+    <tr>
+      <th scope="col" style="width: 40%">{{ _('Special Groups') }}</th>
+      <th scope="col" class="text-center">{{ _('None') }}</th>
+      <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+      <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+      <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+    </tr>
+  </thead>
+  {% endif %}
+  <tbody>
+    {% if show_administrators %}
+    <tr>
+      <td style="vertical-align: middle">{{ _('Administrators') }}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      {% for possible_permissions in [Permissions.GRANT] %}
+        <td class="text-center" style="vertical-align: middle">
+          <label for="permission_administrators_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+          <input type="radio" id="permission_administrators_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" checked disabled />
+        </td>
+      {% endfor %}
+    </tr>
+    {% endif %}
+    {% if show_instrument_scientists %}
+    <tr>
+      <td style="vertical-align: middle">{{ _('Instrument Scientists') }}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      {% for possible_permissions in [Permissions.GRANT] %}
+        <td class="text-center" style="vertical-align: middle">
+          <label for="permissions_instrument_responsible_users_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+          <input type="radio" id="permissions_instrument_responsible_users_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" checked disabled />
+        </td>
+      {% endfor %}
+    </tr>
+    {% endif %}
+    {% if user_may_edit %}
+      {% if show_all_users %}
+      <tr>
+        <td style="vertical-align: middle">{{ _('Everyone') }}</td>
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
+          <td class="text-center" style="vertical-align: middle">
+            <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="{{ permissions_form.public_permissions.name }}" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} />
+          </td>
+        {% endfor %}
+        <td></td>
+        <td></td>
+      </tr>
+      {% endif %}
+      {% if permissions_form.project_permissions %}
+      <tr>
+        <th scope="col" style="width: 40%">{{ _('Project Groups') }}</th>
+        {% if show_special_groups %}
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        {% else %}
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        {% endif %}
+      </tr>
+      {% endif %}
+      {% for project_permissions_form in permissions_form.project_permissions %}
+        {% set project_id = project_permissions_form.project_id.data | int %}
+        {% set project = get_project(project_id) %}
+        <tr>
+          <td>
+            <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>
+            {{ project_permissions_form.csrf_token }}
+            <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
+          </td>
+          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+            <td class="text-center" style="vertical-align: middle">
+              <label for="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+              <input type="radio" name="{{ project_permissions_form.permissions.name }}" id="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} />
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      {% if permissions_form.group_permissions %}
+      <tr>
+        <th scope="col" style="width: 40%">{{ _('Basic Groups') }}</th>
+        {% if show_special_groups or permissions_form.project_permissions %}
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        {% else %}
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        {% endif %}
+      </tr>
+      {% endif %}
+      {% for group_permissions_form in permissions_form.group_permissions %}
+        {% set group_id = group_permissions_form.group_id.data | int %}
+        {% set group = get_group(group_id) %}
+        <tr>
+          <td>
+            <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }}</a>
+            {{ group_permissions_form.csrf_token }}
+            <input type="hidden" name="{{ group_permissions_form.group_id.name }}" value="{{ group_id }}">
+          </td>
+          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+            <td class="text-center" style="vertical-align: middle">
+              <label for="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+              <input type="radio" name="{{ group_permissions_form.permissions.name }}" id="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} />
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      {% if permissions_form.user_permissions %}
+      <tr>
+        <th scope="col" style="width: 40%">{{ _('Users') }}</th>
+        {% if show_special_groups or permissions_form.project_permissions or permissions_form.group_permissions %}
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        {% else %}
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        {% endif %}
+      </tr>
+      {% endif %}
+      {% for user_permissions_form in permissions_form.user_permissions %}
+        {% set user_id = user_permissions_form.user_id.data | int %}
+        {% set user = get_user(user_id) %}
+        {% set permissions = user_permissions.get(user_id, Permissions.NONE) %}
+        <tr>
+          <td>
+            <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
+            {{ user_permissions_form.csrf_token }}
+            <input type="hidden" name="{{ user_permissions_form.user_id.name }}" value="{{ user_id }}">
+            {% if user.id in fixed_user_permissions %}
+            <input type="hidden" name="{{ user_permissions_form.permissions.name }}" value="{{ fixed_user_permissions[user.id].name.lower() }}" checked="checked" />
+            {% endif %}
+          </td>
+          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+            <td class="text-center" style="vertical-align: middle">
+              <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+              <input type="radio" class="permissions_user_{{ possible_permissions.name.lower() }}" name="{{ user_permissions_form.permissions.name }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if user_permissions[user_id] == possible_permissions %}checked{% endif %} {% if user.id in fixed_user_permissions %}disabled="disabled"{% endif %} />
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    {% else %}
+      {% if show_all_users %}
+      <tr>
+        <td style="vertical-align: middle">{{ _('Everyone') }}</td>
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
+          <td class="text-center" style="vertical-align: middle">
+            <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="permissions_public" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
+          </td>
+        {% endfor %}
+        <td></td>
+        <td></td>
+      </tr>
+      {% endif %}
+      {% if project_permissions %}
+      <tr>
+        <th scope="col" style="width: 40%">{{ _('Project Groups') }}</th>
+        {% if show_special_groups %}
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        {% else %}
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        {% endif %}
+      </tr>
+        {% for project_id, permissions in project_permissions.items() | sort %}
+          {% if project_id is not none %}
+            {% set project = get_project(project_id) %}
+            <tr>
+              <td style="vertical-align: middle">
+                <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>
+              </td>
+              {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                <td class="text-center" style="vertical-align: middle">
+                  <label for="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_project_{{ project_id }}" id="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} disabled />
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      {% if group_permissions %}
+      <tr>
+        <th scope="col" style="width: 40%">{{ _('Basic Groups') }}</th>
+        {% if show_special_groups or permissions_form.project_permissions %}
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        {% else %}
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        {% endif %}
+      </tr>
+        {% for group_id, permissions in group_permissions.items() | sort %}
+          {% if group_id is not none %}
+            {% set group = get_group(group_id) %}
+            <tr>
+              <td style="vertical-align: middle">
+                <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }}</a>
+              </td>
+              {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                <td class="text-center" style="vertical-align: middle">
+                  <label for="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_group_{{ group_id }}" id="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} disabled />
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      {% if user_permissions %}
+      <tr>
+        <th scope="col" style="width: 40%">{{ _('Users') }}</th>
+        {% if show_special_groups or permissions_form.project_permissions or permissions_form.group_permissions %}
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+          <th scope="col" class="text-center"></th>
+        {% else %}
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        {% endif %}
+      </tr>
+        {% for user_id, permissions in user_permissions.items() | sort %}
+          {% if user_id is not none %}
+            {% set user = get_user(user_id) %}
+            <tr>
+              <td style="vertical-align: middle">
+                <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
+              </td>
+              {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                <td class="text-center" style="vertical-align: middle">
+                  <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+                  <input type="radio" name="permissions_user_{{ user_id }}" id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if user_permissions[user_id] == possible_permissions %}checked{% endif %} disabled />
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+  </tbody>
+</table>
+{% if user_may_edit %}
+  <div class="container">
+    <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_permissions" value="edit_permissions">{{ _('Save') }}</button>
+  </div>
+  </form>
+  {% if add_user_permissions_form and users %}
+    <h3 id="add_user">{{ _('Add User') }}</h3>
+    <form action="{{ form_url }}" method="post">
+    {{ add_user_permissions_form.csrf_token }}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 40%">{{ _('User') }}</th>
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>
+          <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
+          {% for user in users %}
+            <option value="{{ user.id }}" {% if suggested_user_id == user.id %}selected="selected"{% endif %}>{{ user.get_name() }}</option>
+          {% endfor %}
+          </select>
+        </td>
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+          <td class="text-center" style="vertical-align: middle">
+            <label for="permissions_new_user_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="{{ add_user_permissions_form.permissions.name }}" id="permissions_new_user_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
+          </td>
+        {% endfor %}
+      </tr>
+      </tbody>
+    </table>
+    <div class="container">
+      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_user_permissions" value="add_user_permissions">{{ _('Add') }}</button>
+    </div>
+    </form>
+  {% endif %}
+  {% if add_group_permissions_form and groups %}
+    <h3>{{ _('Add Basic Group') }}</h3>
+    <form action="{{ form_url }}" method="post">
+    {{ add_group_permissions_form.csrf_token }}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 40%">{{ _('Basic Group') }}</th>
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>
+          <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
+          {% for group in groups %}
+            <option value="{{ group.id }}">{{ group.name | get_translated_text }} (#{{ group.id }})</option>
+          {% endfor %}
+          </select>
+        </td>
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+          <td class="text-center" style="vertical-align: middle">
+            <label for="permissions_new_group_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="{{ add_group_permissions_form.permissions.name }}" id="permissions_new_group_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
+          </td>
+        {% endfor %}
+      </tr>
+      </tbody>
+    </table>
+    <div class="container">
+      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">{{ _('Add') }}</button>
+    </div>
+    </form>
+  {% endif %}
+  {% if add_project_permissions_form and projects_by_id and show_projects_form %}
+    <h3>{{ _('Add Project Group') }}</h3>
+    <form action="{{ form_url }}" method="post">
+    {{ add_project_permissions_form.csrf_token }}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 40%">{{ _('Project Group') }}</th>
+          <th scope="col" class="text-center">{{ _('None') }}</th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+          <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>
+          <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
+          {% for level, project_id, enabled in project_id_hierarchy_list %}
+            <option value="{{ project_id }}" {% if not enabled %}disabled="disabled"{% endif %}>{{ ('&nbsp;' * (4 * level)) | safe }}{{ projects_by_id[project_id].name | get_translated_text }} (#{{ project_id }})</option>
+          {% endfor %}
+          </select>
+        </td>
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+          <td class="text-center" style="vertical-align: middle">
+            <label for="permissions_new_project_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="{{ add_project_permissions_form.permissions.name }}" id="permissions_new_project_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
+          </td>
+        {% endfor %}
+      </tr>
+      </tbody>
+    </table>
+    <div class="container">
+      <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">{{ _('Add') }}</button>
+    </div>
+    </form>
+  {% endif %}
+{% endif %}

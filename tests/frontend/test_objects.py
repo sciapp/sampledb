@@ -1182,7 +1182,7 @@ def test_update_object_permissions(flask_server, user):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
         'public_permissions': 'read',
         'user_permissions-0-csrf_token': user_csrf_token,
@@ -1214,7 +1214,7 @@ def test_update_object_permissions(flask_server, user):
         }
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
         'public_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
@@ -1230,7 +1230,7 @@ def test_update_object_permissions(flask_server, user):
     assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
         'public_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,

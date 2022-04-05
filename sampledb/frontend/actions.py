@@ -733,6 +733,10 @@ def action_permissions(action_id):
                 for project in sorted(projects, key=lambda project: project.id)
             ]
         add_project_permissions_form = ActionProjectPermissionsForm()
+        show_projects_form = any(
+            enabled
+            for level, project_id, enabled in project_id_hierarchy_list
+        )
     else:
         permissions_form = None
         users = None
@@ -743,6 +747,7 @@ def action_permissions(action_id):
         add_project_permissions_form = None
         projects_by_id = None
         project_id_hierarchy_list = None
+        show_projects_form = False
 
     if flask.request.method.lower() == 'post':
         if not user_may_edit:
@@ -837,6 +842,7 @@ def action_permissions(action_id):
         add_project_permissions_form=add_project_permissions_form,
         projects_by_id=projects_by_id,
         project_id_hierarchy_list=project_id_hierarchy_list,
+        show_projects_form=show_projects_form,
         get_user=get_user,
         get_group=get_group,
         get_project=get_project,
