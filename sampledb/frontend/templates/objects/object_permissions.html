@@ -258,9 +258,8 @@
 {% block content %}
   <h1>{{ _('Object') }} #{{ object.object_id }}: {{ object.data.name.text | get_translated_text }}</h1>
   <h2>{{ _('Permissions') }}</h2>
-  {% set user_may_edit = (form is not none) %}
+  {% set user_may_edit = (permissions_form is not none) %}
   {% set form_url = url_for('.update_object_permissions', object_id=object.object_id) %}
-  {% set permissions_form = form %}
   {% set fixed_user_permissions = {}  %}
   {% set show_administrators = True %}
   {% set show_instrument_scientists = instrument is not none %}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-03-11 16:34+0100\n"
+"POT-Creation-Date: 2022-04-07 09:24+0200\n"
 "PO-Revision-Date: 2020-11-10 16:31+0100\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -443,7 +443,9 @@ msgid "You do not have the required permissions to use this action."
 msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
 
 msgid "This version contains invalid data and cannot be restored."
-msgstr "Diese Version enthält ungültige Daten und kann nicht wiederhergestellt werden."
+msgstr ""
+"Diese Version enthält ungültige Daten und kann nicht wiederhergestellt "
+"werden."
 
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
@@ -1605,50 +1607,24 @@ msgstr ""
 "ändern, verwenden Sie bitte den <strong>Berechtigungen "
 "bearbeiten</strong>-Knopf auf der Seite des Objekts."
 
-msgid "Special Groups"
-msgstr "Sondergruppen"
+msgid "Permission to view objects and their properties, files and comments."
+msgstr ""
+"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
+"zu sehen."
 
-msgid "None"
-msgstr "Keine"
+msgid ""
+"Permission to edit objects and their properties and add files and "
+"comments. Includes Read permissions."
+msgstr ""
+"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
+"zu bearbeiten. Beinhaltet Lese-Berechtigungen."
 
-msgid "Read"
-msgstr "Lesen"
-
-msgid "Write"
-msgstr "Schreiben"
-
-msgid "Grant"
-msgstr "Rechtevergabe"
-
-msgid "Administrators"
-msgstr "Administratoren"
-
-msgid "Instrument Scientists"
-msgstr "Instrumentverantwortliche"
-
-msgid "Everyone"
-msgstr "Jeder Nutzer"
-
-msgid "Add User"
-msgstr "Nutzer hinzufügen"
-
-msgid "User"
-msgstr "Nutzer"
-
-msgid "Add"
-msgstr "Hinzufügen"
-
-msgid "Add Basic Group"
-msgstr "Einfache Gruppe hinzufügen"
-
-msgid "Basic Group"
-msgstr "Einfache Gruppe"
-
-msgid "Add Project Group"
-msgstr "Projektgruppe hinzufügen"
-
-msgid "Project Group"
-msgstr "Projektgruppe"
+msgid ""
+"Permission to grant permissions to other users. Includes Write "
+"permissions."
+msgstr ""
+"Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
+"Schreib-Berechtigungen."
 
 msgid "Other Settings"
 msgstr "Sonstige Einstellungen"
@@ -1744,6 +1720,9 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 msgid "Type"
 msgstr "Typ"
 
+msgid "Add"
+msgstr "Hinzufügen"
+
 msgid "Change Password"
 msgstr "Passwort ändern"
 
@@ -1775,6 +1754,9 @@ msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
+
+msgid "User"
+msgstr "Nutzer"
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -2672,13 +2654,6 @@ msgstr ""
 "Berechtigung um Schemas und Beschreibungen von Aktionen zu bearbeiten. "
 "Beinhaltet Lese-Berechtigungen."
 
-msgid ""
-"Permission to grant permissions to other users. Includes Write "
-"permissions."
-msgstr ""
-"Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
-"Schreib-Berechtigungen."
-
 #, python-format
 msgid "%(action_type)s Actions"
 msgstr "%(action_type)s-Aktionen"
@@ -2798,6 +2773,9 @@ msgstr ""
 "denken, dass dies irrtümlicherweise geschah, <a "
 "href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
 "Sie bitte einen Administrator</a>."
+
+msgid "Basic Group"
+msgstr "Einfache Gruppe"
 
 msgid "Members"
 msgstr "Mitglieder"
@@ -3073,6 +3051,9 @@ msgstr "wird auf der Instrumentseite angezeigt"
 msgid "shown in the instrument list"
 msgstr "wird in der Instrumentliste angezeigt"
 
+msgid "Instrument Scientists"
+msgstr "Instrumentverantwortliche"
+
 msgid "No user selected"
 msgstr "Kein Nutzer ausgewählt"
 
@@ -3344,18 +3325,6 @@ msgstr "Nutzer wurde bereits hinzugefügt."
 msgid "Permissions"
 msgstr "Berechtigungen"
 
-msgid "Permission to view objects and their properties, files and comments."
-msgstr ""
-"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
-"zu sehen."
-
-msgid ""
-"Permission to edit objects and their properties and add files and "
-"comments. Includes Read permissions."
-msgstr ""
-"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
-"zu bearbeiten. Beinhaltet Lese-Berechtigungen."
-
 msgid "Other databases"
 msgstr "Andere Datenbanken"
 
@@ -3376,6 +3345,15 @@ msgstr "Kommentare"
 
 msgid "Currently limited to sharing links."
 msgstr "Aktuell beschränkt auf das Teilen von Links."
+
+msgid "Read"
+msgstr "Lesen"
+
+msgid "Write"
+msgstr "Schreiben"
+
+msgid "Grant"
+msgstr "Rechtevergabe"
 
 msgid "User-ID"
 msgstr "Nutzer-ID"
@@ -3558,8 +3536,9 @@ msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
 " this change."
-msgstr "Es sind Fehler in anderen Feldern aufgetreten. Bitte klicken Sie auf"
-" \"Objekt bearbeiten\", um die Änderung durchzuführen."
+msgstr ""
+"Es sind Fehler in anderen Feldern aufgetreten. Bitte klicken Sie auf "
+"\"Objekt bearbeiten\", um die Änderung durchzuführen."
 
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
@@ -4246,6 +4225,30 @@ msgstr "Exportiert&nbsp;am %(export_date)s"
 
 msgid "File"
 msgstr "Datei"
+
+msgid "Special Groups"
+msgstr "Sondergruppen"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Administrators"
+msgstr "Administratoren"
+
+msgid "Everyone"
+msgstr "Jeder Nutzer"
+
+msgid "Add User"
+msgstr "Nutzer hinzufügen"
+
+msgid "Add Basic Group"
+msgstr "Einfache Gruppe hinzufügen"
+
+msgid "Add Project Group"
+msgstr "Projektgruppe hinzufügen"
+
+msgid "Project Group"
+msgstr "Projektgruppe"
 
 #, python-format
 msgid ""

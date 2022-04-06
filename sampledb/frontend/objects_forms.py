@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField, BooleanField
+from wtforms import SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField, BooleanField
 from wtforms.validators import InputRequired, ValidationError
 
 from ..logic import errors
@@ -14,46 +14,6 @@ from ..logic.errors import InvalidDOIError
 
 from .validators import ObjectIdValidator
 from ..logic.utils import parse_url
-
-
-class ObjectUserPermissionsForm(FlaskForm):
-    user_id = IntegerField(
-        validators=[InputRequired()]
-    )
-    permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
-        validators=[InputRequired()]
-    )
-
-
-class ObjectGroupPermissionsForm(FlaskForm):
-    group_id = IntegerField(
-        validators=[InputRequired()]
-    )
-    permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
-        validators=[InputRequired()]
-    )
-
-
-class ObjectProjectPermissionsForm(FlaskForm):
-    project_id = IntegerField(
-        validators=[InputRequired()]
-    )
-    permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
-        validators=[InputRequired()]
-    )
-
-
-class ObjectPermissionsForm(FlaskForm):
-    public_permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ)],
-        validators=[InputRequired()]
-    )
-    user_permissions = FieldList(FormField(ObjectUserPermissionsForm), min_entries=0)
-    group_permissions = FieldList(FormField(ObjectGroupPermissionsForm), min_entries=0)
-    project_permissions = FieldList(FormField(ObjectProjectPermissionsForm), min_entries=0)
 
 
 class ObjectForm(FlaskForm):

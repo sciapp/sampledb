@@ -48,15 +48,19 @@
       {% if show_all_users %}
       <tr>
         <td style="vertical-align: middle">{{ _('Everyone') }}</td>
-        {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+          {% if (possible_permissions.name.lower(), possible_permissions.name.lower()) in permissions_form.all_user_permissions.choices %}
           <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" name="{{ permissions_form.public_permissions.name }}" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} />
+            <label for="permissions_all_user_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="{{ permissions_form.all_user_permissions.name }}" id="permissions_all_user_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if all_user_permissions == possible_permissions %}checked{% endif %} />
           </td>
+          {% else %}
+          <td></td>
+          {% endif %}
         {% endfor %}
-        <td></td>
-        <td></td>
       </tr>
+      {% else %}
+        <input type="hidden" name="{{ permissions_form.all_user_permissions.name }}" value="none" />
       {% endif %}
       {% if permissions_form.project_permissions %}
       <tr>
@@ -165,14 +169,16 @@
       {% if show_all_users %}
       <tr>
         <td style="vertical-align: middle">{{ _('Everyone') }}</td>
-        {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
+        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+          {% if possible_permissions in (possible_all_user_permissions or [Permissions.NONE, Permissions.READ]) %}
           <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" name="permissions_public" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
+            <label for="permissions_all_user_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
+            <input type="radio" name="permissions_all_user" id="permissions_all_user_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if all_user_permissions == possible_permissions %}checked{% endif %} {% if not user_may_edit %}disabled{% endif %} />
           </td>
+          {% else %}
+          <td></td>
+          {% endif %}
         {% endfor %}
-        <td></td>
-        <td></td>
       </tr>
       {% endif %}
       {% if project_permissions %}

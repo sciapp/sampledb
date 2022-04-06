@@ -15,7 +15,6 @@
 {% block content %}
   <h2>{{ _('Action Permissions') }}</h2>
   {% set form_url = url_for('.action_permissions', action_id=action.id) %}
-  {% set permissions_form = form %}
   {% set fixed_user_permissions = {action.user_id: Permissions.GRANT} if action.user_id is not none else {}  %}
   {% set show_administrators = True %}
   {% set show_instrument_scientists = instrument is not none %}

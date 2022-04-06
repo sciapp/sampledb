@@ -40,17 +40,19 @@
   <h3>{{ _('Project Group') }} #{{ project.id }}: {{ project.name | get_translated_text }}</h3>
   <h4>{{ _('Permissions') }}</h4>
 
-  {% set user_may_edit = (form is not none) %}
+  {% set user_may_edit = (permissions_form is not none) %}
   {% if user_may_edit %}
   <div id="alert-no-grant-user">
   </div>
   {% endif %}
   {% set form_url = url_for('.update_project_permissions', project_id=project.id) %}
-  {% set permissions_form = form %}
   {% set fixed_user_permissions = {}  %}
   {% set show_administrators = False %}
   {% set show_instrument_scientists = False %}
   {% set show_all_users = False %}
+  {% set read_permissions_description = _('Permission to view this project group\'s objects and their properties, files and comments.') %}
+  {% set write_permissions_description = _('Permission to edit this project group and its objects and their properties and add files and comments. Includes Read permissions.') %}
+  {% set grant_permissions_description = _('Permission to grant permissions to other users. Includes Write permissions.') %}
   {% include "permissions/permissions.html" %}
   {% if user_may_edit %}
     <div class="modal fade" id="deleteProjectModal" tabindex="-1" role="dialog" aria-labelledby="deleteProjectModalLabel">
