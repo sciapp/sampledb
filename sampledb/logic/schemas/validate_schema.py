@@ -258,10 +258,15 @@ def _validate_object_schema(
     except InvalidTemplateIDError:
         raise ValidationError('template must be the ID of a template action', path)
 
+    all_language_codes = {
+        language.lang_code
+        for language in get_languages()
+    }
+
     if schema.get('template') is not None:
         invalid_template_action_ids = list(invalid_template_action_ids) + [schema.get('template')]
 
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'note'}
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
@@ -356,6 +361,34 @@ def _validate_object_schema(
 
     if 'notebookTemplates' in schema:
         _validate_notebook_templates(schema['notebookTemplates'])
+
+    if 'recipes' in schema:
+        for recipe in schema['recipes']:
+            if 'name' not in recipe:
+                raise ValidationError('missing recipe name', path + ['(recipes)'])
+            if not isinstance(recipe['name'], str) and not isinstance(recipe['name'], dict):
+                raise ValidationError('recipe name must be str or dict', path + ['(recipes)'])
+            if isinstance(recipe['name'], dict):
+                if 'en' not in recipe['name']:
+                    raise ValidationError('recipe name must include an english translation', path + ['(recipes)'])
+                for lang_code in recipe['name'].keys():
+                    if lang_code not in all_language_codes:
+                        raise ValidationError('recipe name must only contain known languages', path + ['(recipes)'])
+                for name_text in recipe['name'].values():
+                    if not isinstance(name_text, str):
+                        raise ValidationError('recipe name must only contain text', path + ['(recipes)'])
+            if 'property_values' not in recipe:
+                raise ValidationError('missing property_values', path + ['(recipes)'])
+            for property_name in recipe['property_values']:
+                if property_name not in schema['properties'].keys():
+                    raise ValidationError('unknown property: {}'.format(property_name), path + ['(recipes)'])
+                if schema['properties'][property_name]['type'] not in ['text', 'quantity', 'datetime', 'bool']:
+                    raise ValidationError('unsupported type in recipe', path + ['(recipes)'])
+                if recipe['property_values'][property_name] is not None:
+                    validate(recipe['property_values'][property_name], schema['properties'][property_name])
+                elif schema['properties'][property_name]['type'] == 'bool':
+                    raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)'])
+
     _validate_note_in_schema(schema, path)
 
 
