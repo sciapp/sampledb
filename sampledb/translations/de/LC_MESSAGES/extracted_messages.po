@@ -3638,6 +3638,9 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 msgid "All Actions"
 msgstr "Alle Aktionen"
 
+msgid "Apply Recipe"
+msgstr "Rezept anwenden"
+
 #, python-format
 msgid "Field %(index)s"
 msgstr "Feld %(index)s"

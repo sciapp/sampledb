@@ -1,0 +1,9 @@
+<div class="div-apply-recipe">
+  <select class="selectpicker form-control" id="{{ id_prefix }}_recipe_input">
+    {% for recipe in schema.recipes %}
+      <option value={{ loop.index0 }}>{{ recipe.name | get_translated_text }}</option>
+    {% endfor %}
+  </select>
+  <button type="button" class="btn btn-primary input-group-button-for-selectpicker" onclick='applyRecipe("{{ id_prefix }}", {{ schema.recipes | tojson }}, true);' aria-label="{{ _('Apply Recipe') }}"
+          name="apply" value="Apply Recipe"><span aria-hidden="true">{{ _('Apply Recipe') }}</span></button>
+</div>

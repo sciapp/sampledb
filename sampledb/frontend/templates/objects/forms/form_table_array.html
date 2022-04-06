@@ -95,6 +95,11 @@
           </td>
           {% endif %}
         {% endfor %}
+        {% if 'recipes' in schema %}
+          <td colspan="{{ item_property_names | length }}">
+            {% include "objects/forms/form_table_recipe.html" %}
+          </td>
+        {% endif %}
         {% if numItems > minItems %}
           <td><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
         {% else %}
