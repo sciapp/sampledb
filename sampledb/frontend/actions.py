@@ -17,7 +17,7 @@ import pygments.formatters
 from flask_babel import _
 
 from . import frontend
-from .permission_forms import UserPermissionsForm, ProjectPermissionsForm, GroupPermissionsForm, PermissionsForm, handle_permission_forms, set_up_permissions_forms
+from .permission_forms import handle_permission_forms, set_up_permissions_forms
 from .. import models
 from ..logic.action_permissions import Permissions, get_action_permissions_for_all_users, get_user_action_permissions, set_action_permissions_for_all_users, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, get_sorted_actions_for_user
 from ..logic.actions import Action, create_action, get_action, update_action, get_action_type

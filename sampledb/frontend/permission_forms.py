@@ -42,7 +42,7 @@ class ProjectPermissionsForm(FlaskForm):
 
 class PermissionsForm(FlaskForm):
     all_user_permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ)],
+        choices=[(p.name.lower(), p) for p in (Permissions.NONE, Permissions.READ)],
         validators=[InputRequired()]
     )
     user_permissions = FieldList(FormField(UserPermissionsForm), min_entries=0)

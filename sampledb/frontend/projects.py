@@ -592,7 +592,7 @@ def project_permissions(project_id):
             group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
         permissions_form = PermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
         # disable permissions for all users and other projects
-        permissions_form.all_user_permissions.choices = [('none', 'none')]
+        permissions_form.all_user_permissions.choices = [('none', Permissions.NONE)]
         permissions_form.project_permissions.max_entries = 0
     else:
         delete_project_form = None
@@ -622,7 +622,7 @@ def update_project_permissions(project_id):
 
     permissions_form = PermissionsForm()
     # disable permissions for all users and other projects
-    permissions_form.all_user_permissions.choices = [('none', 'none')]
+    permissions_form.all_user_permissions.choices = [('none', Permissions.NONE)]
     permissions_form.project_permissions.max_entries = 0
     if 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
         # First handle GRANT updates, then others (to prevent temporarily not having a GRANT user)
