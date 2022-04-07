@@ -552,6 +552,20 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return self.get_object_version(object_id, version_id, connection=connection)
 
+    def is_existing_object(self, object_id: int, connection=None) -> bool:
+        """
+        Return whether an object with the given ID exists.
+
+        :param object_id: the ID of a possibly existing object
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: whether the object exists
+        """
+        if connection is None:
+            connection = self.bind.connect()
+        return connection.execute(
+            db.select([self._current_table.c.object_id]).where(self._current_table.c.object_id == object_id)
+        ).fetchone() is not None
+
     def get_current_object(self, object_id, connection=None):
         """
         Queries and returns an object by its ID.

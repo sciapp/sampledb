@@ -245,6 +245,19 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     tags.update_object_tag_usage(object)
 
 
+def check_object_exists(object_id: int) -> None:
+    """
+    Ensures that an object with the specific ID exists.
+
+    :param object_id: the ID of the existing object
+
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    """
+    if not Objects.is_existing_object(object_id=object_id):
+        raise errors.ObjectDoesNotExistError()
+
+
 def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Object:
     """
     Returns either the current or a specific version of the object.

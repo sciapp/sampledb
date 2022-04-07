@@ -6,6 +6,7 @@
 from . import authentication
 from . import background_tasks
 from . import dataverse_export
+from . import default_permissions
 from . import favorites
 from . import files
 from . import groups
@@ -23,7 +24,7 @@ from . import users
 
 from .actions import Action, ActionType
 from .action_translations import ActionTranslation, ActionTypeTranslation
-from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, PublicActions
+from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod
 from .background_tasks import BackgroundTask, BackgroundTaskStatus
@@ -31,6 +32,7 @@ from .comments import Comment
 from .components import Component
 from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
 from .dataverse_export import DataverseExport
+from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
 from .favorites import FavoriteAction, FavoriteInstrument
 from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType
 from .files import File
@@ -45,7 +47,7 @@ from .markdown_images import MarkdownImage
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
-from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, PublicObjects, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, DefaultPublicPermissions
+from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions
 from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
@@ -61,6 +63,7 @@ __all__ = [
     'authentication',
     'background_tasks',
     'dataverse_export',
+    'default_permissions',
     'favorites',
     'files',
     'groups',
@@ -84,7 +87,7 @@ __all__ = [
     'UserActionPermissions',
     'GroupActionPermissions',
     'ProjectActionPermissions',
-    'PublicActions',
+    'AllUserActionPermissions',
     'APILogEntry',
     'Authentication',
     'AuthenticationType',
@@ -115,11 +118,11 @@ __all__ = [
     'UserObjectPermissions',
     'GroupObjectPermissions',
     'ProjectObjectPermissions',
-    'PublicObjects',
+    'AllUserObjectPermissions',
     'DefaultUserPermissions',
     'DefaultGroupPermissions',
     'DefaultProjectPermissions',
-    'DefaultPublicPermissions',
+    'AllUserDefaultPermissions',
     'Permissions',
     'Project',
     'UserProjectPermissions',

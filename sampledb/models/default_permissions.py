@@ -6,53 +6,52 @@
 from .. import db
 from .groups import Group
 from .users import User
-from .objects import Objects
 from .permissions import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class UserObjectPermissions(db.Model):
-    __tablename__ = 'user_object_permissions'
+class DefaultUserPermissions(db.Model):
+    __tablename__ = 'default_user_permissions'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
 
     __table_args__ = (
-        db.PrimaryKeyConstraint(object_id, user_id),
+        db.PrimaryKeyConstraint(creator_id, user_id),
         {},
     )
 
 
-class GroupObjectPermissions(db.Model):
-    __tablename__ = 'group_object_permissions'
+class DefaultGroupPermissions(db.Model):
+    __tablename__ = 'default_group_permissions'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey(Group.id, ondelete="CASCADE"), nullable=False)
     permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
 
     __table_args__ = (
-        db.PrimaryKeyConstraint(object_id, group_id),
+        db.PrimaryKeyConstraint(creator_id, group_id),
         {},
     )
 
 
-class ProjectObjectPermissions(db.Model):
-    __tablename__ = 'project_object_permissions'
+class DefaultProjectPermissions(db.Model):
+    __tablename__ = 'default_project_permissions'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"), nullable=False)
     permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
 
     __table_args__ = (
-        db.PrimaryKeyConstraint(object_id, project_id),
+        db.PrimaryKeyConstraint(creator_id, project_id),
         {},
     )
 
 
-class AllUserObjectPermissions(db.Model):
-    __tablename__ = 'all_user_object_permissions'
+class AllUserDefaultPermissions(db.Model):
+    __tablename__ = 'all_user_default_permissions'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey(User.id), primary_key=True)
     permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)

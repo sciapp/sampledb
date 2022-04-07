@@ -19,16 +19,39 @@ def run(db):
         WHERE user_id IS NULL
     """)
     common_actions = {row[0] for row in common_actions}
-    public_actions = db.session.execute("""
-        SELECT action_id
-        FROM public_actions
-    """)
-    public_actions = {row[0] for row in public_actions}
-    for action_id in common_actions - public_actions:
-        db.session.execute("""
-            INSERT INTO public_actions
-            (action_id)
-            VALUES
-            (:action_id)
-        """, {'action_id': action_id})
+
+    table_exists = db.session.execute("""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_name = 'public_actions'
+    """).fetchall()
+    if table_exists:
+        public_actions = db.session.execute("""
+            SELECT action_id
+            FROM public_actions
+        """)
+        public_actions = {row[0] for row in public_actions}
+        for action_id in common_actions - public_actions:
+            db.session.execute("""
+                INSERT INTO public_actions
+                (action_id)
+                VALUES
+                (:action_id)
+            """, {'action_id': action_id})
+    else:
+        all_user_action_permissions = db.session.execute("""
+            SELECT action_id, permissions
+            FROM all_user_action_permissions
+        """).fetchall()
+        all_user_action_permissions = {
+            action_id: permissions
+            for action_id, permissions in all_user_action_permissions
+        }
+        for action_id, in common_actions:
+            if action_id not in all_user_action_permissions:
+                db.session.execute("""
+                    INSERT INTO public_actions
+                    (action_id, permissions)
+                    VALUES (:action_id, 'READ')
+                """, {'action_id': action_id})
     return True

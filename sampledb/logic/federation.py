@@ -18,6 +18,7 @@ from .files import create_fed_file, get_file, get_files_for_object, hide_file, F
 from .instrument_translations import set_instrument_translation, get_instrument_translations_for_instrument
 from .languages import get_languages, get_language_by_lang_code, get_language
 from .markdown_images import find_referenced_markdown_images, get_markdown_image
+from .object_permissions import set_user_object_permissions, set_group_object_permissions, set_project_object_permissions
 from .schemas import validate_schema, validate
 from .. import db
 from . import errors, fed_logs, languages, markdown_to_html
@@ -31,7 +32,7 @@ from .locations import create_fed_assignment, get_fed_object_location_assignment
 from .objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from .projects import get_project
 from .users import get_user, get_user_alias, create_user
-from ..models import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, Permissions, ComponentAuthenticationType, Component, ActionType, UserType, MarkdownImage
+from ..models import Permissions, ComponentAuthenticationType, Component, ActionType, UserType, MarkdownImage
 from ..models.file_log import FileLogEntry, FileLogEntryType
 
 
@@ -400,18 +401,14 @@ def import_object(object_data, component):
         import_object_location_assignment(assignment_data, object, component)
 
     for user_id, permission in object_data['permissions']['users'].items():
-        perm = UserObjectPermissions(object_id=object.object_id, user_id=user_id, permissions=permission)
-        db.session.merge(perm)
+        set_user_object_permissions(object.object_id, user_id, permission)
 
     for group_id, permission in object_data['permissions']['groups'].items():
-        perm = GroupObjectPermissions(object_id=object.object_id, group_id=group_id, permissions=permission)
-        db.session.merge(perm)
+        set_group_object_permissions(object.object_id, group_id, permission)
 
     for project_id, permission in object_data['permissions']['projects'].items():
-        perm = ProjectObjectPermissions(object_id=object.object_id, project_id=project_id, permissions=permission)
-        db.session.merge(perm)
+        set_project_object_permissions(object.object_id, project_id, permission)
 
-    db.session.commit()
     return object
 
 

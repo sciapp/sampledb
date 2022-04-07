@@ -376,3 +376,7 @@ class BackgroundTaskDoesNotExistError(Exception):
 
 class InvalidURLError(Exception):
     pass
+
+
+class InvalidDefaultPermissionsError(Exception):
+    pass

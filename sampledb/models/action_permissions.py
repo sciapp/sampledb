@@ -52,7 +52,8 @@ class ProjectActionPermissions(db.Model):
     )
 
 
-class PublicActions(db.Model):
-    __tablename__ = 'public_actions'
+class AllUserActionPermissions(db.Model):
+    __tablename__ = 'all_user_action_permissions'
 
     action_id = db.Column(db.Integer, db.ForeignKey(Action.id), primary_key=True)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
