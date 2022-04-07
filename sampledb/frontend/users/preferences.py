@@ -27,7 +27,7 @@ from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.default_permissions import get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
-from ...logic.projects import get_user_projects, get_project
+from ...logic.projects import get_user_projects, get_project, get_project_id_hierarchy_list
 from ...logic.groups import get_user_groups, get_group
 from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
@@ -167,6 +167,25 @@ def change_preferences(user, user_id):
     projects = get_user_projects(flask_login.current_user.id)
     projects = [project for project in projects if project.id not in project_permissions]
     projects.sort(key=lambda project: project.id)
+    projects_by_id = {
+        project.id: project
+        for project in projects
+    }
+    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
+        project_id_hierarchy_list = get_project_id_hierarchy_list(list(projects_by_id))
+        project_id_hierarchy_list = [
+            (level, project_id, project_id not in project_permissions)
+            for level, project_id in project_id_hierarchy_list
+        ]
+    else:
+        project_id_hierarchy_list = [
+            (0, project.id, project.id not in project_permissions)
+            for project in sorted(projects, key=lambda project: project.id)
+        ]
+    show_projects_form = any(
+        enabled
+        for level, project_id, enabled in project_id_hierarchy_list
+    )
 
     if 'change' not in flask.request.form:
         if change_user_form.name.data is None or change_user_form.name.data == "":
@@ -211,6 +230,9 @@ def change_preferences(user, user_id):
                     groups=groups,
                     get_group=get_group,
                     projects=projects,
+                    projects_by_id=projects_by_id,
+                    project_id_hierarchy_list=project_id_hierarchy_list,
+                    show_projects_form=show_projects_form,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
@@ -319,6 +341,9 @@ def change_preferences(user, user_id):
                     groups=groups,
                     get_group=get_group,
                     projects=projects,
+                    projects_by_id=projects_by_id,
+                    project_id_hierarchy_list=project_id_hierarchy_list,
+                    show_projects_form=show_projects_form,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
@@ -378,6 +403,9 @@ def change_preferences(user, user_id):
                     groups=groups,
                     get_group=get_group,
                     projects=projects,
+                    projects_by_id=projects_by_id,
+                    project_id_hierarchy_list=project_id_hierarchy_list,
+                    show_projects_form=show_projects_form,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
@@ -428,6 +456,9 @@ def change_preferences(user, user_id):
                 groups=groups,
                 get_group=get_group,
                 projects=projects,
+                projects_by_id=projects_by_id,
+                project_id_hierarchy_list=project_id_hierarchy_list,
+                show_projects_form=show_projects_form,
                 get_project=get_project,
                 EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                 user_permissions=user_permissions,
@@ -444,7 +475,7 @@ def change_preferences(user, user_id):
                 has_active_method=any(method.active for method in two_factor_authentication_methods),
                 api_tokens=api_tokens
             )
-    if 'edit_user_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
+    if 'edit_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
         set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
         for user_permissions_data in default_permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
@@ -597,6 +628,9 @@ def change_preferences(user, user_id):
         groups=groups,
         get_group=get_group,
         projects=projects,
+        projects_by_id=projects_by_id,
+        project_id_hierarchy_list=project_id_hierarchy_list,
+        show_projects_form=show_projects_form,
         get_project=get_project,
         EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
         user_permissions=user_permissions,

@@ -578,6 +578,7 @@ def project_permissions(project_id):
     user_permissions = logic.projects.get_project_member_user_ids_and_permissions(project_id, include_groups=False)
     group_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id)
     if Permissions.GRANT in logic.projects.get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
+        delete_project_form = DeleteProjectForm()
         user_permission_form_data = []
         for user_id, permissions in sorted(user_permissions.items()):
             if user_id is None:
@@ -591,7 +592,18 @@ def project_permissions(project_id):
         edit_user_permissions_form = ProjectPermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
     else:
         edit_user_permissions_form = None
-    return flask.render_template('projects/project_permissions.html', project=project, user_permissions=user_permissions, group_permissions=group_permissions, project_permissions=project_permissions, get_user=logic.users.get_user, get_group=logic.groups.get_group, Permissions=Permissions, form=edit_user_permissions_form)
+        delete_project_form = None
+    return flask.render_template(
+        'projects/project_permissions.html',
+        project=project,
+        delete_project_form=delete_project_form,
+        user_permissions=user_permissions,
+        group_permissions=group_permissions,
+        get_user=logic.users.get_user,
+        get_group=logic.groups.get_group,
+        Permissions=Permissions,
+        form=edit_user_permissions_form
+    )
 
 
 @frontend.route('/projects/<int:project_id>/permissions', methods=['POST'])
@@ -605,7 +617,7 @@ def update_project_permissions(project_id):
         return flask.abort(404)
 
     edit_user_permissions_form = ProjectPermissionsForm()
-    if 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+    if 'edit_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
         # First handle GRANT updates, then others (to prevent temporarily not having a GRANT user)
         for user_permissions_data in sorted(edit_user_permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
             user_id = user_permissions_data['user_id']

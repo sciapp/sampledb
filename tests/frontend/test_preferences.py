@@ -643,7 +643,7 @@ def test_edit_default_public_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     for hidden_field in default_permissions_form.find_all('input', {'type': 'hidden'}):
@@ -654,7 +654,7 @@ def test_edit_default_public_permissions(flask_server, user):
     assert data['public_permissions'] == 'none'
 
     data['public_permissions'] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
@@ -677,7 +677,7 @@ def test_edit_default_user_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     user_field_name = None
@@ -693,7 +693,7 @@ def test_edit_default_user_permissions(flask_server, user):
     assert data[user_field_name] == 'write'
 
     data[user_field_name] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
@@ -713,7 +713,7 @@ def test_edit_default_group_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     group_field_name = None
@@ -729,7 +729,7 @@ def test_edit_default_group_permissions(flask_server, user):
     assert data[group_field_name] == 'write'
 
     data[group_field_name] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
@@ -749,7 +749,7 @@ def test_edit_default_project_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     project_field_name = None
@@ -765,7 +765,7 @@ def test_edit_default_project_permissions(flask_server, user):
     assert data[project_field_name] == 'write'
 
     data[project_field_name] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
