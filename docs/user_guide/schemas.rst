@@ -1182,3 +1182,53 @@ To denote that a certain condition must not be met, the ``not`` condition type c
     }
 
 .. note:: If you need a new type of conditions, please `open an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_ to let us know.
+
+.. _recipes:
+
+Recipes
+-------
+
+Recipes allow setting default value sets that can be applied while editing or creating an object.
+They can be added to an object, including subobjects and objects in arrays, as a list of recipe objects.
+Each recipe has to be given a name by setting the ``name``. Default values are described in the ``property_values`` section (see code box below).
+
+Currently, only recipe values for parameters of the types ``text``, ``quantity``, ``bool``, and ``datetime`` are supported.
+By setting a value to ``null`` the associated input is cleared.
+As ``bool`` inputs do not support a ``null`` value you might use ``false`` to uncheck the checkbox instead.
+
+.. code-block:: javascript
+    :caption: An action schema containing a recipe
+
+    {
+      "title": "Recipe",
+      "type": "object",
+      "recipes": [
+        {
+          "name": {
+            "en": "Recipe 1",
+            "de": "Rezept 1"
+          },
+          "property_values": {
+            "text": {
+              "text": {
+                "en": "English Text",
+                "de": "Deutscher Text"
+              },
+              "_type": "text"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "text": {
+          "title": "Text",
+          "type": "text",
+          "languages": ["de", "en"]
+        }
+      },
+      "required": ["name"]
+    }
