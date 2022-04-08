@@ -28,7 +28,7 @@ from ..logic.actions import get_action, get_actions, get_action_type, get_action
 from ..logic.action_type_translations import get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
 from ..logic.action_translations import get_action_with_translation_in_language
 from ..logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
-from ..logic.object_permissions import Permissions, get_user_object_permissions, object_is_public, get_object_permissions_for_users, set_object_public, set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ..logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.instrument_translations import get_instrument_with_translation_in_language
 from ..logic.shares import get_shares_for_object, add_object_share, update_object_share
@@ -43,10 +43,11 @@ from ..logic.projects import get_project, get_user_projects, get_user_project_pe
 from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, get_locations, assign_location_to_object, get_locations_tree
 from ..logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
 from ..logic.files import FileLogEntryType
-from ..logic.errors import GroupDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, ProjectDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError, ComponentDoesNotExistError
+from ..logic.errors import ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, LocationDoesNotExistError, ActionTypeDoesNotExistError, ComponentDoesNotExistError
 from ..logic.components import get_component, get_component_by_uuid, get_components
 from ..logic.notebook_templates import get_notebook_templates
-from .objects_forms import ObjectPermissionsForm, ObjectForm, ObjectVersionRestoreForm, ObjectUserPermissionsForm, CommentForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
+from .objects_forms import ObjectForm, ObjectVersionRestoreForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
+from .permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ..utils import object_permissions_required
 from .utils import jinja_filter, generate_qrcode, get_user_if_exists
 from .object_form_parser import parse_form_data
@@ -2285,7 +2286,7 @@ def object_permissions(object_id):
     user_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_readonly=False, include_admin_permissions=False)
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
-    public_permissions = Permissions.READ if object_is_public(object_id) else Permissions.NONE
+    all_user_permissions = get_object_permissions_for_all_users(object_id=object_id)
     component_policies = {share.component_id: share for share in get_shares_for_object(object_id)}
     policies = {share.component_id: share.policy for share in get_shares_for_object(object_id)}
     suggested_user_id = flask.request.args.get('add_user_id', '')
@@ -2294,37 +2295,32 @@ def object_permissions(object_id):
     except ValueError:
         suggested_user_id = None
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
-        user_permission_form_data = []
-        for user_id, permissions in sorted(user_permissions.items()):
-            if user_id is None:
-                continue
-            user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-        group_permission_form_data = []
-        for group_id, permissions in sorted(group_permissions.items()):
-            if group_id is None:
-                continue
-            group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-        project_permission_form_data = []
-        for project_id, permissions in sorted(project_permissions.items()):
-            if project_id is None:
-                continue
-            project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
-        component_policies_form_data = []
-        for share in component_policies.values():
-            component_policies_form_data.append({'component_id': share.component_id, 'policy': share.policy})
-        edit_user_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data, component_permissions=component_policies_form_data)
+        (
+            add_user_permissions_form,
+            add_group_permissions_form,
+            add_project_permissions_form,
+            permissions_form
+        ) = set_up_permissions_forms(
+            logic.object_permissions.object_permissions,
+            object_id,
+            all_user_permissions,
+            user_permissions,
+            group_permissions,
+            project_permissions
+        )
+
         users = get_users(exclude_hidden=True, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
-        add_user_permissions_form = ObjectUserPermissionsForm()
+
         groups = get_user_groups(flask_login.current_user.id)
         groups = [group for group in groups if group.id not in group_permissions]
         groups.sort(key=lambda group: group.id)
-        add_group_permissions_form = ObjectGroupPermissionsForm()
+
         projects = get_user_projects(flask_login.current_user.id, include_groups=True)
         projects = [project for project in projects if project.id not in project_permissions]
         projects.sort(key=lambda project: project.id)
-        add_project_permissions_form = ObjectProjectPermissionsForm()
+
         possible_new_components = [component for component in components if component.id not in component_policies.keys()]
         component_users = {
             component.id: {
@@ -2363,7 +2359,7 @@ def object_permissions(object_id):
         else:
             copy_permissions_form.object_id.choices = []
     else:
-        edit_user_permissions_form = None
+        permissions_form = None
         add_user_permissions_form = None
         add_group_permissions_form = None
         add_project_permissions_form = None
@@ -2411,12 +2407,12 @@ def object_permissions(object_id):
         user_permissions=user_permissions,
         group_permissions=group_permissions,
         project_permissions=project_permissions,
-        public_permissions=public_permissions,
+        all_user_permissions=all_user_permissions,
         federation_shares=component_policies,
         get_user=get_user_if_exists,
         get_component=get_component,
         Permissions=Permissions,
-        form=edit_user_permissions_form,
+        permissions_form=permissions_form,
         users=users,
         groups=groups,
         projects_by_id=all_projects_by_id,
@@ -2441,10 +2437,10 @@ def object_permissions(object_id):
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id):
-    edit_user_permissions_form = ObjectPermissionsForm()
-    add_user_permissions_form = ObjectUserPermissionsForm()
-    add_group_permissions_form = ObjectGroupPermissionsForm()
-    add_project_permissions_form = ObjectProjectPermissionsForm()
+    permissions_form = PermissionsForm()
+    add_user_permissions_form = UserPermissionsForm()
+    add_group_permissions_form = GroupPermissionsForm()
+    add_project_permissions_form = ProjectPermissionsForm()
     add_component_policy_form = ObjectNewShareAccessForm()
     edit_component_policy_form = ObjectEditShareAccessForm()
     copy_permissions_form = CopyPermissionsForm()
@@ -2465,61 +2461,6 @@ def update_object_permissions(object_id):
             logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
             logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)
             flask.flash(_("Successfully copied object permissions."), 'success')
-    elif 'edit_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
-        set_object_public(object_id, edit_user_permissions_form.public_permissions.data == 'read')
-        for user_permissions_data in edit_user_permissions_form.user_permissions.data:
-            user_id = user_permissions_data['user_id']
-            try:
-                get_user(user_id)
-            except UserDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(user_permissions_data['permissions'])
-            set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
-        for group_permissions_data in edit_user_permissions_form.group_permissions.data:
-            group_id = group_permissions_data['group_id']
-            try:
-                get_group(group_id)
-            except GroupDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(group_permissions_data['permissions'])
-            set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=permissions)
-        for project_permissions_data in edit_user_permissions_form.project_permissions.data:
-            project_id = project_permissions_data['project_id']
-            try:
-                get_project(project_id)
-            except ProjectDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(project_permissions_data['permissions'])
-            set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=permissions)
-        user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
-        flask.flash(_("Successfully updated object permissions."), 'success')
-    elif 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
-        user_id = add_user_permissions_form.user_id.data
-        permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-        object_permissions = get_object_permissions_for_users(object_id=object_id, include_instrument_responsible_users=False, include_groups=False, include_projects=False, include_admin_permissions=False)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert user_id not in object_permissions
-        user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
-        set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=permissions)
-        flask.flash(_("Successfully updated object permissions."), 'success')
-    elif 'add_group_permissions' in flask.request.form and add_group_permissions_form.validate_on_submit():
-        group_id = add_group_permissions_form.group_id.data
-        permissions = Permissions.from_name(add_group_permissions_form.permissions.data)
-        object_permissions = get_object_permissions_for_groups(object_id=object_id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert group_id not in object_permissions
-        user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
-        set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=permissions)
-        flask.flash(_("Successfully updated object permissions."), 'success')
-    elif 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
-        project_id = add_project_permissions_form.project_id.data
-        permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
-        object_permissions = get_object_permissions_for_projects(object_id=object_id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert project_id not in object_permissions
-        user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
-        set_project_object_permissions(object_id=object_id, project_id=project_id, permissions=permissions)
-        flask.flash(_("Successfully updated object permissions."), 'success')
     elif 'add_component_policy' in flask.request.form and add_component_policy_form.validate_on_submit():
         component_id = add_component_policy_form.component_id.data
         component = get_component(component_id)
@@ -2593,5 +2534,16 @@ def update_object_permissions(object_id):
             flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
         flask.flash(_("Successfully updated object permissions."), 'success')
     else:
-        flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+        if handle_permission_forms(
+            logic.object_permissions.object_permissions,
+            object_id,
+            add_user_permissions_form,
+            add_group_permissions_form,
+            add_project_permissions_form,
+            permissions_form
+        ):
+            user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
+            flask.flash(_("Successfully updated object permissions."), 'success')
+        else:
+            flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
     return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))

@@ -651,9 +651,9 @@ def test_edit_default_public_permissions(flask_server, user):
     for radio_button in default_permissions_form.find_all('input', {'type': 'radio'}):
         if radio_button.has_attr('checked') and not radio_button.has_attr('disabled'):
             data[radio_button['name']] = radio_button['value']
-    assert data['public_permissions'] == 'none'
+    assert data['all_user_permissions'] == 'none'
 
-    data['public_permissions'] = 'read'
+    data['all_user_permissions'] = 'read'
     data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 

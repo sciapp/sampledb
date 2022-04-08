@@ -9,15 +9,17 @@ import typing
 import flask
 import flask_login
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, StringField, SelectField, IntegerField, FieldList, FormField
+from wtforms import BooleanField, StringField, SelectField, IntegerField
 from wtforms.validators import InputRequired, ValidationError, DataRequired
 import pygments
 import pygments.lexers.data
 import pygments.formatters
+from flask_babel import _
 
 from . import frontend
+from .permission_forms import handle_permission_forms, set_up_permissions_forms
 from .. import models
-from ..logic.action_permissions import Permissions, action_is_public, get_user_action_permissions, set_action_public, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, set_project_action_permissions, set_group_action_permissions, set_user_action_permissions, get_sorted_actions_for_user
+from ..logic.action_permissions import Permissions, get_action_permissions_for_all_users, get_user_action_permissions, set_action_permissions_for_all_users, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, get_sorted_actions_for_user
 from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
@@ -38,7 +40,7 @@ from ..logic.projects import get_projects, get_project, get_project_id_hierarchy
 from .users.forms import ToggleFavoriteActionForm
 from .utils import check_current_user_is_not_readonly
 from ..logic.markdown_to_html import markdown_to_safe_html
-from flask_babel import _
+from .. import logic
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -65,46 +67,6 @@ class ActionForm(FlaskForm):
             raise ValidationError(_("Unknown action type"))
         if action_type.admin_only and not flask_login.current_user.is_admin:
             raise ValidationError(_("Actions with this type can only be created or edited by administrators"))
-
-
-class ActionUserPermissionsForm(FlaskForm):
-    user_id = IntegerField(
-        validators=[InputRequired()]
-    )
-    permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
-        validators=[InputRequired()]
-    )
-
-
-class ActionGroupPermissionsForm(FlaskForm):
-    group_id = IntegerField(
-        validators=[InputRequired()]
-    )
-    permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
-        validators=[InputRequired()]
-    )
-
-
-class ActionProjectPermissionsForm(FlaskForm):
-    project_id = IntegerField(
-        validators=[InputRequired()]
-    )
-    permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT)],
-        validators=[InputRequired()]
-    )
-
-
-class ActionPermissionsForm(FlaskForm):
-    public_permissions = SelectField(
-        choices=[(p.name.lower(), p.name.lower()) for p in (Permissions.NONE, Permissions.READ)],
-        validators=[InputRequired()]
-    )
-    user_permissions = FieldList(FormField(ActionUserPermissionsForm), min_entries=0)
-    group_permissions = FieldList(FormField(ActionGroupPermissionsForm), min_entries=0)
-    project_permissions = FieldList(FormField(ActionProjectPermissionsForm), min_entries=0)
 
 
 @frontend.route('/actions/')
@@ -221,7 +183,7 @@ def action(action_id):
         title=title,
         may_edit=may_edit,
         may_grant=may_grant,
-        is_public=action_is_public(action_id),
+        is_public=Permissions.READ in get_action_permissions_for_all_users(action_id),
         single_translation=single_translation,
         get_component=get_component
     )
@@ -405,13 +367,13 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.is_markdown.data = action.description_is_markdown
             action_form.short_description_is_markdown.data = action.short_description_is_markdown
             action_form.type.data = action.type.id
-            action_form.is_public.data = action_is_public(action.id)
+            action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(action.id)
         elif previous_action is not None:
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
             action_form.short_description_is_markdown.data = previous_action.short_description_is_markdown
             action_form.type.data = previous_action.type.id
-            action_form.is_public.data = action_is_public(previous_action.id)
+            action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -564,8 +526,6 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown
             )
-            if is_public:
-                set_action_public(action.id, True)
         else:
             update_action(
                 action_id=action.id,
@@ -574,7 +534,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown
             )
-            set_action_public(action.id, is_public)
+        set_action_permissions_for_all_users(action.id, Permissions.READ if is_public else Permissions.NONE)
 
         # After validation
         valid_translations = set()
@@ -666,7 +626,7 @@ def action_permissions(action_id):
     if Permissions.READ not in permissions:
         return flask.abort(403)
     user_may_edit = Permissions.GRANT in permissions
-    public_permissions = Permissions.READ if action_is_public(action_id) else Permissions.NONE
+    all_user_permissions = get_action_permissions_for_all_users(action_id=action.id)
     user_permissions = get_action_permissions_for_users(
         action_id=action.id
     )
@@ -684,35 +644,28 @@ def action_permissions(action_id):
         action_id=action.id
     )
     if user_may_edit:
-        user_permission_form_data = []
-        for user_id, permissions in sorted(user_permissions.items()):
-            if user_id is None:
-                continue
-            user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-        group_permission_form_data = []
-        for group_id, permissions in sorted(group_permissions.items()):
-            if group_id is None:
-                continue
-            group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-        project_permission_form_data = []
-        for project_id, permissions in sorted(project_permissions.items()):
-            if project_id is None:
-                continue
-            project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
-        permissions_form = ActionPermissionsForm(
-            public_permissions=public_permissions.name.lower(),
-            user_permissions=user_permission_form_data,
-            group_permissions=group_permission_form_data,
-            project_permissions=project_permission_form_data
+        (
+            add_user_permissions_form,
+            add_group_permissions_form,
+            add_project_permissions_form,
+            permissions_form
+        ) = set_up_permissions_forms(
+            logic.action_permissions.action_permissions,
+            action_id,
+            all_user_permissions,
+            user_permissions,
+            group_permissions,
+            project_permissions
         )
+
         users = get_users(exclude_hidden=True, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
-        add_user_permissions_form = ActionUserPermissionsForm()
+
         groups = get_groups()
         groups = [group for group in groups if group.id not in group_permissions]
         groups.sort(key=lambda group: group.id)
-        add_group_permissions_form = ActionGroupPermissionsForm()
+
         projects = get_projects()
         projects_by_id = {
             project.id: project
@@ -732,7 +685,6 @@ def action_permissions(action_id):
                 (0, project.id, project.id not in project_permissions)
                 for project in sorted(projects, key=lambda project: project.id)
             ]
-        add_project_permissions_form = ActionProjectPermissionsForm()
         show_projects_form = any(
             enabled
             for level, project_id, enabled in project_id_hierarchy_list
@@ -752,76 +704,22 @@ def action_permissions(action_id):
     if flask.request.method.lower() == 'post':
         if not user_may_edit:
             flask.flash(_('You need GRANT permissions to edit the permissions for this action.'), 'error')
-            return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-        if 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
-            user_id = add_user_permissions_form.user_id.data
-            permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-            if permissions == Permissions.NONE or user_id in user_permissions:
-                flask.flash(_('Failed to update action permissions.'), 'error')
-                return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-            set_user_action_permissions(action.id, user_id, permissions)
+            return flask.redirect(flask.url_for('.action_permissions', action_id=action_id))
+        if handle_permission_forms(
+            logic.action_permissions.action_permissions,
+            action_id,
+            add_user_permissions_form,
+            add_group_permissions_form,
+            add_project_permissions_form,
+            permissions_form,
+            user_permissions,
+            group_permissions,
+            project_permissions,
+        ):
             flask.flash(_('Successfully updated action permissions.'), 'success')
-            return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-        if 'add_group_permissions' in flask.request.form and add_group_permissions_form.validate_on_submit():
-            group_id = add_group_permissions_form.group_id.data
-            permissions = Permissions.from_name(add_group_permissions_form.permissions.data)
-            if permissions == Permissions.NONE or group_id in group_permissions:
-                flask.flash(_('Failed to update action permissions.'), 'error')
-                return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-            set_group_action_permissions(action.id, group_id, permissions)
-            flask.flash(_('Successfully updated action permissions.'), 'success')
-            return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-        if 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
-            project_id = add_project_permissions_form.project_id.data
-            permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
-            if permissions == Permissions.NONE or project_id in project_permissions:
-                flask.flash(_('Failed to update action permissions.'), 'error')
-                return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-            set_project_action_permissions(action.id, project_id, permissions)
-            flask.flash(_('Successfully updated action permissions.'), 'success')
-            return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-        if 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
-            set_action_public(action_id, permissions_form.public_permissions.data == 'read')
-            for user_permissions_data in permissions_form.user_permissions.data:
-                user_id = user_permissions_data['user_id']
-                try:
-                    get_user(user_id)
-                except errors.UserDoesNotExistError:
-                    continue
-                permissions = Permissions.from_name(user_permissions_data['permissions'])
-                set_user_action_permissions(
-                    action_id=action.id,
-                    user_id=user_id,
-                    permissions=permissions
-                )
-            for group_permissions_data in permissions_form.group_permissions.data:
-                group_id = group_permissions_data['group_id']
-                try:
-                    get_group(group_id)
-                except errors.GroupDoesNotExistError:
-                    continue
-                permissions = Permissions.from_name(group_permissions_data['permissions'])
-                set_group_action_permissions(
-                    action_id=action.id,
-                    group_id=group_id,
-                    permissions=permissions
-                )
-            for project_permissions_data in permissions_form.project_permissions.data:
-                project_id = project_permissions_data['project_id']
-                try:
-                    get_project(project_id)
-                except errors.ProjectDoesNotExistError:
-                    continue
-                permissions = Permissions.from_name(project_permissions_data['permissions'])
-                set_project_action_permissions(
-                    action_id=action.id,
-                    project_id=project_id,
-                    permissions=permissions
-                )
-            flask.flash(_("Successfully updated action permissions."), 'success')
-            return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
-        flask.flash(_('Failed to update action permissions.'), 'error')
-        return flask.redirect(flask.url_for('.action_permissions', action_id=action.id))
+        else:
+            flask.flash(_('Failed to update action permissions.'), 'error')
+        return flask.redirect(flask.url_for('.action_permissions', action_id=action_id))
 
     return flask.render_template(
         'actions/action_permissions.html',
@@ -832,8 +730,8 @@ def action_permissions(action_id):
         project_permissions=project_permissions,
         group_permissions=group_permissions,
         user_permissions=user_permissions,
-        public_permissions=public_permissions,
-        form=permissions_form,
+        all_user_permissions=all_user_permissions,
+        permissions_form=permissions_form,
         users=users,
         add_user_permissions_form=add_user_permissions_form,
         groups=groups,

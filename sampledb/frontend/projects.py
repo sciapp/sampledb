@@ -14,7 +14,8 @@ from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
 from ..logic.languages import get_languages, get_language, get_language_by_lang_code
 from ..models.languages import Language
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm, ObjectLinkForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm, ObjectLinkForm
+from .permission_forms import PermissionsForm
 from .utils import check_current_user_is_not_readonly
 from ..logic.utils import get_translated_text
 
@@ -589,10 +590,13 @@ def project_permissions(project_id):
             if group_id is None:
                 continue
             group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-        edit_user_permissions_form = ProjectPermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
+        permissions_form = PermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
+        # disable permissions for all users and other projects
+        permissions_form.all_user_permissions.choices = [('none', Permissions.NONE)]
+        permissions_form.project_permissions.max_entries = 0
     else:
-        edit_user_permissions_form = None
         delete_project_form = None
+        permissions_form = None
     return flask.render_template(
         'projects/project_permissions.html',
         project=project,
@@ -602,7 +606,7 @@ def project_permissions(project_id):
         get_user=logic.users.get_user,
         get_group=logic.groups.get_group,
         Permissions=Permissions,
-        form=edit_user_permissions_form
+        permissions_form=permissions_form
     )
 
 
@@ -616,10 +620,13 @@ def update_project_permissions(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.abort(404)
 
-    edit_user_permissions_form = ProjectPermissionsForm()
-    if 'edit_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+    permissions_form = PermissionsForm()
+    # disable permissions for all users and other projects
+    permissions_form.all_user_permissions.choices = [('none', Permissions.NONE)]
+    permissions_form.project_permissions.max_entries = 0
+    if 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
         # First handle GRANT updates, then others (to prevent temporarily not having a GRANT user)
-        for user_permissions_data in sorted(edit_user_permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
+        for user_permissions_data in sorted(permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
             user_id = user_permissions_data['user_id']
             try:
                 logic.users.get_user(user_id)
@@ -630,7 +637,7 @@ def update_project_permissions(project_id):
                 logic.projects.update_user_project_permissions(project_id=project_id, user_id=user_id, permissions=permissions)
             except logic.errors.NoMemberWithGrantPermissionsForProjectError:
                 continue
-        for group_permissions_data in edit_user_permissions_form.group_permissions.data:
+        for group_permissions_data in permissions_form.group_permissions.data:
             group_id = group_permissions_data['group_id']
             try:
                 logic.groups.get_group(group_id)

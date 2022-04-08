@@ -288,6 +288,7 @@ def test_remove_last_user_from_project_permissions(flask_server, user_session):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'none',
@@ -311,6 +312,7 @@ def test_keep_project_permissions(flask_server, user_session):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'grant',
@@ -332,6 +334,7 @@ def test_change_last_user_project_permissions(flask_server, user_session):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'write',
@@ -355,6 +358,7 @@ def test_update_user_project_permissions(flask_server, user_session, user):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'write',
@@ -380,6 +384,7 @@ def test_swap_grant_project_permissions(flask_server, user_session, user):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token_0,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'write',
@@ -405,6 +410,7 @@ def test_update_project_permissions_without_grant(flask_server, user_session, us
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': '',
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': '',
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'write',
@@ -434,6 +440,7 @@ def test_update_group_project_permissions(flask_server, user_session, user):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
         'group_permissions-0-csrf_token': group_csrf_token,
         'group_permissions-0-group_id': str(group_id),
         'group_permissions-0-permissions': 'write',

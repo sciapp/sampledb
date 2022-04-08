@@ -1184,7 +1184,7 @@ def test_update_object_permissions(flask_server, user):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
-        'public_permissions': 'read',
+        'all_user_permissions': 'read',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'grant',
@@ -1216,7 +1216,7 @@ def test_update_object_permissions(flask_server, user):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
-        'public_permissions': 'none',
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': '42',
         'user_permissions-0-permissions': 'read',
@@ -1232,7 +1232,7 @@ def test_update_object_permissions(flask_server, user):
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
-        'public_permissions': 'none',
+        'all_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'read',

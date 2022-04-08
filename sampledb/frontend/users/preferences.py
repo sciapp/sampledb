@@ -17,7 +17,7 @@ from ... import db
 from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
-from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
+from ..permission_forms import handle_permission_forms, set_up_permissions_forms
 from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm
 
 from ... import logic
@@ -26,10 +26,9 @@ from ...logic.authentication import add_authentication_method, remove_authentica
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
-from ...logic.default_permissions import get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
+from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
 from ...logic.projects import get_user_projects, get_project, get_project_id_hierarchy_list
 from ...logic.groups import get_user_groups, get_group
-from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
@@ -125,10 +124,6 @@ def change_preferences(user, user_id):
     created_api_token = None
     create_api_token_form = CreateAPITokenForm()
 
-    add_user_permissions_form = ObjectUserPermissionsForm()
-    add_group_permissions_form = ObjectGroupPermissionsForm()
-    add_project_permissions_form = ObjectProjectPermissionsForm()
-
     notification_mode_form = NotificationModeForm()
 
     other_settings_form = OtherSettingsForm()
@@ -140,30 +135,30 @@ def change_preferences(user, user_id):
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
     project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
-    public_permissions = Permissions.READ if default_is_public(creator_id=flask_login.current_user.id) else Permissions.NONE
-    user_permission_form_data = []
-    for user_id, permissions in sorted(user_permissions.items()):
-        if user_id is None:
-            continue
-        user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-    group_permission_form_data = []
-    for group_id, permissions in sorted(group_permissions.items()):
-        if group_id is None:
-            continue
-        group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-    project_permission_form_data = []
-    for project_id, permissions in sorted(project_permissions.items()):
-        if project_id is None:
-            continue
-        project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
-    default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
+    all_user_permissions = get_default_permissions_for_all_users(creator_id=flask_login.current_user.id)
+
+    (
+        add_user_permissions_form,
+        add_group_permissions_form,
+        add_project_permissions_form,
+        default_permissions_form
+    ) = set_up_permissions_forms(
+        logic.default_permissions.default_permissions,
+        flask_login.current_user.id,
+        all_user_permissions,
+        user_permissions,
+        group_permissions,
+        project_permissions
+    )
 
     users = get_users(exclude_hidden=True, exclude_fed=True)
     users = [user for user in users if user.id not in user_permissions]
     users.sort(key=lambda user: user.id)
+
     groups = get_user_groups(flask_login.current_user.id)
     groups = [group for group in groups if group.id not in group_permissions]
     groups.sort(key=lambda group: group.id)
+
     projects = get_user_projects(flask_login.current_user.id)
     projects = [project for project in projects if project.id not in project_permissions]
     projects.sort(key=lambda project: project.id)
@@ -237,7 +232,7 @@ def change_preferences(user, user_id):
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
-                    public_permissions=public_permissions,
+                    all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
@@ -348,7 +343,7 @@ def change_preferences(user, user_id):
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
-                    public_permissions=public_permissions,
+                    all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
@@ -410,7 +405,7 @@ def change_preferences(user, user_id):
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
-                    public_permissions=public_permissions,
+                    all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
@@ -463,7 +458,7 @@ def change_preferences(user, user_id):
                 EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                 user_permissions=user_permissions,
                 group_permissions=group_permissions,
-                public_permissions=public_permissions,
+                all_user_permissions=all_user_permissions,
                 authentication_method_form=authentication_method_form,
                 authentication_form=authentication_form,
                 create_api_token_form=create_api_token_form,
@@ -475,59 +470,14 @@ def change_preferences(user, user_id):
                 has_active_method=any(method.active for method in two_factor_authentication_methods),
                 api_tokens=api_tokens
             )
-    if 'edit_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
-        set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
-        for user_permissions_data in default_permissions_form.user_permissions.data:
-            user_id = user_permissions_data['user_id']
-            try:
-                get_user(user_id)
-            except UserDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(user_permissions_data['permissions'])
-            set_default_permissions_for_user(creator_id=flask_login.current_user.id, user_id=user_id, permissions=permissions)
-        for group_permissions_data in default_permissions_form.group_permissions.data:
-            group_id = group_permissions_data['group_id']
-            try:
-                get_group(group_id)
-            except GroupDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(group_permissions_data['permissions'])
-            set_default_permissions_for_group(creator_id=flask_login.current_user.id, group_id=group_id, permissions=permissions)
-        for project_permissions_data in default_permissions_form.project_permissions.data:
-            project_id = project_permissions_data['project_id']
-            try:
-                get_project(project_id)
-            except ProjectDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(project_permissions_data['permissions'])
-            set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    if 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
-        user_id = add_user_permissions_form.user_id.data
-        permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-        default_user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert user_id not in default_user_permissions
-        set_default_permissions_for_user(creator_id=flask_login.current_user.id, user_id=user_id, permissions=permissions)
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    if 'add_group_permissions' in flask.request.form and add_group_permissions_form.validate_on_submit():
-        group_id = add_group_permissions_form.group_id.data
-        permissions = Permissions.from_name(add_group_permissions_form.permissions.data)
-        default_group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert group_id not in default_group_permissions
-        set_default_permissions_for_group(creator_id=flask_login.current_user.id, group_id=group_id, permissions=permissions)
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    if 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
-        project_id = add_project_permissions_form.project_id.data
-        permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
-        default_project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert project_id not in default_project_permissions
-        set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
+    if handle_permission_forms(
+        default_permissions,
+        flask_login.current_user.id,
+        add_user_permissions_form,
+        add_group_permissions_form,
+        add_project_permissions_form,
+        default_permissions_form
+    ):
         flask.flash(_("Successfully updated default permissions."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
@@ -636,7 +586,7 @@ def change_preferences(user, user_id):
         user_permissions=user_permissions,
         group_permissions=group_permissions,
         project_permissions=project_permissions,
-        public_permissions=public_permissions,
+        all_user_permissions=all_user_permissions,
         authentication_method_form=authentication_method_form,
         authentication_form=authentication_form,
         create_api_token_form=create_api_token_form,
