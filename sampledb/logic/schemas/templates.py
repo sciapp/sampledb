@@ -85,8 +85,8 @@ def reverse_substitute_templates(schema: dict):
         if 'template' in schema:
             # ensure the action exists
             actions.get_action(schema['template'])
-            for key in schema:
-                if key in ['title', 'type', 'template']:
+            for key in list(schema.keys()):
+                if key in ['title', 'type', 'template', 'may_copy']:
                     continue
                 elif key in ['properties']:
                     schema[key] = {}
