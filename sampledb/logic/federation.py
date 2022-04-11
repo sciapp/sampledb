@@ -18,7 +18,7 @@ from .files import create_fed_file, get_file, get_files_for_object, hide_file, F
 from .instrument_translations import set_instrument_translation, get_instrument_translations_for_instrument
 from .languages import get_languages, get_language_by_lang_code, get_language
 from .markdown_images import find_referenced_markdown_images, get_markdown_image
-from .object_permissions import set_user_object_permissions, set_group_object_permissions, set_project_object_permissions
+from .object_permissions import set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, set_object_permissions_for_all_users, object_permissions
 from .schemas import validate_schema, validate
 from .. import db
 from . import errors, fed_logs, languages, markdown_to_html
@@ -400,14 +400,26 @@ def import_object(object_data, component):
     for assignment_data in object_data['object_location_assignments']:
         import_object_location_assignment(assignment_data, object, component)
 
+    # apply policy permissions as a minimum, but do not reduce existing permissions
+    current_permissions_for_users = object_permissions.get_permissions_for_users(resource_id=object.object_id)
     for user_id, permission in object_data['permissions']['users'].items():
-        set_user_object_permissions(object.object_id, user_id, permission)
+        if permission not in current_permissions_for_users.get(user_id, Permissions.NONE):
+            set_user_object_permissions(object.object_id, user_id, permission)
 
+    current_permissions_for_groups = object_permissions.get_permissions_for_groups(resource_id=object.object_id)
     for group_id, permission in object_data['permissions']['groups'].items():
-        set_group_object_permissions(object.object_id, group_id, permission)
+        if permission not in current_permissions_for_groups.get(group_id, Permissions.NONE):
+            set_group_object_permissions(object.object_id, group_id, permission)
 
+    current_permissions_for_projects = object_permissions.get_permissions_for_projects(resource_id=object.object_id)
     for project_id, permission in object_data['permissions']['projects'].items():
-        set_project_object_permissions(object.object_id, project_id, permission)
+        if permission not in current_permissions_for_projects.get(project_id, Permissions.NONE):
+            set_project_object_permissions(object.object_id, project_id, permission)
+
+    current_permissions_for_all_users = object_permissions.get_permissions_for_all_users(resource_id=object.object_id)
+    permission = object_data['permissions']['all_users']
+    if permission not in current_permissions_for_all_users:
+        set_object_permissions_for_all_users(object.object_id, permission)
 
     return object
 
@@ -744,6 +756,7 @@ def _get_permissions(permissions, default=None):
     users = _get_dict(permissions.get('users'), default={})
     groups = _get_dict(permissions.get('groups'), default={})
     projects = _get_dict(permissions.get('projects'), default={})
+    _get_str(permissions.get('all_users'), default='none')
     for id, perm in users.items():
         _get_id(id, mandatory=True)
         _get_str(perm, mandatory=True)
@@ -1226,7 +1239,7 @@ def parse_object(object_data, component):
         'comments': [],
         'files': [],
         'object_location_assignments': [],
-        'permissions': {'users': {}, 'groups': {}, 'projects': {}}
+        'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': Permissions.NONE}
     }
 
     comments = _get_list(object_data.get('comments'))
@@ -1284,6 +1297,13 @@ def parse_object(object_data, component):
                     result['permissions']['projects'][project_id] = Permissions.from_name(permission)
                 except ValueError:
                     raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+        all_users = _get_str(permissions.get('all_users'))
+        if all_users is not None:
+            permission = all_users
+            try:
+                result['permissions']['all_users'] = Permissions.from_name(permission)
+            except ValueError:
+                raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
     return result
 
 
