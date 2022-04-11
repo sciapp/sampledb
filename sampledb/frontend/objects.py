@@ -2473,7 +2473,7 @@ def update_object_permissions(object_id):
                 'comments': add_component_policy_form.comments.data,
                 'object_location_assignments': add_component_policy_form.object_location_assignments.data,
             },
-            'permissions': {'users': {}, 'groups': {}, 'projects': {}}
+            'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
         }
         allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
         for attr_name, value in flask.request.form.items():
@@ -2508,7 +2508,7 @@ def update_object_permissions(object_id):
                 'comments': edit_component_policy_form.comments.data,
                 'object_location_assignments': edit_component_policy_form.object_location_assignments.data,
             },
-            'permissions': {'users': {}, 'groups': {}, 'projects': {}}
+            'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
         }
         allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
         for attr_name, value in flask.request.form.items():
