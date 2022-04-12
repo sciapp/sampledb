@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# This script is a wrapper for sampledb app
+exec su sampledb -c 'python -m sampledb "$0" "$@"' -- "$@"

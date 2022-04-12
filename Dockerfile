@@ -3,18 +3,16 @@ FROM python:3.10-slim-bullseye
 LABEL maintainer="f.rhiem@fz-juelich.de"
 
 # Install required system packages
+# GCC is required to build python dependencies on ARM architectures
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y libpangocairo-1.0-0 gettext && \
+    apt-get install -y gcc libpangocairo-1.0-0 gettext && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
 RUN useradd -ms /bin/bash sampledb
 USER sampledb
 WORKDIR /home/sampledb
-
-# This is where uploaded files will live (this folder will be mounted as a volume)
-RUN mkdir /home/sampledb/files
 
 # Install required Python packages
 COPY requirements.txt requirements.txt
@@ -36,8 +34,12 @@ ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/.local/bin/pybabel
 ARG SAMPLEDB_VERSION
 ENV SAMPLEDB_VERSION=$SAMPLEDB_VERSION
 
+# Copy the sdb helper script
+COPY ./sdb /usr/local/bin/sdb
+
 # The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
 ADD docker-entrypoint.sh docker-entrypoint.sh
+USER root
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["run"]
 

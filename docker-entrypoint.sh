@@ -1,2 +1,3 @@
 #!/bin/sh
-python -m sampledb "$0" "$@"
+chown sampledb:sampledb "${SAMPLEDB_FILE_STORAGE_PATH}"
+/usr/local/bin/sdb "$@"
