@@ -9,7 +9,7 @@ If you are running SampleDB using Docker, you can execute these scripts using ``
 
 .. code-block:: bash
 
-   alias sdb="docker exec -it sampledb sdb"
+   alias sdb="docker exec -it sampledb sampledb"
 
 Add this in your .bashrc or .zshrc depending if you use respectively bash or zsh as shell.
 

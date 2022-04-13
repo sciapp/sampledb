@@ -6,8 +6,7 @@ LABEL maintainer="f.rhiem@fz-juelich.de"
 # GCC is required to build python dependencies on ARM architectures
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y gcc libpangocairo-1.0-0 gettext && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y gcc libpangocairo-1.0-0 gettext
 
 # Switch to non-root user
 RUN useradd -ms /bin/bash sampledb
@@ -16,7 +15,14 @@ WORKDIR /home/sampledb
 
 # Install required Python packages
 COPY requirements.txt requirements.txt
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
+
+# Clean up system packages that are no longer required
+USER root
+RUN apt-get remove -y gcc && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+USER sampledb
 
 # Copy sampledb source code
 COPY --chown=sampledb:sampledb sampledb sampledb
@@ -34,11 +40,12 @@ ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/.local/bin/pybabel
 ARG SAMPLEDB_VERSION
 ENV SAMPLEDB_VERSION=$SAMPLEDB_VERSION
 
-# Copy the sdb helper script
-COPY ./sdb /usr/local/bin/sdb
+# Copy the SampleDB helper script
+COPY ./docker-helper.sh /usr/local/bin/sampledb
 
 # The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
-ADD docker-entrypoint.sh docker-entrypoint.sh
+COPY docker-entrypoint.sh docker-entrypoint.sh
+
 USER root
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["run"]
