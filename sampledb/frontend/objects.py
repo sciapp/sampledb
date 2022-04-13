@@ -11,6 +11,7 @@ import math
 import os
 import zipfile
 
+import markupsafe
 import flask
 import flask_login
 import itsdangerous
@@ -1694,7 +1695,7 @@ def search():
         search_paths_by_action[action.id] = {}
         if action.type_id not in search_paths_by_action_type:
             search_paths_by_action_type[action.type_id] = {}
-        for property_path, property_type in logic.schemas.utils.get_property_paths_for_schema(
+        for property_path, property_info in logic.schemas.utils.get_property_paths_for_schema(
                 schema=action.schema,
                 valid_property_types={
                     'text',
@@ -1711,18 +1712,30 @@ def search():
                 key if key is not None else '?'
                 for key in property_path
             )
+            property_type = property_info.get('type')
+            property_title = markupsafe.escape(get_translated_text(property_info.get('title')))
             if property_type in {'object_reference', 'sample', 'measurement'}:
                 # unify object_reference, sample and measurement
                 property_type = 'object_reference'
-            search_paths_by_action[action.id][property_path] = [property_type]
+            property_infos = {
+                'types': [property_type],
+                'titles': [property_title]
+            }
+            search_paths_by_action[action.id][property_path] = property_infos
             if property_path not in search_paths_by_action_type[action.type_id]:
-                search_paths_by_action_type[action.type_id][property_path] = [property_type]
-            elif property_type not in search_paths_by_action_type[action.type_id][property_path]:
-                search_paths_by_action_type[action.type_id][property_path].append(property_type)
+                search_paths_by_action_type[action.type_id][property_path] = property_infos
+            else:
+                if property_title not in search_paths_by_action_type[action.type_id][property_path]['titles']:
+                    search_paths_by_action_type[action.type_id][property_path]['titles'].append(property_title)
+                if property_type not in search_paths_by_action_type[action.type_id][property_path]['types']:
+                    search_paths_by_action_type[action.type_id][property_path]['types'].append(property_type)
             if property_path not in search_paths:
-                search_paths[property_path] = [property_type]
-            elif property_type not in search_paths[property_path]:
-                search_paths[property_path].append(property_type)
+                search_paths[property_path] = property_infos
+            else:
+                if property_title not in search_paths[property_path]['titles']:
+                    search_paths[property_path]['titles'].append(property_title)
+                if property_type not in search_paths[property_path]['types']:
+                    search_paths[property_path]['types'].append(property_type)
 
     if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
         referencable_objects = get_objects_with_permissions(
