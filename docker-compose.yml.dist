@@ -1,5 +1,5 @@
 # sampledb docker-compose configuration file
-# use : "docker-compose up -d" to start containers
+# use: "docker-compose up -d" to start containers
 # https://github.com/sciapp/sampledb
 # Note: you will need to edit some values below to run it in production!
 version: '3'
@@ -9,6 +9,12 @@ services:
     image: sciapp/sampledb:0.20.0
     restart: always
     container_name: sampledb
+    # Note: this config option works with docker-compose version >1.27
+    # If you are using an older docker-compose and cannot update to a newer version, you can use the short syntax instead
+    # See: https://docs.docker.com/compose/compose-file/#depends_on
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
         - SAMPLEDB_CONTACT_EMAIL=sampledb@example.com
         - SAMPLEDB_MAIL_SERVER=mail.example.com
@@ -32,13 +38,18 @@ services:
     image: postgres:12
     restart: always
     container_name: sampledb-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     environment:
         - POSTGRES_PASSWORD=password
         - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
         # this is where you will keep the database persistently
         # host:container
-        - ./pgdata:/var/lib/postgresql/data/pgdata
+        - ./pgdata:/var/lib/postgresql/data
     networks:
       - sampledb-net
 
