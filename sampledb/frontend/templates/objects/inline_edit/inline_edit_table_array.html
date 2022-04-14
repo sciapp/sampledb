@@ -26,10 +26,10 @@
         <table class="table">
             <thead>
             <tr>
-                {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
                 {% set item_property_names = schema["items"].properties.keys() %}
                 {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
                 {% for property_name in property_order %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
                     {% if property_name in item_property_names %}
                         <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
                             {% if schema["items"].properties[property_name].type == 'text' %}
@@ -54,6 +54,7 @@
                     {% endif %}
                 {% endfor %}
                 {% for property_name in item_property_names %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
                     {% if property_name not in property_order %}
                         {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
                         <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
