@@ -9,6 +9,9 @@ services:
     image: sciapp/sampledb:0.20.0
     restart: always
     container_name: sampledb
+    # Note: this config option works with docker-compose version >1.27
+    # If you are using an older docker-compose and cannot update to a newer version, you can use the short syntax instead
+    # See: https://docs.docker.com/compose/compose-file/#depends_on
     depends_on:
       db:
         condition: service_healthy
