@@ -39,7 +39,10 @@ def get_property_paths_for_schema(
         schema: typing.Dict[str, typing.Any],
         valid_property_types: typing.Optional[typing.Set[str]] = None,
         path: typing.Optional[typing.List[typing.Optional[str]]] = None
-) -> typing.Dict[typing.Tuple[typing.Optional[str]], str]:
+) -> typing.Dict[
+    typing.Sequence[typing.Optional[str]],
+    typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+]:
     """
     Get a dict mapping property paths to the type used in the given schema.
 
@@ -54,7 +57,10 @@ def get_property_paths_for_schema(
     if path is None:
         path = []
     property_type = schema.get('type')
-    property_paths = {}
+    property_paths: typing.Dict[
+        typing.Sequence[typing.Optional[str]],
+        typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+    ] = {}
     if property_type == 'object':
         property_paths.update(_get_property_paths_for_object_schema(
             schema=schema,
@@ -68,7 +74,10 @@ def get_property_paths_for_schema(
             path=path
         ))
     if property_type is not None and (valid_property_types is None or property_type in valid_property_types):
-        property_paths[tuple(path)] = property_type
+        property_paths[tuple(path)] = {
+            "type": property_type,
+            "title": schema.get('title')
+        }
     return property_paths
 
 
@@ -76,7 +85,10 @@ def _get_property_paths_for_object_schema(
         schema: typing.Dict[str, typing.Any],
         valid_property_types: typing.Optional[typing.Set[str]],
         path: typing.List[typing.Optional[str]]
-) -> typing.Dict[typing.Tuple[typing.Optional[str]], str]:
+) -> typing.Dict[
+    typing.Sequence[typing.Optional[str]],
+    typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+]:
     path = list(path)
     if not isinstance(schema, dict):
         return {}
@@ -98,7 +110,10 @@ def _get_property_paths_for_array_schema(
         schema: typing.Dict[str, typing.Any],
         valid_property_types: typing.Optional[typing.Set[str]],
         path: typing.List[typing.Optional[str]]
-) -> typing.Dict[typing.Tuple[typing.Optional[str]], str]:
+) -> typing.Dict[
+    typing.Sequence[typing.Optional[str]],
+    typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+]:
     path = list(path)
     if not isinstance(schema, dict):
         return {}

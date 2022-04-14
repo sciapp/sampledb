@@ -252,7 +252,7 @@
       var selectpicker = condition.find('.input-condition-operator');
       if (property_name in search_paths) {
         var valid_options = [];
-        var property_types = search_paths[property_name];
+        var property_types = search_paths[property_name].types;
         condition.find('option').each(function(_, option) {
           option = $(option);
           if (property_types.includes(option.data('type'))) {
@@ -396,7 +396,13 @@
       }, {
         name: 'search_paths',
         limit: 10000,
-        source: substringMatcher()
+        display: 'property_name',
+        source: substringMatcher(),
+          templates: {
+              suggestion: function (suggestion) {
+                  return "<span>" + suggestion.property_name + " – " + suggestion.titles + "</span>";
+              },
+          }
       });
       updateConditions();
 
@@ -498,12 +504,16 @@
     function substringMatcher() {
       return function findMatches(q, cb) {
         var search_paths = getCurrentSearchPaths();
-        var strs = Object.keys(search_paths);
+        var property_names = Object.keys(search_paths);
         var matches = [];
         var substrRegex = new RegExp(q, 'i');
-        $.each(strs, function(i, str) {
-          if (substrRegex.test(str)) {
-            matches.push(str);
+        $.each(property_names, function(i, property_name) {
+          let titles = search_paths[property_name]['titles'].join(', ');
+          if (substrRegex.test(property_name) || substrRegex.test(titles)) {
+            matches.push({
+                property_name: property_name,
+                titles: titles
+            });
           }
         });
         cb(matches);
