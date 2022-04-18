@@ -2,7 +2,7 @@
 """
 Scripts for administrating SampleDB
 
-Usage: python -m sampledb <script> ...
+Usage: python -m sampledb <script> [options]
 """
 
 import sys
@@ -10,18 +10,10 @@ import sys
 from .scripts import script_documentation, script_functions
 
 
-available_scripts = list(script_functions.keys())
-available_scripts.sort()
-
-
 def help_and_exit(return_code):
-    print(
-        __doc__ + '\n'
-        'Available scripts:\n'
-        ' - ' + '\n - '.join(available_scripts) + '\n\n'
-        'To find out how more about a script, use:\n\n'
-        'python -m sampledb help <script>\n'
-    )
+    available_scripts = ' - ' + '\n - '.join(sorted(script_functions.keys()))
+    footer = '\n\nTo find out how more about a script, use:\n\npython -m sampledb help <script>'
+    print('{}\nAvailable scripts:\n{}{}'.format(__doc__, available_scripts, footer))
     exit(return_code)
 
 
