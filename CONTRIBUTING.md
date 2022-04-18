@@ -17,6 +17,18 @@ SampleDB is open source and we hope that ideas and improvements from different f
 - Set [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html). At the very least you will need to set a mail server and sender, e.g. by using `export SAMPLEDB_MAIL_SERVER=mail.example.com`, `export SAMPLEDB_MAIL_SENDER=sampledb@example.com` and `export SAMPLEDB_CONTACT_EMAIL=sampledb@example.com`. Depending on how you set up your database, you may have to set the `SAMPLEDB_SQLALCHEMY_DATABASE_URI`.
 - Start an instance using demo data from the `set_up_demo` script, using `python demo.py`. This way, you will have some example instruments, actions, objects and users. If you try to access a route that requires a user account, you will automatically be signed in.
 
+## Using the docker container in dev
+
+If you're using the Docker image, simply add a volume line to mount the `sampledb` folder in the container:
+
+~~~yaml
+volumes:
+  - ./files:/home/sampledb/files
+  # only for dev
+  - ./sampledb:/home/sampledb/sampledb
+~~~
+
+
 ## Translating SampleDB
 
 - SampleDB was primarily developed in English, but can be translated using [Babel](http://babel.pocoo.org/en/latest/cmdline.html) and the *gettext* internationalization and localization system.
