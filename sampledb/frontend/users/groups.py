@@ -246,7 +246,7 @@ def group(group_id):
                 except logic.errors.UserDoesNotExistError:
                     flask.flash(_('This user does not exist.'), 'error')
                 except logic.errors.UserAlreadyMemberOfGroupError:
-                    flask.flash(_('This user is already a member of this basic group'), 'error')
+                    flask.flash(_('This user is already a member of this basic group.'), 'error')
                 else:
                     flask.flash(_('The user was successfully invited to the basic group.'), 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))

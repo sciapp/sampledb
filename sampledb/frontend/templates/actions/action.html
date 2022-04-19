@@ -18,7 +18,7 @@
     {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
   </h1>
   {% if action.user_id is not none %}
-    <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} {% if not is_public %} {{ _("This custom action is not public. ") }} {% else %}  {{ _("This custom action is public. ") }} {% endif %}</p>
+    <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} {% if not is_public %} {{ _("This custom action is not public.") }} {% else %}  {{ _("This custom action is public.") }} {% endif %}</p>
   {% endif %}
   {% if action.is_hidden %}
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
