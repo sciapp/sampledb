@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-04-07 09:24+0200\n"
-"PO-Revision-Date: 2020-11-10 16:31+0100\n"
-"Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
+"POT-Creation-Date: 2022-04-19 08:16+0200\n"
+"PO-Revision-Date: 2022-04-18 17:38+0200\n"
+"Last-Translator: Nicolas CARPi\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
@@ -43,7 +43,7 @@ msgstr "Ungültiger Aktionstyp"
 msgid "Unknown action type"
 msgstr "Unbekannter Aktionstyp"
 
-msgid "Actions with this type can only be created or edited by administrators"
+msgid "Actions with this type can only be created or edited by administrators."
 msgstr ""
 "Aktionen diesen Typs können nur von Administratoren erstellt oder "
 "bearbeitet werden."
@@ -89,11 +89,11 @@ msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
 "Aktion zu bearbeiten."
 
-msgid "Failed to update action permissions."
-msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
-
 msgid "Successfully updated action permissions."
 msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
+
+msgid "Failed to update action permissions."
+msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
 
 msgid "No suitable Dataverses available for export."
 msgstr "Kein für Export brauchbares Dataverse verfügbar."
@@ -175,7 +175,7 @@ msgid "Failed to add API token."
 msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
 
 msgid "Invalid token. Required length: 64 digits."
-msgstr "Ungültiges Token. Geforderte Länge: 64 Zeichen"
+msgstr "Ungültiges Token. Geforderte Länge: 64 Zeichen."
 
 msgid "This token has already been linked to this database."
 msgstr "Dieses Token wurde bereits mit dieser Datenbank verknüpft."
@@ -200,7 +200,7 @@ msgid "You cannot create a log entry for this instrument."
 msgstr "Sie können keinen Log-Eintrag für dieses Instrument erstellen."
 
 msgid "Please enter a valid event datetime."
-msgstr "Bitte geben Sie einen gültigen Ereigniszeitpunkt ein,"
+msgstr "Bitte geben Sie einen gültigen Ereigniszeitpunkt ein."
 
 msgid "Please enter an instrument name."
 msgstr "Bitte geben Sie einen Instrumentnamen ein."
@@ -305,7 +305,7 @@ msgid "The magnitude must be a number."
 msgstr "Die Größe muss eine Zahl sein."
 
 msgid "Please enter a valid datetime."
-msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein,"
+msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
@@ -419,7 +419,7 @@ msgid "Successfully uploaded files."
 msgstr "Die Dateien wurden erfolgreich hochgeladen."
 
 msgid "Failed to upload files."
-msgstr "Das Hochladen der Dateien ist fehlgeschlagen"
+msgstr "Das Hochladen der Dateien ist fehlgeschlagen."
 
 msgid "Successfully posted link."
 msgstr "Der Link wurde erfolgreich eingetragen."
@@ -450,9 +450,6 @@ msgstr ""
 msgid "Successfully copied object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich kopiert."
 
-msgid "Successfully updated object permissions."
-msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
-
 msgid ""
 "A problem occurred while changing the object permissions. Please try "
 "again."
@@ -479,6 +476,9 @@ msgid "Unable to contact %(component_name)s (%(component_address)s)."
 msgstr ""
 "Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
 "fehlgeschlagen."
+
+msgid "Successfully updated object permissions."
+msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
 #, python-format
 msgid ""
@@ -606,7 +606,7 @@ msgid ""
 "(#%(other_object_id)s)</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten von <a href=\"(object_url)s\">%(object_name)s "
+"Metadaten von <a href=\"%(object_url)s\">%(object_name)s "
 "(#%(other_object_id)s)</a> referenziert."
 
 #, python-format
@@ -615,7 +615,7 @@ msgid ""
 "metadata of <a href=\"%(object_url)s\">object #%(other_object_id)s</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten von <a href=\"(object_url)s\">object #%(other_object_id)s</a> "
+"Metadaten von <a href=\"%(object_url)s\">object #%(other_object_id)s</a> "
 "referenziert."
 
 #, python-format
@@ -1108,7 +1108,7 @@ msgid ""
 "erroneously, please"
 msgstr ""
 "Ihr Nutzerkonto wurde als nur lesend markiert. Falls Sie denken, dass "
-"dies irrtümlicherweise geschah, "
+"dies irrtümlicherweise geschah,"
 
 msgid "contact an administrator"
 msgstr "kontaktieren Sie bitte einen Administrator"
@@ -1342,7 +1342,7 @@ msgstr "Der einfachen Gruppe beitreten"
 
 #, python-format
 msgid "The invitation has expired at %(expiration_datetime)s."
-msgstr "Die Einladung ist abgelaufen am %(expiration_datetime)s"
+msgstr "Die Einladung ist abgelaufen am %(expiration_datetime)s."
 
 #, python-format
 msgid ""
@@ -1435,7 +1435,7 @@ msgstr ""
 "href=\"%(instrument_url)s\">%(instrument_name)s</a> bearbeitet."
 
 msgid "Unknown notification type."
-msgstr "Unbekannter Benachrichtigungstyp"
+msgstr "Unbekannter Benachrichtigungstyp."
 
 msgid "Mark as Read"
 msgstr "Als gelesen markieren"
@@ -1526,7 +1526,7 @@ msgid "TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
 
 msgid "Unknown Two Factor Authentication Method"
-msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode."
+msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode"
 
 msgid "Disable"
 msgstr "Deaktivieren"
@@ -1739,7 +1739,7 @@ msgid "Create API Token"
 msgstr "API Token erstellen"
 
 msgid "Please enter a description for the API token."
-msgstr "Bitte geben Sie eine Beschreibung für das API Token an"
+msgstr "Bitte geben Sie eine Beschreibung für das API Token an."
 
 msgid "New API Token"
 msgstr "Neues API Token"
@@ -2359,10 +2359,10 @@ msgstr "Aktionstyp erstellen"
 msgid "Action"
 msgstr "Aktion"
 
-msgid "This custom action is not public. "
+msgid "This custom action is not public."
 msgstr "Diese benutzerdefinierte Aktion ist nicht öffentlich."
 
-msgid "This custom action is public. "
+msgid "This custom action is public."
 msgstr "Diese benutzerdefinierte Aktion ist öffentlich."
 
 msgid "This action has been hidden from action lists."
@@ -2444,7 +2444,7 @@ msgid "Please enter the default magnitude (in base units) as a number."
 msgstr "Bitte geben Sie den Standardwert (in Basis-Einheiten) als Zahl ein."
 
 msgid "Please enter valid units"
-msgstr "Bitte geben Sie gültige Einheiten ein."
+msgstr "Bitte geben Sie gültige Einheiten ein"
 
 msgid "Schema Template input must not be empty"
 msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
@@ -2552,7 +2552,7 @@ msgid "Text (Multiline)"
 msgstr "Text (mehrzeilig)"
 
 msgid "Text (Markdown)"
-msgstr " Text (Markdown)"
+msgstr "Text (Markdown)"
 
 msgid "Text (Choice)"
 msgstr "Text (Auswahl)"
@@ -2576,7 +2576,7 @@ msgid "No"
 msgstr "Nein"
 
 msgid "Additional information on the property."
-msgstr "Weitere Informationen zur Eigenschaft"
+msgstr "Weitere Informationen zur Eigenschaft."
 
 msgid "Note"
 msgstr "Hinweis"
@@ -2613,7 +2613,7 @@ msgid "Units"
 msgstr "Einheiten"
 
 msgid "Standard magnitude in base units."
-msgstr "Standardwert in Basiseinheiten"
+msgstr "Standardwert in Basiseinheiten."
 
 msgid "Schema Editor Warning"
 msgstr "Schema Editor Warnung"
@@ -3368,7 +3368,7 @@ msgid "Copy Permissions"
 msgstr "Berechtigungen kopieren"
 
 msgid "Copy permissions from other Object"
-msgstr "Berechtigungen von anderem Objekt kopieren."
+msgstr "Berechtigungen von anderem Objekt kopieren"
 
 msgid ""
 "You can replace the current permissions by copying the permissions from "
@@ -3587,7 +3587,7 @@ msgstr ""
 
 #, python-format
 msgid "View the Project Group linked to this %(object_type_name)s."
-msgstr "Zeige die mit diesem Objekt verknüpfte Projektgruppe an."
+msgstr "Zeige die mit diesem %(object_type_name)s verknüpfte Projektgruppe an."
 
 msgid "View Project Group"
 msgstr "Projektgruppe anzeigen"
@@ -3610,13 +3610,13 @@ msgid "See other %(measurement_type_name)s Actions..."
 msgstr "Andere %(measurement_type_name)s-Aktionen anzeigen..."
 
 msgid "Generate a PDF containing labels for this object."
-msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren"
+msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren."
 
 msgid "Generate Labels"
 msgstr "Etiketten generieren"
 
 msgid "Show a QR code for a link to this object."
-msgstr "QR Code mit einem Link zu diesem Objekt zeigen"
+msgstr "QR Code mit einem Link zu diesem Objekt zeigen."
 
 msgid "Show QR Code"
 msgstr "QR Code anzeigen"
@@ -3677,7 +3677,7 @@ msgstr "Externen Link öffnen"
 
 #, python-format
 msgid "There are no files for this %(object_type)s."
-msgstr "Es gibt keine Dateien für dieses Objekt."
+msgstr "Es gibt keine Dateien für dieses %(object_type)s."
 
 msgid "Hidden File Information"
 msgstr "Informationen zu versteckter Datei"
@@ -3783,7 +3783,7 @@ msgstr "Gemischte Etikettenformate"
 msgid ""
 "This will generate labels in a selection of predefined formats. To "
 "request adding a new format, please <a "
-"href=\"mailto:%(contact_email)s\">contact an administrator</a>"
+"href=\"mailto:%(contact_email)s\">contact an administrator</a>."
 msgstr ""
 "Dies wird Etiketten in einer Auswahl verschiedener, vordefinierter "
 "Formate erstellen. Bitte <a "
@@ -4194,7 +4194,7 @@ msgid "Create authentication token"
 msgstr "Authentifizierungs-Token erstellen"
 
 msgid "Please enter a description for the authentication token."
-msgstr "Bitte geben Sie eine Beschreibung für das API Token an"
+msgstr "Bitte geben Sie eine Beschreibung für das API Token an."
 
 msgid "Add own authentication token"
 msgstr "Eigenes Authentifizierungs-Token hinzufügen"
@@ -4203,7 +4203,7 @@ msgid "Token"
 msgstr "Token"
 
 msgid "Please enter the authentication token."
-msgstr "Bitte geben Sie das Authentifizierungs-Token ein"
+msgstr "Bitte geben Sie das Authentifizierungs-Token ein."
 
 #, python-format
 msgid "%(service_name)s can share information with other SampleDB instances."
@@ -4226,11 +4226,11 @@ msgstr "Exportiert&nbsp;am %(export_date)s"
 msgid "File"
 msgstr "Datei"
 
-msgid "Special Groups"
-msgstr "Sondergruppen"
-
 msgid "None"
 msgstr "Keine"
+
+msgid "Special Groups"
+msgstr "Sondergruppen"
 
 msgid "Administrators"
 msgstr "Administratoren"
@@ -4509,7 +4509,7 @@ msgstr ""
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."
 
-msgid "This user is already a member of this basic group"
+msgid "This user is already a member of this basic group."
 msgstr "Dieser Nutzer ist bereits ein Mitglied dieser einfachen Gruppe."
 
 msgid "The user was successfully invited to the basic group."

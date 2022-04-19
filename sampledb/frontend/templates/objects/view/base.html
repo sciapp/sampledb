@@ -513,7 +513,7 @@
             <div class="radio">
               <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" onchange="updateLabelsForm()"/>{{ _('Mixed label formats')}}</label>
             </div>
-            <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>', contact_email=config['CONTACT_EMAIL']) }}.</span>
+            <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>.', contact_email=config['CONTACT_EMAIL']) }}.</span>
             <div class="form-group">
               <label for="input-label-mixed-paper-format" class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
               <div class="col-sm-8">

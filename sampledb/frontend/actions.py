@@ -66,7 +66,7 @@ class ActionForm(FlaskForm):
         except errors.ActionTypeDoesNotExistError:
             raise ValidationError(_("Unknown action type"))
         if action_type.admin_only and not flask_login.current_user.is_admin:
-            raise ValidationError(_("Actions with this type can only be created or edited by administrators"))
+            raise ValidationError(_("Actions with this type can only be created or edited by administrators."))
 
 
 @frontend.route('/actions/')
