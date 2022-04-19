@@ -11,9 +11,18 @@ from .scripts import script_documentation, script_functions
 
 
 def help_and_exit(return_code):
-    available_scripts = ' - ' + '\n - '.join(sorted(script_functions.keys()))
-    footer = '\n\nTo find out how more about a script, use:\n\npython -m sampledb help <script>'
-    print('{}\nAvailable scripts:\n{}{}'.format(__doc__, available_scripts, footer))
+    available_scripts = sorted(script_functions.keys())
+    print(
+        __doc__,
+        'Available scripts:',
+        ' - ' + '\n - '.join(available_scripts),
+        '',
+        'To find out how more about a script, use:',
+        '',
+        'python -m sampledb help <script>',
+        '',
+        sep='\n'
+    )
     exit(return_code)
 
 
