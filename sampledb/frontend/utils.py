@@ -574,3 +574,8 @@ def get_search_paths(
 @jinja_function()
 def show_admin_local_storage_warning() -> bool:
     return models.File.query.filter(db.text("data->>'storage' = 'local'")).first() is not None
+
+
+@jinja_function()
+def show_load_objects_in_background_warning() -> bool:
+    return not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']

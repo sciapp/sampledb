@@ -1160,6 +1160,15 @@ msgstr ""
 msgid "Read more."
 msgstr "Mehr."
 
+msgid ""
+"Asynchronous loading of object lists is disabled, please do not set the "
+"configuration value 'LOAD_OBJECTS_IN_BACKGROUND' or set it to 'True' or "
+"'1'."
+msgstr ""
+"Asynchrones Laden von Objektlisten ist deaktiviert, bitte setzen Sie die "
+"Konfigurationsvariable 'LOAD_OBJECTS_IN_BACKGROUND' nicht oder setzen Sie"
+" sie auf 'True' oder '1'."
+
 msgid "is a service by the"
 msgstr "ist ein Dienst des"
 

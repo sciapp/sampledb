@@ -271,6 +271,11 @@
             <p><strong>{{ _('Warning:') }}</strong> {{ _('Some objects have files in \'local\' storage, please move them to \'database\' storage.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage">{{ _('Read more.') }}</a>.</p>
           </div>
         {% endif %}
+        {% if show_load_objects_in_background_warning() %}
+          <div class="alert alert-warning">
+            <p><strong>{{ _('Warning:') }}</strong> {{ _('Asynchronous loading of object lists is disabled, please do not set the configuration value \'LOAD_OBJECTS_IN_BACKGROUND\' or set it to \'True\' or \'1\'.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#synchronous-loading-of-object Lists">{{ _('Read more.') }}</a>.</p>
+          </div>
+        {% endif %}
       {% endblock %}
     {% endif %}
     {% block content %}{% endblock %}
