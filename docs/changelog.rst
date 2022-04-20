@@ -14,6 +14,7 @@ Currently in development.
 - Improve static file caching
 - Added support for a monitoring dashboard (experimental)
 - Added location permission management
+- Deprecated local file storage
 
 Version 0.20
 ------------

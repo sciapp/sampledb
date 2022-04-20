@@ -1150,6 +1150,16 @@ msgstr ""
 msgid "contact an administrator"
 msgstr "kontaktieren Sie bitte einen Administrator"
 
+msgid ""
+"Some objects have files in 'local' storage, please move them to "
+"'database' storage."
+msgstr ""
+"Manche Objekte haben Dateien mit 'local' Speicherung, bitte übertragen "
+"Sie diese zu 'database' Speicherung."
+
+msgid "Read more."
+msgstr "Mehr."
+
 msgid "is a service by the"
 msgstr "ist ein Dienst des"
 
@@ -2084,9 +2094,6 @@ msgid ""
 msgstr ""
 "Tags oder Schlagwörter dienen zur Organisation von Objekten mithilfe "
 "kurzer, kleingeschriebener Wörter."
-
-msgid "Read more."
-msgstr "Mehr."
 
 msgid "Profile"
 msgstr "Profil"

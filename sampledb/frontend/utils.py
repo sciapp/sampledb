@@ -40,6 +40,7 @@ from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.locations import Location, get_location
 from ..logic.location_permissions import get_user_location_permissions, Permissions
 from ..logic.datatypes import JSONEncoder
+from .. import db, models
 
 
 def jinja_filter(name: str = ''):
@@ -568,3 +569,8 @@ def get_search_paths(
                 if property_type not in search_paths[property_path]['types']:
                     search_paths[property_path]['types'].append(property_type)
     return search_paths, search_paths_by_action, search_paths_by_action_type
+
+
+@jinja_function()
+def show_admin_local_storage_warning() -> bool:
+    return models.File.query.filter(db.text("data->>'storage' = 'local'")).first() is not None

@@ -31,8 +31,8 @@ def main(arguments):
                     db.session.add(file)
                     db.session.commit()
                     num_moved_files += 1
-                except Exception:
-                    print(f"Error: Failed to move file #{file.id} for object #{file.object_id}")
+                except Exception as e:
+                    print(f"Error: Failed to move file #{file.id} for object #{file.object_id}", str(e))
     if num_moved_files > 0:
         print(f"Success: Moved {num_moved_files} of {num_local_files} files with local storage.")
     elif num_local_files == 0:

@@ -1683,7 +1683,7 @@ Uploading a file
 
 .. http:post:: /api/v1/objects/(int:object_id)/files/
 
-    Create a new file with local storage for a specific object (`object_id`).
+    Create a new file with database storage for a specific object (`object_id`).
 
     **Example request**:
 
@@ -1695,7 +1695,7 @@ Uploading a file
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
         {
-            "storage": "local",
+            "storage": "database",
             "original_file_name": "test.txt",
             "base64_content": "dGVzdA=="
         }
