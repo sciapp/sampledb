@@ -11,6 +11,7 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/plotly-latest.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('js/plotly-locale-de.js') }}"></script>
     <script type="text/javascript">
@@ -22,6 +23,7 @@
       $(plotly_charts).each(function(index, element) {
         Plotly.newPlot(element[0], element[1]);
       });
+      $('.selectpicker').selectpicker();
     });
   </script>
 {% endblock %}
@@ -164,9 +166,11 @@
   <div class="modal fade" id="optionsModal" tabindex="-1" role="dialog" aria-labelledby="optionsModalLabel">
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
-        {% for key, value in request.args.items() %}
+        {% for key in request.args %}
           {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info'] %}
-            <input type="hidden" name="{{ key }}" value="{{ value }}" />
+            {% for value in request.args.getlist(key) %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}" />
+            {% endfor %}
           {% endif %}
         {% endfor %}
         <input type="hidden" name="object_list_options" value="" />
@@ -249,6 +253,81 @@
       </form>
     </div>
   </div>
+
+
+  {% if show_filters %}
+  <button type="button" class="btn btn-default" data-toggle="modal" data-target="#filtersModal" style="margin-bottom: 10px">
+    {{ _('Filters') }}
+  </button>
+
+  <div class="modal fade" id="filtersModal" tabindex="-1" role="dialog" aria-labelledby="filtersModalLabel">
+    <div class="modal-dialog" role="document">
+      <form method="get" class="form">
+        {% for key in request.args %}
+          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'location_ids', 't', 'action', 'location'] %}
+            {% for value in request.args.getlist(key) %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}" />
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+        <input type="hidden" name="object_list_filters" value="" />
+        <input type="hidden" name="user" value="{{ current_user.id }}" />
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="filtersModalLabel">{{ _('Filters') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="control-label" for="filter_permissions">
+                {{ _('Filter by Permissions') }}
+              </label>
+              <select class="selectpicker form-control" name="user_permissions" id="filter_permissions" data-width="100%">
+                {% for permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                  <option value="{{ permissions.name.lower() }}" {% if permissions.name.lower() == request.args.get('user_permissions', Permissions.READ.name).lower() %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_action_type_ids">
+                {{ _('Filter by Action Type') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="action_type_ids" id="filter_action_type_ids" data-width="100%" data-none-selected-text="{{ _('All action types') }}">
+                {% for action_type in all_action_types %}
+                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.translation.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_action_ids">
+                {{ _('Filter by Action') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on">
+                {% for action in all_actions %}
+                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>{{ action.translation.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_location_ids">
+                {{ _('Filter by Location') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="location_ids" id="filter_location_ids" data-width="100%" data-none-selected-text="{{ _('All locations') }}" data-live-search="on">
+                {% for location in all_locations %}
+                  <option {% if location.component is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ location.id }}" {% if filter_location_ids and location.id in filter_location_ids %}selected="selected"{% endif %}>{{ location.name | get_translated_text }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+            <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 
   {% if objects %}
   <table class="table" id="table-objects">

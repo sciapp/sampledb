@@ -158,6 +158,13 @@ def objects():
         num_objects_found = len(objects)
         sorting_property_name = None
         sorting_order_name = None
+        show_filters = False
+        all_actions = []
+        filter_action_ids = []
+        all_action_types = []
+        filter_action_type_ids = []
+        all_locations = []
+        filter_location_ids = []
     else:
         pagination_enabled = True
         try:
@@ -181,58 +188,113 @@ def objects():
             doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
         except logic.errors.InvalidDOIError:
             doi = None
-        try:
-            location_id = int(flask.request.args.get('location', ''))
-            location = get_location(location_id)
-            if Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id):
-                object_ids_at_location = get_object_ids_at_location(location_id)
-            else:
-                location_id = None
-                location = None
-                object_ids_at_location = []
-                flask.flash(_('You do not have the required permissions to access this location.'), 'error')
-        except ValueError:
-            location_id = None
-            location = None
+
+        show_filters = True
+        all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+        if 'location_ids' in flask.request.args:
+            try:
+                filter_location_ids = [
+                    int(id_str.strip())
+                    for id_str in itertools.chain(*[
+                        location_ids_str.split(',')
+                        for location_ids_str in flask.request.args.getlist('location_ids')
+                    ])
+                ]
+            except ValueError:
+                flask.flash(_('Unable to parse location IDs.'), 'error')
+                return flask.abort(400)
+            all_location_ids = [
+                location.id
+                for location in all_locations
+            ]
+            if any(location_id not in all_location_ids for location_id in filter_location_ids):
+                flask.flash(_('Invalid location ID.'), 'error')
+                return flask.abort(400)
+            if 'location' in flask.request.args:
+                flask.flash(_('Only one of location_ids and location may be set.'), 'error')
+                return flask.abort(400)
+        else:
+            filter_location_ids = None
+        if 'location' in flask.request.args:
+            try:
+                location_id = int(flask.request.args.get('location', ''))
+                if Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id):
+                    filter_location_ids = [location_id]
+                else:
+                    flask.flash(_('You do not have the required permissions to access this location.'), 'error')
+            except ValueError:
+                flask.flash(_('Unable to parse location IDs.'), 'error')
+            except LocationDoesNotExistError:
+                flask.flash(_('No location with the given ID exists.'), 'error')
+        if filter_location_ids is not None:
+            object_ids_at_location = set()
+            for location_id in filter_location_ids:
+                object_ids_at_location.update(get_object_ids_at_location(location_id))
+            object_ids_at_location = list(object_ids_at_location)
+        else:
             object_ids_at_location = None
-        except LocationDoesNotExistError:
+        if filter_location_ids is not None and len(filter_location_ids) == 1:
+            location_id = filter_location_ids[0]
+            location = get_location(location_id)
+        else:
             location_id = None
             location = None
-            object_ids_at_location = []
-            flask.flash(_('No location with the given ID exists.'), 'error')
+
         if 'action_ids' in flask.request.args:
             try:
-                action_ids = [
+                filter_action_ids = [
                     int(id_str.strip())
-                    for id_str in flask.request.args.get('action_ids', '').split(',')
+                    for id_str in itertools.chain(*[
+                        action_ids_str.split(',')
+                        for action_ids_str in flask.request.args.getlist('action_ids')
+                    ])
                 ]
             except ValueError:
                 flask.flash(_('Unable to parse action IDs.'), 'error')
+                return flask.abort(400)
+            all_action_ids = [
+                action.id
+                for action in all_actions
+            ]
+            if any(action_id not in all_action_ids for action_id in filter_action_ids):
+                flask.flash(_('Invalid action ID.'), 'error')
                 return flask.abort(400)
             if 'action' in flask.request.args:
                 flask.flash(_('Only one of action_ids and action may be set.'), 'error')
                 return flask.abort(400)
         else:
-            action_ids = None
+            filter_action_ids = None
 
         if 'action_type_ids' in flask.request.args:
             try:
-                action_type_ids = [
+                filter_action_type_ids = [
                     int(id_str.strip())
-                    for id_str in flask.request.args.get('action_type_ids', '').split(',')
+                    for id_str in itertools.chain(*[
+                        action_type_ids_str.split(',')
+                        for action_type_ids_str in flask.request.args.getlist('action_type_ids')
+                    ])
                 ]
             except ValueError:
                 flask.flash(_('Unable to parse action type IDs.'), 'error')
+                return flask.abort(400)
+            all_action_type_ids = [
+                action_type.id
+                for action_type in all_action_types
+            ]
+            if any(action_type_id not in all_action_type_ids for action_type_id in filter_action_type_ids):
+                flask.flash(_('Invalid action type ID.'), 'error')
                 return flask.abort(400)
             if 't' in flask.request.args:
                 flask.flash(_('Only one of action_type_ids and t may be set.'), 'error')
                 return flask.abort(400)
         else:
-            action_type_ids = None
+            filter_action_type_ids = None
         try:
             action_id = int(flask.request.args.get('action', ''))
         except ValueError:
             action_id = None
+        if action_id is None and filter_action_ids is not None and len(filter_action_ids) == 1:
+            action_id = filter_action_ids[0]
         if action_id is not None:
             action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
             action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
@@ -264,10 +326,10 @@ def objects():
                     action_type = None
             else:
                 action_type = None
-        if action_ids is None and action_id is not None:
-            action_ids = [action_id]
-        if action_type_ids is None and action_type is not None:
-            action_type_ids = [action_type.id]
+        if filter_action_ids is None and action_id is not None:
+            filter_action_ids = [action_id]
+        if filter_action_type_ids is None and action_type is not None:
+            filter_action_type_ids = [action_type.id]
         project_permissions = None
         if display_properties:
             name_only = False
@@ -453,8 +515,8 @@ def objects():
                     sorting_func=sorting_function,
                     limit=limit,
                     offset=offset,
-                    action_ids=action_ids,
-                    action_type_ids=action_type_ids,
+                    action_ids=filter_action_ids,
+                    action_type_ids=filter_action_type_ids,
                     other_user_id=user_id,
                     other_user_permissions=user_permissions,
                     project_id=project_id,
@@ -604,6 +666,9 @@ def objects():
         display_property_titles=display_property_titles,
         search_query=query_string,
         search_paths=search_paths,
+        search_paths_by_action=search_paths_by_action,
+        search_paths_by_action_type=search_paths_by_action_type,
+        Permissions=Permissions,
         creation_info=creation_info,
         last_edit_info=last_edit_info,
         action_info=action_info,
@@ -611,12 +676,19 @@ def objects():
         action_translations=action_translations,
         action_id=action_id,
         action_type=action_type,
+        show_filters=show_filters,
+        all_actions=all_actions,
+        filter_action_ids=filter_action_ids,
+        all_action_types=all_action_types,
+        filter_action_type_ids=filter_action_type_ids,
         project=project,
         project_id=project_id,
         group=group,
         group_id=group_id,
         location_id=location_id,
         location=location,
+        all_locations=all_locations,
+        filter_location_ids=filter_location_ids,
         user_id=user_id,
         user=user,
         doi=doi,

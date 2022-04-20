@@ -335,11 +335,38 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
+msgid "Unable to parse location IDs."
+msgstr "Orts-IDs konnten nicht geparset werden."
+
+msgid "Invalid location ID."
+msgstr "Ungültige Orts-ID"
+
+msgid "Only one of location_ids and location may be set."
+msgstr "location_ids und location dürfen nicht beide gesetzt sein."
+
 msgid "You do not have the required permissions to access this location."
 msgstr "Ihnen fehlen die Berechtigungen um auf diesen Ort zuzugreifen."
 
 msgid "No location with the given ID exists."
 msgstr "Es existiert kein Ort mit dieser ID."
+
+msgid "Unable to parse action IDs."
+msgstr "Aktions-IDs konnten nicht geparset werden."
+
+msgid "Invalid action ID."
+msgstr "Ungültige Aktions-ID"
+
+msgid "Only one of action_ids and action may be set."
+msgstr "action_ids und action dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse action type IDs."
+msgstr "Aktionstyp-IDs konnten nicht geparset werden."
+
+msgid "Invalid action type ID."
+msgstr "Ungültige Aktionstyp-ID"
+
+msgid "Only one of action_type_ids and t may be set."
+msgstr "action_type_ids und t dürfen nicht beide gesetzt sein."
 
 #, python-format
 msgid ""
@@ -3518,6 +3545,30 @@ msgstr "Aktion anzeigen"
 
 msgid "Apply"
 msgstr "Anwenden"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Filter by Permissions"
+msgstr "Nach Berechtigungen filtern"
+
+msgid "All actions"
+msgstr "Alle Aktionen"
+
+msgid "Filter by Action Type"
+msgstr "Nach Aktionstyp filtern"
+
+msgid "All action types"
+msgstr "Alle Aktionstypen"
+
+msgid "Filter by Action"
+msgstr "Nach Aktion filtern"
+
+msgid "Filter by Location"
+msgstr "Nach Ort filtern"
+
+msgid "All locations"
+msgstr "Alle Orte"
 
 msgid "Created"
 msgstr "Erstellt"
