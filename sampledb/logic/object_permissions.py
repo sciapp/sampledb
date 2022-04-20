@@ -270,8 +270,8 @@ def get_objects_with_permissions(
         sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
-        action_id: typing.Optional[int] = None,
-        action_type_id: typing.Optional[int] = None,
+        action_ids: typing.Optional[typing.List[int]] = None,
+        action_type_ids: typing.Optional[typing.List[int]] = None,
         other_user_id: typing.Optional[int] = None,
         other_user_permissions: typing.Optional[Permissions] = None,
         group_id: typing.Optional[int] = None,
@@ -290,17 +290,27 @@ def get_objects_with_permissions(
     if user.is_readonly and permissions != Permissions.READ:
         return []
 
-    if action_type_id is not None and action_id is not None:
-        action_filter = db.and_(Action.type_id == action_type_id, Action.id == action_id)
-    elif action_type_id is not None:
-        if action_type_id <= 0:
-            # merge with default types of other databases
-            action_filter = (db.or_(Action.type_id == action_type_id, Action.type.has(fed_id=action_type_id)))
-        else:
-            action_filter = (Action.type_id == action_type_id)
-        # action_filter = (Action.type_id == action_type_id)
-    elif action_id is not None:
-        action_filter = (Action.id == action_id)
+    if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
+        # include federated equivalents for default action types
+        all_action_types = actions.get_action_types()
+        fed_default_action_types = {}
+        for action_type in all_action_types:
+            if action_type.fed_id is not None and action_type.fed_id <= 0:
+                if action_type.fed_id not in fed_default_action_types:
+                    fed_default_action_types[action_type.fed_id] = []
+                fed_default_action_types[action_type.fed_id].append(action_type.id)
+        extended_action_type_ids = set(action_type_ids)
+        for action_type_id in action_type_ids:
+            if action_type_id <= 0:
+                extended_action_type_ids.update(fed_default_action_types.get(action_type_id, []))
+        action_type_ids = list(extended_action_type_ids)
+
+    if action_type_ids is not None and action_ids is not None:
+        action_filter = db.and_(Action.type_id.in_(action_type_ids), Action.id.in_(action_ids))
+    elif action_type_ids is not None:
+        action_filter = Action.type_id.in_(action_type_ids)
+    elif action_ids is not None:
+        action_filter = Action.id.in_(action_ids)
     else:
         action_filter = None
 
