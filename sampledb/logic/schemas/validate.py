@@ -289,6 +289,8 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str], allow_d
         else:
             allowed_language_codes = {'en'}
         for text in instance['text'].values():
+            if not isinstance(text, str):
+                raise ValidationError('The text in a translation dict must be str.', path)
             if len(text) < min_length:
                 raise ValidationError(_('The text must be at least %(min_length)s characters long.', min_length=min_length), path)
             if max_length is not None and len(text) > max_length:
