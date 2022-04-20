@@ -200,6 +200,35 @@ def objects():
             location = None
             object_ids_at_location = []
             flask.flash(_('No location with the given ID exists.'), 'error')
+        if 'action_ids' in flask.request.args:
+            try:
+                action_ids = [
+                    int(id_str.strip())
+                    for id_str in flask.request.args.get('action_ids', '').split(',')
+                ]
+            except ValueError:
+                flask.flash(_('Unable to parse action IDs.'), 'error')
+                return flask.abort(400)
+            if 'action' in flask.request.args:
+                flask.flash(_('Only one of action_ids and action may be set.'), 'error')
+                return flask.abort(400)
+        else:
+            action_ids = None
+
+        if 'action_type_ids' in flask.request.args:
+            try:
+                action_type_ids = [
+                    int(id_str.strip())
+                    for id_str in flask.request.args.get('action_type_ids', '').split(',')
+                ]
+            except ValueError:
+                flask.flash(_('Unable to parse action type IDs.'), 'error')
+                return flask.abort(400)
+            if 't' in flask.request.args:
+                flask.flash(_('Only one of action_type_ids and t may be set.'), 'error')
+                return flask.abort(400)
+        else:
+            action_type_ids = None
         try:
             action_id = int(flask.request.args.get('action', ''))
         except ValueError:
@@ -235,6 +264,10 @@ def objects():
                     action_type = None
             else:
                 action_type = None
+        if action_ids is None and action_id is not None:
+            action_ids = [action_id]
+        if action_type_ids is None and action_type is not None:
+            action_type_ids = [action_type.id]
         project_permissions = None
         if display_properties:
             name_only = False
@@ -420,8 +453,8 @@ def objects():
                     sorting_func=sorting_function,
                     limit=limit,
                     offset=offset,
-                    action_ids=[action_id] if action_id is not None else None,
-                    action_type_ids=[action_type.id] if action_type is not None else None,
+                    action_ids=action_ids,
+                    action_type_ids=action_type_ids,
                     other_user_id=user_id,
                     other_user_permissions=user_permissions,
                     project_id=project_id,
