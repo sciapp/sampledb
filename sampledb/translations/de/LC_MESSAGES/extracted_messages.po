@@ -346,6 +346,12 @@ msgstr ""
 "Die erweiterte Suche wurde automatisch verwendet. Suchen Sie nach "
 "\"%(query_string)s\" um die einfache Suche zu verwenden."
 
+msgid "Tags"
+msgstr "Tags"
+
+msgid "Hazards"
+msgstr "Gefahren"
+
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
@@ -1071,9 +1077,6 @@ msgstr "Projektgruppen"
 
 msgid "Locations"
 msgstr "Orte"
-
-msgid "Tags"
-msgstr "Tags"
 
 msgid "Other Databases"
 msgstr "Andere Datenbanken"
@@ -2548,9 +2551,6 @@ msgstr "An"
 
 msgid "Disabled"
 msgstr "Aus"
-
-msgid "Hazards"
-msgstr "Gefahren"
 
 msgid "Properties"
 msgstr "Eigenschaften"

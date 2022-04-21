@@ -162,7 +162,7 @@
       <th scope="col" colspan="2">{{ _('Last modified') }}</th>
       {% if show_action %}<th scope="col" rowspan="2">{{ _('Instrument') }}</th><th scope="col" rowspan="2">{{ _('Action') }}</th>{% endif %}
       {% for property_name in display_properties %}
-        <th scope="col" rowspan="2">{{ display_property_titles[property_name] | get_translated_text }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
+        <th scope="col" rowspan="2">{{ display_property_titles.get(property_name, property_name) | get_translated_text }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
       {% endfor %}
     </tr>
     <tr>
