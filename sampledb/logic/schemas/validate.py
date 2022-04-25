@@ -417,11 +417,9 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
 
     if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None \
             and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
-        raise ValidationError(
-            'magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
+        raise ValidationError('magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
     elif quantity_magnitude is None and quantity_magnitude_in_base_units is None:
-        raise ValidationError(
-            'missing keys in schema: either magnitude or magnitude_in_base_units has to be given', None)
+        raise ValidationError('missing keys in schema: either magnitude or magnitude_in_base_units has to be given', path)
     elif quantity_magnitude is None:
         quantity_magnitude = quantity_magnitude_in_base_units
 
