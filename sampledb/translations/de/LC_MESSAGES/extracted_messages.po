@@ -3574,6 +3574,9 @@ msgstr "%(item_name)s hinzufügen"
 msgid "Filter by Action…"
 msgstr "Nach Aktion filtern…"
 
+msgid "sets:"
+msgstr "setzt:"
+
 msgid "New Object"
 msgstr "Neues Objekt"
 

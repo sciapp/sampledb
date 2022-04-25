@@ -1035,6 +1035,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                 'value': recipe['property_values'][property]['value'],
                                 'type': subschema['properties'][property]['type']
                             }
+                        subschema['recipes'][i]['property_values'][property]['title'] = get_translated_text(
+                            subschema['properties'][property]['title'])
+                    subschema['recipes'][i]['name'] = get_translated_text(subschema['recipes'][i]['name'])
             for property in subschema['properties']:
                 insert_recipe_types(subschema['properties'][property])
         elif subschema['type'] == 'array':

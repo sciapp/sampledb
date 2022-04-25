@@ -164,6 +164,22 @@
     }.bind(tagsinput));
   });
 
+  function refreshRecipeTooltip(id_prefix, recipes, showTooltip=false) {
+    let div = $('#' + id_prefix + '_recipe_div');
+    let input = $('#' + id_prefix + '_recipe_input');
+    let recipe = recipes[input.val()];
+    let changedValues = []
+    let recipeName = recipe['name'];
+    for (const [_, value] of Object.entries(recipe['property_values'])) {
+      changedValues.push(value['title'])
+    }
+    div.attr('title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    div.attr('data-original-title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    div.tooltip('hide');
+  }
+
+  $('document').ready(function() {$("select[id$='_recipe_input']").change();})
+
   function applyRecipe(id_prefix, recipes, isTable) {
     let codeMirrors = {};
     $('.CodeMirror').each(function(i, el){
