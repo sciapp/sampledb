@@ -6,6 +6,7 @@
 from copy import deepcopy
 import datetime
 import io
+import itertools
 import json
 import math
 import os
@@ -77,7 +78,10 @@ def objects():
     display_property_titles = {}
     user_language_id = logic.languages.get_user_language(flask_login.current_user).id
     if 'display_properties' in flask.request.args:
-        for property_info in flask.request.args.get('display_properties', '').split(','):
+        for property_info in itertools.chain(*[
+            display_properties_str.split(',')
+            for display_properties_str in flask.request.args.getlist('display_properties')
+        ]):
             if ':' in property_info:
                 property_name, property_title = property_info.split(':', 1)
             else:
@@ -521,6 +525,7 @@ def objects():
         display_properties=display_properties,
         display_property_titles=display_property_titles,
         search_query=query_string,
+        search_paths=search_paths,
         action=action,
         action_translations=action_translations,
         action_id=action_id,

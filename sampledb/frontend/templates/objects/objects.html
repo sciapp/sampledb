@@ -2,9 +2,14 @@
 
 {% block title %}{{ _('Objects') }} — {{ service_name }}{% endblock %}
 
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
+{% endblock %}
 
 {% block scripts %}
   {{ super() }}
+  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('js/plotly-locale-de.js') }}"></script>
@@ -151,6 +156,44 @@
   <h1>{{ _('Objects') }}{{ object_suffix }}</h1>
   {% endif %}
   {% endif %}
+
+  <button type="button" class="btn btn-default" data-toggle="modal" data-target="#optionsModal">
+    {{ _('Options') }}
+  </button>
+
+  <div class="modal fade" id="optionsModal" tabindex="-1" role="dialog" aria-labelledby="optionsModalLabel">
+    <div class="modal-dialog" role="document">
+      <form method="get" class="form">
+        {% for key, value in request.args.items() %}
+          {% if key not in ['display_properties'] %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}" />
+          {% endif %}
+        {% endfor %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="optionsModalLabel">{{ _('Options') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="control-label" for="select_display_properties">
+                {{ _('Show additional properties') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="display_properties" data-width="100%" id="select_display_properties" data-live-search="true" data-none-selected-text="{{ _('No additional properties') }}">
+                {% for property_name in search_paths | sort %}
+                  <option value="{{ property_name }}" {% if display_properties and property_name in display_properties %}selected="selected"{% endif %}>{{ property_name }} – {{ search_paths[property_name]['titles'] | join(', ') }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+            <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 
   {% if objects %}
   <table class="table" id="table-objects">
