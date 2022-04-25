@@ -519,6 +519,38 @@ def objects():
                 property_title = property_name
             display_property_titles[property_name] = property_title
 
+    last_edit_info = None
+    creation_info = None
+    action_info = None
+    if 'object_list_options' in flask.request.args:
+        creation_info = set()
+        for creation_info_str in flask.request.args.getlist('creation_info'):
+            creation_info_str = creation_info_str.strip().lower()
+            if creation_info_str in {'user', 'date'}:
+                creation_info.add(creation_info_str)
+        creation_info = list(creation_info)
+
+        last_edit_info = set()
+        for last_edit_info_str in flask.request.args.getlist('last_edit_info'):
+            last_edit_info_str = last_edit_info_str.strip().lower()
+            if last_edit_info_str in {'user', 'date'}:
+                last_edit_info.add(last_edit_info_str)
+        last_edit_info = list(last_edit_info)
+
+        action_info = set()
+        for action_info_str in flask.request.args.getlist('action_info'):
+            action_info_str = action_info_str.strip().lower()
+            if action_info_str in {'instrument', 'action'}:
+                action_info.add(action_info_str)
+        action_info = list(action_info)
+
+    if creation_info is None:
+        creation_info = ['user', 'date']
+    if last_edit_info is None:
+        last_edit_info = ['user', 'date']
+    if action_info is None:
+        action_info = ['instrument', 'action']
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -526,6 +558,9 @@ def objects():
         display_property_titles=display_property_titles,
         search_query=query_string,
         search_paths=search_paths,
+        creation_info=creation_info,
+        last_edit_info=last_edit_info,
+        action_info=action_info,
         action=action,
         action_translations=action_translations,
         action_id=action_id,

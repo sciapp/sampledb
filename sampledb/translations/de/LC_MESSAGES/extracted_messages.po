@@ -3461,6 +3461,39 @@ msgstr " für <a href=\"{}\">Nutzer #{}: {}</a>"
 msgid " for Publication <a href=\"https://doi.org/{}\">doi:{}</a>"
 msgstr " für Veröffentlichung <a href=\"https://doi.org/{}\">doi:{}</a>"
 
+msgid "Options"
+msgstr "Einstellungen"
+
+msgid "Show additional properties"
+msgstr "Zeige weitere Eigenschaften"
+
+msgid "No additional properties"
+msgstr "Keine weiteren Eigenschaften"
+
+msgid "Show creation information"
+msgstr "Zeige Informationen zur Erstellung"
+
+msgid "Show Date"
+msgstr "Datum anzeigen"
+
+msgid "Show User"
+msgstr "Nutzer anzeigen"
+
+msgid "Show last edit information"
+msgstr "Zeige Informationen zur letzten Änderung"
+
+msgid "Show Action information"
+msgstr "Zeige Informationen zur Aktion"
+
+msgid "Show Instrument"
+msgstr "Instrument anzeigen"
+
+msgid "Show Action"
+msgstr "Aktion anzeigen"
+
+msgid "Apply"
+msgstr "Anwenden"
+
 msgid "Created"
 msgstr "Erstellt"
 
