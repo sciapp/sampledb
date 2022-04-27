@@ -22,7 +22,7 @@ from ..logic.users import get_user
 
 from .markdown_images import IMAGE_FORMATS
 from .objects import get_object_if_current_user_has_read_permissions, get_component_information_by_uuid
-from .utils import custom_format_datetime, get_user_if_exists
+from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
 
 SECTIONS = {
@@ -134,15 +134,37 @@ def create_pdfexport(
                 elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION:
                     object_location_assignment_id = object_log_entry.data['object_location_assignment_id']
                     object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
+                    if object_location_assignment.location_id is not None:
+                        location_url = markupsafe.escape(
+                            flask.url_for(
+                                '.location',
+                                location_id=object_location_assignment.location_id,
+                                _external=True
+                            )
+                        )
+                        location_name = get_location_name(
+                            location_or_location_id=object_location_assignment.location_id,
+                            include_id=True,
+                            language_code=lang_code
+                        )
+                    else:
+                        location_url = None
+                        location_name = None
+                    if object_location_assignment.responsible_user_id is not None:
+                        other_user_url = markupsafe.escape(
+                            flask.url_for(
+                                '.user_profile',
+                                user_id=object_location_assignment.responsible_user_id,
+                                _external=True
+                            )
+                        )
+                    else:
+                        other_user_url = None
                     if object_location_assignment.location_id is not None and object_location_assignment.responsible_user_id is not None:
-                        other_user_url = markupsafe.escape(flask.url_for('.user_profile', user_id=object_location_assignment.responsible_user_id, _external=True))
-                        location_url = markupsafe.escape(flask.url_for('.location', location_id=object_location_assignment.location_id, _external=True))
-                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">location #%(location_id)s</a> and <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, location_url=location_url, location_id=object_location_assignment.location_id, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a> and <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, location_url=location_url, location_name=location_name, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
                     elif object_location_assignment.location_id is not None:
-                        location_url = markupsafe.escape(flask.url_for('.location', location_id=object_location_assignment.location_id, _external=True))
-                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">location #%(location_id)s</a>.', user_url=user_url, user_name=user_name, location_url=location_url, location_id=object_location_assignment.location_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a>.', user_url=user_url, user_name=user_name, location_url=location_url, location_name=location_name)
                     elif object_location_assignment.responsible_user_id is not None:
-                        other_user_url = markupsafe.escape(flask.url_for('.user_profile', user_id=object_location_assignment.responsible_user_id, _external=True))
                         text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
                 elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION:
                     doi = markupsafe.escape(object_log_entry.data['doi'])
@@ -195,7 +217,7 @@ def create_pdfexport(
                     'assigning_user_id': location_assignment.user_id,
                     'assigning_user_name': logic.users.get_user(location_assignment.user_id).get_name(),
                     'location_id': location_assignment.location_id,
-                    'location_name': logic.locations.get_location(location_assignment.location_id).name if location_assignment.location_id else None,
+                    'location_name': get_location_name(location_assignment.location_id, include_id=True, language_code=lang_code) if location_assignment.location_id else None,
                     'responsible_user_id': location_assignment.responsible_user_id,
                     'responsible_user_name': logic.users.get_user(location_assignment.responsible_user_id).get_name() if location_assignment.responsible_user_id else None,
                     'description': location_assignment.description

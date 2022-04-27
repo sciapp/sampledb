@@ -60,6 +60,10 @@ def test_get_location(flask_server, auth, user):
         user_id=user.id
     )
     r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
+    assert r.status_code == 403
+
+    sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'location_id': location.id,
@@ -102,6 +106,11 @@ def test_get_locations(flask_server, auth, user):
         parent_location_id=None,
         user_id=user.id
     )
+    r = requests.get(flask_server.base_url + 'api/v1/locations/', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == []
+
+    sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v1/locations/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [

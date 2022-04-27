@@ -121,7 +121,7 @@
       {% endif %}
     {% endif %}
   {% elif location_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">Location #{}: {}</a>").format(url_for('.location', location_id=location_id), location_id, (location.name | get_translated_text) | e) | safe %}
+    {% set object_suffix = _(" for <a href=\"{}\">Location #{}: {}</a>").format(url_for('.location', location_id=location_id), location_id, (location | get_location_name(False)) | e) | safe %}
     {% if location.component is not none %}
       {% set linked_component = location.component %}
       {% if linked_component.address is not none %}

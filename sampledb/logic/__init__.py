@@ -29,6 +29,7 @@ from . import languages
 from . import ldap
 from . import locale
 from . import locations
+from . import location_permissions
 from . import markdown_images
 from . import markdown_to_html
 from . import notebook_templates
@@ -85,6 +86,7 @@ __all__ = [
     'ldap',
     'locale',
     'locations',
+    'location_permissions',
     'markdown_images',
     'markdown_to_html',
     'notebook_templates',

@@ -13,6 +13,7 @@ Currently in development.
 - Improve display of quantities
 - Improve static file caching
 - Added support for a monitoring dashboard (experimental)
+- Added location permission management
 
 Version 0.20
 ------------

@@ -14,6 +14,7 @@ from . import instruments
 from . import instrument_log_entries
 from . import instrument_translation
 from . import locations
+from . import location_permissions
 from . import markdown_to_html_cache
 from . import markdown_images
 from . import objects
@@ -42,6 +43,7 @@ from .instrument_log_entries import InstrumentLogEntry
 from .instrument_translation import InstrumentTranslation
 from .languages import Language
 from .locations import Location, ObjectLocationAssignment
+from .location_permissions import AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
 from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
@@ -71,6 +73,7 @@ __all__ = [
     'instrument_log_entries',
     'instrument_translation',
     'locations',
+    'location_permissions',
     'markdown_to_html_cache',
     'markdown_images',
     'objects',
@@ -103,6 +106,10 @@ __all__ = [
     'InstrumentLogEntry',
     'Language',
     'Location',
+    'AllUserLocationPermissions',
+    'UserLocationPermissions',
+    'GroupLocationPermissions',
+    'ProjectLocationPermissions',
     'ObjectLocationAssignment',
     'MarkdownToHTMLCacheEntry',
     'MarkdownImage',

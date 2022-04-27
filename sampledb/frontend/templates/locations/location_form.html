@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Location') }} — {{ service_name }}{% endblock %}
+{% block title %}{% if location %}{{ _('Location') }} #{{ location.id }}: {{ location | get_location_name(False) }}{% else %}{{ _('Location') }}{% endif %} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
@@ -169,6 +169,11 @@ $(function (){
 
       <input type="hidden" id="input-translations" name="{{ location_form.translations.name }}" value="">
 
+      {% if submit_text == 'Create' %}
+        <label for="input-public">
+          <input type="checkbox" id="input-public" name="{{ location_form.is_public.name }}" {% if location_form.is_public.data != False %}checked="checked"{% endif %}> {{ _('Public') }}
+        </label>
+      {% endif %}
     </div>
 
     <div class="form-group row clearfix" style="padding-right:0.75em">

@@ -61,7 +61,10 @@
         {% if user_may_edit %}
           {{ permissions_table_fields('all_user', all_user_permissions, permissions_form.all_user_permissions.choices | map(attribute=1) | list, false, permissions_form.all_user_permissions.name) }}
         {% else %}
-          {{ permissions_table_fields('all_user', all_user_permissions, [Permissions.NONE, Permissions.READ], true, none) }}
+          {% if possible_all_user_permissions is not defined %}
+            {% set possible_all_user_permissions = [Permissions.NONE, Permissions.READ] %}
+          {% endif %}
+          {{ permissions_table_fields('all_user', all_user_permissions, possible_all_user_permissions, true, none) }}
         {% endif  %}
       </tr>
     {% elif user_may_edit %}

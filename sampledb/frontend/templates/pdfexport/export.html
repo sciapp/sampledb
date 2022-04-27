@@ -118,8 +118,8 @@
   {% for entry in location_entries %}
     <li style="text-indent: -11em; margin-left: 11em;">
       {{ entry.utc_datetime | babel_format_datetime }} &mdash;
-      {% if assigning_user_id %}
-        {% with user = get_user(assigning_user_id) %}
+      {% if entry.assigning_user_id %}
+        {% with user = get_user(entry.assigning_user_id) %}
           <a href="{{ url_for('.user_profile', user_id=entry.assigning_user_id, _external=True) }}">{{ entry.assigning_user_name }}</a>
           {{ federation_information_symbol(user.component, user.fed_id, 'user', true) }}:
         {% endwith %}
@@ -127,7 +127,7 @@
         {{ _('Unknown User') }}:
       {% endif %}
     {% if entry.location_id %}
-      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name | get_translated_text(metadata_language, default=_('Unnamed Location')) }} (#{{ entry.location_id }})</a>
+      <a href="{{ url_for('.location', location_id=entry.location_id, _external=True) }}">{{ entry.location_name }}</a>
     {% endif %}
     {% if entry.responsible_user_id %}
       {% if entry.location_id %}/{% endif %}
