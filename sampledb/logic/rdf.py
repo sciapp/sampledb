@@ -156,7 +156,7 @@ def generate_rdf(user_id: int, object_id: int, version_id: typing.Optional[int] 
             _external=True
         )
 
-    object_name = object.data.get('name', {}).get('text', 'Unnamed Object')
+    object_name = object.data.get('name', {}).get('text', 'Unnamed Object') if object.data is not None else 'Unnamed Object'
 
     return RDF_TEMPLATE.render(
         object_url=object_url,
