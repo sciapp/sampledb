@@ -457,10 +457,22 @@ def objects():
         }
 
         for property_name in display_properties:
-            if property_name not in objects[i]['data'] or '_type' not in objects[i]['data'][property_name] or property_name not in objects[i]['schema']['properties']:
-                objects[i]['display_properties'][property_name] = None
+            objects[i]['display_properties'][property_name] = None
+            if not objects[i]['data'] or not objects[i]['schema']:
+                # object does not have any properties
                 continue
-            objects[i]['display_properties'][property_name] = (objects[i]['data'][property_name], objects[i]['schema']['properties'][property_name])
+            if property_name not in objects[i]['schema']['properties']:
+                # object must not have this property
+                continue
+            property_schema = objects[i]['schema']['properties'][property_name]
+            if property_name not in objects[i]['data']:
+                # object does not have this property
+                continue
+            property_data = objects[i]['data'][property_name]
+            if not isinstance(property_data, dict) or '_type' not in property_data:
+                # property data cannot be displayed (e.g. None/null or array)
+                continue
+            objects[i]['display_properties'][property_name] = (property_data, property_schema)
     if action_id is None:
         show_action = True
     else:
