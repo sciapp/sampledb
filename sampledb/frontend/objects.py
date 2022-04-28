@@ -30,7 +30,6 @@ from ..logic.action_type_translations import get_action_types_with_translations_
 from ..logic.action_translations import get_action_with_translation_in_language
 from ..logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ..logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
-from ..logic.datatypes import JSONEncoder
 from ..logic.instrument_translations import get_instrument_with_translation_in_language
 from ..logic.shares import get_shares_for_object, add_object_share, update_object_share
 from ..logic.users import get_user, get_users, get_users_by_name, get_users_for_component
@@ -51,7 +50,7 @@ from ..logic.notebook_templates import get_notebook_templates
 from .objects_forms import ObjectForm, ObjectVersionRestoreForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from .permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ..utils import object_permissions_required
-from .utils import jinja_filter, generate_qrcode, get_user_if_exists
+from .utils import generate_qrcode, get_user_if_exists
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from . import pdfexport
@@ -507,11 +506,6 @@ def objects():
         search_tree=search_tree,
         get_component=get_component
     )
-
-
-@jinja_filter
-def to_datatype(obj):
-    return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
 def get_sub_data_and_schema(data, schema, id_prefix):
@@ -1170,7 +1164,6 @@ def show_inline_edit(obj, action):
         "get_action_type": get_action_type,
         "get_action_type_with_translation_in_language": get_action_type_with_translation_in_language,
         "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language,
-        "get_component_information_by_uuid": get_component_information_by_uuid,
         "component": obj.component,
         "fed_object_id": obj.fed_object_id,
         "fed_version_id": obj.fed_version_id,
@@ -1289,28 +1282,6 @@ def get_fed_object_if_current_user_has_read_permissions(fed_object_id, component
     if Permissions.READ not in permissions:
         return None
     return fed_object
-
-
-def get_component_information_by_uuid(component_uuid: str):
-    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        return None, 0, None
-    else:
-        try:
-            component = get_component_by_uuid(component_uuid)
-            return component.get_name(), component.id, component.address
-        except ComponentDoesNotExistError:
-            return _('Unknown database (%(uuid)s)', uuid=component_uuid[:8]), -1, None
-
-
-def get_component_information(component_id: int):
-    try:
-        component = get_component(component_id)
-        component_name = component.name
-        component_id = component.id
-    except ComponentDoesNotExistError:
-        component_name = None
-        component_id = -1
-    return component_name, component_id
 
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
@@ -1521,8 +1492,6 @@ def object(object_id):
             get_object_location_assignment=get_object_location_assignment,
             get_user=get_user_if_exists,
             get_location=get_location,
-            get_component_information_by_uuid=get_component_information_by_uuid,
-            get_component_information=get_component_information,
             PAGE_SIZES=PAGE_SIZES,
             HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
             VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
@@ -2275,7 +2244,6 @@ def object_version(object_id, version_id):
         user_may_grant=user_may_grant,
         get_action_type=get_action_type,
         get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
-        get_component_information_by_uuid=get_component_information_by_uuid,
         component=object.component,
         fed_object_id=object.fed_object_id,
         fed_version_id=object.fed_version_id,

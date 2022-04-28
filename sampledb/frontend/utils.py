@@ -25,7 +25,7 @@ import plotly
 import pytz
 
 from ..logic import errors
-from ..logic.components import get_component_or_none
+from ..logic.components import get_component_or_none, get_component, get_component_by_uuid
 from ..logic.datatypes import Quantity
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
@@ -38,16 +38,38 @@ from ..logic.settings import get_user_settings
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.locations import Location, get_location
 from ..logic.location_permissions import get_user_location_permissions, Permissions
+from ..logic.datatypes import JSONEncoder
 
 
-def jinja_filter(func):
-    global _jinja_filters
-    _jinja_filters[func.__name__] = func
-    return func
+def jinja_filter(name: str = ''):
+    def decorator(func, name):
+        if not name:
+            name = func.__name__
+        jinja_filter.filters[name] = func
+        return func
+
+    return lambda func: decorator(func, name)
 
 
-_jinja_filters = {}
-jinja_filter.filters = _jinja_filters
+def jinja_function(name: str = ''):
+    def decorator(func, name):
+        if not name:
+            name = func.__name__
+        jinja_function.functions[name] = func
+        return func
+
+    return lambda func: decorator(func, name)
+
+
+jinja_filter.filters = {}
+jinja_filter()(hash)
+jinja_filter()(prettify_units)
+jinja_filter('urlencode')(quote_plus)
+jinja_filter()(markdown_to_safe_html)
+jinja_filter()(get_translated_text)
+
+jinja_function.functions = {}
+jinja_function()(get_component_or_none)
 
 
 qrcode_cache = {}
@@ -73,6 +95,7 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
     return qrcode_url
 
 
+@jinja_filter()
 def has_preview(file):
     if file.storage not in {'local', 'database'}:
         return False
@@ -86,16 +109,19 @@ def file_name_is_image(file_name):
     return flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '').startswith('image/')
 
 
+@jinja_filter()
 def is_image(file):
     if file.storage not in {'local', 'database'}:
         return False
     return file_name_is_image(file.original_file_name)
 
 
+@jinja_filter()
 def attachment_is_image(file_attachment):
     return file_name_is_image(file_attachment.file_name)
 
 
+@jinja_filter()
 def get_num_unread_notifications(user):
     return get_num_notifications(user.id, unread_only=True)
 
@@ -105,10 +131,7 @@ def check_current_user_is_not_readonly():
         raise UserIsReadonlyError()
 
 
-def generate_jinja_hash(object):
-    return hash(object)
-
-
+@jinja_filter('plot')
 def plotly_base64_image_from_json(object):
     try:
         fig_plot = plotly.io.from_json(json.dumps(object))
@@ -120,6 +143,7 @@ def plotly_base64_image_from_json(object):
     return 'data:image/svg+xml;base64,{}'.format(base64.b64encode(image_stream.read()).decode('utf-8'))
 
 
+@jinja_filter()
 def plotly_chart_get_title(plotly_object):
     layout = plotly_object.get('layout')
     if isinstance(layout, dict):
@@ -133,10 +157,12 @@ def plotly_chart_get_title(plotly_object):
     return ""
 
 
+@jinja_filter()
 def to_json_no_extra_escapes(json_object, indent=None):
     return json.dumps(json_object, indent=indent)
 
 
+@jinja_filter('babel_format_datetime')
 def custom_format_datetime(
         utc_datetime: typing.Union[str, datetime],
         format: typing.Optional[str] = None
@@ -163,6 +189,7 @@ def custom_format_datetime(
         return utc_datetime
 
 
+@jinja_filter('babel_format_date')
 def custom_format_date(date, format='%Y-%m-%d'):
     if isinstance(date, datetime):
         datetime_obj = date
@@ -171,6 +198,7 @@ def custom_format_date(date, format='%Y-%m-%d'):
     return format_date(datetime_obj)
 
 
+@jinja_filter('babel_format_number')
 def custom_format_number(number: typing.Union[str, int, float], display_digits: typing.Optional[int] = None) -> str:
     """
     Return the formatted number.
@@ -239,6 +267,7 @@ def custom_format_number(number: typing.Union[str, int, float], display_digits: 
             )
 
 
+@jinja_filter('format_quantity')
 def custom_format_quantity(
         data: typing.Optional[typing.Dict[str, typing.Any]],
         schema: typing.Dict[str, typing.Any]
@@ -253,17 +282,17 @@ def custom_format_quantity(
     return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 
 
-@jinja_filter
+@jinja_filter()
 def parse_datetime_string(datetime_string):
     return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S')
 
 
-@jinja_filter
+@jinja_filter()
 def default_format_datetime(utc_datetime: typing.Union[str, datetime]) -> str:
     return custom_format_datetime(utc_datetime, format='%Y-%m-%d %H:%M:%S')
 
 
-@jinja_filter
+@jinja_filter()
 def convert_datetime_input(datetime_input):
     if not datetime_input:
         return ''
@@ -274,10 +303,12 @@ def convert_datetime_input(datetime_input):
         return ''
 
 
+@jinja_filter()
 def base64encode(value):
     return base64.b64encode(json.dumps(value).encode('utf8')).decode('ascii')
 
 
+@jinja_filter('are_conditions_fulfilled')
 def filter_are_conditions_fulfilled(data, property_schema) -> bool:
     if not data:
         return False
@@ -286,6 +317,7 @@ def filter_are_conditions_fulfilled(data, property_schema) -> bool:
     return are_conditions_fulfilled(property_schema.get('conditions'), data)
 
 
+@jinja_filter()
 def to_string_if_dict(data) -> str:
     if isinstance(data, dict):
         return str(data)
@@ -293,6 +325,7 @@ def to_string_if_dict(data) -> str:
         return data
 
 
+@jinja_filter()
 def get_location_name(
         location_or_location_id: typing.Union[int, Location],
         include_id: bool = False,
@@ -326,26 +359,9 @@ def get_location_name(
     return location_name
 
 
-_jinja_filters['prettify_units'] = prettify_units
-_jinja_filters['has_preview'] = has_preview
-_jinja_filters['is_image'] = is_image
-_jinja_filters['attachment_is_image'] = attachment_is_image
-_jinja_filters['get_num_unread_notifications'] = get_num_unread_notifications
-_jinja_filters['urlencode'] = quote_plus
-_jinja_filters['markdown_to_safe_html'] = markdown_to_safe_html
-_jinja_filters['hash'] = generate_jinja_hash
-_jinja_filters['plot'] = plotly_base64_image_from_json
-_jinja_filters['plotly_chart_get_title'] = plotly_chart_get_title
-_jinja_filters['to_json_no_extra_escapes'] = to_json_no_extra_escapes
-_jinja_filters['get_translated_text'] = get_translated_text
-_jinja_filters['babel_format_datetime'] = custom_format_datetime
-_jinja_filters['babel_format_date'] = custom_format_date
-_jinja_filters['babel_format_number'] = custom_format_number
-_jinja_filters['format_quantity'] = custom_format_quantity
-_jinja_filters['base64encode'] = base64encode
-_jinja_filters['are_conditions_fulfilled'] = filter_are_conditions_fulfilled
-_jinja_filters['to_string_if_dict'] = to_string_if_dict
-_jinja_filters['get_location_name'] = get_location_name
+@jinja_filter()
+def to_datatype(obj):
+    return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
 def get_style_aliases(style):
@@ -377,18 +393,22 @@ def get_template(template_folder, default_prefix, schema):
     return template_folder + default_prefix + base_file
 
 
+@jinja_function()
 def get_form_template(schema):
     return get_template('objects/forms/', 'form_', schema)
 
 
+@jinja_function()
 def get_view_template(schema):
     return get_template('objects/view/', '', schema)
 
 
+@jinja_function()
 def get_inline_edit_template(schema):
     return get_template('objects/inline_edit/', 'inline_edit_', schema)
 
 
+@jinja_function()
 def get_local_month_names():
     return [
         flask_babel.get_locale().months['format']['wide'][i]
@@ -396,6 +416,7 @@ def get_local_month_names():
     ]
 
 
+@jinja_function()
 def get_templates(user_id):
     return [
         action
@@ -416,6 +437,7 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None):
 _application_root_url: typing.Optional[str] = None
 
 
+@jinja_function()
 def relative_url_for(route: str, **kwargs) -> str:
     global _application_root_url
     if _application_root_url is None:
@@ -454,6 +476,7 @@ def get_fingerprint(file_path: str) -> str:
 STATIC_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
 
 
+@jinja_function()
 def fingerprinted_static(filename: str) -> str:
     return flask.url_for(
         'static',
@@ -462,12 +485,25 @@ def fingerprinted_static(filename: str) -> str:
     )
 
 
-_jinja_functions = {}
-_jinja_functions['get_view_template'] = get_view_template
-_jinja_functions['get_form_template'] = get_form_template
-_jinja_functions['get_local_month_names'] = get_local_month_names
-_jinja_functions['get_inline_edit_template'] = get_inline_edit_template
-_jinja_functions['get_templates'] = get_templates
-_jinja_functions['get_component_or_none'] = get_component_or_none
-_jinja_functions['relative_url_for'] = relative_url_for
-_jinja_functions['fingerprinted_static'] = fingerprinted_static
+@jinja_function()
+def get_component_information_by_uuid(component_uuid: str):
+    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
+        return None, 0, None
+    else:
+        try:
+            component = get_component_by_uuid(component_uuid)
+            return component.get_name(), component.id, component.address
+        except errors.ComponentDoesNotExistError:
+            return flask_babel.gettext('Unknown database (%(uuid)s)', uuid=component_uuid[:8]), -1, None
+
+
+@jinja_function()
+def get_component_information(component_id: int):
+    try:
+        component = get_component(component_id)
+        component_name = component.name
+        component_id = component.id
+    except errors.ComponentDoesNotExistError:
+        component_name = None
+        component_id = -1
+    return component_name, component_id
