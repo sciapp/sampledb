@@ -21,7 +21,7 @@ from ..logic.object_log import ObjectLogEntryType
 from ..logic.users import get_user
 
 from .markdown_images import IMAGE_FORMATS
-from .objects import get_object_if_current_user_has_read_permissions, get_component_information_by_uuid
+from .objects import get_object_if_current_user_has_read_permissions
 from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
 
@@ -274,8 +274,7 @@ def create_pdfexport(
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         objects=objects,
         get_user=get_user_if_exists,
-        metadata_language=lang_code,
-        get_component_information_by_uuid=get_component_information_by_uuid
+        metadata_language=lang_code
     )
 
     # use regular user language again
