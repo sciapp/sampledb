@@ -19,6 +19,7 @@ import flask_babel
 import flask_login
 from flask_babel import format_datetime, format_date, get_locale
 from babel import numbers
+import markupsafe
 import qrcode
 import qrcode.image.svg
 import plotly
@@ -34,6 +35,7 @@ from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user
 from ..logic.utils import get_translated_text
 from ..logic.schemas.conditions import are_conditions_fulfilled
+from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.settings import get_user_settings
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.locations import Location, get_location
@@ -507,3 +509,58 @@ def get_component_information(component_id: int):
         component_name = None
         component_id = -1
     return component_name, component_id
+
+
+def get_search_paths(actions, action_types, path_depth_limit: typing.Optional[int] = None):
+    search_paths = {}
+    search_paths_by_action = {}
+    search_paths_by_action_type = {}
+    for action_type in action_types:
+        search_paths_by_action_type[action_type.id] = {}
+    for action in actions:
+        search_paths_by_action[action.id] = {}
+        if action.type_id not in search_paths_by_action_type:
+            search_paths_by_action_type[action.type_id] = {}
+        for property_path, property_info in get_property_paths_for_schema(
+                schema=action.schema,
+                valid_property_types={
+                    'text',
+                    'bool',
+                    'quantity',
+                    'datetime',
+                    'user',
+                    'object_reference',
+                    'sample',
+                    'measurement',
+                },
+                path_depth_limit=path_depth_limit
+        ).items():
+            property_path = '.'.join(
+                key if key is not None else '?'
+                for key in property_path
+            )
+            property_type = property_info.get('type')
+            property_title = markupsafe.escape(get_translated_text(property_info.get('title')))
+            if property_type in {'object_reference', 'sample', 'measurement'}:
+                # unify object_reference, sample and measurement
+                property_type = 'object_reference'
+            property_infos = {
+                'types': [property_type],
+                'titles': [property_title]
+            }
+            search_paths_by_action[action.id][property_path] = property_infos
+            if property_path not in search_paths_by_action_type[action.type_id]:
+                search_paths_by_action_type[action.type_id][property_path] = property_infos
+            else:
+                if property_title not in search_paths_by_action_type[action.type_id][property_path]['titles']:
+                    search_paths_by_action_type[action.type_id][property_path]['titles'].append(property_title)
+                if property_type not in search_paths_by_action_type[action.type_id][property_path]['types']:
+                    search_paths_by_action_type[action.type_id][property_path]['types'].append(property_type)
+            if property_path not in search_paths:
+                search_paths[property_path] = property_infos
+            else:
+                if property_title not in search_paths[property_path]['titles']:
+                    search_paths[property_path]['titles'].append(property_title)
+                if property_type not in search_paths[property_path]['types']:
+                    search_paths[property_path]['types'].append(property_type)
+    return search_paths, search_paths_by_action, search_paths_by_action_type

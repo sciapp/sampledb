@@ -11,7 +11,6 @@ import math
 import os
 import zipfile
 
-import markupsafe
 import flask
 import flask_login
 import itsdangerous
@@ -54,7 +53,7 @@ from .utils import generate_qrcode, get_user_if_exists
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from . import pdfexport
-from .utils import check_current_user_is_not_readonly, get_location_name
+from .utils import check_current_user_is_not_readonly, get_location_name, get_search_paths
 from ..logic.utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -82,10 +81,25 @@ def objects():
             if ':' in property_info:
                 property_name, property_title = property_info.split(':', 1)
             else:
-                property_name, property_title = property_info, property_info
+                property_name, property_title = property_info, None
             if property_name not in display_properties:
                 display_properties.append(property_name)
-            display_property_titles[property_name] = property_title
+            if property_title is not None:
+                display_property_titles[property_name] = property_title
+
+    all_actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
+    all_action_types = logic.action_type_translations.get_action_types_with_translations_in_language(
+        language_id=user_language_id,
+        filter_fed_defaults=True
+    )
+    search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
+        actions=all_actions,
+        action_types=all_action_types,
+        path_depth_limit=1
+    )
+
     name_only = True
     if object_ids:
         object_ids = object_ids.split(',')
@@ -443,10 +457,22 @@ def objects():
         }
 
         for property_name in display_properties:
-            if property_name not in objects[i]['data'] or '_type' not in objects[i]['data'][property_name] or property_name not in objects[i]['schema']['properties']:
-                objects[i]['display_properties'][property_name] = None
+            objects[i]['display_properties'][property_name] = None
+            if not objects[i]['data'] or not objects[i]['schema']:
+                # object does not have any properties
                 continue
-            objects[i]['display_properties'][property_name] = (objects[i]['data'][property_name], objects[i]['schema']['properties'][property_name])
+            if property_name not in objects[i]['schema']['properties']:
+                # object must not have this property
+                continue
+            property_schema = objects[i]['schema']['properties'][property_name]
+            if property_name not in objects[i]['data']:
+                # object does not have this property
+                continue
+            property_data = objects[i]['data'][property_name]
+            if not isinstance(property_data, dict) or '_type' not in property_data:
+                # property data cannot be displayed (e.g. None/null or array)
+                continue
+            objects[i]['display_properties'][property_name] = (property_data, property_schema)
     if action_id is None:
         show_action = True
     else:
@@ -469,6 +495,25 @@ def objects():
             language_id=user_language_id,
             use_fallback=True
         )
+
+    default_property_titles = {
+        'tags': _('Tags'),
+        'hazards': _('Hazards')
+    }
+    for property_name in display_properties:
+        if display_property_titles.get(property_name) is None:
+            property_titles = set()
+            for id in action_ids:
+                property_info = search_paths_by_action.get(id, {}).get(property_name)
+                if property_info is not None and 'titles' in property_info:
+                    property_titles.update(property_info['titles'])
+            if property_titles:
+                property_title = ', '.join(sorted(list(property_titles)))
+            elif property_name in default_property_titles:
+                property_title = default_property_titles[property_name]
+            else:
+                property_title = property_name
+            display_property_titles[property_name] = property_title
 
     return flask.render_template(
         'objects/objects.html',
@@ -1676,56 +1721,8 @@ def search():
     user_language_id = get_user_language(flask_login.current_user).id
 
     action_types = get_action_types_with_translations_in_language(user_language_id, filter_fed_defaults=True)
-    search_paths = {}
-    search_paths_by_action = {}
-    search_paths_by_action_type = {}
-    for action_type in action_types:
-        search_paths_by_action_type[action_type.id] = {}
-    for action in actions:
-        search_paths_by_action[action.id] = {}
-        if action.type_id not in search_paths_by_action_type:
-            search_paths_by_action_type[action.type_id] = {}
-        for property_path, property_info in logic.schemas.utils.get_property_paths_for_schema(
-                schema=action.schema,
-                valid_property_types={
-                    'text',
-                    'bool',
-                    'quantity',
-                    'datetime',
-                    'user',
-                    'object_reference',
-                    'sample',
-                    'measurement',
-                }
-        ).items():
-            property_path = '.'.join(
-                key if key is not None else '?'
-                for key in property_path
-            )
-            property_type = property_info.get('type')
-            property_title = markupsafe.escape(get_translated_text(property_info.get('title')))
-            if property_type in {'object_reference', 'sample', 'measurement'}:
-                # unify object_reference, sample and measurement
-                property_type = 'object_reference'
-            property_infos = {
-                'types': [property_type],
-                'titles': [property_title]
-            }
-            search_paths_by_action[action.id][property_path] = property_infos
-            if property_path not in search_paths_by_action_type[action.type_id]:
-                search_paths_by_action_type[action.type_id][property_path] = property_infos
-            else:
-                if property_title not in search_paths_by_action_type[action.type_id][property_path]['titles']:
-                    search_paths_by_action_type[action.type_id][property_path]['titles'].append(property_title)
-                if property_type not in search_paths_by_action_type[action.type_id][property_path]['types']:
-                    search_paths_by_action_type[action.type_id][property_path]['types'].append(property_type)
-            if property_path not in search_paths:
-                search_paths[property_path] = property_infos
-            else:
-                if property_title not in search_paths[property_path]['titles']:
-                    search_paths[property_path]['titles'].append(property_title)
-                if property_type not in search_paths[property_path]['types']:
-                    search_paths[property_path]['types'].append(property_type)
+
+    search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(actions, action_types)
 
     if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
         referencable_objects = get_objects_with_permissions(
