@@ -89,7 +89,7 @@ def objects():
             if property_name not in display_properties:
                 display_properties.append(property_name)
             if property_title is not None:
-                display_property_titles[property_name] = property_title
+                display_property_titles[property_name] = flask.escape(property_title)
 
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
@@ -211,7 +211,7 @@ def objects():
             if not display_properties:
                 display_properties = action_schema.get('displayProperties', [])
                 for property_name in display_properties:
-                    display_property_titles[property_name] = action_schema['properties'][property_name]['title']
+                    display_property_titles[property_name] = flask.escape(action_schema['properties'][property_name]['title'])
         else:
             action = None
             action_type_id = flask.request.args.get('t', '')
@@ -525,9 +525,9 @@ def objects():
             if property_titles:
                 property_title = ', '.join(sorted(list(property_titles)))
             elif property_name in default_property_titles:
-                property_title = default_property_titles[property_name]
+                property_title = flask.escape(default_property_titles[property_name])
             else:
-                property_title = property_name
+                property_title = flask.escape(property_name)
             display_property_titles[property_name] = property_title
 
     last_edit_info = None

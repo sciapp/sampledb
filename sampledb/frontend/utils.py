@@ -19,7 +19,6 @@ import flask_babel
 import flask_login
 from flask_babel import format_datetime, format_date, get_locale
 from babel import numbers
-import markupsafe
 import qrcode
 import qrcode.image.svg
 import plotly
@@ -545,7 +544,7 @@ def get_search_paths(
                 for key in property_path
             )
             property_type = property_info.get('type')
-            property_title = markupsafe.escape(get_translated_text(property_info.get('title')))
+            property_title = flask.escape(get_translated_text(property_info.get('title')))
             if property_type in {'object_reference', 'sample', 'measurement'}:
                 # unify object_reference, sample and measurement
                 property_type = 'object_reference'
