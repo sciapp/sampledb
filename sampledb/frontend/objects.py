@@ -101,7 +101,18 @@ def objects():
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
         actions=all_actions,
         action_types=all_action_types,
-        path_depth_limit=1
+        path_depth_limit=1,
+        valid_property_types=(
+            'text',
+            'bool',
+            'quantity',
+            'datetime',
+            'user',
+            'object_reference',
+            'sample',
+            'measurement',
+            'plotly_chart',
+        )
     )
 
     name_only = True

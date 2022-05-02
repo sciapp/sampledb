@@ -511,7 +511,21 @@ def get_component_information(component_id: int):
     return component_name, component_id
 
 
-def get_search_paths(actions, action_types, path_depth_limit: typing.Optional[int] = None):
+def get_search_paths(
+        actions,
+        action_types,
+        path_depth_limit: typing.Optional[int] = None,
+        valid_property_types: typing.Sequence[str] = (
+            'text',
+            'bool',
+            'quantity',
+            'datetime',
+            'user',
+            'object_reference',
+            'sample',
+            'measurement',
+        )
+):
     search_paths = {}
     search_paths_by_action = {}
     search_paths_by_action_type = {}
@@ -523,16 +537,7 @@ def get_search_paths(actions, action_types, path_depth_limit: typing.Optional[in
             search_paths_by_action_type[action.type_id] = {}
         for property_path, property_info in get_property_paths_for_schema(
                 schema=action.schema,
-                valid_property_types={
-                    'text',
-                    'bool',
-                    'quantity',
-                    'datetime',
-                    'user',
-                    'object_reference',
-                    'sample',
-                    'measurement',
-                },
+                valid_property_types=set(valid_property_types),
                 path_depth_limit=path_depth_limit
         ).items():
             property_path = '.'.join(
