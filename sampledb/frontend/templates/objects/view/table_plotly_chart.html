@@ -5,7 +5,7 @@
   {% if plotly_chart_title %}
     {{ plotly_chart_title }}
   {% else %}
-    {{ schema.title | get_translated_text }} #{{ loop.index }}
+    {{ schema.title | get_translated_text }} {% if loop %}#{{ loop.index }}{% endif %}
   {% endif %}
   <button id="plotly_info_button_{{ name }}_{{ plot_counter.value }}" type="button" class="btn btn-link" style="vertical-align: initial; padding: 0; line-height: 1" data-toggle="modal" data-target="#plotly_modal_{{ name }}_{{ plot_counter.value }}">[{{ _('show plot') }}]</button>
   <div class="modal fade bd-example-modal-lg" id="plotly_modal_{{ name }}_{{ plot_counter.value }}" tabindex="-1" aria-labelledby="plotly_modal_title_{{ name }}_{{ plot_counter.value }}" role="dialog" aria-hidden="true">
@@ -17,7 +17,7 @@
             {% if plotly_chart_title %}
               {{ plotly_chart_title }}
             {% else %}
-              {{ schema.title | get_translated_text }} #{{ loop.index }}
+              {{ schema.title | get_translated_text }} {% if loop %}#{{ loop.index }}{% endif %}
             {% endif %}
           </h5>
         </div>

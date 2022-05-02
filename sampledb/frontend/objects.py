@@ -589,6 +589,7 @@ def objects():
         advanced_search_had_error=advanced_search_had_error,
         search_notes=search_notes,
         search_tree=search_tree,
+        get_user=get_user,
         get_component=get_component
     )
 
