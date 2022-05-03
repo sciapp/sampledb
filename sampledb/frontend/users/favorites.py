@@ -51,6 +51,5 @@ def toggle_favorite_instrument():
             remove_favorite_instrument(instrument_id=instrument_id, user_id=user_id)
             flask.flash(_('The instrument has been removed from your favorites.'), 'success')
     else:
-        print(toggle_favorite_instrument_form.errors)
         flask.flash(_('An error occurred while editing your favorite instruments. Please try again.'), 'error')
     return flask.redirect(flask.url_for('.instruments'))

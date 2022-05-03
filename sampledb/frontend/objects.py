@@ -6,6 +6,7 @@
 from copy import deepcopy
 import datetime
 import io
+import itertools
 import json
 import math
 import os
@@ -77,7 +78,10 @@ def objects():
     display_property_titles = {}
     user_language_id = logic.languages.get_user_language(flask_login.current_user).id
     if 'display_properties' in flask.request.args:
-        for property_info in flask.request.args.get('display_properties', '').split(','):
+        for property_info in itertools.chain(*[
+            display_properties_str.split(',')
+            for display_properties_str in flask.request.args.getlist('display_properties')
+        ]):
             if ':' in property_info:
                 property_name, property_title = property_info.split(':', 1)
             else:
@@ -85,7 +89,7 @@ def objects():
             if property_name not in display_properties:
                 display_properties.append(property_name)
             if property_title is not None:
-                display_property_titles[property_name] = property_title
+                display_property_titles[property_name] = flask.escape(property_title)
 
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
@@ -97,7 +101,18 @@ def objects():
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
         actions=all_actions,
         action_types=all_action_types,
-        path_depth_limit=1
+        path_depth_limit=1,
+        valid_property_types=(
+            'text',
+            'bool',
+            'quantity',
+            'datetime',
+            'user',
+            'object_reference',
+            'sample',
+            'measurement',
+            'plotly_chart',
+        )
     )
 
     name_only = True
@@ -196,7 +211,7 @@ def objects():
             if not display_properties:
                 display_properties = action_schema.get('displayProperties', [])
                 for property_name in display_properties:
-                    display_property_titles[property_name] = action_schema['properties'][property_name]['title']
+                    display_property_titles[property_name] = flask.escape(action_schema['properties'][property_name]['title'])
         else:
             action = None
             action_type_id = flask.request.args.get('t', '')
@@ -478,11 +493,13 @@ def objects():
     else:
         show_action = False
 
-    def build_modified_url(**kwargs):
+    def build_modified_url(**query_parameters):
+        for key in flask.request.args:
+            if key not in query_parameters:
+                query_parameters[key] = flask.request.args.getlist(key)
         return flask.url_for(
             '.objects',
-            **{k: v for k, v in flask.request.args.items() if k not in kwargs},
-            **kwargs
+            **query_parameters
         )
 
     action_ids = {
@@ -510,10 +527,42 @@ def objects():
             if property_titles:
                 property_title = ', '.join(sorted(list(property_titles)))
             elif property_name in default_property_titles:
-                property_title = default_property_titles[property_name]
+                property_title = flask.escape(default_property_titles[property_name])
             else:
-                property_title = property_name
+                property_title = flask.escape(property_name)
             display_property_titles[property_name] = property_title
+
+    last_edit_info = None
+    creation_info = None
+    action_info = None
+    if 'object_list_options' in flask.request.args:
+        creation_info = set()
+        for creation_info_str in flask.request.args.getlist('creation_info'):
+            creation_info_str = creation_info_str.strip().lower()
+            if creation_info_str in {'user', 'date'}:
+                creation_info.add(creation_info_str)
+        creation_info = list(creation_info)
+
+        last_edit_info = set()
+        for last_edit_info_str in flask.request.args.getlist('last_edit_info'):
+            last_edit_info_str = last_edit_info_str.strip().lower()
+            if last_edit_info_str in {'user', 'date'}:
+                last_edit_info.add(last_edit_info_str)
+        last_edit_info = list(last_edit_info)
+
+        action_info = set()
+        for action_info_str in flask.request.args.getlist('action_info'):
+            action_info_str = action_info_str.strip().lower()
+            if action_info_str in {'instrument', 'action'}:
+                action_info.add(action_info_str)
+        action_info = list(action_info)
+
+    if creation_info is None:
+        creation_info = ['user', 'date']
+    if last_edit_info is None:
+        last_edit_info = ['user', 'date']
+    if action_info is None:
+        action_info = ['instrument', 'action']
 
     return flask.render_template(
         'objects/objects.html',
@@ -521,6 +570,10 @@ def objects():
         display_properties=display_properties,
         display_property_titles=display_property_titles,
         search_query=query_string,
+        search_paths=search_paths,
+        creation_info=creation_info,
+        last_edit_info=last_edit_info,
+        action_info=action_info,
         action=action,
         action_translations=action_translations,
         action_id=action_id,
@@ -549,6 +602,7 @@ def objects():
         advanced_search_had_error=advanced_search_had_error,
         search_notes=search_notes,
         search_tree=search_tree,
+        get_user=get_user,
         get_component=get_component
     )
 

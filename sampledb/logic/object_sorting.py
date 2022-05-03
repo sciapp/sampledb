@@ -96,6 +96,14 @@ def property_value(property_name: str) -> typing.Callable[[typing.Any], typing.A
             (
                 columns.data[property_name]['_type'].astext == 'sample',
                 columns.data[property_name]['object_id'].astext
+            ),
+            (
+                columns.data[property_name]['_type'].astext == 'measurement',
+                columns.data[property_name]['object_id'].astext
+            ),
+            (
+                columns.data[property_name]['_type'].astext == 'object_reference',
+                columns.data[property_name]['object_id'].astext
             )
         ], else_=sqlalchemy.sql.null())
     return sorting_func
