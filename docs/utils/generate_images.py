@@ -257,6 +257,7 @@ def files(base_url, driver, object):
             break
     else:
         assert False
+    wait_until_visible(heading)
     y_offset = scroll_to(driver, 0, heading.location['y'])
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/files.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, form_group.location['y'] + form_group.rect['height']) - y_offset))
 
@@ -433,7 +434,6 @@ def other_database(base_url, driver):
     driver.get(base_url + 'users/{}/autologin'.format(admin.id))
     driver.get(base_url + 'other-databases/' + str(component.id))
     for heading in driver.find_elements(By.TAG_NAME, 'h3'):
-        print(heading.text)
         if 'Database #' + str(component.id) + ': ' + component.name in heading.text:
             break
     else:
