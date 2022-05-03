@@ -493,11 +493,13 @@ def objects():
     else:
         show_action = False
 
-    def build_modified_url(**kwargs):
+    def build_modified_url(**query_parameters):
+        for key in flask.request.args:
+            if key not in query_parameters:
+                query_parameters[key] = flask.request.args.getlist(key)
         return flask.url_for(
             '.objects',
-            **{k: v for k, v in flask.request.args.items() if k not in kwargs},
-            **kwargs
+            **query_parameters
         )
 
     action_ids = {
