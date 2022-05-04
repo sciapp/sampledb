@@ -418,7 +418,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                         error_lines = {i + 1 for i in error_lines}
             except Exception as e:
                 error_lines = all_lines
-                error_message = "Unknown errror: {}".format(str(e))
+                error_message = _("Unknown error: ") + str(e)
         lexer = pygments.lexers.data.JsonLexer()
         formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines))
         pygments_output = pygments.highlight(schema_json, lexer, formatter)

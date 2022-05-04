@@ -1,0 +1,9 @@
+<div id="{{ id_prefix }}_recipe_div" class="div-apply-recipe" data-toggle="tooltip" data-placement="top" title="">
+  <select class="selectpicker form-control" id="{{ id_prefix }}_recipe_input" onchange='refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});'>
+    {% for recipe in schema.recipes %}
+      <option value={{ loop.index0 }}>{{ recipe.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="button" class="btn btn-primary input-group-button-for-selectpicker" onclick='applyRecipe("{{ id_prefix }}", {{ schema.recipes | tojson }}, true);' aria-label="{{ _('Apply Recipe') }}"
+          name="apply" value="Apply Recipe"><span aria-hidden="true">{{ _('Apply Recipe') }}</span></button>
+</div>

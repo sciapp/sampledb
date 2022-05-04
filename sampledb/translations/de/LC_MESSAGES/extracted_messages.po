@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-05-04 12:46+0200\n"
+"POT-Creation-Date: 2022-05-04 13:38+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -71,6 +71,9 @@ msgstr "Die angefragte Aktion existiert nicht."
 
 msgid "Only administrators can create actions of this type."
 msgstr "Nur Administratoren können Aktionen diesen Typs erstellen."
+
+msgid "Unknown error: "
+msgstr "Unbekannter Fehler: "
 
 msgid "Something went wrong"
 msgstr "Ein Fehler ist aufgetreten"
@@ -3574,6 +3577,9 @@ msgstr "%(item_name)s hinzufügen"
 msgid "Filter by Action…"
 msgstr "Nach Aktion filtern…"
 
+msgid "sets:"
+msgstr "setzt:"
+
 msgid "New Object"
 msgstr "Neues Objekt"
 
@@ -3637,6 +3643,9 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 
 msgid "All Actions"
 msgstr "Alle Aktionen"
+
+msgid "Apply Recipe"
+msgstr "Rezept anwenden"
 
 #, python-format
 msgid "Field %(index)s"

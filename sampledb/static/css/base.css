@@ -1032,3 +1032,20 @@ code {
     background-color: #f8f8f8;
     color: #333333;
 }
+
+/* combined selectpicker and button */
+.div-apply-recipe {
+    display: flex;
+}
+
+.div-apply-recipe .bootstrap-select .dropdown-toggle {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.div-apply-recipe button[name="apply"] {
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-bottom: 2px;
+}

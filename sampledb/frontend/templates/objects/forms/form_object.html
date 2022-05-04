@@ -69,5 +69,8 @@
     {% endif %}
   {% endfor %}
 {% endif %}
+{% if 'recipes' in schema %}
+  {% include "objects/forms/form_recipe.html" %}
+{% endif %}
 </div>
 <!-- object end -->

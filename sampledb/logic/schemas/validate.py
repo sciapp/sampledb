@@ -289,6 +289,8 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str], allow_d
         else:
             allowed_language_codes = {'en'}
         for text in instance['text'].values():
+            if not isinstance(text, str):
+                raise ValidationError('The text in a translation dict must be str.', path)
             if len(text) < min_length:
                 raise ValidationError(_('The text must be at least %(min_length)s characters long.', min_length=min_length), path)
             if max_length is not None and len(text) > max_length:
@@ -375,11 +377,15 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'}
+    required_keys = {'_type'}
+    valid_keys = required_keys.union({'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'})
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
     if 'units' not in instance:
@@ -415,11 +421,9 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
 
     if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None \
             and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
-        raise ValidationError(
-            'magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
+        raise ValidationError('magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
     elif quantity_magnitude is None and quantity_magnitude_in_base_units is None:
-        raise ValidationError(
-            'missing keys in schema: either magnitude or magnitude_in_base_units has to be given', None)
+        raise ValidationError('missing keys in schema: either magnitude or magnitude_in_base_units has to be given', path)
     elif quantity_magnitude is None:
         quantity_magnitude = quantity_magnitude_in_base_units
 

@@ -50,7 +50,7 @@ from ..logic.notebook_templates import get_notebook_templates
 from .objects_forms import ObjectForm, ObjectVersionRestoreForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from .permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ..utils import object_permissions_required
-from .utils import generate_qrcode, get_user_if_exists
+from .utils import generate_qrcode, get_user_if_exists, default_format_datetime, custom_format_number
 from .object_form_parser import parse_form_data
 from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from . import pdfexport
@@ -988,6 +988,62 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     users.sort(key=lambda user: user.id)
 
     english = get_language(Language.ENGLISH)
+
+    def insert_recipe_types(subschema):
+        if subschema['type'] == 'object':
+            if 'recipes' in subschema:
+                for i, recipe in enumerate(subschema['recipes']):
+                    for property in recipe['property_values']:
+                        if subschema['properties'][property]['type'] == 'datetime':
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': default_format_datetime(recipe['property_values'][property]['utc_datetime']) if
+                                recipe['property_values'][property] is not None else None,
+                                'type': subschema['properties'][property]['type']
+                            }
+                        elif subschema['properties'][property]['type'] == 'quantity':
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': custom_format_number(
+                                    recipe['property_values'][property]['magnitude_in_base_units']) if
+                                recipe['property_values'][property] is not None else None,
+                                'type': subschema['properties'][property]['type']
+                            }
+                        elif subschema['properties'][property]['type'] == 'text' and 'choices' in \
+                                subschema['properties'][property]:
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
+                                'type': 'choice'
+                            }
+                        elif subschema['properties'][property]['type'] == 'text' and 'markdown' in \
+                                subschema['properties'][property] and subschema['properties'][property]['markdown']:
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
+                                'type': 'markdown'
+                            }
+                        elif subschema['properties'][property]['type'] == 'text' and 'multiline' in \
+                                subschema['properties'][property] and subschema['properties'][property]['multiline']:
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
+                                'type': 'multiline'
+                            }
+                        elif subschema['properties'][property]['type'] == 'text':
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
+                                'type': 'text'
+                            }
+                        elif subschema['properties'][property]['type'] == 'bool':
+                            subschema['recipes'][i]['property_values'][property] = {
+                                'value': recipe['property_values'][property]['value'],
+                                'type': subschema['properties'][property]['type']
+                            }
+                        subschema['recipes'][i]['property_values'][property]['title'] = get_translated_text(
+                            subschema['properties'][property]['title'])
+                    subschema['recipes'][i]['name'] = get_translated_text(subschema['recipes'][i]['name'])
+            for property in subschema['properties']:
+                insert_recipe_types(subschema['properties'][property])
+        elif subschema['type'] == 'array':
+            insert_recipe_types(subschema['items'])
+
+    insert_recipe_types(schema)
 
     if object is None:
         if get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:

@@ -2283,3 +2283,286 @@ def test_validate_choice_equals_conditions():
     schema['properties']['conditional_property']['conditions'][0]['choice']['en'] = '3'
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_recipe():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1",
+                "property_values": {
+                    "text": {"text": "Text 1", "_type": "text"},
+                    "choice": {"text": "Option 1", "_type": "text"},
+                    "quantity": {"magnitude_in_base_units": 123.321, "_type": "quantity"},
+                    "boolean": {"value": True, "_type": "bool"},
+                    "timestamp": {"utc_datetime": "2022-04-05 09:07:00", "_type": "datetime"}
+                }
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text"
+            },
+            "choice": {
+                "title": "Choice",
+                "type": "text",
+                "choices": ["Option 1", "Option 2", "Option 3", "Option 4"]
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "nm"
+            },
+            "boolean": {
+                "title": "Boolean",
+                "type": "bool",
+                "default": False
+            },
+            "timestamp": {
+                "title": "Timestamp",
+                "type": "datetime"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "text", "choice", "quantity", "boolean", "timestamp"]
+    }
+    validate_schema(schema)
+
+    schema['recipes'][0]['property_values'] = {
+        "text": None,
+        "choice": None,
+        "quantity": None,
+        "timestamp": None
+    }
+    validate_schema(schema)
+
+
+def test_validate_recipe_invalid_name():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "property_values": {"text": {"text": "Text 1", "_type": "text"}}
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "text"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['name'] = 123
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['name'] = {'en': 'Recipe 1', 'se': 'recept 1'}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['name'] = {'en': 'Recipe 1', 'de': False}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['name'] = {'de': 'Rezept 1'}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_recipe_invalid_text():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1",
+                "property_values": {"text": {"_type": "text", "text": 123}}
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "text"]
+    }
+
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['property_values']['text']['text'] = {'en': 'Recipe 1', 'se': 'recept 1'}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['property_values']['text']['text'] = {'en': 'Recipe 1', 'de': False}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_recipe_invalid_choice():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1",
+                "property_values": {"choice": {"_type": "text", "text": "Option 42"}}
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "choice": {
+                "title": "Choice",
+                "type": "text",
+                "choices": ["Option 1", "Option 2", "Option 3", "Option 4"]
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "choice"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_recipe_invalid_quantity():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1",
+                "property_values": {"quantity": {"_type": "quantity", "magnitude": "Not a number"}}
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "nm"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_recipe_invalid_boolean():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1",
+                "property_values": {"boolean": {"_type": "bool", "value": "Not a number"}}
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "boolean": {
+                "title": "Boolean",
+                "type": "bool"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "boolean"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['property_values']['boolean'] = None
+
+
+def test_validate_recipe_invalid_datetime():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1",
+                "property_values": {"timestamp": {"_type": "datetime", "utc_datetime": 541997}}
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "timestamp": {
+                "title": "Timestamp",
+                "type": "datetime"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "timestamp"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['property_values']['timestamp']['datetime'] = '09:07:00 2022-04-05'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_recipe_invalid_properties():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": [
+            {
+                "name": "Recipe 1"
+            }
+        ],
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "timestamp": {
+                "title": "Timestamp",
+                "type": "datetime"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "timestamp"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['property_values'] = {"invalid_property": {"_type": "quantity", "magnitude": 42}}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
