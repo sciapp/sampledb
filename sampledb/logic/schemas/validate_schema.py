@@ -383,11 +383,11 @@ def _validate_object_schema(
                 if property_name not in schema['properties'].keys():
                     raise ValidationError('unknown property: {}'.format(property_name), path + ['(recipes)'])
                 if schema['properties'][property_name]['type'] not in ['text', 'quantity', 'datetime', 'bool']:
-                    raise ValidationError('unsupported type in recipe', path + ['(recipes)'])
+                    raise ValidationError('unsupported type in recipe', path + ['(recipes)', property_name])
                 if recipe['property_values'][property_name] is not None:
-                    validate(recipe['property_values'][property_name], schema['properties'][property_name])
+                    validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name])
                 elif schema['properties'][property_name]['type'] == 'bool':
-                    raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)'])
+                    raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
 
     _validate_note_in_schema(schema, path)
 

@@ -377,11 +377,15 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'}
+    required_keys = {'_type'}
+    valid_keys = required_keys.union({'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'})
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
     if 'units' not in instance:
