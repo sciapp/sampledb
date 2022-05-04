@@ -221,6 +221,12 @@
             </ul>
           </li>
           {% if num_unread_notifications > 0 %}<li class="nav-item-new-notifications"><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a></li>{% endif %}
+            {% if current_user.is_admin %}
+              {% set num_deprecation_warnings = get_num_deprecation_warnings() %}
+              {% if num_deprecation_warnings > 0 %}
+              <li class="nav-item-new-notifications"><a href="{{ url_for('frontend.admin_warnings') }}"><span class="badge badge-deprecation-warnings"><i class="fa fa-warning" aria-hidden="true"></i> {{ num_deprecation_warnings }}</span></a></li>
+              {% endif %}
+            {% endif %}
           {% else %}
           <li><a href="{{ url_for('frontend.sign_in') }}">{{ _('Sign in') }}</a></li>
           {% endif %}
@@ -264,20 +270,6 @@
             </div>
         {% endif %}
     {% endblock %}
-    {% if current_user.is_admin %}
-      {% block admin_notifcations %}
-        {% if show_admin_local_storage_warning() %}
-          <div class="alert alert-warning">
-            <p><strong>{{ _('Warning:') }}</strong> {{ _('Some objects have files in \'local\' storage, please move them to \'database\' storage.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage">{{ _('Read more.') }}</a>.</p>
-          </div>
-        {% endif %}
-        {% if show_load_objects_in_background_warning() %}
-          <div class="alert alert-warning">
-            <p><strong>{{ _('Warning:') }}</strong> {{ _('Asynchronous loading of object lists is disabled, please do not set the configuration value \'LOAD_OBJECTS_IN_BACKGROUND\' or set it to \'True\' or \'1\'.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#synchronous-loading-of-object Lists">{{ _('Read more.') }}</a>.</p>
-          </div>
-        {% endif %}
-      {% endblock %}
-    {% endif %}
     {% block content %}{% endblock %}
 </div>
 <footer>

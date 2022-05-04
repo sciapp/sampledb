@@ -32,7 +32,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user
-from ..logic.utils import get_translated_text
+from ..logic.utils import get_translated_text, show_admin_local_storage_warning, show_load_objects_in_background_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.settings import get_user_settings
@@ -40,7 +40,6 @@ from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.locations import Location, get_location
 from ..logic.location_permissions import get_user_location_permissions, Permissions
 from ..logic.datatypes import JSONEncoder
-from .. import db, models
 
 
 def jinja_filter(name: str = ''):
@@ -572,10 +571,8 @@ def get_search_paths(
 
 
 @jinja_function()
-def show_admin_local_storage_warning() -> bool:
-    return models.File.query.filter(db.text("data->>'storage' = 'local'")).first() is not None
-
-
-@jinja_function()
-def show_load_objects_in_background_warning() -> bool:
-    return not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']
+def get_num_deprecation_warnings():
+    return sum([
+        show_admin_local_storage_warning(),
+        show_load_objects_in_background_warning(),
+    ])

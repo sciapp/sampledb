@@ -17,6 +17,7 @@ frontend = flask.Blueprint(
 
 from . import actions
 from . import action_types
+from . import admin_warnings
 from . import authentication_forms
 from . import background_tasks
 from . import dataverse_export
@@ -43,6 +44,7 @@ from . import federation
 __all__ = [
     'actions',
     'action_types',
+    'admin_warnings',
     'authentication_forms',
     'background_tasks',
     'dataverse_export',

@@ -186,6 +186,9 @@ def create_app():
     if app.config['BUILD_TRANSLATIONS']:
         build_translations(app.config['PYBABEL_PATH'])
 
+    with app.app_context():
+        sampledb.logic.utils.print_deprecation_warnings()
+
     if app.config['ENABLE_BACKGROUND_TASKS']:
         app.before_first_request(lambda: sampledb.logic.background_tasks.start_handler_threads(app))
 
