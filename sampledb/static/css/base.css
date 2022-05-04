@@ -440,7 +440,7 @@ th:hover .search-helper {
     display:none;
 }
 
-.navbar-header .badge-new-notifications {
+.navbar-header .badge-new-notifications, .navbar-header .badge-deprecation-warnings {
     float: right;
     margin-top: 18px;
 }
@@ -458,7 +458,7 @@ th:hover .search-helper {
     .nav-search-link {
         display:block;
     }
-    .navbar-header .badge-new-notifications {
+    .navbar-header .badge-new-notifications, .navbar-header .badge-deprecation-warnings {
         display: none;
     }
     .nav > .nav-item-new-notifications {
@@ -505,7 +505,13 @@ th:hover .search-helper {
 
 .badge-new-notifications {
     background-color: #ff0000;
+    margin-right: 5px;
+}
+
+.badge-deprecation-warnings {
+    background-color: #fded7c;
     margin-right: 10px;
+    color: #333333;
 }
 
 #notifications-table tbody tr {
@@ -1020,4 +1026,9 @@ div.instrument-log-tree-container > h3 {
 
 .button-search-filter input {
     cursor: pointer;
+}
+
+code {
+    background-color: #f8f8f8;
+    color: #333333;
 }

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-04-26 15:05+0200\n"
+"POT-Creation-Date: 2022-05-04 12:46+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -400,10 +400,6 @@ msgstr "Das Objekt wurde erfolgreich aktualisiert."
 
 msgid "Creating objects with this action has been disabled."
 msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
-
-#, python-format
-msgid "Unknown database (%(uuid)s)"
-msgstr "Unbekannte Datenbank (%(uuid)s)"
 
 msgid "Editing imported objects is not yet supported."
 msgstr "Das Bearbeiten importierter Objekte wird noch nicht unterstützt."
@@ -946,6 +942,10 @@ msgstr "Ort"
 
 msgid "Unnamed Location"
 msgstr "Unbenannter Ort"
+
+#, python-format
+msgid "Unknown database (%(uuid)s)"
+msgstr "Unbekannte Datenbank (%(uuid)s)"
 
 msgid "API Log"
 msgstr "API Log"
@@ -2729,6 +2729,28 @@ msgstr "Daten"
 
 msgid "There are no pending or failed tasks."
 msgstr "Aktuell gibt es keine ausstehenden oder fehlgeschlagenen Aufgaben."
+
+msgid "Warnings"
+msgstr "Warnungen"
+
+msgid ""
+"Some objects have files in <code>local</code> storage, please move them "
+"to <code>database</code> storage."
+msgstr ""
+"Manche Objekte haben Dateien mit <code>local</code> Speicherung, bitte "
+"übertragen Sie diese zu <code>database</code> Speicherung."
+
+msgid ""
+"Asynchronous loading of object lists is disabled, please do not set the "
+"configuration value <code>LOAD_OBJECTS_IN_BACKGROUND</code> or set it to "
+"<code>True</code> or <code>1</code>."
+msgstr ""
+"Asynchrones Laden von Objektlisten ist deaktiviert, bitte setzen Sie die "
+"Konfigurationsvariable <code>LOAD_OBJECTS_IN_BACKGROUND</code> nicht oder"
+" setzen Sie sie auf <code>True</code> oder <code>1</code>."
+
+msgid "There are no warnings for this installation of SampleDB."
+msgstr "Es gibt keine Warnungen für diese SampleDB-Installation."
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"

@@ -5,6 +5,7 @@
 
 import re
 import typing
+import sys
 
 import flask
 import flask_login
@@ -14,7 +15,8 @@ from .languages import get_user_language
 from .. import db
 from .background_tasks.send_mail import post_send_mail_task, BackgroundTaskStatus
 from .security_tokens import generate_token
-from ..models import Authentication, AuthenticationType, User
+from ..models import Authentication, AuthenticationType, User, File
+from ..utils import ansi_color
 
 
 def send_user_invitation_email(
@@ -204,3 +206,37 @@ def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file'
             raise errors.InvalidURLError()
 
     return match_dict
+
+
+def print_deprecation_warnings() -> None:
+    if show_admin_local_storage_warning():
+        print(
+            ansi_color(
+                "Some objects have files in 'local' storage, please move them "
+                "to 'database' storage. To learn more, see: "
+                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage",
+                color=33
+            ),
+            file=sys.stderr,
+            end='\n\n'
+        )
+    if show_load_objects_in_background_warning():
+        print(
+            ansi_color(
+                "Asynchronous loading of object lists is disabled, please do "
+                "not set the configuration value 'LOAD_OBJECTS_IN_BACKGROUND' "
+                "or set it to 'True' or '1'. To learn more, see: "
+                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#synchronous-loading-of-object Lists",
+                color=33
+            ),
+            file=sys.stderr,
+            end='\n\n'
+        )
+
+
+def show_admin_local_storage_warning() -> bool:
+    return File.query.filter(db.text("data->>'storage' = 'local'")).first() is not None
+
+
+def show_load_objects_in_background_warning() -> bool:
+    return not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']

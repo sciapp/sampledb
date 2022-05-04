@@ -200,7 +200,7 @@ This example shows how Markdown can be used for instrument Notes.
         independent_object = sampledb.logic.objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
-        files.create_local_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
+        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
         files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs01.png'), 'rb').read()))
         files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
         files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')

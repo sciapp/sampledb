@@ -14,6 +14,9 @@ Currently in development.
 - Improve static file caching
 - Added support for a monitoring dashboard (experimental)
 - Added location permission management
+- Enabled asynchronous loading of object lists by default
+- Deprecated setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` to false
+- Deprecated local file storage
 
 Version 0.20
 ------------

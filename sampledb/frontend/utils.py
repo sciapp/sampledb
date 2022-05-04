@@ -32,7 +32,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user
-from ..logic.utils import get_translated_text
+from ..logic.utils import get_translated_text, show_admin_local_storage_warning, show_load_objects_in_background_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.settings import get_user_settings
@@ -568,3 +568,11 @@ def get_search_paths(
                 if property_type not in search_paths[property_path]['types']:
                     search_paths[property_path]['types'].append(property_type)
     return search_paths, search_paths_by_action, search_paths_by_action_type
+
+
+@jinja_function()
+def get_num_deprecation_warnings():
+    return sum([
+        show_admin_local_storage_warning(),
+        show_load_objects_in_background_warning(),
+    ])

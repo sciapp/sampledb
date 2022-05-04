@@ -109,7 +109,7 @@ rst_prolog = """
 .. |service_actions_url| replace:: {service_url}/actions
 .. |service_instruments_url| replace:: {service_url}/instruments
 
-.. _let us know: mailto:{contact_email}
+.. _let us know: https://github.com/sciapp/sampledb/issues/new
 
 """.format(
     service_name=service_name,

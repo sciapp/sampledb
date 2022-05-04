@@ -221,6 +221,12 @@
             </ul>
           </li>
           {% if num_unread_notifications > 0 %}<li class="nav-item-new-notifications"><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a></li>{% endif %}
+            {% if current_user.is_admin %}
+              {% set num_deprecation_warnings = get_num_deprecation_warnings() %}
+              {% if num_deprecation_warnings > 0 %}
+              <li class="nav-item-new-notifications"><a href="{{ url_for('frontend.admin_warnings') }}"><span class="badge badge-deprecation-warnings"><i class="fa fa-warning" aria-hidden="true"></i> {{ num_deprecation_warnings }}</span></a></li>
+              {% endif %}
+            {% endif %}
           {% else %}
           <li><a href="{{ url_for('frontend.sign_in') }}">{{ _('Sign in') }}</a></li>
           {% endif %}

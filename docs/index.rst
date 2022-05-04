@@ -42,6 +42,7 @@ Administrator Guide
     administrator_guide/languages.rst
     administrator_guide/federation.rst
     administrator_guide/monitoring_dashboard.rst
+    administrator_guide/deprecated_features.rst
 
 Developer Guide
 ---------------
