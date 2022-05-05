@@ -211,7 +211,7 @@
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">{{ _('Your Basic Groups') }}</a></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">{{ _('Your Project Groups') }}</a></li>
               <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">{{ _('Your Actions') }}</a></li>
-              <li><a href="{{ url_for('frontend.objects', user=current_user.id) }}">{{ _('Your Objects') }}</a></li>
+              <li><a href="{{ url_for('frontend.objects', related_user=current_user.id) }}">{{ _('Your Objects') }}</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>

@@ -2,7 +2,7 @@
 """
 
 """
-
+import typing
 from copy import deepcopy
 import datetime
 import io
@@ -13,6 +13,7 @@ import os
 import zipfile
 
 import flask
+import flask_babel
 import flask_login
 import itsdangerous
 import requests
@@ -133,27 +134,14 @@ def objects():
                 objects.append(get_object(object_id))
             except logic.errors.ObjectDoesNotExistError:
                 pass
-        action_id = None
-        action = None
-        action_type = None
-        project_id = None
-        location_id = None
-        location = None
-        user = None
-        user_id = None
-        doi = None
-        object_ids_at_location = None
-        project = None
-        group = None
-        group_id = None
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
         advanced_search_had_error = False
         search_notes = []
         search_tree = None
-        limit = None
-        offset = None
+        pagination_limit = None
+        pagination_offset = None
         pagination_enabled = True
         num_objects_found = len(objects)
         sorting_property_name = None
@@ -165,29 +153,16 @@ def objects():
         filter_action_type_ids = []
         all_locations = []
         filter_location_ids = []
+        filter_related_user_id = None
+        filter_doi = None
+        filter_user_id = None
+        filter_user_permissions = None
+        filter_group_id = None
+        filter_group_permissions = None
+        filter_project_id = None
+        filter_project_permissions = None
     else:
         pagination_enabled = True
-        try:
-            user_id = int(flask.request.args.get('user', ''))
-            user = get_user(user_id)
-        except ValueError:
-            user_id = None
-            user = None
-        except UserDoesNotExistError:
-            user_id = None
-            user = None
-        if user_id is not None:
-            user_permissions = {
-                'read': Permissions.READ,
-                'write': Permissions.WRITE,
-                'grant': Permissions.GRANT
-            }.get(flask.request.args.get('user_permissions', '').lower())
-        else:
-            user_permissions = None
-        try:
-            doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
-        except logic.errors.InvalidDOIError:
-            doi = None
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
@@ -226,19 +201,6 @@ def objects():
                 flask.flash(_('Unable to parse location IDs.'), 'error')
             except LocationDoesNotExistError:
                 flask.flash(_('No location with the given ID exists.'), 'error')
-        if filter_location_ids is not None:
-            object_ids_at_location = set()
-            for location_id in filter_location_ids:
-                object_ids_at_location.update(get_object_ids_at_location(location_id))
-            object_ids_at_location = list(object_ids_at_location)
-        else:
-            object_ids_at_location = None
-        if filter_location_ids is not None and len(filter_location_ids) == 1:
-            location_id = filter_location_ids[0]
-            location = get_location(location_id)
-        else:
-            location_id = None
-            location = None
 
         if 'action_ids' in flask.request.args:
             try:
@@ -299,12 +261,13 @@ def objects():
             action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
             action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
             action_schema = action.schema
-            if not display_properties:
-                display_properties = action_schema.get('displayProperties', [])
-                for property_name in display_properties:
-                    display_property_titles[property_name] = flask.escape(action_schema['properties'][property_name]['title'])
+            action_display_properties = action_schema.get('displayProperties', [])
+            for property_name in action_display_properties:
+                if property_name not in display_properties:
+                    display_properties.append(property_name)
+                if property_name not in display_property_titles:
+                    display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
         else:
-            action = None
             action_type_id = flask.request.args.get('t', '')
             if action_type_id is not None:
                 try:
@@ -330,80 +293,101 @@ def objects():
             filter_action_ids = [action_id]
         if filter_action_type_ids is None and action_type is not None:
             filter_action_type_ids = [action_type.id]
-        project_permissions = None
         if display_properties:
             name_only = False
-        try:
-            project_id = int(flask.request.args.get('project', ''))
-        except ValueError:
-            project_id = None
-        if project_id is not None:
-            if Permissions.READ not in get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
-                return flask.abort(403)
-            project = get_project(project_id)
-            project_permissions = {
-                'read': Permissions.READ,
-                'write': Permissions.WRITE,
-                'grant': Permissions.GRANT
-            }.get(flask.request.args.get('project_permissions', '').lower())
-        else:
-            project = None
 
-        group_permissions = None
         try:
-            group_id = int(flask.request.args.get('group', ''))
+            filter_related_user_id = int(flask.request.args.get('related_user', ''))
+            get_user(filter_related_user_id)
         except ValueError:
-            group_id = None
-        if group_id is not None:
-            try:
-                group = logic.groups.get_group(group_id)
-                group_member_ids = logic.groups.get_group_member_ids(group_id)
-            except logic.errors.GroupDoesNotExistError:
-                group = None
-            else:
-                if flask_login.current_user.id not in group_member_ids:
-                    return flask.abort(403)
+            filter_related_user_id = None
+        except UserDoesNotExistError:
+            filter_related_user_id = None
+
+        try:
+            filter_doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
+        except logic.errors.InvalidDOIError:
+            filter_doi = None
+
+        filter_user_permissions = None
+        try:
+            filter_user_id = int(flask.request.args.get('user', ''))
+            get_user(filter_user_id)
+        except ValueError:
+            filter_user_id = None
+        except UserDoesNotExistError:
+            filter_user_id = None
         else:
-            group = None
-        if group is not None:
-            group_permissions = {
+            filter_user_permissions = {
                 'read': Permissions.READ,
                 'write': Permissions.WRITE,
                 'grant': Permissions.GRANT
-            }.get(flask.request.args.get('group_permissions', '').lower())
+            }.get(flask.request.args.get('user_permissions', '').lower(), Permissions.READ)
+
+        filter_group_permissions = None
+        try:
+            filter_group_id = int(flask.request.args.get('group', ''))
+            group_member_ids = logic.groups.get_group_member_ids(filter_group_id)
+        except ValueError:
+            filter_group_id = None
+        except logic.errors.GroupDoesNotExistError:
+            filter_group_id = None
         else:
-            group_permissions = None
+            if flask_login.current_user.id not in group_member_ids:
+                return flask.abort(403)
+            filter_group_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('group_permissions', '').lower(), Permissions.READ)
+
+        filter_project_permissions = None
+        try:
+            filter_project_id = int(flask.request.args.get('project', ''))
+            get_project(filter_project_id)
+        except ValueError:
+            filter_project_id = None
+        except logic.errors.ProjectDoesNotExistError:
+            filter_project_id = None
+        else:
+            if Permissions.READ not in get_user_project_permissions(project_id=filter_project_id, user_id=flask_login.current_user.id, include_groups=True):
+                return flask.abort(403)
+            filter_project_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(flask.request.args.get('project_permissions', '').lower(), Permissions.READ)
 
         if flask.request.args.get('limit', '') == 'all':
-            limit = None
+            pagination_limit = None
         else:
             try:
-                limit = int(flask.request.args.get('limit', ''))
+                pagination_limit = int(flask.request.args.get('limit', ''))
             except ValueError:
-                limit = None
+                pagination_limit = None
             else:
-                if limit <= 0:
-                    limit = None
-                elif limit >= 1000:
-                    limit = 1000
+                if pagination_limit <= 0:
+                    pagination_limit = None
+                elif pagination_limit >= 1000:
+                    pagination_limit = 1000
 
             # default objects per page
-            if limit is None:
-                limit = get_user_settings(flask_login.current_user.id)['OBJECTS_PER_PAGE']
+            if pagination_limit is None:
+                pagination_limit = get_user_settings(flask_login.current_user.id)['OBJECTS_PER_PAGE']
             else:
-                set_user_settings(flask_login.current_user.id, {'OBJECTS_PER_PAGE': limit})
+                set_user_settings(flask_login.current_user.id, {'OBJECTS_PER_PAGE': pagination_limit})
 
         try:
-            offset = int(flask.request.args.get('offset', ''))
+            pagination_offset = int(flask.request.args.get('offset', ''))
         except ValueError:
-            offset = None
+            pagination_offset = None
         else:
-            if offset < 0:
-                offset = None
-            elif offset > 100000000:
-                offset = 100000000
-        if limit is not None and offset is None:
-            offset = 0
+            if pagination_offset < 0:
+                pagination_offset = None
+            elif pagination_offset > 100000000:
+                pagination_offset = 100000000
+        if pagination_limit is not None and pagination_offset is None:
+            pagination_offset = 0
 
         sorting_order_name = flask.request.args.get('order', None)
         if sorting_order_name == 'asc':
@@ -446,17 +430,17 @@ def objects():
         advanced_search_had_error = False
         additional_search_notes = []
         if not use_advanced_search and query_string:
-            if user_id is None:
+            if filter_user_id is None:
                 users = get_users_by_name(query_string)
                 if len(users) == 1:
                     user = users[0]
-                    user_id = user.id
+                    filter_user_id = user.id
                     query_string = ''
                 elif len(users) > 1:
                     additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
-            if doi is None and query_string.startswith('doi:'):
+            if filter_doi is None and query_string.startswith('doi:'):
                 try:
-                    doi = logic.publications.simplify_doi(query_string)
+                    filter_doi = logic.publications.simplify_doi(query_string)
                     query_string = ''
                 except logic.errors.InvalidDOIError:
                     pass
@@ -475,34 +459,46 @@ def objects():
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func)
         search_notes.extend(additional_search_notes)
-        if user_id is None or user_permissions is not None:
+
+        if filter_location_ids is not None:
+            object_ids_at_location = set()
+            for location_id in filter_location_ids:
+                object_ids_at_location.update(get_object_ids_at_location(location_id))
+        else:
+            object_ids_at_location = None
+        if filter_related_user_id is None:
             object_ids_for_user = None
         else:
-            object_ids_for_user = user_log.get_user_related_object_ids(user_id)
-        if doi is None:
+            object_ids_for_user = set(user_log.get_user_related_object_ids(filter_related_user_id))
+        if filter_doi is None:
             object_ids_for_doi = None
         else:
-            object_ids_for_doi = logic.publications.get_object_ids_linked_to_doi(doi)
+            object_ids_for_doi = set(logic.publications.get_object_ids_linked_to_doi(filter_doi))
+
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
         try:
-            object_ids = None
+            object_ids: typing.Optional[typing.Set[int]] = None
             if object_ids_at_location is not None:
                 if object_ids is None:
-                    object_ids = set()
-                object_ids = object_ids.union(object_ids_at_location)
+                    object_ids = object_ids_at_location
+                else:
+                    object_ids = object_ids.intersection(object_ids_at_location)
             if object_ids_for_user is not None:
                 if object_ids is None:
-                    object_ids = set()
-                object_ids = object_ids.union(object_ids_for_user)
+                    object_ids = object_ids_for_user
+                else:
+                    object_ids = object_ids.intersection(object_ids_for_user)
             if object_ids_for_doi is not None:
                 if object_ids is None:
-                    object_ids = set()
-                object_ids = object_ids.union(object_ids_for_doi)
+                    object_ids = object_ids_for_doi
+                else:
+                    object_ids = object_ids.intersection(object_ids_for_doi)
+
             if object_ids is not None:
                 pagination_enabled = False
-                limit = None
-                offset = None
+                pagination_limit = None
+                pagination_offset = None
             if object_ids is not None and not object_ids:
                 objects = []
                 num_objects_found = 0
@@ -513,16 +509,16 @@ def objects():
                     permissions=Permissions.READ,
                     filter_func=filter_func,
                     sorting_func=sorting_function,
-                    limit=limit,
-                    offset=offset,
+                    limit=pagination_limit,
+                    offset=pagination_offset,
                     action_ids=filter_action_ids,
                     action_type_ids=filter_action_type_ids,
-                    other_user_id=user_id,
-                    other_user_permissions=user_permissions,
-                    project_id=project_id,
-                    project_permissions=project_permissions,
-                    group_id=group_id,
-                    group_permissions=group_permissions,
+                    other_user_id=filter_user_id,
+                    other_user_permissions=filter_user_permissions,
+                    project_id=filter_project_id,
+                    project_permissions=filter_project_permissions,
+                    group_id=filter_group_id,
+                    group_permissions=filter_group_permissions,
                     object_ids=object_ids,
                     num_objects_found=num_objects_found_list,
                     name_only=name_only
@@ -583,10 +579,6 @@ def objects():
                 # property data cannot be displayed (e.g. None/null or array)
                 continue
             objects[i]['display_properties'][property_name] = (property_data, property_schema)
-    if action_id is None:
-        show_action = True
-    else:
-        show_action = False
 
     def build_modified_url(**query_parameters):
         for key in flask.request.args:
@@ -657,7 +649,111 @@ def objects():
     if last_edit_info is None:
         last_edit_info = ['user', 'date']
     if action_info is None:
-        action_info = ['instrument', 'action']
+        if filter_action_ids is None or len(filter_action_ids) != 1:
+            action_info = ['instrument', 'action']
+        else:
+            action_info = []
+
+    object_name_plural = flask_babel.gettext('Objects')
+
+    filter_action_type_infos = []
+    if filter_action_type_ids:
+        for action_type_id in filter_action_type_ids:
+            action_type = get_action_type_with_translation_in_language(action_type_id, user_language_id)
+            action_type_name = action_type.translation.name
+            action_type_component = get_component(action_type.component_id) if action_type.component_id is not None else None
+            if not action_type_name:
+                action_type_name = flask_babel.gettext('Unnamed Action Type')
+            filter_action_type_infos.append({
+                'id': action_type_id,
+                'name': action_type_name,
+                'url': flask.url_for('.actions', t=action_type_id),
+                'fed_id': action_type.fed_id,
+                'component_name': action_type_component.get_name() if action_type_component is not None else None
+            })
+
+            if filter_action_type_ids and len(filter_action_type_ids) == 1:
+                object_name_plural = action_type.translation.object_name_plural
+
+    filter_action_infos = []
+    if filter_action_ids:
+        for action_id in filter_action_ids:
+            action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
+            action_name = action.translation.name
+            if not action_name:
+                action_name = flask_babel.gettext('Unnamed Action')
+            action_name += f' (#{action_id})'
+            filter_action_infos.append({
+                'name': action_name,
+                'url': flask.url_for('.action', action_id=action_id),
+                'fed_id': action.fed_id,
+                'component_name': action.component.get_name() if action.component is not None else None
+            })
+
+    filter_location_infos = []
+    if filter_location_ids:
+        for location_id in filter_location_ids:
+            location = get_location(location_id)
+            location_name = get_location_name(location_id, include_id=True)
+            filter_location_infos.append({
+                'name': location_name,
+                'url': flask.url_for('.location', location_id=location_id),
+                'fed_id': location.fed_id,
+                'component_name': location.component.get_name() if location.component is not None else None
+            })
+
+    if filter_related_user_id is not None:
+        user = get_user(filter_related_user_id)
+        filter_related_user_info = {
+            'name': user.get_name(),
+            'url': flask.url_for('.user_profile', user_id=filter_related_user_id),
+            'fed_id': user.fed_id,
+            'component_name': user.component.get_name() if user.component is not None else None,
+        }
+    else:
+        filter_related_user_info = None
+
+    if filter_user_permissions is not None and filter_user_id is not None:
+        filter_user_permissions_info = {
+            'name': None,
+            'url': None,
+            'fed_id': None,
+            'component_name': None,
+            'permissions': flask_babel.gettext(filter_user_permissions.name.title())
+        }
+        if filter_user_id != flask_login.current_user.id:
+            user = get_user(filter_user_id)
+            filter_user_permissions_info.update({
+                'name': user.get_name(),
+                'url': flask.url_for('.user_profile', user_id=filter_user_id),
+                'fed_id': user.fed_id,
+                'component_name': user.component.get_name() if user.component is not None else None,
+            })
+        elif filter_user_permissions == Permissions.READ:
+            # READ permissions for the current user as always necessary, so this filter does not need to be displayed
+            filter_user_permissions_info = None
+    else:
+        filter_user_permissions_info = None
+
+    if filter_group_permissions is not None and filter_group_id is not None:
+        group = get_group(filter_group_id)
+        filter_group_permissions_info = {
+            'name': f'{get_translated_text(group.name)} (#{filter_group_id})',
+            'url': flask.url_for('.group', group_id=filter_group_id),
+            'permissions': flask_babel.gettext(filter_group_permissions.name.title())
+        }
+    else:
+        filter_group_permissions_info = None
+
+    if filter_project_permissions is not None and filter_project_id is not None:
+        project = get_project(filter_project_id)
+        filter_project_permissions_info = {
+            'name': f'{get_translated_text(project.name)} (#{filter_project_id})',
+            'url': flask.url_for('.project', project_id=filter_project_id),
+            'permissions': flask_babel.gettext(filter_project_permissions.name.title())
+        }
+    else:
+        filter_project_permissions_info = None
 
     return flask.render_template(
         'objects/objects.html',
@@ -665,6 +761,11 @@ def objects():
         display_properties=display_properties,
         display_property_titles=display_property_titles,
         search_query=query_string,
+        use_advanced_search=use_advanced_search,
+        must_use_advanced_search=must_use_advanced_search,
+        advanced_search_had_error=advanced_search_had_error,
+        search_notes=search_notes,
+        search_tree=search_tree,
         search_paths=search_paths,
         search_paths_by_action=search_paths_by_action,
         search_paths_by_action_type=search_paths_by_action_type,
@@ -672,41 +773,32 @@ def objects():
         creation_info=creation_info,
         last_edit_info=last_edit_info,
         action_info=action_info,
-        action=action,
         action_translations=action_translations,
-        action_id=action_id,
-        action_type=action_type,
+        object_name_plural=object_name_plural,
+        filter_action_type_infos=filter_action_type_infos,
+        filter_action_infos=filter_action_infos,
+        filter_location_infos=filter_location_infos,
+        filter_related_user_info=filter_related_user_info,
+        filter_user_permissions_info=filter_user_permissions_info,
+        filter_group_permissions_info=filter_group_permissions_info,
+        filter_project_permissions_info=filter_project_permissions_info,
+        filter_doi_info=filter_doi,
         show_filters=show_filters,
         all_actions=all_actions,
         filter_action_ids=filter_action_ids,
         all_action_types=all_action_types,
         filter_action_type_ids=filter_action_type_ids,
-        project=project,
-        project_id=project_id,
-        group=group,
-        group_id=group_id,
-        location_id=location_id,
-        location=location,
         all_locations=all_locations,
         filter_location_ids=filter_location_ids,
-        user_id=user_id,
-        user=user,
-        doi=doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         get_instrument_translation_for_instrument_in_language=logic.instrument_translations.get_instrument_translation_for_instrument_in_language,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
-        limit=limit,
-        offset=offset,
+        limit=pagination_limit,
+        offset=pagination_offset,
         pagination_enabled=pagination_enabled,
         num_objects_found=num_objects_found,
-        show_action=show_action,
-        use_advanced_search=use_advanced_search,
-        must_use_advanced_search=must_use_advanced_search,
-        advanced_search_had_error=advanced_search_had_error,
-        search_notes=search_notes,
-        search_tree=search_tree,
         get_user=get_user,
         get_component=get_component
     )
