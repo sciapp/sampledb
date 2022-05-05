@@ -1,3 +1,7 @@
 <div class="row" style="padding-right:0.75em">
-    {{ data.utc_datetime | babel_format_datetime}}
+    {% if data is not none %}
+      {{ data.utc_datetime | babel_format_datetime }}
+    {% else %}
+      &mdash;
+    {% endif %}
 </div>
