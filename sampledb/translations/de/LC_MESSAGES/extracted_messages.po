@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-05-04 13:38+0200\n"
+"POT-Creation-Date: 2022-05-05 15:20+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -324,7 +324,7 @@ msgid "Please enter a magnitude."
 msgstr "Bitte geben Sie eine Größe ein."
 
 msgid "Unable to parse magnitude."
-msgstr "Größe konnte nicht geparset werden."
+msgstr "Größe konnte nicht geparst werden."
 
 msgid "The magnitude must be a number."
 msgstr "Die Größe muss eine Zahl sein."
@@ -335,11 +335,38 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
+msgid "Unable to parse location IDs."
+msgstr "Orts-IDs konnten nicht geparst werden."
+
+msgid "Invalid location ID."
+msgstr "Ungültige Orts-ID"
+
+msgid "Only one of location_ids and location may be set."
+msgstr "location_ids und location dürfen nicht beide gesetzt sein."
+
 msgid "You do not have the required permissions to access this location."
 msgstr "Ihnen fehlen die Berechtigungen um auf diesen Ort zuzugreifen."
 
 msgid "No location with the given ID exists."
 msgstr "Es existiert kein Ort mit dieser ID."
+
+msgid "Unable to parse action IDs."
+msgstr "Aktions-IDs konnten nicht geparst werden."
+
+msgid "Invalid action ID."
+msgstr "Ungültige Aktions-ID"
+
+msgid "Only one of action_ids and action may be set."
+msgstr "action_ids und action dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse action type IDs."
+msgstr "Aktionstyp-IDs konnten nicht geparst werden."
+
+msgid "Invalid action type ID."
+msgstr "Ungültige Aktionstyp-ID"
+
+msgid "Only one of action_type_ids and t may be set."
+msgstr "action_type_ids und t dürfen nicht beide gesetzt sein."
 
 #, python-format
 msgid ""
@@ -354,6 +381,15 @@ msgstr "Tags"
 
 msgid "Hazards"
 msgstr "Gefahren"
+
+msgid "Objects"
+msgstr "Objekte"
+
+msgid "Unnamed Action Type"
+msgstr "Unbenannter Aktionstyp"
+
+msgid "Unnamed Action"
+msgstr "Unbenannte Aktion"
 
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
@@ -1053,9 +1089,6 @@ msgstr "Instrumente"
 
 msgid "Actions"
 msgstr "Aktionen"
-
-msgid "Objects"
-msgstr "Objekte"
 
 msgid "Objects with <b>READ</b> permissions"
 msgstr "Objekte mit <b>LESE</b>-Berechtigungen"
@@ -3468,23 +3501,45 @@ msgstr "Fehler:"
 msgid "Query:"
 msgstr "Abfrage:"
 
-msgid " for <a href=\"{}\">Project Group #{}: {}</a>"
-msgstr " für <a href=\"{}\">Projektgruppe #{}: {}</a>"
+msgid "for action type:"
+msgstr "für den Aktionstyp:"
 
-msgid " for <a href=\"{}\">Basic Group #{}: {}</a>"
-msgstr " für <a href=\"{}\">einfache Gruppe #{}: {}</a>"
+msgid "for action types:"
+msgstr "für die Aktionstypen:"
 
-msgid " for <a href=\"{}\">Action #{}: {}</a>"
-msgstr " für <a href=\"{}\">Aktion #{}: {}</a>"
+msgid "for action:"
+msgstr "für die Aktion:"
 
-msgid " for <a href=\"{}\">Location #{}: {}</a>"
-msgstr " für <a href=\"{}\">Ort #{}: {}</a>"
+msgid "for actions:"
+msgstr "für die Aktionen:"
 
-msgid " for <a href=\"{}\">User #{}: {}</a>"
-msgstr " für <a href=\"{}\">Nutzer #{}: {}</a>"
+msgid "for location:"
+msgstr "für den Ort:"
 
-msgid " for Publication <a href=\"https://doi.org/{}\">doi:{}</a>"
-msgstr " für Veröffentlichung <a href=\"https://doi.org/{}\">doi:{}</a>"
+msgid "for locations:"
+msgstr "für die Orte:"
+
+msgid "for publication:"
+msgstr "für die Publikation:"
+
+msgid "with activity by user:"
+msgstr "mit Aktivität des Nutzers:"
+
+#, python-format
+msgid "with %(permissions)s permissions for user:"
+msgstr "mit %(permissions)s-Berechtigungen für den Nutzer:"
+
+#, python-format
+msgid "with %(permissions)s permissions"
+msgstr "mit %(permissions)s-Berechtigungen"
+
+#, python-format
+msgid "with %(permissions)s permissions for basic group:"
+msgstr "mit %(permissions)s-Berechtigungen für die einfache Gruppe:"
+
+#, python-format
+msgid "with %(permissions)s permissions for project group:"
+msgstr "mit %(permissions)s-Berechtigungen für die Projektgruppe:"
 
 msgid "Options"
 msgstr "Einstellungen"
@@ -3518,6 +3573,30 @@ msgstr "Aktion anzeigen"
 
 msgid "Apply"
 msgstr "Anwenden"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Filter by Permissions"
+msgstr "Nach Berechtigungen filtern"
+
+msgid "Filter by Action Type"
+msgstr "Nach Aktionstyp filtern"
+
+msgid "All action types"
+msgstr "Alle Aktionstypen"
+
+msgid "Filter by Action"
+msgstr "Nach Aktion filtern"
+
+msgid "All actions"
+msgstr "Alle Aktionen"
+
+msgid "Filter by Location"
+msgstr "Nach Ort filtern"
+
+msgid "All locations"
+msgstr "Alle Orte"
 
 msgid "Created"
 msgstr "Erstellt"

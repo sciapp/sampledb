@@ -11,6 +11,7 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/plotly-latest.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('js/plotly-locale-de.js') }}"></script>
     <script type="text/javascript">
@@ -22,6 +23,7 @@
       $(plotly_charts).each(function(index, element) {
         Plotly.newPlot(element[0], element[1]);
       });
+      $('.selectpicker').selectpicker();
     });
   </script>
 {% endblock %}
@@ -111,50 +113,78 @@
   {% endif %}
 
   {% if objects or not search_notes %}
-  {% if project_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">Project Group #{}: {}</a>").format(url_for('.project', project_id=project_id), project_id, (project.name | get_translated_text) | e) | safe %}
-  {% elif group_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">Basic Group #{}: {}</a>").format(url_for('.group', group_id=group_id), group_id, (group.name | get_translated_text) | e) | safe %}
-  {% elif action_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">Action #{}: {}</a>").format(url_for('.action', action_id=action_id), action_id, action.translation.name | e) | safe %}
-    {% if action.component_id is not none %}
-      {% set linked_component = get_component(action.component_id) %}
-      {% if linked_component.address is not none %}
-        {% set object_suffix = object_suffix + " <a href=\"{}{}\"><i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i></a>".format(linked_component.address, url_for('frontend.action', action_id=action.fed_id), action.fed_id, linked_component.get_name()) | safe %}
-      {% else %}
-        {% set object_suffix = object_suffix + " <i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i>".format(action.fed_id, linked_component.get_name()) | safe %}
+    <h1>{{ object_name_plural }}</h1>
+    {% if filter_action_type_infos or filter_action_infos or filter_location_infos or filter_related_user_info or filter_user_permissions_info or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info %}
+      <ul>
+      {% if filter_action_type_infos %}
+        <li>
+          {% if filter_action_type_infos | length == 1 %}
+            {{ _('for action type:') }}
+          {% else %}
+            {{ _('for action types:') }}
+          {% endif %}
+          {% for action_type_info in filter_action_type_infos %}
+            <a href="{{ action_type_info.url }}">{{ action_type_info.name }}</a>{% if action_type_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_type_info.fed_id }} @ {{ action_type_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_type_infos | length %},{% elif loop.index + 1 == filter_action_type_infos | length %} or {% endif %}
+          {% endfor %}
+        </li>
       {% endif %}
-    {% endif %}
-  {% elif location_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">Location #{}: {}</a>").format(url_for('.location', location_id=location_id), location_id, (location | get_location_name(False)) | e) | safe %}
-    {% if location.component is not none %}
-      {% set linked_component = location.component %}
-      {% if linked_component.address is not none %}
-        {% set object_suffix = object_suffix + " <a href=\"{}{}\"><i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i></a>".format(linked_component.address, url_for('frontend.location', location_id=location.fed_id), location.fed_id, linked_component.get_name()) | safe %}
-      {% else %}
-        {% set object_suffix = object_suffix + " <i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i>".format(location.fed_id, linked_component.get_name()) | safe %}
+      {% if filter_action_infos %}
+        <li>
+          {% if filter_action_infos | length == 1 %}
+            {{ _('for action:') }}
+          {% else %}
+            {{ _('for actions:') }}
+          {% endif %}
+          {% for action_info in filter_action_infos %}
+            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} or {% endif %}
+          {% endfor %}
+        </li>
       {% endif %}
-    {% endif %}
-  {% elif user_id %}
-    {% set object_suffix = _(" for <a href=\"{}\">User #{}: {}</a>").format(url_for('.user_profile', user_id=user_id), user_id, user.get_name() | e) | safe %}
-    {% if user.component_id is not none %}
-      {% set linked_component = get_component(user.component_id) %}
-      {% if linked_component.address is not none %}
-        {% set object_suffix = object_suffix + " <a href=\"{}{}\"><i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i></a>".format(linked_component.address, url_for('frontend.user_profile', user_id=user.fed_id), user.fed_id, linked_component.get_name()) | safe %}
-      {% else %}
-        {% set object_suffix = object_suffix + " <i class=\"fa fa-share-alt\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"#{} @ {}\"></i>".format(user.fed_id, linked_component.get_name()) | safe %}
+      {% if filter_location_infos %}
+        <li>
+          {% if filter_location_infos | length == 1 %}
+            {{ _('for location:') }}
+          {% else %}
+            {{ _('for locations:') }}
+          {% endif %}
+          {% for location_info in filter_location_infos %}
+            <a href="{{ location_info.url }}">{{ location_info.name }}</a>{% if location_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ location_info.fed_id }} @ {{ location_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_location_infos | length %},{% elif loop.index + 1 == filter_location_infos | length %} or {% endif %}
+          {% endfor %}
+        </li>
       {% endif %}
+      {% if filter_doi_info %}
+        <li>{{ _('for publication:') }} {{ filter_doi_info }}</li>
+      {% endif %}
+      {% if filter_related_user_info %}
+        <li>
+        {{ _('with activity by user:') }}
+        <a href="{{ filter_related_user_info.url }}">{{ filter_related_user_info.name }}</a>{% if filter_related_user_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ filter_related_user_info.fed_id }} @ {{ filter_related_user_info.component_name }}"></i>{% endif %}
+        </li>
+      {% endif %}
+      {% if filter_user_permissions_info %}
+        <li>
+        {% if filter_user_permissions_info.url %}
+          {{ _('with %(permissions)s permissions for user:', permissions=filter_user_permissions_info.permissions) }}
+          <a href="{{ filter_user_permissions_info.url }}">{{ filter_user_permissions_info.name }}</a>{% if filter_user_permissions_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ filter_user_permissions_info.fed_id }} @ {{ filter_user_permissions_info.component_name }}"></i>{% endif %}
+        {% else %}
+          {{ _('with %(permissions)s permissions', permissions=filter_user_permissions_info.permissions) }}
+        {% endif %}
+        </li>
+      {% endif %}
+      {% if filter_group_permissions_info %}
+        <li>
+          {{ _('with %(permissions)s permissions for basic group:', permissions=filter_group_permissions_info.permissions) }}
+          <a href="{{ filter_group_permissions_info.url }}">{{ filter_group_permissions_info.name }}</a>
+        </li>
+      {% endif %}
+      {% if filter_project_permissions_info %}
+        <li>
+          {{ _('with %(permissions)s permissions for project group:', permissions=filter_project_permissions_info.permissions) }}
+          <a href="{{ filter_project_permissions_info.url }}">{{ filter_project_permissions_info.name }}</a>
+        </li>
+      {% endif %}
+      </ul>
     {% endif %}
-  {% elif doi %}
-    {% set object_suffix = _(" for Publication <a href=\"https://doi.org/{}\">doi:{}</a>").format(doi, doi) | safe %}
-  {% else %}
-    {% set object_suffix = "" %}
-  {% endif %}
-  {% if action_type %}
-  <h1>{{ action_type.translation.object_name_plural }}{{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}{{ object_suffix }}</h1>
-  {% else %}
-  <h1>{{ _('Objects') }}{{ object_suffix }}</h1>
-  {% endif %}
   {% endif %}
 
   <button type="button" class="btn btn-default" data-toggle="modal" data-target="#optionsModal" style="margin-bottom: 10px">
@@ -164,9 +194,11 @@
   <div class="modal fade" id="optionsModal" tabindex="-1" role="dialog" aria-labelledby="optionsModalLabel">
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
-        {% for key, value in request.args.items() %}
+        {% for key in request.args %}
           {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info'] %}
-            <input type="hidden" name="{{ key }}" value="{{ value }}" />
+            {% for value in request.args.getlist(key) %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}" />
+            {% endfor %}
           {% endif %}
         {% endfor %}
         <input type="hidden" name="object_list_options" value="" />
@@ -216,7 +248,6 @@
                 </label>
               </div>
             </div>
-            {% if show_action %}
             <div class="form-group">
               <label class="control-label">
                 {{ _('Show Action information') }}
@@ -232,14 +263,6 @@
               </label>
               </div>
             </div>
-            {% else %}
-              {% if 'instrument' in action_info %}
-                <input type="hidden" name="action_info" value="instrument" />
-              {% endif %}
-              {% if 'action' in action_info %}
-                <input type="hidden" name="action_info" value="action" />
-              {% endif %}
-            {% endif %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
@@ -249,6 +272,81 @@
       </form>
     </div>
   </div>
+
+
+  {% if show_filters %}
+  <button type="button" class="btn btn-default" data-toggle="modal" data-target="#filtersModal" style="margin-bottom: 10px">
+    {{ _('Filters') }}
+  </button>
+
+  <div class="modal fade" id="filtersModal" tabindex="-1" role="dialog" aria-labelledby="filtersModalLabel">
+    <div class="modal-dialog" role="document">
+      <form method="get" class="form">
+        {% for key in request.args %}
+          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'location_ids', 't', 'action', 'location', 'offset'] %}
+            {% for value in request.args.getlist(key) %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}" />
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+        <input type="hidden" name="object_list_filters" value="" />
+        <input type="hidden" name="user" value="{{ current_user.id }}" />
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="filtersModalLabel">{{ _('Filters') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="control-label" for="filter_permissions">
+                {{ _('Filter by Permissions') }}
+              </label>
+              <select class="selectpicker form-control" name="user_permissions" id="filter_permissions" data-width="100%">
+                {% for permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
+                  <option value="{{ permissions.name.lower() }}" {% if permissions.name.lower() == request.args.get('user_permissions', Permissions.READ.name).lower() %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_action_type_ids">
+                {{ _('Filter by Action Type') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="action_type_ids" id="filter_action_type_ids" data-width="100%" data-none-selected-text="{{ _('All action types') }}">
+                {% for action_type in all_action_types %}
+                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.translation.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_action_ids">
+                {{ _('Filter by Action') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on">
+                {% for action in all_actions %}
+                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>{{ action.translation.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_location_ids">
+                {{ _('Filter by Location') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="location_ids" id="filter_location_ids" data-width="100%" data-none-selected-text="{{ _('All locations') }}" data-live-search="on">
+                {% for location in all_locations %}
+                  <option {% if location.component is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ location.id }}" {% if filter_location_ids and location.id in filter_location_ids %}selected="selected"{% endif %}>{{ location.name | get_translated_text }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+            <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 
   {% if objects %}
   <table class="table" id="table-objects">
@@ -262,13 +360,11 @@
       {% if last_edit_info %}
         <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
       {% endif %}
-      {% if show_action %}
-        {% if 'instrument' in action_info %}
-          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Instrument') }}</th>
-        {% endif %}
-        {% if 'action' in action_info %}
-          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Action') }}</th>
-        {% endif %}
+      {% if 'instrument' in action_info %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Instrument') }}</th>
+      {% endif %}
+      {% if 'action' in action_info %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Action') }}</th>
       {% endif %}
       {% for property_name in display_properties %}
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
@@ -315,32 +411,23 @@
         {{ federation_information_symbol(object.modified_by.component, object.modified_by.fed_id, 'user') }}
         {% else %}&mdash;{% endif %}</td>
       {% endif %}
-      {% if show_action %}
-        {% if object.action is not none %}
-          {% if 'instrument' in action_info %}
-          {% if object.action.instrument is not none %}
-            <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ get_instrument_translation_for_instrument_in_language(object.action.instrument_id, get_user_language(current_user).id, use_fallback=True).name }}</a>
-              {{ federation_information_symbol(object.action.instrument.component, object.action.instrument.fed_id, 'instrument') }}
-            </td>
-          {% else %}
-            <td>&mdash;</td>
-          {% endif %}
-          {% endif %}
-          {% if 'action' in action_info %}
-          <td>
-            <a href="{{ url_for('.action', action_id=object.action.id) }}">
-              {{ action_translations[object.action.id].name }}
-            </a>
-            {{ federation_information_symbol(object.action.component, object.action.fed_id, 'action') }}
+      {% if object.action is not none %}
+        {% if 'instrument' in action_info %}
+        {% if object.action.instrument is not none %}
+          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ get_instrument_translation_for_instrument_in_language(object.action.instrument_id, get_user_language(current_user).id, use_fallback=True).name }}</a>
+            {{ federation_information_symbol(object.action.instrument.component, object.action.instrument.fed_id, 'instrument') }}
           </td>
-          {% endif %}
         {% else %}
-          {% if 'instrument' in action_info %}
           <td>&mdash;</td>
-          {% endif %}
-          {% if 'action' in action_info %}
-          <td>&mdash;</td>
-          {% endif %}
+        {% endif %}
+        {% endif %}
+        {% if 'action' in action_info %}
+        <td>
+          <a href="{{ url_for('.action', action_id=object.action.id) }}">
+            {{ action_translations[object.action.id].name }}
+          </a>
+          {{ federation_information_symbol(object.action.component, object.action.fed_id, 'action') }}
+        </td>
         {% endif %}
       {% endif %}
       {% for property_name in display_properties %}
