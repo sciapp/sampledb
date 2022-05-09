@@ -299,6 +299,11 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=Fals
     if keys != [id_prefix + '__datetime']:
         raise ValueError('invalid datetime form data')
     datetime_string = form_data.get(id_prefix + '__datetime', [''])[0]
+    if not datetime_string:
+        if not required:
+            return None
+        else:
+            raise ValueError(_('Please enter a valid datetime.'))
     try:
         settings = get_user_settings(current_user.id)
         language = languages.get_user_language(current_user)

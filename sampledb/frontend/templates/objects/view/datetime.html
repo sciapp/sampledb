@@ -7,7 +7,7 @@
     {% endif %}
   </label>
   <div class="col-md-9">
-    {% if data is not none and 'utc_datetime' in data and not (data.utc_datetime is none) %}
+    {% if data is not none %}
       {{ data.utc_datetime | babel_format_datetime }}
     {% else %}
       &mdash;

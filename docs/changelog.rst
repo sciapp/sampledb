@@ -18,6 +18,7 @@ Currently in development.
 - Deprecated setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` to false
 - Deprecated local file storage
 - Added recipes
+- Allow missing datetime entries if not marked as required
 
 Version 0.20
 ------------

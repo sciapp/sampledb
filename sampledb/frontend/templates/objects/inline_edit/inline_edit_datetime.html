@@ -15,7 +15,7 @@
     <div class="view-switch">
         <div class="col-md-9" style="padding-left: 15px">
             <div class="container alert-upload-container">
-                {% if data is not none and 'utc_datetime' in data and not (data.utc_datetime is none) %}
+                {% if data is not none %}
                     {{ data.utc_datetime | babel_format_datetime }}
                 {% else %}
                     &mdash;
@@ -32,7 +32,7 @@
     <div class="form-switch">
         <div class="col-md-9">
             <div class="input-group date" data-datetime="
-                    {% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | default_format_datetime }}{% else %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
+                    {% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | default_format_datetime }}{% endif %}">
                 <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
                 <span class="input-group-addon">
             <span class="glyphicon glyphicon-calendar"></span>
