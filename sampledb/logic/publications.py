@@ -11,6 +11,7 @@ from .. import models
 from . import errors
 from . import object_log
 from . import user_log
+from . import object_permissions
 from .objects import get_object
 from .users import get_user
 
@@ -128,3 +129,44 @@ def simplify_doi(doi: str) -> str:
     if any(c in '<>"' for c in object_id):
         raise errors.InvalidDOIError()
     return doi
+
+
+def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, str]]:
+    """
+    Get a list of DOIs and titles for publications linked to objects readable by the given user.
+
+    If multiple titles are used for the same DOI, the most used, non-empty
+    title will be used, with lexicographical sorting as final criteria.
+
+    :param user_id: the ID of an existing user
+    :return: a list containing publication DOIs and titles
+    """
+    readable_objects = object_permissions.get_objects_with_permissions(
+        user_id=user_id,
+        permissions=object_permissions.Permissions.READ,
+        name_only=True
+    )
+    readable_object_ids = {
+        object.object_id
+        for object in readable_objects
+    }
+    publication_links = models.object_publications.ObjectPublication.query.filter(
+        models.object_publications.ObjectPublication.object_id.in_(readable_object_ids)
+    ).all()
+    publication_titles = {}
+    for link in publication_links:
+        if link.doi not in publication_titles:
+            publication_titles[link.doi] = []
+        if link.title:
+            publication_titles[link.doi].append(link.title)
+    publications = []
+    for doi in publication_titles:
+        if publication_titles[doi]:
+            # sort titles lexicographically, then find most commonly used title
+            publication_titles[doi].sort()
+            title = collections.Counter(publication_titles[doi]).most_common(1)[0][0]
+        else:
+            title = None
+        publications.append((doi, title))
+    publications.sort()
+    return publications

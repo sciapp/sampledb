@@ -31,6 +31,7 @@ from . import languages
 from . import objects
 from . import objects_forms
 from . import projects
+from . import publications
 from . import status
 from . import tags
 from . import timezone
@@ -58,6 +59,7 @@ __all__ = [
     'objects',
     'objects_forms',
     'projects',
+    'publications',
     'status',
     'tags',
     'timezone',

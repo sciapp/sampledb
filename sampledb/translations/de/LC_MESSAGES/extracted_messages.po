@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-05-05 15:20+0200\n"
+"POT-Creation-Date: 2022-05-10 10:45+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1114,6 +1114,9 @@ msgstr "Projektgruppen"
 msgid "Locations"
 msgstr "Orte"
 
+msgid "Publications"
+msgstr "Publikationen"
+
 msgid "Other Databases"
 msgstr "Andere Datenbanken"
 
@@ -1925,6 +1928,19 @@ msgstr "Aktivieren"
 
 msgid "Deactivate"
 msgstr "Deaktivieren"
+
+msgid ""
+"Publications can be linked to objects to track where and how an object "
+"has been used in a publication."
+msgstr ""
+"Publikationen können mit Objekten verknüpft werden, um nachverfolgen zu"
+" können, wo und wie diese in Veröffentlichungen genutzt werden."
+
+msgid "Untitled publication"
+msgstr "Publikation ohne Titel"
+
+msgid "No publications have been linked to any objects yet."
+msgstr "Es wurden noch keine Publikationen mit Objekten verknüpft."
 
 #, python-format
 msgid "Account Recovery Email sent to %(email)s"
@@ -4066,9 +4082,6 @@ msgstr "Diesem Objekt wurde noch kein Ort zugewiesen."
 
 msgid "Assign Location"
 msgstr "Ort zuweisen"
-
-msgid "Publications"
-msgstr "Publikationen"
 
 msgid "DOI"
 msgstr "DOI"
