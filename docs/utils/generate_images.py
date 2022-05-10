@@ -257,9 +257,24 @@ def files(base_url, driver, object):
             break
     else:
         assert False
-    wait_until_visible(heading)
+    wait_until_visible(form_group)
     y_offset = scroll_to(driver, 0, heading.location['y'])
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/files.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, form_group.location['y'] + form_group.rect['height']) - y_offset))
+
+    # this image has caused some issues before, so if the box is empty, print out information on how it was calculated
+    # see: https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/-/issues/11
+    height = form_group.rect['height']
+    heading_y_location = heading.location['y'] - y_offset
+    form_group_y_location = form_group.location['y'] - y_offset
+    box = (0, heading_y_location, width, min(heading_y_location + max_height, form_group_y_location + height))
+    if not (box[0] >= 0 and box[1] >= 0 and box[2] > 0 and box[3] > 0):
+        print('failed to make files visible', file=sys.stderr)
+        print('box:', box, file=sys.stderr)
+        print('heading_y_location:', heading_y_location, file=sys.stderr)
+        print('form_group_y_location:', form_group_y_location, file=sys.stderr)
+        print('y_offset:', y_offset, file=sys.stderr)
+        print('height:', height, file=sys.stderr)
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/files.png', box)
 
 
 def file_information(base_url, driver, object):
@@ -276,8 +291,21 @@ def file_information(base_url, driver, object):
     file_table.find_elements(By.CLASS_NAME, 'button-file-info')[0].click()
 
     modal = wait_until_visible(driver.find_element(By.ID, 'fileInfoModal-0').find_element(By.CLASS_NAME, 'modal-content'))
+    y_offset = scroll_to(driver, 0, modal.location['y'])
 
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/file_information.png', (0, modal.rect['y'], width, min(modal.rect['y'] + max_height, modal.rect['y'] + modal.rect['height'])))
+    # this image has caused some issues before, so if the box is empty, print out information on how it was calculated
+    # see: https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/-/issues/11
+    height = modal.rect['height']
+    y_location = modal.location['y'] - y_offset
+    box = (0, y_location, width, y_location + min(max_height, height))
+    if not (box[0] >= 0 and box[1] >= 0 and box[2] > 0 and box[3] > 0):
+        print('failed to make file_information visible', file=sys.stderr)
+        print('box:', box, file=sys.stderr)
+        print('y_location:', y_location, file=sys.stderr)
+        print('y_offset:', y_offset, file=sys.stderr)
+        print('height:', height, file=sys.stderr)
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/file_information.png', box)
 
 
 def labels(base_url, driver, object):
