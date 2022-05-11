@@ -204,6 +204,7 @@ This example shows how Markdown can be used for instrument Notes.
         files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs01.png'), 'rb').read()))
         files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
         files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')
+        sampledb.logic.publications.link_publication_to_object(instrument_responsible_user.id, instrument_object.id, '10.5281/zenodo.4012175', 'sciapp/sampledb', 'Example')
 
         projects.link_project_and_object(project_id, instrument_object.object_id, instrument_responsible_user.id)
 

@@ -161,6 +161,8 @@ def objects():
         filter_group_permissions = None
         filter_project_id = None
         filter_project_permissions = None
+        all_publications = []
+        filter_doi = None
     else:
         pagination_enabled = True
 
@@ -304,6 +306,7 @@ def objects():
         except UserDoesNotExistError:
             filter_related_user_id = None
 
+        all_publications = logic.publications.get_publications_for_user(flask_login.current_user.id)
         try:
             filter_doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
         except logic.errors.InvalidDOIError:
@@ -755,6 +758,14 @@ def objects():
     else:
         filter_project_permissions_info = None
 
+    if filter_doi:
+        filter_doi_info = {
+            'doi': filter_doi,
+            'title': dict(all_publications).get(filter_doi)
+        }
+    else:
+        filter_doi_info = None
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -782,7 +793,7 @@ def objects():
         filter_user_permissions_info=filter_user_permissions_info,
         filter_group_permissions_info=filter_group_permissions_info,
         filter_project_permissions_info=filter_project_permissions_info,
-        filter_doi_info=filter_doi,
+        filter_doi_info=filter_doi_info,
         show_filters=show_filters,
         all_actions=all_actions,
         filter_action_ids=filter_action_ids,
@@ -790,6 +801,8 @@ def objects():
         filter_action_type_ids=filter_action_type_ids,
         all_locations=all_locations,
         filter_location_ids=filter_location_ids,
+        all_publications=all_publications,
+        filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         get_instrument_translation_for_instrument_in_language=logic.instrument_translations.get_instrument_translation_for_instrument_in_language,
         build_modified_url=build_modified_url,
