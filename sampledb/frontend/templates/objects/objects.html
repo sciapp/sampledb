@@ -23,7 +23,21 @@
       $(plotly_charts).each(function(index, element) {
         Plotly.newPlot(element[0], element[1]);
       });
-      $('.selectpicker').selectpicker();
+      $('.selectpicker').each(function(_, element) {
+        let selectpicker = $(element);
+        selectpicker.selectpicker();
+        // ensure options marked as selected will be selected again after page reload
+        let selected_options = selectpicker.find('option[selected]');
+        if (selected_options) {
+          let selected_option_values = [];
+          selected_options.each(function(_, option) {
+            selected_option_values.push($(option).val());
+          });
+          selectpicker.selectpicker('val', selected_option_values);
+        } else {
+          selectpicker.selectpicker('val', null);
+        }
+      });
     });
   </script>
 {% endblock %}
@@ -153,7 +167,7 @@
         </li>
       {% endif %}
       {% if filter_doi_info %}
-        <li>{{ _('for publication:') }} {{ filter_doi_info }}</li>
+        <li>{{ _('for publication:') }} <a href="http://doi.org/{{ filter_doi_info.doi | urlencode }}">{% if filter_doi_info.title %}{{ filter_doi_info.title }}{% else %}{{ _('Untitled publication') }}{% endif %} (DOI: {{ filter_doi_info.doi }})</a></li>
       {% endif %}
       {% if filter_related_user_info %}
         <li>
@@ -283,7 +297,7 @@
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
         {% for key in request.args %}
-          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'location_ids', 't', 'action', 'location', 'offset'] %}
+          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi'] %}
             {% for value in request.args.getlist(key) %}
               <input type="hidden" name="{{ key }}" value="{{ value }}" />
             {% endfor %}
@@ -337,6 +351,17 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_publication_doi">
+                {{ _('Filter by Publication') }}
+              </label>
+              <select class="selectpicker form-control" name="doi" id="filter_doi" data-width="100%" data-none-selected-text="{{ _('All publications') }}" data-live-search="on">
+                <option value="">{{ _('All publications') }}</option>
+                {% for doi, title in all_publications %}
+                  <option value="{{ doi }}" {% if filter_doi and doi == filter_doi %}selected="selected"{% endif %}>{% if title %}{{ title }}{% else %}{{ _('Untitled publication') }}{% endif %} (DOI: {{ doi }})</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
@@ -347,6 +372,10 @@
     </div>
   </div>
   {% endif %}
+
+  <a href="{{ url_for('.search') }}" class="btn btn-default" style="margin-bottom: 10px">
+    {{ _('Search') }}
+  </a>
 
   {% if objects %}
   <table class="table" id="table-objects">
