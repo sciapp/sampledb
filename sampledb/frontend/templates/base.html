@@ -170,6 +170,7 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
+            <li><a href="{{ url_for('frontend.publications') }}">{{ _('Publications') }}</a></li>
             {% if config['FEDERATION_UUID'] is not none %}
             <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
             {% endif %}

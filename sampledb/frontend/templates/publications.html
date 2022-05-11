@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Publications') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Publications') }}</h1>
+  <p class="text-muted">{{ _('Publications can be linked to objects to track where and how an object has been used in a publication.') }}</p>
+  {% if publications %}
+    <ul>
+    {% for doi, title in publications %}
+      <li>
+        <a href="http://doi.org/{{ doi | urlencode }}">{% if title %}{{ title }}{% else %}{{ _('Untitled publication') }}{% endif %} (DOI: {{ doi }})</a>
+        <a href="{{ url_for('.objects', doi=doi) }}" class="btn btn-default btn-xs">{{ _('View Objects') }}</a>
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>{{ _('No publications have been linked to any objects yet.') }}</p>
+  {% endif %}
+{% endblock %}
