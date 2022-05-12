@@ -163,18 +163,16 @@ def text_equals(db_obj, text):
             db_obj['_type'].astext == 'text',
             db.or_(
                 db.and_(
-                    db_obj['text']['en'].astext == db.null(),
+                    db.func.jsonb_typeof(db_obj['text']) == 'string',
                     db_obj['text'].astext == text,
                 ),
-                db.and_(
-                    db_obj['text']['en'].astext != db.null(),
-                    db.or_(
-                        *[
-                            db_obj['text'][language.lang_code].astext == text
-                            for language in languages.get_languages()
-                        ]
+                *[
+                    db.and_(
+                        db_obj['text'].has_key(language.lang_code),
+                        db_obj['text'][language.lang_code].astext == text
                     )
-                )
+                    for language in languages.get_languages()
+                ]
             )
         ),
         db.and_(
@@ -192,18 +190,16 @@ def text_contains(db_obj, text):
             db_obj['_type'].astext == 'text',
             db.or_(
                 db.and_(
-                    db_obj['text']['en'].astext == db.null(),
+                    db.func.jsonb_typeof(db_obj['text']) == 'string',
                     db_obj['text'].astext.like('%' + text + '%')
                 ),
-                db.and_(
-                    db_obj['text']['en'].astext != db.null(),
-                    db.or_(
-                        *[
-                            db_obj['text'][language.lang_code].astext.like('%' + text + '%')
-                            for language in languages.get_languages()
-                        ]
+                *[
+                    db.and_(
+                        db_obj['text'].has_key(language.lang_code),
+                        db_obj['text'][language.lang_code].astext.like('%' + text + '%')
                     )
-                )
+                    for language in languages.get_languages()
+                ]
             )
         ),
         db.and_(

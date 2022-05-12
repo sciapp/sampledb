@@ -2,6 +2,7 @@
 import functools
 import json
 import typing
+
 from sqlalchemy import String, and_, or_
 from sqlalchemy.sql.expression import select, true, false, not_
 from . import where_filters
@@ -60,7 +61,15 @@ def binary_operator_handler(left_operand_type, right_operand_type, operator):
             input_text = left_operand.input_text + operator.input_text + right_operand.input_text
             start_position = left_operand.start_position
             end_position = right_operand.end_position
-            filter_func, outer_filter = func(left_operand.value, right_operand.value, outer_filter, search_notes, input_text, start_position, end_position)
+
+            def null_safe_outer_filter(expr):
+                if left_operand_type == Attribute:
+                    expr = db.and_(left_operand.value != db.null(), expr)
+                if right_operand_type == Attribute:
+                    expr = db.and_(right_operand.value != db.null(), expr)
+                return outer_filter(expr)
+
+            filter_func, outer_filter = func(left_operand.value, right_operand.value, null_safe_outer_filter, search_notes, input_text, start_position, end_position)
             filter_func = Expression(input_text, start_position, filter_func)
             return filter_func, outer_filter
         assert (left_operand_type, right_operand_type, operator) not in binary_operator_handlers

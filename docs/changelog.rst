@@ -19,6 +19,8 @@ Currently in development.
 - Deprecated local file storage
 - Added recipes
 - Allow missing datetime entries if not marked as required
+- Fix negated text search
+- Fix search with missing attributes
 
 Version 0.20
 ------------
