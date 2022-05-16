@@ -600,8 +600,10 @@ def _validate_object_reference(instance: dict, schema: dict, path: typing.List[s
                 valid_action_type_ids = [schema['action_type_id']]
             else:
                 valid_action_type_ids = schema['action_type_id']
-            if valid_action_type_ids is not None and actions.get_action(object.action_id).type_id not in valid_action_type_ids:
-                raise ValidationError('object has wrong action type', path)
+            if valid_action_type_ids is not None:
+                action = actions.get_action(object.action_id)
+                if action.type_id not in valid_action_type_ids and not (action.type.fed_id is not None and action.type.fed_id < 0 and action.type.fed_id in valid_action_type_ids):
+                    raise ValidationError('object has wrong action type', path)
 
 
 def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str]) -> None:
