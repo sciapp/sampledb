@@ -406,6 +406,7 @@ MIME_TYPES = {
     '.txt': 'text/plain',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
+    '.gif': 'image/gif',
     '.pdf': 'application/pdf'
 }
 
