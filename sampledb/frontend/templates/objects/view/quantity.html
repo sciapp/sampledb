@@ -7,7 +7,7 @@
       <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format((data | to_datatype).magnitude) + (data | to_datatype).units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
       {% endif %}
     {% else %}
-    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+    <a href="{{ url_for('.objects', q=search_query_attribute + ' == null', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
     {% endif %}
   </label>
   <div class="col-md-9">

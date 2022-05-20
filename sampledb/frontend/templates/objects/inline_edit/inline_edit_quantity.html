@@ -11,7 +11,7 @@
                            class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                     {% endif %}
                 {% else %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}"
+                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == null', advanced='on') }}"
                        class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                 {% endif %}
             </label>
