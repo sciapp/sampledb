@@ -60,6 +60,14 @@ class Attribute(Literal):
         return '<Attribute({})>'.format(self.value)
 
 
+class Null(Literal):
+    def __init__(self, input_text: str, start_position: int, value: str) -> None:
+        super(Null, self).__init__(input_text, start_position, value)
+
+    def __repr__(self) -> str:
+        return '<Null({})>'.format(self.value)
+
+
 class Quantity(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Quantity) -> None:
         super(Quantity, self).__init__(input_text, start_position, value)
@@ -391,6 +399,11 @@ def parse_reference(text: str) -> typing.Optional[int]:
     return None
 
 
+def parse_null(text: str) -> typing.Optional[str]:
+    if text.strip().lower() == 'null':
+        return 'null'
+
+
 def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.List[str]]:
     text = text.strip()
     if text[:1] not in string.ascii_letters:
@@ -432,6 +445,10 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator, lis
         end = token.start_position + len(token.input_text)
         if not isinstance(token, Token):
             tokens.append(token)
+            continue
+        null = parse_null(token.input_text)
+        if null is not None:
+            tokens.append(Null(token.input_text, token.start_position, null))
             continue
         reference = parse_reference(token.input_text)
         if reference is not None:

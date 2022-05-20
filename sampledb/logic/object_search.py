@@ -294,6 +294,11 @@ def _(left_operand, right_operand, outer_filter, search_notes, input_text, start
     return outer_filter(where_filters.boolean_equals(right_operand, left_operand)), None
 
 
+@binary_operator_handler(Attribute, object_search_parser.Null, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.attribute_not_set(left_operand)), None
+
+
 @binary_operator_handler(Attribute, datatypes.Boolean, '==')
 def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.boolean_equals(left_operand, right_operand)), None
@@ -596,6 +601,9 @@ def transform_literal_to_query(data, literal: object_search_parser.Literal, sear
             return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text('jsonb_typeof(data -> {0}) = \'array\''.format(jsonb_selector)), filter)).exists()
         return Attribute(literal.input_text, literal.start_position, data[attributes]), None
 
+    if isinstance(literal, object_search_parser.Null):
+        return literal, None
+
     if isinstance(literal, object_search_parser.Boolean):
         return literal, None
 
@@ -701,6 +709,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
         left_operand_type = Reference
     elif isinstance(left_operand, Attribute):
         left_operand_type = Attribute
+    elif isinstance(left_operand, object_search_parser.Null):
+        left_operand_type = object_search_parser.Null
     else:
         left_operand_type = None
 
@@ -716,6 +726,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
         right_operand_type = Reference
     elif isinstance(right_operand, Attribute):
         right_operand_type = Attribute
+    elif isinstance(right_operand, object_search_parser.Null):
+        right_operand_type = object_search_parser.Null
     else:
         right_operand_type = None
 

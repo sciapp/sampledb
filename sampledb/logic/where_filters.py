@@ -239,3 +239,7 @@ def tags_contain(db_obj, tag):
         db_obj['_type'].astext == 'tags',
         db_obj['tags'].contains(json.dumps(tag))
     )
+
+
+def attribute_not_set(db_obj):
+    return db_obj == db.null()
