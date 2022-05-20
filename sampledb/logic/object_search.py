@@ -63,9 +63,10 @@ def binary_operator_handler(left_operand_type, right_operand_type, operator):
             end_position = right_operand.end_position
 
             def null_safe_outer_filter(expr):
-                if left_operand_type == Attribute:
+                # comparisons with null may contain null attributes, but other operations must not
+                if left_operand_type == Attribute and right_operand_type != object_search_parser.Null:
                     expr = db.and_(left_operand.value != db.null(), expr)
-                if right_operand_type == Attribute:
+                if right_operand_type == Attribute and left_operand_type != object_search_parser.Null:
                     expr = db.and_(right_operand.value != db.null(), expr)
                 return outer_filter(expr)
 

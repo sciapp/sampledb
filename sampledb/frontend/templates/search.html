@@ -103,6 +103,7 @@
               <option value="15" data-type="object_reference" data-show-field="object_reference" data-operator="!=">{{ _('is object reference not equal to') }}</option>
               <option value="16" data-type="user" data-show-field="user" data-operator="==">{{ _('is user reference equal to') }}</option>
               <option value="17" data-type="user" data-show-field="user" data-operator="!=">{{ _('is user reference not equal to') }}</option>
+              <option value="18" data-type="all" data-operator="== null">{{ _('is not set') }}</option>
             </select>
           </div>
         </div>
@@ -255,7 +256,7 @@
         var property_types = search_paths[property_name].types;
         condition.find('option').each(function(_, option) {
           option = $(option);
-          if (property_types.includes(option.data('type'))) {
+          if (property_types.includes(option.data('type')) || option.data('type') === 'all') {
             valid_options.push(option.val());
           } else {
             option.hide();
