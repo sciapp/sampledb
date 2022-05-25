@@ -333,6 +333,17 @@ def parse_quantity(text: str, start: int, end: int) -> typing.Optional[datatypes
     if is_negative:
         text = text[1:]
         len_magnitude -= 1
+    if len_magnitude != len(text) and text[len_magnitude].lower() == 'e':
+        for index, character in enumerate(text[len_magnitude + 1:]):
+            len_exponent = index
+            if index == 0 and character == '-':
+                continue
+            if not character.isdigit():
+                break
+        else:
+            len_exponent = len(text[len_magnitude + 1:])
+        if len_exponent > 0:
+            len_magnitude += 1 + len_exponent
 
     if len_magnitude > 0:
         try:

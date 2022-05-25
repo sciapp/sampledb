@@ -1553,6 +1553,12 @@ def test_find_by_quantity_less_than(user, action) -> None:
     assert len(objects) == 0
     assert len(search_notes) == 0
 
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('quantity_attr < 1e-4km', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1
+    assert len(search_notes) == 0
+
 
 def test_find_by_quantity_greater_than(user, action) -> None:
     data = {
