@@ -117,6 +117,7 @@ def objects():
     )
 
     name_only = True
+    implicit_action_type = None
     if object_ids:
         object_ids = object_ids.split(',')
         try:
@@ -162,7 +163,6 @@ def objects():
         filter_project_id = None
         filter_project_permissions = None
         all_publications = []
-        filter_doi = None
     else:
         pagination_enabled = True
 
@@ -261,7 +261,7 @@ def objects():
             action_id = filter_action_ids[0]
         if action_id is not None:
             action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
-            action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
+            implicit_action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
             action_schema = action.schema
             action_display_properties = action_schema.get('displayProperties', [])
             for property_name in action_display_properties:
@@ -291,10 +291,11 @@ def objects():
                     action_type = None
             else:
                 action_type = None
+            if filter_action_type_ids is None and action_type is not None:
+                filter_action_type_ids = [action_type.id]
+
         if filter_action_ids is None and action_id is not None:
             filter_action_ids = [action_id]
-        if filter_action_type_ids is None and action_type is not None:
-            filter_action_type_ids = [action_type.id]
         if display_properties:
             name_only = False
 
@@ -677,6 +678,8 @@ def objects():
 
             if filter_action_type_ids and len(filter_action_type_ids) == 1:
                 object_name_plural = action_type.translation.object_name_plural
+    elif implicit_action_type is not None:
+        object_name_plural = implicit_action_type.translation.object_name_plural
 
     filter_action_infos = []
     if filter_action_ids:
