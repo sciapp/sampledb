@@ -41,7 +41,7 @@ class ActionType(db.Model):
     component = db.relationship('Component')
 
     def __repr__(self):
-        return '<{0}(id={1.id!r}, name={1.name!r})>'.format(type(self).__name__, self)
+        return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
 
 
 class Action(db.Model):
