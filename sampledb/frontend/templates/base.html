@@ -236,7 +236,8 @@
     </div>
   </div>
 </nav>
-<div id="main" class="container">
+<div id="main">
+  <div class="container">
     <noscript>
         <div class="alert alert-danger" role="alert">
             <strong>{{ _('Warning:') }}</strong> {{ _('This service requires JavaScript. Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> and reload the page.') }}
@@ -272,6 +273,7 @@
         {% endif %}
     {% endblock %}
     {% block content %}{% endblock %}
+  </div>
 </div>
 <footer>
   <div class="container">
