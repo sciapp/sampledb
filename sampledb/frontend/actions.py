@@ -129,6 +129,7 @@ def actions():
         Permissions=Permissions,
         user_favorite_action_ids=user_favorite_action_ids,
         toggle_favorite_action_form=toggle_favorite_action_form,
+        get_user=get_user,
         get_component=get_component
     )
 
@@ -185,6 +186,7 @@ def action(action_id):
         may_grant=may_grant,
         is_public=Permissions.READ in get_action_permissions_for_all_users(action_id),
         single_translation=single_translation,
+        get_user=get_user,
         get_component=get_component
     )
 

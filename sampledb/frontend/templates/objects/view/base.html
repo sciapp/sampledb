@@ -121,8 +121,9 @@
               {% for action in favorite_measurement_actions %}
               <li>
                 <a href="{{ url_for('.new_object', action_id=action.id, sample_id=object_id) }}">
-                {% if action.user is not none %}
-                  {{ action.user.get_name() }} /
+                {% if action.user_id is not none %}
+                  {% set action_owner = get_user(action.user_id) %}
+                  {{ action_owner.get_name() }} /
                 {% endif %}
                 {% if action.instrument is not none %}
                   {% set temp = namespace(instrument=get_instrument_with_translation_in_language(action.instrument_id, get_user_language(current_user).id)) %}

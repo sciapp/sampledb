@@ -107,8 +107,7 @@ def create_app():
 
     @sampledb_app.route('/users/<int:user_id>/autologin')
     def autologin(user_id):
-        user = sampledb.models.User.query.get(user_id)
-        assert user is not None
+        user = sampledb.logic.users.get_user(user_id)
         flask_login.login_user(user)
         return ''
 

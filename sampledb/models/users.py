@@ -4,9 +4,7 @@
 """
 
 import enum
-import flask_login
 import typing
-from flask_babel import _
 
 from .. import db
 
@@ -18,7 +16,7 @@ class UserType(enum.Enum):
     FEDERATION_USER = 3
 
 
-class User(db.Model, flask_login.UserMixin):
+class User(db.Model):
     __tablename__ = 'users'
     __table_args__ = (
         db.CheckConstraint(
@@ -71,19 +69,6 @@ class User(db.Model, flask_login.UserMixin):
             )
         except AttributeError:
             return False
-
-    def get_id(self):
-        return self.id
-
-    def get_name(self, include_ref=False):
-        if include_ref and self.component_id is not None:
-            db_ref = ', #{} @ {}'.format(self.fed_id, self.component.get_name())
-        else:
-            db_ref = ''
-        if self.name is None:
-            return _('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
-        else:
-            return '{} (#{}{})'.format(self.name, self.id, db_ref)
 
     def __repr__(self):
         return '<{0}(id={1.id}, name={1.name})>'.format(type(self).__name__, self)

@@ -3,6 +3,7 @@
   <h3>{{ _("Instrument Scientists:") }}</h3>
   <ul>
   {% for user in instrument.responsible_users %}
+    {% set user = get_user(user.id) %}
     {% if not user.is_hidden %}
     <li><a href="{{ url_for('frontend.user_profile', user_id=user.id) }}">{{ user.get_name() }}</a></li>
     {% endif %}

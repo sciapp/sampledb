@@ -168,7 +168,7 @@ def add_instrument_responsible_user(instrument_id: int, user_id: int) -> None:
     instrument = Instrument.query.get(instrument_id)
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
-    user = users.get_user(user_id)
+    user = users.get_mutable_user(user_id)
     if user in instrument.responsible_users:
         raise errors.UserAlreadyResponsibleForInstrumentError()
     instrument.responsible_users.append(user)
@@ -193,7 +193,7 @@ def remove_instrument_responsible_user(instrument_id: int, user_id: int) -> None
     instrument = Instrument.query.get(instrument_id)
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
-    user = users.get_user(user_id)
+    user = users.get_mutable_user(user_id)
     if user not in instrument.responsible_users:
         raise errors.UserNotResponsibleForInstrumentError()
     instrument.responsible_users.remove(user)
@@ -217,7 +217,7 @@ def set_instrument_responsible_users(instrument_id: int, user_ids: typing.List[i
         raise errors.InstrumentDoesNotExistError()
     instrument.responsible_users.clear()
     for user_id in user_ids:
-        user = users.get_user(user_id)
+        user = users.get_mutable_user(user_id)
         instrument.responsible_users.append(user)
     db.session.add(instrument)
     db.session.commit()

@@ -257,10 +257,10 @@ def change_preferences(user, user_id):
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
             if change_user_form.name.data != user.name:
-                u = user
-                u.name = str(change_user_form.name.data)
-                db.session.add(u)
-                db.session.commit()
+                logic.users.update_user(
+                    user.id,
+                    name=str(change_user_form.name.data)
+                )
                 user_log.edit_user_preferences(user_id=user_id)
                 flask.flash(_("Successfully updated your user name."), 'success')
             if change_user_form.email.data != user.email:
@@ -295,12 +295,13 @@ def change_preferences(user, user_id):
                 change_role = (user.role != role and (role is not None or user.role is not None))
                 change_extra_fields = user.extra_fields != extra_fields
                 if change_orcid or change_affiliation or change_role or change_extra_fields:
-                    user.orcid = orcid
-                    user.affiliation = affiliation
-                    user.role = role
-                    user.extra_fields = extra_fields
-                    db.session.add(user)
-                    db.session.commit()
+                    logic.users.update_user(
+                        user.id,
+                        orcid=orcid,
+                        affiliation=affiliation,
+                        role=role,
+                        extra_fields=extra_fields
+                    )
                     user_log.edit_user_preferences(user_id=user_id)
                     flask.flash(_("Successfully updated your user information."), 'success')
 
@@ -622,9 +623,10 @@ def confirm_email():
         else:
             return flask.abort(400)
         if salt == 'edit_profile':
-            user = get_user(user_id)
-            user.email = email
-            db.session.add(user)
+            logic.users.update_user(
+                user_id,
+                email=email
+            )
         elif salt == 'add_login':
             auth = Authentication.query.filter(Authentication.user_id == user_id,
                                                Authentication.login['login'].astext == email).first()

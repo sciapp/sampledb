@@ -25,7 +25,6 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     content = db.Column(db.Text, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=True)
-    author = db.relationship('User')
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
