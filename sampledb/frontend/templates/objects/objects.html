@@ -376,8 +376,10 @@
   <a href="{{ url_for('.search') }}" class="btn btn-default" style="margin-bottom: 10px">
     {{ _('Search') }}
   </a>
-
   {% if objects %}
+  </div>
+
+  <div class="container" id="table-objects-container">
   <table class="table" id="table-objects">
   <thead>
     <tr>
@@ -476,6 +478,9 @@
   {% endfor %}
   </tbody>
   </table>
+  </div>
+
+  <div class="container">
   {% if pagination_enabled %}
     <div>
     {{ _('Pages') }}:
