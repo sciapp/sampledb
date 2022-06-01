@@ -2,18 +2,7 @@
     {# Label #}
     <div class="col-md-3" style="padding-right: 0px">
             <label class="col-md-12 view-label">{{ schema.title  | get_translated_text }}
-                {% if data is not none %}
-                    {% if schema['units'] == "1" %}
-                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format(data.magnitude_in_base_units), advanced='on') }}"
-                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                    {% else %}
-                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == %g'| format((data | to_datatype).magnitude) + (data | to_datatype).units, advanced='on') }}"
-                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                    {% endif %}
-                {% else %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}"
-                       class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% endif %}
+              {% include "objects/search_link.html" %}
             </label>
     </div>
     {# View #}

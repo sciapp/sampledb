@@ -21,10 +21,9 @@
       <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">{{ _('Edit Instrument') }}</a>
     {% endif %}
   {% endif %}
-  {% if instrument.actions %}
+  {% if instrument_actions %}
   <h2>{{ _('Actions') }}</h2>
-  {% for action in instrument.actions %}
-    {% if not action.is_hidden or current_user.is_admin %}
+  {% for action in instrument_actions %}
       <h3>
         <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action_translations[action.id].name }}"> {{ action_translations[action.id].name }}</a>
         {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
@@ -38,7 +37,6 @@
       {% if not current_user.is_readonly %}
         <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ get_action_type_translation_for_action_type_in_language(action.type_id, get_user_language(current_user).id, True).perform_text}}</a>
       {% endif %}
-    {% endif %}
   {% endfor %}
   {% endif %}
   {% if is_instrument_responsible_user %}

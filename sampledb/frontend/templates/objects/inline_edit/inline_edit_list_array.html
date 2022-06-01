@@ -15,6 +15,11 @@
     {% else %}
         {% set numItems = 0 %}
     {% endif %}
+    {% if search_query_attribute %}
+        {% set base_search_query_attribute = search_query_attribute %}
+    {% else %}
+        {% set base_search_query_attribute = "" %}
+    {% endif %}
     {% set itemName = (schema['items'].title | get_translated_text) %}
     <div class="col-md-9 array-style-list">
         {% if data is not none %}

@@ -63,9 +63,10 @@ def binary_operator_handler(left_operand_type, right_operand_type, operator):
             end_position = right_operand.end_position
 
             def null_safe_outer_filter(expr):
-                if left_operand_type == Attribute:
+                # comparisons with null may contain null attributes, but other operations must not
+                if left_operand_type == Attribute and right_operand_type != object_search_parser.Null:
                     expr = db.and_(left_operand.value != db.null(), expr)
-                if right_operand_type == Attribute:
+                if right_operand_type == Attribute and left_operand_type != object_search_parser.Null:
                     expr = db.and_(right_operand.value != db.null(), expr)
                 return outer_filter(expr)
 
@@ -292,6 +293,11 @@ def _(left_operand, right_operand, outer_filter, search_notes, input_text, start
 @binary_operator_handler(datatypes.Boolean, Attribute, '==')
 def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
     return outer_filter(where_filters.boolean_equals(right_operand, left_operand)), None
+
+
+@binary_operator_handler(Attribute, object_search_parser.Null, '==')
+def _(left_operand, right_operand, outer_filter, search_notes, input_text, start_position, end_position):
+    return outer_filter(where_filters.attribute_not_set(left_operand)), None
 
 
 @binary_operator_handler(Attribute, datatypes.Boolean, '==')
@@ -596,6 +602,9 @@ def transform_literal_to_query(data, literal: object_search_parser.Literal, sear
             return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text('jsonb_typeof(data -> {0}) = \'array\''.format(jsonb_selector)), filter)).exists()
         return Attribute(literal.input_text, literal.start_position, data[attributes]), None
 
+    if isinstance(literal, object_search_parser.Null):
+        return literal, None
+
     if isinstance(literal, object_search_parser.Boolean):
         return literal, None
 
@@ -701,6 +710,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
         left_operand_type = Reference
     elif isinstance(left_operand, Attribute):
         left_operand_type = Attribute
+    elif isinstance(left_operand, object_search_parser.Null):
+        left_operand_type = object_search_parser.Null
     else:
         left_operand_type = None
 
@@ -716,6 +727,8 @@ def transform_binary_operation_to_query(data, left_operand, operator, right_oper
         right_operand_type = Reference
     elif isinstance(right_operand, Attribute):
         right_operand_type = Attribute
+    elif isinstance(right_operand, object_search_parser.Null):
+        right_operand_type = object_search_parser.Null
     else:
         right_operand_type = None
 

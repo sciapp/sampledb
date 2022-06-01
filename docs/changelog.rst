@@ -22,6 +22,7 @@ Currently in development.
 - Fix negated text search
 - Fix search with missing attributes
 - Let the objects table extend to the full window width
+- Allow searching for missing attributes
 
 Version 0.20
 ------------

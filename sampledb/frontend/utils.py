@@ -576,3 +576,32 @@ def get_num_deprecation_warnings():
         show_admin_local_storage_warning(),
         show_load_objects_in_background_warning(),
     ])
+
+
+@jinja_function()
+def get_search_query(attribute, data, metadata_language=None):
+    if data is None:
+        return f'{attribute} == null'
+    if data['_type'] == 'bool':
+        if data['value']:
+            return f'{attribute} == True'
+        else:
+            return f'{attribute} == False'
+    if data['_type'] == 'datetime':
+        return f'{attribute} == {data["utc_datetime"].split()[0]}'
+    if data['_type'] == 'user':
+        return f'{attribute} == #{data["user_id"]}'
+    if data['_type'] in ('object_reference', 'sample', 'measurement'):
+        return f'{attribute} == #{data["object_id"]}'
+    if data['_type'] == 'quantity':
+        if data['units'] == '1':
+            return f'{attribute} == {data["magnitude_in_base_units"]}'
+        else:
+            return f'{attribute} == {to_datatype(data).magnitude}{data["units"]}'
+    if data['_type'] == 'text':
+        if data['text']:
+            return f'{attribute} == "{get_translated_text(data["text"], metadata_language)}"'
+        else:
+            return f'{attribute} == ""'
+    # fallback: find all objects that have this attribute set
+    return f'!({attribute} == null)'

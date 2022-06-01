@@ -18,6 +18,7 @@ from wtforms.validators import DataRequired, ValidationError
 
 from . import frontend
 from ..logic.action_translations import get_action_translation_for_action_in_language
+from ..logic.action_permissions import get_user_action_permissions
 from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
@@ -332,17 +333,24 @@ def instrument(instrument_id):
                 reverse=not instrument_log_order_ascending
             )
 
+    instrument_actions = [
+        action
+        for action in instrument.actions
+        if Permissions.READ in get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
+    ]
+
     action_translations = {
         action.id: get_action_translation_for_action_in_language(
             action_id=action.id,
             language_id=user_language_id,
             use_fallback=True
         )
-        for action in instrument.actions
+        for action in instrument_actions
     }
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
+        instrument_actions=instrument_actions,
         instrument_translations=instrument_translations,
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
