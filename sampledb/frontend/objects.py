@@ -1346,10 +1346,8 @@ def get_project_if_it_exists(project_id):
         return None
 
 
-def show_inline_edit(obj, action):
+def show_inline_edit(obj, action, related_objects_tree):
     # Set view attributes
-    related_objects_tree = logic.object_relationships.build_related_objects_tree(obj.id, user_id=flask_login.current_user.id)
-
     user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
 
@@ -1657,8 +1655,6 @@ def get_fed_object_if_current_user_has_read_permissions(fed_object_id, component
 def object(object_id):
     object = get_object(object_id=object_id)
 
-    related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, user_id=flask_login.current_user.id)
-
     user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
 
@@ -1677,6 +1673,10 @@ def object(object_id):
         action = None
         new_schema_available = False
         user_may_use_as_template = False
+    if action and action.type and action.type.enable_related_objects:
+        related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, user_id=flask_login.current_user.id)
+    else:
+        related_objects_tree = None
     if not user_may_edit and flask.request.args.get('mode', '') == 'edit':
         if object.fed_object_id is not None:
             flask.flash(_('Editing imported objects is not yet supported.'), 'error')
@@ -1689,7 +1689,7 @@ def object(object_id):
         if not user_may_edit and flask.request.args.get('mode', '') == 'inline_edit':
             return flask.abort(403)
         if user_may_edit and flask.request.method == 'GET' and flask.request.args.get('mode', '') in {'', 'inline_edit'}:
-            return show_inline_edit(object, get_action(object.action_id))
+            return show_inline_edit(object, get_action(object.action_id), related_objects_tree)
     if flask.request.method == 'GET' and flask.request.args.get('mode', '') not in ('edit', 'upgrade'):
         if action is not None:
             instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument else None
