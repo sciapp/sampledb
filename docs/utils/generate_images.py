@@ -27,8 +27,8 @@ import tests.conftest
 DEVICE_PIXEL_RATIO = int(os.environ.get('DEVICE_PIXEL_RATIO', '1'))
 
 
-def scroll_to(driver, x, y):
-    driver.execute_script("window.scrollTo({}, {})".format(x, y))
+def scroll_to_element(driver, element):
+    driver.execute_script(f"window.scrollTo(0, {element.location['y']})")
     # disable scrollbars
     driver.execute_script("""
     var style = document.createElement('style');
@@ -36,6 +36,11 @@ def scroll_to(driver, x, y):
     var head = document.getElementsByTagName('head')[0];
     head.appendChild(style);
     """)
+    num_attempts = 0
+    while element.location['y'] < 0 and num_attempts < 5:
+        print(f"Additional scrolling by {element.location['y']} (attempt #{num_attempts})", file=sys.stderr)
+        driver.execute_script("window.scrollBy({}, {})".format(0, element.location['y']))
+        num_attempts += 1
     return driver.execute_script("""
     return window.pageYOffset;
     """)
@@ -125,7 +130,7 @@ def default_permissions(base_url, driver):
             break
     else:
         assert False
-    scroll_to(driver, 0, heading.location['y'])
+    scroll_to_element(driver, heading)
     resize_for_screenshot(driver, width, next_heading.location['y'] - heading.location['y'])
     driver.get_screenshot_as_file('docs/static/img/generated/default_permissions.png')
 
@@ -174,7 +179,7 @@ def comments(base_url, driver, object):
             break
     else:
         assert False
-    y_offset = scroll_to(driver, 0, heading.location['y'])
+    y_offset = scroll_to_element(driver, heading)
     comment_form = driver.find_element(By.ID, 'new-comment-form')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/comments.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, comment_form.location['y'] + comment_form.rect['height']) - y_offset))
 
@@ -194,7 +199,7 @@ def activity_log(base_url, driver, object):
             break
     else:
         assert False
-    y_offset = scroll_to(driver, 0, heading.location['y'])
+    y_offset = scroll_to_element(driver, heading)
     activity_log = driver.find_element(By.ID, 'activity_log')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log_dontblock.png', (0, heading.location['y'] - y_offset, width, min(activity_log.location['y'] - y_offset + activity_log.rect['height'], max_height)))
 
@@ -216,7 +221,7 @@ def locations(base_url, driver, object):
             break
     else:
         assert False
-    y_offset = scroll_to(driver, 0, heading.location['y'])
+    y_offset = scroll_to_element(driver, heading)
     location_form = driver.find_element(By.ID, 'assign-location-form')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height']) - y_offset))
 
@@ -258,7 +263,7 @@ def files(base_url, driver, object):
     else:
         assert False
     wait_until_visible(form_group)
-    y_offset = scroll_to(driver, 0, heading.location['y'])
+    y_offset = scroll_to_element(driver, heading)
 
     # this image has caused some issues before, so if the box is empty, print out information on how it was calculated
     # see: https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/-/issues/11
@@ -291,7 +296,7 @@ def file_information(base_url, driver, object):
     file_table.find_elements(By.CLASS_NAME, 'button-file-info')[0].click()
 
     modal = wait_until_visible(driver.find_element(By.ID, 'fileInfoModal-0').find_element(By.CLASS_NAME, 'modal-content'))
-    y_offset = scroll_to(driver, 0, modal.location['y'])
+    y_offset = scroll_to_element(driver, modal)
 
     # this image has caused some issues before, so if the box is empty, print out information on how it was calculated
     # see: https://iffgit.fz-juelich.de/Scientific-IT-Systems/SampleDB/-/issues/11
@@ -360,7 +365,7 @@ def object_permissions(base_url, driver):
             break
     else:
         assert False
-    scroll_to(driver, 0, heading.location['y'])
+    y_offset = scroll_to_element(driver, heading)
     footer = driver.find_elements(By.TAG_NAME, 'footer')[-1]
     resize_for_screenshot(driver, width, footer.location['y'] - heading.location['y'])
     driver.get_screenshot_as_file('docs/static/img/generated/object_permissions.png')
@@ -403,7 +408,7 @@ def schema_editor(base_url, driver):
 
     driver.get(base_url + 'actions/new/')
     form = wait_until_visible(driver.find_element(By.ID, 'schema-editor'))
-    y_offset = scroll_to(driver, 0, form.location['y'])
+    y_offset = scroll_to_element(driver, form)
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
@@ -424,7 +429,7 @@ def disable_schema_editor(base_url, driver):
             parent = parent.find_element(By.XPATH, './..')
     else:
         assert False
-    y_offset = scroll_to(driver, 0, form.location['y'])
+    y_offset = scroll_to_element(driver, form)
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/disable_schema_editor.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
@@ -451,7 +456,7 @@ def translations(base_url, driver):
     $('[data-name="input-names"] .selectpicker').change();
     """)
     form = driver.find_element(By.CSS_SELECTOR, '[data-name="input-names"]')
-    y_offset = scroll_to(driver, 0, form.location['y'])
+    y_offset = scroll_to_element(driver, form)
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/translations.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
 
 
@@ -466,7 +471,7 @@ def other_database(base_url, driver):
             break
     else:
         assert False
-    y_offset = scroll_to(driver, 0, heading.location['y'])
+    y_offset = scroll_to_element(driver, heading)
     last_table = driver.find_elements(By.TAG_NAME, 'table')[-1]
 
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/other_database.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, last_table.location['y'] + last_table.rect['height'])))
