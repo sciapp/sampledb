@@ -678,6 +678,97 @@ def test_validate_quantity_with_invalid_display_digits():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_quantity_schema_min_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': 1.5
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_invalid_min_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': '1.5'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_max_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'max_magnitude': 1.5
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_invalid_max_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'max_magnitude': '1.5'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_min_and_max_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': 1.5,
+        'max_magnitude': 1.5
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': 1,
+        'max_magnitude': 2
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_invalid_min_and_max_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': 2,
+        'max_magnitude': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_min_and_max_magnitude_invalid_default():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': 1,
+        'max_magnitude': 2,
+        'default': 1
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['default'] = 0.5
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['default'] = 2.5
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_array_schema():
     schema = {
         'title': 'Example',

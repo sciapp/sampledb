@@ -419,6 +419,16 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
         except Exception:
             raise ValidationError('Unable to create quantity based on given magnitude_in_base_units', path)
 
+    if 'min_magnitude' in schema and quantity_magnitude_in_base_units.magnitude_in_base_units < schema['min_magnitude']:
+        min_magnitude = datatypes.Quantity(schema["min_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
+        min_value = f'{min_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
+        raise ValidationError(_('Must be greater than or equal to %(value)s', value=min_value), path)
+
+    if 'max_magnitude' in schema and quantity_magnitude_in_base_units.magnitude_in_base_units > schema['max_magnitude']:
+        max_magnitude = datatypes.Quantity(schema["max_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
+        max_value = f'{max_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
+        raise ValidationError(_('Must be less than or equal to %(value)s', value=max_value), path)
+
     if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None \
             and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
         raise ValidationError('magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)

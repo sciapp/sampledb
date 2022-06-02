@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-05-11 13:41+0200\n"
+"POT-Creation-Date: 2022-06-07 12:37+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2074,6 +2074,9 @@ msgstr "ist eine Referenz zu dem Nutzer"
 
 msgid "is user reference not equal to"
 msgstr "ist eine Referenz zu einem anderen Nutzer als"
+
+msgid "is not set"
+msgstr "ist nicht gesetzt"
 
 msgid "Text"
 msgstr "Text"
@@ -4946,6 +4949,14 @@ msgid "Please enter the date and time in the format: %(datetime_format)s"
 msgstr ""
 "Bitte geben Sie Datum und Uhrzeit in folgendem Format ein: "
 "%(datetime_format)s"
+
+#, python-format
+msgid "Must be greater than or equal to %(value)s"
+msgstr "Muss größer als oder gleich zu %(value)s sein"
+
+#, python-format
+msgid "Must be less than or equal to %(value)s"
+msgstr "Muss kleiner als oder gleich zu %(value)s sein"
 
 msgid "plotly data must be valid JSON"
 msgstr "Die plotly-Daten müssen gültiges JSON sein"
