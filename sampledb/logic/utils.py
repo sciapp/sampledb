@@ -86,13 +86,20 @@ def send_recovery_email(email):
     password_reset_urls = {}
     for user in users:
         for authentication_method in user.authentication_methods:
-            if authentication_method.type != AuthenticationType.LDAP:
+            if authentication_method.type not in {AuthenticationType.LDAP, AuthenticationType.API_TOKEN}:
                 password_reset_urls[authentication_method] = build_confirm_url(authentication_method)
+
+    def filter_printable_authentication_methods(authentication_methods):
+        printable_authentication_methods = []
+        for authentication_method in authentication_methods:
+            if authentication_method.type in {AuthenticationType.LDAP, AuthenticationType.EMAIL, AuthenticationType.OTHER}:
+                printable_authentication_methods.append(authentication_method)
+        return printable_authentication_methods
 
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Account Recovery"
-    html = flask.render_template('mails/account_recovery.html', email=email, users=users, password_reset_urls=password_reset_urls)
-    text = flask.render_template('mails/account_recovery.txt', email=email, users=users, password_reset_urls=password_reset_urls)
+    html = flask.render_template('mails/account_recovery.html', email=email, users=users, password_reset_urls=password_reset_urls, filter_printable_authentication_methods=filter_printable_authentication_methods)
+    text = flask.render_template('mails/account_recovery.txt', email=email, users=users, password_reset_urls=password_reset_urls, filter_printable_authentication_methods=filter_printable_authentication_methods)
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
     return post_send_mail_task(
