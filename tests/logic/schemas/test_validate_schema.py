@@ -2370,6 +2370,24 @@ def test_validate_choice_equals_conditions():
         with pytest.raises(ValidationError):
             validate_schema(schema)
 
+    schema['properties']['conditional_property']['type'] = 'array'
+    schema['properties']['conditional_property']['items'] = {
+        'title': 'test',
+        'type': 'text'
+    }
+    validate_schema(schema)
+    del schema['properties']['conditional_property']['items']
+
+    schema['properties']['conditional_property']['type'] = 'object'
+    schema['properties']['conditional_property']['properties'] = {
+        'test':{
+            'title': 'test',
+            'type': 'text'
+        }
+    }
+    validate_schema(schema)
+    del schema['properties']['conditional_property']['properties']
+
     schema['properties']['conditional_property']['type'] = 'text'
     schema['properties']['conditional_property']['conditions'][0]['choice']['en'] = '3'
     with pytest.raises(ValidationError):

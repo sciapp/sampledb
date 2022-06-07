@@ -341,10 +341,14 @@ def parse_boolean_form_data(form_data, schema, id_prefix, errors, required=False
 @form_data_parser
 def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if not keys:
+        return None
     item_schema = schema['items']
     item_indices = set()
     for key in keys:
         key_rest = key.replace(id_prefix, '', 1)
+        if key_rest == '__hidden':
+            continue
         if not key_rest.startswith('__'):
             raise ValueError('invalid array form data')
         key_parts = key_rest.split('__')
@@ -388,14 +392,16 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
 @form_data_parser
 def parse_object_form_data(form_data, schema, id_prefix, errors, required=False):
     assert schema['type'] == 'object'
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if not keys:
+        return None
     data = {}
-    if any(key.startswith(id_prefix + '__') for key in form_data.keys()):
-        for property_name, property_schema in schema['properties'].items():
-            property_id_prefix = id_prefix + '__' + property_name
-            property_required = (property_name in schema.get('required', []))
-            property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
-            if property is not None:
-                data[property_name] = property
+    for property_name, property_schema in schema['properties'].items():
+        property_id_prefix = id_prefix + '__' + property_name
+        property_required = (property_name in schema.get('required', []))
+        property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
+        if property is not None:
+            data[property_name] = property
     schemas.validate(data, schema)
     return data
 

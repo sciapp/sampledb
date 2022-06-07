@@ -3,6 +3,7 @@
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
   </div>
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
 {% set is_required = False %}
 {% set minItems = schema.get('minItems', 0) %}
 {% set maxItems = schema.get('maxItems', None) %}
