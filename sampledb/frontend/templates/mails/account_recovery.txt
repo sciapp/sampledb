@@ -7,10 +7,11 @@ we have received an account recovery request for {{email}}. If you did not initi
 
 {% if users | length == 1 %}
 {% with user = users[0] %}
-{% if user.authentication_methods | length == 0 %}
+{% set printable_authentication_methods = filter_printable_authentication_methods(user.authentication_methods) %}
+{% if printable_authentication_methods | length == 0 %}
 There is no way to sign in to your {{ service_name }} account {{ user.name }} at this time. Please contact an administrator ({{ contact_email }}) to regain access to your account.
-{% elif user.authentication_methods | length == 1 %}
-{% with authentication_method = user.authentication_methods[0] %}
+{% elif printable_authentication_methods | length == 1 %}
+{% with authentication_method = printable_authentication_methods[0] %}
 {% if authentication_method.type.name.lower() == 'ldap' %}
 You can use the {{ ldap_name }} account {{authentication_method.login['login']}} to sign in to your {{ service_name }} account {{ user.name }}. To set a new password for your {{ ldap_name }} account, please contact an administrator ({{ contact_email }}).
 {% elif authentication_method.type.name.lower() == 'email' %}
@@ -23,7 +24,7 @@ You can use the username {{authentication_method.login['login']}} to sign in to 
 {% endwith %}
 {% else %}
 Your {{ service_name }} account {{ user.name }} has the following authentication methods:
-{% for authentication_method in user.authentication_methods %}
+{% for authentication_method in printable_authentication_methods %}
 {% if authentication_method.type.name.lower() == 'ldap' %}
 - You can use the {{ ldap_name }} account {{authentication_method.login['login']}} to sign in to your {{ service_name }} account. To set a new password for your {{ ldap_name }} account, please contact an administrator ({{ contact_email }}).
 {% elif authentication_method.type.name.lower() == 'email' %}
@@ -39,8 +40,9 @@ Your {{ service_name }} account {{ user.name }} has the following authentication
 {% else %}
 You have the following {{ service_name }} accounts:
 {% for user in users %}
+{% set printable_authentication_methods = filter_printable_authentication_methods(user.authentication_methods) %}
 - {{ user.name }}:
-{% for authentication_method in user.authentication_methods %}
+{% for authentication_method in printable_authentication_methods %}
 {% if authentication_method.type.name.lower() == 'ldap' %}
   - You can use the {{ ldap_name }} account {{authentication_method.login['login']}} to sign in to this {{ service_name }} account. To set a new password for your {{ ldap_name }} account, please contact an administrator ({{ contact_email }}).
 {% elif authentication_method.type.name.lower() == 'email' %}
