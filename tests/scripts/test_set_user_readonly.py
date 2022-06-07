@@ -20,10 +20,7 @@ def test_set_readonly_yes(capsys):
 
 def test_set_readonly_no(capsys):
     user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
-    user = users.get_user(user_id)
-    user.is_readonly = True
-    db.session.add(user)
-    db.session.commit()
+    users.set_user_readonly(user_id, True)
 
     scripts.main([scripts.__file__, 'set_user_readonly', str(user_id), 'no'])
     assert 'Success' in capsys.readouterr()[0]
@@ -33,10 +30,7 @@ def test_set_readonly_no(capsys):
 
 def test_set_readonly_yes_no_change(capsys):
     user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
-    user = users.get_user(user_id)
-    user.is_readonly = True
-    db.session.add(user)
-    db.session.commit()
+    users.set_user_readonly(user_id, True)
 
     scripts.main([scripts.__file__, 'set_user_readonly', str(user_id), 'yes'])
     assert 'Success' in capsys.readouterr()[0]

@@ -70,6 +70,10 @@ def get_comment(comment_id: int, component_id: typing.Optional[int] = None):
         comment = Comment.query.filter_by(fed_id=comment_id, component_id=component_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()
+    if comment.user_id is None:
+        comment.author = None
+    else:
+        comment.author = users.get_user(comment.user_id)
     return comment
 
 
@@ -86,6 +90,11 @@ def get_comments_for_object(object_id: int) -> typing.List[Comment]:
     if not comments:
         # ensure that the object exists
         objects.get_object(object_id)
+    for comment in comments:
+        if comment.user_id is None:
+            comment.author = None
+        else:
+            comment.author = users.get_user(comment.user_id)
     return comments
 
 
@@ -106,4 +115,8 @@ def get_comment_for_object(object_id: int, comment_id: int) -> Comment:
         # ensure that the object exists
         objects.get_object(object_id)
         raise errors.CommentDoesNotExistError()
+    if comment.user_id is None:
+        comment.author = None
+    else:
+        comment.author = users.get_user(comment.user_id)
     return comment

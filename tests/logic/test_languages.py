@@ -8,7 +8,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 import pytest
 
 from sampledb import db, models
-from sampledb.logic import errors, languages, settings
+from sampledb.logic import errors, languages, settings, users
 
 
 def test_create_language():
@@ -215,6 +215,7 @@ def test_get_user_language():
     )
     db.session.add(user)
     db.session.commit()
+    user = users.get_user(user.id)
     assert getattr(user, 'language', None) is None
 
     assert languages.get_user_language(user) == english

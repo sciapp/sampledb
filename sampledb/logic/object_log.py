@@ -8,6 +8,7 @@ import typing
 
 from . import objects
 from . import object_permissions
+from . import users
 from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions
 from .. import db
 
@@ -17,6 +18,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
     object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
     processed_object_log_entries = []
+    users_by_id = {None: None}
     for object_log_entry in object_log_entries:
         use_object_entry = False
         using_object_type = ''
@@ -40,6 +42,9 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
             else:
                 object_log_entry.data[using_object_type] = object
 
+        if object_log_entry.user_id not in users_by_id:
+            users_by_id[object_log_entry.user_id] = users.get_user(object_log_entry.user_id)
+        object_log_entry.user = users_by_id[object_log_entry.user_id]
         processed_object_log_entries.append(object_log_entry)
     return processed_object_log_entries
 

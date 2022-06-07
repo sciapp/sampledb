@@ -20,10 +20,7 @@ def test_set_hidden_yes(capsys):
 
 def test_set_hidden_no(capsys):
     user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
-    user = users.get_user(user_id)
-    user.is_hidden = True
-    db.session.add(user)
-    db.session.commit()
+    users.set_user_hidden(user_id, True)
 
     scripts.main([scripts.__file__, 'set_user_hidden', str(user_id), 'no'])
     assert 'Success' in capsys.readouterr()[0]
@@ -33,10 +30,7 @@ def test_set_hidden_no(capsys):
 
 def test_set_hidden_yes_no_change(capsys):
     user_id = users.create_user("username", "example@example.com", users.UserType.PERSON).id
-    user = users.get_user(user_id)
-    user.is_hidden = True
-    db.session.add(user)
-    db.session.commit()
+    users.set_user_hidden(user_id, True)
 
     scripts.main([scripts.__file__, 'set_user_hidden', str(user_id), 'yes'])
     assert 'Success' in capsys.readouterr()[0]

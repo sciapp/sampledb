@@ -150,10 +150,17 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def log_entries(self):
-        return FileLogEntry.query.filter_by(
+        users_by_id = {None: None}
+        log_entries = []
+        for log_entry in FileLogEntry.query.filter_by(
             object_id=self.object_id,
             file_id=self.id
-        ).order_by(FileLogEntry.utc_datetime.asc()).all()
+        ).order_by(FileLogEntry.utc_datetime.asc()).all():
+            if log_entry.user_id not in users_by_id:
+                users_by_id[log_entry.user_id] = users.get_user(log_entry.user_id)
+            log_entry.user = users_by_id[log_entry.user_id]
+            log_entries.append(log_entry)
+        return log_entries
 
     @property
     def is_hidden(self):

@@ -18,7 +18,7 @@ from sampledb.logic.action_translations import get_action_translations_for_actio
 from sampledb.logic.action_type_translations import get_action_type_translations_for_action_type, get_action_type_translation_for_action_type_in_language
 from sampledb.logic.actions import get_action, get_action_type, create_action_type, create_action
 from sampledb.logic.comments import get_comment, create_comment, get_comments_for_object
-from sampledb.logic.components import get_component_by_uuid, add_component
+from sampledb.logic.components import get_component_by_uuid, add_component, get_component
 from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
 from sampledb.logic.federation import parse_action, parse_instrument, parse_user, parse_location, parse_action_type, shared_object_preprocessor, shared_action_preprocessor, shared_action_type_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_user_preprocessor, locations_check_for_cyclic_dependencies, parse_import_action, parse_import_action_type, parse_import_instrument, parse_import_user, parse_import_location, parse_import_comment, parse_import_object_location_assignment, parse_import_object, parse_import_file, update_shares, parse_import_markdown_image
 from sampledb.logic.files import get_file, create_url_file, get_files_for_object
@@ -634,7 +634,7 @@ def _check_user(user_data):
     assert user is not None
     assert user.fed_id == user_data.get('user_id')
     assert user.component_id == component.id
-    assert user.component == component
+    assert user.component == get_component(component.id)
 
     assert user.name == user_data.get('name')
     assert user.email == user_data.get('email')

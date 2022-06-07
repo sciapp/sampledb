@@ -22,7 +22,7 @@ import flask
 
 from .. import db
 from ..models import groups
-from .users import get_user
+from .users import get_user, get_mutable_user
 from .security_tokens import generate_token
 from .notifications import create_notification_for_being_invited_to_a_group
 from ..logic.languages import get_language_by_lang_code, Language
@@ -130,7 +130,7 @@ def create_group(name: typing.Union[str, dict], description: typing.Union[str, d
         if item[1] == '':
             del description[item[0]]
 
-    user = get_user(initial_user_id)
+    user = get_mutable_user(initial_user_id)
     group = groups.Group(name=name, description=description)
     group.members.append(user)
     db.session.add(group)
@@ -263,7 +263,7 @@ def get_user_groups(user_id: int) -> typing.List[Group]:
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    user = get_user(user_id)
+    user = get_mutable_user(user_id)
     return [Group.from_database(group) for group in user.groups]
 
 
@@ -286,7 +286,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
     group = groups.Group.query.get(group_id)
     if group is None:
         raise errors.GroupDoesNotExistError()
-    user = get_user(user_id)
+    user = get_mutable_user(user_id)
     if user in group.members:
         raise errors.UserAlreadyMemberOfGroupError()
 
@@ -329,7 +329,7 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
     group = groups.Group.query.get(group_id)
     if group is None:
         raise errors.GroupDoesNotExistError()
-    user = get_user(user_id)
+    user = get_mutable_user(user_id)
     if user in group.members:
         raise errors.UserAlreadyMemberOfGroupError()
     group.members.append(user)
@@ -366,7 +366,7 @@ def remove_user_from_group(group_id: int, user_id: int) -> None:
     group = groups.Group.query.get(group_id)
     if group is None:
         raise errors.GroupDoesNotExistError()
-    user = get_user(user_id)
+    user = get_mutable_user(user_id)
     if user not in group.members:
         raise errors.UserNotMemberOfGroupError()
     group.members.remove(user)

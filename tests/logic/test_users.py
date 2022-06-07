@@ -89,8 +89,10 @@ def test_set_user_hidden(user):
     user = sampledb.logic.users.get_user(user.id)
     assert not user.is_hidden
     sampledb.logic.users.set_user_hidden(user.id, True)
+    user = sampledb.logic.users.get_user(user.id)
     assert user.is_hidden
     sampledb.logic.users.set_user_hidden(user.id, False)
+    user = sampledb.logic.users.get_user(user.id)
     assert not user.is_hidden
 
 
@@ -98,8 +100,10 @@ def test_set_user_readonly(user):
     user = sampledb.logic.users.get_user(user.id)
     assert not user.is_readonly
     sampledb.logic.users.set_user_readonly(user.id, True)
+    user = sampledb.logic.users.get_user(user.id)
     assert user.is_readonly
     sampledb.logic.users.set_user_readonly(user.id, False)
+    user = sampledb.logic.users.get_user(user.id)
     assert not user.is_readonly
 
 
@@ -107,8 +111,10 @@ def test_set_user_administrator(user):
     user = sampledb.logic.users.get_user(user.id)
     assert not user.is_admin
     sampledb.logic.users.set_user_administrator(user.id, True)
+    user = sampledb.logic.users.get_user(user.id)
     assert user.is_admin
     sampledb.logic.users.set_user_administrator(user.id, False)
+    user = sampledb.logic.users.get_user(user.id)
     assert not user.is_admin
 
 

@@ -31,7 +31,6 @@ class FileLogEntry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
-    user = db.relationship('User')
 
     __table_args__ = (db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]), {})
 

@@ -40,10 +40,8 @@ try:
         import flask
         import flask_login
         if user_id is None:
-            user = sampledb.logic.instruments.get_instruments()[0].responsible_users[0]
-        else:
-            user = sampledb.models.User.query.get(user_id)
-        assert user is not None
+            user_id = sampledb.logic.instruments.get_instruments()[0].responsible_users[0].id
+        user = sampledb.logic.users.get_user(user_id)
         flask_login.login_user(user)
         # Remove the message asking the user to sign in
         flask.session.pop('_flashes', None)

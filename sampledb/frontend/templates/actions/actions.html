@@ -18,8 +18,9 @@
       {{ toggle_favorite_action_form.csrf_token() }}
       <h2>
         {% if action.user is not none %}
-        <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.get_name() }}">{{ action.user.get_name() }}</a>
-          {{ federation_information_symbol(action.user.component, action.user.fed_id, 'user') }} /
+          {% set action_owner = get_user(action.user_id) %}
+          <a href="{{ url_for('.user_profile', user_id=action.user_id) }}" title="{{ action_owner.get_name() }}">{{ action_owner.get_name() }}</a>
+          {{ federation_information_symbol(action_owner.component, action_owner.fed_id, 'user') }} /
         {% endif %}
         {% if action.instrument is not none %}
           <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.name }}">{{ action.instrument.translation.name }}</a>

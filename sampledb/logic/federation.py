@@ -31,7 +31,7 @@ from .instruments import create_instrument, get_instrument
 from .locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations
 from .objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from .projects import get_project
-from .users import get_user, get_user_alias, create_user
+from .users import get_user, get_mutable_user, get_user_alias, create_user
 from ..models import Permissions, ComponentAuthenticationType, Component, ActionType, UserType, MarkdownImage
 from ..models.file_log import FileLogEntry, FileLogEntryType
 
@@ -232,7 +232,7 @@ def import_markdown_image(markdown_image_data, component):
 def import_user(user_data, component):
     component_id = _get_or_create_component_id(user_data['component_uuid'])
     try:
-        user = get_user(user_data['fed_id'], component_id)
+        user = get_mutable_user(user_data['fed_id'], component_id)
         if user.name != user_data['name'] or user.email != user_data['email'] or user.orcid != user_data['orcid'] or user.affiliation != user_data['affiliation'] or user.role != user_data['role'] or user.extra_fields != user_data['extra_fields']:
             user.name = user_data['name']
             user.email = user_data['email']
@@ -240,6 +240,7 @@ def import_user(user_data, component):
             user.affiliation = user_data['affiliation']
             user.role = user_data['role']
             user.extra_fields = user_data['extra_fields']
+            db.session.add(user)
             db.session.commit()
             fed_logs.update_user(user.id, component.id)
     except errors.UserDoesNotExistError:

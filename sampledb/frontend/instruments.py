@@ -123,6 +123,7 @@ def instruments():
         instruments=instruments,
         user_favorite_instrument_ids=user_favorite_instrument_ids,
         toggle_favorite_instrument_form=toggle_favorite_instrument_form,
+        get_user=get_user,
         get_component=get_component
     )
 
@@ -367,6 +368,7 @@ def instrument(instrument_id):
         single_instrument_translation=single_instrument_translation,
         get_action_type_translation_for_action_type_in_language=get_action_type_translation_for_action_type_in_language,
         ActionType=ActionType,
+        get_user=get_user,
         get_component=get_component
     )
 

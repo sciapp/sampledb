@@ -184,14 +184,14 @@ def test_change_password_in_authentication_method(flask_server, users):
     user = sampledb.logic.authentication.login(username, password)
     assert user is not None
 
-    authentication_id = user.authentication_methods[0].id
+    authentication_id = sampledb.logic.users.get_mutable_user(user.id).authentication_methods[0].id
     result = change_password_in_authentication_method(authentication_id, 'abc')
     # authentication_method is LDAP, password not changed
     assert result is False
 
     user_id = users[2].id
     user = users[2]
-    authentication_id = user.authentication_methods[0].id
+    authentication_id = sampledb.logic.users.get_mutable_user(user.id).authentication_methods[0].id
     result = change_password_in_authentication_method(authentication_id, 'abc')
     # change password if authentication_method is OTHER
     assert result is True

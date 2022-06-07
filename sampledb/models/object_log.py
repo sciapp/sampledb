@@ -40,7 +40,6 @@ class ObjectLogEntry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
-    user = db.relationship('User')
 
     def __init__(self, type, object_id, user_id, data, utc_datetime=None):
         self.type = type

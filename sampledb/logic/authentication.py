@@ -120,7 +120,7 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     db.session.commit()
 
 
-def login(login: str, password: str) -> typing.Optional[User]:
+def login(login: str, password: str) -> typing.Optional[logic.users.User]:
     """
     Authenticate a user and create an LDAP based user if necessary.
 
@@ -147,10 +147,10 @@ def login(login: str, password: str) -> typing.Optional[User]:
             continue
         if authentication_method.type == AuthenticationType.LDAP and is_ldap_configured():
             if validate_user(login, password):
-                return authentication_method.user
+                return logic.users.User.from_database(authentication_method.user)
         elif authentication_method.type in {AuthenticationType.EMAIL, AuthenticationType.OTHER}:
             if _validate_password_authentication(authentication_method, password):
-                return authentication_method.user
+                return logic.users.User.from_database(authentication_method.user)
 
     # no matching authentication method in db
     if not authentication_methods and '@' not in login and is_ldap_configured():

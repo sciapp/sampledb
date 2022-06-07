@@ -132,12 +132,12 @@ def create_project(name: typing.Union[str, dict], description: typing.Union[str,
         if item[1] == '':
             del description[item[0]]
 
-    user = get_user(initial_user_id)
+    get_user(initial_user_id)
     project = projects.Project(name=name, description=description)
     db.session.add(project)
-
     db.session.commit()
-    user_project_permissions = projects.UserProjectPermissions(project_id=project.id, user_id=user.id, permissions=Permissions.GRANT)
+
+    user_project_permissions = projects.UserProjectPermissions(project_id=project.id, user_id=initial_user_id, permissions=Permissions.GRANT)
     db.session.add(user_project_permissions)
     db.session.commit()
     return Project.from_database(project)
@@ -432,10 +432,10 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    user = get_user(user_id)
+    get_user(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
-        user_id=user.id
+        user_id=user_id
     ).first()
     if existing_permissions is not None:
         raise errors.UserAlreadyMemberOfProjectError()
@@ -516,10 +516,10 @@ def remove_user_from_project(project_id: int, user_id: int) -> None:
     project = projects.Project.query.get(project_id)
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    user = get_user(user_id)
+    get_user(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
-        user_id=user.id
+        user_id=user_id
     ).first()
     if existing_permissions is None:
         raise errors.UserNotMemberOfProjectError()
