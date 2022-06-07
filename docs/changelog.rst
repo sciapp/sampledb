@@ -23,6 +23,7 @@ Currently in development.
 - Fix search with missing attributes
 - Let the objects table extend to the full window width
 - Allow searching for missing attributes
+- Allow setting minimum and maximum values for quantities
 
 Version 0.20
 ------------

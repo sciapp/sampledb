@@ -563,7 +563,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy', 'style', 'display_digits'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy', 'style', 'display_digits', 'min_magnitude', 'max_magnitude'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -585,6 +585,16 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
         raise ValidationError('default must be float or int', path)
+    if 'min_magnitude' in schema and not isinstance(schema['min_magnitude'], float) and not isinstance(schema['min_magnitude'], int):
+        raise ValidationError('min_magnitude must be float or int', path)
+    if 'max_magnitude' in schema and not isinstance(schema['max_magnitude'], float) and not isinstance(schema['max_magnitude'], int):
+        raise ValidationError('max_magnitude must be float or int', path)
+    if 'min_magnitude' in schema and 'max_magnitude' in schema and schema['min_magnitude'] > schema['max_magnitude']:
+        raise ValidationError('max_magnitude must be greater than or equal to min_magnitude', path)
+    if 'min_magnitude' in schema and 'default' in schema and schema['min_magnitude'] > schema['default']:
+        raise ValidationError('default must be greater than or equal to min_magnitude', path)
+    if 'max_magnitude' in schema and 'default' in schema and schema['max_magnitude'] < schema['default']:
+        raise ValidationError('default must be less than or equal to max_magnitude', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'placeholder' in schema and not isinstance(schema['placeholder'], str) and not isinstance(schema['placeholder'], dict):

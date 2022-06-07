@@ -480,6 +480,36 @@ def test_validate_quantity_invalid_type():
         validate(instance, schema)
 
 
+def test_validate_quantity_min_and_max_magnitude():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'min_magnitude': -1,
+        'max_magnitude': 2
+    }
+    instance = {
+        '_type': 'quantity',
+        'units': 'm',
+        'dimensionality': '[length]',
+        'magnitude_in_base_units': 1
+    }
+    validate(instance, schema)
+    del instance['magnitude']
+    instance['magnitude_in_base_units'] = -1
+    validate(instance, schema)
+    del instance['magnitude']
+    instance['magnitude_in_base_units'] = 2
+    validate(instance, schema)
+    del instance['magnitude']
+    instance['magnitude_in_base_units'] = -2
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+    instance['magnitude_in_base_units'] = 3
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_datetime():
     schema = {
         'title': 'Example',

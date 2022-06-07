@@ -572,6 +572,16 @@ display_digits
 
 This attribute is the number of decimal places to be shown when displaying the magnitude, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitude will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
 
+min_magnitude
+^^^^^^^^^^^^^
+
+The minimum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the minimum to 10nm, you need to set ``min_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
+
+max_magnitude
+^^^^^^^^^^^^^
+
+The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
+
 Datetimes
 `````````
 
