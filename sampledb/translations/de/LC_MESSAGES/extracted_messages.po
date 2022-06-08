@@ -1769,8 +1769,8 @@ msgstr "Administratoreinstellungen"
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
 
-msgid "Yes &mdash; Use <b>GRANT</b> permissions for all objects"
-msgstr "Ja &mdash; Verwende <b>RECHTEVERGABE</b>-Berechtigungen für alle Objekte"
+msgid "Yes &mdash; Always use <b>GRANT</b> permissions"
+msgstr "Ja &mdash; Verwende immer <b>RECHTEVERGABE</b>-Berechtigungen"
 
 msgid "No &mdash; Use regular permission system"
 msgstr "Nein &mdash; Verwende das normale Berechtigungenssystem"
