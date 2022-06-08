@@ -5,6 +5,7 @@
 
 import io
 import json
+import sys
 import tarfile
 import zipfile
 
@@ -308,3 +309,23 @@ def test_tar_gz_export(user, app, tmpdir):
 
         with tar_file.extractfile(f'sampledb_export/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt') as text_file:
             assert text_file.read() == b'Example Content'
+
+
+def test_eln_export(user, app, tmpdir):
+    files.FILE_STORAGE_PATH = tmpdir
+
+    set_up_state(user)
+    object_id = sampledb.logic.objects.get_objects()[0].id
+    instrument_id = sampledb.logic.instruments.get_instruments()[0].id
+    instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
+    instrument_log_entry_file_id = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(instrument_log_entry_id)[0].id
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        zip_bytes = export.get_eln_archive(user.id)
+    app.config['SERVER_NAME'] = server_name
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
+        assert zip_file.testzip() is None
+        with zip_file.open('sampledb_export/ro-crate-metadata.json') as data_file:
+            json.load(data_file)
