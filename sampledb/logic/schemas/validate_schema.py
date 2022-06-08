@@ -160,7 +160,7 @@ def _validate_array_schema(
     :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy'}
+    valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions'}
     required_keys = {'type', 'title', 'items'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -273,6 +273,9 @@ def _validate_object_schema(
         valid_keys.add('batch')
         valid_keys.add('batch_name_format')
         valid_keys.add('notebookTemplates')
+    if path:
+        # the top level object must not have any conditions
+        valid_keys.add('conditions')
     required_keys = {'type', 'title', 'properties'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys

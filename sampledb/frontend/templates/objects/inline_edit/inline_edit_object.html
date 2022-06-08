@@ -3,6 +3,7 @@
     <span style="font-size:1.5em; padding-left: 15px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
 <div style="">
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
     {% if search_query_attribute %}
         {% set base_search_query_attribute = search_query_attribute %}
     {% else %}
