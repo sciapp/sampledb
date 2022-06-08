@@ -7,7 +7,7 @@ import typing
 
 import flask
 
-from . import locations, users, settings
+from . import locations, users
 from ..models import Permissions, AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
 from .permissions import ResourcePermissions
 
@@ -44,7 +44,7 @@ def get_user_location_permissions(
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS']:
         # if only admins are allowed to manage locations, only they can have
         # more than READ permissions
-        if not (include_admin_permissions and user.is_admin and settings.get_user_settings(user_id)['USE_ADMIN_PERMISSIONS']):
+        if not (include_admin_permissions and user.has_admin_permissions):
             max_permissions = min(max_permissions, Permissions.READ)
 
     # resource independent permissions

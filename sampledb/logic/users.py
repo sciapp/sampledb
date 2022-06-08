@@ -14,7 +14,7 @@ from flask_babel import gettext
 
 from .components import get_component
 from .. import db
-from . import errors
+from . import errors, settings
 from .. models import users, UserType, UserFederationAlias
 
 
@@ -120,6 +120,18 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
         else:
             return '{} (#{}{})'.format(self.name, self.id, db_ref)
+
+    @property
+    def has_admin_permissions(self) -> bool:
+        """
+        Return whether the user has administrator permissions.
+
+        This is the case if the user is an admin and has admin permissions enabled in their settings.
+        """
+        if not self.is_admin:
+            return False
+        user_settings = settings.get_user_settings(self.id)
+        return user_settings['USE_ADMIN_PERMISSIONS']
 
 
 def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:

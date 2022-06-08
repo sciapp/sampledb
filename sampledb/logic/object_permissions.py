@@ -15,7 +15,6 @@ from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, Action, Object
-from . import settings
 from .users import get_user
 from .permissions import ResourcePermissions
 
@@ -108,7 +107,7 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
 
     if include_admin_permissions:
         # administrators have GRANT permissions if they use admin permissions
-        if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+        if user.has_admin_permissions:
             # unless they are limited to READ permissions
             if user.is_readonly:
                 return Permissions.READ
@@ -203,7 +202,7 @@ def get_object_info_with_permissions(
     else:
         action_filter = None
 
-    if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+    if user.has_admin_permissions:
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
@@ -332,7 +331,7 @@ def get_objects_with_permissions(
         FROM objects_current AS o
         """
 
-    if not user.is_admin or not settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+    if not user.has_admin_permissions:
         stmt += """
         JOIN (
             SELECT

@@ -29,7 +29,7 @@ for the individual resource types, as a base to avoid code duplication.
 """
 import typing
 
-from . import settings, users, groups, projects
+from . import users, groups, projects
 from ..models import Permissions
 from .. import db
 
@@ -148,7 +148,7 @@ class ResourcePermissions(object):
 
         if include_admin_permissions:
             for user in users.get_administrators():
-                if not settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+                if not user.has_admin_permissions:
                     # skip admins who do not use admin permissions
                     continue
                 permissions_for_users[user.id] = Permissions.GRANT
@@ -351,7 +351,7 @@ class ResourcePermissions(object):
 
         if max_permissions not in permissions and include_admin_permissions:
             # administrators have GRANT permissions if they use admin permissions
-            if user.is_admin and settings.get_user_settings(user.id)['USE_ADMIN_PERMISSIONS']:
+            if user.has_admin_permissions:
                 permissions = max(permissions, Permissions.GRANT)
 
         if max_permissions not in permissions and include_all_users:
