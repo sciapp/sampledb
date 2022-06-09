@@ -5,6 +5,7 @@ Implementation of validate_schema(schema)
 
 
 import datetime
+import math
 import typing
 import urllib.parse
 import re
@@ -592,6 +593,12 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('min_magnitude must be float or int', path)
     if 'max_magnitude' in schema and not isinstance(schema['max_magnitude'], float) and not isinstance(schema['max_magnitude'], int):
         raise ValidationError('max_magnitude must be float or int', path)
+    if 'default' in schema and not math.isfinite(schema['default']):
+        raise ValidationError('default must be a finite number', path)
+    if 'min_magnitude' in schema and not math.isfinite(schema['min_magnitude']):
+        raise ValidationError('min_magnitude must be a finite number', path)
+    if 'max_magnitude' in schema and not math.isfinite(schema['max_magnitude']):
+        raise ValidationError('max_magnitude must be a finite number', path)
     if 'min_magnitude' in schema and 'max_magnitude' in schema and schema['min_magnitude'] > schema['max_magnitude']:
         raise ValidationError('max_magnitude must be greater than or equal to min_magnitude', path)
     if 'min_magnitude' in schema and 'default' in schema and schema['min_magnitude'] > schema['default']:

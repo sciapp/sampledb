@@ -405,6 +405,8 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     if 'magnitude' in instance:
         if not isinstance(instance['magnitude'], float) and not isinstance(instance['magnitude'], int):
             raise ValidationError('magnitude must be float or int', path)
+        if not math.isfinite(instance['magnitude']):
+            raise ValidationError('magnitude must be a finite number', path)
         try:
             quantity_magnitude = datatypes.Quantity(instance['magnitude'], units=instance['units'],
                                                     already_in_base_units=False)
@@ -413,6 +415,8 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     if 'magnitude_in_base_units' in instance:
         if not isinstance(instance['magnitude_in_base_units'], float) and not isinstance(instance['magnitude_in_base_units'], int):
             raise ValidationError('magnitude_in_base_units must be float or int', path)
+        if not math.isfinite(instance['magnitude_in_base_units']):
+            raise ValidationError('magnitude_in_base_units must be a finite number', path)
         try:
             quantity_magnitude_in_base_units = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'],
                                                                   already_in_base_units=True)
