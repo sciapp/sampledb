@@ -18,7 +18,7 @@ import typing
 
 from .. import db
 from ..models import Settings
-from .users import get_user
+from . import users
 
 
 DEFAULT_SETTINGS = {
@@ -50,7 +50,7 @@ def get_user_settings(user_id: int) -> typing.Dict[str, typing.Any]:
     :raise errors.UserDoesNotExistError: if the user does not exist
     """
     # ensure the user exists
-    get_user(user_id)
+    users.get_user(user_id)
     verified_data = copy.deepcopy(DEFAULT_SETTINGS)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is not None:
@@ -69,7 +69,7 @@ def set_user_settings(user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     :raise errors.UserDoesNotExistError: if the user does not exist
     """
     # ensure the user exists
-    get_user(user_id)
+    users.get_user(user_id)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is None:
         verified_data = {}
