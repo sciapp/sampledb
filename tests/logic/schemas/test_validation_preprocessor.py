@@ -20,27 +20,22 @@ SCHEMA = {
     }
 
 
-example_template = None
-
-
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def template_action():
     action_schema = copy.deepcopy(SCHEMA)
     action_schema["properties"]["value"] = {
         "title": "Value",
         "type": "text"
     }
-    global example_template
-    example_template = actions.create_action(action_type_id=sampledb.models.ActionType.TEMPLATE, schema=action_schema)
-    return example_template
+    return actions.create_action(action_type_id=sampledb.models.ActionType.TEMPLATE, schema=action_schema)
 
 
-def test_substitute_templates_substitution_passes():
+def test_substitute_templates_substitution_passes(template_action):
     base_action_schema = copy.deepcopy(SCHEMA)
     template_include_schema = {
             "type": "object",
             "title": "Template Include",
-            "template": example_template.id
+            "template": template_action.id
         }
     base_action_schema["properties"]["template_include"] = template_include_schema
     asserted_action_schema = {
@@ -54,7 +49,7 @@ def test_substitute_templates_substitution_passes():
             "template_include": {
                 "type": "object",
                 "title": "Template Include",
-                "template": example_template.id,
+                "template": template_action.id,
                 "properties": {
                     "value": {
                         "title": "Value",
@@ -84,12 +79,12 @@ def test_substitute_template_template_does_not_exist():
         actions.create_action(action_type_id=sampledb.models.ActionType.SAMPLE_CREATION, schema=action_schema)
 
 
-def test_substitute_template_template_properties_not_empty():
+def test_substitute_template_template_properties_not_empty(template_action):
     action_schema = copy.deepcopy(SCHEMA)
     template_include_schema = {
         "title": "Template Include",
         "type": "object",
-        "template": example_template.id,
+        "template": template_action.id,
         "properties": {
             "val": {
                 "title": "Value",
@@ -102,7 +97,7 @@ def test_substitute_template_template_properties_not_empty():
     assert stored_action.schema == action_schema
 
 
-def test_reverse_substitute_passes():
+def test_reverse_substitute_passes(template_action):
     action_schema = {
         "title": "Example Action",
         "type": "object",
@@ -114,7 +109,7 @@ def test_reverse_substitute_passes():
             "template_include": {
                 "type": "object",
                 "title": "Template Include",
-                "template": f"{example_template.id}",
+                "template": f"{template_action.id}",
                 "properties": {
                     "value": {
                         "title": "Value",
@@ -139,7 +134,7 @@ def test_reverse_substitute_passes():
                 "template_include": {
                     "type": "object",
                     "title": "Template Include",
-                    "template": f"{example_template.id}",
+                    "template": f"{template_action.id}",
                     "properties": {},
                     "propertyOrder": [],
                     "required": []
