@@ -367,7 +367,8 @@ def to_datatype(obj):
 
 def get_style_aliases(style):
     return {
-        'horizontal_table': ['table', 'horizontal_table']
+        'horizontal_table': ['table', 'horizontal_table'],
+        'full_width_table': ['table']
     }.get(style, [style])
 
 

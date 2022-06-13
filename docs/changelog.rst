@@ -24,6 +24,7 @@ Currently in development.
 - Let the objects table extend to the full window width
 - Allow searching for missing attributes
 - Allow setting minimum and maximum values for quantities
+- Added array style ``full_width_table``
 
 Version 0.20
 ------------

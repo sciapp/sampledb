@@ -21,7 +21,7 @@
         {% set numItems = 0 %}
     {% endif %}
 </div>
-<div style="padding-left:2.5em;">
+<div {% if schema.style == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if data is not none %}
     {% for item in data %}
