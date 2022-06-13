@@ -350,6 +350,29 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-full-width-objects-table-yes">
+        {{ _('Show objects table at full width') }} {{ user_settings["FULL_WIDTH_OBJECTS_TABLE"] }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-full-width-objects-table" id="input-full-width-objects-table-yes" value="yes" {% if user_settings["FULL_WIDTH_OBJECTS_TABLE"] is true %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Let the objects table be as wide as the browser window') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-full-width-objects-table" id="input-full-width-objects-table-no" value="no" {% if user_settings["FULL_WIDTH_OBJECTS_TABLE"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Limit the objects table to the regular content width') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-full-width-objects-table" id="input-full-width-objects-table-default" value="default" {% if user_settings["FULL_WIDTH_OBJECTS_TABLE"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
       <label class="col-md-4 control-label" for="select-locale">
         {{ _('Language') }}
       </label>

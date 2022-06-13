@@ -227,6 +227,8 @@ Miscellaneous
      - If set, the inline edit mode will be disabled and users will not be able to edit individual fields.
    * - SAMPLEDB_SHOW_OBJECT_TITLE
      - If set, object schema titles will be shown when viewing metadata by default. Users may override this setting in their preferences.
+   * - SAMPLEDB_FULL_WIDTH_OBJECTS_TABLE
+     - If set, the table of objects will be the full width of the browser. Users may override this setting in their preferences. (default: True)
    * - SAMPLEDB_HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE
      - If set, the object type and id, e.g. "Sample #4" will not be shown on the object page.
    * - SAMPLEDB_MAX_BATCH_SIZE

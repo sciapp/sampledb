@@ -21,7 +21,7 @@ Currently in development.
 - Allow missing datetime entries if not marked as required
 - Fix negated text search
 - Fix search with missing attributes
-- Let the objects table extend to the full window width
+- Made the objects table width configurable
 - Allow searching for missing attributes
 - Allow setting minimum and maximum values for quantities
 

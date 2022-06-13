@@ -379,7 +379,7 @@
   {% if objects %}
   </div>
 
-  <div class="container" id="table-objects-container">
+  <div class="container" {% with user_settings = get_user_settings() %}{% if user_settings['FULL_WIDTH_OBJECTS_TABLE'] or (user_settings['FULL_WIDTH_OBJECTS_TABLE'] is none and config['FULL_WIDTH_OBJECTS_TABLE']) %}id="table-objects-container"{% endif %}{% endwith %}>
   <table class="table" id="table-objects">
   <thead>
     <tr>

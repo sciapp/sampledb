@@ -545,6 +545,15 @@ def change_preferences(user, user_id):
             show_object_title = None
         modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
 
+        full_width_objects_table_text = flask.request.form.get('input-full-width-objects-table', 'default')
+        if full_width_objects_table_text == 'yes':
+            full_width_objects_table = True
+        elif full_width_objects_table_text == 'no':
+            full_width_objects_table = False
+        else:
+            full_width_objects_table = None
+        modified_settings['FULL_WIDTH_OBJECTS_TABLE'] = full_width_objects_table
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
