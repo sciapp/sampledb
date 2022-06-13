@@ -20,26 +20,22 @@ SCHEMA = {
     }
 
 
-example_template = None
-
-
-@pytest.fixture(autouse=True)
-def create_template_action():
+@pytest.fixture
+def template_action():
     action_schema = copy.deepcopy(SCHEMA)
     action_schema["properties"]["value"] = {
         "title": "Value",
         "type": "text"
     }
-    global example_template
-    example_template = actions.create_action(action_type_id=sampledb.models.ActionType.TEMPLATE, schema=action_schema)
+    return actions.create_action(action_type_id=sampledb.models.ActionType.TEMPLATE, schema=action_schema)
 
 
-def test_substitute_templates_substitution_passes():
+def test_substitute_templates_substitution_passes(template_action):
     base_action_schema = copy.deepcopy(SCHEMA)
     template_include_schema = {
             "type": "object",
             "title": "Template Include",
-            "template": example_template.id
+            "template": template_action.id
         }
     base_action_schema["properties"]["template_include"] = template_include_schema
     asserted_action_schema = {
@@ -53,7 +49,7 @@ def test_substitute_templates_substitution_passes():
             "template_include": {
                 "type": "object",
                 "title": "Template Include",
-                "template": example_template.id,
+                "template": template_action.id,
                 "properties": {
                     "value": {
                         "title": "Value",
@@ -83,12 +79,12 @@ def test_substitute_template_template_does_not_exist():
         actions.create_action(action_type_id=sampledb.models.ActionType.SAMPLE_CREATION, schema=action_schema)
 
 
-def test_substitute_template_template_properties_not_empty():
+def test_substitute_template_template_properties_not_empty(template_action):
     action_schema = copy.deepcopy(SCHEMA)
     template_include_schema = {
         "title": "Template Include",
         "type": "object",
-        "template": example_template.id,
+        "template": template_action.id,
         "properties": {
             "val": {
                 "title": "Value",
@@ -101,7 +97,7 @@ def test_substitute_template_template_properties_not_empty():
     assert stored_action.schema == action_schema
 
 
-def test_reverse_substitute_passes():
+def test_reverse_substitute_passes(template_action):
     action_schema = {
         "title": "Example Action",
         "type": "object",
@@ -113,7 +109,7 @@ def test_reverse_substitute_passes():
             "template_include": {
                 "type": "object",
                 "title": "Template Include",
-                "template": f"{example_template.id}",
+                "template": f"{template_action.id}",
                 "properties": {
                     "value": {
                         "title": "Value",
@@ -138,7 +134,7 @@ def test_reverse_substitute_passes():
                 "template_include": {
                     "type": "object",
                     "title": "Template Include",
-                    "template": f"{example_template.id}",
+                    "template": f"{template_action.id}",
                     "properties": {},
                     "propertyOrder": [],
                     "required": []
@@ -147,5 +143,79 @@ def test_reverse_substitute_passes():
             "propertyOrder": [],
             "required": ["name"]
         }
+    reverse_substitute_templates(action_schema)
+    assert asserted_dict == action_schema
+
+
+def test_template_with_conditions(template_action):
+    action_schema = {
+        "title": "Example Action",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Example Attribute",
+                "type": "text"
+            },
+            "checkbox": {
+                "title": "Checkbox",
+                "type": "bool"
+            },
+            "template_include": {
+                "type": "object",
+                "title": "Template Include",
+                "template": template_action.id,
+                "properties": {
+                    "value": {
+                        "title": "Value",
+                        "type": "text"
+                    }
+                },
+                "propertyOrder": [],
+                "required": [],
+                "conditions": [
+                    {
+                        "type": "bool_equals",
+                        "property_name": "checkbox",
+                        "value": True
+                    }
+                ]
+            }
+        },
+        "propertyOrder": [],
+        "required": ["name"]
+    }
+    asserted_dict = {
+            "title": "Example Action",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Example Attribute",
+                    "type": "text"
+                },
+                "checkbox": {
+                    "title": "Checkbox",
+                    "type": "bool"
+                },
+                "template_include": {
+                    "type": "object",
+                    "title": "Template Include",
+                    "template": template_action.id,
+                    "properties": {},
+                    "propertyOrder": [],
+                    "required": [],
+                    "conditions": [
+                        {
+                            "type": "bool_equals",
+                            "property_name": "checkbox",
+                            "value": True
+                        }
+                    ]
+                }
+            },
+            "propertyOrder": [],
+            "required": ["name"]
+        }
+    stored_action = actions.create_action(action_type_id=sampledb.models.ActionType.SAMPLE_CREATION, schema=action_schema)
+    assert stored_action.schema == action_schema
     reverse_substitute_templates(action_schema)
     assert asserted_dict == action_schema
