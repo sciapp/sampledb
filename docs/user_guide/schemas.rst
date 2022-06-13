@@ -309,7 +309,7 @@ If the ``default`` attribute is not set, this number can be used to set how many
 style
 ^^^^^
 
-This attribute is a string indicating how the array should be displayed. By default, the items will be shown one after another, but sometimes a different behavior may be desired. If the items are objects, using the ``table`` style may be useful to create a table with the items as rows and their properties in the columns. Alternatively, if the items should be in the columns and their properties should be in the rows, the ``horizontal_table`` style can be used. If the items are neither objects nor arrays, the ``list`` style may be useful to create a simple list.
+This attribute is a string indicating how the array should be displayed. By default, the items will be shown one after another, but sometimes a different behavior may be desired. If the items are objects, using the ``table`` style may be useful to create a table with the items as rows and their properties in the columns. For top-level tables with many columns, the ``full_width_table`` style can be used to let the table be as wide as the browser window permits. Alternatively, if the items should be in the columns and their properties should be in the rows, the ``horizontal_table`` style can be used. If the items are neither objects nor arrays, the ``list`` style may be useful to create a simple list.
 
 .. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
 
