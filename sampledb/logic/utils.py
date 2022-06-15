@@ -152,6 +152,40 @@ def get_translated_text(
     return default
 
 
+def get_all_translated_texts(
+        text: typing.Optional[typing.Union[str, typing.Dict[str, str]]],
+        join_symbol: str,
+        default: str = ''
+) -> str:
+    """
+    Return all translations from a translation dictionary.
+
+    The english translation will always be first in the result, if it exists.
+
+    If text is a string instead of a dict, it will be returned as-is.
+
+    If text is neither a string nor a dict, a default will be returned.
+
+    :param text: a dict mapping language codes to translations
+    :param join_symbol: the symbol to join translations with
+    :param default: a text to return if the input text is None or empty
+    :return: the translation
+    """
+    if isinstance(text, str):
+        return text
+
+    if isinstance(text, dict):
+        translations = []
+        if 'en' in text:
+            translations.append(text['en'])
+        for language_code, translation in text.items():
+            if language_code != 'en':
+                translations.append(translation)
+        return join_symbol.join(translations)
+
+    return default
+
+
 def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
     """
     Validate and parse a given URI/URL.
