@@ -96,7 +96,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
         if not keys:
             return None
         enabled_languages = form_data.get(id_prefix + '__text_languages', [])
-        if 'en' not in enabled_languages:
+        if 'en' not in enabled_languages and ('languages' not in schema or schema['languages'] == 'all' or 'en' in schema['languages']):
             enabled_languages.append('en')
         data = {
             '_type': 'text',
