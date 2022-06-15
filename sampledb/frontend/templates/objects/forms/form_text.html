@@ -21,7 +21,8 @@
     <div class="row">
       <label class="control-label col-md-12 {% if schema.title | get_translated_text and (is_required and (schema.minLength or schema.choices)) %}required-label{% endif %}">{{ schema.title | get_translated_text }}</label>
     </div>
-    {% if input_languages | length > 1 and 'choices' not in schema %}
+    {% if 'choices' not in schema %}
+      {% if input_languages | length > 1 %}
     <div class="row col-md-offset-4">
       <select class="selectpicker col-md-12 select-language" multiple="multiple" style="padding-bottom: 5px;"  data-style="btn-default btn-xs" id="{{ id_prefix }}-select-language" name="{{ id_prefix }}_text_languages">
       {% for language in input_languages %}
@@ -39,6 +40,11 @@
       {% endfor %}
     </select>
     </div>
+      {% elif input_languages | length == 1 %}
+        <input type="hidden" value="{{ input_languages[0].lang_code }}" name="{{ id_prefix }}_text_languages" />
+      {% else %}
+        <input type="hidden" value="en" name="{{ id_prefix }}_text_languages" />
+      {% endif %}
     {% endif %}
   </div>
   <div class="col-md-9">

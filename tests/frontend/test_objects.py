@@ -1466,7 +1466,7 @@ def test_create_object_similar_property_names(flask_server, user):
     form_data = {'action_submit': 'action_submit'}
 
     for input_field in input_fields:
-        if input_field['name'].startswith('object'):
+        if input_field['name'].startswith('object') and not input_field['name'].endswith('__text_languages'):
             value = 'Test'
             if 'name_2' in input_field['name']:
                 value = 'Test-2'
@@ -1543,7 +1543,7 @@ def test_edit_object_similar_property_names(flask_server, user):
     form_data = {'action_submit': 'action_submit'}
 
     for input_field in input_fields:
-        if input_field['name'].startswith('object'):
+        if input_field['name'].startswith('object') and not input_field['name'].endswith('__text_languages'):
             value = 'Test'
             if 'name_2' in input_field['name']:
                 value = 'Test-2'

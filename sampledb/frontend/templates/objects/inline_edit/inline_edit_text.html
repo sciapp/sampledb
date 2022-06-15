@@ -23,7 +23,8 @@
         <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
           {% include "objects/search_link.html" %}
         </label>
-        {% if input_languages | length > 1 and 'choices' not in schema %}
+        {% if 'choices' not in schema %}
+          {% if input_languages | length > 1 %}
             <div class="form-switch">
                 <div class="row col-md-offset-4">
                     <select class="selectpicker col-md-12 select-language" multiple="multiple"
@@ -47,6 +48,11 @@
                     </select>
                 </div>
             </div>
+          {% elif input_languages | length == 1 %}
+            <input type="hidden" value="{{ input_languages[0].lang_code }}" name="{{ id_prefix }}_text_languages" />
+          {% else %}
+            <input type="hidden" value="en" name="{{ id_prefix }}_text_languages" />
+          {% endif %}
         {% endif %}
     </div>
     {# View #}
