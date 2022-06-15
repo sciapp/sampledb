@@ -416,8 +416,8 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     }
     if 'languages' in schema:
         if schema['languages'] != 'all':
-            if not isinstance(schema['languages'], list):
-                raise ValidationError('languages must be a list of known language codes or "all"', path)
+            if not isinstance(schema['languages'], list) or len(schema['languages']) == 0:
+                raise ValidationError('languages must be a non-empty list of known language codes or "all"', path)
             for language in schema['languages']:
                 if not isinstance(language, str) or language not in all_language_codes:
                     raise ValidationError('languages must be a list of known language codes or "all"', path)
