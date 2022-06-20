@@ -3973,6 +3973,12 @@ msgstr ""
 " zu:"
 
 #, python-format
+msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the URL to:"
+msgstr ""
+"<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die URL aktualisiert"
+" zu:"
+
+#, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the description to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die Beschreibung "

@@ -334,7 +334,10 @@
                   {% elif file.storage == 'url' %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('URL') }}:</label></div>
-                    <div class="col-sm-9">{{ file.data.url }}</div>
+                    <div class="col-sm-9">
+                      <span class="file-info-view-mode">{{ file.url }}</span><span class="file-info-edit-mode"><input type="text" name="{{ file_information_form.url.name }}" class="input-file-info-url has-error" style="width:100%" value="{{ file.url }}"></span>
+                      <div class="help-block file-url-error" id="file-url-error-{{ file.id }}"><span class="text-danger"></span></div>
+                    </div>
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Linked by') }}:</label></div>
@@ -380,6 +383,11 @@
                             <tr>
                               <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }}<br />{{ log_entry.data['title'] }}</td>
+                            </tr>
+                          {% elif log_entry.type == FileLogEntryType.EDIT_URL %}
+                            <tr>
+                              <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
+                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the URL to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['url'] }}</pre></td>
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
                             <tr>
@@ -962,7 +970,7 @@
                         {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded %(file_name)s.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_name=file.original_file_name) }}
                       {% endif %}
                     {% elif file.storage == 'url' %}
-                      {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), link_url=file.data.url) }}
+                      {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), link_url=file.url) }}
                     {% else %}
                       {% if action is not none and action.type.enable_files %}
                         {{ _('<a href="%(user_url)s">%(user_name)s</a> posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
@@ -1444,11 +1452,9 @@
         $('.file-info-hide').hide();
         $('.file-info-edit-mode').hide();
         $('.file-info-view-mode').show();
+        $('.file-url-error').hide();
         $('.button-file-info-edit').on('click', function () {
-          $('.input-file-info-title').each(function () {
-            $(this).attr('data-value', $(this).attr('value'));
-          });
-          $('.input-file-info-description').each(function () {
+          $('.input-file-info-title', '.input-file-info-url', '.input-file-info-description').each(function () {
             $(this).attr('data-value', $(this).val());
           });
           $('.file-info-edit-mode').show();
@@ -1457,10 +1463,8 @@
         $('.button-file-info-cancel').on('click', function () {
           $('.file-info-edit-mode').hide();
           $('.file-info-view-mode').show();
-          $('.input-file-info-title').each(function () {
-            $(this).val($(this).attr('data-value'));
-          });
-          $('.input-file-info-description').each(function () {
+          $('.file-url-error').hide();
+          $('.input-file-info-title', '.input-file-info-url', '.input-file-info-description').each(function () {
             $(this).val($(this).attr('data-value'));
           });
         });
@@ -1476,6 +1480,14 @@
           $('.file-info-hide').hide();
           $('.file-info-main').show();
         });
+        {% if edit_external_link_file and edit_external_link_file is not none and edit_external_link_file | int(-1) != -1 and edit_external_link_error in external_link_errors %}
+          var file_id = {{ edit_external_link_file | int }};
+          $('.file-info-edit-mode').show();
+          $('.file-info-view-mode').hide();
+          $('#fileInfoModal-' + file_id).modal('show');
+          $('#file-url-error-' + file_id + ' > span:first-of-type').text('{{ external_link_errors[edit_external_link_error] }}');
+          $('#file-url-error-' + file_id).show();
+        {% endif %}
       {% endif %}
       {% if related_objects_tree %}
         $('input[name^=data_export_object_]').prop("checked", false);

@@ -1490,6 +1490,8 @@ def show_inline_edit(obj, action, related_objects_tree):
         "file_source_instrument_exists": False,
         "file_source_jupyterhub_exists": False,
         "file_form": FileForm(),
+        "edit_external_link_file": flask.request.args.get('edit_invalid_link_file', None),
+        "edit_external_link_error": flask.request.args.get('edit_invalid_link_error', None),
         "external_link_form": ExternalLinkForm(),
         "external_link_error": flask.request.args.get('invalid_link_error', None),
         "external_link_errors": {
@@ -1838,6 +1840,8 @@ def object(object_id):
             file_source_instrument_exists=False,
             file_source_jupyterhub_exists=False,
             file_form=FileForm(),
+            edit_external_link_file=flask.request.args.get('edit_invalid_link_file', None),
+            edit_external_link_error=flask.request.args.get('edit_invalid_link_error', None),
             external_link_form=ExternalLinkForm(),
             external_link_error=flask.request.args.get('invalid_link_error', None),
             external_link_errors={
@@ -2336,21 +2340,27 @@ def object_file(object_id, file_id):
 def update_file_information(object_id, file_id):
     check_current_user_is_not_readonly()
     form = FileInformationForm()
-    if not form.validate_on_submit():
+    if form.validate_on_submit():
+        title = form.title.data
+        url = form.url.data
+        description = form.description.data
+        try:
+            logic.files.update_file_information(
+                object_id=object_id,
+                file_id=file_id,
+                user_id=flask_login.current_user.id,
+                title=title,
+                url=url,
+                description=description
+            )
+        except logic.errors.FileDoesNotExistError:
+            return flask.abort(404)
+        return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
+    else:
+        if 'url' in form.errors:
+            errorcode = form.errors['url']
+            return flask.redirect(flask.url_for('.object', object_id=object_id, edit_invalid_link_file=file_id, edit_invalid_link_error=errorcode, _anchor='file-{}'.format(file_id)))
         return flask.abort(400)
-    title = form.title.data
-    description = form.description.data
-    try:
-        logic.files.update_file_information(
-            object_id=object_id,
-            file_id=file_id,
-            user_id=flask_login.current_user.id,
-            title=title,
-            description=description
-        )
-    except logic.errors.FileDoesNotExistError:
-        return flask.abort(404)
-    return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
 
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>/hide', methods=['POST'])
