@@ -168,15 +168,15 @@ def test_parse_url():
         utils.parse_url('com')
     with pytest.raises(errors.InvalidURLError):
         utils.parse_url('ftp://example.com', valid_schemes=['http', 'https', 'file', 'sftp', 'smb'])
-    with pytest.raises(errors.InvalidURLError):
+    with pytest.raises(errors.URLTooLongError):
         utils.parse_url('https://www.example.com', max_length=10)
-    with pytest.raises(errors.InvalidURLError):
+    with pytest.raises(errors.InvalidIPAddressError):
         utils.parse_url('http://999.123.123.123')
     with pytest.raises(errors.InvalidURLError):
         utils.parse_url('http://.example.com')
     with pytest.raises(errors.InvalidURLError):
         utils.parse_url('http:///example.com')
-    with pytest.raises(errors.InvalidURLError):
+    with pytest.raises(errors.InvalidPortNumberError):
         utils.parse_url('http://example.com:99999')
     with pytest.raises(errors.InvalidURLError):
         utils.parse_url('http://example.com:')

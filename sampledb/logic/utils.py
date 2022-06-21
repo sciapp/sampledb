@@ -199,8 +199,8 @@ def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file'
     :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
     :raises: InvalidURIError if the given URI is invalid
     """
-    if not 1 <= len(url) <= max_length:
-        raise errors.InvalidURLError()
+    if not len(url) <= max_length:
+        raise errors.URLTooLongError()
 
     regex = re.compile(
         # schemes
@@ -239,12 +239,12 @@ def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file'
         for block in match_dict['ip_address'].split('.'):
             num = int(block)
             if num < 0 or num > 225:
-                raise errors.InvalidURLError()
+                raise errors.InvalidIPAddressError()
 
     if match_dict['port']:
         num = int(match_dict['port'])
         if num < 1 or num > 65535:
-            raise errors.InvalidURLError()
+            raise errors.InvalidPortNumberError()
 
     return match_dict
 

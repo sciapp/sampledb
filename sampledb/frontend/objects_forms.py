@@ -38,14 +38,24 @@ class FileForm(FlaskForm):
             raise ValidationError('Invalid file source')
 
 
+def _validate_url(url):
+    try:
+        parse_url(url)
+    except errors.InvalidURLError:
+        raise ValidationError(0)
+    except errors.URLTooLongError:
+        raise ValidationError(1)
+    except errors.InvalidIPAddressError:
+        raise ValidationError(2)
+    except errors.InvalidPortNumberError:
+        raise ValidationError(3)
+
+
 class ExternalLinkForm(FlaskForm):
     url = StringField()
 
     def validate_url(form, field):
-        try:
-            parse_url(field.data)
-        except errors.InvalidURLError:
-            raise ValidationError('Invalid URL')
+        _validate_url(field.data)
 
 
 class FileInformationForm(FlaskForm):
