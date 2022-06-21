@@ -186,7 +186,7 @@ def get_all_translated_texts(
     return default
 
 
-def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
+def parse_url(url, max_length=2048, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
     """
     Validate and parse a given URI/URL.
 
@@ -194,7 +194,7 @@ def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file'
     like file:///path and file:/path are considered invalid.
 
     :param url: string representing the URI to validate
-    :param max_length: the URI strings maximum allowed length.
+    :param max_length: the URI strings maximum allowed length (default: 2048)
     :param valid_schemes: valid URI schemes
     :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
     :raises: InvalidURIError if the given URI is invalid
