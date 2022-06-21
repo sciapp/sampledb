@@ -7,16 +7,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-06-21 15:00+0200\n"
+"POT-Creation-Date: 2022-06-21 16:29+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.10.2\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -2616,6 +2616,15 @@ msgstr "Diese Aktion aus Aktionslisten verstecken"
 msgid "Schema"
 msgstr "Schema"
 
+msgid "Use Graphical Editor"
+msgstr "Grafischen Editor verwenden"
+
+msgid "Graphical Editor"
+msgstr "Grafischer Editor"
+
+msgid "JSON Editor"
+msgstr "JSON-Editor"
+
 msgid "Title"
 msgstr "Titel"
 
@@ -2734,17 +2743,8 @@ msgstr ""
 "grafischen Schema-Editor nicht unterstützt werden. Falls Sie fortfahren, "
 "könnten diese aus dem Schema entfernt werden."
 
-#, python-format
-msgid ""
-"If you wish to edit the schema with the text-based editor, you can enable"
-" it in your <a href=\"%(preference_url)s\">preferences</a>."
-msgstr ""
-"Falls Sie das Schema im text-basierten Editor bearbeiten möchten, können "
-"Sie diesen in den <a href=\"%(preference_url)s\">Einstellungen</a> "
-"aktivieren."
-
-msgid "Edit Preferences"
-msgstr "Einstellungen bearbeiten"
+msgid "Use JSON Editor"
+msgstr "JSON-Editor verwenden"
 
 msgid "Action Permissions"
 msgstr "Aktionsberechtigungen"
@@ -4923,6 +4923,10 @@ msgid "Unnamed Instrument (#%(instrument_id)s)"
 msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
 #, python-format
+msgid "Imported User (#%(user_id)s%(db_ref)s)"
+msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
+
+#, python-format
 msgid ""
 "Unable to convert property '%(title)s' from type '%(type1)s' to type "
 "'%(type2)s'."
@@ -4988,8 +4992,4 @@ msgid ""
 msgstr ""
 "Die plotly-Daten müssen gültig sein. Bitte prüfen Sie, welches Schema von"
 " plotly unterstützt wird."
-
-#, python-format
-msgid "Imported User (#%(user_id)s%(db_ref)s)"
-msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
 

@@ -8,9 +8,7 @@
 <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-toggle.min.css') }}" />
 <link rel="stylesheet" href="{{ fingerprinted_static('css/pygments.css') }}">
 <link rel="stylesheet" href="{{ fingerprinted_static('css/inscrybmde.min.css') }}" />
-{% if use_schema_editor %}
 <link rel="stylesheet" href="{{ fingerprinted_static('css/schema_editor.css') }}">
-{% endif %}
 {% endblock %}
 
 
@@ -20,9 +18,7 @@
   <script src="{{ fingerprinted_static('js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/markdown_image_upload.js') }}"></script>
-  {% if use_schema_editor %}
   <script src="{{ fingerprinted_static('js/schema_editor.js') }}"></script>
-  {% endif %}
   <script src="{{ fingerprinted_static('js/sampledb-internationalization.js') }}"></script>
   <script>
   // translations of error / help messages used in the static schema_editor.js
@@ -147,7 +143,7 @@
     </div>
   {% endif %}
 
-    <form method="post">
+    <form method="post" id="form-action">
         {{ action_form.hidden_tag() }}
         <div class="col-md-12">
 
@@ -323,16 +319,18 @@
 
       <div class="form-group {% if action_form.schema.name in action_form.errors %}has-error{% endif %}">
         <label for="input-schema" class="control-label">{{ _('Schema') }}</label>
-        {% if use_schema_editor %}
-          <script>
-          {% if error_message is not none %}
-            window.schema_editor_error_message = {{ error_message | tojson }};
-          {% else %}
-            window.schema_editor_error_message = null;
-          {% endif %}
-          </script>
-          <div class="schema-editor" id="schema-editor"></div>
+        <label class="pull-right">
+          <span class="sr-only">{{ _('Use Graphical Editor') }}</span>
+          <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" {% if use_schema_editor %}checked="checked"{% endif %} />
+        </label>
+        <script>
+        {% if error_message is not none %}
+          window.schema_editor_error_message = {{ error_message | tojson }};
+        {% else %}
+          window.schema_editor_error_message = null;
         {% endif %}
+        </script>
+        <div class="schema-editor" id="schema-editor"></div>
         <textarea class="form-control" rows="{% if schema_json %}{{ schema_json.splitlines() | length }}{% else %}5{% endif %}" id="input-schema" name="{{ action_form.schema.name }}" placeholder="{{ _('Schema') }}">{{ action_form.schema.data or ''}}</textarea>
       </div>
 
@@ -351,7 +349,6 @@
   </form>
 
 
-{% if use_schema_editor %}
   <div id="schema-editor-templates">
     <div class="well schema-editor-root-object">
       <div class="schema-editor-property-settings">
@@ -574,15 +571,13 @@
         </div>
         <div class="modal-body">
           <p>{{ _('The schema for this action contains advanced features which the graphical schema editor does not support. If you continue, these might be removed from the schema.') }}</p>
-          <p>{{ _('If you wish to edit the schema with the text-based editor, you can enable it in your <a href="%(preference_url)s">preferences</a>.', preference_url=url_for('.user_me_preferences')) }}</p>
         </div>
         <div class="modal-footer">
-          <a class="btn btn-primary" href="{{ url_for('.user_me_preferences') }}">{{ _('Edit Preferences') }}</a>
-          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Use Schema Editor') }}</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Use Graphical Editor') }}</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" id="button-use-text-editor">{{ _('Use JSON Editor') }}</button>
         </div>
       </div>
     </div>
   </div>
-{% endif %}
 
 {% endblock %}
