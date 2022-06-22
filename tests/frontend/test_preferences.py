@@ -153,7 +153,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
 
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(f'{flask_server.base_url}users/{user_id}/preferences')
     r = session.get(confirmation_url)
 
@@ -467,7 +467,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
     # Get the confirmation url from the mail and open it
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(f'{flask_server.base_url}users/{user.id}/preferences')
     r = session.get(confirmation_url)
     assert r.status_code == 200
