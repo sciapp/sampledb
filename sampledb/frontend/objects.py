@@ -1491,7 +1491,13 @@ def show_inline_edit(obj, action, related_objects_tree):
         "file_source_jupyterhub_exists": False,
         "file_form": FileForm(),
         "external_link_form": ExternalLinkForm(),
-        "external_link_invalid": 'invalid_link' in flask.request.args,
+        "external_link_error": flask.request.args.get('invalid_link_error', None),
+        "external_link_errors": {
+            '0': _('Please enter a valid URL.'),
+            '1': _('The URL you have entered exceeds the length limit.'),
+            '2': _('The IP address you entered is invalid.'),
+            '3': _('The port number you entered is invalid.')
+        },
         "mobile_upload_url": mobile_upload_url,
         "mobile_upload_qrcode": mobile_upload_qrcode,
         "notebook_templates": notebook_templates,
@@ -1833,7 +1839,13 @@ def object(object_id):
             file_source_jupyterhub_exists=False,
             file_form=FileForm(),
             external_link_form=ExternalLinkForm(),
-            external_link_invalid='invalid_link' in flask.request.args,
+            external_link_error=flask.request.args.get('invalid_link_error', None),
+            external_link_errors={
+                '0': _('Please enter a valid URL.'),
+                '1': _('The URL you have entered exceeds the length limit.'),
+                '2': _('The IP address you entered is invalid.'),
+                '3': _('The port number you entered is invalid.')
+            },
             mobile_upload_url=mobile_upload_url,
             mobile_upload_qrcode=mobile_upload_qrcode,
             notebook_templates=notebook_templates,
@@ -2427,8 +2439,12 @@ def post_object_files(object_id):
         logic.files.create_url_file(object_id, flask_login.current_user.id, url)
         flask.flash(_('Successfully posted link.'), 'success')
     elif external_link_form.errors:
+        errorcode = 1
+        if 'url' in external_link_form.errors:
+            errorcode = external_link_form.errors['url']
+
         flask.flash(_('Failed to post link.'), 'error')
-        return flask.redirect(flask.url_for('.object', object_id=object_id, invalid_link=True, _anchor='anchor-post-link'))
+        return flask.redirect(flask.url_for('.object', object_id=object_id, invalid_link_error=errorcode, _anchor='anchor-post-link'))
     else:
         flask.flash(_('Failed to upload files.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))

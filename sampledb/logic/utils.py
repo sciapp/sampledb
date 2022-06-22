@@ -186,7 +186,7 @@ def get_all_translated_texts(
     return default
 
 
-def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
+def parse_url(url, max_length=2048, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
     """
     Validate and parse a given URI/URL.
 
@@ -194,13 +194,13 @@ def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file'
     like file:///path and file:/path are considered invalid.
 
     :param url: string representing the URI to validate
-    :param max_length: the URI strings maximum allowed length.
+    :param max_length: the URI strings maximum allowed length (default: 2048)
     :param valid_schemes: valid URI schemes
     :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
     :raises: InvalidURIError if the given URI is invalid
     """
-    if not 1 <= len(url) <= max_length:
-        raise errors.InvalidURLError()
+    if not len(url) <= max_length:
+        raise errors.URLTooLongError()
 
     regex = re.compile(
         # schemes
@@ -239,12 +239,12 @@ def parse_url(url, max_length=100, valid_schemes=['http', 'https', 'ftp', 'file'
         for block in match_dict['ip_address'].split('.'):
             num = int(block)
             if num < 0 or num > 225:
-                raise errors.InvalidURLError()
+                raise errors.InvalidIPAddressError()
 
     if match_dict['port']:
         num = int(match_dict['port'])
         if num < 1 or num > 65535:
-            raise errors.InvalidURLError()
+            raise errors.InvalidPortNumberError()
 
     return match_dict
 

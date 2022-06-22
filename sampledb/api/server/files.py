@@ -140,6 +140,18 @@ class ObjectFiles(Resource):
                 return {
                     "message": "url must be a valid url"
                 }, 400
+            except errors.URLTooLongError:
+                return {
+                    "message": "url exceeds length limit"
+                }, 400
+            except errors.InvalidIPAddressError:
+                return {
+                    "message": "url contains an invalid IP address"
+                }, 400
+            except errors.InvalidPortNumberError:
+                return {
+                    "message": "url contains an invalid port number"
+                }, 400
             file = create_url_file(
                 object_id=object_id,
                 user_id=flask.g.user.id,

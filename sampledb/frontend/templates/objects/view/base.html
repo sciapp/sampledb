@@ -483,7 +483,7 @@
 
         <h5 id="anchor-post-link">{{ _('Post Link')}}</h5>
         <div class="form-group" style="padding-right:0.75em">
-          <form class="form {% if external_link_invalid %}has-error{% endif %}" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}">
+          <form class="form {% if external_link_error in external_link_errors %}has-error{% endif %}" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}">
             {{ external_link_form.csrf_token }}
             <div class="input-group">
               <span class="input-group-addon"><i class="fa fa-link"></i></span>
@@ -492,8 +492,8 @@
                 <button type="submit" class="btn btn-primary" style="width:11em;"><i class="fa fa-link fa-fw"></i> {{ _('Submit') }}</button>
               </span>
             </div>
-            {% if external_link_invalid %}
-              <div class="help-block">{{ _('Please enter a valid URL.')}}</div>
+            {% if external_link_error in external_link_errors %}
+              <div class="help-block">{{ external_link_errors[external_link_error] }}</div>
             {% endif %}
           </form>
         </div>

@@ -378,5 +378,17 @@ class InvalidURLError(Exception):
     pass
 
 
+class URLTooLongError(Exception):
+    pass
+
+
+class InvalidIPAddressError(Exception):
+    pass
+
+
+class InvalidPortNumberError(Exception):
+    pass
+
+
 class InvalidDefaultPermissionsError(Exception):
     pass
