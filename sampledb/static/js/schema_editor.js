@@ -1,27 +1,14 @@
-$(function() {
+function enableSchemaEditor() {
   $('[data-toggle="tooltip"]:not(.disabled)').tooltip();
   var schema_editor = $('#schema-editor');
   var schema_editor_templates = $('#schema-editor-templates');
   var input_schema = $('#input-schema');
   input_schema.hide();
   $('.pygments').hide();
+  schema_editor.show();
 
-  // Add function to hide alert onclick
-  $('#schema-editor-type-is-template-close').click(function() {
-      $('.schema-editor-type-is-template').hide();
-  });
-  // Add function to show alert if action_type data-is-template is True on change
-  let type_input =  $('#input-type');
-  type_input.change(function() {
-      let chosen_action_type = type_input.find('[value=' + type_input.val() + ']');
-      if(chosen_action_type.data('isTemplate') === "True") {
-          $('.schema-editor-type-is-template').show();
-      } else {
-          $('.schema-editor-type-is-template').hide();
-      }
-  }).change();
-
-  var schema = JSON.parse(input_schema.text());
+  var schema_text = input_schema.val();
+  var schema = JSON.parse(schema_text);
   delete schema['displayProperties'];
   if ('propertyOrder' in schema && schema['propertyOrder'].includes('tags')) {
     schema['propertyOrder'].splice(schema['propertyOrder'].indexOf('tags'), 1);
@@ -34,12 +21,13 @@ $(function() {
   window.schema_editor_path_mapping = {};
   window.schema_editor_errors = {};
   window.schema_editor_missing_type_support = false;
+  window.schema_editor_initial_updates = [];
 
-  input_schema.text(JSON.stringify(schema, null, 4));
+  input_schema.val(JSON.stringify(schema, null, 4));
 
   schema_editor.html("");
 
-  $('form').on('submit', function() {
+  $('#form-action').on('submit', function () {
     return (JSON.stringify(window.schema_editor_errors) === '{}');
   });
 
@@ -72,7 +60,7 @@ $(function() {
     }
     title_input.attr('id', 'schema-editor-root-object-title-input');
     title_label.attr('for', title_input.attr('id'));
-    title_input.on('change', function() {
+    title_input.on('change', function () {
       var title_input = $(this);
       var title_group = title_input.parent();
       var title_help = title_group.find('.help-block');
@@ -83,9 +71,9 @@ $(function() {
       } else {
         title_help.text("");
         title_group.removeClass("has-error");
-        var schema = JSON.parse(input_schema.text());
+        var schema = JSON.parse(input_schema.val());
         schema['title'] = title;
-        input_schema.text(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 4));
       }
     });
 
@@ -99,8 +87,8 @@ $(function() {
       hazards_input.prop('checked', false);
     }
     hazards_input.bootstrapToggle();
-    hazards_input.on('change', function() {
-      var schema = JSON.parse(input_schema.text());
+    hazards_input.on('change', function () {
+      var schema = JSON.parse(input_schema.val());
       if ('properties' in schema && 'hazards' in schema['properties']) {
         delete schema['properties']['hazards'];
       }
@@ -129,7 +117,7 @@ $(function() {
         }
         schema['propertyOrder'].push('hazards');
       }
-      input_schema.text(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 4));
     });
 
     var tags_label = node.find('.schema-editor-root-object-tags-label');
@@ -142,8 +130,8 @@ $(function() {
       tags_input.prop('checked', false);
     }
     tags_input.bootstrapToggle();
-    tags_input.on('change', function() {
-      var schema = JSON.parse(input_schema.text());
+    tags_input.on('change', function () {
+      var schema = JSON.parse(input_schema.val());
       if ('properties' in schema && 'tags' in schema['properties']) {
         delete schema['properties']['tags'];
       }
@@ -180,7 +168,7 @@ $(function() {
           schema['propertyOrder'].push('hazards');
         }
       }
-      input_schema.text(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 4));
     });
 
     var properties_node = node.find('.schema-editor-root-object-properties');
@@ -212,7 +200,7 @@ $(function() {
           if ('template' in schema['properties'][name]) {
             var select_input = $(property_node[0]).find('#schema-editor-object__' + name + '-template-id-input')[0];
             var current_template = schema['properties'][name]['template'];
-            $(select_input.options).each(function() {
+            $(select_input.options).each(function () {
               if (Number.parseInt(this.value) === current_template) {
                 $(this).attr('selected', true);
               } else {
@@ -229,8 +217,8 @@ $(function() {
     }
 
     var create_property_button = node.find('.schema-editor-create-property-button');
-    create_property_button.on('click', function() {
-      var schema = JSON.parse(input_schema.text());
+    create_property_button.on('click', function () {
+      var schema = JSON.parse(input_schema.val());
       var num_new_properties = 1;
       var name = 'new_property_' + num_new_properties;
       while (name in schema['properties'] || [name] in window.schema_editor_path_mapping) {
@@ -256,7 +244,7 @@ $(function() {
       if (property_node !== null) {
         properties_node[0].appendChild(property_node[0]);
       }
-      input_schema.text(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 4));
       var name_input = property_node.find('.schema-editor-generic-property-name-input');
       name_input.val("");
       name_input.trigger('change');
@@ -266,7 +254,7 @@ $(function() {
   }
 
   function globallyValidateSchema() {
-    var schema = JSON.parse(input_schema.text());
+    var schema = JSON.parse(input_schema.val());
     var help_block = $('#schema-editor .schema-editor-global-help');
     var help_parent = help_block.parent();
     help_block.text("");
@@ -301,7 +289,7 @@ $(function() {
         move_property_up_button.prop('disabled', false);
         move_property_up_button.removeClass('disabled');
       }
-      if (i === property_elements.length-1) {
+      if (i === property_elements.length - 1) {
         move_property_down_button.prop('disabled', true);
         move_property_down_button.addClass('disabled');
       } else {
@@ -349,7 +337,7 @@ $(function() {
       type = "user";
     } else if (schema['type'] === 'plotly_chart') {
       type = "plotly_chart";
-    } else if (schema['type'] === 'object') {
+    } else if (schema['type'] === 'object' && 'template' in schema) {
       type = 'template';
     } else {
       window.schema_editor_missing_type_support = true;
@@ -396,11 +384,11 @@ $(function() {
     }
 
     var delete_property_button = node.find('.schema-editor-delete-property-button');
-    delete_property_button.on('click', function() {
+    delete_property_button.on('click', function () {
       var path = this;
       var real_path = window.schema_editor_path_mapping[path.join('__')].slice();
-      var schema = JSON.parse(input_schema.text());
-      var name = real_path[real_path.length-1];
+      var schema = JSON.parse(input_schema.val());
+      var name = real_path[real_path.length - 1];
       if ('properties' in schema && name in schema['properties']) {
         delete schema['properties'][name];
       }
@@ -412,7 +400,7 @@ $(function() {
         var index = schema['required'].indexOf(name);
         schema['required'].splice(index, 1);
       }
-      input_schema.text(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 4));
 
       var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
       name_input.closest('.schema-editor-property').remove();
@@ -423,32 +411,32 @@ $(function() {
       globallyValidateSchema();
     }.bind(path));
     var move_property_up_button = node.find('.schema-editor-move-property-up-button');
-    move_property_up_button.on('click', function() {
+    move_property_up_button.on('click', function () {
       var path = this;
       var real_path = window.schema_editor_path_mapping[path.join('__')].slice();
-      var schema = JSON.parse(input_schema.text());
-      var name = real_path[real_path.length-1];
+      var schema = JSON.parse(input_schema.val());
+      var name = real_path[real_path.length - 1];
       if ('propertyOrder' in schema && schema['propertyOrder'].includes(name)) {
         var index = schema['propertyOrder'].indexOf(name);
         if (index > 0) {
           schema['propertyOrder'].splice(index, 1);
-          schema['propertyOrder'].splice(index-1, 0, name);
+          schema['propertyOrder'].splice(index - 1, 0, name);
         }
-      input_schema.text(JSON.stringify(schema, null, 4));
-      globallyValidateSchema();
-      var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
-      var element = name_input.closest('.schema-editor-property');
-      element.insertBefore(element.prev('.schema-editor-property'));
-      element.find('[data-toggle="tooltip"]').tooltip('hide');
-      globallyValidateSchema();
+        input_schema.val(JSON.stringify(schema, null, 4));
+        globallyValidateSchema();
+        var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
+        var element = name_input.closest('.schema-editor-property');
+        element.insertBefore(element.prev('.schema-editor-property'));
+        element.find('[data-toggle="tooltip"]').tooltip('hide');
+        globallyValidateSchema();
       }
     }.bind(path));
     var move_property_down_button = node.find('.schema-editor-move-property-down-button');
-    move_property_down_button.on('click', function() {
+    move_property_down_button.on('click', function () {
       var path = this;
       var real_path = window.schema_editor_path_mapping[path.join('__')].slice();
-      var schema = JSON.parse(input_schema.text());
-      var name = real_path[real_path.length-1];
+      var schema = JSON.parse(input_schema.val());
+      var name = real_path[real_path.length - 1];
       if ('propertyOrder' in schema && schema['propertyOrder'].includes(name)) {
         var index = schema['propertyOrder'].indexOf(name);
         var num_properties = schema['propertyOrder'].length;
@@ -460,15 +448,15 @@ $(function() {
         }
         if (index < num_properties - 1) {
           schema['propertyOrder'].splice(index, 1);
-          schema['propertyOrder'].splice(index+1, 0, name);
+          schema['propertyOrder'].splice(index + 1, 0, name);
         }
-      input_schema.text(JSON.stringify(schema, null, 4));
-      globallyValidateSchema();
-      var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
-      var element = name_input.closest('.schema-editor-property');
-      element.insertAfter(element.next('.schema-editor-property'));
-      element.find('[data-toggle="tooltip"]').tooltip('hide');
-      globallyValidateSchema();
+        input_schema.val(JSON.stringify(schema, null, 4));
+        globallyValidateSchema();
+        var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
+        var element = name_input.closest('.schema-editor-property');
+        element.insertAfter(element.next('.schema-editor-property'));
+        element.find('[data-toggle="tooltip"]').tooltip('hide');
+        globallyValidateSchema();
       }
     }.bind(path));
 
@@ -477,7 +465,7 @@ $(function() {
     window.schema_editor_path_mapping[path.join('__')] = path;
     name_input.attr('id', 'schema-editor-object__' + path.join('__') + '-name-input');
     name_label.attr('for', name_input.attr('id'));
-    name_input.val(path[path.length-1]);
+    name_input.val(path[path.length - 1]);
     name_input.on('change', updateProperty.bind(path));
 
 
@@ -504,7 +492,7 @@ $(function() {
     type_input.val(type);
     type_input.selectpicker();
 
-    type_input.on('change', function() {
+    type_input.on('change', function () {
       var type = $(this).val();
       var node = $(this).closest('.schema-editor-generic-property');
       node.find('.schema-editor-property-settings').css('display', 'none');
@@ -594,7 +582,7 @@ $(function() {
 
     function updateGenericProperty(path, real_path) {
       var has_error = false;
-      var schema = JSON.parse(input_schema.text());
+      var schema = JSON.parse(input_schema.val());
       var name_input = $('#schema-editor-object__' + path.join('__') + '-name-input');
       var name = name_input.val();
       var name_group = name_input.parent();
@@ -647,8 +635,8 @@ $(function() {
       var required = $('#schema-editor-object__' + path.join('__') + '-required-input').prop('checked');
       var has_note = $('#schema-editor-object__' + path.join('__') + '-generic-note-checkbox').prop('checked');
       var note = $('#schema-editor-object__' + path.join('__') + '-generic-note-input').val();
-      if (name !== real_path[real_path.length-1]) {
-        delete schema['properties'][real_path[real_path.length-1]];
+      if (name !== real_path[real_path.length - 1]) {
+        delete schema['properties'][real_path[real_path.length - 1]];
         if ('required' in schema) {
           for (var i = 0; i < schema['required'].length; i++) {
             if (schema['required'][i] === real_path[real_path.length - 1]) {
@@ -677,7 +665,7 @@ $(function() {
             schema['propertyOrder'].push('hazards')
           }
         }
-        real_path[real_path.length-1] = name;
+        real_path[real_path.length - 1] = name;
         window.schema_editor_path_mapping[path.join('__')] = real_path;
       }
       property_schema = {
@@ -690,19 +678,19 @@ $(function() {
         if (!('required' in schema)) {
           schema['required'] = [];
         }
-        if (!schema['required'].includes(real_path[real_path.length-1])) {
-          schema['required'].push(real_path[real_path.length-1]);
+        if (!schema['required'].includes(real_path[real_path.length - 1])) {
+          schema['required'].push(real_path[real_path.length - 1]);
         }
-      } else if ('required' in schema){
-        for(var i = 0; i < schema['required'].length; i++){
-           if ( schema['required'][i] === real_path[real_path.length-1]) {
-             schema['required'].splice(i, 1);
-           }
+      } else if ('required' in schema) {
+        for (var i = 0; i < schema['required'].length; i++) {
+          if (schema['required'][i] === real_path[real_path.length - 1]) {
+            schema['required'].splice(i, 1);
+          }
         }
       }
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
+      schema['properties'][real_path[real_path.length - 1]] = property_schema;
 
-      input_schema.text(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 4));
 
       window.schema_editor_errors[path.join('__') + '__generic'] = true;
       if (!has_error) {
@@ -712,9 +700,9 @@ $(function() {
     }
 
     function updateSpecificProperty(path, real_path, schema, property_schema, has_error) {
-      schema['properties'][real_path[real_path.length-1]] = property_schema;
+      schema['properties'][real_path[real_path.length - 1]] = property_schema;
 
-      input_schema.text(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 4));
 
       window.schema_editor_errors[path.join('__') + '__specific'] = true;
       if (!has_error) {
@@ -726,8 +714,8 @@ $(function() {
     function updateTextProperty(path, real_path) {
       updateGenericProperty(path, real_path);
       var has_error = false;
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "text";
 
       setOptionalValueInPropertySchema(path, 'text', 'default', property_schema);
@@ -741,8 +729,8 @@ $(function() {
     function updateChoiceProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "text";
 
       setOptionalValueInPropertySchema(path, 'choice', 'default', property_schema);
@@ -779,8 +767,8 @@ $(function() {
     function updateMultilineProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "text";
       property_schema["multiline"] = true;
 
@@ -794,8 +782,8 @@ $(function() {
     function updateMarkdownProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "text";
       property_schema["markdown"] = true;
 
@@ -809,8 +797,8 @@ $(function() {
     function updateBoolProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "bool";
 
       var has_default = $('#schema-editor-object__' + path.join('__') + '-bool-default-checkbox').prop('checked');
@@ -826,8 +814,8 @@ $(function() {
     function updatePlotlyChartProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "plotly_chart";
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
@@ -836,8 +824,8 @@ $(function() {
     function updateTemplateObjectProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
 
       property_schema["type"] = "object";
       property_schema["properties"] = {};
@@ -845,9 +833,9 @@ $(function() {
       var template_input = $('#schema-editor-object__' + path.join('__') + '-template-id-input');
       var template_group = template_input.closest('.schema-editor-property-settings.schema-editor-template-property-settings');
       var template_help = template_group.find('.help-block');
-      if($(template_input).is(':visible')) {
-        let new_template_id = $( template_input ).val();
-        if(new_template_id === "" || Number.isNaN(Number.parseInt(new_template_id))) {
+      if ($(template_input).is(':visible')) {
+        let new_template_id = $(template_input).val();
+        if (new_template_id === "" || Number.isNaN(Number.parseInt(new_template_id))) {
           template_help.text(window.schema_editor_translations['schema_template_must_be_set']);
           template_group.addClass("has-error");
           has_error = true;
@@ -864,8 +852,8 @@ $(function() {
     function updateSampleProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "sample";
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
@@ -874,8 +862,8 @@ $(function() {
     function updateMeasurementProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "measurement";
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
@@ -884,8 +872,8 @@ $(function() {
     function updateUserProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "user";
 
       var has_default = $('#schema-editor-object__' + path.join('__') + '-user-default-checkbox').prop('checked');
@@ -901,8 +889,8 @@ $(function() {
     function updateObjectReferenceProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "object_reference";
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
@@ -911,8 +899,8 @@ $(function() {
     function updateDatetimeProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "datetime";
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
@@ -921,8 +909,8 @@ $(function() {
     function updateQuantityProperty(path, real_path) {
       var has_error = false;
       updateGenericProperty(path, real_path);
-      var schema = JSON.parse(input_schema.text());
-      var property_schema = schema['properties'][real_path[real_path.length-1]];
+      var schema = JSON.parse(input_schema.val());
+      var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "quantity";
 
       var units_input = $('#schema-editor-object__' + path.join('__') + '-quantity-units-input');
@@ -1010,7 +998,7 @@ $(function() {
         value_checkbox.prop('checked', false);
         value_input.prop('disabled', true);
       }
-      value_checkbox.on('change', function() {
+      value_checkbox.on('change', function () {
         var value_input = $(this).parent().parent().find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-input');
         if ($(this).prop('checked')) {
           value_input.prop('disabled', false);
@@ -1087,7 +1075,7 @@ $(function() {
       default_input.prop('disabled', true);
       default_input.closest('.toggle').addClass('disabled');
     }
-    default_checkbox.on('change', function() {
+    default_checkbox.on('change', function () {
       var default_input = $(this).parent().parent().find('.schema-editor-bool-property-default-input');
       if ($(this).prop('checked')) {
         default_input.prop('disabled', false);
@@ -1135,14 +1123,66 @@ $(function() {
     template_id_input.selectpicker();
     template_id_input.on('change', updateProperty.bind(path));
 
+    if ('conditions' in schema) {
+      // Conditions are not supported in the graphical schema editor yet
+      window.schema_editor_missing_type_support = true;
+    }
+
+    window.schema_editor_initial_updates.push(updateProperty.bind(path))
+
     return node;
   }
 
   var root_object_node = buildRootObjectNode(schema);
   schema_editor[0].appendChild(root_object_node[0]);
-  input_schema.text(JSON.stringify(schema, null, 4));
+  input_schema.val(JSON.stringify(schema, null, 4));
   globallyValidateSchema();
+  $.each(window.schema_editor_initial_updates, function (_, update_func) {
+    update_func();
+  });
   if (window.schema_editor_missing_type_support) {
     $('#schemaEditorWarningModal').modal('show');
+    input_schema.val(schema_text);
   }
+}
+
+function disableSchemaEditor() {
+  var schema_editor = $('#schema-editor');
+  var input_schema = $('#input-schema');
+  schema_editor.hide();
+  input_schema.show();
+  $('.pygments').show();
+  $('button[name="action_submit"]').prop('disabled', false);
+  $('#form-action').off('submit');
+}
+
+$(function () {
+  // Add function to hide alert onclick
+  $('#schema-editor-type-is-template-close').on('click', function () {
+    $('.schema-editor-type-is-template').hide();
+  })
+  // Add function to show alert if action_type data-is-template is True on change
+  let type_input = $('#input-type');
+  type_input.on('change', function () {
+    let chosen_action_type = type_input.find('[value=' + type_input.val() + ']');
+    if (chosen_action_type.data('isTemplate') === "True") {
+      $('.schema-editor-type-is-template').show();
+    } else {
+      $('.schema-editor-type-is-template').hide();
+    }
+  }).change();
+
+  var toggle_schema_editor = $('#toggle-schema-editor');
+  toggle_schema_editor.on('change', function () {
+    if (toggle_schema_editor.prop('checked')) {
+      enableSchemaEditor();
+    } else {
+      disableSchemaEditor();
+    }
+  });
+  toggle_schema_editor.change();
+
+  $('#button-use-text-editor').on('click', function () {
+    toggle_schema_editor.bootstrapToggle('off');
+  })
 });
