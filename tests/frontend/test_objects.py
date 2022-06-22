@@ -494,7 +494,7 @@ def test_request_object_permissions_with_enough_permissions(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.post(flask_server.base_url + 'objects/{}/permissions/request'.format(object.object_id), allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(object.object_id)
+    assert r.headers['Location'] == '/objects/{}'.format(object.object_id)
     notifications = sampledb.logic.notifications.get_notifications(user.id, unread_only=True)
     for notification in notifications:
         assert notification.type != sampledb.logic.notifications.NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST

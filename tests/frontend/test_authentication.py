@@ -75,7 +75,7 @@ def test_sign_in_redirect(flask_server):
         'csrf_token': csrf_token
     }, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'] == flask_server.base_url + 'actions/'
+    assert r.headers['Location'] == '/actions/'
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
 
@@ -104,7 +104,7 @@ def test_sign_in_invalid_redirect(flask_server):
         'csrf_token': csrf_token
     }, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'] == flask_server.base_url
+    assert r.headers['Location'] == '/'
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
 
@@ -203,6 +203,6 @@ def test_sign_out_page_unauthenticated(flask_server, user):
     # when not authenticated, the sign out page redirects to the sign in page
     r = session.get(flask_server.base_url + 'users/me/sign_out', allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/me/sign_in')
+    assert r.headers['Location'].startswith('/users/me/sign_in')
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
 

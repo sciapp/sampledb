@@ -144,7 +144,8 @@ class ObjectVersions(Resource):
         object_version_url = flask.url_for(
             'api.object_version',
             object_id=object.object_id,
-            version_id=object.version_id + 1
+            version_id=object.version_id + 1,
+            _external=True
         )
         return flask.redirect(object_version_url, code=201)
 
@@ -156,7 +157,8 @@ class Object(Resource):
         object_version_url = flask.url_for(
             'api.object_version',
             object_id=object.object_id,
-            version_id=object.version_id
+            version_id=object.version_id,
+            _external=True
         )
         return flask.redirect(object_version_url, code=302)
 
@@ -364,6 +366,7 @@ class Objects(Resource):
         object_version_url = flask.url_for(
             'api.object_version',
             object_id=object.object_id,
-            version_id=object.version_id
+            version_id=object.version_id,
+            _external=True
         )
         return flask.redirect(object_version_url, code=201)
