@@ -132,7 +132,7 @@ def test_create_group(flask_server, user_session):
     assert group.name == {'en': 'Example Group'}
     assert group.description == {'en': 'Example Description'}
 
-    assert r.headers['Location'] == flask_server.base_url + 'groups/{}'.format(group.id)
+    assert r.headers['Location'] == '/groups/{}'.format(group.id)
 
 
 def test_leave_group(flask_server, user_session):

@@ -133,7 +133,7 @@ def test_create_project(flask_server, user_session):
     assert project.name == {'en': 'Example Project'}
     assert project.description == {'en': 'Example Description'}
 
-    assert r.headers['Location'] == flask_server.base_url + 'projects/{}'.format(project.id)
+    assert r.headers['Location'] == '/projects/{}'.format(project.id)
 
 
 def test_leave_project(flask_server, user_session):

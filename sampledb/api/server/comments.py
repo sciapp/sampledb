@@ -68,7 +68,8 @@ class ObjectComments(Resource):
         comment_url = flask.url_for(
             'api.object_comment',
             object_id=object_id,
-            comment_id=comment_id
+            comment_id=comment_id,
+            _external=True
         )
         return flask.redirect(comment_url, code=201)
 

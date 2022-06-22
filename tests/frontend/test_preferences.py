@@ -75,9 +75,9 @@ def test_user_preferences_change_name(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -115,9 +115,9 @@ def test_user_preferences_change_contactemail(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     user_id = int(url[len(flask_server.base_url + 'users/'):].split('/')[0])
 
@@ -153,7 +153,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
 
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(f'{flask_server.base_url}users/{user_id}/preferences')
     r = session.get(confirmation_url)
 
@@ -179,9 +179,9 @@ def test_user_add_ldap_authentication_method_wrong_password(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -209,9 +209,9 @@ def test_user_add_ldap_authentication_method(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -247,9 +247,9 @@ def test_user_add_ldap_authentication_method_case_insensitive(flask_server, user
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -285,9 +285,9 @@ def test_user_add_other_authentication_method_not_allowed(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -338,9 +338,9 @@ def test_user_add_general_authentication_method(flask_server):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -404,9 +404,9 @@ def test_user_add_email_authentication_method(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
@@ -467,7 +467,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
     # Get the confirmation url from the mail and open it
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(f'{flask_server.base_url}users/{user.id}/preferences')
     r = session.get(confirmation_url)
     assert r.status_code == 200
@@ -518,9 +518,9 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
@@ -569,9 +569,9 @@ def test_user_remove_authentication_method(flask_server):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
@@ -593,9 +593,9 @@ def test_user_remove_authentication_method(flask_server):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url =flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -861,9 +861,9 @@ def test_user_preferences_change_password(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 

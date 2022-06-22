@@ -160,7 +160,8 @@ class ObjectFiles(Resource):
         file_url = flask.url_for(
             'api.object_file',
             object_id=file.object_id,
-            file_id=file.id
+            file_id=file.id,
+            _external=True
         )
         return flask.redirect(file_url, code=201)
 
