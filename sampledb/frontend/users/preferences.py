@@ -511,12 +511,13 @@ def change_preferences(user, user_id):
         elif select_locale in logic.locale.get_allowed_language_codes():
             set_user_settings(flask_login.current_user.id, {'LOCALE': select_locale, 'AUTO_LC': False})
 
-        if select_timezone == 'auto_tz':
-            set_user_settings(flask_login.current_user.id, {'AUTO_TZ': True})
-        elif select_timezone in all_timezones:
-            set_user_settings(flask_login.current_user.id, {'AUTO_TZ': False, 'TIMEZONE': select_timezone})
-        else:
-            flask.flash("Invalid timezone", 'error')
+        if not flask.current_app.config['TIMEZONE']:
+            if select_timezone == 'auto_tz':
+                set_user_settings(flask_login.current_user.id, {'AUTO_TZ': True})
+            elif select_timezone in all_timezones:
+                set_user_settings(flask_login.current_user.id, {'AUTO_TZ': False, 'TIMEZONE': select_timezone})
+            else:
+                flask.flash("Invalid timezone", 'error')
 
         objects_per_page = flask.request.form.get('input-objects-per-page', '')
         if objects_per_page == 'all':

@@ -388,6 +388,7 @@
       </span>
     </div>
 
+    {% if not config['TIMEZONE'] %}
     <input type="text" hidden id="timezone" value="" name="timezone">
 
     <div class="form-group">
@@ -403,6 +404,7 @@
           </select>
       </span>
     </div>
+    {% endif %}
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-objects-per-page">
         {{ _('Objects per Page') }}
@@ -607,11 +609,13 @@
     <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
     <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
 
+  {% if not config['TIMEZONE'] %}
     <script>
     const tz_pref = moment.tz.guess(true);
     var auto_tz = document.getElementById("auto_tz");
     auto_tz.textContent += tz_pref;
-  </script>
+    </script>
+  {% endif %}
   {% if created_api_token %}
     <script>
   $('#viewApiTokenModal').modal('show');

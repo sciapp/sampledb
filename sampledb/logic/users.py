@@ -133,6 +133,12 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
         user_settings = settings.get_user_settings(self.id)
         return user_settings['USE_ADMIN_PERMISSIONS']
 
+    @property
+    def timezone(self):
+        if flask.current_app.config['TIMEZONE']:
+            return flask.current_app.config['TIMEZONE']
+        return settings.get_user_settings(self.id)['TIMEZONE']
+
 
 def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:
     return User.from_database(get_mutable_user(user_id, component_id))

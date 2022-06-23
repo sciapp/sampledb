@@ -11,6 +11,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap-tagsinput.min.js') }}"></script>
@@ -29,7 +30,8 @@
       $(this).datetimepicker({
         locale: "{{ get_user_language(current_user).lang_code }}",
         format: "{{ get_user_language(current_user).datetime_format_moment }}",
-        date: $(this).attr('data-datetime')
+        date: $(this).attr('data-datetime'),
+        timeZone: "{{ current_user.timezone }}"
       });
     });
 
