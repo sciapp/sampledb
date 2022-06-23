@@ -32,7 +32,7 @@ from ...logic.schemas import validate, generate_placeholder
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.groups import get_group
-from ...logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions
+from ...logic.objects import create_object, create_object_batch, update_object, get_object
 from ...logic.object_log import ObjectLogEntryType
 from ...logic.projects import get_project, get_user_project_permissions
 from ...logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree
@@ -42,7 +42,7 @@ from ...logic.files import FileLogEntryType
 from ...logic.errors import ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, LocationDoesNotExistError, ActionTypeDoesNotExistError
 from ...logic.components import get_component
 from ...logic.notebook_templates import get_notebook_templates
-from .forms import ObjectForm, ObjectVersionRestoreForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
+from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
 from ...utils import object_permissions_required
 from ..utils import generate_qrcode, get_user_if_exists, default_format_datetime, custom_format_number
 from .object_form_parser import parse_form_data
@@ -2250,99 +2250,3 @@ def new_object():
 
     # TODO: check instrument permissions
     return show_object_form(None, action, previous_object, placeholder_data=placeholder_data)
-
-
-@frontend.route('/objects/<int:object_id>/versions/')
-@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_versions(object_id):
-    object = get_object(object_id=object_id)
-    if object is None:
-        return flask.abort(404)
-    object_versions = get_object_versions(object_id=object_id)
-    object_versions.sort(key=lambda object_version: -object_version.version_id)
-    return flask.render_template('objects/object_versions.html', get_user=get_user_if_exists, object=object, object_versions=object_versions)
-
-
-@frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
-@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_version(object_id, version_id):
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
-    english = get_language(Language.ENGLISH)
-    object = get_object(object_id=object_id, version_id=version_id)
-    form = None
-    user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
-    if Permissions.WRITE in user_permissions:
-        current_object = get_object(object_id=object_id)
-        if current_object.version_id != version_id:
-            form = ObjectVersionRestoreForm()
-    user_may_grant = Permissions.GRANT in user_permissions
-    action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
-    action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
-    instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id else None
-
-    object_languages = logic.languages.get_languages_in_object_data(object.data)
-    languages = []
-    for lang_code in object_languages:
-        languages.append(get_language_by_lang_code(lang_code))
-
-    metadata_language = flask.request.args.get('language', None)
-    if not any(
-        language.lang_code == metadata_language
-        for language in languages
-    ):
-        metadata_language = None
-    return flask.render_template(
-        'objects/view/base.html',
-        template_mode="view",
-        show_object_type_and_id_on_object_page_text=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
-        show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
-        languages=languages,
-        metadata_language=metadata_language,
-        ENGLISH=english,
-        is_archived=True,
-        object_type=action_type.translation.object_name,
-        action=action,
-        action_type=action_type,
-        instrument=instrument,
-        schema=object.schema,
-        data=object.data,
-        name=object.name,
-        last_edit_datetime=object.utc_datetime,
-        last_edit_user=get_user(object.user_id),
-        get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-        object_id=object_id,
-        version_id=version_id,
-        link_version_specific_rdf=True,
-        restore_form=form,
-        get_user=get_user_if_exists,
-        user_may_grant=user_may_grant,
-        get_action_type=get_action_type,
-        get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
-        component=object.component,
-        fed_object_id=object.fed_object_id,
-        fed_version_id=object.fed_version_id,
-        get_component=get_component
-    )
-
-
-@frontend.route('/objects/<int:object_id>/versions/<int:version_id>/restore', methods=['GET', 'POST'])
-@object_permissions_required(Permissions.WRITE)
-def restore_object_version(object_id, version_id):
-    if version_id < 0 or object_id < 0:
-        return flask.abort(404)
-    try:
-        current_object = get_object(object_id=object_id)
-    except ObjectDoesNotExistError:
-        return flask.abort(404)
-    if current_object.version_id <= version_id:
-        return flask.abort(404)
-    form = ObjectVersionRestoreForm()
-    if form.validate_on_submit():
-        try:
-            logic.objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
-        except logic.errors.ValidationError:
-            flask.flash(_('This version contains invalid data and cannot be restored.'), 'error')
-        else:
-            return flask.redirect(flask.url_for('.object', object_id=object_id))
-    return flask.render_template('objects/restore_object_version.html', object_id=object_id, version_id=version_id, restore_form=form)
-

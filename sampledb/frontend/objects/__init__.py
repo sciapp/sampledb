@@ -4,6 +4,7 @@ from . import forms
 from . import object_form_parser
 from . import permissions
 from . import search
+from . import versions
 
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     'object_form_parser',
     'permissions',
     'search',
+    'versions',
 ]
