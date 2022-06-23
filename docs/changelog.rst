@@ -25,6 +25,7 @@ Currently in development.
 - Allow searching for missing attributes
 - Allow setting minimum and maximum values for quantities
 - Added array style ``full_width_table``
+- Allow selecting a unit when entering a quantity
 
 Version 0.20
 ------------

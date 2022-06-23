@@ -919,6 +919,13 @@ function enableSchemaEditor() {
       var units_help = units_group.find('.help-block');
       // TODO: validate units
       if (units.length > 0) {
+        // allow multiple units separated by a comma
+        if (units.split(',').length > 1) {
+          units = units.split(',');
+          units = units.map(function(unit) {
+            return unit.trim();
+          });
+        }
         property_schema['units'] = units;
         units_help.text("");
         units_group.removeClass("has-error");

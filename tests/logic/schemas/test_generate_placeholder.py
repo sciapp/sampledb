@@ -112,6 +112,22 @@ def test_generate_quantity_object_default_invalid_units():
         generate_placeholder(object_schema)
 
 
+def test_generate_quantity_object_default_multiple_units():
+    object_schema = {
+        'title': 'Example Quantity',
+        'type': 'quantity',
+        'units': ['mm', 'm'],
+        'default': 1e-3
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'quantity',
+        'dimensionality': '[length]',
+        'units': 'mm',
+        'magnitude_in_base_units': 1e-3
+    }
+
+
 def test_generate_object():
     object_schema = {
         'title': 'Example Object',

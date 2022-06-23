@@ -395,7 +395,11 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
     if not units_are_valid(instance['units']):
         raise ValidationError('Invalid/Unknown units', path)
     try:
-        schema_quantity = datatypes.Quantity(1.0, units=schema['units'])
+        if isinstance(schema['units'], str):
+            schema_units = schema['units']
+        else:
+            schema_units = schema['units'][0]
+        schema_quantity = datatypes.Quantity(1.0, units=schema_units)
     except Exception:
         raise ValidationError('Unable to create schema quantity', path)
 

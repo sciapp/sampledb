@@ -593,6 +593,35 @@ def test_validate_quantity_schema_invalid_note():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_quantity_schema_multiple_units():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': ['m', 'km']
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_multiple_units_mismatched_dimensionality():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': ['mg', 'ms']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_multiple_units_duplicates():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': ['m * s', 's * m']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_quantity_schema_invalid_units():
     schema = {
         'title': 'Example',

@@ -183,7 +183,10 @@ def _generate_quantity_placeholder(schema: dict, path: typing.List[str]) -> typi
     if 'default' not in schema:
         return None
     magnitude_in_base_units = schema['default']
-    units = schema['units']
+    if isinstance(schema['units'], str):
+        units = schema['units']
+    else:
+        units = schema['units'][0]
 
     try:
         dimensionality = get_dimensionality_for_units(units)

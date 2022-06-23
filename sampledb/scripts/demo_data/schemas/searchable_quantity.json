@@ -14,7 +14,11 @@
     "mass": {
       "title": "Mass",
       "type": "quantity",
-      "units": "kg"
+      "units": [
+        "kg",
+        "g",
+        "mg"
+      ]
     }
   },
   "propertyOrder": ["name", "tags", "mass"],

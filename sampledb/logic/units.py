@@ -19,12 +19,14 @@ def prettify_units(units: typing.Union[str, ureg.Unit]) -> str:
     :param units: The pint units or their string representation
     :return: The prettified units
     """
-    units = str(units)
+    units = str(units).strip()
     units = {
         'degC': '\xb0C',
         'degree_Celsius': '\xb0C',
         'deg': '\xb0',
         'degree': '\xb0',
-        'percent': '%'
+        'percent': '%',
+        '': '—',
+        '1': '—'
     }.get(units, units)
     return units
