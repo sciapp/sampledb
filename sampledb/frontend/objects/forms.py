@@ -7,13 +7,13 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField, BooleanField
 from wtforms.validators import InputRequired, ValidationError
 
-from ..logic import errors
-from ..logic.object_permissions import Permissions
-from ..logic.publications import simplify_doi
-from ..logic.errors import InvalidDOIError
+from ...logic import errors
+from ...logic.object_permissions import Permissions
+from ...logic.publications import simplify_doi
+from ...logic.errors import InvalidDOIError
 
-from .validators import ObjectIdValidator
-from ..logic.utils import parse_url
+from ..validators import ObjectIdValidator
+from ...logic.utils import parse_url
 
 
 class ObjectForm(FlaskForm):

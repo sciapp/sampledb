@@ -20,43 +20,43 @@ import requests
 import werkzeug.utils
 from flask_babel import _
 
-from ..logic.federation import update_poke_component
-from . import frontend
-from .. import logic
-from .. import models
-from .. import db
-from ..logic import user_log, object_log, comments, object_sorting
-from ..logic.actions import get_action, get_actions, get_action_type, get_action_types
-from ..logic.action_type_translations import get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
-from ..logic.action_translations import get_action_with_translation_in_language
-from ..logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
-from ..logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
-from ..logic.instrument_translations import get_instrument_with_translation_in_language
-from ..logic.shares import get_shares_for_object, add_object_share, update_object_share
-from ..logic.users import get_user, get_users, get_users_by_name, get_users_for_component
-from ..logic.schemas import validate, generate_placeholder
-from ..logic.settings import get_user_settings, set_user_settings
-from ..logic.object_search import generate_filter_func, wrap_filter_func
-from ..logic.groups import get_group, get_user_groups
-from ..logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions, get_fed_object
-from ..logic.object_log import ObjectLogEntryType
-from ..logic.projects import get_project, get_user_projects, get_user_project_permissions
-from ..logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree
-from ..logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
-from ..logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
-from ..logic.files import FileLogEntryType
-from ..logic.errors import ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, LocationDoesNotExistError, ActionTypeDoesNotExistError, ComponentDoesNotExistError
-from ..logic.components import get_component, get_component_by_uuid, get_components
-from ..logic.notebook_templates import get_notebook_templates
-from .objects_forms import ObjectForm, ObjectVersionRestoreForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
-from .permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
-from ..utils import object_permissions_required
-from .utils import generate_qrcode, get_user_if_exists, default_format_datetime, custom_format_number
+from ...logic.federation import update_poke_component
+from .. import frontend
+from ... import logic
+from ... import models
+from ... import db
+from ...logic import user_log, object_log, comments, object_sorting
+from ...logic.actions import get_action, get_actions, get_action_type, get_action_types
+from ...logic.action_type_translations import get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
+from ...logic.action_translations import get_action_with_translation_in_language
+from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
+from ...logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_info_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ...logic.instrument_translations import get_instrument_with_translation_in_language
+from ...logic.shares import get_shares_for_object, add_object_share, update_object_share
+from ...logic.users import get_user, get_users, get_users_by_name, get_users_for_component
+from ...logic.schemas import validate, generate_placeholder
+from ...logic.settings import get_user_settings, set_user_settings
+from ...logic.object_search import generate_filter_func, wrap_filter_func
+from ...logic.groups import get_group, get_user_groups
+from ...logic.objects import create_object, create_object_batch, update_object, get_object, get_object_versions, get_fed_object
+from ...logic.object_log import ObjectLogEntryType
+from ...logic.projects import get_project, get_user_projects, get_user_project_permissions
+from ...logic.locations import get_location, get_object_ids_at_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree
+from ...logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
+from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
+from ...logic.files import FileLogEntryType
+from ...logic.errors import ObjectDoesNotExistError, UserDoesNotExistError, ActionDoesNotExistError, ValidationError, LocationDoesNotExistError, ActionTypeDoesNotExistError, ComponentDoesNotExistError
+from ...logic.components import get_component, get_component_by_uuid, get_components
+from ...logic.notebook_templates import get_notebook_templates
+from .forms import ObjectForm, ObjectVersionRestoreForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
+from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
+from ...utils import object_permissions_required
+from ..utils import generate_qrcode, get_user_if_exists, default_format_datetime, custom_format_number
 from .object_form_parser import parse_form_data
-from .labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
-from . import pdfexport
-from .utils import check_current_user_is_not_readonly, get_location_name, get_search_paths
-from ..logic.utils import get_translated_text
+from ..labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
+from .. import pdfexport
+from ..utils import check_current_user_is_not_readonly, get_location_name, get_search_paths
+from ...logic.utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
