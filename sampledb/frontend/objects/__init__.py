@@ -3,6 +3,7 @@ from . import files
 from . import forms
 from . import object_form_parser
 from . import permissions
+from . import search
 
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     'forms',
     'object_form_parser',
     'permissions',
+    'search',
 ]
