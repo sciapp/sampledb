@@ -19,7 +19,7 @@ from ...logic.errors import UserDoesNotExistError
 from .forms import FileForm, FileInformationForm, FileHidingForm, ExternalLinkForm
 from ...utils import object_permissions_required
 from ..utils import check_current_user_is_not_readonly
-from .objects import on_unauthorized
+from .permissions import on_unauthorized
 
 
 @frontend.route('/objects/<int:object_id>/files/')
