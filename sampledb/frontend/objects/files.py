@@ -14,6 +14,7 @@ from flask_babel import _
 
 from .. import frontend
 from ... import logic
+from ...logic.objects import get_object
 from ...logic.object_permissions import Permissions
 from ...logic.errors import UserDoesNotExistError
 from .forms import FileForm, FileInformationForm, FileHidingForm, ExternalLinkForm
@@ -71,6 +72,10 @@ def object_file(object_id, file_id):
 @object_permissions_required(Permissions.WRITE)
 def update_file_information(object_id, file_id):
     check_current_user_is_not_readonly()
+    object = get_object(object_id)
+    if object.fed_object_id is not None:
+        flask.flash(_('Uploading files for imported objects is not yet supported.'), 'error')
+        return flask.abort(403)
     form = FileInformationForm()
     if form.validate_on_submit():
         title = form.title.data

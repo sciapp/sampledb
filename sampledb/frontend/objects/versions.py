@@ -14,11 +14,10 @@ from ...logic.action_type_translations import get_action_type_with_translation_i
 from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.object_permissions import Permissions, get_user_object_permissions
 from ...logic.instrument_translations import get_instrument_with_translation_in_language
-from ...logic.users import get_user
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object, get_object_versions
-from ...logic.languages import get_language_by_lang_code, get_language, Language
-from ...logic.errors import ObjectDoesNotExistError
+from ...logic.languages import get_language_by_lang_code, get_user_language, get_languages_in_object_data, get_language, Language
+from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
 from .forms import ObjectVersionRestoreForm
 from ...utils import object_permissions_required
@@ -40,7 +39,7 @@ def object_versions(object_id):
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_version(object_id, version_id):
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
+    user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
     form = None
@@ -54,7 +53,7 @@ def object_version(object_id, version_id):
     action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
     instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id else None
 
-    object_languages = logic.languages.get_languages_in_object_data(object.data)
+    object_languages = get_languages_in_object_data(object.data)
     languages = []
     for lang_code in object_languages:
         languages.append(get_language_by_lang_code(lang_code))
@@ -81,8 +80,6 @@ def object_version(object_id, version_id):
         schema=object.schema,
         data=object.data,
         name=object.name,
-        last_edit_datetime=object.utc_datetime,
-        last_edit_user=get_user(object.user_id),
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         object_id=object_id,
         version_id=version_id,
@@ -114,7 +111,7 @@ def restore_object_version(object_id, version_id):
     if form.validate_on_submit():
         try:
             logic.objects.restore_object_version(object_id=object_id, version_id=version_id, user_id=flask_login.current_user.id)
-        except logic.errors.ValidationError:
+        except ValidationError:
             flask.flash(_('This version contains invalid data and cannot be restored.'), 'error')
         else:
             return flask.redirect(flask.url_for('.object', object_id=object_id))
