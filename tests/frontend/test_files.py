@@ -220,6 +220,74 @@ def test_update_file_information(flask_server, user, tmpdir):
     assert file.description == 'Description'
 
 
+def test_update_url_file_information(flask_server, user, tmpdir):
+    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
+
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example Object'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+
+    sampledb.logic.files.create_url_file(object.id, user.id, 'http://example.com/example')
+
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    file_form = document.find('form', {'action': '/objects/{}/files/0'.format(object.id)})
+    csrf_token = file_form.find('input', {'name': 'csrf_token'})['value']
+    r = session.post(flask_server.base_url + 'objects/{}/files/0'.format(object.id), data={
+        'csrf_token': csrf_token,
+        'title': 'Title',
+        'url': 'http://example.com/',
+        'description': 'Description'
+    })
+    assert r.status_code == 200
+    file = sampledb.logic.files.get_file_for_object(object.id, 0)
+    assert file.title == 'Title'
+    assert file.url == 'http://example.com/'
+    assert file.description == 'Description'
+
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    file_form = document.find('form', {'action': '/objects/{}/files/0'.format(object.id)})
+    csrf_token = file_form.find('input', {'name': 'csrf_token'})['value']
+    r = session.post(flask_server.base_url + 'objects/{}/files/0'.format(object.id), data={
+        'csrf_token': csrf_token,
+        'title': 'Title',
+        'url': 'invalid-url',
+        'description': 'Description'
+    })
+    assert r.status_code == 200
+    file = sampledb.logic.files.get_file_for_object(object.id, 0)
+    assert file.title == 'Title'
+    assert file.url == 'http://example.com/'
+    assert file.description == 'Description'
+
+
 def test_download_zip_archive(flask_server, user, tmpdir):
     sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
 

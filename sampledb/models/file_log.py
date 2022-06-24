@@ -19,6 +19,7 @@ class FileLogEntryType(enum.Enum):
     EDIT_DESCRIPTION = 2
     HIDE_FILE = 3
     UNHIDE_FILE = 4
+    EDIT_URL = 5
 
 
 class FileLogEntry(db.Model):

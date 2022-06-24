@@ -57,6 +57,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
         self._hide_reason = None
         self._hide_datetime = None
         self._title = None
+        self._url = None
         self._description = None
         return self
 
@@ -107,7 +108,17 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
     @property
     def url(self) -> str:
         if self.storage == 'url':
-            return self.data['url']
+            if self._url is None:
+                log_entry = FileLogEntry.query.filter_by(
+                    object_id=self.object_id,
+                    file_id=self.id,
+                    type=FileLogEntryType.EDIT_URL
+                ).order_by(FileLogEntry.utc_datetime.desc()).first()
+                if log_entry is not None:
+                    self._url = log_entry.data['url']
+                else:
+                    self._url = self.data['url']
+            return self._url
         else:
             raise InvalidFileStorageError()
 
@@ -120,20 +131,27 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
     @property
     def title(self) -> typing.Union[str, None]:
         if self._title is None:
-            log_entry = FileLogEntry.query.filter_by(
-                object_id=self.object_id,
-                file_id=self.id,
-                type=FileLogEntryType.EDIT_TITLE
-            ).order_by(FileLogEntry.utc_datetime.desc()).first()
-            if log_entry is None:
+            self._title = self.real_title
+            if self._title is None:
                 if self.storage in {'local', 'database'}:
                     return self.original_file_name
                 elif self.storage == 'url':
-                    return self.data['url']
+                    return self.url
                 else:
                     raise InvalidFileStorageError()
-            self._title = log_entry.data['title']
         return self._title
+
+    @property
+    def real_title(self):
+        log_entry = FileLogEntry.query.filter_by(
+            object_id=self.object_id,
+            file_id=self.id,
+            type=FileLogEntryType.EDIT_TITLE
+        ).order_by(FileLogEntry.utc_datetime.desc()).first()
+        if log_entry is None:
+            return None
+        else:
+            return log_entry.data['title']
 
     @property
     def description(self) -> typing.Union[str, None]:
@@ -459,7 +477,7 @@ def _create_db_file(
     return db_file
 
 
-def update_file_information(object_id: int, file_id: int, user_id: int, title: str, description: str) -> None:
+def update_file_information(object_id: int, file_id: int, user_id: int, title: str, description: str, url: typing.Optional[str] = None) -> None:
     """
     Creates new file log entries for updating a file's information.
 
@@ -468,6 +486,7 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
     :param user_id: the ID of an existing user
     :param title: the new title
     :param description: the new description
+    :param url: the new url
     :raise errors.FileDoesNotExistError: when no file with the given object ID
         and file ID exists
     """
@@ -479,9 +498,15 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
             title = file.url
         else:
             title = file.original_file_name
-    if title != file.title:
+    if title != file.real_title:
         log_entry = FileLogEntry(type=FileLogEntryType.EDIT_TITLE, object_id=object_id, file_id=file_id, user_id=user_id, data={
             'title': title
+        })
+        db.session.add(log_entry)
+        db.session.commit()
+    if url and file.storage == 'url' and url != file.url:
+        log_entry = FileLogEntry(type=FileLogEntryType.EDIT_URL, object_id=object_id, file_id=file_id, user_id=user_id, data={
+            'url': url
         })
         db.session.add(log_entry)
         db.session.commit()

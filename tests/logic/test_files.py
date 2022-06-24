@@ -210,10 +210,18 @@ def test_url_file_information(user: User, object: Object):
     log_entry = file.log_entries[2]
     assert log_entry.type == files.FileLogEntryType.EDIT_TITLE
     assert log_entry.data == {'title': file.url}
+    files.update_file_information(object_id=object.object_id, file_id=file.id, user_id=user.id, title='', description='Description', url='https://example.com/example')
+    file = files.get_file_for_object(object.object_id, 0)
+    assert file.url == 'https://example.com/example'
+    assert file.description == 'Description'
+    assert len(file.log_entries) == 4
+    log_entry = file.log_entries[3]
+    assert log_entry.type == files.FileLogEntryType.EDIT_URL
+    assert log_entry.data == {'url': file.url}
 
     with pytest.raises(files.FileDoesNotExistError):
         files.update_file_information(object_id=object.object_id, file_id=file.id + 1, user_id=user.id, title='Title', description='Description')
-    assert len(file.log_entries) == 3
+    assert len(file.log_entries) == 4
 
 
 def test_invalid_file_storage(user: User, object: Object, tmpdir):

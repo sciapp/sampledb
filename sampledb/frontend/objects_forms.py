@@ -60,7 +60,12 @@ class ExternalLinkForm(FlaskForm):
 
 class FileInformationForm(FlaskForm):
     title = StringField()
+    url = StringField()
     description = TextAreaField()
+
+    def validate_url(form, field):
+        if field.data is not None:
+            _validate_url(field.data)
 
 
 class FileHidingForm(FlaskForm):
