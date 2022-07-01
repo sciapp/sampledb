@@ -118,11 +118,19 @@ def test_quantity_equals(objects):
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'kilometer')}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(100, 'centimeters')))
 
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'kilometer')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(-100, 'centimeters')))
+
 
 def test_quantity_equals_epsilon(objects):
     object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(10, 'mg')}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(9.99, 'mg')}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(0.00001, 'kg')))
+
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-10, 'mg')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(-9.99, 'mg')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(-0.00001, 'kg')))
 
 
 def test_quantity_less_than(objects):
@@ -130,20 +138,36 @@ def test_quantity_less_than(objects):
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'kilometer')}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_less_than(data['q'], datatypes.Quantity(1.5, 'meters')))
 
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'kilometer')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_less_than(data['q'], datatypes.Quantity(-0.5, 'meters')))
+
 
 def test_quantity_less_than_equals(objects):
     object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'meter')}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'kilometer')}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_less_than_equals(data['q'], datatypes.Quantity(1, 'meter')))
 
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'kilometer')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_less_than_equals(data['q'], datatypes.Quantity(-1, 'meter')))
+
 
 def test_quantity_greater_than(objects):
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(-200, 'centimeter')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_greater_than(data['q'], datatypes.Quantity(-1.5, 'meters')))
+
     object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'meter')}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'centimeter')}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_greater_than(data['q'], datatypes.Quantity(0.5, 'meters')))
 
 
 def test_quantity_greater_than_equals(objects):
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(-200, 'centimeter')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_greater_than_equals(data['q'], datatypes.Quantity(-1, 'meter')))
+
     object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'meter')}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'centimeter')}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_greater_than_equals(data['q'], datatypes.Quantity(1, 'meter')))
@@ -155,12 +179,20 @@ def test_quantity_between(objects):
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(10, 'centimeters'), datatypes.Quantity(1, 'meter')))
     assert [] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(10, 'centimeters'), datatypes.Quantity(1, 'second')))
 
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'centimeter')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(-1, 'meter'), datatypes.Quantity(-10, 'centimeters')))
+
 
 def test_quantity_between_excluding(objects):
     object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'meter')}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'q': datatypes.Quantity(1, 'centimeter')}, schema={}, user_id=0)
     assert [] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(10, 'centimeters'), datatypes.Quantity(1, 'meter'), including=False))
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(10, 'centimeters'), datatypes.Quantity(1.1, 'meter'), including=False))
+
+    object1 = objects.create_object(action_id=0, data={'q': datatypes.Quantity(-1, 'meter')}, schema={}, user_id=0)
+    objects.create_object(action_id=0, data={'q': datatypes.Quantity(-10, 'centimeter')}, schema={}, user_id=0)
+    assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(-1.1, 'meter'), datatypes.Quantity(-10, 'centimeters'), including=False))
 
 
 def test_datetime_equals(objects):
