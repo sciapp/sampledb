@@ -12,6 +12,9 @@ import base64
 import io
 import json
 import os
+
+import pytz
+import pytz.exceptions
 import requests
 import typing
 import sys
@@ -279,6 +282,20 @@ def check_config(
                     file=sys.stderr
                 )
 
+    if config['TIMEZONE']:
+        try:
+            pytz.timezone(config['TIMEZONE'])
+        except pytz.exceptions.UnknownTimeZoneError:
+            print(
+                ansi_color(
+                    'Unknown time zone.\n',
+                    color=31
+                ),
+                file=sys.stderr
+            )
+            can_run = False
+            show_config_info = True
+
     try:
         os.makedirs(config['FILE_STORAGE_PATH'], exist_ok=True)
         test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
@@ -471,6 +488,8 @@ ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 
 ENABLE_BACKGROUND_TASKS = False
+
+TIMEZONE = None
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

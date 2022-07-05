@@ -35,7 +35,6 @@ from ..logic.users import get_user
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
-from ..logic.settings import get_user_settings
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.locations import Location, get_location
 from ..logic.location_permissions import get_user_location_permissions, Permissions
@@ -183,9 +182,8 @@ def custom_format_datetime(
             format2 = 'medium'
             return format_datetime(utc_datetime, format=format2)
         else:
-            settings = get_user_settings(flask_login.current_user.id)
             utc_datetime = pytz.utc.localize(utc_datetime)
-            local_datetime = utc_datetime.astimezone(pytz.timezone(settings['TIMEZONE']))
+            local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone))
             return local_datetime.strftime(format)
     except ValueError:
         return utc_datetime

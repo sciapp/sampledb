@@ -78,11 +78,10 @@ class InstrumentLogEntryForm(FlaskForm):
     def validate_event_utc_datetime(form, field):
         if field.data:
             try:
-                settings = get_user_settings(flask_login.current_user.id)
                 language = get_user_language(flask_login.current_user)
                 parsed_datetime = datetime.datetime.strptime(field.data, language.datetime_format_datetime)
                 # convert datetime to utc
-                local_datetime = pytz.timezone(settings['TIMEZONE']).localize(parsed_datetime)
+                local_datetime = pytz.timezone(flask_login.current_user.timezone).localize(parsed_datetime)
                 utc_datetime = local_datetime.astimezone(pytz.utc)
                 field.data = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
             except Exception:

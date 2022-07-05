@@ -52,6 +52,8 @@ def set_locale():
 
 @babel.timezoneselector
 def set_timezone():
+    if flask.current_app.config['TIMEZONE']:
+        return flask.current_app.config['TIMEZONE']
     if current_user.is_authenticated:
         settings = sampledb.logic.settings.get_user_settings(current_user.id)
         if settings['AUTO_TZ']:

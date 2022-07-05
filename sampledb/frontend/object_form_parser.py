@@ -13,7 +13,6 @@ import pint
 import pytz
 
 from ..logic import schemas, languages
-from ..logic.settings import get_user_settings
 from ..logic.units import ureg
 from ..logic.errors import ValidationError
 from ..logic.schemas.generate_placeholder import generate_placeholder
@@ -305,11 +304,10 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=Fals
         else:
             raise ValueError(_('Please enter a valid datetime.'))
     try:
-        settings = get_user_settings(current_user.id)
         language = languages.get_user_language(current_user)
         parsed_datetime = datetime.datetime.strptime(datetime_string, language.datetime_format_datetime)
         # convert datetime to utc
-        local_datetime = pytz.timezone(settings['TIMEZONE']).localize(parsed_datetime)
+        local_datetime = pytz.timezone(current_user.timezone).localize(parsed_datetime)
         utc_datetime = local_datetime.astimezone(pytz.utc)
         utc_datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
     except Exception:

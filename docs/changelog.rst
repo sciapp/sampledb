@@ -24,6 +24,7 @@ Currently in development.
 - Made the objects table width configurable
 - Allow searching for missing attributes
 - Allow setting minimum and maximum values for quantities
+- Allow setting an instance-wide timezone using ``SAMPLEDB_TIMEZONE``
 - Added array style ``full_width_table``
 
 Version 0.20

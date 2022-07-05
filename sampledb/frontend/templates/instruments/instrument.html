@@ -485,6 +485,7 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   {{ super() }}
   <script src="{{ fingerprinted_static('js/markdown_image_viewer.js') }}"></script>
   <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap-toggle.min.js') }}"></script>
@@ -515,7 +516,8 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
             format: 'YYYY-MM',
             showClear: true,
             showClose: true,
-            maxDate: moment(new Date())
+            maxDate: moment(new Date()),
+            timeZone: "{{ current_user.timezone }}"
           });
           datetimepicker.on('dp.change', function() {
             update_instrument_log_filter_states();
@@ -911,7 +913,8 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           format: '{{ instrument_log_entry_form.event_utc_datetime.format_moment }}',
           showClear: true,
           showClose: true,
-          showTodayButton: true
+          showTodayButton: true,
+          timeZone: "{{ current_user.timezone }}"
         });
         checkbox.on('change', function() {
           var checked = checkbox.prop('checked');
