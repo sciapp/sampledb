@@ -45,6 +45,10 @@ class PermissionsForm(FlaskForm):
         choices=[(p.name.lower(), p) for p in (Permissions.NONE, Permissions.READ)],
         validators=[InputRequired()]
     )
+    anonymous_user_permissions = SelectField(
+        choices=[(p.name.lower(), p) for p in (Permissions.NONE, Permissions.READ)],
+        validators=[InputRequired()]
+    )
     user_permissions = FieldList(FormField(UserPermissionsForm), min_entries=0)
     group_permissions = FieldList(FormField(GroupPermissionsForm), min_entries=0)
     project_permissions = FieldList(FormField(ProjectPermissionsForm), min_entries=0)
@@ -112,6 +116,8 @@ def handle_permission_forms(
     elif 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
         permissions = Permissions.from_name(permissions_form.all_user_permissions.data)
         resource_permissions.set_permissions_for_all_users(resource_id, permissions)
+        permissions = Permissions.from_name(permissions_form.anonymous_user_permissions.data)
+        resource_permissions.set_permissions_for_anonymous_users(resource_id, permissions)
         for user_permissions_data in permissions_form.user_permissions.data:
             user_id = user_permissions_data['user_id']
             permissions = Permissions.from_name(user_permissions_data['permissions'])
@@ -153,12 +159,15 @@ def set_up_permissions_forms(
         resource_permissions: ResourcePermissions,
         resource_id: int,
         existing_all_user_permissions: typing.Optional[Permissions] = None,
+        existing_anonymous_user_permissions: typing.Optional[Permissions] = None,
         existing_user_permissions: typing.Optional[typing.Dict[int, Permissions]] = None,
         existing_group_permissions: typing.Optional[typing.Dict[int, Permissions]] = None,
         existing_project_permissions: typing.Optional[typing.Dict[int, Permissions]] = None
 ) -> typing.Tuple[UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, PermissionsForm]:
     if existing_all_user_permissions is None:
         existing_all_user_permissions = resource_permissions.get_permissions_for_all_users(resource_id)
+    if existing_anonymous_user_permissions is None:
+        existing_anonymous_user_permissions = resource_permissions.get_permissions_for_anonymous_users(resource_id)
     if existing_user_permissions is None:
         existing_user_permissions = resource_permissions.get_permissions_for_users(resource_id)
     if existing_group_permissions is None:
@@ -167,6 +176,8 @@ def set_up_permissions_forms(
         existing_project_permissions = resource_permissions.get_permissions_for_projects(resource_id)
 
     all_user_permissions_form_data = existing_all_user_permissions.name.lower()
+
+    anonymous_user_permissions_form_data = existing_anonymous_user_permissions.name.lower()
 
     user_permission_form_data = []
     for user_id, permissions in sorted(existing_user_permissions.items()):
@@ -188,6 +199,7 @@ def set_up_permissions_forms(
 
     permissions_form = PermissionsForm(
         all_user_permissions=all_user_permissions_form_data,
+        anonymous_user_permissions=anonymous_user_permissions_form_data,
         user_permissions=user_permission_form_data,
         group_permissions=group_permission_form_data,
         project_permissions=project_permission_form_data

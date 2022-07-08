@@ -70,5 +70,16 @@ def run(db):
             SET enabled_for_user_interface = TRUE
             WHERE id < 0
         """)
+    if ('datetime_format_moment_output',) in languages_column_names:
+        db.session.execute("""
+            UPDATE languages
+            SET datetime_format_moment_output = 'MMM D, YYYY, h:mm:ss A'
+            WHERE id = -99
+        """)
+        db.session.execute("""
+            UPDATE languages
+            SET datetime_format_moment_output = 'DD.MM.YYYY HH:mm:ss'
+            WHERE id = -98
+        """)
 
     return performed_migration

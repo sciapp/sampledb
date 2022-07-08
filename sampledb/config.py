@@ -491,6 +491,8 @@ ENABLE_BACKGROUND_TASKS = False
 
 TIMEZONE = None
 
+ENABLE_ANONYMOUS_USERS = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -536,6 +538,7 @@ for config_name in {
     'DISABLE_INLINE_EDIT',
     'ENABLE_BACKGROUND_TASKS',
     'ENABLE_MONITORINGDASHBOARD',
+    'ENABLE_ANONYMOUS_USERS',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

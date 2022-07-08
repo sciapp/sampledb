@@ -24,6 +24,7 @@ class Language(db.Model):
     names = db.Column(db.JSON, nullable=False)
     datetime_format_datetime = db.Column(db.String)
     datetime_format_moment = db.Column(db.String)
+    datetime_format_moment_output = db.Column(db.String, nullable=False, default='lll', server_default='lll')
     enabled_for_input = db.Column(db.Boolean, nullable=False)
     enabled_for_user_interface = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
 
@@ -33,6 +34,7 @@ class Language(db.Model):
             lang_code: str,
             datetime_format_datetime: str,
             datetime_format_moment: str,
+            datetime_format_moment_output: str,
             enabled_for_input: bool,
             enabled_for_user_interface: bool
     ):
@@ -40,6 +42,7 @@ class Language(db.Model):
         self.lang_code = lang_code
         self.datetime_format_datetime = datetime_format_datetime
         self.datetime_format_moment = datetime_format_moment
+        self.datetime_format_moment_output = datetime_format_moment_output
         self.enabled_for_input = enabled_for_input
         self.enabled_for_user_interface = enabled_for_user_interface
 
@@ -49,6 +52,7 @@ class Language(db.Model):
             self.lang_code == other.lang_code and
             self.datetime_format_datetime == other.datetime_format_datetime and
             self.datetime_format_moment == other.datetime_format_moment and
+            self.datetime_format_moment_output == other.datetime_format_moment_output and
             self.enabled_for_input == other.enabled_for_input and
             self.enabled_for_user_interface == other.enabled_for_user_interface
         )

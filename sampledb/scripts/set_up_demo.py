@@ -56,6 +56,7 @@ def main(arguments):
             lang_code=german.lang_code,
             datetime_format_datetime=german.datetime_format_datetime,
             datetime_format_moment=german.datetime_format_moment,
+            datetime_format_moment_output=german.datetime_format_moment_output,
             enabled_for_input=True,
             enabled_for_user_interface=True
         )
@@ -207,6 +208,8 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.publications.link_publication_to_object(instrument_responsible_user.id, instrument_object.id, '10.5281/zenodo.4012175', 'sciapp/sampledb', 'Example')
 
         projects.link_project_and_object(project_id, instrument_object.object_id, instrument_responsible_user.id)
+
+        object_permissions.set_object_permissions_for_anonymous_users(instrument_object.id, object_permissions.Permissions.READ)
 
         with open(os.path.join(schema_directory, 'ombe_measurement_updated.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)

@@ -304,6 +304,17 @@
     {% endif %}
 
     $(function() {
+      // localize datetimes for anonymous users if the timezone has not been set in the config
+      {% if current_user.timezone is none %}
+      $('span[data-utc-datetime]').each(function(_, element) {
+          let utc_datetime_str = $(element).data('utcDatetime');
+          let utc_datetime = moment.utc(utc_datetime_str);
+          let local_datetime = utc_datetime.local();
+          let lang_code = "{{ get_user_language(current_user).lang_code }}";
+          let format = "{{ get_user_language(current_user).datetime_format_moment_output }}";
+          element.innerText = local_datetime.locale(lang_code).format(format);
+      });
+      {% endif %}
 
       $(".navbar-nav > .dropdown").hover(function(){
         var dropdown_menu = $(this).children(".dropdown-menu");

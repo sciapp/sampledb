@@ -140,6 +140,27 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
         return settings.get_user_settings(self.id)['TIMEZONE']
 
 
+class AnonymousUser(flask_login.AnonymousUserMixin):
+    @property
+    def id(self) -> typing.Optional[int]:
+        return self.get_id()
+
+    @property
+    def has_admin_permissions(self) -> bool:
+        return False
+
+    @property
+    def timezone(self):
+        if flask.current_app.config['TIMEZONE']:
+            return flask.current_app.config['TIMEZONE']
+        return None
+
+    @property
+    def is_readonly(self) -> bool:
+        # anonymous users cannot change anything but are not specifically marked as readonly
+        return False
+
+
 def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:
     return User.from_database(get_mutable_user(user_id, component_id))
 

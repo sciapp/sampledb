@@ -168,6 +168,7 @@ def create_app():
     app.register_blueprint(sampledb.frontend.frontend)
 
     login_manager.login_view = 'frontend.sign_in'
+    login_manager.anonymous_user = sampledb.logic.users.AnonymousUser
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
 

@@ -203,3 +203,71 @@ class PublicObjectPermissions(Resource):
             permissions=Permissions.READ if is_public else Permissions.NONE
         )
         return is_public, 200
+
+
+class AuthenticatedUserObjectPermissions(Resource):
+    @object_permissions_required(Permissions.READ)
+    def get(self, object_id: int):
+        permissions = object_permissions.get_object_permissions_for_all_users(
+            object_id=object_id
+        )
+        return permissions.name.lower(), 200
+
+    @object_permissions_required(Permissions.GRANT)
+    def put(self, object_id: int):
+        request_json = flask.request.get_json(force=True)
+        if not isinstance(request_json, str):
+            return {
+                "message": "JSON string body required"
+            }, 400
+        try:
+            permissions = Permissions.from_name(request_json)
+            if permissions not in {Permissions.NONE, Permissions.READ}:
+                raise ValueError("invalid permissions level")
+        except ValueError:
+            return {
+                "message": 'expected "none" or "read"'
+            }, 400
+        object_permissions.set_object_permissions_for_all_users(
+            object_id=object_id,
+            permissions=permissions
+        )
+        return permissions.name.lower(), 200
+
+
+class AnonymousUserObjectPermissions(Resource):
+    @object_permissions_required(Permissions.READ)
+    def get(self, object_id: int):
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return {
+                "message": "anonymous users are disabled"
+            }, 400
+        permissions = object_permissions.get_object_permissions_for_anonymous_users(
+            object_id=object_id
+        )
+        return permissions.name.lower(), 200
+
+    @object_permissions_required(Permissions.GRANT)
+    def put(self, object_id: int):
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return {
+                "message": "anonymous users are disabled"
+            }, 400
+        request_json = flask.request.get_json(force=True)
+        if not isinstance(request_json, str):
+            return {
+                "message": "JSON string body required"
+            }, 400
+        try:
+            permissions = Permissions.from_name(request_json)
+            if permissions not in {Permissions.NONE, Permissions.READ}:
+                raise ValueError("invalid permissions level")
+        except ValueError:
+            return {
+                "message": 'expected "none" or "read"'
+            }, 400
+        object_permissions.set_object_permissions_for_anonymous_users(
+            object_id=object_id,
+            permissions=permissions
+        )
+        return permissions.name.lower(), 200

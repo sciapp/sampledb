@@ -5,6 +5,7 @@
 
 import typing
 
+import flask
 import sqlalchemy
 
 from .. import db
@@ -14,7 +15,7 @@ from .default_permissions import get_default_permissions_for_users, get_default_
 from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, Action, Object
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, AnonymousUserObjectPermissions, Action, Object
 from .users import get_user
 from .permissions import ResourcePermissions
 
@@ -25,6 +26,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 object_permissions = ResourcePermissions(
     resource_id_name='object_id',
     all_user_permissions_table=AllUserObjectPermissions,
+    anonymous_user_permissions_table=AnonymousUserObjectPermissions,
     user_permissions_table=UserObjectPermissions,
     group_permissions_table=GroupObjectPermissions,
     project_permissions_table=ProjectObjectPermissions,
@@ -38,6 +40,14 @@ def get_object_permissions_for_all_users(object_id: int) -> Permissions:
 
 def set_object_permissions_for_all_users(object_id: int, permissions: Permissions) -> None:
     object_permissions.set_permissions_for_all_users(resource_id=object_id, permissions=permissions)
+
+
+def get_object_permissions_for_anonymous_users(object_id: int) -> Permissions:
+    return object_permissions.get_permissions_for_anonymous_users(resource_id=object_id)
+
+
+def set_object_permissions_for_anonymous_users(object_id: int, permissions: Permissions) -> None:
+    object_permissions.set_permissions_for_anonymous_users(resource_id=object_id, permissions=permissions)
 
 
 def get_object_permissions_for_users(
@@ -94,7 +104,24 @@ def _get_object_responsible_user_ids(object_id):
     return [user.id for user in instrument.responsible_users]
 
 
-def get_user_object_permissions(object_id: int, user_id: int, include_instrument_responsible_users: bool = True, include_groups: bool = True, include_projects: bool = True, include_readonly: bool = True, include_admin_permissions: bool = True):
+def get_user_object_permissions(
+        object_id: int,
+        user_id: typing.Optional[int],
+        include_instrument_responsible_users: bool = True,
+        include_groups: bool = True,
+        include_projects: bool = True,
+        include_readonly: bool = True,
+        include_admin_permissions: bool = True
+) -> Permissions:
+    # ensure the object exists to avoid returning permissions for non-existing objects
+    objects.check_object_exists(object_id=object_id)
+
+    if user_id is None:
+        if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return object_permissions.get_permissions_for_anonymous_users(resource_id=object_id)
+        else:
+            return Permissions.NONE
+
     user = get_user(user_id)
 
     if include_admin_permissions:
@@ -139,6 +166,8 @@ def get_user_object_permissions(object_id: int, user_id: int, include_instrument
         resource_id=object_id,
         user_id=user_id,
         include_all_users=True,
+        # user is not anonymous but may still benefit from anonymous user permissions
+        include_anonymous_users=flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
         include_groups=include_groups,
         include_projects=include_projects,
         # admin permissions have already been checked above
@@ -255,7 +284,7 @@ def get_object_info_with_permissions(
 
 
 def get_objects_with_permissions(
-        user_id: int,
+        user_id: typing.Optional[int],
         permissions: Permissions,
         filter_func: typing.Callable = lambda data: True,
         sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
@@ -274,12 +303,16 @@ def get_objects_with_permissions(
         name_only: bool = False,
         **kwargs
 ) -> typing.List[Object]:
+    if user_id is None:
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return []
+        user = None
+    else:
+        user = get_user(user_id)
 
-    user = get_user(user_id)
-
-    # readonly users may not have more than READ permissions
-    if user.is_readonly and permissions != Permissions.READ:
-        return []
+        # readonly users may not have more than READ permissions
+        if user.is_readonly and permissions != Permissions.READ:
+            return []
 
     if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
         # include federated equivalents for default action types
@@ -323,7 +356,7 @@ def get_objects_with_permissions(
         FROM objects_current AS o
         """
 
-    if not user.has_admin_permissions:
+    if user is None or not user.has_admin_permissions:
         stmt += """
         JOIN (
             SELECT

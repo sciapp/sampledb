@@ -23,6 +23,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 action_permissions = ResourcePermissions(
     resource_id_name='action_id',
     all_user_permissions_table=AllUserActionPermissions,
+    anonymous_user_permissions_table=None,
     user_permissions_table=UserActionPermissions,
     group_permissions_table=GroupActionPermissions,
     project_permissions_table=ProjectActionPermissions,
@@ -63,14 +64,17 @@ def set_project_action_permissions(action_id: int, project_id: int, permissions:
 
 
 def get_user_action_permissions(
-        action_id,
-        user_id,
+        action_id: int,
+        user_id: typing.Optional[int],
         *,
         include_groups: bool = True,
         include_projects: bool = True,
         include_admin_permissions: bool = True,
         include_instrument_responsible_users: bool = True
 ) -> Permissions:
+    if user_id is None:
+        return Permissions.NONE
+
     additional_permissions = Permissions.NONE
 
     # users have GRANT permissions for actions they own

@@ -264,6 +264,7 @@
   {% set show_administrators = True %}
   {% set show_instrument_scientists = instrument is not none %}
   {% set show_all_users = True %}
+  {% set show_anonymous_users = config['ENABLE_ANONYMOUS_USERS'] %}
   {% set read_permissions_description = _('Permission to view objects and their properties, files and comments.') %}
   {% set write_permissions_description = _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') %}
   {% set grant_permissions_description = _('Permission to grant permissions to other users. Includes Write permissions.') %}

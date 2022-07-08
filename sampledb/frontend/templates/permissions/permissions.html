@@ -55,9 +55,23 @@
     </tr>
     {% endif %}
 
+    {% if show_anonymous_users %}
+      <tr>
+        <td style="vertical-align: middle">{{ _('Anonymous Users') }}</td>
+        {% if user_may_edit %}
+          {{ permissions_table_fields('anonymous_user', anonymous_user_permissions, permissions_form.anonymous_user_permissions.choices | map(attribute=1) | list, false, permissions_form.anonymous_user_permissions.name) }}
+        {% else %}
+          {% set possible_anonymous_user_permissions = [Permissions.NONE, Permissions.READ] %}
+          {{ permissions_table_fields('anonymous_user', anonymous_user_permissions, possible_anonymous_user_permissions, true, none) }}
+        {% endif  %}
+      </tr>
+    {% elif user_may_edit %}
+      <input type="hidden" name="{{ permissions_form.anonymous_user_permissions.name }}" value="none" />
+    {% endif %}
+
     {% if show_all_users %}
       <tr>
-        <td style="vertical-align: middle">{{ _('Everyone') }}</td>
+        <td style="vertical-align: middle">{{ _('All Signed-In Users') }}</td>
         {% if user_may_edit %}
           {{ permissions_table_fields('all_user', all_user_permissions, permissions_form.all_user_permissions.choices | map(attribute=1) | list, false, permissions_form.all_user_permissions.name) }}
         {% else %}

@@ -237,5 +237,7 @@ Miscellaneous
      - If set, some potentially time consuming tasks such as sending emails will be performed in the background to reduce frontend latency or timeouts.
    * - SAMPLEDB_TIMEZONE
      - If set, the given timezone will be used for all users instead of using their browser timezone or the one set in their preferences.
+   * - SAMPLEDB_ENABLE_ANONYMOUS_USERS
+     - If set, objects may be set to be readable by anonymous users, without requiring them to sign in.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

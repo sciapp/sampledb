@@ -39,20 +39,24 @@ DEFAULT_SETTINGS = {
 }
 
 
-def get_user_settings(user_id: int) -> typing.Dict[str, typing.Any]:
+def get_user_settings(
+        user_id: typing.Optional[int]
+) -> typing.Dict[str, typing.Any]:
     """
     Get the settings for a user.
 
     This function will amend the user's settings with the default settings,
     so that code can rely on settings being available.
 
-    :param user_id: the ID of an existing user
+    :param user_id: the ID of an existing user, or None
     :return: the settings data
     :raise errors.UserDoesNotExistError: if the user does not exist
     """
+    verified_data = copy.deepcopy(DEFAULT_SETTINGS)
+    if user_id is None:
+        return verified_data
     # ensure the user exists
     users.get_user(user_id)
-    verified_data = copy.deepcopy(DEFAULT_SETTINGS)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is not None:
         verified_data.update(_verify_settings(settings.data))

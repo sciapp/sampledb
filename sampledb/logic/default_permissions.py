@@ -8,6 +8,7 @@ from ..models import Permissions, DefaultUserPermissions, DefaultGroupPermission
 default_permissions = ResourcePermissions(
     resource_id_name='creator_id',
     all_user_permissions_table=AllUserDefaultPermissions,
+    anonymous_user_permissions_table=None,
     user_permissions_table=DefaultUserPermissions,
     group_permissions_table=DefaultGroupPermissions,
     project_permissions_table=DefaultProjectPermissions,
@@ -69,3 +70,7 @@ def get_default_permissions_for_all_users(creator_id: int) -> Permissions:
 
 def set_default_permissions_for_all_users(creator_id: int, permissions: Permissions) -> None:
     return default_permissions.set_permissions_for_all_users(resource_id=creator_id, permissions=permissions)
+
+
+def get_default_permissions_for_anonymous_users(creator_id: int) -> Permissions:
+    return default_permissions.get_permissions_for_anonymous_users(resource_id=creator_id)

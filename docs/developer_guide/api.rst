@@ -281,12 +281,12 @@ Object Permissions
 ------------------
 
 
-Reading whether an object is public
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reading whether an object is readable by all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/permissions/public
 
-    Get whether or not an object is public.
+    Get whether or not an object is readable by all authenticated users.
 
     **Example request**:
 
@@ -311,12 +311,12 @@ Reading whether an object is public
     :statuscode 404: the object does not exist
 
 
-Setting whether an object is public
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setting whether an object is readable by all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:put:: /api/v1/objects/(int:object_id)/permissions/public
 
-    Get whether or not an object is public.
+    Set whether or not an object should be readable by all authenticated users.
 
     **Example request**:
 
@@ -337,6 +337,130 @@ Setting whether an object is public
         Content-Type: application/json
 
         false
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Getting the permissions for all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/authenticated_users
+
+    Get the permissions for an object for all authenticated users.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/authenticated_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "none"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting the permissions for all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/authenticated_users
+
+    Set the permissions for an object for all authenticated users.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/authenticated_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "read"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Getting the permissions for anonymous users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/anonymous_users
+
+    Get the permissions for an object for anonymous users, if anonymous users are enabled.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/anonymous_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "none"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting the permissions for anonymous users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/anonymous_users
+
+    Set the permissions for an object for anonymous users, if anonymous users are enabled.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/anonymous_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "read"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
 
     :statuscode 200: no error
     :statuscode 403: the user does not have GRANT permissions for this object

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-07-13 13:25+0200\n"
+"POT-Creation-Date: 2022-07-13 14:11+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3260,6 +3260,9 @@ msgstr "Zeitpunktsformat für datetime"
 msgid "Datetime format for moment"
 msgstr "Zeitpunktsformat für moment"
 
+msgid "Datetime format for moment output"
+msgstr "Zeitpunktsformat für moment-Ausgabe"
+
 msgid "Enabled for input"
 msgstr "Für Eingabe aktiviert"
 
@@ -4497,8 +4500,11 @@ msgstr "Sondergruppen"
 msgid "Administrators"
 msgstr "Administratoren"
 
-msgid "Everyone"
-msgstr "Jeder Nutzer"
+msgid "Anonymous Users"
+msgstr "Anonyme Nutzer"
+
+msgid "All Signed-In Users"
+msgstr "Alle angemeldeten Nutzer"
 
 msgid "Add User"
 msgstr "Nutzer hinzufügen"

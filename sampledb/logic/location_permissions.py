@@ -18,6 +18,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 location_permissions = ResourcePermissions(
     resource_id_name='location_id',
     all_user_permissions_table=AllUserLocationPermissions,
+    anonymous_user_permissions_table=None,
     user_permissions_table=UserLocationPermissions,
     group_permissions_table=GroupLocationPermissions,
     project_permissions_table=ProjectLocationPermissions,
@@ -34,6 +35,8 @@ def get_user_location_permissions(
         include_admin_permissions: bool = True
 ) -> Permissions:
     additional_permissions = Permissions.NONE
+    if user_id is None:
+        return Permissions.NONE
 
     user = users.get_user(user_id)
     if user.is_readonly:
@@ -93,7 +96,13 @@ def set_project_location_permissions(location_id: int, project_id: int, permissi
     location_permissions.set_permissions_for_project(resource_id=location_id, project_id=project_id, permissions=permissions)
 
 
-def get_locations_with_user_permissions(user_id: int, permissions: Permissions) -> typing.List['locations.Location']:
+def get_locations_with_user_permissions(
+        user_id: typing.Optional[int],
+        permissions: Permissions
+) -> typing.List['locations.Location']:
+    if user_id is None:
+        return []
+
     all_locations = locations.get_locations()
     if permissions in Permissions.NONE:
         return all_locations

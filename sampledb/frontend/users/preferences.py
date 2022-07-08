@@ -26,7 +26,7 @@ from ...logic.authentication import add_authentication_method, remove_authentica
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
-from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
+from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
 from ...logic.projects import get_user_projects, get_project, get_project_id_hierarchy_list
 from ...logic.groups import get_user_groups, get_group
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
@@ -136,6 +136,7 @@ def change_preferences(user, user_id):
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
     project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
     all_user_permissions = get_default_permissions_for_all_users(creator_id=flask_login.current_user.id)
+    anonymous_user_permissions = get_default_permissions_for_anonymous_users(creator_id=flask_login.current_user.id)
 
     (
         add_user_permissions_form,
@@ -146,6 +147,7 @@ def change_preferences(user, user_id):
         logic.default_permissions.default_permissions,
         flask_login.current_user.id,
         all_user_permissions,
+        anonymous_user_permissions,
         user_permissions,
         group_permissions,
         project_permissions

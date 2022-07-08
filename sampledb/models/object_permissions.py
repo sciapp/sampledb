@@ -56,3 +56,10 @@ class AllUserObjectPermissions(db.Model):
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
     permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)
+
+
+class AnonymousUserObjectPermissions(db.Model):
+    __tablename__ = 'anonymous_user_object_permissions'
+
+    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)

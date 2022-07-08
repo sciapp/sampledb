@@ -66,7 +66,16 @@ def user():
     return user
 
 
-def test_single_object(sample_action, user):
+@pytest.fixture
+def user2():
+    user = User(name="User2", email="example@example.com", type=UserType.PERSON)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    assert user.id is not None
+    return user
+
+
+def test_single_object(sample_action, user, user2):
     data = {
         'name': {
             '_type': 'text',
@@ -78,9 +87,17 @@ def test_single_object(sample_action, user):
     assert tree == {
         'object_id': object.id,
         'component_uuid': None,
+        'permissions': 'grant',
         'path': [(object.id, None)],
         'referenced_objects': [],
         'referencing_objects': []
+    }
+    tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user2.id)
+    assert tree == {
+        'object_id': object.id,
+        'component_uuid': None,
+        'permissions': 'none',
+        'path': [(object.id, None)],
     }
 
 
@@ -107,12 +124,14 @@ def test_object_with_measurement(sample_action, measurement_action, user):
     assert tree == {
         'object_id': object.id,
         'component_uuid': None,
+        'permissions': 'grant',
         'path': [(object.id, None)],
         'referenced_objects': [],
         'referencing_objects': [
             {
                 'object_id': measurement.id,
                 'component_uuid': None,
+                'permissions': 'grant',
                 'path': [(object.id, None), -2, (measurement.id, None)],
                 'referenced_objects': [],
                 'referencing_objects': []
@@ -144,12 +163,14 @@ def test_object_with_sample(sample_action, user):
     assert tree == {
         'object_id': object.id,
         'component_uuid': None,
+        'permissions': 'grant',
         'path': [(object.id, None)],
         'referenced_objects': [],
         'referencing_objects': [
             {
                 'object_id': sample.id,
                 'component_uuid': None,
+                'permissions': 'grant',
                 'path': [(object.id, None), -2, (sample.id, None)],
                 'referenced_objects': [],
                 'referencing_objects': []
@@ -192,11 +213,13 @@ def test_object_with_cyclic_sample(sample_action, user):
     assert tree == {
         'object_id': object.id,
         'component_uuid': None,
+        'permissions': 'grant',
         'path': [(object.id, None)],
         'referenced_objects': [
             {
                 'object_id': sample.id,
                 'component_uuid': None,
+                'permissions': 'grant',
                 'path': [(object.id, None), -1, (sample.id, None)],
                 'referenced_objects': [],
                 'referencing_objects': []
@@ -206,6 +229,7 @@ def test_object_with_cyclic_sample(sample_action, user):
             {
                 'object_id': sample.id,
                 'component_uuid': None,
+                'permissions': 'grant',
                 'path': [(object.id, None), -1, (sample.id, None)],
             }
         ]

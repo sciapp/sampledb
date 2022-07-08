@@ -376,7 +376,7 @@ def test_get_projects_object_permissions(flask_server, auth, user, other_user, o
     }
 
 
-def test_set_object_public(flask_server, auth, object_id):
+def test_get_object_public(flask_server, auth, object_id):
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() is False
@@ -406,3 +406,84 @@ def test_set_object_public(flask_server, auth, object_id):
         "message": "JSON boolean body required"
     }
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+
+
+def test_get_all_user_object_permissions(flask_server, auth, object_id):
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "none"
+
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object_id, sampledb.models.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "read"
+
+
+def test_set_all_user_object_permissions(flask_server, auth, object_id):
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json="read", auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "read"
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json="none", auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "none"
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json=True, auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {
+        "message": "JSON string body required"
+    }
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+
+
+def test_get_anonymous_user_object_permissions(flask_server, auth, object_id):
+    flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "none"
+
+    sampledb.logic.object_permissions.set_object_permissions_for_anonymous_users(object_id, sampledb.models.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "read"
+
+    flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {
+        "message": "anonymous users are disabled"
+    }
+
+
+def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
+    flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json="read", auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "read"
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json="none", auth=auth)
+    assert r.status_code == 200
+    assert r.json() == "none"
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json=True, auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {
+        "message": "JSON string body required"
+    }
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+
+    flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {
+        "message": "anonymous users are disabled"
+    }

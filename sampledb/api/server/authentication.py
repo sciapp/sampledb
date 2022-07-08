@@ -53,4 +53,9 @@ def object_permissions_required(permissions: Permissions):
 
     :param permissions: the required object permissions
     """
-    return object_permissions_required_generic(permissions, multi_auth, lambda: flask.g.user.id)
+    return object_permissions_required_generic(
+        required_object_permissions=permissions,
+        auth_extension=multi_auth,
+        user_id_callable=lambda: flask.g.user.id,
+        may_enable_anonymous_users=False
+    )

@@ -39,6 +39,7 @@ class ResourcePermissions(object):
             self,
             resource_id_name: str,
             all_user_permissions_table: typing.Any,
+            anonymous_user_permissions_table: typing.Any,
             user_permissions_table: typing.Any,
             group_permissions_table: typing.Any,
             project_permissions_table: typing.Any,
@@ -46,10 +47,60 @@ class ResourcePermissions(object):
     ) -> None:
         self._resource_id_name = resource_id_name
         self._all_user_permissions_table = all_user_permissions_table
+        self._anonymous_user_permissions_table = anonymous_user_permissions_table
         self._user_permissions_table = user_permissions_table
         self._group_permissions_table = group_permissions_table
         self._project_permissions_table = project_permissions_table
         self._check_resource_exists = check_resource_exists
+
+    def _get_user_independent_permissions(
+            self,
+            resource_id: int,
+            table: typing.Any
+    ) -> Permissions:
+        """
+        Return the permissions for a specific resource from a user independent table.
+
+        :param resource_id: the ID of an existing resource
+        :param table: the permissions table
+        :return: the user independent permissions
+        """
+        if table is None:
+            return Permissions.NONE
+        permissions = table.query.filter_by(**{self._resource_id_name: resource_id}).first()
+        if permissions is None:
+            self._check_resource_exists(resource_id)
+            return Permissions.NONE
+        return permissions.permissions
+
+    def _set_user_independent_permissions(
+            self,
+            resource_id: int,
+            permissions: Permissions,
+            table: typing.Any
+    ) -> None:
+        """
+        Set the permissions for a specific resource in a user independent table.
+
+        :param resource_id: the ID of an existing resource
+        :param permissions: the user independent permissions
+        :param table: the permissions table
+        """
+        self._check_resource_exists(resource_id)
+
+        if table is None:
+            return
+
+        if permissions == Permissions.NONE:
+            table.query.filter_by(**{self._resource_id_name: resource_id}).delete()
+        else:
+            all_user_permissions = table.query.filter_by(**{self._resource_id_name: resource_id}).first()
+            if all_user_permissions is None:
+                all_user_permissions = table(permissions=permissions, **{self._resource_id_name: resource_id})
+            else:
+                all_user_permissions.permissions = permissions
+            db.session.add(all_user_permissions)
+        db.session.commit()
 
     def get_permissions_for_all_users(
             self,
@@ -61,13 +112,7 @@ class ResourcePermissions(object):
         :param resource_id: the ID of an existing resource
         :return: the permissions for all users
         """
-        self._check_resource_exists(resource_id)
-
-        all_user_permissions = self._all_user_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).first()
-        if all_user_permissions is None:
-            self._check_resource_exists(resource_id)
-            return Permissions.NONE
-        return all_user_permissions.permissions
+        return self._get_user_independent_permissions(resource_id, self._all_user_permissions_table)
 
     def set_permissions_for_all_users(
             self,
@@ -80,18 +125,32 @@ class ResourcePermissions(object):
         :param resource_id: the ID of an existing resource
         :param permissions: the permissions for all users
         """
-        self._check_resource_exists(resource_id)
+        self._set_user_independent_permissions(resource_id, permissions, self._all_user_permissions_table)
 
-        if permissions == Permissions.NONE:
-            self._all_user_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).delete()
-        else:
-            all_user_permissions = self._all_user_permissions_table.query.filter_by(**{self._resource_id_name: resource_id}).first()
-            if all_user_permissions is None:
-                all_user_permissions = self._all_user_permissions_table(permissions=permissions, **{self._resource_id_name: resource_id})
-            else:
-                all_user_permissions.permissions = permissions
-            db.session.add(all_user_permissions)
-        db.session.commit()
+    def get_permissions_for_anonymous_users(
+            self,
+            resource_id: int
+    ) -> Permissions:
+        """
+        Return the permissions anonymous users have for a specific resource.
+
+        :param resource_id: the ID of an existing resource
+        :return: the permissions for anonymous users
+        """
+        return self._get_user_independent_permissions(resource_id, self._anonymous_user_permissions_table)
+
+    def set_permissions_for_anonymous_users(
+            self,
+            resource_id: int,
+            permissions: Permissions
+    ) -> None:
+        """
+        Set the permissions all users have for a specific resource.
+
+        :param resource_id: the ID of an existing resource
+        :param permissions: the permissions for anonymous users
+        """
+        self._set_user_independent_permissions(resource_id, permissions, self._anonymous_user_permissions_table)
 
     def get_permissions_for_users(
             self,
@@ -311,9 +370,10 @@ class ResourcePermissions(object):
     def get_permissions_for_user(
             self,
             resource_id: int,
-            user_id: int,
+            user_id: typing.Optional[int],
             *,
             include_all_users: bool = False,
+            include_anonymous_users: bool = False,
             include_groups: bool = False,
             include_projects: bool = False,
             include_admin_permissions: bool = False,
@@ -331,6 +391,7 @@ class ResourcePermissions(object):
         :param resource_id: the ID of an existing resource
         :param user_id: the ID of an existing user
         :param include_all_users: whether permissions for all users should be included
+        :param include_anonymous_users: whether permissions for anonymous users should be included
         :param include_groups: whether groups that the users are members of should be included
         :param include_projects: whether projects that the users are members of should be included
         :param include_admin_permissions: whether admin permissions should be included
@@ -339,11 +400,18 @@ class ResourcePermissions(object):
         :return: the combined permissions for the given user
         """
         self._check_resource_exists(resource_id)
-        # ensure that the user can be found
-        user = users.get_user(user_id)
 
         permissions = additional_permissions
         max_permissions = Permissions.GRANT
+
+        if max_permissions not in permissions and include_anonymous_users:
+            permissions = max(permissions, self.get_permissions_for_anonymous_users(resource_id))
+
+        if user_id is None:
+            return permissions
+
+        # ensure that the user can be found
+        user = users.get_user(user_id)
 
         # readonly users may never have more than READ permissions
         if user.is_readonly and limit_readonly_users:

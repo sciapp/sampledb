@@ -17,7 +17,10 @@ import flask
 from .. import logic
 
 
-def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> typing.Dict[str, bytes]:
+def get_archive_files(
+        user_id: typing.Optional[int],
+        object_ids: typing.Optional[typing.List[int]] = None
+) -> typing.Dict[str, bytes]:
     archive_files = {}
     if object_ids is None:
         relevant_instrument_ids = {
@@ -143,10 +146,10 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
     action_infos = []
     for action_info in logic.actions.get_actions():
         if action_info.id in relevant_action_ids:
-            relevant_user_ids.add(action_info.user_id)
-            relevant_instrument_ids.add(action_info.instrument_id)
             action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
             if logic.action_permissions.Permissions.READ in action_permissions:
+                relevant_user_ids.add(action_info.user_id)
+                relevant_instrument_ids.add(action_info.instrument_id)
                 action_translation = logic.action_translations.get_action_translation_for_action_in_language(
                     action_id=action_info.id,
                     language_id=logic.languages.Language.ENGLISH
@@ -243,13 +246,19 @@ def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]
     user_infos = []
     for user_info in logic.users.get_users(exclude_hidden=False):
         if user_info.id in relevant_user_ids:
-            user_infos.append({
-                'id': user_info.id,
-                'name': user_info.name,
-                'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None,
-                'affiliation': user_info.affiliation if user_info.affiliation else None,
-                'role': user_info.role if user_info.role else None
-            })
+            if user_id is None:
+                user_infos.append({
+                    'id': user_info.id,
+                    'name': user_info.name
+                })
+            else:
+                user_infos.append({
+                    'id': user_info.id,
+                    'name': user_info.name,
+                    'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None,
+                    'affiliation': user_info.affiliation if user_info.affiliation else None,
+                    'role': user_info.role if user_info.role else None
+                })
     infos['users'] = user_infos
 
     locations = logic.locations.get_locations()
@@ -302,8 +311,13 @@ The file data.json contains information on objects from the SampleDB instance at
         readme_text += """
 The objects directory contains files uploaded for the objects in data.json.
 """
-    readme_text += f"""
+    if user_id is not None:
+        readme_text += f"""
 This archive was created for user #{user_id} at {datetime.datetime.now().isoformat()}.
+"""
+    else:
+        readme_text += f"""
+This archive was created for an anonymous user at {datetime.datetime.now().isoformat()}.
 """
 
     archive_files["sampledb_export/README.txt"] = readme_text
@@ -315,7 +329,10 @@ This archive was created for user #{user_id} at {datetime.datetime.now().isoform
     return archive_files
 
 
-def get_zip_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> bytes:
+def get_zip_archive(
+        user_id: typing.Optional[int],
+        object_ids: typing.Optional[typing.List[int]] = None
+) -> bytes:
     archive_files = get_archive_files(user_id, object_ids=object_ids)
     zip_bytes = io.BytesIO()
     with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
@@ -324,7 +341,10 @@ def get_zip_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] 
     return zip_bytes.getvalue()
 
 
-def get_tar_gz_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> bytes:
+def get_tar_gz_archive(
+        user_id: typing.Optional[int],
+        object_ids: typing.Optional[typing.List[int]] = None
+) -> bytes:
     archive_files = get_archive_files(user_id, object_ids=object_ids)
     tar_bytes = io.BytesIO()
     with tarfile.open('sampledb_export.tar.gz', 'w:gz', fileobj=tar_bytes) as tar_file:
