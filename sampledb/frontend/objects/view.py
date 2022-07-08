@@ -74,11 +74,7 @@ def object(object_id):
     user_may_grant = Permissions.GRANT in user_permissions
 
     mode = flask.request.args.get('mode', '')
-    if not user_may_edit and mode == 'edit':
-        if object.fed_object_id is not None:
-            flask.flash(_('Editing imported objects is not yet supported.'), 'error')
-        return flask.abort(403)
-    if not user_may_edit and mode == 'upgrade':
+    if not user_may_edit and mode in {'edit', 'upgrade'}:
         if object.fed_object_id is not None:
             flask.flash(_('Editing imported objects is not yet supported.'), 'error')
         return flask.abort(403)
@@ -754,10 +750,22 @@ def export_data(object_id):
 @flask_login.login_required
 def new_object():
     check_current_user_is_not_readonly()
+
     action_id = flask.request.args.get('action_id', None)
+    if action_id is not None:
+        try:
+            action_id = int(action_id)
+        except ValueError:
+            action_id = None
+
     previous_object_id = flask.request.args.get('previous_object_id', None)
+    if previous_object_id is not None:
+        try:
+            previous_object_id = int(previous_object_id)
+        except ValueError:
+            previous_object_id = None
+
     if not action_id and not previous_object_id:
-        # TODO: handle error
         return flask.abort(404)
 
     sample_id = flask.request.args.get('sample_id', None)
@@ -774,7 +782,7 @@ def new_object():
             flask.flash(_("You do not have the required permissions to use this object as a template."), 'error')
             return flask.abort(403)
         if action_id:
-            if action_id != str(previous_object.action_id):
+            if action_id != previous_object.action_id:
                 flask.flash(_("This object was created with a different action."), 'error')
                 return flask.abort(400)
             else:
