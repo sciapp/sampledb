@@ -26,6 +26,7 @@ Currently in development.
 - Allow setting minimum and maximum values for quantities
 - Allow setting an instance-wide timezone using ``SAMPLEDB_TIMEZONE``
 - Added array style ``full_width_table``
+- Allow selecting a unit when entering a quantity
 
 Version 0.20
 ------------

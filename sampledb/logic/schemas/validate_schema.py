@@ -10,12 +10,15 @@ import typing
 import urllib.parse
 import re
 
+import pint
+
 from ..errors import ValidationError, ActionDoesNotExistError, InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
 from .utils import units_are_valid
 from .validate import validate
 from .templates import substitute_templates
 from .conditions import validate_condition_schema
 from ..languages import get_languages
+from .. import datatypes
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -582,10 +585,28 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
         for language in get_languages()
     }
 
-    if not isinstance(schema['units'], str):
-        raise ValidationError('units must be str', path)
-    elif not units_are_valid(schema['units']):
-        raise ValidationError('invalid units', path)
+    if isinstance(schema['units'], str):
+        if not units_are_valid(schema['units']):
+            raise ValidationError('invalid units', path)
+    elif isinstance(schema['units'], list) and len(schema['units']) > 0:
+        dimensionality = None
+        pint_units = []
+        for unit in schema['units']:
+            if not isinstance(unit, str):
+                raise ValidationError('units must be string or list of strings', path)
+            try:
+                quantity = datatypes.Quantity(1.0, units=unit)
+            except pint.UndefinedUnitError:
+                raise ValidationError('invalid units', path)
+            if dimensionality is None:
+                dimensionality = quantity.dimensionality
+            elif quantity.dimensionality != dimensionality:
+                raise ValidationError('units must be for same dimensionality', path)
+            if quantity.pint_units in pint_units:
+                raise ValidationError('units must not be duplicate', path)
+            pint_units.append(quantity.pint_units)
+    else:
+        raise ValidationError('units must be string or list of strings', path)
 
     if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
         raise ValidationError('default must be float or int', path)

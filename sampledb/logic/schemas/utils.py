@@ -21,7 +21,9 @@ def units_are_valid(units: str) -> bool:
         return False
 
 
-def get_dimensionality_for_units(units: str) -> str:
+def get_dimensionality_for_units(
+        units: typing.Union[str, typing.List[str]]
+) -> str:
     """
     Returns the units' dimensionality in the dimensionality syntax of the pint package.
 
@@ -29,6 +31,11 @@ def get_dimensionality_for_units(units: str) -> str:
     :return: dimensionality as string
     :raise errors.UndefinedUnitError: if the units are undefined
     """
+    if isinstance(units, list):
+        if len(units) > 0:
+            units = units[0]
+        else:
+            units = '1'
     try:
         return str(ureg.Unit(units).dimensionality)
     except pint.UndefinedUnitError:

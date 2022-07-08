@@ -275,7 +275,7 @@ def custom_format_quantity(
     if data is None:
         mdash = '\u2014'
         return mdash
-    if schema.get('units', '1') == '1':
+    if data.get('units', '1') in {'1', ''}:
         return custom_format_number(data.get('magnitude_in_base_units', 0), schema.get('display_digits', None))
     quantity = Quantity.from_json(data)
     narrow_non_breaking_space = '\u202f'

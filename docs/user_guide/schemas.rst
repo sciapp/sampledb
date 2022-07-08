@@ -568,12 +568,12 @@ A note to display below the field when creating or editing an object using this 
 default
 ^^^^^^^
 
-The default value for this property as a number. This should be the value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters.
+The default value for this property as a number. This should be the value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters. If there are multiple units, the first one will be used for the default.
 
 units
 ^^^^^
 
-A JSON string containing the units for this property, e.g. ``nm`` or ``degC``.
+A JSON array of strings or a single string containing the units for this property, e.g. ``"nm"``,  ``"degC"`` or ``["cm", "mm"]`.
 
 .. note:: These units will be parsed using the `pint Python Package <https://pint.readthedocs.io/en/latest/index.html>`_ with additional `units defined by SampleDB <https://github.com/sciapp/sampledb/blob/develop/sampledb/logic/unit_definitions.txt>`_.
 

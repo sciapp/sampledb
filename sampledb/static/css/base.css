@@ -1080,3 +1080,8 @@ code {
     border-bottom-left-radius: 0;
     margin-bottom: 2px;
 }
+
+.unit-selectpicker {
+    min-width: 100px;
+    text-align: left;
+}
