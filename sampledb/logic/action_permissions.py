@@ -96,31 +96,6 @@ def get_user_action_permissions(
     )
 
 
-def action_is_public(action_id: int) -> bool:
-    """
-    Return whether an action is readable for all users.
-
-    :param action_id: the ID of an existing action
-    :return: whether the action is public or not
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    return Permissions.READ in get_action_permissions_for_all_users(action_id)
-
-
-def set_action_public(action_id: int, is_public: bool = True) -> None:
-    """
-    Set that an action is readable for all users.
-
-    :param action_id: the ID of an existing action
-    :param is_public: whether the action should be public or not
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    # ensure that the action can be found
-    set_action_permissions_for_all_users(action_id, Permissions.READ if is_public else Permissions.NONE)
-
-
 def _get_action_responsible_user_ids(action_id: int) -> typing.List[int]:
     try:
         action = actions.get_action(action_id)

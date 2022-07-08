@@ -174,14 +174,14 @@ This example shows how Markdown can be used for instrument Notes.
 
         set_action_translation(Language.ENGLISH, instrument_action.id, "Sample Creation", "This is an example action")
 
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         independent_action = create_action(
             action_type_id=ActionType.SAMPLE_CREATION,
             schema=schema
         )
         set_action_translation(Language.ENGLISH, independent_action.id, "Alternative Process", "This is an example action")
 
-        sampledb.logic.action_permissions.set_action_public(independent_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(independent_action.id, sampledb.models.Permissions.READ)
         with open(os.path.join(schema_directory, 'ombe_measurement_batch.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             batch_schema = json.load(schema_file)
         action = create_action(
@@ -191,7 +191,7 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, action.id, "Sample Creation (Batch)", "This is an example action")
 
-        sampledb.logic.action_permissions.set_action_public(action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         with open(os.path.join(objects_directory, 'ombe-1.sampledb.json'), 'r', encoding='utf-8') as data_file:
@@ -231,7 +231,7 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, instrument_action.id, "XRR Measurement", "", )
 
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         with open(os.path.join(schema_directory, 'searchable_quantity.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
         action = create_action(
@@ -240,7 +240,7 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, action.id, "Searchable Object", "")
 
-        sampledb.logic.action_permissions.set_action_public(action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         independent_object = sampledb.logic.objects.create_object(data={
             "name": {
                 "_type": "text",
@@ -290,7 +290,7 @@ This example shows how Markdown can be used for instrument Notes.
             instrument_id=instrument.id
         )
         set_action_translation(Language.ENGLISH, instrument_action.id, "Perform Measurement", "")
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         instrument = create_instrument()
@@ -304,7 +304,7 @@ This example shows how Markdown can be used for instrument Notes.
             instrument_id=instrument.id
         )
         set_action_translation(Language.ENGLISH, instrument_action.id, "Perform Measurement", "")
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         instrument = create_instrument()
@@ -318,7 +318,7 @@ This example shows how Markdown can be used for instrument Notes.
             instrument_id=instrument.id
         )
         set_action_translation(Language.ENGLISH, instrument_action.id, "Perform Measurement", "")
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         with open(os.path.join(schema_directory, 'other_sample.sampledb.json'), 'r', encoding='utf-8') as schema_file:
@@ -328,7 +328,7 @@ This example shows how Markdown can be used for instrument Notes.
             schema=schema
         )
         set_action_translation(Language.ENGLISH, action.id, "Other Sample", "", )
-        sampledb.logic.action_permissions.set_action_public(action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         sample_action = sampledb.logic.actions.create_action(
@@ -351,7 +351,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         )
         set_action_translation(Language.ENGLISH, sample_action.id, name="sample_action", description="")
-        sampledb.logic.action_permissions.set_action_public(sample_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(sample_action.id, sampledb.models.Permissions.READ)
         measurement_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.MEASUREMENT,
             schema={
@@ -378,7 +378,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         )
         set_action_translation(Language.ENGLISH, measurement_action.id, name="measurement_action", description="")
-        sampledb.logic.action_permissions.set_action_public(measurement_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(measurement_action.id, sampledb.models.Permissions.READ)
         data = {
             'name': {
                 '_type': 'text',
@@ -386,7 +386,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         }
         object = sampledb.logic.objects.create_object(sample_action.id, data, basic_user.id)
-        sampledb.logic.object_permissions.set_object_public(object.id, True)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.READ)
         data = {
             'name': {
                 '_type': 'text',
@@ -398,7 +398,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         }
         sample = sampledb.logic.objects.create_object(sample_action.id, data, basic_user.id)
-        sampledb.logic.object_permissions.set_object_public(sample.id, True)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(sample.id, sampledb.models.Permissions.READ)
         data = {
             'name': {
                 '_type': 'text',
@@ -426,7 +426,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         }
         measurement = sampledb.logic.objects.create_object(measurement_action.id, data, basic_user.id)
-        sampledb.logic.object_permissions.set_object_public(measurement.id, True)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(measurement.id, sampledb.models.Permissions.READ)
         data = {
             'name': {
                 '_type': 'text',
@@ -442,7 +442,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         }
         measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
-        sampledb.logic.object_permissions.set_object_public(measurement.id, True)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(measurement.id, sampledb.models.Permissions.READ)
 
         with open(os.path.join(schema_directory, 'plotly.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
@@ -452,7 +452,7 @@ This example shows how Markdown can be used for instrument Notes.
             instrument_id=instrument.id
         )
         set_action_translation(Language.ENGLISH, plotly_action.id, name="Plotly Example Action", description="")
-        sampledb.logic.action_permissions.set_action_public(plotly_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(plotly_action.id, sampledb.models.Permissions.READ)
 
         with open(os.path.join(objects_directory, 'plotly-example-data1.sampledb.json'), 'r', encoding='utf-8') as data_file:
             example_data = json.load(data_file)
@@ -468,7 +468,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         }
         plotly_object = sampledb.logic.objects.create_object(plotly_action.id, data, basic_user.id)
-        sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(plotly_object.id, sampledb.models.Permissions.READ)
 
         with open(os.path.join(schema_directory, 'plotly_array.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
@@ -477,7 +477,7 @@ This example shows how Markdown can be used for instrument Notes.
             schema=schema
         )
         set_action_translation(Language.ENGLISH, plotly_array_action.id, name="Plotly Array Example Action", description="")
-        sampledb.logic.action_permissions.set_action_public(plotly_array_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(plotly_array_action.id, sampledb.models.Permissions.READ)
 
         with open(os.path.join(objects_directory, 'plotly-example-data2.sampledb.json'), 'r', encoding='utf-8') as data_file:
             example_data2 = json.load(data_file)
@@ -505,7 +505,7 @@ This example shows how Markdown can be used for instrument Notes.
             ]
         }
         plotly_object = sampledb.logic.objects.create_object(plotly_array_action.id, data, basic_user.id)
-        sampledb.logic.object_permissions.set_object_public(plotly_object.id, True)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(plotly_object.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         campus = sampledb.logic.locations.create_location({"en": "Campus"}, {"en": "Max Mustermann Campus"}, None, instrument_responsible_user.id)
@@ -598,7 +598,7 @@ This example shows how Markdown can be used for instrument Notes.
             }
         )
         set_action_translation(Language.ENGLISH, action.id, name="Conditions Demo Action", description="")
-        sampledb.logic.action_permissions.set_action_public(action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
 
         UUID = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
         component = sampledb.logic.components.add_component(UUID, 'Example SampleDB', None, 'Example component database for demonstration purposes. Do not expect it to function.')

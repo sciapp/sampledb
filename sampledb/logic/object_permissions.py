@@ -82,14 +82,6 @@ def set_project_object_permissions(object_id: int, project_id: int, permissions:
     object_permissions.set_permissions_for_project(resource_id=object_id, project_id=project_id, permissions=permissions)
 
 
-def object_is_public(object_id: int) -> bool:
-    return Permissions.READ in get_object_permissions_for_all_users(object_id=object_id)
-
-
-def set_object_public(object_id: int, is_public: bool = True) -> None:
-    set_object_permissions_for_all_users(object_id, Permissions.READ if is_public else Permissions.NONE)
-
-
 def _get_object_responsible_user_ids(object_id):
     object = objects.get_object(object_id)
     try:

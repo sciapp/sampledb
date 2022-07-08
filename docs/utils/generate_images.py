@@ -571,7 +571,7 @@ try:
             name="Sample Creation",
             description="This is an example action"
         )
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         data = {
             'name': {
                 '_type': 'text',

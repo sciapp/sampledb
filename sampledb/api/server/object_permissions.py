@@ -185,8 +185,8 @@ class ProjectsObjectPermissions(Resource):
 class PublicObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
     def get(self, object_id: int):
-        is_public = object_permissions.object_is_public(
-            object_id=object_id,
+        is_public = Permissions.READ in object_permissions.get_object_permissions_for_all_users(
+            object_id=object_id
         )
         return is_public, 200
 
@@ -198,5 +198,8 @@ class PublicObjectPermissions(Resource):
                 "message": "JSON boolean body required"
             }, 400
         is_public = bool(request_json)
-        object_permissions.set_object_public(object_id, is_public)
+        object_permissions.set_object_permissions_for_all_users(
+            object_id=object_id,
+            permissions=Permissions.READ if is_public else Permissions.NONE
+        )
         return is_public, 200

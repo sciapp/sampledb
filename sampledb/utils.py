@@ -49,7 +49,7 @@ def object_permissions_required(
                 return flask.abort(404)
             except logic.errors.ObjectVersionDoesNotExistError:
                 return flask.abort(404)
-            if not (logic.object_permissions.object_is_public(object_id) and required_object_permissions in Permissions.READ):
+            if required_object_permissions not in logic.object_permissions.get_object_permissions_for_all_users(object_id):
                 user_id = user_id_callable()
                 user = logic.users.get_user(user_id)
                 if user.is_readonly and required_object_permissions not in Permissions.READ:
