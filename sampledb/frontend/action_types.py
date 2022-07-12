@@ -7,13 +7,14 @@ import flask
 import flask_login
 import json
 from flask_wtf import FlaskForm
-from wtforms.fields import StringField, BooleanField
+from wtforms.fields import StringField, BooleanField, SelectField
 from wtforms.validators import DataRequired
 from flask_babel import _
 
 from . import frontend
 from .. import logic
 from .utils import check_current_user_is_not_readonly
+from ..logic.actions import SciCatExportType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -92,6 +93,12 @@ class ActionTypeForm(FlaskForm):
     enable_project_link = BooleanField()
     disable_create_objects = BooleanField()
     is_template = BooleanField()
+    scicat_export_type = SelectField(choices=[
+        ('none', '—'),
+        (SciCatExportType.SAMPLE.name.lower(), _('Sample')),
+        (SciCatExportType.RAW_DATASET.name.lower(), _('Raw Dataset')),
+        (SciCatExportType.DERIVED_DATASET.name.lower(), _('Derived Dataset')),
+    ])
 
 
 def show_action_type_form(type_id):
@@ -143,6 +150,10 @@ def show_action_type_form(type_id):
             action_type_form.enable_project_link.data = action_type.enable_project_link
             action_type_form.disable_create_objects.data = action_type.disable_create_objects
             action_type_form.is_template.data = action_type.is_template
+            if action_type.scicat_export_type is None:
+                action_type_form.scicat_export_type.data = 'none'
+            else:
+                action_type_form.scicat_export_type.data = action_type.scicat_export_type.name.lower()
 
     if action_type_form.validate_on_submit():
         if type_id is None:
@@ -197,7 +208,15 @@ def show_action_type_form(type_id):
                     enable_related_objects=action_type_form.enable_related_objects.data,
                     enable_project_link=action_type_form.enable_project_link.data,
                     disable_create_objects=action_type_form.disable_create_objects.data,
-                    is_template=action_type_form.is_template.data
+                    is_template=action_type_form.is_template.data,
+                    scicat_export_type={
+                        type.name.lower(): type
+                        for type in [
+                            SciCatExportType.SAMPLE,
+                            SciCatExportType.RAW_DATASET,
+                            SciCatExportType.DERIVED_DATASET
+                        ]
+                    }.get(action_type_form.scicat_export_type.data)
                 )
 
                 for translation in translation_data:
@@ -236,7 +255,12 @@ def show_action_type_form(type_id):
                 enable_related_objects=action_type_form.enable_related_objects.data,
                 enable_project_link=action_type_form.enable_project_link.data,
                 disable_create_objects=action_type_form.disable_create_objects.data,
-                is_template=action_type_form.is_template.data
+                is_template=action_type_form.is_template.data,
+                scicat_export_type={
+                    'sample': SciCatExportType.SAMPLE,
+                    'raw_dataset': SciCatExportType.RAW_DATASET,
+                    'derived_dataset': SciCatExportType.DERIVED_DATASET
+                }.get(action_type_form.scicat_export_type.data)
             )
 
             try:

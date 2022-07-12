@@ -134,7 +134,7 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -145,6 +145,8 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     if path != ['hazards']:
         raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
 
@@ -221,7 +223,7 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'dataverse_export', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'dataverse_export', 'scicat_export', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -234,6 +236,8 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
         validate({'_type': 'tags', 'tags': schema['default']}, schema, path + ['(default)'])
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     if path != ['tags']:
         raise ValidationError('Tags must be a top-level entry named "tags"', path)
 
@@ -407,7 +411,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'languages', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'languages', 'conditions', 'may_copy', 'style'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -511,6 +515,10 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('dataverse_export must be True or False', path)
     if 'dataverse_export' in schema and not schema['dataverse_export'] and path == ['name']:
         raise ValidationError('dataverse_export must be True for the object name', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
+    if 'scicat_export' in schema and not schema['scicat_export'] and path == ['name']:
+        raise ValidationError('scicat_export must be True for the object name', path)
     _validate_note_in_schema(schema, path)
 
 
@@ -522,7 +530,7 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -538,6 +546,8 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
                 raise ValidationError('invalid default value', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     _validate_note_in_schema(schema, path)
 
 
@@ -549,7 +559,7 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -559,6 +569,8 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('default must be bool', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     _validate_note_in_schema(schema, path)
 
 
@@ -570,7 +582,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'conditions', 'may_copy', 'style', 'display_digits', 'min_magnitude', 'max_magnitude'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits', 'min_magnitude', 'max_magnitude'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -628,6 +640,8 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('default must be less than or equal to max_magnitude', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     if 'placeholder' in schema and not isinstance(schema['placeholder'], str) and not isinstance(schema['placeholder'], dict):
         raise ValidationError('placeholder must be str or dict', path)
     if 'placeholder' in schema and isinstance(schema['placeholder'], dict):
@@ -652,7 +666,7 @@ def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -664,6 +678,8 @@ def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     _validate_note_in_schema(schema, path)
 
 
@@ -675,7 +691,7 @@ def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -687,6 +703,8 @@ def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
 
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     _validate_note_in_schema(schema, path)
 
 
@@ -698,7 +716,7 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -726,6 +744,8 @@ def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> N
         raise ValidationError('action_id must be int, None or a list of ints', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     _validate_note_in_schema(schema, path)
 
 
@@ -787,7 +807,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'default', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'default', 'conditions', 'may_copy', 'style'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -798,6 +818,8 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
     if 'default' in schema and schema['default'] != 'self':
         raise ValidationError('default must be "self"', path)
     _validate_note_in_schema(schema, path)

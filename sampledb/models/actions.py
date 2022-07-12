@@ -3,9 +3,18 @@
 
 """
 
+import enum
 import typing
 
 from .. import db
+
+
+# defined here to avoid circular import dependency (actions -> scicat_export -> objects -> actions)
+@enum.unique
+class SciCatExportType(enum.Enum):
+    RAW_DATASET = 0
+    DERIVED_DATASET = 1
+    SAMPLE = 2
 
 
 class ActionType(db.Model):
@@ -39,6 +48,7 @@ class ActionType(db.Model):
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
+    scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
 
     def __repr__(self):
         return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)

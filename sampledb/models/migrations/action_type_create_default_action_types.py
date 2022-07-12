@@ -149,6 +149,12 @@ def run(db):
             }
         ]
 
+        scicat_export_types = {
+            ActionType.SAMPLE_CREATION: 'SAMPLE',
+            ActionType.MEASUREMENT: 'RAW_DATASET',
+            ActionType.SIMULATION: 'RAW_DATASET'
+        }
+
         performed_migration = False
 
         existing_action_type_ids = [
@@ -170,5 +176,15 @@ def run(db):
                           VALUES (:id, :admin_only, :show_on_frontpage, :show_in_navbar, :enable_labels, :enable_files, :enable_locations, :enable_publications, :enable_comments, :enable_activity_log, :enable_related_objects)
                       """, params=action_type)
             performed_migration = True
+
+            if action_type['id'] in scicat_export_types:
+                db.session.execute("""
+                    UPDATE action_types
+                    SET scicat_export_type = :export_type
+                    WHERE id = :id
+                """, {
+                    "id": action_type['id'],
+                    "export_type": scicat_export_types[action_type['id']]
+                })
 
         return performed_migration

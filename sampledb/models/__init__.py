@@ -20,6 +20,7 @@ from . import markdown_images
 from . import objects
 from . import object_permissions
 from . import projects
+from . import scicat_export
 from . import settings
 from . import users
 
@@ -53,6 +54,7 @@ from .object_permissions import UserObjectPermissions, GroupObjectPermissions, P
 from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
+from .scicat_export import SciCatExport, SciCatExportType
 from .settings import Settings
 from .shares import ObjectShare
 from .tags import Tag
@@ -79,6 +81,7 @@ __all__ = [
     'objects',
     'object_permissions',
     'projects',
+    'scicat_export',
     'settings',
     'users',
     'Action',
@@ -135,6 +138,8 @@ __all__ = [
     'Project',
     'UserProjectPermissions',
     'GroupProjectPermissions',
+    'SciCatExport',
+    'SciCatExportType',
     'SubprojectRelationship',
     'Settings',
     'Tag',

@@ -396,3 +396,7 @@ class InvalidPortNumberError(Exception):
 
 class InvalidDefaultPermissionsError(Exception):
     pass
+
+
+class SciCatNotReachableError(Exception):
+    pass

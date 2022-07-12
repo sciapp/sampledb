@@ -129,6 +129,27 @@ Dataverse Export
 
 For more information on the Dataverse export, see :ref:`dataverse_export`.
 
+.. _scicat_configuration:
+
+SciCat Export
+-------------
+
+.. list-table:: SciCat Export Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_SCICAT_NAME
+     - The name of the SciCat instance (default: ``SciCat``)
+   * - SAMPLEDB_SCICAT_API_URL
+     - The base URL of the SciCat API server
+   * - SAMPLEDB_SCICAT_FRONTEND_URL
+     - The base URL of the SciCat frontend server
+   * - SCICAT_EXTRA_PID_PREFIX
+     - An additional prefix to use for generating persistent identifiers in combination with a UUID
+
+For more information on the SciCat export, see :ref:`scicat_export`.
+
 Administrator Account
 ---------------------
 

@@ -21,6 +21,15 @@ msgstr ""
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
 
+msgid "Sample"
+msgstr "Probe"
+
+msgid "Raw Dataset"
+msgstr "Rohdatensatz"
+
+msgid "Derived Dataset"
+msgstr "Abgeleiteter Datensatz"
+
 msgid "Please fill out the form."
 msgstr "Bitte füllen Sie das Formular aus."
 
@@ -100,6 +109,9 @@ msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
 
 msgid "No suitable Dataverses available for export."
 msgstr "Kein für Export brauchbares Dataverse verfügbar."
+
+msgid "An unknown error occurred while uploading the dataset."
+msgstr "Beim Export des Datensatzes ist ein unbekannter Fehler aufgetreten."
 
 msgid "PDF file"
 msgstr "PDF-Dokument"
@@ -736,6 +748,13 @@ msgid "Successfully unlinked the object and project group."
 msgstr ""
 "Die Verknüpfung zwischen Objekt und Projektgruppe wurde erfolgreich "
 "aufgehoben."
+
+msgid "The SciCat export type is not set for objects of this type."
+msgstr "Der SciCat Export-Typ ist für Objekte diesen Typs nicht gesetzt."
+
+#, python-format
+msgid "%(scicat_name)s is currently unreachable, please try again later."
+msgstr "%(scicat_name)s is aktuell nicht erreichbar, bitte versuchen Sie es später erneut."
 
 msgid "Please enter your contact email."
 msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
@@ -2382,6 +2401,9 @@ msgstr ""
 "Nein, verhindere das Einbinden von Aktionen dieses Typs als Schema-"
 "Vorlage in anderen Aktionen"
 
+msgid "SciCat Export Type"
+msgstr "SciCat-Export-Typ"
+
 msgid "View Actions"
 msgstr "Aktionen anzeigen"
 
@@ -3722,6 +3744,62 @@ msgstr ""
 msgid "Restore"
 msgstr "Wiederherstellen"
 
+#, python-format
+msgid "Export to %(scicat_name)s"
+msgstr "Nach %(scicat_name)s exportieren"
+
+#, python-format
+msgid ""
+"%(service_name)s can export the metadata of this object to "
+"%(scicat_name)s."
+msgstr ""
+"%(service_name)s kann die Metadaten und Dateien für dieses Objekt nach "
+"%(scicat_name)s exportieren."
+
+msgid "Input Datasets"
+msgstr "Eingabe-Datensätze"
+
+msgid "Owner Group"
+msgstr "Owner-Gruppe"
+
+msgid "Access Groups"
+msgstr "Access-Gruppen"
+
+#, python-format
+msgid "Select which properties should be exported to %(scicat_name)s."
+msgstr ""
+"Wählen Sie aus, welche Eigenschaften nach %(scicat_name)s exportiert "
+"werden sollen."
+
+#, python-format
+msgid "Select which tags should be exported as keywords to %(scicat_name)s."
+msgstr "Wählen Sie aus, welche Tags nach %(scicat_name)s exportiert werden sollen."
+
+#, python-format
+msgid ""
+"To access your SciCat token, visit <a "
+"href=\"%(scicat_frontend_url)s/user\">%(scicat_name)s</a>"
+msgstr ""
+"Um auf Ihr SciCat Token zuzugreifen, besuchen Sie <a "
+"href=\"%(scicat_frontend_url)s/user\">%(scicat_name)s</a>"
+
+msgid "SciCat Token"
+msgstr "SciCat Token"
+
+msgid "The token you entered was invalid."
+msgstr "Das eingegebene Token war ungültig."
+
+#, python-format
+msgid "Store this token in %(service_name)s"
+msgstr "Token in %(service_name)s speichern"
+
+msgid ""
+"You can delete a stored SciCat token at any time by editing your "
+"preferences."
+msgstr ""
+"Sie können ein gespeichertes SciCat Token jederzeit löschen, in dem Sie "
+"ihre Einstellung bearbeiten."
+
 msgid "Insufficient Permissions"
 msgstr "Fehlende Berechtigungen"
 
@@ -3917,6 +3995,18 @@ msgstr "QR Code anzeigen"
 
 msgid "Export object information to an archive or PDF file."
 msgstr "Objektinformationen in ein Archiv oder eine PDF-Datei exportieren."
+
+#, python-format
+msgid "Export object information to %(scicat_name)s."
+msgstr "Exportiere Objektinformationen nach %(scicat_name)s."
+
+#, python-format
+msgid "View object information on %(scicat_name)s."
+msgstr "Zeigt Objektinformationen in %(scicat_name)s an."
+
+#, python-format
+msgid "View on %(scicat_name)s"
+msgstr "In %(scicat_name)s anzeigen"
 
 #, python-format
 msgid "Export object information and files to %(dataverse_name)s."
@@ -5127,3 +5217,4 @@ msgid ""
 msgstr ""
 "Die plotly-Daten müssen gültig sein. Bitte prüfen Sie, welches Schema von"
 " plotly unterstützt wird."
+

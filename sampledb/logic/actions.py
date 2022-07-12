@@ -25,7 +25,7 @@ import typing
 
 from .. import db
 from .. import models
-from ..models import Action
+from ..models import Action, SciCatExportType
 from . import errors, instruments, users, schemas, components
 
 
@@ -45,7 +45,8 @@ class ActionType(collections.namedtuple('ActionType', [
     'disable_create_objects',
     'is_template',
     'fed_id',
-    'component_id'
+    'component_id',
+    'scicat_export_type'
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
@@ -68,7 +69,8 @@ class ActionType(collections.namedtuple('ActionType', [
             disable_create_objects: bool,
             is_template: bool,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            scicat_export_type: typing.Optional[SciCatExportType] = None
     ):
         self = super(ActionType, cls).__new__(
             cls,
@@ -87,7 +89,8 @@ class ActionType(collections.namedtuple('ActionType', [
             disable_create_objects,
             is_template,
             fed_id,
-            component_id
+            component_id,
+            scicat_export_type
         )
         return self
 
@@ -110,6 +113,7 @@ class ActionType(collections.namedtuple('ActionType', [
             is_template=action_type.is_template,
             fed_id=action_type.fed_id,
             component_id=action_type.component_id,
+            scicat_export_type=action_type.scicat_export_type
         )
 
     def __repr__(self):
@@ -169,7 +173,8 @@ def create_action_type(
         disable_create_objects: bool,
         is_template: bool,
         fed_id: typing.Optional[int] = None,
-        component_id: typing.Optional[int] = None
+        component_id: typing.Optional[int] = None,
+        scicat_export_type: typing.Optional[SciCatExportType] = None
 ) -> ActionType:
     """
     Create a new action type.
@@ -185,6 +190,7 @@ def create_action_type(
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
     :param enable_project_link: objects created with actions of this type can be linked to a project group
+    :param scicat_export_type: the SciCat type to use during export, or None
     :return: the created action type
     """
     if (component_id is None) != (fed_id is None):
@@ -209,7 +215,8 @@ def create_action_type(
         disable_create_objects=disable_create_objects,
         is_template=is_template,
         fed_id=fed_id,
-        component_id=component_id
+        component_id=component_id,
+        scicat_export_type=scicat_export_type
     )
     db.session.add(action_type)
     db.session.commit()
@@ -230,7 +237,8 @@ def update_action_type(
         enable_related_objects: bool,
         enable_project_link: bool,
         disable_create_objects: bool,
-        is_template: bool
+        is_template: bool,
+        scicat_export_type: typing.Optional[SciCatExportType] = None
 ) -> ActionType:
     """
     Update an existing action type.
@@ -247,6 +255,7 @@ def update_action_type(
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
     :param enable_project_link: objects created with actions of this type can be linked to a project group
+    :param scicat_export_type: the SciCat type to use during export, or None
     :return: the created action type
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -267,6 +276,7 @@ def update_action_type(
     action_type.enable_project_link = enable_project_link
     action_type.disable_create_objects = disable_create_objects
     action_type.is_template = is_template
+    action_type.scicat_export_type = scicat_export_type
     db.session.add(action_type)
     db.session.commit()
     return ActionType.from_database(action_type)

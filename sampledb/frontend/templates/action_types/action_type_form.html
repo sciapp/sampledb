@@ -342,6 +342,16 @@
                  {% if action_type_form.is_template.data %}checked="checked"{% endif %}> {{ _('Allow actions of this type as schema templates in other actions') }}
           </label>
         </div>
+        <div class="form-group">
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="select-scicat_export-type" class="control-label">{{ _("SciCat Export Type") }}</label>
+          </div>
+          <select id="select-scicat_export-type" name="{{ action_type_form.scicat_export_type.name }}" class="selectpicker">
+            {% for value, label in action_type_form.scicat_export_type.choices %}
+            <option value="{{ value }}" {% if action_type_form.scicat_export_type.data == value %}selected="selected"{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
