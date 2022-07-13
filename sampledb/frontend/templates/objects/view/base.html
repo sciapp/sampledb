@@ -895,7 +895,7 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=object_log_entry.user.id, user_name=object_log_entry.user.get_name(), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">{{ _('View') }}</a>

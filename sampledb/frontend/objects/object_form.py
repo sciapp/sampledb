@@ -190,6 +190,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     raw_form_data['object__name__text'] = [batch_base_name + example_name_suffix]
                 else:
                     enabled_languages = form_data.get('object__name__text_languages', [])
+                    if type(enabled_languages) is str:
+                        enabled_languages = [enabled_languages]
                     if 'en' not in enabled_languages:
                         enabled_languages.append('en')
                     for language_code in enabled_languages:
