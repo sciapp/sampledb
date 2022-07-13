@@ -29,7 +29,6 @@ from . import locations
 from . import markdown_images
 from . import languages
 from . import objects
-from . import objects_forms
 from . import projects
 from . import publications
 from . import status
@@ -57,7 +56,6 @@ __all__ = [
     'markdown_images',
     'languages',
     'objects',
-    'objects_forms',
     'projects',
     'publications',
     'status',
