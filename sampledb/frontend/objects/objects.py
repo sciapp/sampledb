@@ -126,6 +126,8 @@ def objects():
         filter_doi = None
         filter_user_id = None
         filter_user_permissions = None
+        filter_all_users_permissions = None
+        filter_anonymous_permissions = None
         filter_group_id = None
         filter_group_permissions = None
         filter_project_id = None
@@ -295,6 +297,17 @@ def objects():
                 'write': Permissions.WRITE,
                 'grant': Permissions.GRANT
             }.get(flask.request.args.get('user_permissions', '').lower(), Permissions.READ)
+
+        filter_all_users_permissions = {
+            'read': Permissions.READ
+        }.get(flask.request.args.get('all_users_permissions', '').lower(), None)
+
+        if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            filter_anonymous_permissions = {
+                'read': Permissions.READ
+            }.get(flask.request.args.get('anonymous_permissions', '').lower(), None)
+        else:
+            filter_anonymous_permissions = None
 
         filter_group_permissions = None
         try:
@@ -491,6 +504,8 @@ def objects():
                     project_permissions=filter_project_permissions,
                     group_id=filter_group_id,
                     group_permissions=filter_group_permissions,
+                    all_users_permissions=filter_all_users_permissions,
+                    anonymous_users_permissions=filter_anonymous_permissions,
                     object_ids=object_ids,
                     num_objects_found=num_objects_found_list,
                     name_only=name_only
@@ -764,6 +779,8 @@ def objects():
         filter_user_permissions_info=filter_user_permissions_info,
         filter_group_permissions_info=filter_group_permissions_info,
         filter_project_permissions_info=filter_project_permissions_info,
+        filter_all_users_permissions=filter_all_users_permissions,
+        filter_anonymous_permissions=filter_anonymous_permissions,
         filter_doi_info=filter_doi_info,
         show_filters=show_filters,
         all_actions=all_actions,
