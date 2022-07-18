@@ -17,7 +17,8 @@ from .utils import check_current_user_is_not_readonly
 from ..logic.component_authentication import remove_component_authentication_method, add_token_authentication, remove_own_component_authentication_method, add_own_token_authentication
 from ..logic.components import get_component, update_component, add_component, get_components
 from ..logic.federation import import_updates
-from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias
+from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, \
+    get_user_alias
 from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication
 
 
@@ -25,6 +26,10 @@ from ..models import OwnComponentAuthentication, ComponentAuthenticationType, Co
 @flask_login.login_required
 def component(component_id):
     component = get_component(component_id)
+    try:
+        alias = get_user_alias(flask_login.current_user.get_id(), component_id)
+    except errors.UserAliasDoesNotExistError:
+        alias = None
     created_api_token = None
     add_own_api_token_form = AddOwnAPITokenForm()
     create_api_token_form = CreateAPITokenForm()
@@ -157,6 +162,7 @@ def component(component_id):
     return flask.render_template(
         'other_databases/component.html',
         component=component,
+        alias=alias,
         show_edit_form=show_edit_form,
         edit_component_form=edit_component_form,
         sync_component_form=sync_component_form,
@@ -226,8 +232,15 @@ def user_alias():
     aliases = get_user_aliases_for_user(user.id)
     added_components = [alias.component_id for alias in aliases]
     addable_components = [comp for comp in components if comp.id not in added_components]
-    aliases_were_updated = False
-
+    try:
+        add_alias_component = int(flask.request.args.get('add_alias_component'))
+        get_component(add_alias_component)
+    except ValueError:
+        add_alias_component = None
+    except TypeError:
+        add_alias_component = None
+    except errors.ComponentDoesNotExistError:
+        add_alias_component = None
     add_alias_form = AddAliasForm()
     add_alias_form.component.choices = [
         (str(comp.id), comp.name)
@@ -238,7 +251,10 @@ def user_alias():
 
     delete_alias_form = DeleteAliasForm()
 
+    show_edit_form = False
+
     if 'edit' in flask.request.form:
+        show_edit_form = True
         if edit_alias_form.validate_on_submit():
             try:
                 update_user_alias(
@@ -259,7 +275,8 @@ def user_alias():
             except errors.UserAliasDoesNotExistError:
                 flask.flash(_('There is no alias for this database.'), 'error')
             else:
-                aliases_were_updated = True
+                flask.flash(_('User alias updated successfully.'), 'success')
+                return flask.redirect(flask.url_for('.user_alias'))
     if 'add' in flask.request.form:
         if add_alias_form.validate_on_submit():
             create_user_alias(
@@ -275,7 +292,8 @@ def user_alias():
                 add_alias_form.role.data if add_alias_form.role.data != '' and not add_alias_form.use_real_role.data else None,
                 add_alias_form.use_real_role.data,
             )
-            aliases_were_updated = True
+            flask.flash(_('User alias updated successfully.'), 'success')
+            return flask.redirect(flask.url_for('.user_alias'))
     if 'delete' in flask.request.form:
         if delete_alias_form.validate_on_submit():
             try:
@@ -285,16 +303,8 @@ def user_alias():
             except errors.UserAliasDoesNotExistError:
                 flask.flash(_('The alias for this database has already been deleted.'), 'error')
             else:
-                aliases_were_updated = True
-
-    if aliases_were_updated:
-        aliases = get_user_aliases_for_user(user.id)
-        added_components = [alias.component_id for alias in aliases]
-        addable_components = [comp for comp in components if comp.id not in added_components]
-        add_alias_form.component.choices = [
-            (str(comp.id), comp.name)
-            for comp in components if comp.id not in added_components
-        ]
+                flask.flash(_('User alias updated successfully.'), 'success')
+                return flask.redirect(flask.url_for('.user_alias'))
 
     if len(addable_components) == 0:
         add_alias_form = None
@@ -305,6 +315,9 @@ def user_alias():
             add_alias_form.affiliation.data = user.affiliation
         if add_alias_form.role.data is None:
             add_alias_form.role.data = user.role
+
+    if add_alias_component and not add_alias_form.is_submitted():
+        add_alias_form.component.data = add_alias_component
 
     aliases_by_component = {
         alias.component_id: {
@@ -340,5 +353,6 @@ def user_alias():
         delete_alias_form=delete_alias_form,
         aliases_by_component=aliases_by_component,
         user_data=user_data,
-        component_names=component_names
+        component_names=component_names,
+        show_edit_form=show_edit_form
     )

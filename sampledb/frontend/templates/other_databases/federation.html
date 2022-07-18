@@ -9,7 +9,7 @@
     </div>
   {% endif %}
   <h1>{{ _('Other Databases') }}</h1>
-  <p class="text-muted">{{ _('%(service_name)s can share information with other SampleDB instances.', service_name=service_name) }}</p>
+  <p class="text-muted">{{ _('%(service_name)s can share information with other SampleDB instances. To determine which personal data is shared with other databases, you can <a href="%(alias_url)s">create an alias</a>.', service_name=service_name, alias_url=url_for('.user_alias')) }}</p>
   <p><label>{{ _('UUID of %(service_name)s: ', service_name=service_name) }}</label> <span id="local-uuid">{{ config['FEDERATION_UUID'] }}</span></p>
   {% if current_user.is_admin %}
   <p>
