@@ -89,10 +89,15 @@ class UserFederationAlias(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'))
     name = db.Column(db.String, nullable=True)
+    use_real_name = db.Column(db.Boolean, nullable=False, default=False)
     email = db.Column(db.String, nullable=True)
+    use_real_email = db.Column(db.Boolean, nullable=False, default=False)
     orcid = db.Column(db.String, nullable=True)
+    use_real_orcid = db.Column(db.Boolean, nullable=False, default=False)
     affiliation = db.Column(db.String, nullable=True)
+    use_real_affiliation = db.Column(db.Boolean, nullable=False, default=False)
     role = db.Column(db.String, nullable=True)
+    use_real_role = db.Column(db.Boolean, nullable=False, default=False)
     extra_fields = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
     user = db.relationship('User')
     component = db.relationship('Component')
@@ -102,14 +107,19 @@ class UserFederationAlias(db.Model):
         {},
     )
 
-    def __init__(self, user_id: int, component_id: int, name: typing.Optional[str] = None, email: typing.Optional[str] = None, orcid: typing.Optional[str] = None, affiliation: typing.Optional[str] = None, role: typing.Optional[str] = None, extra_fields: typing.Optional[dict] = {}):
+    def __init__(self, user_id: int, component_id: int, name: typing.Optional[str] = None, use_real_name: bool = False, email: typing.Optional[str] = None, use_real_email: bool = False, orcid: typing.Optional[str] = None, use_real_orcid: bool = False, affiliation: typing.Optional[str] = None, use_real_affiliation: bool = False, role: typing.Optional[str] = None, use_real_role: bool = False, extra_fields: typing.Optional[dict] = {}):
         self.user_id = user_id
         self.component_id = component_id
         self.name = name
+        self.use_real_name = use_real_name
         self.email = email
+        self.use_real_email = use_real_email
         self.orcid = orcid
+        self.use_real_orcid = use_real_orcid
         self.affiliation = affiliation
+        self.use_real_affiliation = use_real_affiliation
         self.role = role
+        self.use_real_role = use_real_role
         self.extra_fields = extra_fields
 
     def __repr__(self):

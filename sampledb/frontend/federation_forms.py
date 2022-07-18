@@ -5,11 +5,10 @@
 
 import flask
 import flask_login
-import re
 
 from flask_babel import _
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, SelectField
+from wtforms import StringField, IntegerField, SubmitField, SelectField, BooleanField
 from wtforms.validators import Length, DataRequired, ValidationError, InputRequired
 
 
@@ -47,10 +46,13 @@ class SyncComponentForm(FlaskForm):
 class EditAliasForm(FlaskForm):
     component = IntegerField('Component', validators=[InputRequired()])
     name = StringField('Full Name')
-    email = StringField('Contact Email')
-    orcid = StringField('ORCID iD')
+    use_real_name = BooleanField('Use real name')
+    use_real_email = BooleanField('Use real email')
+    use_real_orcid = BooleanField('Use real ORCID iD')
     affiliation = StringField('Affiliation')
-    role = StringField()
+    use_real_affiliation = BooleanField('Use real affiliation')
+    role = StringField('Role')
+    use_real_role = BooleanField('Use real role')
     submit = SubmitField('Change Alias')
 
     def __init_(self, name=None, email=None):
@@ -62,32 +64,17 @@ class EditAliasForm(FlaskForm):
             if ', ' not in name[1:-1]:
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
-    def validate_orcid(self, field):
-        orcid = field.data
-        # accept empty ORCID iDs
-        if orcid is None:
-            return
-        orcid = orcid.strip()
-        if not orcid:
-            return
-        # accept full ORCID iDs
-        orcid_prefix = 'https://orcid.org/'
-        if orcid.startswith(orcid_prefix):
-            orcid = orcid[len(orcid_prefix):]
-        # check ORCID iD syntax
-        if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
-            raise ValidationError(_('Please enter a valid ORCID iD.'))
-        # keep sanitized ORCID iD on success
-        field.data = orcid
-
 
 class AddAliasForm(FlaskForm):
     component = SelectField('Database', validators=[InputRequired()])
     name = StringField('Full Name')
-    email = StringField('Contact Email')
-    orcid = StringField('ORCID iD')
+    use_real_name = BooleanField('Use real name')
+    use_real_email = BooleanField('Use real email')
+    use_real_orcid = BooleanField('Use real ORCID iD')
     affiliation = StringField('Affiliation')
-    role = StringField()
+    use_real_affiliation = BooleanField('Use real affiliation')
+    role = StringField('Role')
+    use_real_role = BooleanField('Use real role')
     submit = SubmitField('Add Alias')
 
     def __init_(self, name=None, email=None):
@@ -98,24 +85,6 @@ class AddAliasForm(FlaskForm):
             name = field.data
             if ', ' not in name[1:-1]:
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
-
-    def validate_orcid(self, field):
-        orcid = field.data
-        # accept empty ORCID iDs
-        if orcid is None:
-            return
-        orcid = orcid.strip()
-        if not orcid:
-            return
-        # accept full ORCID iDs
-        orcid_prefix = 'https://orcid.org/'
-        if orcid.startswith(orcid_prefix):
-            orcid = orcid[len(orcid_prefix):]
-        # check ORCID iD syntax
-        if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
-            raise ValidationError(_('Please enter a valid ORCID iD.'))
-        # keep sanitized ORCID iD on success
-        field.data = orcid
 
 
 class DeleteAliasForm(FlaskForm):

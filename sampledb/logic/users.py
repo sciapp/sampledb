@@ -15,7 +15,7 @@ from flask_babel import gettext
 from .components import get_component
 from .. import db
 from . import errors, settings
-from .. models import users, UserType, UserFederationAlias
+from .. models import users, UserType
 
 
 class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id', 'utc_datetime', 'accepted'])):
@@ -159,6 +159,82 @@ class AnonymousUser(flask_login.AnonymousUserMixin):
     def is_readonly(self) -> bool:
         # anonymous users cannot change anything but are not specifically marked as readonly
         return False
+
+
+class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields'])):
+    """
+    This class provides an immutable wrapper around models.users.UserFederationAlias.
+    """
+
+    def __new__(
+            cls,
+            user_id: int,
+            component_id: int,
+            name: typing.Optional[str],
+            use_real_name: bool,
+            email: typing.Optional[str],
+            use_real_email: bool,
+            orcid: typing.Optional[str],
+            use_real_orcid: bool,
+            affiliation: typing.Optional[str],
+            use_real_affiliation: bool,
+            role: typing.Optional[str],
+            use_real_role: bool,
+            extra_fields: typing.Dict[str, typing.Any]
+    ):
+        self = super(UserFederationAlias, cls).__new__(
+            cls,
+            user_id,
+            component_id,
+            name,
+            use_real_name,
+            email,
+            use_real_email,
+            orcid,
+            use_real_orcid,
+            affiliation,
+            use_real_affiliation,
+            role,
+            use_real_role,
+            extra_fields
+        )
+        return self
+
+    @classmethod
+    def from_database(cls, alias: users.UserFederationAlias) -> 'UserFederationAlias':
+        if any([alias.use_real_name, alias.use_real_email, alias.use_real_orcid, alias.use_real_affiliation, alias.use_real_role]):
+            user = get_user(alias.user_id)
+            return UserFederationAlias(
+                user_id=alias.user_id,
+                component_id=alias.component_id,
+                name=user.name if alias.use_real_name else alias.name,
+                use_real_name=alias.use_real_name,
+                email=user.email if alias.use_real_email else alias.email,
+                use_real_email=alias.use_real_email,
+                orcid=user.orcid if alias.use_real_orcid else alias.orcid,
+                use_real_orcid=alias.use_real_orcid,
+                affiliation=user.affiliation if alias.use_real_affiliation else alias.affiliation,
+                use_real_affiliation=alias.use_real_affiliation,
+                role=user.role if alias.use_real_role else alias.role,
+                use_real_role=alias.use_real_role,
+                extra_fields=copy.deepcopy(alias.extra_fields)
+            )
+        else:
+            return UserFederationAlias(
+                user_id=alias.user_id,
+                component_id=alias.component_id,
+                name=alias.name,
+                use_real_name=alias.use_real_name,
+                email=alias.email,
+                use_real_email=alias.use_real_email,
+                orcid=alias.orcid,
+                use_real_orcid=alias.use_real_orcid,
+                affiliation=alias.affiliation,
+                use_real_affiliation=alias.use_real_affiliation,
+                role=alias.role,
+                use_real_role=alias.use_real_role,
+                extra_fields=copy.deepcopy(alias.extra_fields)
+            )
 
 
 def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:
@@ -395,67 +471,169 @@ def set_user_invitation_accepted(invitation_id: int) -> None:
     db.session.commit()
 
 
-def get_user_alias(user_id: int, component_id: int):
+def get_user_alias(user_id: int, component_id: int) -> UserFederationAlias:
     """
     Get an existing user alias.
 
     :param user_id: the ID of an existing user
     :param component_id: the ID of an existing component
     :return: the user alias
+    :raise errors.UserDoesNotExistError: when no user with given ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with given ID exists
     :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
     """
-    alias = UserFederationAlias.query.get((user_id, component_id))
+    alias = users.UserFederationAlias.query.get((user_id, component_id))
     if alias is None:
         get_user(user_id)
         get_component(component_id)
         raise errors.UserAliasDoesNotExistError()
-    return alias
+    return UserFederationAlias.from_database(alias)
 
 
-def get_user_aliases_for_user(user_id: int):
+def get_user_aliases_for_user(user_id: int) -> typing.List[UserFederationAlias]:
     """
     Get all aliases for a user.
 
     :param user_id: the ID of an existing user
     :return: list of user aliases
-    :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
+    :raise errors.UserDoesNotExistError: when no user with given ID exists
     """
     get_user(user_id)
-    alias = UserFederationAlias.query.filter_by(user_id=user_id).all()
-    return alias
+    alias = users.UserFederationAlias.query.filter_by(user_id=user_id).all()
+    return [UserFederationAlias.from_database(a) for a in alias]
 
 
-def create_user_alias(user_id: int, component_id: int, name: typing.Optional[str], email: typing.Optional[str], orcid: typing.Optional[str], affiliation: typing.Optional[str], role: typing.Optional[str]):
-    get_user(user_id)
-    get_component(component_id)
-    if get_user_alias(user_id, component_id):
+def create_user_alias(
+    user_id: int,
+    component_id: int,
+    name: typing.Optional[str] = None,
+    use_real_name: bool = False,
+    email: typing.Optional[str] = None,
+    use_real_email: bool = False,
+    orcid: typing.Optional[str] = None,
+    use_real_orcid: bool = False,
+    affiliation: typing.Optional[str] = None,
+    use_real_affiliation: bool = False,
+    role: typing.Optional[str] = None,
+    use_real_role: bool = False
+) -> UserFederationAlias:
+    """
+    Create a new user alias for a component.
+
+    :param user_id: the ID of an existing user
+    :param component_id:  the ID of an existing component
+    :param name: the alias name
+    :param use_real_name: boolean whether to use the name from the users' profile
+    :param email: the alias email
+    :param use_real_email: boolean whether to use the email from the users' profile
+    :param orcid: the alias orcid
+    :param use_real_orcid: boolean whether to use the orcid from the users' profile
+    :param affiliation: the alias affiliation
+    :param use_real_affiliation: boolean whether to use the affiliation from the users' profile
+    :param role: the alias role
+    :param use_real_role: boolean whether to use the role from the users' profile
+    :return: the new created alias
+    :raise errors.UserDoesNotExistError: when no user with given ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with given ID exists
+    :raise errors.UserAliasAlreadyExistsError: when an alias with given IDs already exists
+    """
+    alias = users.UserFederationAlias.query.get((user_id, component_id))
+    if alias is not None:
+        get_user(user_id)
+        get_component(component_id)
         raise errors.UserAliasAlreadyExistsError()
-    alias = UserFederationAlias(user_id, component_id, name, email, orcid, affiliation, role, {})
+    if use_real_name:
+        name = None
+    if use_real_email:
+        email = None
+    if use_real_orcid:
+        orcid = None
+    if use_real_affiliation:
+        affiliation = None
+    if use_real_role:
+        role = None
+    alias = users.UserFederationAlias(user_id, component_id, name, use_real_name, email, use_real_email, orcid, use_real_orcid, affiliation, use_real_affiliation, role, use_real_role, {})
     db.session.add(alias)
     db.session.commit()
-    return alias
+    return UserFederationAlias.from_database(alias)
 
 
-def update_user_alias(user_id: int, component_id: int, name: typing.Optional[str], email: typing.Optional[str], orcid: typing.Optional[str], affiliation: typing.Optional[str], role: typing.Optional[str]):
-    get_user(user_id)
-    get_component(component_id)
-    alias = UserFederationAlias.query.get((user_id, component_id))
+def update_user_alias(
+    user_id: int,
+    component_id: int,
+    name: typing.Optional[str] = None,
+    use_real_name: bool = False,
+    email: typing.Optional[str] = None,
+    use_real_email: bool = False,
+    orcid: typing.Optional[str] = None,
+    use_real_orcid: bool = False,
+    affiliation: typing.Optional[str] = None,
+    use_real_affiliation: bool = False,
+    role: typing.Optional[str] = None,
+    use_real_role: bool = False
+) -> None:
+    """
+    Update a users' alias for a component.
+
+    :param user_id: the ID of an existing user
+    :param component_id:  the ID of an existing component
+    :param name: the alias name
+    :param use_real_name: boolean whether to use the name from the users' profile
+    :param email: the alias email
+    :param use_real_email: boolean whether to use the email from the users' profile
+    :param orcid: the alias orcid
+    :param use_real_orcid: boolean whether to use the orcid from the users' profile
+    :param affiliation: the alias affiliation
+    :param use_real_affiliation: boolean whether to use the affiliation from the users' profile
+    :param role: the alias role
+    :param use_real_role: boolean whether to use the role from the users' profile
+    :raise errors.UserDoesNotExistError: when no user with given ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with given ID exists
+    :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
+    """
+    alias = users.UserFederationAlias.query.get((user_id, component_id))
     if alias is None:
+        get_user(user_id)
+        get_component(component_id)
         raise errors.UserAliasDoesNotExistError()
+    if use_real_name:
+        name = None
+    if use_real_email:
+        email = None
+    if use_real_orcid:
+        orcid = None
+    if use_real_affiliation:
+        affiliation = None
+    if use_real_role:
+        role = None
     alias.name = name
+    alias.use_real_name = use_real_name
     alias.email = email
+    alias.use_real_email = use_real_email
     alias.orcid = orcid
+    alias.use_real_orcid = use_real_orcid
     alias.affiliation = affiliation
+    alias.use_real_affiliation = use_real_affiliation
     alias.role = role
+    alias.use_real_role = use_real_role
     db.session.add(alias)
     db.session.commit()
 
 
-def delete_user_alias(user_id: int, component_id: int):
-    get_user(user_id)
-    get_component(component_id)
-    alias = UserFederationAlias.query.get((user_id, component_id))
+def delete_user_alias(user_id: int, component_id: int) -> None:
+    """
+    Delete a user alias.
+
+    :param user_id: the ID of an existing user
+    :param component_id:  the ID of an existing component
+    :raise errors.UserDoesNotExistError: when no user with given ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with given ID exists
+    :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
+    """
+    alias = users.UserFederationAlias.query.get((user_id, component_id))
     if alias is None:
+        get_user(user_id)
+        get_component(component_id)
         raise errors.UserAliasDoesNotExistError()
     db.session.delete(alias)
     db.session.commit()

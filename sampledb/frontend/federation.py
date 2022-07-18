@@ -243,11 +243,16 @@ def user_alias():
             try:
                 update_user_alias(
                     user.id, edit_alias_form.component.data,
-                    edit_alias_form.name.data if edit_alias_form.name.data != '' else None,
-                    edit_alias_form.email.data if edit_alias_form.email.data != '' else None,
-                    edit_alias_form.orcid.data if edit_alias_form.orcid.data != '' else None,
-                    edit_alias_form.affiliation.data if edit_alias_form.affiliation.data != '' else None,
-                    edit_alias_form.role.data if edit_alias_form.role.data != '' else None,
+                    edit_alias_form.name.data if edit_alias_form.name.data != '' and not edit_alias_form.use_real_name.data else None,
+                    edit_alias_form.use_real_name.data,
+                    None,
+                    edit_alias_form.use_real_email.data,
+                    None,
+                    edit_alias_form.use_real_orcid.data,
+                    edit_alias_form.affiliation.data if edit_alias_form.affiliation.data != '' and not edit_alias_form.use_real_affiliation.data else None,
+                    edit_alias_form.use_real_affiliation.data,
+                    edit_alias_form.role.data if edit_alias_form.role.data != '' and not edit_alias_form.use_real_role.data else None,
+                    edit_alias_form.use_real_role.data,
                 )
             except errors.ComponentDoesNotExistError:
                 flask.flash(_('That database does not exist.'), 'error')
@@ -259,11 +264,16 @@ def user_alias():
         if add_alias_form.validate_on_submit():
             create_user_alias(
                 user.id, add_alias_form.component.data,
-                add_alias_form.name.data if add_alias_form.name.data != '' else None,
-                add_alias_form.email.data if add_alias_form.email.data != '' else None,
-                add_alias_form.orcid.data if add_alias_form.orcid.data != '' else None,
-                add_alias_form.affiliation.data if add_alias_form.affiliation.data != '' else None,
-                add_alias_form.role.data if add_alias_form.role.data != '' else None,
+                add_alias_form.name.data if add_alias_form.name.data != '' and not add_alias_form.use_real_name.data else None,
+                add_alias_form.use_real_name.data,
+                None,
+                add_alias_form.use_real_email.data,
+                None,
+                add_alias_form.use_real_orcid.data,
+                add_alias_form.affiliation.data if add_alias_form.affiliation.data != '' and not add_alias_form.use_real_affiliation.data else None,
+                add_alias_form.use_real_affiliation.data,
+                add_alias_form.role.data if add_alias_form.role.data != '' and not add_alias_form.use_real_role.data else None,
+                add_alias_form.use_real_role.data,
             )
             aliases_were_updated = True
     if 'delete' in flask.request.form:
@@ -291,10 +301,6 @@ def user_alias():
     else:
         if add_alias_form.name.data is None:
             add_alias_form.name.data = user.name
-        if add_alias_form.email.data is None:
-            add_alias_form.email.data = user.email
-        if add_alias_form.orcid.data is None:
-            add_alias_form.orcid.data = user.orcid
         if add_alias_form.affiliation.data is None:
             add_alias_form.affiliation.data = user.affiliation
         if add_alias_form.role.data is None:
@@ -306,7 +312,12 @@ def user_alias():
             'email': alias.email if alias.email is not None else '',
             'orcid': alias.orcid if alias.orcid is not None else '',
             'affiliation': alias.affiliation if alias.affiliation is not None else '',
-            'role': alias.role if alias.role is not None else ''
+            'role': alias.role if alias.role is not None else '',
+            'use_real_name': alias.use_real_name,
+            'use_real_email': alias.use_real_email,
+            'use_real_orcid': alias.use_real_orcid,
+            'use_real_affiliation': alias.use_real_affiliation,
+            'use_real_role': alias.use_real_role,
         } for alias in aliases}
 
     user_data = {
