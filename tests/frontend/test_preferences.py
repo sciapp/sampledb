@@ -634,7 +634,7 @@ def test_user_remove_authentication_method(flask_server):
 
 def test_edit_default_public_permissions(flask_server, user):
     with flask_server.app.app_context():
-        assert not default_permissions.default_is_public(user.id)
+        assert sampledb.models.Permissions.READ not in default_permissions.get_default_permissions_for_all_users(user.id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -658,7 +658,7 @@ def test_edit_default_public_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert default_permissions.default_is_public(user.id)
+        assert sampledb.models.Permissions.READ in default_permissions.get_default_permissions_for_all_users(user.id)
 
 
 def test_edit_default_user_permissions(flask_server, user):

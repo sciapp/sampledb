@@ -629,6 +629,7 @@ def action_permissions(action_id):
         return flask.abort(403)
     user_may_edit = Permissions.GRANT in permissions
     all_user_permissions = get_action_permissions_for_all_users(action_id=action.id)
+    anonymous_user_permissions = Permissions.NONE
     user_permissions = get_action_permissions_for_users(
         action_id=action.id
     )
@@ -655,6 +656,7 @@ def action_permissions(action_id):
             logic.action_permissions.action_permissions,
             action_id,
             all_user_permissions,
+            anonymous_user_permissions,
             user_permissions,
             group_permissions,
             project_permissions

@@ -16,7 +16,7 @@ from ...logic import user_log
 from ...logic.actions import get_action
 from ...logic.components import get_component_by_uuid
 from ...logic.errors import ObjectDoesNotExistError, ComponentDoesNotExistError
-from ...logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ...logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ...logic.shares import get_shares_for_object, add_object_share, update_object_share
 from ...logic.users import get_users, get_users_for_component
 from ...logic.groups import get_group, get_user_groups
@@ -105,6 +105,7 @@ def object_permissions(object_id):
     group_permissions = get_object_permissions_for_groups(object_id=object_id, include_projects=False)
     project_permissions = get_object_permissions_for_projects(object_id=object_id)
     all_user_permissions = get_object_permissions_for_all_users(object_id=object_id)
+    anonymous_user_permissions = get_object_permissions_for_anonymous_users(object_id=object_id)
     component_policies = {share.component_id: share for share in get_shares_for_object(object_id)}
     policies = {share.component_id: share.policy for share in get_shares_for_object(object_id)}
     suggested_user_id = flask.request.args.get('add_user_id', '')
@@ -122,6 +123,7 @@ def object_permissions(object_id):
             logic.object_permissions.object_permissions,
             object_id,
             all_user_permissions,
+            anonymous_user_permissions,
             user_permissions,
             group_permissions,
             project_permissions
@@ -226,6 +228,7 @@ def object_permissions(object_id):
         group_permissions=group_permissions,
         project_permissions=project_permissions,
         all_user_permissions=all_user_permissions,
+        anonymous_user_permissions=anonymous_user_permissions,
         federation_shares=component_policies,
         get_user=get_user_if_exists,
         get_component=get_component,

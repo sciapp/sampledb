@@ -51,7 +51,7 @@ def actions(flask_server):
         )
         # force attribute refresh
         assert action.id is not None
-        sampledb.logic.action_permissions.set_action_public(action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     return actions
 
 

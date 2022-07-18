@@ -188,29 +188,32 @@ def object(object_id):
         "dataverse_url": dataverse_url,
     })
 
-    # use in measurement menu
-    measurement_actions = logic.action_translations.get_actions_with_translation_in_language(
-        language_id=user_language_id,
-        action_type_id=models.ActionType.MEASUREMENT,
-        use_fallback=True
-    )
-    favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
-    favorite_measurement_actions = [
-        action
-        for action in measurement_actions
-        if action.id in favorite_action_ids and not action.is_hidden
-    ]
-    # sort by: instrument name (independent actions first), action name
-    favorite_measurement_actions.sort(
-        key=lambda action: (
-            action.user.name.lower() if action.user else '',
-            get_instrument_with_translation_in_language(
-                instrument_id=action.instrument_id,
-                language_id=user_language_id
-            ).translation.name.lower() if action.instrument else '',
-            action.translation.name.lower()
+    if flask_login.current_user.is_authenticated:
+        # use in measurement menu
+        measurement_actions = logic.action_translations.get_actions_with_translation_in_language(
+            language_id=user_language_id,
+            action_type_id=models.ActionType.MEASUREMENT,
+            use_fallback=True
         )
-    )
+        favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+        favorite_measurement_actions = [
+            action
+            for action in measurement_actions
+            if action.id in favorite_action_ids and not action.is_hidden
+        ]
+        # sort by: instrument name (independent actions first), action name
+        favorite_measurement_actions.sort(
+            key=lambda action: (
+                action.user.name.lower() if action.user else '',
+                get_instrument_with_translation_in_language(
+                    instrument_id=action.instrument_id,
+                    language_id=user_language_id
+                ).translation.name.lower() if action.instrument else '',
+                action.translation.name.lower()
+            )
+        )
+    else:
+        favorite_measurement_actions = []
     template_kwargs.update({
         "favorite_measurement_actions": favorite_measurement_actions,
         "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(

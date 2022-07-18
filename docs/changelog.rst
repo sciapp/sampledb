@@ -27,6 +27,7 @@ Currently in development.
 - Allow setting an instance-wide timezone using ``SAMPLEDB_TIMEZONE``
 - Added array style ``full_width_table``
 - Allow selecting a unit when entering a quantity
+- Allow giving anonymous users READ permissions for objects
 
 Version 0.20
 ------------

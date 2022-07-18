@@ -48,7 +48,7 @@ def set_up_state(user: User):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     action2 = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema={
@@ -70,7 +70,7 @@ def set_up_state(user: User):
         name='Irrelevant Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action2.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action2.id, sampledb.models.Permissions.READ)
     data = {'name': {'_type': 'text', 'text': 'Object'}}
     object = objects.create_object(user_id=user.id, action_id=action.id, data=data)
     def save_content(file): file.write("This is a test file.".encode('utf-8'))

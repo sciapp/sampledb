@@ -100,7 +100,7 @@
           <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Modify who can read the information for this object, write it or grant permissions to other users.') }}"><i class="fa fa-lock" aria-hidden="true"></i> {{ _('Edit Permissions') }}</a>
         </div>
       {% endif %}
-      {% if project %}
+      {% if project and current_user.is_authenticated%}
         <div class="form-group">
           <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.translation.object_name) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
@@ -110,7 +110,7 @@
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
       {% endif %}
-      {% if (action is not none and action.type.id == action.type.SAMPLE_CREATION) and not config['DISABLE_USE_IN_MEASUREMENT'] %}
+      {% if (action is not none and action.type.id == action.type.SAMPLE_CREATION) and not config['DISABLE_USE_IN_MEASUREMENT'] and not current_user.is_readonly and current_user.is_authenticated %}
 
         <div class="form-group">
           <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">
@@ -375,23 +375,23 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td>{{ file.utc_datetime | babel_format_datetime }}</td>
+                          <td><span data-utc-datetime="{{ file.utc_datetime | generic_format_datetime }}">{{ file.utc_datetime | babel_format_datetime }}</span></td>
                           <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.get_name()) }}</td>
                         </tr>
                         {% for log_entry in file.log_entries %}
                           {% if log_entry.type == FileLogEntryType.EDIT_TITLE %}
                             <tr>
-                              <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
+                              <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }}<br />{{ log_entry.data['title'] }}</td>
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_URL %}
                             <tr>
-                              <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
+                              <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the URL to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['url'] }}</pre></td>
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
                             <tr>
-                              <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
+                              <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
                             </tr>
                           {% else %}
@@ -669,7 +669,7 @@
       <tbody>
       {% for object_location_assignment in object_location_assignments | reverse %}
         <tr>
-          <td>{{ object_location_assignment.utc_datetime | babel_format_datetime }}</td>
+          <td><span data-utc-datetime="{{ object_location_assignment.utc_datetime | generic_format_datetime }}">{{ object_location_assignment.utc_datetime | babel_format_datetime }}</span></td>
           <td>
             {% if object_location_assignment.location_id is not none %}
               {% with location = get_location(object_location_assignment.location_id) %}
@@ -833,7 +833,7 @@
               {% else %}
                 <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.get_name() }}</a>
                 {{ federation_information_symbol(comment.author.component, comment.author.fed_id, 'user') }}
-              {% endif %}, {{ comment.utc_datetime | babel_format_datetime }}
+              {% endif %}, <span data-utc-datetime="{{ comment.utc_datetime | generic_format_datetime }}">{{ comment.utc_datetime | babel_format_datetime }}</span>
             </div>
           </div>
         {% endfor %}
@@ -881,7 +881,7 @@
         <tbody>
         {% for object_log_entry in object_log_entries %}
           <tr data-activity-log-type="{{ object_log_entry.type.name.lower() }}">
-            <td style="white-space: nowrap;width: 1%;">{{ object_log_entry.utc_datetime | babel_format_datetime }}</td>
+            <td style="white-space: nowrap;width: 1%;"><span data-utc-datetime="{{ object_log_entry.utc_datetime | generic_format_datetime }}">{{ object_log_entry.utc_datetime | babel_format_datetime }}</span></td>
             {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
               <td>
               {% if 'previous_object_id' in object_log_entry.data %}

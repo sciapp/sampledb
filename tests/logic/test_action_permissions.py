@@ -123,18 +123,18 @@ def user(users):
 def test_public_actions(independent_action, user_action):
     # non-user actions will always
     action_id = independent_action.id
-    assert not action_permissions.action_is_public(action_id)
-    action_permissions.set_action_public(action_id)
-    assert action_permissions.action_is_public(action_id)
-    action_permissions.set_action_public(action_id, False)
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
+    action_permissions.set_action_permissions_for_all_users(action_id, sampledb.models.Permissions.READ)
+    assert Permissions.READ in action_permissions.get_action_permissions_for_all_users(action_id)
+    action_permissions.set_action_permissions_for_all_users(action_id, sampledb.models.Permissions.NONE)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
 
     action_id = user_action.id
-    assert not action_permissions.action_is_public(action_id)
-    action_permissions.set_action_public(action_id)
-    assert action_permissions.action_is_public(action_id)
-    action_permissions.set_action_public(action_id, False)
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
+    action_permissions.set_action_permissions_for_all_users(action_id, sampledb.models.Permissions.READ)
+    assert Permissions.READ in action_permissions.get_action_permissions_for_all_users(action_id)
+    action_permissions.set_action_permissions_for_all_users(action_id, sampledb.models.Permissions.NONE)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
 
 
 def test_get_user_action_permissions(user, independent_action):
@@ -203,12 +203,12 @@ def test_get_user_user_action_permissions(users, user_action):
 def test_get_user_public_action_permissions(user, user_action, independent_action):
     user_id = user.id
     action_id = user_action.id
-    action_permissions.set_action_public(action_id)
+    action_permissions.set_action_permissions_for_all_users(action_id, sampledb.models.Permissions.READ)
     assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.READ
 
     action_id = independent_action.id
     assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.NONE
-    action_permissions.set_action_public(action_id)
+    action_permissions.set_action_permissions_for_all_users(action_id, sampledb.models.Permissions.READ)
     assert action_permissions.get_user_action_permissions(user_id=user_id, action_id=action_id) == Permissions.READ
 
 
@@ -331,35 +331,35 @@ def test_group_permissions(users, user_action):
     action_id = user_action.id
     group_id = groups.create_group("Example Group", "", creator.id).id
 
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.NONE
 
     action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.WRITE)
 
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.NONE
 
     groups.add_user_to_group(group_id=group_id, user_id=user.id)
 
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.WRITE
 
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user.id, permissions=Permissions.READ)
 
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.WRITE
 
     action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.READ)
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user.id, permissions=Permissions.WRITE)
 
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.WRITE
 
     action_permissions.set_user_action_permissions(action_id=action_id, user_id=user.id, permissions=Permissions.READ)
     action_permissions.set_group_action_permissions(action_id=action_id, group_id=group_id, permissions=Permissions.GRANT)
     groups.remove_user_from_group(group_id=group_id, user_id=user.id)
 
-    assert not action_permissions.action_is_public(action_id)
+    assert Permissions.READ not in action_permissions.get_action_permissions_for_all_users(action_id)
     assert action_permissions.get_user_action_permissions(action_id=action_id, user_id=user.id) == Permissions.READ
 
 

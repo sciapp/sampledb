@@ -33,13 +33,16 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
             using_object_type = 'object'
         if use_object_entry:
             using_object_id = using_object_type + '_id'
-            object_id = object_log_entry.data[using_object_id]
-            object = objects.get_object(object_id=object_id)
-            if user_id is not None and Permissions.READ not in object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
+            object_id = object_log_entry.data.get(using_object_id)
+            if object_id is None:
+                # object ID was not set or has already been cleared
+                pass
+            elif Permissions.READ not in object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
                 # Clear the using object ID, the user may only know that the
                 # object was used for some other object, but not for which
                 object_log_entry.data[using_object_id] = None
             else:
+                object = objects.get_object(object_id=object_id)
                 object_log_entry.data[using_object_type] = object
 
         if object_log_entry.user_id not in users_by_id:

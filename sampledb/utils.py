@@ -33,11 +33,11 @@ def ansi_color(text: str, color: int):
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
-        user_id_callable: typing.Callable[[], int] = lambda: flask_login.current_user.id,
-        on_unauthorized: typing.Callable[[int], None] = lambda object_id: flask.abort(403)
+        user_id_callable: typing.Callable[[], int] = lambda: flask_login.current_user.get_id() if flask_login.current_user else None,
+        on_unauthorized: typing.Callable[[int], None] = lambda object_id: flask.abort(403),
+        may_enable_anonymous_users=True
 ):
     def decorator(func, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized):
-        @auth_extension.login_required
         @functools.wraps(func)
         def wrapper(*args, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized, **kwargs):
             assert 'object_id' in kwargs
@@ -49,8 +49,15 @@ def object_permissions_required(
                 return flask.abort(404)
             except logic.errors.ObjectVersionDoesNotExistError:
                 return flask.abort(404)
-            if not (logic.object_permissions.object_is_public(object_id) and required_object_permissions in Permissions.READ):
-                user_id = user_id_callable()
+            user_id = user_id_callable()
+            if user_id is None:
+                if may_enable_anonymous_users and flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+                    anonymous_permissions = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+                else:
+                    anonymous_permissions = Permissions.NONE
+                if required_object_permissions not in anonymous_permissions:
+                    return auth_extension.login_required(lambda: on_unauthorized(object_id))()
+            elif required_object_permissions not in logic.object_permissions.get_object_permissions_for_all_users(object_id):
                 user = logic.users.get_user(user_id)
                 if user.is_readonly and required_object_permissions not in Permissions.READ:
                     return on_unauthorized(object_id)
@@ -58,6 +65,8 @@ def object_permissions_required(
                 if required_object_permissions not in user_object_permissions:
                     return on_unauthorized(object_id)
             return func(*args, **kwargs)
+        if not may_enable_anonymous_users:
+            wrapper = auth_extension.login_required(wrapper)
         return wrapper
     return decorator
 

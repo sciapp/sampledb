@@ -4,7 +4,7 @@
   </label>
   <div class="col-md-9">
     {% if data is not none %}
-      {{ data.utc_datetime | babel_format_datetime }}
+      <span data-utc-datetime="{{ data.utc_datetime | generic_format_datetime }}">{{ data.utc_datetime | babel_format_datetime }}</span>
     {% else %}
       &mdash;
     {% endif %}

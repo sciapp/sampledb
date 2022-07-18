@@ -23,6 +23,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 action_permissions = ResourcePermissions(
     resource_id_name='action_id',
     all_user_permissions_table=AllUserActionPermissions,
+    anonymous_user_permissions_table=None,
     user_permissions_table=UserActionPermissions,
     group_permissions_table=GroupActionPermissions,
     project_permissions_table=ProjectActionPermissions,
@@ -63,14 +64,17 @@ def set_project_action_permissions(action_id: int, project_id: int, permissions:
 
 
 def get_user_action_permissions(
-        action_id,
-        user_id,
+        action_id: int,
+        user_id: typing.Optional[int],
         *,
         include_groups: bool = True,
         include_projects: bool = True,
         include_admin_permissions: bool = True,
         include_instrument_responsible_users: bool = True
 ) -> Permissions:
+    if user_id is None:
+        return Permissions.NONE
+
     additional_permissions = Permissions.NONE
 
     # users have GRANT permissions for actions they own
@@ -94,31 +98,6 @@ def get_user_action_permissions(
         limit_readonly_users=True,
         additional_permissions=additional_permissions
     )
-
-
-def action_is_public(action_id: int) -> bool:
-    """
-    Return whether an action is readable for all users.
-
-    :param action_id: the ID of an existing action
-    :return: whether the action is public or not
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    return Permissions.READ in get_action_permissions_for_all_users(action_id)
-
-
-def set_action_public(action_id: int, is_public: bool = True) -> None:
-    """
-    Set that an action is readable for all users.
-
-    :param action_id: the ID of an existing action
-    :param is_public: whether the action should be public or not
-    :raise errors.ActionDoesNotExistError: if no action with the given action
-        ID exists
-    """
-    # ensure that the action can be found
-    set_action_permissions_for_all_users(action_id, Permissions.READ if is_public else Permissions.NONE)
 
 
 def _get_action_responsible_user_ids(action_id: int) -> typing.List[int]:

@@ -446,6 +446,7 @@ def translations(base_url, driver):
                 lang_code=language.lang_code,
                 datetime_format_datetime=language.datetime_format_datetime,
                 datetime_format_moment=language.datetime_format_moment,
+                datetime_format_moment_output=language.datetime_format_moment_output,
                 enabled_for_input=True,
                 enabled_for_user_interface=True
             )
@@ -571,7 +572,7 @@ try:
             name="Sample Creation",
             description="This is an example action"
         )
-        sampledb.logic.action_permissions.set_action_public(instrument_action.id)
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         data = {
             'name': {
                 '_type': 'text',

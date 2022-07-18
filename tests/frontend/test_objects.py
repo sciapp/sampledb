@@ -864,7 +864,7 @@ def test_new_object(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -908,7 +908,7 @@ def test_new_object_batch(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -933,7 +933,7 @@ def test_new_object_batch_invalid_number(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -961,7 +961,7 @@ def test_new_object_batch_float_number(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -983,7 +983,7 @@ def test_new_object_batch_invalid_float_number(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -1005,7 +1005,7 @@ def test_new_object_batch_number_exceeds_max(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -1027,7 +1027,7 @@ def test_new_object_batch_number_below_one(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -1172,7 +1172,7 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1185,6 +1185,7 @@ def test_update_object_permissions(flask_server, user):
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
         'all_user_permissions': 'read',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'grant',
@@ -1200,7 +1201,7 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
         user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
@@ -1217,6 +1218,7 @@ def test_update_object_permissions(flask_server, user):
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
         'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': '42',
         'user_permissions-0-permissions': 'read',
@@ -1227,12 +1229,13 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     form_data = {
         'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
         'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'read',
@@ -1243,7 +1246,7 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.READ
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 403
@@ -1280,7 +1283,7 @@ def test_object_permissions_add_user(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1314,7 +1317,7 @@ def test_object_permissions_add_user(flask_server, user):
         user.id: sampledb.logic.object_permissions.Permissions.GRANT,
         user2.id: sampledb.logic.object_permissions.Permissions.WRITE
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
         user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
@@ -1454,7 +1457,7 @@ def test_create_object_similar_property_names(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     assert len(sampledb.logic.objects.get_objects()) == 0
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1595,7 +1598,7 @@ def test_copy_object(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     name = 'Example1'
     object = sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}, 'name2': {'_type': 'text', 'text': name}},

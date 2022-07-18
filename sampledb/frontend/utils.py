@@ -163,6 +163,22 @@ def to_json_no_extra_escapes(json_object, indent=None):
     return json.dumps(json_object, indent=indent)
 
 
+@jinja_filter('generic_format_datetime')
+def generic_format_datetime(
+        utc_datetime: typing.Union[str, datetime]
+) -> str:
+    """
+    Returns a datetime in the common format and in UTC.
+
+    :param utc_datetime: a datetime str or object in UTC
+    :return: the formatted datetime
+    """
+    if isinstance(utc_datetime, str):
+        # assume the datetime is already formatted
+        return utc_datetime
+    return utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+
+
 @jinja_filter('babel_format_datetime')
 def custom_format_datetime(
         utc_datetime: typing.Union[str, datetime],

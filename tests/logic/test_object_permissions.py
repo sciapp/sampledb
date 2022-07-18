@@ -110,14 +110,14 @@ def user(users):
     return users[0]
 
 
-def test_public_objects(independent_action_object):
+def test_object_permissions_for_all_users(independent_action_object):
     object_id = independent_action_object.object_id
 
-    assert not object_permissions.object_is_public(object_id)
-    object_permissions.set_object_public(object_id)
-    assert object_permissions.object_is_public(object_id)
-    object_permissions.set_object_public(object_id, False)
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+    object_permissions.set_object_permissions_for_all_users(object_id, Permissions.READ)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
+    object_permissions.set_object_permissions_for_all_users(object_id, Permissions.NONE)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
 
 def test_default_user_object_permissions(user, independent_action_object):
@@ -180,10 +180,10 @@ def test_get_instrument_responsible_user_object_permissions(user, instrument, in
     assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.GRANT
 
 
-def test_get_user_public_object_permissions(user, independent_action_object):
+def test_get_user_object_permissions_for_all_users(user, independent_action_object):
     user_id = user.id
     object_id = independent_action_object.object_id
-    object_permissions.set_object_public(object_id)
+    object_permissions.set_object_permissions_for_all_users(object_id, Permissions.READ)
     assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
 
 
@@ -195,13 +195,13 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
     assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
         users[1].id: Permissions.GRANT
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    object_permissions.set_object_public(object_id)
+    object_permissions.set_object_permissions_for_all_users(object_id, Permissions.READ)
     assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
         users[1].id: Permissions.GRANT
     }
-    assert object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
     sampledb.db.session.add(UserObjectPermissions(user_id=user_id, object_id=object_id, permissions=Permissions.WRITE))
     sampledb.db.session.commit()
@@ -209,7 +209,7 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
         user_id: Permissions.WRITE,
         users[1].id: Permissions.GRANT
     }
-    assert object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
     instrument.responsible_users.append(users[0])
     sampledb.db.session.add(instrument)
@@ -218,7 +218,7 @@ def test_get_object_permissions(users, instrument, instrument_action_object):
         user_id: Permissions.GRANT,
         users[1].id: Permissions.GRANT
     }
-    assert object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
 
 def test_get_object_permissions_with_projects(users, independent_action_object):
@@ -293,7 +293,7 @@ def test_update_object_permissions(users, independent_action_object):
     assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
         users[1].id: Permissions.GRANT
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
 
 def test_group_permissions(users, independent_action_object):
@@ -304,7 +304,7 @@ def test_group_permissions(users, independent_action_object):
     assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
     assert object_permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
 
     object_permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.WRITE)
@@ -312,7 +312,7 @@ def test_group_permissions(users, independent_action_object):
     assert object_permissions.get_object_permissions_for_users(object_id=object_id) == {
         creator.id: Permissions.GRANT
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
     assert object_permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.NONE
 
     groups.add_user_to_group(group_id=group_id, user_id=user.id)
@@ -321,7 +321,7 @@ def test_group_permissions(users, independent_action_object):
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
     assert object_permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
 
     object_permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.READ)
@@ -330,7 +330,7 @@ def test_group_permissions(users, independent_action_object):
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
     assert object_permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
 
     object_permissions.set_group_object_permissions(object_id=object_id, group_id=group_id, permissions=Permissions.READ)
@@ -340,7 +340,7 @@ def test_group_permissions(users, independent_action_object):
         creator.id: Permissions.GRANT,
         user.id: Permissions.WRITE
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
     assert object_permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.WRITE
 
     object_permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=Permissions.READ)
@@ -351,7 +351,7 @@ def test_group_permissions(users, independent_action_object):
         creator.id: Permissions.GRANT,
         user.id: Permissions.READ
     }
-    assert not object_permissions.object_is_public(object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
     assert object_permissions.get_user_object_permissions(object_id=object_id, user_id=user.id) == Permissions.READ
 
 
@@ -587,28 +587,28 @@ def test_default_permissions_for_projects(users, independent_action):
 def test_default_public_permissions(users, independent_action):
     user, creator = users
 
-    assert not default_permissions.default_is_public(creator_id=creator.id)
+    assert sampledb.models.Permissions.READ not in default_permissions.get_default_permissions_for_all_users(creator.id)
     object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
         'name': {
             '_type': 'text',
             'text': 'Name'
         }
     })
-    assert not object_permissions.object_is_public(object_id=object.id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.id)
 
-    default_permissions.set_default_public(creator_id=creator.id, is_public=True)
-    assert default_permissions.default_is_public(creator_id=creator.id)
+    default_permissions.set_default_permissions_for_all_users(creator.id, sampledb.models.Permissions.READ)
+    assert sampledb.models.Permissions.READ in default_permissions.get_default_permissions_for_all_users(creator.id)
     object = sampledb.logic.objects.create_object(user_id=creator.id, action_id=independent_action.id, data={
         'name': {
             '_type': 'text',
             'text': 'Name'
         }
     })
-    assert object_permissions.object_is_public(object_id=object.id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.id)
 
-    default_permissions.set_default_public(creator_id=creator.id, is_public=False)
-    assert not default_permissions.default_is_public(creator_id=creator.id)
-    assert object_permissions.object_is_public(object_id=object.id)
+    default_permissions.set_default_permissions_for_all_users(creator.id, sampledb.models.Permissions.NONE)
+    assert sampledb.models.Permissions.READ not in default_permissions.get_default_permissions_for_all_users(creator.id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.id)
 
 
 def test_get_object_permissions_for_readonly_users(users, instrument, instrument_action_object):

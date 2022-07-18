@@ -49,7 +49,7 @@ from .markdown_images import MarkdownImage
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
-from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions
+from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, AnonymousUserObjectPermissions
 from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
@@ -126,6 +126,7 @@ __all__ = [
     'GroupObjectPermissions',
     'ProjectObjectPermissions',
     'AllUserObjectPermissions',
+    'AnonymousUserObjectPermissions',
     'DefaultUserPermissions',
     'DefaultGroupPermissions',
     'DefaultProjectPermissions',

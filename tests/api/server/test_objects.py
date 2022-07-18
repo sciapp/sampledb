@@ -153,7 +153,7 @@ def test_get_object_version(flask_server, auth, user, action):
         "component_id": object.component_id
     }
 
-    sampledb.logic.action_permissions.set_action_public(action_id=object.action_id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(object.action_id, sampledb.models.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
     assert r.status_code == 200
     assert json.loads(r.content.decode('utf-8')) == {

@@ -1676,6 +1676,7 @@ def test_project_translations():
         lang_code=german.lang_code,
         datetime_format_datetime=german.datetime_format_datetime,
         datetime_format_moment=german.datetime_format_moment,
+        datetime_format_moment_output=german.datetime_format_moment_output,
         enabled_for_input=True,
         enabled_for_user_interface=True
     )
