@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-09-13 16:35+0200\n"
+"POT-Creation-Date: 2022-09-14 13:03+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1324,6 +1324,27 @@ msgstr "Datenschutzerklärung"
 msgid "Accessibility"
 msgstr "Barrierefreiheit"
 
+msgid "Urgent Notifications"
+msgstr "Wichtige Benachrichtigungen"
+
+#, python-format
+msgid ""
+"<a href=\"%(assigner_url)s\">%(assigner_name)s</a> assigned you as "
+"responsible user for <a href=\"%(object_url)s\">%(object_name)s</a>."
+msgstr ""
+"<a href=\"%(assigner_url)s\">%(assigner_name)s</a> hat Sie als "
+"verantwortlichen Nutzer für <a "
+"href=\"%(object_url)s\">%(object_name)s</a> eingetragen."
+
+msgid "View Object"
+msgstr "Objekt anzeigen"
+
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgid "Decline"
+msgstr "Ablehnen"
+
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
 
@@ -1524,12 +1545,6 @@ msgstr ""
 "<a href=\"%(assigner_url)s\">%(assigner_name)s</a> hat Sie als "
 "verantwortlichen Nutzer für <a href=\"%(object_url)s\">Objekt "
 "#%(object_id)s</a> eingetragen."
-
-msgid "Confirm"
-msgstr "Bestätigen"
-
-msgid "Decline"
-msgstr "Ablehnen"
 
 #, python-format
 msgid ""

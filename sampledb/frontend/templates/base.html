@@ -38,8 +38,14 @@
 
 {% if current_user.is_authenticated %}
   {% set num_unread_notifications = (current_user | get_num_unread_notifications) %}
+  {% if config['SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS']  %}
+    {% set object_responsibility_assignments = get_unhandled_object_responsibility_assignments(current_user.id) %}
+  {% else %}
+    {% set object_responsibility_assignments = [] %}
+  {% endif %}
 {% else %}
   {% set num_unread_notifications = 0 %}
+  {% set object_responsibility_assignments = [] %}
 {% endif %}
 <nav class="navbar navbar-default navbar-static-top">
   <div class="container-fluid">
@@ -285,6 +291,37 @@
     <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_imprint %} &bullet; <a href="{{ service_imprint }}">{{ _('Imprint') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}{% if service_accessibility %} &bullet; <a href="{{ service_accessibility }}">{{ _('Accessibility') }}</a>{% endif %}</p>
   </div>
 </footer>
+
+{% if 'hide_notifications' not in request.args and object_responsibility_assignments %}
+<div class="modal fade" id="urgentNotificationModal" tabindex="-1" role="dialog" aria-labelledby="urgentNotificationModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="urgentNotificationModalLabel">{{ _("Urgent Notifications") }}</h4>
+      </div>
+      <div class="modal-body">
+      {% for object_responsibility_assignment in object_responsibility_assignments %}
+        {% if loop.index0 %}
+          <hr />
+        {% endif %}
+        <div class="clearfix">
+          <p>
+            {{ _('<a href="%(assigner_url)s">%(assigner_name)s</a> assigned you as responsible user for <a href="%(object_url)s">%(object_name)s</a>.', assigner_url=url_for('.user_profile', user_id=object_responsibility_assignment.user_id), assigner_name=get_user(object_responsibility_assignment.user_id).name, object_url=url_for('.object', object_id=object_responsibility_assignment.object_id), object_name=get_object_name_if_user_has_permissions(object_responsibility_assignment.object_id)) }}
+          </p>
+          <div class="pull-right">
+            <a class="btn btn-default btn-xs" href="{{ url_for('.object', object_id=object_responsibility_assignment.object_id, hide_notifications=1, _anchor='locations') }}">{{ _('View Object') }}</a>
+            <a class="btn btn-primary btn-xs" href="{{ build_object_location_assignment_confirmation_url(object_responsibility_assignment.id) }}">{{ _('Confirm') }}</a>
+            <a class="btn btn-danger btn-xs" href="{{ build_object_location_assignment_declination_url(object_responsibility_assignment.id) }}">{{ _('Decline') }}</a>
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
  {% block scripts %}
   <script src="{{ fingerprinted_static('js/jquery-3.5.1.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js/bootstrap.min.js') }}"></script>
@@ -292,7 +329,6 @@
   <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
 
   <script>
-
     $('[data-toggle="tooltip"]').tooltip();
     {% if current_user.is_authenticated %}
       {% with user_settings = get_user_settings() %}
@@ -403,6 +439,14 @@
       $('.show-fullscreen-image-preview').on('click', function (e) {
         $(this).next('.fullscreen-image-preview').css('display', 'flex');
       });
+
+    {% if object_responsibility_assignments %}
+      let urgent_notification_modal = $('#urgentNotificationModal');
+      urgent_notification_modal.on('shown.bs.modal', function () {
+        urgent_notification_modal.focus();
+      });
+      urgent_notification_modal.modal();
+    {% endif %}
    });
   </script>
   {% endblock %}

@@ -576,6 +576,8 @@ ENABLE_ANONYMOUS_USERS = False
 
 ENABLE_NUMERIC_TAGS = None
 
+SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -623,6 +625,7 @@ for config_name in {
     'ENABLE_MONITORINGDASHBOARD',
     'ENABLE_ANONYMOUS_USERS',
     'ENABLE_NUMERIC_TAGS',
+    'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):
