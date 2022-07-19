@@ -47,13 +47,26 @@ class Location(collections.namedtuple('Location', ['id', 'name', 'description', 
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id', 'confirmed', 'fed_id', 'component_id'])):
+class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id', 'confirmed', 'fed_id', 'component_id', 'declined'])):
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
 
-    def __new__(cls, id: int, object_id: int, location_id: int, user_id: int, description: typing.Optional[typing.Dict[str, str]], utc_datetime: datetime.datetime, responsible_user_id: int, confirmed: bool, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None):
-        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed, fed_id, component_id)
+    def __new__(
+            cls,
+            id: int,
+            object_id: int,
+            location_id: int,
+            user_id: int,
+            description: typing.Optional[typing.Dict[str, str]],
+            utc_datetime: datetime.datetime,
+            responsible_user_id: int,
+            confirmed: bool,
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None,
+            declined: bool = False
+    ):
+        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed, fed_id, component_id, declined)
         return self
 
     @classmethod
@@ -68,7 +81,8 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             utc_datetime=object_location_assignment.utc_datetime,
             confirmed=object_location_assignment.confirmed,
             fed_id=object_location_assignment.fed_id,
-            component_id=object_location_assignment.component_id
+            component_id=object_location_assignment.component_id,
+            declined=object_location_assignment.declined
         )
 
 
@@ -318,7 +332,8 @@ def assign_location_to_object(
         user_id=user_id,
         description=description,
         utc_datetime=datetime.datetime.utcnow(),
-        confirmed=(user_id == responsible_user_id)
+        confirmed=(user_id == responsible_user_id),
+        declined=False
     )
     db.session.add(object_location_assignment)
     db.session.commit()
@@ -339,7 +354,8 @@ def create_fed_assignment(
         user_id: typing.Optional[int],
         description: typing.Optional[typing.Dict[str, str]],
         utc_datetime: typing.Optional[datetime.datetime],
-        confirmed: typing.Optional[bool]
+        confirmed: typing.Optional[bool],
+        declined: bool = False
 ) -> ObjectLocationAssignment:
     if description is not None:
         if isinstance(description, str):
@@ -367,6 +383,7 @@ def create_fed_assignment(
         description=description,
         utc_datetime=utc_datetime,
         confirmed=confirmed,
+        declined=declined,
         fed_id=fed_id,
         component_id=component_id
     )
@@ -460,7 +477,26 @@ def confirm_object_responsibility(object_location_assignment_id: int) -> None:
     :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
         location assignment with the given object location assignment ID exists
     """
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
+    object_location_assignment = get_object_location_assignment(object_location_assignment_id)
+    if object_location_assignment.declined:
+        raise errors.ObjectLocationAssignmentAlreadyDeclinedError()
     object_location_assignment.confirmed = True
+    db.session.add(object_location_assignment)
+    db.session.commit()
+
+
+def decline_object_responsibility(object_location_assignment_id: int) -> None:
+    """
+    Decline responsibility for an object.
+
+    :param object_location_assignment_id: the ID of an existing object location
+        assignment
+    :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
+        location assignment with the given object location assignment ID exists
+    """
+    object_location_assignment = get_object_location_assignment(object_location_assignment_id)
+    if object_location_assignment.confirmed:
+        raise errors.ObjectLocationAssignmentAlreadyConfirmedError()
+    object_location_assignment.declined = True
     db.session.add(object_location_assignment)
     db.session.commit()

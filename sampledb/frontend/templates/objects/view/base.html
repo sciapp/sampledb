@@ -700,8 +700,11 @@
                 {{ federation_information_symbol(user.component, user.fed_id, 'user') }}
                 {% if object_location_assignment.confirmed %}
                   <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.')}}">&check;</span>
+                {% elif object_location_assignment.declined %}
+                  <span class="label label-danger label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has declined this responsibility assignment.')}}">&cross;</span>
                 {% elif object_location_assignment.responsible_user_id == current_user.id %}
                   <a class="btn btn-xs btn-primary" href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">{{ _('Confirm') }}</a>
+                  <a class="btn btn-xs btn-danger" href="{{ build_object_location_assignment_declination_url(object_location_assignment.id) }}">{{ _('Decline') }}</a>
                 {% else %}
                   <span class="label label-warning label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has not confirmed this responsibility assignment yet.') }}">?</span>
                 {% endif %}

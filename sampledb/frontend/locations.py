@@ -18,7 +18,7 @@ from .permission_forms import set_up_permissions_forms, handle_permission_forms
 from .. import logic
 from ..logic import errors
 from ..logic.components import get_component
-from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility
+from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility
 from ..logic.languages import Language, get_language, get_languages, get_language_by_lang_code
 from ..logic.security_tokens import verify_token
 from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read
@@ -281,16 +281,25 @@ def new_location():
     return _show_location_form(None, parent_location)
 
 
-@frontend.route('/locations/confirm_responsibility')
-@flask_login.login_required
-def accept_responsibility_for_object():
+def _handle_object_location_assignment(
+        token_salt: str,
+        missing_token_text: str,
+        invalid_token_text: str,
+        success_text: str,
+        callback: typing.Callable[[int], None]
+) -> typing.Any:
     token = flask.request.args.get('t', None)
     if token is None:
-        flask.flash(_('The confirmation token is missing.'), 'error')
+        flask.flash(missing_token_text, 'error')
         return flask.redirect(flask.url_for('.index'))
-    object_location_assignment_id = verify_token(token, salt='confirm_responsibility', secret_key=flask.current_app.config['SECRET_KEY'], expiration=None)
+    object_location_assignment_id = verify_token(
+        token=token,
+        salt=token_salt,
+        secret_key=flask.current_app.config['SECRET_KEY'],
+        expiration=None
+    )
     if object_location_assignment_id is None:
-        flask.flash(_('The confirmation token is invalid.'), 'error')
+        flask.flash(invalid_token_text, 'error')
         return flask.redirect(flask.url_for('.index'))
     try:
         object_location_assignment = get_object_location_assignment(object_location_assignment_id)
@@ -302,14 +311,40 @@ def accept_responsibility_for_object():
         return flask.redirect(flask.url_for('.index'))
     if object_location_assignment.confirmed:
         flask.flash(_('This responsibility assignment has already been confirmed.'), 'success')
+    elif object_location_assignment.declined:
+        flask.flash(_('This responsibility assignment has already been declined.'), 'success')
     else:
-        confirm_object_responsibility(object_location_assignment_id)
-        flask.flash(_('You have successfully confirmed this responsibility assignment.'), 'success')
+        callback(object_location_assignment_id)
+        flask.flash(success_text, 'success')
         mark_notification_for_being_assigned_as_responsible_user_as_read(
             user_id=flask_login.current_user.id,
             object_location_assignment_id=object_location_assignment_id
         )
     return flask.redirect(flask.url_for('.object', object_id=object_location_assignment.object_id))
+
+
+@frontend.route('/locations/confirm_responsibility')
+@flask_login.login_required
+def accept_responsibility_for_object():
+    return _handle_object_location_assignment(
+        token_salt='confirm_responsibility',
+        missing_token_text=_('The confirmation token is missing.'),
+        invalid_token_text=_('The confirmation token is invalid.'),
+        success_text=_('You have successfully confirmed this responsibility assignment.'),
+        callback=confirm_object_responsibility
+    )
+
+
+@frontend.route('/locations/decline_responsibility')
+@flask_login.login_required
+def decline_responsibility_for_object():
+    return _handle_object_location_assignment(
+        token_salt='decline_responsibility',
+        missing_token_text=_('The declination token is missing.'),
+        invalid_token_text=_('The declination token is invalid.'),
+        success_text=_('You have successfully declined this responsibility assignment.'),
+        callback=decline_object_responsibility
+    )
 
 
 def _sort_location_ids_by_name(location_ids: typing.Iterable[int], location_map: typing.Dict[int, Location]) -> typing.List[int]:

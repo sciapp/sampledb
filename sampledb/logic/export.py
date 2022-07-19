@@ -87,12 +87,22 @@ def get_archive_files(
             relevant_user_ids.add(location_assignment.user_id)
             relevant_user_ids.add(location_assignment.responsible_user_id)
             relevant_location_ids.add(location_assignment.location_id)
+            if location_assignment.responsible_user_id:
+                if location_assignment.confirmed:
+                    status = 'confirmed'
+                elif location_assignment.declined:
+                    status = 'declined'
+                else:
+                    status = 'unconfirmed'
+            else:
+                status = None
             object_infos[-1]['location_assignments'].append({
                 'id': location_assignment.id,
                 'assigning_user_id': location_assignment.user_id,
                 'responsible_user_id': location_assignment.responsible_user_id,
                 'location_id': location_assignment.location_id,
                 'utc_datetime': location_assignment.utc_datetime.isoformat(),
+                'status': status
             })
 
         log_entries = logic.object_log.get_object_log_entries(object.id, user_id)

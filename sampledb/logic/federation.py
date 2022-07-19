@@ -480,7 +480,7 @@ def import_object_location_assignment(assignment_data, object, component):
     location_id = _get_or_create_location_id(assignment_data['location'])
 
     if assignment is None:
-        assignment = create_fed_assignment(assignment_data['fed_id'], component_id, object.object_id, location_id, responsible_user_id, user_id, assignment_data['description'], assignment_data['utc_datetime'], assignment_data['confirmed'])
+        assignment = create_fed_assignment(assignment_data['fed_id'], component_id, object.object_id, location_id, responsible_user_id, user_id, assignment_data['description'], assignment_data['utc_datetime'], assignment_data['confirmed'], assignment_data.get('declined', False))
         fed_logs.import_object_location_assignment(assignment.id, component.id)
     elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.utc_datetime != assignment_data['utc_datetime']:
         assignment.location_id = location_id
@@ -490,6 +490,7 @@ def import_object_location_assignment(assignment_data, object, component):
         assignment.object_id = object.object_id
         assignment.confirmed = assignment_data['confirmed']
         assignment.utc_datetime = assignment_data['utc_datetime']
+        assignment.declined = assignment_data.get('declined', False)
         db.session.commit()
         fed_logs.update_object_location_assignment(assignment.id, component.id)
     return assignment

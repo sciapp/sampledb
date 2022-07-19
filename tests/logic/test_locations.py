@@ -280,6 +280,34 @@ def test_object_responsibility_confirmation(user: User, object: Object, app):
     locations.confirm_object_responsibility(object_location_assignment.id)
     object_location_assignment = locations.get_current_object_location_assignment(object.id)
     assert object_location_assignment.confirmed
+    assert not object_location_assignment.declined
+    with pytest.raises(errors.ObjectLocationAssignmentAlreadyConfirmedError):
+        locations.decline_object_responsibility(object_location_assignment.id)
+    object_location_assignment = locations.get_current_object_location_assignment(object.id)
+    assert not object_location_assignment.declined
+    assert object_location_assignment.confirmed
+
+
+def test_object_responsibility_declination(user: User, object: Object, app):
+    other_user = User(name='Other User', email="example@example.com", type=UserType.PERSON)
+    sampledb.db.session.add(other_user)
+    sampledb.db.session.commit()
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        locations.assign_location_to_object(object.id, None, user.id, other_user.id, {'en': ""})
+    app.config['SERVER_NAME'] = server_name
+    object_location_assignment = locations.get_current_object_location_assignment(object.id)
+    assert not object_location_assignment.declined
+    locations.decline_object_responsibility(object_location_assignment.id)
+    object_location_assignment = locations.get_current_object_location_assignment(object.id)
+    assert object_location_assignment.declined
+    assert not object_location_assignment.confirmed
+    with pytest.raises(errors.ObjectLocationAssignmentAlreadyDeclinedError):
+        locations.confirm_object_responsibility(object_location_assignment.id)
+    object_location_assignment = locations.get_current_object_location_assignment(object.id)
+    assert object_location_assignment.declined
+    assert not object_location_assignment.confirmed
 
 
 def test_location_translations(user: User):

@@ -42,7 +42,12 @@
             <td>
               {% if notification.type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER %}
                 {{ _('<a href="%(assigner_url)s">%(assigner_name)s</a> assigned you as responsible user for <a href="%(object_url)s">object #%(object_id)s</a>.', assigner_url=url_for('.user_profile', user_id=notification.data['assigner_id']), assigner_name=get_user(notification.data['assigner_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
-                {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed(notification.data['object_location_assignment_id']) %}<a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">{{ _('Confirm') }}</a>{% endif %}
+                {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed_or_declined(notification.data['object_location_assignment_id']) %}
+                  <a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">{{ _('Confirm') }}</a>
+                  {% if 'declination_url' in notification.data %}
+                  <a class="btn btn-xs btn-danger" href="{{ notification.data['declination_url'] }}">{{ _('Decline') }}</a>
+                  {% endif %}
+                {% endif %}
               {% elif notification.type == NotificationType.OTHER %}
                 {{ notification.data['message'] }}
               {% elif notification.type == NotificationType.INVITED_TO_GROUP %}
