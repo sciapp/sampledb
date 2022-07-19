@@ -291,7 +291,9 @@ def change_preferences(user, user_id):
                     role = None
                 extra_fields = {}
                 for extra_field_id in flask.current_app.config['EXTRA_USER_FIELDS']:
-                    extra_fields[extra_field_id] = flask.request.form.get('extra_field_' + str(extra_field_id)) or None
+                    extra_field_value = flask.request.form.get('extra_field_' + str(extra_field_id))
+                    if extra_field_value:
+                        extra_fields[extra_field_id] = extra_field_value
                 change_orcid = (user.orcid != orcid and (orcid is not None or user.orcid is not None))
                 change_affiliation = (user.affiliation != affiliation and (affiliation is not None or user.affiliation is not None))
                 change_role = (user.role != role and (role is not None or user.role is not None))
