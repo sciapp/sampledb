@@ -421,13 +421,26 @@ def get_objects_with_permissions(
         parameters['min_group_permissions_int'] = group_permissions.value
 
     if all_users_permissions is not None:
-        stmt += """
-        JOIN all_user_object_permissions as ap1
-        ON (
-            ap1.object_id = o.object_id AND
-            ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> ap1.permissions::text)::int >= :min_all_users_permissions_int
-        )
-        """
+        if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            stmt += """
+            JOIN (
+                SELECT object_id, permissions FROM all_user_object_permissions
+                UNION
+                SELECT object_id, permissions FROM anonymous_user_object_permissions
+            ) as ap1
+            ON (
+                ap1.object_id = o.object_id AND
+                ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> ap1.permissions::text)::int >= :min_all_users_permissions_int
+            )
+            """
+        else:
+            stmt += """
+            JOIN all_user_object_permissions as ap1
+            ON (
+                ap1.object_id = o.object_id AND
+                ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> ap1.permissions::text)::int >= :min_all_users_permissions_int
+            )
+            """
         parameters['min_all_users_permissions_int'] = all_users_permissions.value
 
     if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
