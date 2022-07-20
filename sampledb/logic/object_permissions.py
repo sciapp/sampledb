@@ -139,11 +139,12 @@ def get_user_object_permissions(
         SELECT
         MAX(permissions_int)
         FROM user_object_permissions_by_all
-        WHERE (user_id = :user_id OR user_id IS NULL) AND object_id = :object_id
+        WHERE (user_id = :user_id OR user_id IS NULL) AND (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE)
         """)
         permissions_int = db.engine.execute(stmt, {
             'user_id': user_id,
-            'object_id': object_id
+            'object_id': object_id,
+            'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS']
         }).fetchone()[0]
         if permissions_int is None or permissions_int <= 0:
             return Permissions.NONE
@@ -239,7 +240,7 @@ def get_object_info_with_permissions(
             SELECT
             object_id, MAX(permissions_int) AS max_permission
             FROM user_object_permissions_by_all
-            WHERE user_id = :user_id OR user_id IS NULL
+            WHERE (user_id = :user_id OR user_id IS NULL) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE)
             GROUP BY (object_id)
             HAVING MAX(permissions_int) >= :min_permissions_int
         ) AS p
@@ -259,7 +260,8 @@ def get_object_info_with_permissions(
 
     parameters = {
         'min_permissions_int': permissions.value,
-        'user_id': user_id
+        'user_id': user_id,
+        'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS']
     }
 
     table = stmt.alias('tbl')
@@ -362,12 +364,13 @@ def get_objects_with_permissions(
             SELECT
             u.object_id
             FROM user_object_permissions_by_all as u
-            WHERE u.user_id = :user_id OR u.user_id IS NULL
+            WHERE (u.user_id = :user_id OR u.user_id IS NULL) AND (u.requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE)
             GROUP BY (u.object_id)
             HAVING MAX(u.permissions_int) >= :min_permissions_int
         ) AS up
         ON o.object_id = up.object_id
         """
+        parameters['enable_anonymous_users'] = flask.current_app.config['ENABLE_ANONYMOUS_USERS']
 
     if other_user_id is not None:
         stmt += """
@@ -375,7 +378,7 @@ def get_objects_with_permissions(
             SELECT
             u.object_id
             FROM user_object_permissions_by_all as u
-            WHERE u.user_id = :other_user_id OR u.user_id IS NULL
+            WHERE (u.user_id = :other_user_id OR u.user_id IS NULL) AND (u.requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE)
             GROUP BY (u.object_id)
             HAVING MAX(u.permissions_int) >= :min_other_user_permissions_int
         ) AS oup
@@ -385,6 +388,7 @@ def get_objects_with_permissions(
         if other_user_permissions is None:
             other_user_permissions = permissions
         parameters['min_other_user_permissions_int'] = other_user_permissions.value
+        parameters['enable_anonymous_users'] = flask.current_app.config['ENABLE_ANONYMOUS_USERS']
 
     if project_id is not None:
         stmt += """
