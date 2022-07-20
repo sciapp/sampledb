@@ -300,6 +300,8 @@ def get_objects_with_permissions(
         group_permissions: typing.Optional[Permissions] = None,
         project_id: typing.Optional[int] = None,
         project_permissions: typing.Optional[Permissions] = None,
+        all_users_permissions: typing.Optional[Permissions] = None,
+        anonymous_users_permissions: typing.Optional[Permissions] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None,
         num_objects_found: typing.Optional[typing.List[int]] = None,
         name_only: bool = False,
@@ -417,6 +419,43 @@ def get_objects_with_permissions(
         if group_permissions is None:
             group_permissions = permissions
         parameters['min_group_permissions_int'] = group_permissions.value
+
+    if all_users_permissions is not None:
+        if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            stmt += """
+            JOIN (
+                SELECT object_id, permissions FROM all_user_object_permissions
+                UNION
+                SELECT object_id, permissions FROM anonymous_user_object_permissions
+            ) as ap1
+            ON (
+                ap1.object_id = o.object_id AND
+                ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> ap1.permissions::text)::int >= :min_all_users_permissions_int
+            )
+            """
+        else:
+            stmt += """
+            JOIN all_user_object_permissions as ap1
+            ON (
+                ap1.object_id = o.object_id AND
+                ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> ap1.permissions::text)::int >= :min_all_users_permissions_int
+            )
+            """
+        parameters['min_all_users_permissions_int'] = all_users_permissions.value
+
+    if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+        if anonymous_users_permissions is not None:
+            stmt += """
+            JOIN anonymous_user_object_permissions as ap2
+            ON (
+                ap2.object_id = o.object_id AND
+                ('{"READ": 1, "WRITE": 2, "GRANT": 3}'::jsonb ->> ap2.permissions::text)::int >= :min_anonymous_users_permissions_int
+            )
+            """
+            parameters['min_anonymous_users_permissions_int'] = anonymous_users_permissions.value
+    elif anonymous_users_permissions is not None and Permissions.READ in anonymous_users_permissions:
+        # if permissions for anonymous users are required but anonymous users are disabled, do not return any objects
+        return []
 
     if object_ids:
         stmt += """

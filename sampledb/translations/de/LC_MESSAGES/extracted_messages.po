@@ -3585,6 +3585,14 @@ msgid "with activity by user:"
 msgstr "mit Aktivität des Nutzers:"
 
 #, python-format
+msgid "with %(permissions)s permissions for anonymous users"
+msgstr "mit %(permissions)s-Berechtigungen für anonyme Nutzer"
+
+#, python-format
+msgid "with %(permissions)s permissions for all signed-in users"
+msgstr "mit %(permissions)s-Berechtigungen für alle angemeldeten Nutzer"
+
+#, python-format
 msgid "with %(permissions)s permissions for user:"
 msgstr "mit %(permissions)s-Berechtigungen für den Nutzer:"
 
@@ -3638,6 +3646,12 @@ msgstr "Filter"
 
 msgid "Filter by Permissions"
 msgstr "Nach Berechtigungen filtern"
+
+msgid "Filter by Permissions for All Signed-In Users"
+msgstr "Nach Berechtigungen für alle angemeldeten Nutzer filtern"
+
+msgid "Filter by Permissions for Anonymous Users"
+msgstr "Nach Berechtigungen für anonyme Nutzer filtern"
 
 msgid "Filter by Action Type"
 msgstr "Nach Aktionstyp filtern"
