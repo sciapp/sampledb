@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-07-13 14:11+0200\n"
+"POT-Creation-Date: 2022-07-21 10:29+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -185,6 +185,21 @@ msgstr "Dieses Token wurde bereits mit dieser Datenbank verknüpft."
 
 msgid "The database information has been added successfully"
 msgstr "Die Datenbank wurde erfolgreich angelegt"
+
+msgid "That database does not exist."
+msgstr "Diese Datenbank existiert nicht."
+
+msgid "There is no alias for this database."
+msgstr "Es gibt keinen Nutzer-Alias für diese Datenbank."
+
+msgid "User alias updated successfully."
+msgstr "Der Nutzeralias wurde erfolgreich aktualisiert."
+
+msgid "The alias for this database has already been deleted."
+msgstr "Der Nutzer-Alias für diese Datenbank wurde bereits gelöscht."
+
+msgid "Please enter your name as: surname, given names."
+msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
 
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
@@ -728,9 +743,6 @@ msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
 msgid "Passwords must match"
 msgstr "Passwörter müssen übereinstimmen"
 
-msgid "Please enter your name as: surname, given names."
-msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vorname."
-
 msgid "Unknown Location"
 msgstr "Unbekannter Ort"
 
@@ -1174,6 +1186,9 @@ msgstr "Ihre Aktionen"
 
 msgid "Your Objects"
 msgstr "Ihre Objekte"
+
+msgid "User Alias Settings"
+msgstr "Nutzer-Alias Einstellungen"
 
 msgid "Invite a Guest"
 msgstr "Gast einladen"
@@ -4484,9 +4499,41 @@ msgstr "Token"
 msgid "Please enter the authentication token."
 msgstr "Bitte geben Sie das Authentifizierungs-Token ein."
 
+msgid "User Alias"
+msgstr "Nutzer-Alias"
+
 #, python-format
-msgid "%(service_name)s can share information with other SampleDB instances."
-msgstr "%(service_name)s kann Informationen mit anderen SampleDB Instanzen teilen."
+msgid "User Alias shared with %(component_name)s"
+msgstr "Nutzer-Alias, der mit %(component_name)s geteilt wird"
+
+msgid "(Taken from profile)"
+msgstr "(Übernommen aus Nutzerprofil)"
+
+msgid "E-Mail"
+msgstr "E-Mail"
+
+#, python-format
+msgid ""
+"As you have not configured an user alias yet, no personal information "
+"about you is shared with %(component_name)s."
+msgstr ""
+"Da Sie noch keinen Nutzer-Alias eingerichtet haben, werden keine "
+"persönlichen Daten mit %(component_name)s geteilt."
+
+#, python-format
+msgid "Create User Alias for %(component_name)s"
+msgstr "Alias für %(component_name)s erstellen"
+
+#, python-format
+msgid ""
+"%(service_name)s can share information with other SampleDB instances. To "
+"determine which personal data is shared with other databases, you can <a "
+"href=\"%(alias_url)s\">create an alias</a>."
+msgstr ""
+"%(service_name)s kann Informationen mit anderen SampleDB Instanzen "
+"teilen. Um zu bestimmen welche personenbezogenen Daten mit anderen "
+"Datenbanken geteilt werden, können Sie <a href=\"%(alias_url)s\">einen "
+"Alias anlegen</a>."
 
 #, python-format
 msgid "UUID of %(service_name)s: "
@@ -4494,6 +4541,49 @@ msgstr "UUID von %(service_name)s: "
 
 msgid "Add Database"
 msgstr "Datenbank hinzufügen"
+
+#, python-format
+msgid ""
+"When an object is shared by %(service_name)s with other databases, by "
+"default no information about you except for your user ID will be shared. "
+"You can define a user alias for each database and control what "
+"information may be shared."
+msgstr ""
+"Wenn ein Objekt von %(service_name)s mit einer anderen Datenbank geteilt "
+"wird, werden standardmäßig bis auf Ihre Nutzer-ID keine weiteren "
+"Informationen über Sie ausgetauscht. Sie können für jede Datenbank einen "
+"Nutzer-Alias definieren und einstellen, welche Informationen geteilt "
+"werden dürfen."
+
+msgid "Add User Alias"
+msgstr "Nutzer-Alias hinzufügen"
+
+#, python-format
+msgid ""
+"Always use the value from my user profile (currently: "
+"<strong>%(value)s</strong>)"
+msgstr ""
+"Nutze immer den Wert in meinem Nutzerprofil (aktuell: "
+"<strong>%(value)s</strong>)"
+
+msgid "not set"
+msgstr "nicht gesetzt"
+
+msgid "Copy from"
+msgstr "Kopieren von"
+
+msgid "user profile"
+msgstr "Nutzerprofil"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+#, python-format
+msgid "Edit Alias for %(component_name)s"
+msgstr "Alias für %(component_name)s bearbeiten"
+
+msgid "Edit Alias:"
+msgstr "Alias bearbeiten:"
 
 msgid "Unable to export data of type:"
 msgstr "Exportieren nicht möglich für Typ:"
@@ -5034,4 +5124,3 @@ msgid ""
 msgstr ""
 "Die plotly-Daten müssen gültig sein. Bitte prüfen Sie, welches Schema von"
 " plotly unterstützt wird."
-

@@ -228,6 +228,91 @@
     </form>
     {% endif %}
   {% endif %}
+  <h4>{{ _('User Alias') }}</h4>
+  {% if alias %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" colspan="2">{{ _('User Alias shared with %(component_name)s', component_name=component.get_name()) }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="text-right fit">{{ _('Name') }}</th>
+          <td>
+            {% if alias.name is none %}
+              &mdash;
+            {% else %}
+              {{ alias.name }}
+            {% endif %}
+            {% if alias['use_real_name'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('E-Mail') }}</th>
+          <td>
+            {% if alias.email is none %}
+              &mdash;
+            {% else %}
+              {{ alias.email }}
+            {% endif %}
+            {% if alias['use_real_email'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">ORCID iD</th>
+          <td>
+            {% if alias.orcid is none %}
+              &mdash;
+              {% if alias['use_real_orcid'] %}
+                <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+              {% endif %}
+            {% else %}
+              <div itemscope itemtype="https://schema.org/Person"><a itemprop="sameAs" content="https://orcid.org/{{ alias.orcid }}" href="https://orcid.org/{{ alias.orcid }}" target="orcid.widget" rel="me noopener noreferrer" style="vertical-align:top;"><img src="{{ url_for('static', filename='img/orcid_16x16.png') }}" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">https://orcid.org/{{ alias.orcid }}</a>
+                {% if alias['use_real_orcid'] %}
+                <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+              {% endif %}
+              </div>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('Affiliation') }}</th>
+          <td>
+            {% if alias.affiliation is none %}
+              &mdash;
+            {% else %}
+              {{ alias.affiliation }}
+            {% endif %}
+            {% if alias['use_real_affiliation'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('Role') }}</th>
+          <td>
+            {% if alias.role is none %}
+              &mdash;
+            {% else %}
+              {{ alias.role }}
+            {% endif %}
+            {% if alias['use_real_role'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr><td></td><td><a class="btn btn-primary" href="{{ url_for('.user_alias') }}">{{ _('User Alias Settings') }}</a></td></tr>
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ _('As you have not configured an user alias yet, no personal information about you is shared with %(component_name)s.', component_name=component.name) }}</p>
+    <a class="btn btn-primary" href="{{ url_for('.user_alias', add_alias_component=component.id) }}">{{ _('Create User Alias for %(component_name)s', component_name=component.name) }}</a>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}

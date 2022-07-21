@@ -60,6 +60,10 @@ class UserAliasDoesNotExistError(Exception):
     pass
 
 
+class UserAliasAlreadyExistsError(Exception):
+    pass
+
+
 class UserNotMemberOfGroupError(Exception):
     pass
 

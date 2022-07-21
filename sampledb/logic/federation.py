@@ -31,7 +31,7 @@ from .instruments import create_instrument, get_instrument
 from .locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations
 from .objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from .projects import get_project
-from .users import get_user, get_mutable_user, get_user_alias, create_user
+from .users import get_user, get_mutable_user, get_user_alias, create_user, set_user_hidden
 from ..models import Permissions, ComponentAuthenticationType, Component, ActionType, UserType, MarkdownImage
 from ..models.file_log import FileLogEntry, FileLogEntryType
 
@@ -255,6 +255,7 @@ def import_user(user_data, component):
             extra_fields=user_data['extra_fields'],
             type=UserType.FEDERATION_USER
         )
+        set_user_hidden(user.id, True)
         fed_logs.import_user(user.id, component.id)
     return user
 
@@ -500,6 +501,7 @@ def _get_or_create_user_id(user_data):
         user = get_user(user_data['user_id'], component_id)
     except errors.UserDoesNotExistError:
         user = create_user(name=None, email=None, fed_id=user_data['user_id'], component_id=component_id, type=UserType.FEDERATION_USER)
+        set_user_hidden(user.id, True)
         fed_logs.create_ref_user(user.id, component_id)
     return user.id
 
