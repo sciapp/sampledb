@@ -1097,16 +1097,16 @@
     </div>
   {% endif %}
 
-  {% if related_objects_tree %}
-    {% if not is_archived and action is not none and action.type.enable_related_objects %}
-      <h2>{{ _('Related Objects') }}</h2>
+  {% if not is_archived and related_objects_tree and action is not none and action.type.enable_related_objects %}
+    <h2>{{ _('Related Objects') }}</h2>
 
-      <div class="related-objects">
-        {% set in_export_data_model = False %}
-        {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
-      </div>
-    {% endif %}
+    <div class="related-objects">
+      {% set in_export_data_model = False %}
+      {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+    </div>
+  {% endif %}
 
+  {% if not is_archived %}
     <div class="modal fade" id="dataExportModal" tabindex="-1" role="dialog" aria-labelledby="dataExportModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -1156,7 +1156,7 @@
               </div>
             </div>
 
-            {% if action is not none and action.type.enable_related_objects %}
+            {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             <div class="related-objects">
               <div>{{ _('Objects') }}</div>
               {% set in_export_data_model = True %}
@@ -1165,7 +1165,7 @@
             {% endif %}
           </div>
           <div class="modal-footer">
-            {% if action is not none and action.type.enable_related_objects %}
+            {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">{{ _('Select All') }}</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">{{ _('Deselect All') }}</button>
             {% endif %}
@@ -1514,7 +1514,7 @@
           });
           var pdf_export_language = $('#pdf–export-sections select[name="language"]').selectpicker('val');
           var object_ids_to_export = [];
-          {% if action is not none and action.type.enable_related_objects %}
+          {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             $('input[name^=data_export_object_]').each(function () {
               if ($(this).prop('checked')) {
                 object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
