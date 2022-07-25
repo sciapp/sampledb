@@ -1315,14 +1315,31 @@
         $('[data-toggle="popover"]').popover()
       });
       {% if object_log_entries and action is not none and action.type.enable_activity_log %}
+        {% set filter_type_list = {
+            "versions": [ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH, ObjectLogEntryType.EDIT_OBJECT, ObjectLogEntryType.RESTORE_OBJECT_VERSION],
+            "measurements": [ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT],
+            "comments": [ObjectLogEntryType.POST_COMMENT],
+            "files": [ObjectLogEntryType.UPLOAD_FILE],
+            "locations": [ObjectLogEntryType.ASSIGN_LOCATION],
+            "references": [ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA, ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT, ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION],
+           }
+        %}
+        {% set handled_entry_types = [] %}
         var activity_log_filter_type_list = {
-          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
-          "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
-          "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
-          "files": ['{{ ObjectLogEntryType.UPLOAD_FILE.name.lower() }}'],
-          "locations": ['{{ ObjectLogEntryType.ASSIGN_LOCATION.name.lower() }}'],
-          "references": ['{{ ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}'],
-          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.LINK_PUBLICATION.name.lower() }}', '{{ ObjectLogEntryType.EXPORT_TO_DATAVERSE.name.lower() }}', '{{ ObjectLogEntryType.LINK_PROJECT.name.lower() }}', '{{ ObjectLogEntryType.UNLINK_PROJECT.name.lower() }}']
+          {% for filter_label, entry_types in filter_type_list.items() %}
+              "{{ filter_label }}": [
+                  {% for entry_type in entry_types %}
+                      '{{ entry_type.name.lower() }}',{{ handled_entry_types.append(entry_type) or '' }}
+                  {% endfor %}
+              ],
+          {% endfor %}
+          "other": [
+            {% for entry_type in ObjectLogEntryType %}
+                {% if entry_type not in handled_entry_types %}
+                    '{{ entry_type.name.lower() }}',
+                {% endif %}
+            {% endfor %}
+          ]
         };
         window.activity_log_toggle = function (should_show, category) {
           var type_list = activity_log_filter_type_list[category];
