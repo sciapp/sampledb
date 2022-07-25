@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-07-21 10:29+0200\n"
+"POT-Creation-Date: 2022-07-22 17:04+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4199,6 +4199,9 @@ msgstr "Aktivitäts-Log"
 
 msgid "Measurements"
 msgstr "Messungen"
+
+msgid "References"
+msgstr "Referenzen"
 
 #, python-format
 msgid ""

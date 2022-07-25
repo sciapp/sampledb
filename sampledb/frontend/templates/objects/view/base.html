@@ -868,6 +868,8 @@
                 <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> {{ _('Measurements') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> {{ _('Comments') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> {{ _('Files') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;locations&quot;);' /> {{ _('Locations') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;references&quot;);' /> {{ _('References') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> {{ _('Other') }}</label>
                 <script>
                   window.update_activity_log_filter_states();
@@ -1318,7 +1320,9 @@
           "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
           "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
           "files": ['{{ ObjectLogEntryType.UPLOAD_FILE.name.lower() }}'],
-          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}']
+          "locations": ['{{ ObjectLogEntryType.ASSIGN_LOCATION.name.lower() }}'],
+          "references": ['{{ ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}'],
+          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.LINK_PUBLICATION.name.lower() }}', '{{ ObjectLogEntryType.EXPORT_TO_DATAVERSE.name.lower() }}', '{{ ObjectLogEntryType.LINK_PROJECT.name.lower() }}', '{{ ObjectLogEntryType.UNLINK_PROJECT.name.lower() }}']
         };
         window.activity_log_toggle = function (should_show, category) {
           var type_list = activity_log_filter_type_list[category];
@@ -1343,6 +1347,8 @@
             "measurements": true,
             "comments": true,
             "files": true,
+            "locations": true,
+            "references": true,
             "other": true
           };
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
@@ -1351,6 +1357,8 @@
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
         window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
         window.activity_log_toggle(activity_log_filter_state['files'], "files");
+        window.activity_log_toggle(activity_log_filter_state['locations'], "locations");
+        window.activity_log_toggle(activity_log_filter_state['references'], "references");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
         window.update_activity_log_filter_states = function () {
           if (window.activity_log_toggle.current_state['versions']) {
@@ -1364,6 +1372,12 @@
           }
           if (window.activity_log_toggle.current_state['files']) {
             $('#activity_log_filter_files').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['locations']) {
+            $('#activity_log_filter_locations').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['references']) {
+            $('#activity_log_filter_references').attr('checked', 'checked');
           }
           if (window.activity_log_toggle.current_state['other']) {
             $('#activity_log_filter_other').attr('checked', 'checked');
