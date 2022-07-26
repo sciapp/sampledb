@@ -28,6 +28,7 @@ Currently in development.
 - Added array style ``full_width_table``
 - Allow selecting a unit when entering a quantity
 - Allow giving anonymous users READ permissions for objects
+- Added SciCat export
 
 Version 0.20
 ------------

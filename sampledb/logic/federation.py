@@ -318,7 +318,8 @@ def import_action_type(action_type_data, component):
                 enable_related_objects=action_type_data['enable_related_objects'],
                 enable_project_link=action_type_data['enable_project_link'],
                 disable_create_objects=action_type_data['disable_create_objects'],
-                is_template=action_type_data['is_template']
+                is_template=action_type_data['is_template'],
+                scicat_export_type=None
             )
             fed_logs.update_action_type(action_type.id, component.id)
     except errors.ActionTypeDoesNotExistError:
@@ -337,7 +338,8 @@ def import_action_type(action_type_data, component):
             enable_related_objects=action_type_data['enable_related_objects'],
             enable_project_link=action_type_data['enable_project_link'],
             disable_create_objects=action_type_data['disable_create_objects'],
-            is_template=action_type_data['is_template']
+            is_template=action_type_data['is_template'],
+            scicat_export_type=None
         )
         fed_logs.import_action_type(action_type.id, component.id)
 
@@ -540,7 +542,8 @@ def _get_or_create_action_type_id(action_type_data):
             disable_create_objects=False,
             is_template=False,
             fed_id=action_type_data['action_type_id'],
-            component_id=component_id
+            component_id=component_id,
+            scicat_export_type=None
         )
         fed_logs.create_ref_action_type(action_type.id, component_id)
     return action_type.id

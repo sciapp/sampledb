@@ -60,7 +60,7 @@
   {% if dataverse_export_form.files.choices %}
   <div>
     <label>{{ _('Files') }}</label>
-    <p class="text-muted">{{ _('Select which files should be exported to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}.</p>
+    <p class="text-muted">{{ _('Select which files should be exported to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}</p>
     <div class="form-group">
       <span class="btn btn-default dataverse-export-select-all" style="width:8em">{{ _('Select all') }}</span>
       <span class="btn btn-default dataverse-export-select-none" style="width:8em">{{ _('Unselect all') }}</span>

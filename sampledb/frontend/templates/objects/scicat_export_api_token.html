@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }} — {{ service_name }}{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}</h1>
+  <p>{{ _('%(service_name)s can export the metadata of this object to %(scicat_name)s.', service_name=service_name, scicat_name=config['SCICAT_NAME']) }}</p>
+  <p>{{ _('To access your SciCat token, visit <a href="%(scicat_frontend_url)s/user">%(scicat_name)s</a>', scicat_name=config['SCICAT_NAME'], scicat_frontend_url=config['SCICAT_FRONTEND_URL']) }}.</p>
+  <form method="post">
+    {{ scicat_api_token_form.hidden_tag() }}
+    <div class="form-group{% if had_invalid_api_token %} has-error{% endif %}">
+      <label>{{ _('SciCat Token') }}
+        <input type="text" autocomplete="off" class="form-control" required="required" style="width: 45em" name="{{ scicat_api_token_form.api_token.name }}"/>
+      </label>
+      {% if had_invalid_api_token %}
+      <div class="help-block">{{ _('The token you entered was invalid.') }}</div>
+      {% endif %}
+    </div>
+    <div class="form-group">
+    <label style="font-weight: normal">
+      <input type="checkbox" {% if scicat_api_token_form.store_api_token.data %}checked="checked"{% endif %} name="{{ scicat_api_token_form.store_api_token.name }}" /> {{ _('Store this token in %(service_name)s', service_name=service_name) }} <span data-toggle="tooltip" data-placement="top" title="{{ _('You can delete a stored SciCat token at any time by editing your preferences.') }}"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+    </label>
+    </div>
+    <div class="form-group">
+      <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default" style="width:8em">{{ _('Cancel') }}</a>
+      <input type="submit" value="{{ _('Continue') }}" class="btn btn-primary" style="width:8em">
+    </div>
+  </form>
+{% endblock %}

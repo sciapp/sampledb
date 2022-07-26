@@ -118,6 +118,23 @@ def check_config(
         )
         show_config_info = True
 
+    if 'SCICAT_API_URL' not in defined_config_keys:
+        print(
+            'SciCat export will be disabled, because the configuration '
+            'value SCICAT_API_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+    elif 'SCICAT_FRONTEND_URL' not in defined_config_keys:
+        print(
+            'SciCat export will be disabled, because the configuration '
+            'value SCICAT_FRONTEND_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
     admin_password_set = 'ADMIN_PASSWORD' in defined_config_keys
     admin_username_set = 'ADMIN_USERNAME' in defined_config_keys
     admin_email_set = 'ADMIN_EMAIL' in defined_config_keys
@@ -437,6 +454,12 @@ DATAVERSE_NAME = 'Dataverse'
 DATAVERSE_URL = None
 DATAVERSE_ROOT_IDS = ':root'
 
+# Scicat settings
+SCICAT_NAME = 'SciCat'
+SCICAT_API_URL = None
+SCICAT_FRONTEND_URL = None
+SCICAT_EXTRA_PID_PREFIX = ''
+
 # PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
@@ -543,3 +566,9 @@ for config_name in {
     value = globals().get(config_name)
     if isinstance(value, str):
         globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
+
+# remove trailing slashes from SciCat urls
+if isinstance(SCICAT_API_URL, str) and SCICAT_API_URL.endswith('/'):
+    SCICAT_API_URL = SCICAT_API_URL[:-1]
+if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
+    SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]

@@ -188,6 +188,19 @@ def object(object_id):
         "dataverse_url": dataverse_url,
     })
 
+    # scicat export
+    scicat_enabled = bool(flask.current_app.config['SCICAT_API_URL']) and bool(flask.current_app.config['SCICAT_FRONTEND_URL'])
+    if scicat_enabled:
+        scicat_url = logic.scicat_export.get_scicat_url(object.id)
+        show_scicat_export = user_may_grant and not scicat_url and action_type.scicat_export_type is not None
+    else:
+        scicat_url = None
+        show_scicat_export = False
+    template_kwargs.update({
+        "show_scicat_export": show_scicat_export,
+        "scicat_url": scicat_url,
+    })
+
     if flask_login.current_user.is_authenticated:
         # use in measurement menu
         measurement_actions = logic.action_translations.get_actions_with_translation_in_language(

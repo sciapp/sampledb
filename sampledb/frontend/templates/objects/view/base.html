@@ -155,6 +155,19 @@
     <div class="form-group">
       <div data-toggle="tooltip" data-placement="top" title="{{ _('Export object information to an archive or PDF file.') }}"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dataExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> {{ _('Export Data') }}</button></div>
     </div>
+    {% if show_scicat_export %}
+    <div class="form-group">
+      <a href="{{ url_for('.scicat_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information to %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}">
+        <img src="{{ fingerprinted_static("img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
+      </a>
+    </div>
+    {% elif scicat_url %}
+      <div class="form-group">
+        <a href="{{ scicat_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View object information on %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}">
+          <img src="{{ fingerprinted_static("img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('View on %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
+        </a>
+      </div>
+    {% endif %}
     {% if show_dataverse_export %}
       <div class="form-group">
         <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">

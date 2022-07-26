@@ -170,7 +170,7 @@ def dataverse_export(object_id):
         try:
             message = dataset_url_or_response.get('message')
         except Exception:
-            message = "An unknown error occurred while uploading the dataset."
+            message = _("An unknown error occurred while uploading the dataset.")
         flask.flash(message, 'error')
 
     return flask.render_template(

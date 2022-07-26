@@ -44,6 +44,7 @@ from . import projects
 from . import publications
 from . import rdf
 from . import schemas
+from . import scicat_export
 from . import security_tokens
 from . import settings
 from . import tags
@@ -100,6 +101,7 @@ __all__ = [
     'projects',
     'publications',
     'rdf',
+    'scicat_export',
     'security_tokens',
     'settings',
     'tags',
