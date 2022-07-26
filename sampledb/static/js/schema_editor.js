@@ -31,6 +31,13 @@ function enableSchemaEditor() {
     return (JSON.stringify(window.schema_editor_errors) === '{}');
   });
 
+  function getElementForProperty(path, element_suffix) {
+    let element_id = 'schema-editor-object__' + path.join('__') + '-' + element_suffix;
+    // find object via document.getElementById instead of $() to avoid selector string mix-ups with invalid name
+    let dom_element = document.getElementById(element_id);
+    // then create JQuery element from DOM element
+    return $(dom_element);
+  }
 
   function buildRootObjectNode(schema) {
     var node = schema_editor_templates.find('.schema-editor-root-object')[0].cloneNode(true);
@@ -198,16 +205,9 @@ function enableSchemaEditor() {
 
         if (property_node !== null) {
           if ('template' in schema['properties'][name]) {
-            var select_input = $(property_node[0]).find('#schema-editor-object__' + name + '-template-id-input')[0];
-            var current_template = schema['properties'][name]['template'];
-            $(select_input.options).each(function () {
-              if (Number.parseInt(this.value) === current_template) {
-                $(this).attr('selected', true);
-              } else {
-                $(this).attr('selected', false);
-              }
-            });
-            $(select_input).selectpicker('refresh');
+            let current_template = schema['properties'][name]['template'];
+            let template_input = property_node.find('select.schema-editor-generic-property-template-id-input');
+            template_input.selectpicker('val', current_template);
             properties_node[0].appendChild(property_node[0]);
           } else {
             properties_node[0].appendChild(property_node[0]);
@@ -352,7 +352,7 @@ function enableSchemaEditor() {
     function updateProperty() {
       var path = this;
       var real_path = window.schema_editor_path_mapping[path.join('__')].slice();
-      var type = $('#schema-editor-object__' + path.join('__') + '-type-input').val();
+      var type = getElementForProperty(path, 'type-input').selectpicker('val');
       if (type === "text") {
         updateTextProperty(path, real_path);
       } else if (type === "choice") {
@@ -402,7 +402,7 @@ function enableSchemaEditor() {
       }
       input_schema.val(JSON.stringify(schema, null, 4));
 
-      var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
+      var name_input = getElementForProperty(path, 'name-input');
       name_input.closest('.schema-editor-property').remove();
 
       delete window.schema_editor_errors[path.join('__') + '__generic'];
@@ -424,7 +424,7 @@ function enableSchemaEditor() {
         }
         input_schema.val(JSON.stringify(schema, null, 4));
         globallyValidateSchema();
-        var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
+        var name_input = getElementForProperty(path, 'name-input');
         var element = name_input.closest('.schema-editor-property');
         element.insertBefore(element.prev('.schema-editor-property'));
         element.find('[data-toggle="tooltip"]').tooltip('hide');
@@ -452,7 +452,7 @@ function enableSchemaEditor() {
         }
         input_schema.val(JSON.stringify(schema, null, 4));
         globallyValidateSchema();
-        var name_input = $('#schema-editor #schema-editor-object__' + path.join('__') + '-name-input');
+        var name_input = getElementForProperty(path, 'name-input');
         var element = name_input.closest('.schema-editor-property');
         element.insertAfter(element.next('.schema-editor-property'));
         element.find('[data-toggle="tooltip"]').tooltip('hide');
@@ -489,8 +489,7 @@ function enableSchemaEditor() {
     var type_input = node.find('.schema-editor-generic-property-type-input');
     type_input.attr('id', 'schema-editor-object__' + path.join('__') + '-type-input');
     type_label.attr('for', type_input.attr('id'));
-    type_input.val(type);
-    type_input.selectpicker();
+    type_input.selectpicker('val', type);
 
     type_input.on('change', function () {
       var type = $(this).val();
@@ -504,8 +503,8 @@ function enableSchemaEditor() {
     type_input.on('change', updateProperty.bind(path));
 
     function setOptionalValueInPropertySchema(path, type, name, property_schema) {
-      var has_value = $('#schema-editor-object__' + path.join('__') + '-' + type + '-' + name + '-checkbox').prop('checked');
-      var value = $('#schema-editor-object__' + path.join('__') + '-' + type + '-' + name + '-input').val();
+      var has_value = getElementForProperty(path, type + '-' + name + '-checkbox').prop('checked');
+      var value = getElementForProperty(path, type + '-' + name + '-input').val();
 
       if (has_value) {
         property_schema[name] = value;
@@ -513,8 +512,8 @@ function enableSchemaEditor() {
     }
 
     function setMinAndMaxLengthInPropertySchema(path, type, property_schema, has_error) {
-      var has_minlength = $('#schema-editor-object__' + path.join('__') + '-' + type + '-minlength-checkbox').prop('checked');
-      var minlength_input = $('#schema-editor-object__' + path.join('__') + '-' + type + '-minlength-input');
+      var has_minlength = getElementForProperty(path, type + '-minlength-checkbox').prop('checked');
+      var minlength_input = getElementForProperty(path, type + '-minlength-input');
       var minlength = minlength_input.val();
       var minlength_group = minlength_input.parent();
       var minlength_help = minlength_group.find('.help-block');
@@ -542,8 +541,8 @@ function enableSchemaEditor() {
         minlength_group.removeClass("has-error");
       }
 
-      var has_maxlength = $('#schema-editor-object__' + path.join('__') + '-' + type + '-maxlength-checkbox').prop('checked');
-      var maxlength_input = $('#schema-editor-object__' + path.join('__') + '-' + type + '-maxlength-input');
+      var has_maxlength = getElementForProperty(path, type + '-maxlength-checkbox').prop('checked');
+      var maxlength_input = getElementForProperty(path, type + '-maxlength-input');
       var maxlength = maxlength_input.val();
       var maxlength_group = maxlength_input.parent();
       var maxlength_help = maxlength_group.find('.help-block');
@@ -583,7 +582,7 @@ function enableSchemaEditor() {
     function updateGenericProperty(path, real_path) {
       var has_error = false;
       var schema = JSON.parse(input_schema.val());
-      var name_input = $('#schema-editor-object__' + path.join('__') + '-name-input');
+      var name_input = getElementForProperty(path, 'name-input');
       var name = name_input.val();
       var name_group = name_input.parent();
       var name_help = name_group.find('.help-block');
@@ -616,7 +615,7 @@ function enableSchemaEditor() {
         name_group.addClass("has-error");
         has_error = true;
       }
-      var title_input = $('#schema-editor-object__' + path.join('__') + '-title-input');
+      var title_input = getElementForProperty(path, 'title-input');
       var title_group = title_input.parent();
       var title_help = title_group.find('.help-block');
       var title = title_input.val();
@@ -632,9 +631,9 @@ function enableSchemaEditor() {
         title_help.text("");
         title_group.removeClass("has-error");
       }
-      var required = $('#schema-editor-object__' + path.join('__') + '-required-input').prop('checked');
-      var has_note = $('#schema-editor-object__' + path.join('__') + '-generic-note-checkbox').prop('checked');
-      var note = $('#schema-editor-object__' + path.join('__') + '-generic-note-input').val();
+      var required = getElementForProperty(path, 'required-input').prop('checked');
+      var has_note = getElementForProperty(path, 'generic-note-checkbox').prop('checked');
+      var note = getElementForProperty(path, 'generic-note-input').val();
       if (name !== real_path[real_path.length - 1]) {
         delete schema['properties'][real_path[real_path.length - 1]];
         if ('required' in schema) {
@@ -735,7 +734,7 @@ function enableSchemaEditor() {
 
       setOptionalValueInPropertySchema(path, 'choice', 'default', property_schema);
 
-      var choices_input = $('#schema-editor-object__' + path.join('__') + '-choice-choices-input');
+      var choices_input = getElementForProperty(path, 'choice-choices-input');
       var choices_group = choices_input.parent();
       var choices_help = choices_group.find('.help-block');
       var choices = choices_input.val();
@@ -801,8 +800,8 @@ function enableSchemaEditor() {
       var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "bool";
 
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-bool-default-checkbox').prop('checked');
-      var default_value = $('#schema-editor-object__' + path.join('__') + '-bool-default-input').prop('checked');
+      var has_default = getElementForProperty(path, 'bool-default-checkbox').prop('checked');
+      var default_value = getElementForProperty(path, 'bool-default-input').prop('checked');
 
       if (has_default) {
         property_schema['default'] = default_value;
@@ -828,13 +827,14 @@ function enableSchemaEditor() {
       var property_schema = schema['properties'][real_path[real_path.length - 1]];
 
       property_schema["type"] = "object";
+      property_schema["template"] = null;
       property_schema["properties"] = {};
 
-      var template_input = $('#schema-editor-object__' + path.join('__') + '-template-id-input');
+      var template_input = getElementForProperty(path, 'template-id-input');
       var template_group = template_input.closest('.schema-editor-property-settings.schema-editor-template-property-settings');
       var template_help = template_group.find('.help-block');
-      if ($(template_input).is(':visible')) {
-        let new_template_id = $(template_input).val();
+      if (template_input.is(':visible')) {
+        let new_template_id = template_input.selectpicker('val');
         if (new_template_id === "" || Number.isNaN(Number.parseInt(new_template_id))) {
           template_help.text(window.schema_editor_translations['schema_template_must_be_set']);
           template_group.addClass("has-error");
@@ -876,7 +876,7 @@ function enableSchemaEditor() {
       var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "user";
 
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-user-default-checkbox').prop('checked');
+      var has_default = getElementForProperty(path, 'user-default-checkbox').prop('checked');
       if (has_default) {
         property_schema["default"] = "self";
       } else {
@@ -913,7 +913,7 @@ function enableSchemaEditor() {
       var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "quantity";
 
-      var units_input = $('#schema-editor-object__' + path.join('__') + '-quantity-units-input');
+      var units_input = getElementForProperty(path, 'quantity-units-input');
       var units = units_input.val();
       var units_group = units_input.parent();
       var units_help = units_group.find('.help-block');
@@ -935,8 +935,8 @@ function enableSchemaEditor() {
         has_error = true;
       }
 
-      var has_default = $('#schema-editor-object__' + path.join('__') + '-quantity-default-checkbox').prop('checked');
-      var default_input = $('#schema-editor-object__' + path.join('__') + '-quantity-default-input');
+      var has_default = getElementForProperty(path, 'quantity-default-checkbox').prop('checked');
+      var default_input = getElementForProperty(path, 'quantity-default-input');
       var default_value = default_input.val();
       var default_group = default_input.parent();
       var default_help = default_group.find('.help-block');
@@ -957,8 +957,8 @@ function enableSchemaEditor() {
         default_group.removeClass("has-error");
       }
 
-      var has_placeholder = $('#schema-editor-object__' + path.join('__') + '-quantity-placeholder-checkbox').prop('checked');
-      var placeholder_value = $('#schema-editor-object__' + path.join('__') + '-quantity-placeholder-input').val();
+      var has_placeholder = getElementForProperty(path, 'quantity-placeholder-checkbox').prop('checked');
+      var placeholder_value = getElementForProperty(path, 'quantity-placeholder-input').val();
 
       if (has_placeholder) {
         property_schema['placeholder'] = placeholder_value;
