@@ -6,6 +6,7 @@ Implementation of validate_schema(schema)
 
 import datetime
 import math
+import string
 import typing
 import urllib.parse
 import re
@@ -28,7 +29,8 @@ def validate_schema(
         path: typing.Optional[typing.List[str]] = None,
         *,
         parent_conditions: typing.Optional[typing.List[typing.Tuple]] = None,
-        invalid_template_action_ids: typing.Sequence[int] = ()
+        invalid_template_action_ids: typing.Sequence[int] = (),
+        strict: bool = False
 ) -> None:
     """
     Validates the given schema and raises a ValidationError if it is invalid.
@@ -36,6 +38,7 @@ def validate_schema(
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
@@ -79,9 +82,9 @@ def validate_schema(
     if path == [] and schema['type'] != 'object':
         raise ValidationError('invalid schema (root must be an object)', path)
     if schema['type'] == 'array':
-        return _validate_array_schema(schema, path, invalid_template_action_ids)
+        return _validate_array_schema(schema, path, invalid_template_action_ids, strict=strict)
     elif schema['type'] == 'object':
-        return _validate_object_schema(schema, path, invalid_template_action_ids)
+        return _validate_object_schema(schema, path, invalid_template_action_ids, strict=strict)
     elif schema['type'] == 'text':
         return _validate_text_schema(schema, path)
     elif schema['type'] == 'datetime':
@@ -156,7 +159,8 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_array_schema(
         schema: dict,
         path: typing.List[str],
-        invalid_template_action_ids: typing.Sequence[int] = ()
+        invalid_template_action_ids: typing.Sequence[int] = (),
+        strict: bool = False
 ) -> None:
     """
     Validates the given array schema and raises a ValidationError if it is invalid.
@@ -164,6 +168,7 @@ def _validate_array_schema(
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions'}
@@ -208,7 +213,7 @@ def _validate_array_schema(
     if has_default_items and has_max_items:
         if schema['defaultItems'] > schema['maxItems']:
             raise ValidationError('defaultItems must be less than or equal to maxItems', path)
-    validate_schema(schema['items'], path + ['[?]'], invalid_template_action_ids=invalid_template_action_ids)
+    validate_schema(schema['items'], path + ['[?]'], invalid_template_action_ids=invalid_template_action_ids, strict=strict)
     if 'default' in schema:
         if has_default_items:
             raise ValidationError('default and defaultItems are mutually exclusive', path)
@@ -245,7 +250,8 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
 def _validate_object_schema(
         schema: dict,
         path: typing.List[str],
-        invalid_template_action_ids: typing.Sequence[int] = ()
+        invalid_template_action_ids: typing.Sequence[int] = (),
+        strict: bool = False
 ) -> None:
     """
     Validates the given object schema and raises a ValidationError if it is invalid.
@@ -253,6 +259,7 @@ def _validate_object_schema(
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     try:
@@ -298,13 +305,30 @@ def _validate_object_schema(
     property_conditions = []
     property_schemas = {}
     for property_name, property_schema in schema['properties'].items():
+        property_name_valid = True
+        if not property_name:
+            property_name_valid = False
         if '__' in property_name:
+            property_name_valid = False
+        if strict and property_name_valid:
+            # property name may only consist of ascii characters, digits and underscores
+            if not all(c in (string.ascii_letters + string.digits + '_') for c in property_name):
+                property_name_valid = False
+            # property name must start with a character
+            if property_name[0] not in string.ascii_letters:
+                property_name_valid = False
+            # property name must not end with an underscore
+            if property_name.endswith('_'):
+                property_name_valid = False
+        if not property_name_valid:
             raise ValidationError('invalid property name: {}'.format(property_name), path)
+
         validate_schema(
             property_schema,
             path + [property_name],
             parent_conditions=property_conditions,
-            invalid_template_action_ids=invalid_template_action_ids
+            invalid_template_action_ids=invalid_template_action_ids,
+            strict=strict
         )
         property_schemas[property_name] = property_schema
     for condition_path, condition in property_conditions:

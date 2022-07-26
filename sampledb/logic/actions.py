@@ -326,7 +326,7 @@ def create_action(
         get_action_type(action_type_id)
 
     if schema is not None:
-        schemas.validate_schema(schema)
+        schemas.validate_schema(schema, strict=True)
     if instrument_id is not None:
         # ensure that the instrument can be found
         instruments.get_instrument(instrument_id)
@@ -413,7 +413,7 @@ def update_action(
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
     """
-    schemas.validate_schema(schema, invalid_template_action_ids=[action_id])
+    schemas.validate_schema(schema, invalid_template_action_ids=[action_id], strict=True)
     action = Action.query.get(action_id)
     if action is None:
         raise errors.ActionDoesNotExistError()
@@ -446,7 +446,7 @@ def update_actions_using_template_action(
         updated_schema = schemas.templates.update_schema_using_template_action(current_schema, template_action_id, template_action_schema)
         if action.schema != updated_schema:
             try:
-                schemas.validate_schema(updated_schema)
+                schemas.validate_schema(updated_schema, strict=True)
             except errors.ValidationError:
                 continue
             action.schema = updated_schema
