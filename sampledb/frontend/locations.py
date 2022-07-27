@@ -157,6 +157,7 @@ def location_permissions(location_id):
             logic.location_permissions.location_permissions,
             location_id,
             all_user_permissions,
+            None,
             user_permissions,
             group_permissions,
             project_permissions

@@ -25,7 +25,10 @@ from ..models import OwnComponentAuthentication, ComponentAuthenticationType, Co
 @frontend.route('/other-databases/<int:component_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def component(component_id):
-    component = get_component(component_id)
+    try:
+        component = get_component(component_id)
+    except errors.ComponentDoesNotExistError:
+        return flask.abort(404)
     try:
         alias = get_user_alias(flask_login.current_user.get_id(), component_id)
     except errors.UserAliasDoesNotExistError:
