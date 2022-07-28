@@ -3,6 +3,7 @@
 
 """
 
+import contextlib
 import getpass
 import copy
 import logging
@@ -12,10 +13,13 @@ import threading
 import time
 
 import cherrypy
+import chromedriver_binary
 import flask
 import flask_login
 import pytest
 import requests
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
 import sqlalchemy
 
 import sampledb
@@ -143,3 +147,17 @@ def app_context(app):
     with app.app_context():
         # yield to keep the app context active until the test is done
         yield None
+
+
+@pytest.fixture(scope='session')
+def driver():
+    options = Options()
+    options.add_argument("--lang=en-US")
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-dev-shm-usage')
+    with contextlib.closing(Chrome(options=options)) as driver:
+        # wait for driver to start up
+        time.sleep(5)
+        yield driver
