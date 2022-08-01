@@ -161,7 +161,7 @@ class AnonymousUser(flask_login.AnonymousUserMixin):
         return False
 
 
-class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields'])):
+class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields', 'last_modified'])):
     """
     This class provides an immutable wrapper around models.users.UserFederationAlias.
     """
@@ -180,7 +180,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
             use_real_affiliation: bool,
             role: typing.Optional[str],
             use_real_role: bool,
-            extra_fields: typing.Dict[str, typing.Any]
+            extra_fields: typing.Dict[str, typing.Any],
+            last_modified: datetime.datetime
     ):
         self = super(UserFederationAlias, cls).__new__(
             cls,
@@ -196,7 +197,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
             use_real_affiliation,
             role,
             use_real_role,
-            extra_fields
+            extra_fields,
+            last_modified
         )
         return self
 
@@ -217,7 +219,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
                 use_real_affiliation=alias.use_real_affiliation,
                 role=user.role if alias.use_real_role else alias.role,
                 use_real_role=alias.use_real_role,
-                extra_fields=copy.deepcopy(alias.extra_fields)
+                extra_fields=copy.deepcopy(alias.extra_fields),
+                last_modified=alias.last_modified
             )
         else:
             return UserFederationAlias(
@@ -233,7 +236,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
                 use_real_affiliation=alias.use_real_affiliation,
                 role=alias.role,
                 use_real_role=alias.use_real_role,
-                extra_fields=copy.deepcopy(alias.extra_fields)
+                extra_fields=copy.deepcopy(alias.extra_fields),
+                last_modified=alias.last_modified
             )
 
 
@@ -616,6 +620,7 @@ def update_user_alias(
     alias.use_real_affiliation = use_real_affiliation
     alias.role = role
     alias.use_real_role = use_real_role
+    alias.last_modified = datetime.datetime.utcnow()
     db.session.add(alias)
     db.session.commit()
 

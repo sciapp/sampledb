@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 import sampledb.models
@@ -177,7 +179,10 @@ def test_get_user_exceptions(component):
 
 def test_create_user_alias(component, user):
     assert len(UserFederationAlias.query.all()) == 0
+    utc_datetime_before = datetime.datetime.utcnow()
     alias = create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, True)
+    assert alias.last_modified >= utc_datetime_before
+    assert alias.last_modified <= datetime.datetime.utcnow()
     assert len(UserFederationAlias.query.all()) == 1
     assert alias.user_id == user.id
     assert alias.component_id == component.id
@@ -202,8 +207,11 @@ def test_get_user_alias(component, user):
         get_user_alias(user.id + 1, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         get_user_alias(user.id, component.id + 1)
+    utc_datetime_before = datetime.datetime.utcnow()
     created_alias = create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, False)
     alias = get_user_alias(user.id, component.id)
+    assert alias.last_modified >= utc_datetime_before
+    assert alias.last_modified <= datetime.datetime.utcnow()
     assert alias.user_id == created_alias.user_id
     assert alias.component_id == created_alias.component_id
     assert alias.name == created_alias.name
@@ -242,8 +250,11 @@ def test_update_user_alias(component, user):
     with pytest.raises(errors.UserAliasDoesNotExistError):
         update_user_alias(user.id, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
     create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, False)
+    utc_datetime_before = datetime.datetime.utcnow()
     update_user_alias(user.id, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
     alias = get_user_alias(user.id, component.id)
+    assert alias.last_modified >= utc_datetime_before
+    assert alias.last_modified <= datetime.datetime.utcnow()
     assert alias.user_id == user.id
     assert alias.component_id == component.id
     assert alias.name == 'User'

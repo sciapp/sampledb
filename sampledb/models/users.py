@@ -5,6 +5,7 @@
 
 import enum
 import typing
+from datetime import datetime
 
 from .. import db
 
@@ -99,6 +100,7 @@ class UserFederationAlias(db.Model):
     role = db.Column(db.String, nullable=True)
     use_real_role = db.Column(db.Boolean, nullable=False, default=False)
     extra_fields = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
+    last_modified = db.Column(db.DateTime, nullable=False)
     user = db.relationship('User')
     component = db.relationship('Component')
 
@@ -107,7 +109,7 @@ class UserFederationAlias(db.Model):
         {},
     )
 
-    def __init__(self, user_id: int, component_id: int, name: typing.Optional[str] = None, use_real_name: bool = False, email: typing.Optional[str] = None, use_real_email: bool = False, orcid: typing.Optional[str] = None, use_real_orcid: bool = False, affiliation: typing.Optional[str] = None, use_real_affiliation: bool = False, role: typing.Optional[str] = None, use_real_role: bool = False, extra_fields: typing.Optional[dict] = {}):
+    def __init__(self, user_id: int, component_id: int, name: typing.Optional[str] = None, use_real_name: bool = False, email: typing.Optional[str] = None, use_real_email: bool = False, orcid: typing.Optional[str] = None, use_real_orcid: bool = False, affiliation: typing.Optional[str] = None, use_real_affiliation: bool = False, role: typing.Optional[str] = None, use_real_role: bool = False, extra_fields: typing.Optional[dict] = {}, last_modified: typing.Optional[datetime] = None):
         self.user_id = user_id
         self.component_id = component_id
         self.name = name
@@ -121,6 +123,10 @@ class UserFederationAlias(db.Model):
         self.role = role
         self.use_real_role = use_real_role
         self.extra_fields = extra_fields
+        if last_modified is None:
+            self.last_modified = datetime.utcnow()
+        else:
+            self.last_modified = last_modified
 
     def __repr__(self):
         return '<{0}(user_id={1.user_id}, component_id={1.component_id}; name={1.name})>'.format(type(self).__name__, self)
