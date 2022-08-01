@@ -1,6 +1,7 @@
 # coding: utf-8
 """
 """
+import datetime
 from uuid import UUID
 
 import collections
@@ -18,18 +19,18 @@ MAX_COMPONENT_NAME_LENGTH = 100
 MAX_COMPONENT_ADDRESS_LENGTH = 100
 
 
-class Component(collections.namedtuple('FederationComponent', ['id', 'address', 'uuid', 'name', 'description'])):
+class Component(collections.namedtuple('FederationComponent', ['id', 'address', 'uuid', 'name', 'description', 'last_sync_timestamp'])):
     """
     This class provides an immutable wrapper around models.federation.FederationComponent.
     """
 
-    def __new__(cls, id: int, uuid: str, name: typing.Optional[str], address: typing.Optional[str], description: typing.Optional[str]):
-        self = super(Component, cls).__new__(cls, id, address, uuid, name, description)
+    def __new__(cls, id: int, uuid: str, name: typing.Optional[str], address: typing.Optional[str], description: typing.Optional[str], last_sync_timestamp: typing.Optional[datetime.datetime]):
+        self = super(Component, cls).__new__(cls, id, address, uuid, name, description, last_sync_timestamp)
         return self
 
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
-        return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description)
+        return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp)
 
     def get_name(self):
         if self.name is None:
@@ -39,6 +40,12 @@ class Component(collections.namedtuple('FederationComponent', ['id', 'address', 
             return _('Database #%(id)s', id=self.id)
         else:
             return self.name
+
+    def update_last_sync_timestamp(self, last_sync_timestamp: datetime.datetime):
+        component = components.Component.query.get(self.id)
+        component.last_sync_timestamp = last_sync_timestamp
+        db.session.add(component)
+        db.session.commit()
 
 
 def validate_address(address, max_length=100, allow_http=False):
@@ -109,7 +116,6 @@ def add_component(uuid: str, name: typing.Optional[str] = None, address: typing.
     db.session.add(component)
     db.session.commit()
 
-    db.session.commit()
     return Component.from_database(component)
 
 

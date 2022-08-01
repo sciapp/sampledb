@@ -61,7 +61,11 @@ def get(endpoint, component, headers=None):
 
     if auth:
         headers['Authorization'] = 'Bearer ' + auth.login['token']
-    req = requests.get(component.address + endpoint, headers=headers)
+
+    parameters = {}
+    if component.last_sync_timestamp is not None:
+        parameters['last_sync_timestamp'] = component.last_sync_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
+    req = requests.get(component.address + endpoint, headers=headers, params=parameters)
     if req.status_code == 401:
         # 401 Unauthorized
         raise errors.UnauthorizedRequestError()
@@ -80,11 +84,13 @@ def update_poke_component(component):
 def import_updates(component):
     if flask.current_app.config['FEDERATION_UUID'] is None:
         raise errors.ComponentNotConfiguredForFederationError()
+    timestamp = datetime.utcnow()
     try:
         updates = get('/federation/v1/shares/objects/', component)
     except errors.InvalidJSONError:
         raise errors.InvalidDataExportError('Received an invalid JSON string.')
     update_shares(component, updates)
+    component.update_last_sync_timestamp(timestamp)
 
 
 def update_shares(component, updates):
