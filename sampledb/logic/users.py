@@ -507,6 +507,28 @@ def get_user_aliases_for_user(user_id: int) -> typing.List[UserFederationAlias]:
     return [UserFederationAlias.from_database(a) for a in alias]
 
 
+def get_user_aliases_for_component(component_id: int, modified_since: typing.Optional[datetime.datetime] = None) -> typing.List[UserFederationAlias]:
+    """
+    Get all aliases for a component.
+
+    :param component_id: the ID of an existing component
+    :param modified_since: Only return aliases modified since modified_since. None to query every alias. (default: None)
+    :return: list of user aliases
+    :raise errors.ComponentDoesNotExistError: when no component with the given ID exists
+    """
+    get_component(component_id)
+    if modified_since is None:
+        alias = users.UserFederationAlias.query.filter_by(component_id=component_id).all()
+    else:
+        alias = users.UserFederationAlias.query.filter(
+            db.and_(
+                users.UserFederationAlias.component_id == component_id,
+                users.UserFederationAlias.last_modified >= modified_since
+            )
+        ).all()
+    return [UserFederationAlias.from_database(a) for a in alias]
+
+
 def create_user_alias(
     user_id: int,
     component_id: int,
