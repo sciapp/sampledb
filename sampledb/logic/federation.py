@@ -81,22 +81,7 @@ def update_poke_component(component):
     post('/federation/v1/hooks/update/', component)
 
 
-def import_updates(component):
-    if flask.current_app.config['FEDERATION_UUID'] is None:
-        raise errors.ComponentNotConfiguredForFederationError()
-    timestamp = datetime.utcnow()
-    try:
-        updates = get('/federation/v1/shares/objects/', component)
-    except errors.InvalidJSONError:
-        raise errors.InvalidDataExportError('Received an invalid JSON string.')
-    update_shares(component, updates)
-    component.update_last_sync_timestamp(timestamp)
-
-
-def update_shares(component, updates):
-    # parse and validate
-    _get_dict(updates, mandatory=True)
-    header = updates.get('header')
+def _validate_header(header, component):
     if header is not None:
         if header.get('db_uuid') != component.uuid:
             raise errors.InvalidDataExportError('UUID of exporting database ({}) does not match expected UUID ({}).'.format(header.get('db_uuid'), component.uuid))
@@ -109,9 +94,47 @@ def update_shares(component, updates):
                     raise errors.InvalidDataExportError('Unsupported protocol version {}'.format(header.get('protocol_version')))
             except ValueError:
                 raise errors.InvalidDataExportError('Invalid protocol version {}'.format(header.get('protocol_version')))
-
         else:
             raise errors.InvalidDataExportError('Missing protocol_version.')
+
+
+def import_updates(component):
+    if flask.current_app.config['FEDERATION_UUID'] is None:
+        raise errors.ComponentNotConfiguredForFederationError()
+    timestamp = datetime.utcnow()
+    try:
+        users = get('/federation/v1/shares/users/', component)
+    except errors.InvalidJSONError:
+        raise errors.InvalidDataExportError('Received an invalid JSON string.')
+    except errors.RequestServerError:
+        pass
+    except errors.UnauthorizedRequestError:
+        pass
+    try:
+        updates = get('/federation/v1/shares/objects/', component)
+    except errors.InvalidJSONError:
+        raise errors.InvalidDataExportError('Received an invalid JSON string.')
+    update_users(component, users)
+    update_shares(component, updates)
+    component.update_last_sync_timestamp(timestamp)
+
+
+def update_users(component, updates):
+    _get_dict(updates, mandatory=True)
+    _validate_header(updates.get('header'), component)
+
+    users = []
+    user_data_list = _get_list(updates.get('users'), default=[])
+    for user_data in user_data_list:
+        users.append(parse_user(user_data, component))
+    for user_data in users:
+        import_user(user_data, component)
+
+
+def update_shares(component, updates):
+    # parse and validate
+    _get_dict(updates, mandatory=True)
+    _validate_header(updates.get('header'), component)
 
     markdown_images = []
     markdown_images_data_dict = _get_dict(updates.get('markdown_images'), default={})

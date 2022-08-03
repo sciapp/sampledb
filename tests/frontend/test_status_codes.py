@@ -232,6 +232,7 @@ def test_status_codes(flask_server, user):
         'apple-touch-icon.png': 200,
         'favicon.ico': 200,
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
+        'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
         'groups/': 200,
         f'groups/{group_id}': 200,
         'instruments/': 200,
