@@ -401,7 +401,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 invalid_template_paths = enforce_permissions(schema, flask_login.current_user.id)
                 if invalid_template_paths:
                     raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
-                validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id])
+                validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id], strict=True)
             except errors.ValidationError as e:
                 error_message = e.message
                 if not e.paths:

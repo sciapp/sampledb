@@ -2704,3 +2704,73 @@ def test_validate_recipe_invalid_properties():
     schema['recipes'][0]['property_values'] = {"invalid_property": {"_type": "quantity", "magnitude": 42}}
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_invalid_property_names_schema():
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name"]
+    }
+
+    schema["properties"]["test1"] = {
+        "title": "Test",
+        "type": "text"
+    }
+    validate_schema(schema)
+    validate_schema(schema, strict=True)
+    del schema["properties"]["test1"]
+
+    schema["properties"]["te__st"] = {
+        "title": "Test",
+        "type": "text"
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    with pytest.raises(ValidationError):
+        validate_schema(schema, strict=True)
+    del schema["properties"]["te__st"]
+
+    schema["properties"][""] = {
+        "title": "Test",
+        "type": "text"
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    with pytest.raises(ValidationError):
+        validate_schema(schema, strict=True)
+    del schema["properties"][""]
+
+    schema["properties"]["test_"] = {
+        "title": "Test",
+        "type": "text"
+    }
+    validate_schema(schema)
+    with pytest.raises(ValidationError):
+        validate_schema(schema, strict=True)
+    del schema["properties"]["test_"]
+
+    schema["properties"]["1test"] = {
+        "title": "Test",
+        "type": "text"
+    }
+    validate_schema(schema)
+    with pytest.raises(ValidationError):
+        validate_schema(schema, strict=True)
+    del schema["properties"]["1test"]
+
+    schema["properties"]["te.st"] = {
+        "title": "Test",
+        "type": "text"
+    }
+    validate_schema(schema)
+    with pytest.raises(ValidationError):
+        validate_schema(schema, strict=True)
+    del schema["properties"]["te.st"]

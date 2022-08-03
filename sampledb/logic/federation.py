@@ -914,7 +914,7 @@ def parse_action(action_data):
         raise errors.InvalidDataExportError('Invalid update for local action {}'.format(fed_id))
     if schema is not None:
         try:
-            validate_schema(schema)
+            validate_schema(schema, strict=True)
         except errors.ValidationError as e:
             raise errors.InvalidDataExportError('Invalid schema in action #{} @ {} ({})'.format(fed_id, uuid, e))
 
@@ -1224,7 +1224,7 @@ def parse_object(object_data, component):
         _parse_schema(schema)
         try:
             if schema is not None:
-                validate_schema(schema)
+                validate_schema(schema, strict=True)
                 if data is not None:
                     validate(data, schema, allow_disabled_languages=True)
         except errors.ValidationError:
