@@ -185,7 +185,8 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         get_group=logic.groups.get_group,
         get_project=logic.projects.get_project,
         get_instrument=logic.instruments.get_instrument,
-        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry
+        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry,
+        get_object_location_assignment=logic.locations.get_object_location_assignment
     )
     text = flask.render_template(
         template_path + '.txt',
@@ -196,7 +197,8 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         get_group=logic.groups.get_group,
         get_project=logic.projects.get_project,
         get_instrument=logic.instruments.get_instrument,
-        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry
+        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry,
+        get_object_location_assignment=logic.locations.get_object_location_assignment
     )
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
@@ -600,5 +602,29 @@ def create_notification_for_an_edited_instrument_log_entry(
         data={
             'instrument_log_entry_id': instrument_log_entry_id,
             'version_id': version_id
+        }
+    )
+
+
+def create_notification_for_a_declined_responsibility_assignment(
+        user_id: int,
+        object_location_assignment_id: int
+) -> None:
+    """
+    Create a notification of type RESPONSIBILITY_ASSIGNMENT_DECLINED.
+
+    :param user_id: the ID of an existing user
+    :param object_location_assignment_id: the ID of an existing object location
+        assignment
+    :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
+        location assignment with the given object location assignment ID exists
+    """
+    # ensure the object location assignment exists
+    logic.locations.get_object_location_assignment(object_location_assignment_id)
+    _create_notification(
+        type=NotificationType.RESPONSIBILITY_ASSIGNMENT_DECLINED,
+        user_id=user_id,
+        data={
+            'object_location_assignment_id': object_location_assignment_id,
         }
     )

@@ -130,10 +130,20 @@ def notifications(user_id):
         get_instrument_log_entry=_safe_get_instrument_log_entry,
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
+        get_object_location_assignment=_safe_get_object_location_assignment,
         Permissions=object_permissions.Permissions,
         object_location_assignment_is_confirmed_or_declined=_object_location_assignment_is_confirmed_or_declined,
         datetime=datetime
     )
+
+
+def _safe_get_object_location_assignment(
+        object_location_assignment_id: int
+) -> typing.Optional[locations.ObjectLocationAssignment]:
+    try:
+        return locations.get_object_location_assignment(object_location_assignment_id)
+    except errors.ObjectLocationAssignmentDoesNotExistError:
+        return None
 
 
 def _safe_get_group(group_id: int) -> typing.Optional[groups.Group]:

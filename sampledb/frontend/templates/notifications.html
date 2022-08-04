@@ -104,6 +104,13 @@
               {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED %}
                 {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
                 {{ _('<a href="%(user_url)s">%(user_name)s</a> has edited a <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument(instrument_log_entry.instrument_id).name | get_translated_text(default=_('Unnamed Instrument'))) }}
+              {% elif notification.type == NotificationType.RESPONSIBILITY_ASSIGNMENT_DECLINED %}
+                {% set object_location_assignment = get_object_location_assignment(notification.data['object_location_assignment_id']) %}
+                {% if object_location_assignment %}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> has declined responsibility for <a href="%(object_url)s">object #%(object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), user_name=get_user(object_location_assignment.responsible_user_id).name, object_url=url_for('.object', object_id=object_location_assignment.object_id), object_id=object_location_assignment.object_id) }}
+                {% else %}
+                  {{ _('An unknown object responsibility assignment has been declined.') }}
+                {% endif %}
               {% else %}
                 {{ _('Unknown notification type.') }}
               {% endif %}
