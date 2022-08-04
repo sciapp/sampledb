@@ -154,13 +154,13 @@ def location_permissions(location_id):
             add_project_permissions_form,
             permissions_form
         ) = set_up_permissions_forms(
-            logic.location_permissions.location_permissions,
-            location_id,
-            all_user_permissions,
-            None,
-            user_permissions,
-            group_permissions,
-            project_permissions
+            resource_permissions=logic.location_permissions.location_permissions,
+            resource_id=location_id,
+            existing_all_user_permissions=all_user_permissions,
+            existing_anonymous_user_permissions=None,
+            existing_user_permissions=user_permissions,
+            existing_group_permissions=group_permissions,
+            existing_project_permissions=project_permissions
         )
         permissions_form.all_user_permissions.choices = [
             (p.name.lower(), p)
