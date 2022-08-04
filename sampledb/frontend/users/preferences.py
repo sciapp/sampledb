@@ -144,13 +144,13 @@ def change_preferences(user, user_id):
         add_project_permissions_form,
         default_permissions_form
     ) = set_up_permissions_forms(
-        logic.default_permissions.default_permissions,
-        flask_login.current_user.id,
-        all_user_permissions,
-        anonymous_user_permissions,
-        user_permissions,
-        group_permissions,
-        project_permissions
+        resource_permissions=logic.default_permissions.default_permissions,
+        resource_id=flask_login.current_user.id,
+        existing_all_user_permissions=all_user_permissions,
+        existing_anonymous_user_permissions=anonymous_user_permissions,
+        existing_user_permissions=user_permissions,
+        existing_group_permissions=group_permissions,
+        existing_project_permissions=project_permissions
     )
 
     users = get_users(exclude_hidden=True, exclude_fed=True)

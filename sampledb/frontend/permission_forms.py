@@ -156,6 +156,7 @@ def handle_permission_forms(
 
 
 def set_up_permissions_forms(
+        *,
         resource_permissions: ResourcePermissions,
         resource_id: int,
         existing_all_user_permissions: typing.Optional[Permissions] = None,

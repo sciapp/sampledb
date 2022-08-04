@@ -653,13 +653,13 @@ def action_permissions(action_id):
             add_project_permissions_form,
             permissions_form
         ) = set_up_permissions_forms(
-            logic.action_permissions.action_permissions,
-            action_id,
-            all_user_permissions,
-            anonymous_user_permissions,
-            user_permissions,
-            group_permissions,
-            project_permissions
+            resource_permissions=logic.action_permissions.action_permissions,
+            resource_id=action_id,
+            existing_all_user_permissions=all_user_permissions,
+            existing_anonymous_user_permissions=anonymous_user_permissions,
+            existing_user_permissions=user_permissions,
+            existing_group_permissions=group_permissions,
+            existing_project_permissions=project_permissions
         )
 
         users = get_users(exclude_hidden=True, exclude_fed=True)
