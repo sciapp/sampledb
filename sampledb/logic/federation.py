@@ -1406,7 +1406,7 @@ def schema_entry_preprocessor(schema, refs):
                     refs.append(('actions', schema.get('template')))
                 action = get_action(schema.get('template'))
                 if action.component_id is not None:
-                    comp = get_component(action.component_id)
+                    comp = action.component
                     schema['template'] = {
                         'action_id': action.fed_id,
                         'component_uuid': comp.uuid
@@ -1437,7 +1437,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                 refs.append(('actions', object.action_id))
             action = get_action(object.action_id)
             if action.component_id is not None:
-                comp = get_component(action.component_id)
+                comp = action.component
                 result['action'] = {
                     'action_id': action.fed_id,
                     'component_uuid': comp.uuid
@@ -1457,7 +1457,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                         'component_uuid': flask.current_app.config['FEDERATION_UUID']
                     }
                 else:
-                    comp = get_component(comment.component_id)
+                    comp = comment.component
                     res_comment = {
                         'comment_id': comment.fed_id,
                         'component_uuid': comp.uuid
@@ -1469,7 +1469,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                         refs.append(('users', comment.user_id))
                     user = get_user(comment.user_id)
                     if user.fed_id is not None:
-                        comp = get_component(user.component_id)
+                        comp = user.component
                         res_comment['user'] = {
                             'user_id': user.fed_id,
                             'component_uuid': comp.uuid
@@ -1503,7 +1503,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                         refs.append(('users', file.user_id))
                     user = get_user(file.user_id)
                     if user.fed_id is not None:
-                        comp = get_component(user.component_id)
+                        comp = user.component
                         res_file['user'] = {
                             'user_id': user.fed_id,
                             'component_uuid': comp.uuid
@@ -1527,7 +1527,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                         refs.append(('users', log_entry.user_id))
                     user = get_user(file.user_id)
                     if user.fed_id is not None:
-                        comp = get_component(user.component_id)
+                        comp = user.component
                         res_file['hidden']['user'] = {
                             'user_id': user.fed_id,
                             'component_uuid': comp.uuid
@@ -1552,7 +1552,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                 if ola.location_id is not None:
                     location = get_location(ola.location_id)
                     if location.component is not None:
-                        comp = get_component(location.component.id)
+                        comp = location.component
                         loc = {
                             'location_id': location.fed_id,
                             'component_uuid': comp.uuid
@@ -1567,7 +1567,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                 if ola.responsible_user_id is not None:
                     responsible_user = get_user(ola.responsible_user_id)
                     if responsible_user.component_id is not None:
-                        comp = get_component(responsible_user.component_id)
+                        comp = responsible_user.component
                         r_user = {
                             'user_id': responsible_user.fed_id,
                             'component_uuid': comp.uuid
@@ -1581,7 +1581,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                     r_user = None
                 ola_user = get_user(ola.user_id)
                 if ola_user.component_id is not None:
-                    comp = get_component(ola_user.component_id)
+                    comp = ola_user.component
                     c_user = {
                         'user_id': ola_user.fed_id,
                         'component_uuid': comp.uuid
@@ -1622,7 +1622,7 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                     refs.append(('users', version.user_id))
                 user = get_user(version.user_id)
                 if user.component_id is not None:
-                    comp = get_component(user.component_id)
+                    comp = user.component
                     result['versions'][-1]['user'] = {
                         'user_id': user.fed_id,
                         'component_uuid': comp.uuid
@@ -1712,7 +1712,7 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
                 'component_uuid': flask.current_app.config['FEDERATION_UUID']
             }
         else:
-            comp = get_component(i.component_id)
+            comp = i.component
             instrument = {
                 'instrument_id': i.fed_id,
                 'component_uuid': comp.uuid
@@ -1740,7 +1740,7 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
                 'component_uuid': flask.current_app.config['FEDERATION_UUID']
             }
         else:
-            comp = get_component(u.component_id)
+            comp = u.component
             user = {
                 'user_id': u.fed_id,
                 'component_uuid': comp.uuid
@@ -1749,7 +1749,7 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
     schema_entry_preprocessor(schema, refs)
     return {
         'action_id': action.id if action.fed_id is None else action.fed_id,
-        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if action.component_id is None else get_component(action.component_id).uuid,
+        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if action.component_id is None else action.component.uuid,
         'action_type': action_type,
         'instrument': instrument,
         'schema': schema,
@@ -1844,7 +1844,7 @@ def shared_instrument_preprocessor(instrument_id: int, _component: Component, _r
         translations_data = None
     return {
         'instrument_id': instrument.id if instrument.fed_id is None else instrument.fed_id,
-        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if instrument.component_id is None else get_component(instrument.component_id).uuid,
+        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if instrument.component_id is None else instrument.component.uuid,
         'description_is_markdown': instrument.description_is_markdown,
         'notes_is_markdown': instrument.notes_is_markdown,
         'is_hidden': instrument.is_hidden,
@@ -1900,7 +1900,7 @@ def shared_location_preprocessor(location_id: int, _component: Component, refs: 
         parent_location = None
     return {
         'location_id': location.id if location.fed_id is None else location.fed_id,
-        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if location.component is None else get_component(location.component.id).uuid,
+        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if location.component is None else location.component.uuid,
         'name': location.name,
         'description': location.description,
         'parent_location': parent_location
