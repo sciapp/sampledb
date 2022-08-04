@@ -29,6 +29,7 @@ Currently in development.
 - Allow selecting a unit when entering a quantity
 - Allow giving anonymous users READ permissions for objects
 - Added SciCat export
+- Allow declining object responsibility assignments
 
 Version 0.20
 ------------

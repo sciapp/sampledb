@@ -400,3 +400,11 @@ class InvalidDefaultPermissionsError(Exception):
 
 class SciCatNotReachableError(Exception):
     pass
+
+
+class ObjectLocationAssignmentAlreadyConfirmedError(Exception):
+    pass
+
+
+class ObjectLocationAssignmentAlreadyDeclinedError(Exception):
+    pass

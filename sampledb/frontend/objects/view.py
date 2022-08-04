@@ -58,6 +58,19 @@ def build_object_location_assignment_confirmation_url(object_location_assignment
     return confirmation_url
 
 
+def build_object_location_assignment_declination_url(object_location_assignment_id: int) -> str:
+    declination_url = flask.url_for(
+        'frontend.decline_responsibility_for_object',
+        t=logic.security_tokens.generate_token(
+            object_location_assignment_id,
+            salt='decline_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
+    return declination_url
+
+
 def get_project_if_it_exists(project_id):
     try:
         return get_project(project_id)
@@ -335,6 +348,7 @@ def object(object_id):
         "user_may_assign_location": user_may_assign_location,
         "object_location_assignments": object_location_assignments,
         "build_object_location_assignment_confirmation_url": build_object_location_assignment_confirmation_url,
+        "build_object_location_assignment_declination_url": build_object_location_assignment_declination_url,
         "location_form": location_form,
         "location_is_fed": location_is_fed,
         "user_is_fed": user_is_fed,

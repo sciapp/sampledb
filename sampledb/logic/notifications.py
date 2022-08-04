@@ -381,6 +381,15 @@ def create_notification_for_being_assigned_as_responsible_user(object_location_a
         ),
         _external=True
     )
+    declination_url = flask.url_for(
+        'frontend.decline_responsibility_for_object',
+        t=logic.security_tokens.generate_token(
+            object_location_assignment_id,
+            salt='decline_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
     _create_notification(
         type=NotificationType.ASSIGNED_AS_RESPONSIBLE_USER,
         user_id=object_location_assignment.responsible_user_id,
@@ -388,7 +397,8 @@ def create_notification_for_being_assigned_as_responsible_user(object_location_a
             'object_id': object_location_assignment.object_id,
             'assigner_id': object_location_assignment.user_id,
             'object_location_assignment_id': object_location_assignment_id,
-            'confirmation_url': confirmation_url
+            'confirmation_url': confirmation_url,
+            'declination_url': declination_url
         }
     )
 

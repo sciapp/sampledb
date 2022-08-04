@@ -301,12 +301,6 @@ msgid ""
 "location."
 msgstr "Ihnen fehlen die Berechtigungen um den gewünschten Eltern-Ort zu nutzen."
 
-msgid "The confirmation token is missing."
-msgstr "Das Bestätigungstoken fehlt."
-
-msgid "The confirmation token is invalid."
-msgstr "Das Bestätigungstoken ist ungültig."
-
 msgid "This responsibility assignment does not exist."
 msgstr "Diese Verantwortungszuweisung existiert nicht."
 
@@ -316,8 +310,26 @@ msgstr "Diese Verantwortungszuweisung gehört zu einem anderen Nutzer."
 msgid "This responsibility assignment has already been confirmed."
 msgstr "Diese Verantwortungszuweisung wurde bereits bestätigt."
 
+msgid "This responsibility assignment has already been declined."
+msgstr "Diese Verantwortungszuweisung wurde bereits abgelehnt."
+
+msgid "The confirmation token is missing."
+msgstr "Das Bestätigungstoken fehlt."
+
+msgid "The confirmation token is invalid."
+msgstr "Das Bestätigungstoken ist ungültig."
+
 msgid "You have successfully confirmed this responsibility assignment."
 msgstr "Sie haben diese Verantwortungszuweisung erfolgreich bestätigt."
+
+msgid "The declination token is missing."
+msgstr "Das Ablehnungstoken fehlt."
+
+msgid "The declination token is invalid."
+msgstr "Das Ablehnungstoken ist ungültig."
+
+msgid "You have successfully declined this responsibility assignment."
+msgstr "Sie haben diese Verantwortungszuweisung erfolgreich abgelehnt."
 
 msgid "Please enter at least an english name."
 msgstr "Bitte geben Sie zumindest einen englischen Namen ein."
@@ -414,16 +426,26 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
 "einer Probe verwendet."
 
+msgid " (confirmed)"
+msgstr " (bestätigt)"
+
+msgid " (declined)"
+msgstr " (abgelehnt)"
+
+msgid " (unconfirmed)"
+msgstr " (unbestätigt)"
+
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
 "href=\"%(location_url)s\">%(location_name)s</a> and <a "
-"href=\"%(other_user_url)s\">user #%(responsible_user_id)s</a>."
+"href=\"%(other_user_url)s\">user "
+"#%(responsible_user_id)s</a>%(responsibility_status)s."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem <a "
 "href=\"%(location_url)s\">%(location_name)s</a> und <a "
 "href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
-"zugeweisen."
+"zugeweisen%(responsibility_status)s."
 
 #, python-format
 msgid ""
@@ -436,11 +458,12 @@ msgstr ""
 #, python-format
 msgid ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
-"href=\"%(other_user_url)s\">user #%(responsible_user_id)s</a>."
+"href=\"%(other_user_url)s\">user "
+"#%(responsible_user_id)s</a>%(responsibility_status)s."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem <a "
 "href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
-"zugewiesen."
+"zugewiesen%(responsibility_status)s."
 
 #, python-format
 msgid ""
@@ -1463,6 +1486,9 @@ msgstr ""
 
 msgid "Confirm"
 msgstr "Bestätigen"
+
+msgid "Decline"
+msgstr "Ablehnen"
 
 #, python-format
 msgid ""
@@ -4244,6 +4270,9 @@ msgstr "Zuweisender Nutzer"
 
 msgid "The user has confirmed this responsibility assignment."
 msgstr "Der Nutzer hat die Verantwortungszuweisung bestätigt."
+
+msgid "The user has declined this responsibility assignment."
+msgstr "Der Nutzer hat die Verantwortungszuweisung abgelehnt."
 
 msgid "The user has not confirmed this responsibility assignment yet."
 msgstr "Der Nutzer hat die Verantwortungszuweisung noch nicht bestätigt."

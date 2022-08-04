@@ -160,12 +160,40 @@ def create_pdfexport(
                         )
                     else:
                         other_user_url = None
+                    if object_location_assignment.confirmed:
+                        responsibility_status = _(' (confirmed)')
+                    elif object_location_assignment.declined:
+                        responsibility_status = _(' (declined)')
+                    else:
+                        responsibility_status = _(' (unconfirmed)')
                     if object_location_assignment.location_id is not None and object_location_assignment.responsible_user_id is not None:
-                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a> and <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, location_url=location_url, location_name=location_name, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
+                        text += _(
+                            '<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a> and <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>%(responsibility_status)s.',
+                            user_url=user_url,
+                            user_name=user_name,
+                            location_url=location_url,
+                            location_name=location_name,
+                            other_user_url=other_user_url,
+                            responsible_user_id=object_location_assignment.responsible_user_id,
+                            responsibility_status=responsibility_status
+                        )
                     elif object_location_assignment.location_id is not None:
-                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a>.', user_url=user_url, user_name=user_name, location_url=location_url, location_name=location_name)
+                        text += _(
+                            '<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a>.',
+                            user_url=user_url,
+                            user_name=user_name,
+                            location_url=location_url,
+                            location_name=location_name
+                        )
                     elif object_location_assignment.responsible_user_id is not None:
-                        text += _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
+                        text += _(
+                            '<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>%(responsibility_status)s.',
+                            user_url=user_url,
+                            user_name=user_name,
+                            other_user_url=other_user_url,
+                            responsible_user_id=object_location_assignment.responsible_user_id,
+                            responsibility_status=responsibility_status
+                        )
                 elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION:
                     doi = markupsafe.escape(object_log_entry.data['doi'])
                     text += _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://dx.doi.org/%(doi)s">%(doi)s</a> to this object.', user_url=user_url, user_name=user_name, doi=doi)

@@ -35,6 +35,14 @@ class MarkNotificationAsReadForm(FlaskForm):
     mark_notification_read = IntegerField(validators=[InputRequired()])
 
 
+def _object_location_assignment_is_confirmed_or_declined(object_location_assignment_id):
+    try:
+        object_location_assignment = locations.get_object_location_assignment(object_location_assignment_id)
+    except errors.ObjectLocationAssignmentDoesNotExistError:
+        return False
+    return object_location_assignment.confirmed or object_location_assignment.declined
+
+
 @frontend.route('/users/me/notifications')
 @flask_login.login_required
 def current_user_notifications():
@@ -124,7 +132,7 @@ def notifications(user_id):
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
         Permissions=object_permissions.Permissions,
-        object_location_assignment_is_confirmed=lambda object_location_assignment_id: locations.get_object_location_assignment(object_location_assignment_id).confirmed,
+        object_location_assignment_is_confirmed_or_declined=_object_location_assignment_is_confirmed_or_declined,
         datetime=datetime
     )
 

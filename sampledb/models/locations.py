@@ -49,6 +49,10 @@ class ObjectLocationAssignment(db.Model):
             '(fed_id IS NOT NULL AND component_id IS NOT NULL) OR (description IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
             name='object_location_assignments_not_null_check'
         ),
+        db.CheckConstraint(
+            'NOT (confirmed AND declined)',
+            name='object_location_assignments_not_both_states_check'
+        ),
         db.UniqueConstraint('fed_id', 'component_id', name='object_location_assignments_fed_id_component_id_key'),
     )
 
@@ -64,8 +68,21 @@ class ObjectLocationAssignment(db.Model):
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
+    declined = db.Column(db.Boolean, nullable=False, default=False)
 
-    def __init__(self, object_id: int, location_id: int, user_id: int, description: dict, utc_datetime: typing.Optional[datetime.datetime] = None, responsible_user_id: typing.Optional[int] = None, confirmed: bool = False, fed_id: int = None, component_id: int = None):
+    def __init__(
+            self,
+            object_id: int,
+            location_id: int,
+            user_id: int,
+            description: dict,
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            responsible_user_id: typing.Optional[int] = None,
+            confirmed: bool = False,
+            declined: bool = False,
+            fed_id: int = None,
+            component_id: int = None
+    ):
         self.object_id = object_id
         self.location_id = location_id
         self.user_id = user_id
@@ -75,8 +92,9 @@ class ObjectLocationAssignment(db.Model):
         self.utc_datetime = utc_datetime
         self.responsible_user_id = responsible_user_id
         self.confirmed = confirmed
+        self.declined = declined
         self.fed_id = fed_id
         self.component_id = component_id
 
     def __repr__(self):
-        return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed})>'.format(type(self).__name__, self)
+        return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed}, declined={1.declined})>'.format(type(self).__name__, self)
