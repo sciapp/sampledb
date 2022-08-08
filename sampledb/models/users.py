@@ -41,9 +41,10 @@ class User(db.Model):
     extra_fields = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    last_modified = db.Column(db.DateTime, nullable=False)
     component = db.relationship('Component')
 
-    def __init__(self, name, email, type, orcid: typing.Optional[str] = None, affiliation: typing.Optional[str] = None, role: typing.Optional[str] = None, extra_fields: typing.Optional[dict] = {}, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None):
+    def __init__(self, name, email, type, orcid: typing.Optional[str] = None, affiliation: typing.Optional[str] = None, role: typing.Optional[str] = None, extra_fields: typing.Optional[dict] = {}, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None, last_modified: typing.Optional[datetime] = None):
         self.name = name
         self.email = email
         self.type = type
@@ -53,6 +54,10 @@ class User(db.Model):
         self.extra_fields = extra_fields
         self.fed_id = fed_id
         self.component_id = component_id
+        if last_modified is None:
+            self.last_modified = datetime.utcnow()
+        else:
+            self.last_modified = last_modified
 
     def __eq__(self, other):
         try:
@@ -65,6 +70,8 @@ class User(db.Model):
                 self.is_readonly == other.is_readonly and
                 self.is_hidden == other.is_hidden and
                 self.orcid == other.orcid and
+                self.affiliation == other.affiliation and
+                self.role == other.role and
                 self.fed_id == other.fed_id and
                 self.component_id == other.component_id
             )
