@@ -545,13 +545,13 @@
     </ol>
     </div>
   {% endif %}
-  {% elif not search_notes %}
-    <div class="alert alert-warning" role="alert">
-    {% if use_advanced_search and advanced_search_had_error %}
+  {% elif not search_notes and use_advanced_search and advanced_search_had_error %}
+    <div class="alert alert-danger" role="alert">
       {{ _('Failed to interpret advanced search query. Please check your query or try the regular search instead.') }}
-    {% else %}
+    </div>
+  {% elif not advanced_search_had_error %}
+    <div class="alert alert-warning" role="alert">
       {{ _('No objects were found.') }}
-    {% endif %}
     </div>
   {% endif %}
 {% endblock %}
