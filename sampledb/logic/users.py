@@ -42,7 +42,7 @@ class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id
         return datetime.datetime.utcnow() >= expiration_datetime
 
 
-class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_admin', 'is_readonly', 'is_hidden', 'is_active', 'orcid', 'affiliation', 'role', 'extra_fields', 'fed_id', 'component_id']), flask_login.UserMixin):
+class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_admin', 'is_readonly', 'is_hidden', 'is_active', 'orcid', 'affiliation', 'role', 'extra_fields', 'fed_id', 'component_id', 'last_modified']), flask_login.UserMixin):
     """
     This class provides an immutable wrapper around models.users.User.
     """
@@ -62,7 +62,8 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             role: str,
             extra_fields: typing.Dict[str, typing.Any],
             fed_id: int,
-            component_id: int
+            component_id: int,
+            last_modified: datetime.datetime
     ):
         self = super(User, cls).__new__(
             cls,
@@ -79,7 +80,8 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             role,
             extra_fields,
             fed_id,
-            component_id
+            component_id,
+            last_modified
         )
         return self
 
@@ -99,7 +101,8 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             role=user.role,
             extra_fields=copy.deepcopy(user.extra_fields),
             fed_id=user.fed_id,
-            component_id=user.component_id
+            component_id=user.component_id,
+            last_modified=user.last_modified
         )
 
     @property
@@ -161,7 +164,7 @@ class AnonymousUser(flask_login.AnonymousUserMixin):
         return False
 
 
-class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields'])):
+class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields', 'last_modified'])):
     """
     This class provides an immutable wrapper around models.users.UserFederationAlias.
     """
@@ -180,7 +183,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
             use_real_affiliation: bool,
             role: typing.Optional[str],
             use_real_role: bool,
-            extra_fields: typing.Dict[str, typing.Any]
+            extra_fields: typing.Dict[str, typing.Any],
+            last_modified: datetime.datetime
     ):
         self = super(UserFederationAlias, cls).__new__(
             cls,
@@ -196,7 +200,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
             use_real_affiliation,
             role,
             use_real_role,
-            extra_fields
+            extra_fields,
+            last_modified
         )
         return self
 
@@ -217,7 +222,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
                 use_real_affiliation=alias.use_real_affiliation,
                 role=user.role if alias.use_real_role else alias.role,
                 use_real_role=alias.use_real_role,
-                extra_fields=copy.deepcopy(alias.extra_fields)
+                extra_fields=copy.deepcopy(alias.extra_fields),
+                last_modified=alias.last_modified
             )
         else:
             return UserFederationAlias(
@@ -233,7 +239,8 @@ class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_i
                 use_real_affiliation=alias.use_real_affiliation,
                 role=alias.role,
                 use_real_role=alias.use_real_role,
-                extra_fields=copy.deepcopy(alias.extra_fields)
+                extra_fields=copy.deepcopy(alias.extra_fields),
+                last_modified=alias.last_modified
             )
 
 
@@ -294,6 +301,7 @@ def update_user(user_id: int, **attributes: typing.Dict[str, typing.Any]) -> Non
 
     for name, value in attributes.items():
         setattr(user, name, value)
+    user.last_modified = datetime.datetime.utcnow()
     db.session.add(user)
     db.session.commit()
 
@@ -371,8 +379,8 @@ def create_user(
     Create a new user.
 
     This function cannot create a user as an administrator. To set whether or
-    not a user is an administrator, use the set_administrator script or modify
-    the User object returned by this function.
+    not a user is an administrator, use the set_administrator script or
+    set_user_administrator function.
 
     :param name: the user's name
     :param email: the user's email address
@@ -386,7 +394,7 @@ def create_user(
     if component_id is not None:
         get_component(component_id)
 
-    user = users.User(name=name, email=email, type=type, orcid=orcid, affiliation=affiliation, role=role, extra_fields=extra_fields, fed_id=fed_id, component_id=component_id)
+    user = users.User(name=name, email=email, type=type, orcid=orcid, affiliation=affiliation, role=role, extra_fields=extra_fields, fed_id=fed_id, component_id=component_id, last_modified=datetime.datetime.utcnow())
     db.session.add(user)
     db.session.commit()
     return User.from_database(user)
@@ -503,6 +511,34 @@ def get_user_aliases_for_user(user_id: int) -> typing.List[UserFederationAlias]:
     return [UserFederationAlias.from_database(a) for a in alias]
 
 
+def get_user_aliases_for_component(component_id: int, modified_since: typing.Optional[datetime.datetime] = None) -> typing.List[UserFederationAlias]:
+    """
+    Get all aliases for a component.
+
+    :param component_id: the ID of an existing component
+    :param modified_since: Only return aliases modified since modified_since. None to query every alias. (default: None)
+    :return: list of user aliases
+    :raise errors.ComponentDoesNotExistError: when no component with the given ID exists
+    """
+    get_component(component_id)
+    if modified_since is None:
+        alias = users.UserFederationAlias.query.filter_by(component_id=component_id).all()
+    else:
+        alias = users.UserFederationAlias.query.filter(
+            db.or_(
+                db.and_(
+                    users.UserFederationAlias.component_id == component_id,
+                    users.UserFederationAlias.last_modified >= modified_since
+                ),
+                db.and_(
+                    db.or_(users.UserFederationAlias.use_real_name, users.UserFederationAlias.use_real_email, users.UserFederationAlias.use_real_orcid, users.UserFederationAlias.use_real_affiliation, users.UserFederationAlias.use_real_role),
+                    users.User.last_modified >= modified_since
+                )
+            )
+        ).all()
+    return [UserFederationAlias.from_database(a) for a in alias]
+
+
 def create_user_alias(
     user_id: int,
     component_id: int,
@@ -616,6 +652,7 @@ def update_user_alias(
     alias.use_real_affiliation = use_real_affiliation
     alias.role = role
     alias.use_real_role = use_real_role
+    alias.last_modified = datetime.datetime.utcnow()
     db.session.add(alias)
     db.session.commit()
 

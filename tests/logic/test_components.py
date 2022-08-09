@@ -2,6 +2,7 @@
 '''
 
 '''
+import datetime
 from uuid import uuid4
 
 import pytest
@@ -24,6 +25,7 @@ def test_create_component():
     assert component.uuid == '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
     assert component.name == 'Example Component'
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
 
 def test_create_duplicate_component():
@@ -144,6 +146,7 @@ def test_get_components():
     assert component.uuid == '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
     assert component.name == 'Example Component 1'
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
     add_component(address='https://example.com/sampledb', uuid='cf7118a7-6976-5b1a-9a39-7adc72f591a4', name='Example Component 2', description='')
     components = logic.components.get_components()
@@ -164,6 +167,7 @@ def test_update_component():
     assert component.uuid == '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
     assert component.name == 'Test Component'
     assert component.description == 'Test Description'
+    assert component.last_sync_timestamp is None
 
 
 def test_update_component_that_does_not_exist():
@@ -178,6 +182,7 @@ def test_update_component_that_does_not_exist():
     assert component.id == component_id
     assert component.name == 'Example Component'
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
 
 def test_update_component_with_existing_name():
@@ -195,6 +200,7 @@ def test_update_component_with_existing_name():
     assert component.uuid == 'cf7118a7-6976-5b1a-9a39-7adc72f591a4'
     assert component.name == 'Example Component 2'
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
 
 def test_update_component_with_empty_address():
@@ -210,6 +216,7 @@ def test_update_component_with_empty_address():
     assert component.address == 'https://example.com'
     assert component.name == 'Example Component'
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
 
 def test_update_component_with_long_name():
@@ -225,6 +232,7 @@ def test_update_component_with_long_name():
     assert component.address == 'https://example.com'
     assert component.name == 'Example Component'
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
     update_component(component_id=component_id, name='A' * 100, description='')
 
@@ -234,6 +242,7 @@ def test_update_component_with_long_name():
     assert component.name == 'A' * 100
     assert component.address is None
     assert component.description == ''
+    assert component.last_sync_timestamp is None
 
 
 def test_get_name():
@@ -280,3 +289,12 @@ def test_validate_address():
         validate_address('https://www.example.com', max_length=10)
     with pytest.raises(InsecureComponentAddressError):
         validate_address('http://example.com')
+
+
+def test_update_last_sync_timestamp():
+    component = add_component(address='https://example.com', uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='')
+    assert component.last_sync_timestamp is None
+    timestamp = datetime.datetime.utcnow()
+    component.update_last_sync_timestamp(last_sync_timestamp=timestamp)
+    component = logic.components.get_component(component.id)
+    assert component.last_sync_timestamp == timestamp

@@ -2,6 +2,7 @@
 """
 
 """
+import datetime
 import re
 import typing
 from flask_babel import _
@@ -17,12 +18,14 @@ class Component(db.Model):
     uuid = db.Column(db.Text, nullable=False, unique=True)
     name = db.Column(db.Text, nullable=True, unique=True)
     description = db.Column(db.Text, nullable=False, default='')
+    last_sync_timestamp = db.Column(db.DateTime, nullable=True)
 
-    def __init__(self, uuid: str, name: typing.Optional[str] = None, description: typing.Optional[str] = '', address: typing.Optional[str] = None):
+    def __init__(self, uuid: str, name: typing.Optional[str] = None, description: typing.Optional[str] = '', address: typing.Optional[str] = None, last_sync_timestamp: typing.Optional[datetime.datetime] = None):
         self.address = address
         self.uuid = uuid
         self.name = name
         self.description = description
+        self.last_sync_timestamp = last_sync_timestamp
 
     def __repr__(self):
         return '<{0}(id={1.id}, address={1.address}, uuid={1.uuid}, name={1.name}, description={1.description})>'.format(type(self).__name__, self)

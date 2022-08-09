@@ -3,15 +3,12 @@
 
 """
 import base64
-import copy
 import typing
 from copy import deepcopy
 import datetime
 import flask
 import pytest
-import sqlalchemy
 
-import sampledb
 from sampledb import logic, db
 from sampledb.logic import errors, actions, instruments, object_permissions
 from sampledb.logic.action_translations import get_action_translations_for_action, set_action_translation, get_action_translation_for_action_in_language
@@ -3269,8 +3266,6 @@ def test_shared_instrument_preprocessor_markdown_images(component, markdown_imag
         }
 
 
-
-
 def test_shared_instrument_preprocessor_does_not_exist(instrument, component):
     refs = []
     markdown_images = {}
@@ -3550,6 +3545,24 @@ def test_update_shares(component, users, groups, projects):
     assert project_permissions[local_project1.id] == Permissions.READ
     assert project_permissions[local_project2.id] == Permissions.WRITE
     assert project_permissions[local_project3.id] == Permissions.GRANT
+
+
+def test_update_users(component):
+    user1 = deepcopy(USER_DATA)
+    user1['user_id'] = 1
+    user2 = deepcopy(USER_DATA)
+    user2['user_id'] = 2
+    user2['name'] = 'User 2'
+    user3 = deepcopy(USER_DATA)
+    user3['user_id'] = 23
+    user3['name'] = 'User 23'
+    updates = {'users': [user1, user2, user3]}
+
+    update_shares(component, updates)
+    _check_user(user1)
+    _check_user(user2)
+    _check_user(user3)
+    assert len(User.query.all()) == 3
 
 
 def test_import_object_invalid_permission(component, user):

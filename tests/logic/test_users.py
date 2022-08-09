@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 import sampledb.models
@@ -5,7 +7,8 @@ import sampledb.logic
 from sampledb import db
 from sampledb.logic import errors
 from sampledb.logic.components import add_component
-from sampledb.logic.users import create_user_alias, get_user_alias, get_user_aliases_for_user, update_user_alias
+from sampledb.logic.users import create_user_alias, get_user_alias, get_user_aliases_for_user, update_user_alias, \
+    get_user_aliases_for_component
 from sampledb.models import User, UserType, UserFederationAlias
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
@@ -122,21 +125,39 @@ def test_set_user_administrator(user):
 
 def test_create_user():
     assert len(User.query.all()) == 0
+    ts = datetime.datetime.utcnow()
     user = sampledb.logic.users.create_user(name='User', email='user@example.com', type=UserType.PERSON)
+    assert ts <= user.last_modified <= datetime.datetime.utcnow()
     assert len(User.query.all()) == 1
     assert user.name == 'User'
     assert user.email == 'user@example.com'
 
 
+def test_update_user():
+    user = sampledb.logic.users.create_user(name='User', email='user@example.com', type=UserType.PERSON)
+    assert len(User.query.all()) == 1
+    ts = datetime.datetime.utcnow()
+    sampledb.logic.users.update_user(user.id, name='Updated User', email='up.user@example.com')
+    user = sampledb.logic.users.get_user(user.id)
+    assert ts <= user.last_modified <= datetime.datetime.utcnow()
+    assert len(User.query.all()) == 1
+    assert user.name == 'Updated User'
+    assert user.email == 'up.user@example.com'
+
+
 def test_create_user_fed(component):
     assert len(User.query.all()) == 0
+    ts = datetime.datetime.utcnow()
     user = sampledb.logic.users.create_user(name='User', email='user@example.com', fed_id=1, component_id=component.id, type=UserType.FEDERATION_USER)
+    assert ts <= user.last_modified <= datetime.datetime.utcnow()
     assert len(User.query.all()) == 1
     assert user.name == 'User'
     assert user.email == 'user@example.com'
     assert user.fed_id == 1
     assert user.component_id == component.id
+    ts = datetime.datetime.utcnow()
     user = sampledb.logic.users.create_user(name=None, email=None, fed_id=2, component_id=component.id, affiliation='Scientific IT Systems', type=UserType.FEDERATION_USER)
+    assert ts <= user.last_modified <= datetime.datetime.utcnow()
     assert len(User.query.all()) == 2
     assert user.name is None
     assert user.email is None
@@ -177,7 +198,10 @@ def test_get_user_exceptions(component):
 
 def test_create_user_alias(component, user):
     assert len(UserFederationAlias.query.all()) == 0
+    utc_datetime_before = datetime.datetime.utcnow()
     alias = create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, True)
+    assert alias.last_modified >= utc_datetime_before
+    assert alias.last_modified <= datetime.datetime.utcnow()
     assert len(UserFederationAlias.query.all()) == 1
     assert alias.user_id == user.id
     assert alias.component_id == component.id
@@ -202,8 +226,11 @@ def test_get_user_alias(component, user):
         get_user_alias(user.id + 1, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         get_user_alias(user.id, component.id + 1)
+    utc_datetime_before = datetime.datetime.utcnow()
     created_alias = create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, False)
     alias = get_user_alias(user.id, component.id)
+    assert alias.last_modified >= utc_datetime_before
+    assert alias.last_modified <= datetime.datetime.utcnow()
     assert alias.user_id == created_alias.user_id
     assert alias.component_id == created_alias.component_id
     assert alias.name == created_alias.name
@@ -242,8 +269,11 @@ def test_update_user_alias(component, user):
     with pytest.raises(errors.UserAliasDoesNotExistError):
         update_user_alias(user.id, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
     create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, False)
+    utc_datetime_before = datetime.datetime.utcnow()
     update_user_alias(user.id, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
     alias = get_user_alias(user.id, component.id)
+    assert alias.last_modified >= utc_datetime_before
+    assert alias.last_modified <= datetime.datetime.utcnow()
     assert alias.user_id == user.id
     assert alias.component_id == component.id
     assert alias.name == 'User'
@@ -255,3 +285,75 @@ def test_update_user_alias(component, user):
         update_user_alias(user.id + 1, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
     with pytest.raises(errors.ComponentDoesNotExistError):
         update_user_alias(user.id, component.id + 1, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
+
+
+def test_get_user_aliases_for_component():
+    component1 = add_component(address=None, uuid=UUID_1, name='Example component 1', description='')
+    component2 = add_component(address=None, uuid=UUID_2, name='Example component 2', description='')
+    user1 = sampledb.models.User(name="Basic User 1", email="example1@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user1)
+    sampledb.db.session.commit()
+    user2 = sampledb.models.User(name="Basic User 2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user2)
+    sampledb.db.session.commit()
+    ts1 = datetime.datetime.utcnow()
+    alias_user1_component1 = create_user_alias(user1.id, component1.id, 'B. User 1', False, None, False, None, False, None, False, None, False)
+    alias_user1_component2 = create_user_alias(user1.id, component2.id, None, False, None, False, None, False, None, False, None, False)
+    ts2 = datetime.datetime.utcnow()
+    alias_user2_component1 = create_user_alias(user2.id, component1.id, 'B. User 2', False, None, False, None, False, None, False, None, False)
+    alias_user2_component2 = create_user_alias(user2.id, component2.id, 'B. User 2', False, 'contact@example.com', False, None, False, None, False, None, False)
+    ts3 = datetime.datetime.utcnow()
+    user_aliases = get_user_aliases_for_component(component1.id)
+    assert alias_user1_component1 in user_aliases
+    assert alias_user2_component1 in user_aliases
+    assert len(user_aliases) == 2
+    user_aliases = get_user_aliases_for_component(component2.id)
+    assert alias_user1_component2 in user_aliases
+    assert alias_user2_component2 in user_aliases
+    assert len(user_aliases) == 2
+    with pytest.raises(errors.ComponentDoesNotExistError):
+        get_user_aliases_for_component(component2.id + 1)
+
+    user_aliases = get_user_aliases_for_component(component1.id, modified_since=ts1)
+    assert alias_user1_component1 in user_aliases
+    assert alias_user2_component1 in user_aliases
+    assert len(user_aliases) == 2
+    user_aliases = get_user_aliases_for_component(component1.id, modified_since=ts2)
+    assert alias_user2_component1 in user_aliases
+    assert len(user_aliases) == 1
+    user_aliases = get_user_aliases_for_component(component1.id, modified_since=ts3)
+    assert len(user_aliases) == 0
+
+
+def test_get_user_aliases_for_component_use_real_data():
+    component = add_component(address=None, uuid=UUID_1, name='Example component 1', description='')
+    user1 = sampledb.models.User(name="Basic User 1", email="example1@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user1)
+    sampledb.db.session.commit()
+    user2 = sampledb.models.User(name="Basic User 2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.db.session.add(user2)
+    sampledb.db.session.commit()
+    ts1 = datetime.datetime.utcnow()
+    alias_user1 = create_user_alias(user1.id, component.id, None, True, None, False, None, False, None, False, None, False)
+    ts2 = datetime.datetime.utcnow()
+    alias_user2 = create_user_alias(user2.id, component.id, 'B. User 2', False, None, False, None, False, None, False, None, False)
+    ts3 = datetime.datetime.utcnow()
+
+    user_aliases = get_user_aliases_for_component(component.id, modified_since=ts1)
+    assert alias_user1 in user_aliases
+    assert alias_user2 in user_aliases
+    assert len(user_aliases) == 2
+    user_aliases = get_user_aliases_for_component(component.id, modified_since=ts2)
+    assert alias_user2 in user_aliases
+    assert len(user_aliases) == 1
+    user_aliases = get_user_aliases_for_component(component.id, modified_since=ts3)
+    assert len(user_aliases) == 0
+
+    ts4 = datetime.datetime.utcnow()
+    sampledb.logic.users.update_user(user1.id, name='User Name')
+    sampledb.logic.users.update_user(user2.id, email='user@example.com')    # not using real data -> ignore profile update
+    user_aliases = get_user_aliases_for_component(component.id, modified_since=ts4)
+    alias_user1 = get_user_alias(user1.id, component.id)
+    assert alias_user1.name == 'User Name'
+    assert alias_user1 in user_aliases
+    assert len(user_aliases) == 1
