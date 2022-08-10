@@ -573,7 +573,7 @@ The default value for this property as a number. This should be the value in bas
 units
 ^^^^^
 
-A JSON array of strings or a single string containing the units for this property, e.g. ``"nm"``,  ``"degC"`` or ``["cm", "mm"]`.
+A JSON array of strings or a single string containing the units for this property, e.g. ``"nm"``,  ``"degC"`` or ``["cm", "mm"]``.
 
 .. note:: These units will be parsed using the `pint Python Package <https://pint.readthedocs.io/en/latest/index.html>`_ with additional `units defined by SampleDB <https://github.com/sciapp/sampledb/blob/develop/sampledb/logic/unit_definitions.txt>`_.
 
