@@ -24,7 +24,7 @@
     <dt>{{ _('Other Databases') }}</dt>
     <dd>
       {% if user.component.address is not none %}
-      {{ _('<a href="%(user_url)s">User #%(user_id)s</a> (<a href="%(component_url)s">%(component_name)s</a>)', user_url=user.component.address ~ url_for('.user_profile', user_id=user.fed_id), user_id=user.fed_id, component_url=user.component.address, component_name=user.component.get_name()) }}
+      {{ _('<a href="%(user_url)s">User #%(user_id)s</a> (<a href="%(component_url)s">%(component_name)s</a>)', user_url=user.component.address ~ relative_url_for('.user_profile', user_id=user.fed_id), user_id=user.fed_id, component_url=user.component.address, component_name=user.component.get_name()) }}
       {% else %}
         {{ _('User #%(user_id)s (%(component_name)s)', user_id=user.id, component_name=user.component.get_name()) }}
       {% endif %}
