@@ -23,21 +23,17 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 def float_operator_equals(left, right):
     return db.and_(
-        left * (1 - EPSILON) <= right,
-        left * (1 + EPSILON) >= right
+        left * (1 - db.func.sign(left) * EPSILON) <= right,
+        left * (1 + db.func.sign(left) * EPSILON) >= right
     )
 
 
 def float_operator_less_than_equals(left, right):
-    return db.and_(
-        left * (1 - EPSILON) <= right
-    )
+    return left * (1 - db.func.sign(left) * EPSILON) <= right
 
 
 def float_operator_greater_than_equals(left, right):
-    return db.and_(
-        left * (1 + EPSILON) >= right
-    )
+    return left * (1 + db.func.sign(left) * EPSILON) >= right
 
 
 def quantity_binary_operator(db_obj, other, operator):
@@ -75,8 +71,8 @@ def quantity_between(db_obj, left, right, including=True):
         return db.and_(
             db_obj['_type'].astext == 'quantity',
             db_obj['dimensionality'].astext == str(left.dimensionality),
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 + EPSILON) >= left.magnitude_in_base_units,
-            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 - EPSILON) <= right.magnitude_in_base_units
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 + db.func.sign(db_obj['magnitude_in_base_units'].astext.cast(db.Float)) * EPSILON) >= left.magnitude_in_base_units,
+            db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 - db.func.sign(db_obj['magnitude_in_base_units'].astext.cast(db.Float)) * EPSILON) <= right.magnitude_in_base_units
         )
     else:
         return db.and_(
