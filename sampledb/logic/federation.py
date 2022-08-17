@@ -49,7 +49,7 @@ def post(endpoint, component, payload=None, headers=None):
 
     if auth:
         headers['Authorization'] = 'Bearer ' + auth.login['token']
-    requests.post(component.address + endpoint, data=payload, headers=headers)
+    requests.post(component.address.rstrip('/') + endpoint, data=payload, headers=headers)
 
 
 def get(endpoint, component, headers=None):
@@ -65,7 +65,7 @@ def get(endpoint, component, headers=None):
     parameters = {}
     if component.last_sync_timestamp is not None:
         parameters['last_sync_timestamp'] = component.last_sync_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
-    req = requests.get(component.address + endpoint, headers=headers, params=parameters)
+    req = requests.get(component.address.rstrip('/') + endpoint, headers=headers, params=parameters)
     if req.status_code == 401:
         # 401 Unauthorized
         raise errors.UnauthorizedRequestError()
