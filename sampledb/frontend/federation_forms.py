@@ -61,7 +61,7 @@ class EditAliasForm(FlaskForm):
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
             name = field.data
-            if ', ' not in name[1:-1]:
+            if name and ', ' not in name[1:-1]:
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
 
@@ -83,7 +83,7 @@ class AddAliasForm(FlaskForm):
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
             name = field.data
-            if ', ' not in name[1:-1]:
+            if name and ', ' not in name[1:-1]:
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
 
