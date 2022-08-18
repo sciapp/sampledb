@@ -48,6 +48,11 @@ def dataverse_export(object_id):
     if not server_url:
         return flask.abort(404)
 
+    object = logic.objects.get_object(object_id)
+    if object.component_id is not None:
+        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
+
     dataverse_export_form = DataverseExportForm()
 
     user_id = flask_login.current_user.id
@@ -80,7 +85,6 @@ def dataverse_export(object_id):
             had_invalid_api_token=had_invalid_api_token
         )
 
-    object = logic.objects.get_object(object_id)
     properties = [
         (metadata, path)
         for metadata, path in logic.dataverse_export.flatten_metadata(object.data)

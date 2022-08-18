@@ -438,7 +438,7 @@ def get_templates(user_id):
     return [
         action
         for action in get_sorted_actions_for_user(user_id=user_id)
-        if action.type.is_template
+        if action.type_id is not None and action.type.is_template and action.schema
     ]
 
 
@@ -547,6 +547,8 @@ def get_search_paths(
     for action_type in action_types:
         search_paths_by_action_type[action_type.id] = {}
     for action in actions:
+        if not action.schema:
+            continue
         search_paths_by_action[action.id] = {}
         if action.type_id not in search_paths_by_action_type:
             search_paths_by_action_type[action.type_id] = {}

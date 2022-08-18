@@ -40,7 +40,8 @@ class Action(Resource):
         try:
             action = get_action_with_translation_in_language(
                 action_id=action_id,
-                language_id=Language.ENGLISH
+                language_id=Language.ENGLISH,
+                use_fallback=True
             )
         except errors.ActionDoesNotExistError:
             return {
@@ -58,6 +59,7 @@ class Actions(Resource):
         return [
             action_to_json(get_action_with_translation_in_language(
                 action_id=action.id,
-                language_id=Language.ENGLISH
+                language_id=Language.ENGLISH,
+                use_fallback=True
             )) for action in actions
         ]

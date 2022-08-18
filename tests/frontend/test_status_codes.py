@@ -1,3 +1,4 @@
+import copy
 import secrets
 
 import flask
@@ -32,7 +33,21 @@ def _assert_all_routes_are_handled(flask_server, handled_routes, arguments):
                 for argument in rule.arguments:
                     if argument not in rule_arguments:
                         rule_arguments[argument] = arguments[argument]
-                url = flask.url_for(rule.endpoint, **rule_arguments)
+                argument_combinations = [{}]
+                for key, value in rule_arguments.items():
+                    if isinstance(value, list):
+                        new_argument_combinations = []
+                        for combination in argument_combinations:
+                            for item in value:
+                                new_combination = copy.deepcopy(combination)
+                                new_combination[key] = item
+                                new_argument_combinations.append(new_combination)
+                        argument_combinations = new_argument_combinations
+                    else:
+                        for combination in argument_combinations:
+                            combination[key] = value
+                for combination in argument_combinations:
+                    url = flask.url_for(rule.endpoint, **combination)
                 assert url.startswith('http://localhost/')
                 url = url[len('http://localhost/'):]
                 all_routes.add(url)
@@ -49,8 +64,12 @@ def test_status_codes(flask_server, user):
     with flask_server.app.app_context():
         user_id = user.id
         language_id = sampledb.logic.languages.Language.ENGLISH
-        component_id = 1
-        component = "invalid"
+        component = sampledb.logic.components.add_component(
+            uuid='8bde2cf5-e64c-4bda-beb3-0b448cb90174',
+            address='https://localhost',
+            name='Test Component'
+        )
+        component_id = component.id
         token = "invalid"
         static_file_name = 'css/base.css'
         action_type_id = sampledb.models.ActionType.SAMPLE_CREATION
@@ -72,6 +91,17 @@ def test_status_codes(flask_server, user):
             user_id=user_id,
             action_id=action_id,
             permissions=sampledb.models.Permissions.GRANT
+        )
+        other_action_id = sampledb.logic.actions.create_action(
+            action_type_id=None,
+            fed_id=1,
+            component_id=component_id,
+            schema=None
+        ).id
+        sampledb.logic.action_permissions.set_user_action_permissions(
+            user_id=user_id,
+            action_id=other_action_id,
+            permissions=sampledb.models.Permissions.READ
         )
         api_token = secrets.token_hex(32)
         sampledb.logic.authentication.add_api_token(user.id, api_token, 'Test API Token')
@@ -178,6 +208,31 @@ def test_status_codes(flask_server, user):
             },
             user_id=user_id
         )
+        other_object_id = sampledb.logic.objects.create_object(
+            action_id=other_action_id,
+            data={
+                'name': {
+                    '_type': 'text',
+                    'text': 'test'
+                }
+            },
+            schema={
+                'type': 'object',
+                'title': 'Example',
+                'properties': {
+                    'name': {
+                        'type': 'text',
+                        'title': 'name'
+                    }
+                },
+                'required': ['name']
+            },
+            user_id=user_id
+        ).id
+        sampledb.logic.instrument_log_entries.create_instrument_log_object_attachment(
+            instrument_log_entry_id=instrument_log_entry_id,
+            object_id=object_id
+        )
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -188,7 +243,9 @@ def test_status_codes(flask_server, user):
         'action_types/new': 200,
         'actions/': 200,
         f'actions/{action_id}': 200,
+        f'actions/{other_action_id}': 200,
         f'actions/{action_id}/permissions': 200,
+        f'actions/{other_action_id}/permissions': 200,
         'actions/new/': 200,
         'admin/background_tasks/': 200,
         'admin/warnings/': 200,
@@ -196,6 +253,7 @@ def test_status_codes(flask_server, user):
         f'api/v1/action_types/{action_type_id}': 200,
         'api/v1/actions/': 200,
         f'api/v1/actions/{action_id}': 200,
+        f'api/v1/actions/{other_action_id}': 200,
         'api/v1/instruments/': 200,
         f'api/v1/instruments/{instrument_id}': 200,
         f'api/v1/instruments/{instrument_id}/log_categories/': 200,
@@ -226,6 +284,23 @@ def test_status_codes(flask_server, user):
         f'api/v1/objects/{object_id}/permissions/users/': 200,
         f'api/v1/objects/{object_id}/permissions/users/{user_id}': 200,
         f'api/v1/objects/{object_id}/versions/0': 200,
+        f'api/v1/objects/{other_object_id}': 302,
+        f'api/v1/objects/{other_object_id}/comments/': 200,
+        f'api/v1/objects/{other_object_id}/comments/{comment_id}': 404,
+        f'api/v1/objects/{other_object_id}/files/': 200,
+        f'api/v1/objects/{other_object_id}/files/{file_id}': 404,
+        f'api/v1/objects/{other_object_id}/locations/': 200,
+        f'api/v1/objects/{other_object_id}/locations/{object_location_assignment_index}': 404,
+        f'api/v1/objects/{other_object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
+        f'api/v1/objects/{other_object_id}/permissions/authenticated_users': 200,
+        f'api/v1/objects/{other_object_id}/permissions/groups/': 200,
+        f'api/v1/objects/{other_object_id}/permissions/groups/{group_id}': 200,
+        f'api/v1/objects/{other_object_id}/permissions/projects/': 200,
+        f'api/v1/objects/{other_object_id}/permissions/projects/{project_id}': 200,
+        f'api/v1/objects/{other_object_id}/permissions/public': 200,
+        f'api/v1/objects/{other_object_id}/permissions/users/': 200,
+        f'api/v1/objects/{other_object_id}/permissions/users/{user_id}': 200,
+        f'api/v1/objects/{other_object_id}/versions/0': 200,
         'api/v1/users/': 200,
         f'api/v1/users/{user_id}': 200,
         'api/v1/users/me': 200,
@@ -251,7 +326,7 @@ def test_status_codes(flask_server, user):
         'locations/decline_responsibility': 302,
         'locations/new/': 200,
         f'markdown_images/{markdown_image_file_name}': 200,
-        f'markdown_images/{component}/{markdown_image_file_name}': 400,  # 400 because component ID is invalid
+        f'markdown_images/{component.uuid}/{markdown_image_file_name}': 404,
         'objects/': 200,
         f'objects/{object_id}': 200,
         f'objects/{object_id}/dataverse_export/': 200,
@@ -267,13 +342,29 @@ def test_status_codes(flask_server, user):
         f'objects/{object_id}/versions/0': 200,
         f'objects/{object_id}/versions/0/dc.rdf': 200,
         f'objects/{object_id}/versions/0/restore': 200,
+        f'objects/{other_object_id}': 200,
+        f'objects/{other_object_id}/dataverse_export/': 200,
+        f'objects/{other_object_id}/dc.rdf': 200,
+        f'objects/{other_object_id}/export': 200,
+        f'objects/{other_object_id}/files/': 200,
+        f'objects/{other_object_id}/files/{file_id}': 404,
+        f'objects/{other_object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
+        f'objects/{other_object_id}/label': 200,
+        f'objects/{other_object_id}/permissions': 200,
+        f'objects/{other_object_id}/scicat_export/': 302,
+        f'objects/{other_object_id}/versions/': 200,
+        f'objects/{other_object_id}/versions/0': 200,
+        f'objects/{other_object_id}/versions/0/dc.rdf': 200,
+        f'objects/{other_object_id}/versions/0/restore': 404,
         'objects/new': 404,  # 404 because /objects/new requires action_id or previous_object_id
         f'objects/new?action_id={action_id}': 200,
+        f'objects/new?action_id={other_action_id}': 302,
         f'objects/new?previous_object_id={object_id}': 200,
+        f'objects/new?previous_object_id={other_object_id}': 302,
         'objects/referencable': 200,
         'objects/search/': 200,
         'other-databases/': 200,
-        f'other-databases/{component_id}': 404,  # 404 because component does not exist
+        f'other-databases/{component_id}': 200,
         'other-databases/alias/': 200,
         'projects/': 200,
         f'projects/{project_id}': 200,
@@ -324,7 +415,7 @@ def test_status_codes(flask_server, user):
 
     handled_routes = list(expected_status_codes.keys()) + excluded_routes
     _assert_all_routes_are_handled(flask_server, handled_routes, {
-        'object_id': object_id,
+        'object_id': [object_id, other_object_id],
         'version_id': 0,
         'instrument_id': instrument_id,
         'log_entry_id': instrument_log_entry_id,
@@ -340,8 +431,8 @@ def test_status_codes(flask_server, user):
         'file_id': file_id,
         'type_id': action_type_id,
         'location_id': location_id,
-        'action_id': action_id,
-        'component': component,
+        'action_id': [action_id, other_action_id],
+        'component': component.uuid,
         'component_id': component_id,
         'language_id': language_id,
         'filename': static_file_name,

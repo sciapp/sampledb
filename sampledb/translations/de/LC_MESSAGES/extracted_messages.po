@@ -107,6 +107,9 @@ msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
 msgid "Failed to update action permissions."
 msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
 
+msgid "Exporting imported objects is not supported."
+msgstr "Das Exportieren importierter Objekte wird nicht unterstützt."
+
 msgid "No suitable Dataverses available for export."
 msgstr "Kein für Export brauchbares Dataverse verfügbar."
 
@@ -777,7 +780,9 @@ msgstr "Der SciCat Export-Typ ist für Objekte diesen Typs nicht gesetzt."
 
 #, python-format
 msgid "%(scicat_name)s is currently unreachable, please try again later."
-msgstr "%(scicat_name)s is aktuell nicht erreichbar, bitte versuchen Sie es später erneut."
+msgstr ""
+"%(scicat_name)s is aktuell nicht erreichbar, bitte versuchen Sie es "
+"später erneut."
 
 msgid "Please enter your contact email."
 msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
@@ -1000,6 +1005,9 @@ msgstr ""
 
 msgid "Editing imported objects is not yet supported."
 msgstr "Das Bearbeiten importierter Objekte wird noch nicht unterstützt."
+
+msgid "The schema for this object cannot be updated."
+msgstr "Das Schema für dieses Objekt kann nicht aktualisiert werden."
 
 msgid "Please enter a valid URL."
 msgstr "Bitte geben Sie eine gültige URL ein."
@@ -2562,6 +2570,9 @@ msgstr "Diese benutzerdefinierte Aktion ist öffentlich."
 
 msgid "This action has been hidden from action lists."
 msgstr "Diese Aktion wurde aus Aktionslisten versteckt."
+
+msgid "Create Object"
+msgstr "Objekt erstellen"
 
 msgid "Modify the settings for this action."
 msgstr "Einstellungen für diese Aktion modifizieren."

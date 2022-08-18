@@ -57,7 +57,7 @@ def create_object(
         user ID exists
     """
     action = actions.get_action(action_id)
-    if action.type.disable_create_objects:
+    if action.type_id is not None and action.type.disable_create_objects:
         raise CreatingObjectsDisabledError()
     users.get_user(user_id)
     try:

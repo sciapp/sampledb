@@ -789,4 +789,23 @@ This example shows how Markdown can be used for instrument Notes.
                 }
             ]
         }, component)
+        sampledb.logic.federation.parse_import_object({
+            'object_id': 3,
+            'versions': [{
+                'version_id': 0,
+                'data': {'name': {'_type': 'text', 'text': 'Shared Object Without Shared Action'}},
+                'schema': {'title': 'Sampling', 'type': 'object',
+                           'properties': {'name': {'title': 'Additional Note', 'type': 'text'}}, 'required': ['name']},
+                'user': {'user_id': 2, 'component_uuid': UUID},
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+            }],
+            'action': {'action_id': 3, 'component_uuid': UUID},
+            'policy': {
+                'access': {'data': True, 'files': True, 'action': True, 'comments': True, 'user_ids': True,
+                           'user_data': True, 'object_location_assignments': True},
+                'permissions': {'users': {basic_user.id: 'read'}, 'groups': {group_id: 'read'},
+                                'projects': {project_id: 'read'}}
+            }
+        }, component)
+
     print("Success: set up demo data", flush=True)

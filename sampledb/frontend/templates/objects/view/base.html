@@ -105,12 +105,12 @@
           <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.translation.object_name) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
       {% endif %}
-      {% if user_may_use_as_template and not action.type.disable_create_objects %}
+      {% if user_may_use_as_template and action.type_id is not none and not action.type.disable_create_objects %}
         <div class="form-group">
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
       {% endif %}
-      {% if (action is not none and action.type.id == action.type.SAMPLE_CREATION) and not config['DISABLE_USE_IN_MEASUREMENT'] and not current_user.is_readonly and current_user.is_authenticated %}
+      {% if (action is not none and action.type_id == action.type.SAMPLE_CREATION) and not config['DISABLE_USE_IN_MEASUREMENT'] and not current_user.is_readonly and current_user.is_authenticated %}
 
         <div class="form-group">
           <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">

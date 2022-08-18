@@ -34,10 +34,10 @@
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
-  {% if not action.type.disable_create_objects %}
-  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text }}</a>
-  {% if not current_user.is_readonly %}
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text}}</a>
+  {% if action.type_id is none or not action.type.disable_create_objects %}
+  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text if action.type_id else _('View Objects') }}</a>
+  {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none %}
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text if action.type_id else _('Create Object') }}</a>
   {% endif %}
   {% endif %}
   {% if not current_user.is_readonly %}
@@ -47,7 +47,7 @@
     {% if may_grant %}
       <a href="{{ url_for('.action_permissions', action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Edit the permissions for this action.') }}">{{ _('Edit Permissions') }}</a>
     {% endif %}
-    {% if not action.type.admin_only or current_user.is_admin %}
+    {% if action.type_id is not none and action.schema is not none and (not action.type.admin_only or current_user.is_admin) %}
       <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _("Create a new custom action based on the settings for this action.") }} ">{{ _("Use as Template") }}</a>
     {% endif %}
   {% endif %}
