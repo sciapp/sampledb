@@ -424,6 +424,7 @@ SERVICE_DESCRIPTION = {
 }
 SERVICE_IMPRINT = None
 SERVICE_PRIVACY_POLICY = None
+SERVICE_ACCESSIBILITY = None
 SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
 
 # location for storing files

@@ -1289,6 +1289,9 @@ msgstr "Impressum"
 msgid "Privacy Policy"
 msgstr "Datenschutzerklärung"
 
+msgid "Accessibility"
+msgstr "Barrierefreiheit"
+
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
 

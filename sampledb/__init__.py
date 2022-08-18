@@ -110,6 +110,7 @@ def setup_jinja_environment(app):
         service_description=app.config['SERVICE_DESCRIPTION'],
         service_imprint=app.config['SERVICE_IMPRINT'],
         service_privacy_policy=app.config['SERVICE_PRIVACY_POLICY'],
+        service_accessibility=app.config['SERVICE_ACCESSIBILITY'],
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
         get_action_types=sampledb.logic.actions.get_action_types,
