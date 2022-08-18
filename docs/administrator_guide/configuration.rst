@@ -82,6 +82,8 @@ Customization
      - The URL to use for the imprint link
    * - SAMPLEDB_SERVICE_PRIVACY_POLICY
      - The URL to use for the privacy policy link
+   * - SAMPLEDB_SERVICE_ACCESSIBILITY
+     - The URL to use for the accessibility link
    * - SAMPLEDB_PDFEXPORT_LOGO_URL
      - A file, http or https URL for a PNG or JPEG logo to be included in object export PDF documents
    * - SAMPLEDB_PDFEXPORT_LOGO_ALIGNMENT
