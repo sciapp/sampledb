@@ -171,13 +171,9 @@ def get_export_infos(
                         action_id=action_info.id,
                         language_id=logic.languages.Language.ENGLISH
                     )
-                    action_type_translation = logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-                        action_type_id=action_info.type_id,
-                        language_id=logic.languages.Language.ENGLISH
-                    )
                     action_infos.append({
                         'id': action_info.id,
-                        'type': action_type_translation.object_name.lower(),
+                        'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
                         'name': action_translation.name,
                         'user_id': action_info.user_id,
                         'instrument_id': action_info.instrument_id,

@@ -361,7 +361,7 @@
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="action_type_ids" id="filter_action_type_ids" data-width="100%" data-none-selected-text="{{ _('All action types') }}">
                 {% for action_type in all_action_types %}
-                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.translation.name }}</option>
+                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</option>
                 {% endfor %}
               </select>
             </div>

@@ -15,7 +15,6 @@ class ActionTypeTranslation(db.Model):
     language = db.relationship('Language')
 
     action_type_id = db.Column(db.Integer, db.ForeignKey('action_types.id'))
-    action_types = db.relationship("ActionType")
 
     name = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)

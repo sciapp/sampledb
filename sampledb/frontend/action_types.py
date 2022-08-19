@@ -27,11 +27,9 @@ def action_types():
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
-    action_types_with_translations = logic.action_type_translations.get_action_types_with_translations_in_language(user_language_id)
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=action_types_with_translations
+        action_types=logic.actions.get_action_types()
     )
 
 
@@ -42,9 +40,8 @@ def action_type(type_id):
         return flask.abort(403)
 
     try:
-        action_type = logic.action_type_translations.get_action_type_with_translation_in_language(
-            action_type_id=type_id,
-            language_id=logic.languages.get_user_language(flask_login.current_user).id
+        action_type = logic.actions.get_action_type(
+            action_type_id=type_id
         )
     except logic.errors.ActionTypeDoesNotExistError:
         return flask.abort(404)

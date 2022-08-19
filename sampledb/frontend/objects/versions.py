@@ -10,7 +10,6 @@ from flask_babel import _
 from .. import frontend
 from ... import logic
 from ...logic.actions import get_action_type
-from ...logic.action_type_translations import get_action_type_with_translation_in_language
 from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.object_permissions import Permissions, get_user_object_permissions
 from ...logic.instrument_translations import get_instrument_with_translation_in_language
@@ -19,6 +18,7 @@ from ...logic.objects import get_object, get_object_versions
 from ...logic.languages import get_language_by_lang_code, get_user_language, get_languages_in_object_data, get_language, Language
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
+from ...logic.utils import get_translated_text
 from .forms import ObjectVersionRestoreForm
 from ...utils import object_permissions_required
 from ..utils import get_user_if_exists
@@ -50,7 +50,7 @@ def object_version(object_id, version_id):
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
     action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
-    action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id else None
+    action_type = get_action_type(action.type_id) if action.type_id else None
     instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id else None
 
     object_languages = get_languages_in_object_data(object.data)
@@ -73,7 +73,7 @@ def object_version(object_id, version_id):
         metadata_language=metadata_language,
         ENGLISH=english,
         is_archived=True,
-        object_type=action_type.translation.object_name if action_type is not None else None,
+        object_type=get_translated_text(action_type.object_name, user_language_id) if action_type is not None else None,
         action=action,
         action_type=action_type,
         instrument=instrument,
@@ -88,7 +88,6 @@ def object_version(object_id, version_id):
         get_user=get_user_if_exists,
         user_may_grant=user_may_grant,
         get_action_type=get_action_type,
-        get_action_type_with_translation_in_language=get_action_type_with_translation_in_language,
         component=object.component,
         fed_object_id=object.fed_object_id,
         fed_version_id=object.fed_version_id,

@@ -49,9 +49,52 @@ class ActionType(db.Model):
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
+    translations = db.relationship('ActionTypeTranslation')
 
     def __repr__(self):
         return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
+
+    @property
+    def name(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.name
+            for translation in self.translations
+        }
+
+    @property
+    def description(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.description
+            for translation in self.translations
+        }
+
+    @property
+    def object_name(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.object_name
+            for translation in self.translations
+        }
+
+    @property
+    def object_name_plural(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.object_name_plural
+            for translation in self.translations
+        }
+
+    @property
+    def view_text(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.view_text
+            for translation in self.translations
+        }
+
+    @property
+    def perform_text(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.perform_text
+            for translation in self.translations
+        }
 
 
 class Action(db.Model):

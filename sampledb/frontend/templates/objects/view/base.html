@@ -102,7 +102,7 @@
       {% endif %}
       {% if project and current_user.is_authenticated%}
         <div class="form-group">
-          <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.translation.object_name) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
+          <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.object_name | get_translated_text(default=_('Object'))) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
       {% endif %}
       {% if user_may_use_as_template and action.type_id is not none and not action.type.disable_create_objects %}
@@ -114,7 +114,7 @@
 
         <div class="form-group">
           <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type_with_translation_in_language(action.type.MEASUREMENT, get_user_language(current_user).id).translation.name) }} <span class="caret"></span></button>
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type(action.type.MEASUREMENT).name | get_translated_text(_('Measurement'))) }} <span class="caret"></span></button>
             <ul class="dropdown-menu dropdown-menu-right">
               <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
               {% if favorite_measurement_actions %}
@@ -297,7 +297,7 @@
         </tbody>
       </table>
       {% else %}
-        <p>{{ _('There are no files for this %(object_type)s.', object_type=action_type.translation.object_name.lower()) }}</p>
+        <p>{{ _('There are no files for this %(object_type)s.', object_type=action_type.object_name | get_translated_text(default=_('Object'))) }}</p>
       {% endif %}
 
       {% for file in files %}

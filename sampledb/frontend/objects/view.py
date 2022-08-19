@@ -18,7 +18,6 @@ from ... import models
 from ... import db
 from ...logic import object_log, comments, errors
 from ...logic.actions import get_action, get_action_type
-from ...logic.action_type_translations import get_action_type_with_translation_in_language
 from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
@@ -135,9 +134,9 @@ def object(object_id):
     # basic object and action information
     if object.action_id is not None:
         action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
-        action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id is not None else None
+        action_type = get_action_type(action.type_id) if action.type_id is not None else None
         instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id is not None else None
-        object_type = action_type.translation.object_name if action_type else None
+        object_type = get_translated_text(action_type.object_name, user_language_id) if action_type else None
         if action.schema is not None and action.schema != object.schema:
             new_schema_available = True
         else:
@@ -254,11 +253,7 @@ def object(object_id):
         favorite_measurement_actions = []
     template_kwargs.update({
         "favorite_measurement_actions": favorite_measurement_actions,
-        "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-            action_type_id=logic.actions.models.ActionType.MEASUREMENT,
-            language_id=logic.languages.get_user_language(flask_login.current_user).id,
-            use_fallback=True
-        ).name,
+        "measurement_type_name": get_translated_text(logic.actions.get_action_type(logic.actions.models.ActionType.MEASUREMENT).name),
     })
 
     # notebook templates
@@ -419,7 +414,6 @@ def object(object_id):
         "get_object_location_assignment": get_object_location_assignment,
         "get_project": get_project_if_it_exists,
         "get_action_type": get_action_type,
-        "get_action_type_with_translation_in_language": get_action_type_with_translation_in_language,
         "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language,
         "get_component": get_component,
     })

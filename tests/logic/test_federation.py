@@ -12,7 +12,7 @@ import pytest
 from sampledb import logic, db
 from sampledb.logic import errors, actions, instruments, object_permissions
 from sampledb.logic.action_translations import get_action_translations_for_action, set_action_translation, get_action_translation_for_action_in_language
-from sampledb.logic.action_type_translations import get_action_type_translations_for_action_type, get_action_type_translation_for_action_type_in_language
+from sampledb.logic.action_type_translations import get_action_type_translations_for_action_type
 from sampledb.logic.actions import get_action, get_action_type, create_action_type, create_action
 from sampledb.logic.comments import get_comment, create_comment, get_comments_for_object
 from sampledb.logic.components import get_component_by_uuid, add_component, get_component
@@ -3267,15 +3267,13 @@ def test_shared_action_type_preprocessor(component):
     assert processed_action['enable_project_link'] == action_type.enable_project_link
 
     assert len(processed_action['translations'])
-    for key, value in processed_action['translations'].items():
-        language_id = get_language_by_lang_code(key).id
-        translation = get_action_type_translation_for_action_type_in_language(action_type.id, language_id)
-        assert value['name'] == translation.name
-        assert value['description'] == translation.description
-        assert value['object_name'] == translation.object_name
-        assert value['object_name_plural'] == translation.object_name_plural
-        assert value['view_text'] == translation.view_text
-        assert value['perform_text'] == translation.perform_text
+    for lang_code, value in processed_action['translations'].items():
+        assert value['name'] == action_type.name.get(lang_code)
+        assert value['description'] == action_type.description.get(lang_code)
+        assert value['object_name'] == action_type.object_name.get(lang_code)
+        assert value['object_name_plural'] == action_type.object_name_plural.get(lang_code)
+        assert value['view_text'] == action_type.view_text.get(lang_code)
+        assert value['perform_text'] == action_type.perform_text.get(lang_code)
 
     assert refs == []
     assert markdown_images == {}

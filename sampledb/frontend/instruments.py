@@ -19,7 +19,6 @@ from wtforms.validators import DataRequired, ValidationError
 from . import frontend
 from ..logic.action_translations import get_action_translation_for_action_in_language
 from ..logic.action_permissions import get_user_action_permissions
-from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
@@ -366,7 +365,6 @@ def instrument(instrument_id):
         instrument_log_order_attribute=instrument_log_order_attribute,
         action_translations=action_translations,
         single_instrument_translation=single_instrument_translation,
-        get_action_type_translation_for_action_type_in_language=get_action_type_translation_for_action_type_in_language,
         ActionType=ActionType,
         get_user=get_user,
         get_component=get_component

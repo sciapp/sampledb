@@ -8,7 +8,6 @@ import typing
 from . import errors
 from . import actions
 from . import action_translations
-from . import action_type_translations
 from . import favorites
 from . import languages
 from . import users
@@ -166,7 +165,6 @@ def get_sorted_actions_for_user(
     visible_actions = []
     action_permissions = {}
     translated_instruments_by_id = {}
-    translated_action_types_by_id = {}
     for action in action_translations.get_actions_with_translation_in_language(
         language_id=user_language_id,
         action_type_id=action_type_id,
@@ -183,12 +181,6 @@ def get_sorted_actions_for_user(
                 if action.instrument_id not in translated_instruments_by_id:
                     translated_instruments_by_id[action.instrument_id] = instrument_translations.get_instrument_with_translation_in_language(action.instrument_id, user_language_id)
                 setattr(action, 'instrument', translated_instruments_by_id[action.instrument_id])
-
-            if action.type_id:
-                #  action type translation
-                if action.type_id not in translated_action_types_by_id:
-                    translated_action_types_by_id[action.type_id] = action_type_translations.get_action_type_with_translation_in_language(action.type.id, user_language_id)
-                setattr(action, 'type', translated_action_types_by_id[action.type_id])
 
             visible_actions.append(action)
             action_permissions[action.id] = permissions

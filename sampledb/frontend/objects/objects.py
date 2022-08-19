@@ -14,8 +14,7 @@ from .. import frontend
 from ... import logic
 from ... import models
 from ...logic import user_log, object_sorting
-from ...logic.actions import get_action
-from ...logic.action_type_translations import get_action_type_with_translation_in_language
+from ...logic.actions import get_action, get_action_type
 from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
@@ -60,8 +59,7 @@ def objects():
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
-    all_action_types = logic.action_type_translations.get_action_types_with_translations_in_language(
-        language_id=user_language_id,
+    all_action_types = logic.actions.get_action_types(
         filter_fed_defaults=True
     )
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
@@ -231,7 +229,7 @@ def objects():
             action_id = filter_action_ids[0]
         if action_id is not None:
             action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
-            implicit_action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id is not None else None
+            implicit_action_type = get_action_type(action.type_id) if action.type_id is not None else None
             action_schema = action.schema
             if action_schema:
                 action_display_properties = action_schema.get('displayProperties', [])
@@ -254,9 +252,8 @@ def objects():
                     }.get(action_type_id, None)
             if action_type_id is not None:
                 try:
-                    action_type = get_action_type_with_translation_in_language(
-                        action_type_id=action_type_id,
-                        language_id=user_language_id
+                    action_type = get_action_type(
+                        action_type_id=action_type_id
                     )
                 except ActionTypeDoesNotExistError:
                     action_type = None
@@ -657,11 +654,9 @@ def objects():
     filter_action_type_infos = []
     if filter_action_type_ids:
         for action_type_id in filter_action_type_ids:
-            action_type = get_action_type_with_translation_in_language(action_type_id, user_language_id)
-            action_type_name = action_type.translation.name
+            action_type = get_action_type(action_type_id)
+            action_type_name = get_translated_text(action_type.name, user_language_id, default=_('Unnamed Action Type'))
             action_type_component = get_component(action_type.component_id) if action_type.component_id is not None else None
-            if not action_type_name:
-                action_type_name = _('Unnamed Action Type')
             filter_action_type_infos.append({
                 'id': action_type_id,
                 'name': action_type_name,
@@ -671,9 +666,9 @@ def objects():
             })
 
             if filter_action_type_ids and len(filter_action_type_ids) == 1:
-                object_name_plural = action_type.translation.object_name_plural
+                object_name_plural = get_translated_text(action_type.name, user_language_id, default=_('Objects'))
     elif implicit_action_type is not None:
-        object_name_plural = implicit_action_type.translation.object_name_plural
+        object_name_plural = get_translated_text(implicit_action_type.name, user_language_id, default=_('Objects'))
 
     filter_action_infos = []
     if filter_action_ids:
