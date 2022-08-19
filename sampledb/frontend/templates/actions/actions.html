@@ -26,7 +26,7 @@
           <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.name }}">{{ action.instrument.translation.name }}</a>
           {{ federation_information_symbol(action.instrument.component, action.instrument.fed_id, 'instrument') }} &mdash;
         {% endif %}
-        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.translation.name }}">{{ action.translation.name }}</a>
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
         {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
@@ -35,9 +35,9 @@
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _("This action has been hidden from action lists.") }} </p>
     {% endif %}
 
-    {% if action.translation.short_description %}
+    {% if action.short_description | get_translated_text %}
       <div class="action-user-content">
-        {% if action.short_description_is_markdown %}{{ action.translation.short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.translation.short_description }}</p>{% endif %}
+        {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description | get_translated_text }}</p>{% endif %}
       </div>
     {% endif %}
     {% with instrument = action.instrument %}

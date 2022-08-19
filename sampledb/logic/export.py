@@ -167,25 +167,21 @@ def get_export_infos(
                 if logic.action_permissions.Permissions.READ in action_permissions:
                     relevant_user_ids.add(action_info.user_id)
                     relevant_instrument_ids.add(action_info.instrument_id)
-                    action_translation = logic.action_translations.get_action_translation_for_action_in_language(
-                        action_id=action_info.id,
-                        language_id=logic.languages.Language.ENGLISH
-                    )
                     action_infos.append({
                         'id': action_info.id,
                         'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
-                        'name': action_translation.name,
+                        'name': action_info.name.get('en'),
                         'user_id': action_info.user_id,
                         'instrument_id': action_info.instrument_id,
-                        'description': action_translation.description,
+                        'description': action_info.description.get('en'),
                         'description_is_markdown': action_info.description_is_markdown,
-                        'short_description': action_translation.short_description,
+                        'short_description': action_info.short_description.get('en'),
                         'short_description_is_markdown': action_info.short_description_is_markdown
                     })
                     if action_info.description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.description)))
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en'))))
                     if action_info.short_description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.short_description)))
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en'))))
         infos['actions'] = action_infos
 
     if include_instruments:

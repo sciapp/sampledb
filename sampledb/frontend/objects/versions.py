@@ -9,8 +9,7 @@ from flask_babel import _
 
 from .. import frontend
 from ... import logic
-from ...logic.actions import get_action_type
-from ...logic.action_translations import get_action_with_translation_in_language
+from ...logic.actions import get_action_type, get_action
 from ...logic.object_permissions import Permissions, get_user_object_permissions
 from ...logic.instrument_translations import get_instrument_with_translation_in_language
 from ...logic.settings import get_user_settings
@@ -49,7 +48,7 @@ def object_version(object_id, version_id):
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
-    action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
+    action = get_action(object.action_id)
     action_type = get_action_type(action.type_id) if action.type_id else None
     instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id else None
 

@@ -47,7 +47,7 @@
     </label>
     <div class="col-md-9">
       {% if action is not none %}
-        <a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a>
+        <a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
         {{ federation_information_symbol(get_component_or_none(action.component_id), action.fed_id, 'action') }}
       {% else %}&mdash;{% endif %}
     </div>
@@ -130,7 +130,7 @@
                   {{ temp.instrument.translation.name }}
                   &mdash;
                 {% endif %}
-                  {{ action.translation.name }}
+                  {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
                 </a>
               </li>
               {% endfor %}

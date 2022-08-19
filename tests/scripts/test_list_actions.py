@@ -40,8 +40,8 @@ def actions(instrument):
 def test_list_actions(instrument, actions, capsys):
     scripts.main([scripts.__file__, 'list_actions'])
     output = capsys.readouterr()[0]
-    for action in sampledb.logic.action_translations.get_actions_with_translation_in_language(sampledb.logic.languages.Language.ENGLISH):
-        assert '- #{0}: {1}'.format(action.id, action.translation.name) in output
+    for action in sampledb.logic.actions.get_actions():
+        assert '- #{0}: {1}'.format(action.id, action.name.get('en', 'Unnamed Action')) in output
 
 
 def test_list_actions_arguments(instrument, actions, capsys):

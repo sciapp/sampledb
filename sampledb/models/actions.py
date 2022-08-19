@@ -121,6 +121,7 @@ class Action(db.Model):
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
+    translations = db.relationship('ActionTranslation')
 
     def __init__(
             self,
@@ -160,3 +161,24 @@ class Action(db.Model):
 
     def __repr__(self):
         return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
+
+    @property
+    def name(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.name
+            for translation in self.translations
+        }
+
+    @property
+    def description(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.description
+            for translation in self.translations
+        }
+
+    @property
+    def short_description(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.short_description
+            for translation in self.translations
+        }

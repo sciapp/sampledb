@@ -12,7 +12,6 @@ from flask_babel import _
 
 from .. import db
 from . import errors, actions, languages
-from .actions import get_action_type, get_action
 from .languages import Language
 from .. import models
 
@@ -207,86 +206,3 @@ def delete_action_translation(
 
     db.session.delete(action_translation)
     db.session.commit()
-
-
-def get_actions_with_translations(action_type_id: typing.Optional[int] = None) -> typing.List[models.Action]:
-    """
-    Returns a list of all existing actions with their translations and a list of available languages as attributes
-    called translations and languages. Optionally the ID of an action type can be given, which returns then the list of
-    all existing actions of a given type.
-
-    :param action_type_id: None or the ID of an existing action type
-    :return: the action types with translations and languages
-    """
-
-    if action_type_id is not None:
-        actions = models.Action.query.filter_by(type_id=action_type_id).all()
-        if not actions:
-            # ensure the action type exists
-            get_action_type(action_type_id=action_type_id)
-    else:
-        actions = models.Action.query.all()
-    for action in actions:
-        translations = get_action_translations_for_action(action.id, use_fallback=True)
-        languages = [lang.language for lang in translations]
-        setattr(action, 'translations', translations)
-        setattr(action, 'languages', languages)
-    return actions
-
-
-def get_action_with_translation_in_language(
-        action_id: int,
-        language_id: int,
-        use_fallback: bool = False
-) -> models.Action:
-    """
-    Returns the action with the given ID and a single translation in the given language or in English.
-    If the translation in the given language is missing contenttypes from its English version, the translation will
-    then get the missing contents in English as additional attributes.
-
-    :param action_id: the ID of an existing action
-    :param language_id: either the ID or the language code of an existing language
-    :param use_fallback: whether or not a fallback translation may be used
-    :return: the action with a single translation attribute/
-    :raise errors.ActionDoesNotExistError: if no action with the given ID
-        exists
-    :raise errors.ActionTranslationDoesNotExistError: if no translation exists
-        for this action and language
-    """
-    action = get_action(action_id)
-    setattr(action, 'translation', get_action_translation_for_action_in_language(action.id, language_id, use_fallback))
-    return action
-
-
-def get_actions_with_translation_in_language(
-        language_id: int,
-        action_type_id: typing.Optional[int] = None,
-        use_fallback: bool = False
-) -> typing.List[models.Action]:
-    """
-    Returns a list of actions, optionally of a given type,  with a single translation.
-    The translation will be in either the given language or in English.
-    If the translation in the given language which is not English is missing contenttypes such as e.g. names, the
-    translation will have additional attributes for the missing parts such as english_name, english_description.
-
-    :param language_id: either the ID or the language code of an existing language
-    :param action_type_id: either None or the ID of an action type
-    :param use_fallback: whether or not a fallback translation may be used
-    :return: a list containing all actions with an additional attribute called translation
-
-    """
-    if action_type_id is not None:
-        if action_type_id <= 0:
-            # merge with default types of other databases
-            actions = models.Action.query.filter(db.or_(models.Action.type_id == action_type_id, models.Action.type.has(fed_id=action_type_id))).all()
-        else:
-            actions = models.Action.query.filter_by(type_id=action_type_id).all()
-        if not actions:
-            # ensure the action type exists
-            get_action_type(action_type_id=action_type_id)
-    else:
-        actions = models.Action.query.all()
-    for action in actions:
-        setattr(action, 'translation', get_action_translation_for_action_in_language(action.id, language_id, use_fallback))
-
-    return actions

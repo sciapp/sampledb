@@ -25,7 +25,7 @@
   <h2>{{ _('Actions') }}</h2>
   {% for action in instrument_actions %}
       <h3>
-        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action_translations[action.id].name }}"> {{ action_translations[action.id].name }}</a>
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text }}"> {{ action.name | get_translated_text }}</a>
         {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
       </h3>
       {% if action_translations[action.id].short_description %}

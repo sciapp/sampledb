@@ -552,7 +552,7 @@
             <option value="">&mdash;</option>
             {% for template in get_templates(current_user.id) %}
               {% if current_action is none or current_action.id != template.id %}
-                <option value="{{ template.id }}">{{ template.translation.name }}</option>
+                <option value="{{ template.id }}">{{ template.name | get_translated_text }}</option>
               {% endif %}
             {% endfor %}
           </select>

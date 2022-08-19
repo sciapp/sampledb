@@ -15,7 +15,6 @@ from ... import logic
 from ... import models
 from ...logic import user_log, object_sorting
 from ...logic.actions import get_action, get_action_type
-from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
 from ...logic.users import get_user, get_users_by_name
@@ -228,7 +227,7 @@ def objects():
         if action_id is None and filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
         if action_id is not None:
-            action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
+            action = get_action(action_id)
             implicit_action_type = get_action_type(action.type_id) if action.type_id is not None else None
             action_schema = action.schema
             if action_schema:
@@ -673,10 +672,8 @@ def objects():
     filter_action_infos = []
     if filter_action_ids:
         for action_id in filter_action_ids:
-            action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
-            action_name = action.translation.name
-            if not action_name:
-                action_name = _('Unnamed Action')
+            action = get_action(action_id)
+            action_name = get_translated_text(action.name, user_language_id, _('Unnamed Action'))
             action_name += f' (#{action_id})'
             filter_action_infos.append({
                 'name': action_name,

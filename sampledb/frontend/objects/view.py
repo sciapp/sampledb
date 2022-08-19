@@ -18,7 +18,6 @@ from ... import models
 from ... import db
 from ...logic import object_log, comments, errors
 from ...logic.actions import get_action, get_action_type
-from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
 from ...logic.instrument_translations import get_instrument_with_translation_in_language
@@ -133,7 +132,7 @@ def object(object_id):
 
     # basic object and action information
     if object.action_id is not None:
-        action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
+        action = get_action(object.action_id)
         action_type = get_action_type(action.type_id) if action.type_id is not None else None
         instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id is not None else None
         object_type = get_translated_text(action_type.object_name, user_language_id) if action_type else None
@@ -227,10 +226,8 @@ def object(object_id):
 
     if flask_login.current_user.is_authenticated:
         # use in measurement menu
-        measurement_actions = logic.action_translations.get_actions_with_translation_in_language(
-            language_id=user_language_id,
-            action_type_id=models.ActionType.MEASUREMENT,
-            use_fallback=True
+        measurement_actions = logic.actions.get_actions(
+            action_type_id=models.ActionType.MEASUREMENT
         )
         favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
         favorite_measurement_actions = [
@@ -246,7 +243,7 @@ def object(object_id):
                     instrument_id=action.instrument_id,
                     language_id=user_language_id
                 ).translation.name.lower() if action.instrument else '',
-                action.translation.name.lower()
+                get_translated_text(action.name, user_language_id).lower()
             )
         )
     else:

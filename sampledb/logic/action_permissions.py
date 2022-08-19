@@ -7,7 +7,6 @@ import typing
 
 from . import errors
 from . import actions
-from . import action_translations
 from . import favorites
 from . import languages
 from . import users
@@ -15,6 +14,7 @@ from . import instruments
 from . import instrument_translations
 from .permissions import ResourcePermissions
 from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions, Action
+from .utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -165,10 +165,8 @@ def get_sorted_actions_for_user(
     visible_actions = []
     action_permissions = {}
     translated_instruments_by_id = {}
-    for action in action_translations.get_actions_with_translation_in_language(
-        language_id=user_language_id,
-        action_type_id=action_type_id,
-        use_fallback=True
+    for action in actions.get_actions(
+        action_type_id=action_type_id
     ):
         if owner_id is not None and action.user_id != owner_id:
             continue
@@ -189,6 +187,6 @@ def get_sorted_actions_for_user(
         0 if action.id in user_favorite_action_ids else 1,
         action.user.name.lower() if action.user and action.user.name is not None else '',
         action.instrument.translation.name.lower() if action.instrument else '',
-        action.translation.name.lower()
+        get_translated_text(action.name, user_language_id).lower()
     ))
     return visible_actions

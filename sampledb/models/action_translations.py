@@ -64,7 +64,6 @@ class ActionTranslation(db.Model):
     language = db.relationship('Language')
 
     action_id = db.Column(db.Integer, db.ForeignKey('actions.id'))
-    action = db.relationship("Action")
 
     name = db.Column(db.String, nullable=True)
     description = db.Column(db.String, nullable=True, default='')
