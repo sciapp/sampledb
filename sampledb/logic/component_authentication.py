@@ -5,6 +5,7 @@ from ..models import Component, ComponentAuthentication, ComponentAuthentication
 from .errors import NoAuthenticationMethodError, InvalidTokenError, AuthenticationMethodDoesNotExistError, \
     TokenExistsError
 from .authentication import _hash_password, _validate_password_authentication
+from . import components
 
 
 def get_own_authentication(component_id, type=ComponentAuthenticationType.TOKEN):
@@ -77,7 +78,8 @@ def login_via_component_token(component_token: str) -> typing.Optional[Component
 
     for authentication_method in authentication_methods:
         if _validate_password_authentication(authentication_method, password):
-            return authentication_method.component
+            if authentication_method.component:
+                return components.Component.from_database(authentication_method.component)
     return None
 
 
