@@ -36,7 +36,6 @@ def action(instrument, schema_file_name):
         instrument_id=instrument.id
     )
     assert action.id is not None
-    db.session.expunge(action)
     return action
 
 

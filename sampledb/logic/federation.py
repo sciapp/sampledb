@@ -22,7 +22,7 @@ from .object_permissions import set_user_object_permissions, set_group_object_pe
 from .schemas import validate_schema, validate
 from .. import db
 from . import errors, fed_logs, languages, markdown_to_html
-from .actions import get_action, create_action_type, get_action_type, update_action_type, create_action
+from .actions import get_action, create_action_type, get_action_type, update_action_type, create_action, get_mutable_action
 from .component_authentication import get_own_authentication
 from .comments import get_comment, get_comments_for_object, create_comment
 from .components import get_component_by_uuid, get_component, add_component
@@ -672,7 +672,7 @@ def import_action(action_data, component):
     schema = _import_schema(action_data['schema'])
 
     try:
-        action = get_action(action_data['fed_id'], component_id)
+        action = get_mutable_action(action_data['fed_id'], component_id)
         if action.type_id != action_type_id or action.schema != action_data['schema'] or action.instrument_id != instrument_id or action.user_id != user_id or action.description_is_markdown != action_data['description_is_markdown'] or action.is_hidden != action_data['is_hidden'] or action.short_description_is_markdown != action_data['short_description_is_markdown']:
             action.action_type_id = action_type_id
             action.schema = schema
