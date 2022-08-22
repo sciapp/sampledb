@@ -19,7 +19,7 @@ import requests
 from .components import get_component_by_uuid
 from .. import db
 from .units import prettify_units
-from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings, instrument_translations, languages
+from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
 from ..models import DataverseExport
 
 
@@ -315,11 +315,7 @@ def upload_object(
 
     action = actions.get_action(object.action_id)
     if action.instrument_id:
-        instrument_name = instrument_translations.get_instrument_translation_for_instrument_in_language(
-            instrument_id=action.instrument_id,
-            language_id=languages.Language.ENGLISH,
-            use_fallback=True
-        ).name
+        instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')
     else:
         instrument_name = None
 

@@ -4,8 +4,8 @@
 """
 
 import pytest
-from sampledb.logic.instruments import create_instrument
-from sampledb.logic.instrument_translations import set_instrument_translation, get_instruments_with_translation_in_language
+from sampledb.logic.instruments import create_instrument, get_instruments
+from sampledb.logic.instrument_translations import set_instrument_translation
 from sampledb.logic.languages import Language
 import sampledb.__main__ as scripts
 
@@ -34,8 +34,8 @@ def instrument_translations(instruments):
 def test_list_instruments(instrument_translations, capsys):
     scripts.main([scripts.__file__, 'list_instruments'])
     output = capsys.readouterr()[0]
-    for instrument in get_instruments_with_translation_in_language(Language.ENGLISH):
-        assert '- #{0}: {1}'.format(instrument.id, instrument.translation.name) in output
+    for instrument in get_instruments():
+        assert f'- #{instrument.id}: {instrument.name.get("en", "Unnamed Instrument")}' in output
 
 
 def test_list_instruments_arguments(instrument_translations, capsys):

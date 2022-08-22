@@ -20,7 +20,6 @@ from ...logic import object_log, comments, errors
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
-from ...logic.instrument_translations import get_instrument_with_translation_in_language
 from ...logic.users import get_user, get_users
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
@@ -134,7 +133,7 @@ def object(object_id):
     if object.action_id is not None:
         action = get_action(object.action_id)
         action_type = get_action_type(action.type_id) if action.type_id is not None else None
-        instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id is not None else None
+        instrument = action.instrument
         object_type = get_translated_text(action_type.object_name, user_language_id) if action_type else None
         if action.schema is not None and action.schema != object.schema:
             new_schema_available = True
@@ -239,10 +238,7 @@ def object(object_id):
         favorite_measurement_actions.sort(
             key=lambda action: (
                 action.user.name.lower() if action.user else '',
-                get_instrument_with_translation_in_language(
-                    instrument_id=action.instrument_id,
-                    language_id=user_language_id
-                ).translation.name.lower() if action.instrument else '',
+                get_translated_text(action.instrument.name, user_language_id).lower() if action.instrument else '',
                 get_translated_text(action.name, user_language_id).lower()
             )
         )
@@ -411,7 +407,6 @@ def object(object_id):
         "get_object_location_assignment": get_object_location_assignment,
         "get_project": get_project_if_it_exists,
         "get_action_type": get_action_type,
-        "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language,
         "get_component": get_component,
     })
 

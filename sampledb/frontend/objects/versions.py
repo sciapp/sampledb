@@ -11,7 +11,6 @@ from .. import frontend
 from ... import logic
 from ...logic.actions import get_action_type, get_action
 from ...logic.object_permissions import Permissions, get_user_object_permissions
-from ...logic.instrument_translations import get_instrument_with_translation_in_language
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object, get_object_versions
 from ...logic.languages import get_language_by_lang_code, get_user_language, get_languages_in_object_data, get_language, Language
@@ -50,7 +49,7 @@ def object_version(object_id, version_id):
     user_may_grant = Permissions.GRANT in user_permissions
     action = get_action(object.action_id)
     action_type = get_action_type(action.type_id) if action.type_id else None
-    instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id else None
+    instrument = action.instrument
 
     object_languages = get_languages_in_object_data(object.data)
     languages = []

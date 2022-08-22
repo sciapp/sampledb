@@ -479,7 +479,7 @@
       {% if object.action is not none %}
         {% if 'instrument' in action_info %}
         {% if object.action.instrument is not none %}
-          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ get_instrument_translation_for_instrument_in_language(object.action.instrument_id, get_user_language(current_user).id, use_fallback=True).name }}</a>
+          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
             {{ federation_information_symbol(object.action.instrument.component, object.action.instrument.fed_id, 'instrument') }}
           </td>
         {% else %}
@@ -489,7 +489,7 @@
         {% if 'action' in action_info %}
         <td>
           <a href="{{ url_for('.action', action_id=object.action.id) }}">
-            {{ action_translations[object.action.id].name }}
+            {{ object.action.name | get_translated_text(default=_('Unnamed Action')) }}
           </a>
           {{ federation_information_symbol(object.action.component, object.action.fed_id, 'action') }}
         </td>

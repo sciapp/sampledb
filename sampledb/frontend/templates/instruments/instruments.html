@@ -14,8 +14,7 @@
       <input type="hidden" name="instrument_id" value="{{ instrument.id }}">
       {{ toggle_favorite_instrument_form.csrf_token() }}
       <h2>
-        <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}"
-           title="{{ instrument.translation.name }}">{{ instrument.translation.name }}</a>
+        <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
         {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
         <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
@@ -25,11 +24,11 @@
         <i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.') }}
       </p>
     {% endif %}
-    {% if instrument.translation.short_description %}
+    {% if instrument.short_description | get_translated_text %}
       <div class="instrument-user-content">
       {% if instrument.short_description_is_markdown %}
-        {{ instrument.translation.short_description | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
-      {% else %}<p>{{ instrument.translation.short_description }}</p>{% endif %}
+        {{ instrument.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
+      {% else %}<p>{{ instrument.short_description | get_translated_text }}</p>{% endif %}
       </div>
     {% endif %}
     {% include "instruments/instrument_scientists.html" %}

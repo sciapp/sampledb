@@ -20,7 +20,7 @@ from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_f
 from sampledb.logic.federation import parse_action, parse_instrument, parse_user, parse_location, parse_action_type, shared_object_preprocessor, shared_action_preprocessor, shared_action_type_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_user_preprocessor, locations_check_for_cyclic_dependencies, parse_import_action, parse_import_action_type, parse_import_instrument, parse_import_user, parse_import_location, parse_import_location_type, parse_import_comment, parse_import_object_location_assignment, parse_import_object, parse_import_file, update_shares, parse_import_markdown_image
 from sampledb.logic.files import get_file, create_url_file, get_files_for_object
 from sampledb.logic.groups import create_group
-from sampledb.logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, get_instrument_translation_for_instrument_in_language
+from sampledb.logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation
 from sampledb.logic.instruments import get_instrument
 from sampledb.logic.languages import get_language, get_language_by_lang_code
 from sampledb.logic.locations import get_location, get_fed_object_location_assignment, create_location, get_object_location_assignments, get_location_type
@@ -3305,13 +3305,11 @@ def test_shared_instrument_preprocessor(instrument, component, app):
         assert processed_instrument['is_hidden'] == instrument.is_hidden
 
         assert len(processed_instrument['translations']) == 2
-        for key, value in processed_instrument['translations'].items():
-            language_id = get_language_by_lang_code(key).id
-            translation = get_instrument_translation_for_instrument_in_language(instrument.id, language_id)
-            assert value['name'] == translation.name
-            assert value['description'] == translation.description
-            assert value['short_description'] == translation.short_description
-            assert value['notes'] == translation.notes
+        for lang_code, value in processed_instrument['translations'].items():
+            assert value['name'] == instrument.name.get(lang_code)
+            assert value['description'] == instrument.description.get(lang_code)
+            assert value['short_description'] == instrument.short_description.get(lang_code)
+            assert value['notes'] == instrument.notes.get(lang_code)
 
         assert refs == []
         assert markdown_images == {}

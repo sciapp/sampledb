@@ -23,7 +23,7 @@
           {{ federation_information_symbol(action_owner.component, action_owner.fed_id, 'user') }} /
         {% endif %}
         {% if action.instrument is not none %}
-          <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.translation.name }}">{{ action.instrument.translation.name }}</a>
+          <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
           {{ federation_information_symbol(action.instrument.component, action.instrument.fed_id, 'instrument') }} &mdash;
         {% endif %}
         <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>

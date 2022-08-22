@@ -14,7 +14,6 @@ class InstrumentTranslation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id'))
-    instruments = db.relationship("Instrument", back_populates='instrument_translations')
 
     language_id = db.Column(db.Integer, db.ForeignKey('languages.id'))
     language = db.relationship('Language')

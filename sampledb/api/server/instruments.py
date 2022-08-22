@@ -6,9 +6,9 @@ RESTful API for SampleDB
 from flask_restful import Resource
 
 from .authentication import multi_auth
-from ...logic.instrument_translations import get_instrument_with_translation_in_language, get_instruments_with_translation_in_language
+from ...logic.instruments import get_instrument, get_instruments
 from ...logic.languages import Language
-from ...logic import errors
+from ...logic import errors, utils
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -16,8 +16,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def instrument_to_json(instrument):
     return {
         'instrument_id': instrument.id,
-        'name': instrument.translation.name,
-        'description': instrument.translation.description,
+        'name': utils.get_translated_text(instrument.name, Language.ENGLISH),
+        'description': utils.get_translated_text(instrument.description, Language.ENGLISH),
         'is_hidden': instrument.is_hidden,
         'instrument_scientists': [user.id for user in instrument.responsible_users]
     }
@@ -27,9 +27,8 @@ class Instrument(Resource):
     @multi_auth.login_required
     def get(self, instrument_id: int):
         try:
-            instrument = get_instrument_with_translation_in_language(
-                instrument_id=instrument_id,
-                language_id=Language.ENGLISH
+            instrument = get_instrument(
+                instrument_id=instrument_id
             )
         except errors.InstrumentDoesNotExistError:
             return {
@@ -41,7 +40,8 @@ class Instrument(Resource):
 class Instruments(Resource):
     @multi_auth.login_required
     def get(self):
-        instruments = get_instruments_with_translation_in_language(
-            language_id=Language.ENGLISH
-        )
-        return [instrument_to_json(instrument) for instrument in instruments]
+        instruments = get_instruments()
+        return [
+            instrument_to_json(instrument)
+            for instrument in instruments
+        ]

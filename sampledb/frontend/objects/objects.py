@@ -586,13 +586,6 @@ def objects():
     action_ids = {
         object['action'].id for object in objects if object['action'] is not None
     }
-    action_translations = {}
-    for id in action_ids:
-        action_translations[id] = logic.action_translations.get_action_translation_for_action_in_language(
-            action_id=id,
-            language_id=user_language_id,
-            use_fallback=True
-        )
 
     default_property_titles = {
         'tags': _('Tags'),
@@ -773,7 +766,6 @@ def objects():
         creation_info=creation_info,
         last_edit_info=last_edit_info,
         action_info=action_info,
-        action_translations=action_translations,
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
@@ -795,7 +787,6 @@ def objects():
         all_publications=all_publications,
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-        get_instrument_translation_for_instrument_in_language=logic.instrument_translations.get_instrument_translation_for_instrument_in_language,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,

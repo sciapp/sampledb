@@ -34,7 +34,7 @@
     <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
     <div class="col-md-9">
       {% if instrument is not none %}
-        <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>
+        <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name | get_translated_text }}</a>
         {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
       {% else %}&mdash;{% endif %}
     </div>
@@ -126,8 +126,7 @@
                   {{ action_owner.get_name() }} /
                 {% endif %}
                 {% if action.instrument is not none %}
-                  {% set temp = namespace(instrument=get_instrument_with_translation_in_language(action.instrument_id, get_user_language(current_user).id)) %}
-                  {{ temp.instrument.translation.name }}
+                  {{ action.instrument.name | get_translated_text  }}
                   &mdash;
                 {% endif %}
                   {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
