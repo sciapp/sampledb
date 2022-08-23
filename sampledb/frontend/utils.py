@@ -434,6 +434,11 @@ def get_local_month_names():
 
 
 @jinja_function()
+def get_local_decimal_delimiter():
+    return numbers.format_decimal(1.2346, locale=flask_babel.get_locale())[1:2]
+
+
+@jinja_function()
 def get_templates(user_id):
     return [
         action
