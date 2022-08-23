@@ -1377,6 +1377,56 @@ If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled
       "object_id": null
     }
 
+calculate
+`````````````
+
+This condition is different in the sense that the condition does not determine if this property will be displayed or not. It defines that this property can be automatically calculated if other properties are already given. Thus this condition only works with properties of the type quantity. Calculations can be defined back and forth between properties like the example below shows.
+
+.. code-block:: javascript
+    :caption: An calculate condition example
+
+    "m": {
+      "title": "Meters",
+      "units": "m",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["s", "mps"],
+          "digits": 2,
+          "formula": "mps * s"
+        }
+      ],
+      "type": "quantity"
+    },
+    "s": {
+      "title": "Seconds",
+      "units": "s",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["m", "mps"],
+          "digits": 2,
+          "formula": "m / mps"
+        }
+      ],
+      "type": "quantity"
+    },
+    "mps": {
+      "title": "Meters per second",
+      "units": "m/s",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["m", "s"],
+          "digits": 2,
+          "formula": "m / s"
+        }
+      ],
+      "type": "quantity"
+    },
+
+The ``formula`` attribute defines the calculation logic and follows the syntax of math.evaluate from `Math.JS <https://mathjs.org/>`_. The reference attribute is also different and now called ``property_names``. It accepts an array of referencing properties. The attribute ``digits`` defines how the calculation result should be rounded. It is the only optional attribute.
+
 any / all
 `````````
 

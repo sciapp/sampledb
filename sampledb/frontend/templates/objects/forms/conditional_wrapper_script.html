@@ -112,6 +112,61 @@
           object_element.on('conditions_state_changed.sampledb', evaluateCondition);
           evaluateCondition();
         }
+      {% elif condition['type'] == 'calculate' %}
+        {
+          let wrapper_condition = true;
+          let conditional_elements = [];
+          let property_names = [];
+
+          {% for property_name in condition['property_names'] %}
+              let {{ property_name }}_id = "{{ parent_id_prefix + '_' + property_name }}";
+              if (!"{{ property_name }}".includes('__')) {
+                {{ property_name }}_id =  {{ property_name }}_id + "__magnitude";
+              }
+              let {{ property_name }} = $("[name=\"" + {{ property_name }}_id + "\"]");
+              if ({{ property_name }}.length == 0) {
+                wrapper_condition = false;
+              } else {
+                conditional_elements.push({{ property_name }});
+                property_names.push('{{ property_name }}');
+              }
+          {% endfor %}
+
+          let target_element = $("[name=\"{{ id_prefix + '_magnitude' }}\"]");
+
+          let evaluateCondition = function () {
+            window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = wrapper_condition;
+
+            if (target_element.length > 0 && wrapper_condition === true) {
+                let formula = "{{ condition['formula'] }}";
+                let conditions_valid = true;
+                for (i = 0; i < conditional_elements.length; i++) {
+                    let value = conditional_elements[i].val()
+                    value = value.replace(/[^0-9\{{ get_local_decimal_delimiter() }}]/g, "");
+                    value = value.replace(/\{{ get_local_decimal_delimiter() }}/g, ".");
+                    if (isNaN(parseFloat(value))) {
+                        conditions_valid = false;
+                        break;
+                    }
+                    formula = formula.replace( property_names[i], parseFloat(value) );
+                }
+                if (conditions_valid === true) {
+                    let result = math.evaluate(formula);
+                    {% if 'digits' in condition %}
+                        result = math.round(result, {{ condition['digits'] }});
+                    {% endif %}
+                    let result_str = String(result);
+                    target_element.val(result_str.replace(/\./g, "{{ get_local_decimal_delimiter() }}"));
+                }
+            }
+
+            update_conditions_result();
+          }
+          conditional_elements.forEach(function(conditional_element) {
+            conditional_element.on('change', evaluateCondition);
+          });
+          evaluateCondition();
+        }
       {% elif condition['type'] == 'any' %}
         window.conditional_wrapper_conditions["{{ id_prefix }}"][{{ index | safe }}] = {'type': 'any', 'conditions': []};
         {% for sub_condition in condition.conditions %}

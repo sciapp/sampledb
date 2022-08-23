@@ -1,0 +1,76 @@
+{
+  "title": "Condition Calculate Example",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "m": {
+      "title": "Meters",
+      "units": "m",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["s", "mps"],
+          "formula": "mps * s"
+        }
+      ],
+      "type": "quantity"
+    },
+    "s": {
+      "title": "Seconds",
+      "units": "s",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["m", "mps"],
+          "formula": "m / mps"
+        }
+      ],
+      "type": "quantity"
+    },
+    "mps": {
+      "title": "Meters per second",
+      "units": "m/s",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["m", "s"],
+          "formula": "m / s"
+        }
+      ],
+      "type": "quantity"
+    },
+    "miles": {
+      "title": "Miles",
+      "units": "mi",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["kilometers"],
+          "digits": 2,
+          "formula": "kilometers / 1.609"
+        }
+      ],
+      "type": "quantity"
+    },
+    "kilometers": {
+      "title": "Kilometers",
+      "units": "km",
+      "conditions": [
+        {
+          "type": "calculate",
+          "property_names": ["miles"],
+          "digits": 2,
+          "formula": "miles * 1.609"
+        }
+      ],
+      "type": "quantity"
+    }
+  },
+  "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers"],
+  "required": ["name"]
+}
