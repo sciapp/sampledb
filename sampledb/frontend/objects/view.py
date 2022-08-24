@@ -219,6 +219,13 @@ def object(object_id):
         "scicat_url": scicat_url,
     })
 
+    # download service
+    download_service_enabled = bool(flask.current_app.config['DOWNLOAD_SERVICE_URL'])
+    download_service_enabled = download_service_enabled and (flask.current_app.config['DOWNLOAD_SERVICE_SECRET'])
+    template_kwargs.update({
+        "show_download_service": download_service_enabled,
+    })
+
     if flask_login.current_user.is_authenticated:
         # use in measurement menu
         measurement_actions = logic.action_translations.get_actions_with_translation_in_language(

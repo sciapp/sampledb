@@ -51,6 +51,37 @@ def use_environment_configuration(env_prefix):
         globals()[name] = value
 
 
+def is_download_service_whitelist_valid() -> bool:
+    # check if paths and user ids from DOWNLOAD_SERVICE_WHITELIST are valid
+    for path, user_ids in DOWNLOAD_SERVICE_WHITELIST.items():
+        norm_path = os.path.normpath(os.path.join(os.path.sep, path))
+        if norm_path != path:
+            print(
+                ansi_color(
+                    'DOWNLOAD_SERVICE_WHITELIST: Please use a normalized '
+                    'paths.'
+                    '\n',
+                    color=33
+                ),
+                file=sys.stderr
+            )
+            return False
+
+        for user_id in user_ids:
+            if type(user_id) is not int:
+                print(
+                    ansi_color(
+                        'DOWNLOAD_SERVICE_WHITELIST: Please use a number for '
+                        'the user IDs.'
+                        '\n',
+                        color=33
+                    ),
+                    file=sys.stderr
+                )
+                return False
+    return True
+
+
 def check_config(
         config: typing.Mapping[str, typing.Any]
 ) -> typing.Dict[str, typing.Any]:
@@ -130,6 +161,23 @@ def check_config(
         print(
             'SciCat export will be disabled, because the configuration '
             'value SCICAT_FRONTEND_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    if 'DOWNLOAD_SERVICE_URL' not in defined_config_keys:
+        print(
+            'Download service will be disabled, because the configuration '
+            'value DOWNLOAD_SERVICE_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+    elif 'DOWNLOAD_SERVICE_SECRET' not in defined_config_keys:
+        print(
+            'Download service will be disabled, because the configuration '
+            'value DOWNLOAD_SERVICE_SECRET is missing.\n'
             '\n',
             file=sys.stderr
         )
@@ -368,6 +416,10 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not is_download_service_whitelist_valid():
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -461,6 +513,11 @@ SCICAT_API_URL = None
 SCICAT_FRONTEND_URL = None
 SCICAT_EXTRA_PID_PREFIX = ''
 
+DOWNLOAD_SERVICE_URL = None
+DOWNLOAD_SERVICE_SECRET = None
+DOWNLOAD_SERVICE_WHITELIST = {}
+DOWNLOAD_SERVICE_TIME_LIMIT = 24 * 60 * 60
+
 # PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
@@ -527,7 +584,7 @@ except ValueError:
     pass
 
 # parse values as integers
-for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE', 'VALID_TIME_DELTA'}:
+for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE', 'VALID_TIME_DELTA', 'DOWNLOAD_SERVICE_TIME_LIMIT'}:
     value = globals().get(config_name)
     if isinstance(value, str):
         try:
@@ -536,7 +593,7 @@ for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE', 'VALID_TIME_DELTA'}:
             pass
 
 # parse values as json
-for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS'}:
+for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST'}:
     value = globals().get(config_name)
     if isinstance(value, str) and value.startswith('{'):
         try:
@@ -573,3 +630,7 @@ if isinstance(SCICAT_API_URL, str) and SCICAT_API_URL.endswith('/'):
     SCICAT_API_URL = SCICAT_API_URL[:-1]
 if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
     SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]
+
+# remove trailing slashes from Download Service url
+if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
+    DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]

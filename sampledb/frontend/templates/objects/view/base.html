@@ -230,7 +230,14 @@
               " style="display: none">
                 <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
               </button>
-              <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download files as zip archive')}}"><i class="fa fa-download"></i></a>
+              <div class="form-group" style="display: inline-flex">
+                {% if show_download_service %}
+                  <iframe id="download_frame" style="display:none"></iframe>
+                  <div data-toggle="tooltip" data-placement="top" title="{{ _('Download files as zip archive') }}"><a class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="modal" data-target="#dataFilesDownloadModal"><i class="fa fa-download"></i></a></div>
+                {% else %}
+                  <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download files as zip archive')}}"><i class="fa fa-download"></i></a>
+                {% endif %}
+              </div>
             </th>
           </tr>
         </thead>
@@ -1194,6 +1201,41 @@
       </div>
     </div>
   {% endif %}
+
+    {% if show_download_service and not is_archived and action is not none and action.type is not none and action.type.enable_files and files %}
+    <div class="modal fade" id="dataFilesDownloadModal" tabindex="-1" role="dialog" aria-labelledby="dataFilesDownloadModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="dataFilesDownloadModalLabel">{{ _('Export Data') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group" id="modal-file-sections">
+              <table style="width: 100%">
+                <tbody>
+                  {% for file in files %}
+                    {% if not (file.is_hidden or file.storage in ['local', 'url']) %}
+                      <tr>
+                        <td><label>{{ file.title }}</label></td>
+                        <td><label><input type="checkbox" id="data_download_service_checked_{{ file.id }}" name="data_download_service_checked_{{ file.id }}" data-object-id="{{ file.id }}"></label></td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="button-modal-files-select-all">{{ _('Select All') }}</button>
+            <button type="button" class="btn btn-default" id="button-modal-files-deselect-all">{{ _('Deselect All') }}</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <a class="btn btn-primary" id="button-modal-files-download-zip">{{ _('Export Data')}}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -1604,6 +1646,27 @@
         });
         updateDataExportLink();
       {% endif %}
+
+      {% if show_download_service and not is_archived and action is not none and action.type is not none and action.type.enable_files and files %}
+        $('#button-modal-files-select-all').on('click', function () {
+          $('input[name^=data_download_service_checked_]').prop("checked", true);
+        });
+        $('#button-modal-files-deselect-all').on('click', function () {
+          $('input[name^=data_download_service_checked_]').prop("checked", false);
+        });
+        $('#button-modal-files-download-zip').on('click', function () {
+          let file_ids = [];
+          $('input[name^=data_download_service_checked_]').each(function() {
+            if ($(this).prop('checked')) {
+              file_ids.push(parseInt($(this).attr('data-object-id')));
+            }
+          });
+          let params = '?file_ids=' + file_ids.join('&file_ids=')
+          let ifrm = document.getElementById('download_frame');
+          ifrm.src = '{{ url_for('.download_service', object_id=object_id) }}' + params;
+        });
+      {% endif %}
+
       $('[data-toggle="tooltip"]').tooltip();
 
     function copyToClipboard(text) {
