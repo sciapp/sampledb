@@ -27,6 +27,9 @@ def search():
 
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(actions, action_types)
 
+    if None in search_paths_by_action_type:
+        del search_paths_by_action_type[None]
+
     if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
         referencable_objects = get_objects_with_permissions(
             user_id=flask_login.current_user.id,

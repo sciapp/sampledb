@@ -442,6 +442,8 @@ def update_actions_using_template_action(
     for action in actions:
         if action.id == template_action_id:
             continue
+        if not action.schema:
+            continue
         current_schema = copy.deepcopy(action.schema)
         updated_schema = schemas.templates.update_schema_using_template_action(current_schema, template_action_id, template_action_schema)
         if action.schema != updated_schema:

@@ -231,14 +231,15 @@ def objects():
             action_id = filter_action_ids[0]
         if action_id is not None:
             action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
-            implicit_action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
+            implicit_action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id is not None else None
             action_schema = action.schema
-            action_display_properties = action_schema.get('displayProperties', [])
-            for property_name in action_display_properties:
-                if property_name not in display_properties:
-                    display_properties.append(property_name)
-                if property_name not in display_property_titles:
-                    display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
+            if action_schema:
+                action_display_properties = action_schema.get('displayProperties', [])
+                for property_name in action_display_properties:
+                    if property_name not in display_properties:
+                        display_properties.append(property_name)
+                    if property_name not in display_property_titles:
+                        display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
         else:
             action_type_id = flask.request.args.get('t', '')
             if action_type_id is not None:

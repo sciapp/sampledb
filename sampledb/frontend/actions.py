@@ -117,7 +117,7 @@ def actions():
         actions = [
             action
             for action in actions
-            if not action.type.disable_create_objects
+            if action.schema is not None and action.type_id is not None and not action.type.disable_create_objects
         ]
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
@@ -150,19 +150,20 @@ def action(action_id):
 
     user_language_id = languages.get_user_language(flask_login.current_user).id
 
-    if action.type.admin_only and not flask_login.current_user.is_admin:
+    if action.type_id is not None and action.type.admin_only and not flask_login.current_user.is_admin:
         may_edit = False
     may_grant = Permissions.GRANT in permissions
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
-        original_schema = copy.deepcopy(action.schema)
-        try:
-            reverse_substitute_templates(action.schema)
-        except errors.ActionDoesNotExistError:
-            action.schema = original_schema
-            flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
-            if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
-                flask.abort(400)
+        if action.schema:
+            original_schema = copy.deepcopy(action.schema)
+            try:
+                reverse_substitute_templates(action.schema)
+            except errors.ActionDoesNotExistError:
+                action.schema = original_schema
+                flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
+                if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
+                    flask.abort(400)
         check_current_user_is_not_readonly()
         if not may_edit:
             if action.fed_id is not None:
@@ -219,9 +220,12 @@ def new_action():
         except errors.ActionDoesNotExistError:
             flask.flash(_('The requested action does not exist.'), 'error')
         else:
-            if previous_action.type.admin_only and not flask_login.current_user.is_admin:
-                flask.flash(_('Only administrators can create actions of this type.'), 'error')
-                return flask.redirect(flask.url_for('.action', action_id=previous_action_id))
+            if previous_action is not None:
+                if previous_action.type_id is None or previous_action.schema is None:
+                    previous_action = None
+                elif previous_action.type.admin_only and not flask_login.current_user.is_admin:
+                    flask.flash(_('Only administrators can create actions of this type.'), 'error')
+                    return flask.redirect(flask.url_for('.action', action_id=previous_action_id))
     return show_action_form(None, previous_action, action_type_id)
 
 
@@ -374,7 +378,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
             action_form.short_description_is_markdown.data = previous_action.short_description_is_markdown
-            action_form.type.data = previous_action.type.id
+            action_form.type.data = previous_action.type_id
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
 
     if action_form.schema.data:

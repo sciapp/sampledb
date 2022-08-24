@@ -179,15 +179,16 @@ def get_sorted_actions_for_user(
         permissions = get_user_action_permissions(user_id=user_id, action_id=action.id)
         if Permissions.READ in permissions:
             # instrument translation
-            if action.instrument:
+            if action.instrument_id:
                 if action.instrument_id not in translated_instruments_by_id:
                     translated_instruments_by_id[action.instrument_id] = instrument_translations.get_instrument_with_translation_in_language(action.instrument_id, user_language_id)
                 setattr(action, 'instrument', translated_instruments_by_id[action.instrument_id])
 
-            #  action type translation
-            if action.type_id not in translated_action_types_by_id:
-                translated_action_types_by_id[action.type_id] = action_type_translations.get_action_type_with_translation_in_language(action.type.id, user_language_id)
-            setattr(action, 'type', translated_action_types_by_id[action.type_id])
+            if action.type_id:
+                #  action type translation
+                if action.type_id not in translated_action_types_by_id:
+                    translated_action_types_by_id[action.type_id] = action_type_translations.get_action_type_with_translation_in_language(action.type.id, user_language_id)
+                setattr(action, 'type', translated_action_types_by_id[action.type_id])
 
             visible_actions.append(action)
             action_permissions[action.id] = permissions

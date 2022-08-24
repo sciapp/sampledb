@@ -48,8 +48,13 @@ def scicat_export(object_id):
         return flask.abort(404)
 
     object = logic.objects.get_object(object_id)
+
+    if object.component_id is not None:
+        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
+
     action = logic.actions.get_action(object.action_id)
-    object_export_type = action.type.scicat_export_type
+    object_export_type = action.type.scicat_export_type if action.type_id is not None else None
     if object_export_type is None:
         flask.flash(_("The SciCat export type is not set for objects of this type."), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))

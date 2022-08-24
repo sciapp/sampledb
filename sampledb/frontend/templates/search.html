@@ -493,7 +493,11 @@
       var action_select = $('select[name="action"]');
       if (action_select.selectpicker('val')) {
         var selected_action_id = action_select.find('option:selected').data('actionId');
-        return search_paths_by_action[selected_action_id];
+        if (selected_action_id in search_paths_by_action) {
+            return search_paths_by_action[selected_action_id];
+        } else {
+            return {};
+        }
       }
       var action_type_select = $('select[name="t"]');
       if (action_type_select.selectpicker('val')) {

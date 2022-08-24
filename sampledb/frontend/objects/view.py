@@ -96,10 +96,15 @@ def object(object_id):
             return flask.abort(403)
     if mode in {'edit', 'upgrade'} or flask.request.method == 'POST':
         check_current_user_is_not_readonly()
+        action = get_action(object.action_id)
+        should_upgrade_schema = (mode == 'upgrade')
+        if should_upgrade_schema and (not action.schema or action.schema == object.schema):
+            flask.flash(_('The schema for this object cannot be updated.'), 'error')
+            return flask.redirect(flask.url_for('.object', object_id=object_id))
         return show_object_form(
             object=object,
-            action=get_action(object.action_id),
-            should_upgrade_schema=(mode == 'upgrade')
+            action=action,
+            should_upgrade_schema=should_upgrade_schema
         )
 
     template_kwargs = {}
@@ -130,10 +135,10 @@ def object(object_id):
     # basic object and action information
     if object.action_id is not None:
         action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
-        action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id)
+        action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id is not None else None
         instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id is not None else None
-        object_type = action_type.translation.object_name
-        if action.schema != object.schema:
+        object_type = action_type.translation.object_name if action_type else None
+        if action.schema is not None and action.schema != object.schema:
             new_schema_available = True
         else:
             new_schema_available = False
@@ -205,7 +210,7 @@ def object(object_id):
     scicat_enabled = bool(flask.current_app.config['SCICAT_API_URL']) and bool(flask.current_app.config['SCICAT_FRONTEND_URL'])
     if scicat_enabled:
         scicat_url = logic.scicat_export.get_scicat_url(object.id)
-        show_scicat_export = user_may_grant and not scicat_url and action_type.scicat_export_type is not None
+        show_scicat_export = user_may_grant and not scicat_url and action_type is not None and action_type.scicat_export_type is not None
     else:
         scicat_url = None
         show_scicat_export = False
@@ -826,6 +831,9 @@ def new_object():
         if Permissions.READ not in get_user_action_permissions(action_id, user_id=flask_login.current_user.id):
             flask.flash(_("You do not have the required permissions to use this action."), 'error')
             return flask.abort(403)
+        if action.type_id is None or action.schema is None:
+            flask.flash(_("Creating objects with this action has been disabled."), 'error')
+            return flask.redirect(flask.url_for('.action', action_id=action_id))
 
     placeholder_data = {}
 
@@ -842,10 +850,11 @@ def new_object():
             get_object(sample_id)
         except errors.ObjectDoesNotExistError:
             sample_id = None
-    if sample_id is not None:
-        if action.schema.get('properties', {}).get('sample', {}).get('type', '') == 'sample':
+    if sample_id is not None and action is not None and action.schema is not None:
+        sample_type = action.schema.get('properties', {}).get('sample', {}).get('type', '')
+        if sample_type in ('sample', 'object_reference'):
             placeholder_data = {
-                ('sample', ): {'_type': 'sample', 'object_id': sample_id}
+                ('sample', ): {'_type': sample_type, 'object_id': sample_id}
             }
 
     # TODO: check instrument permissions

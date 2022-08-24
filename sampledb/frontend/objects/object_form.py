@@ -47,7 +47,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         data = object.data
     previous_object_schema = None
     mode = 'edit'
-    if should_upgrade_schema:
+    if should_upgrade_schema and action.schema:
         mode = 'upgrade'
         assert object is not None
         schema = action.schema
@@ -326,6 +326,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     english = get_language(Language.ENGLISH)
 
+    if not schema:
+        flask.flash(_('Creating objects with this action has been disabled.'), 'error')
+        return flask.redirect(flask.url_for('.action', action_id=action_id))
+
     def insert_recipe_types(subschema):
         if subschema['type'] == 'object':
             if 'recipes' in subschema:
@@ -383,7 +387,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     insert_recipe_types(schema)
 
     if object is None:
-        if get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:
+        if action_id not in action_type_id_by_action_id or get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:
             flask.flash(_('Creating objects with this action has been disabled.'), 'error')
             return flask.redirect(flask.url_for('.action', action_id=action_id))
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
