@@ -105,8 +105,9 @@ def instruments():
     user_language_id = get_user_language(flask_login.current_user).id
     all_instruments = get_instruments_with_translation_in_language(user_language_id)
     instruments = []
+    user_has_admin_permissions = flask_login.current_user.is_admin and get_user_settings(flask_login.current_user.id)["USE_ADMIN_PERMISSIONS"]
     for instrument in all_instruments:
-        if instrument.is_hidden and not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
+        if instrument.is_hidden and not user_has_admin_permissions and flask_login.current_user not in instrument.responsible_users:
             continue
         instruments.append(instrument)
     user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
