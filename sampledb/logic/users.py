@@ -524,7 +524,9 @@ def get_user_aliases_for_component(component_id: int, modified_since: typing.Opt
     if modified_since is None:
         alias = users.UserFederationAlias.query.filter_by(component_id=component_id).all()
     else:
-        alias = users.UserFederationAlias.query.filter(
+        alias = users.UserFederationAlias.query.join(
+            users.User, users.User.id == users.UserFederationAlias.user_id
+        ).filter(
             db.or_(
                 db.and_(
                     users.UserFederationAlias.component_id == component_id,
