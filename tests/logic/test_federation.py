@@ -600,7 +600,7 @@ def _check_instrument(instrument_data):
     assert instrument is not None
     assert instrument.fed_id == instrument_data.get('instrument_id')
     assert instrument.component_id == component.id
-    assert instrument.component == component
+    assert instrument.component == Component.from_database(component)
 
     assert instrument.description_is_markdown == instrument_data.get('description_is_markdown')
     assert instrument.short_description_is_markdown == instrument_data.get('short_description_is_markdown')

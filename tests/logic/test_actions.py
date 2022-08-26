@@ -263,8 +263,26 @@ def test_get_actions():
         schema=SCHEMA
     )
     assert actions.get_actions() == [measurement_action, sample_action] or actions.get_actions() == [sample_action, measurement_action]
-    assert actions.get_actions(sampledb.models.ActionType.SAMPLE_CREATION) == [sample_action]
-    assert actions.get_actions(sampledb.models.ActionType.MEASUREMENT) == [measurement_action]
+    assert actions.get_actions(action_type_id=sampledb.models.ActionType.SAMPLE_CREATION) == [sample_action]
+    assert actions.get_actions(action_type_id=sampledb.models.ActionType.MEASUREMENT) == [measurement_action]
+
+    instrument = instruments.create_instrument()
+    instrument_action = actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=SCHEMA,
+        instrument_id=instrument.id
+    )
+    assert actions.get_actions(
+        instrument_id=instrument.id
+    ) == [instrument_action]
+    assert actions.get_actions(
+        instrument_id=instrument.id,
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION
+    ) == [instrument_action]
+    assert actions.get_actions(
+        instrument_id=instrument.id,
+        action_type_id=sampledb.models.ActionType.MEASUREMENT
+    ) == []
 
 
 def test_create_user_action():

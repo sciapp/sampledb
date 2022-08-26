@@ -101,7 +101,7 @@ class Action(collections.namedtuple('Action', [
             type_id=action.type_id,
             type=ActionType.from_database(action.type) if action.type is not None else None,
             instrument_id=action.instrument_id,
-            instrument=action.instrument,  # TODO: instruments.Instrument.from_database(action.instrument)
+            instrument=instruments.Instrument.from_database(action.instrument) if action.instrument is not None else None,
             schema=copy.deepcopy(action.schema) if action.schema is not None else None,
             user_id=action.user_id,
             user=users.User.from_database(action.user) if action.user is not None else None,
@@ -469,22 +469,35 @@ def create_action(
     return Action.from_database(action)
 
 
-def get_actions(action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
+def get_actions(
+        *,
+        action_type_id: typing.Optional[int] = None,
+        instrument_id: typing.Optional[int] = None,
+) -> typing.List[Action]:
     """
     Returns all actions, optionally only actions of a given type.
 
-    :param action_type_id: None or the ID of an existing action type
+    :param action_type_id: the ID of an existing action type, or None
+    :param instrument_id: the ID of an existing instrument, or None
     :return: the list of actions
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
     """
+    query = models.Action.query
     if action_type_id is not None:
-        actions = models.Action.query.filter_by(type_id=action_type_id).all()
-        if not actions:
+        query = query.filter_by(type_id=action_type_id)
+    if instrument_id is not None:
+        query = query.filter_by(instrument_id=instrument_id)
+    actions = query.all()
+    if not actions:
+        if action_type_id is not None:
             # ensure the action type exists
             get_action_type(action_type_id=action_type_id)
-    else:
-        actions = models.Action.query.all()
+        if instrument_id is not None:
+            # ensure the instrument exists
+            instruments.get_instrument(instrument_id=instrument_id)
     return [
         Action.from_database(action)
         for action in actions

@@ -27,7 +27,7 @@ from .component_authentication import get_own_authentication
 from .comments import get_comment, get_comments_for_object, create_comment
 from .components import get_component_by_uuid, get_component, add_component
 from .groups import get_group
-from .instruments import create_instrument, get_instrument
+from .instruments import create_instrument, get_instrument, get_mutable_instrument
 from .locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations, get_location_type, create_location_type, update_location_type, set_location_responsible_users, LocationType
 from .objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from .projects import get_project
@@ -300,7 +300,7 @@ def import_user(user_data, component):
 def import_instrument(instrument_data, component):
     component_id = _get_or_create_component_id(instrument_data['component_uuid'])
     try:
-        instrument = get_instrument(instrument_data['fed_id'], component_id)
+        instrument = get_mutable_instrument(instrument_data['fed_id'], component_id)
         if instrument.description_is_markdown != instrument_data['description_is_markdown'] or instrument.is_hidden != instrument_data['is_hidden'] or instrument.short_description_is_markdown != instrument_data['short_description_is_markdown']:
             instrument.description_is_markdown = instrument_data['description_is_markdown']
             instrument.is_hidden = instrument_data['is_hidden']

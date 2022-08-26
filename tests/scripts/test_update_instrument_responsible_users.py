@@ -14,7 +14,6 @@ import sampledb.__main__ as scripts
 def instrument():
     instrument = instruments.create_instrument()
     assert instrument.id is not None
-    db.session.expunge(instrument)
     return instrument
 
 
@@ -37,6 +36,7 @@ def test_update_instrument_responsible_users(instrument, users, capsys):
     assert len(instrument.responsible_users) == 0
     instruments.add_instrument_responsible_user(instrument.id, users[0].id)
     instruments.add_instrument_responsible_user(instrument.id, users[1].id)
+    instrument = instruments.get_instruments()[0]
     assert len(instrument.responsible_users) == 2
     assert instrument.responsible_users == [users[0], users[1]] or instrument.responsible_users == [users[1], users[0]]
 

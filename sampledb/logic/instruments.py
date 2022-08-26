@@ -10,13 +10,104 @@ Similar to actions, instruments cannot be deleted. However, all information
 about an instrument may be altered.
 """
 
+import collections
 import typing
 
 from .components import get_component
 from .. import db
-from ..models import Instrument
+from .. import models
 from ..models.instruments import instrument_user_association_table
-from . import users, errors
+from . import users, errors, components
+
+
+class Instrument(collections.namedtuple('Instrument', [
+    'id',
+    'responsible_users',
+    'users_can_create_log_entries',
+    'users_can_view_log_entries',
+    'create_log_entry_default',
+    'is_hidden',
+    'name',
+    'notes',
+    'notes_is_markdown',
+    'description',
+    'description_is_markdown',
+    'short_description',
+    'short_description_is_markdown',
+    'fed_id',
+    'component_id',
+    'component'
+])):
+    """
+    This class provides an immutable wrapper around models.instruments.Instrument.
+    """
+
+    def __new__(
+            cls,
+            id: int,
+            responsible_users: typing.List[users.User],
+            users_can_create_log_entries: bool,
+            users_can_view_log_entries: bool,
+            create_log_entry_default: bool,
+            is_hidden: bool,
+            name: typing.Dict[str, str],
+            notes: typing.Dict[str, str],
+            notes_is_markdown: bool,
+            description: typing.Dict[str, str],
+            description_is_markdown: bool,
+            short_description: typing.Dict[str, str],
+            short_description_is_markdown: bool,
+            fed_id: int,
+            component_id: int,
+            component: typing.Optional[components.Component]
+    ):
+        self = super(Instrument, cls).__new__(
+            cls,
+            id,
+            responsible_users,
+            users_can_create_log_entries,
+            users_can_view_log_entries,
+            create_log_entry_default,
+            is_hidden,
+            name,
+            notes,
+            notes_is_markdown,
+            description,
+            description_is_markdown,
+            short_description,
+            short_description_is_markdown,
+            fed_id,
+            component_id,
+            component
+        )
+        return self
+
+    @classmethod
+    def from_database(cls, instrument: models.Instrument) -> 'Instrument':
+        return Instrument(
+            id=instrument.id,
+            responsible_users=[
+                users.User.from_database(user)
+                for user in instrument.responsible_users
+            ],
+            users_can_create_log_entries=instrument.users_can_create_log_entries,
+            users_can_view_log_entries=instrument.users_can_view_log_entries,
+            create_log_entry_default=instrument.create_log_entry_default,
+            is_hidden=instrument.is_hidden,
+            name=instrument.name,
+            notes=instrument.notes,
+            notes_is_markdown=instrument.notes_is_markdown,
+            description=instrument.description,
+            description_is_markdown=instrument.description_is_markdown,
+            short_description=instrument.short_description,
+            short_description_is_markdown=instrument.short_description_is_markdown,
+            fed_id=instrument.fed_id,
+            component_id=instrument.component_id,
+            component=components.Component.from_database(instrument.component) if instrument.component is not None else None
+        )
+
+    def __repr__(self):
+        return f"<{type(self).__name__}(id={self.id!r})>"
 
 
 def create_instrument(
@@ -54,7 +145,7 @@ def create_instrument(
     if component_id is not None:
         get_component(component_id)
 
-    instrument = Instrument(
+    instrument = models.Instrument(
         description_is_markdown=description_is_markdown,
         users_can_create_log_entries=users_can_create_log_entries,
         users_can_view_log_entries=users_can_view_log_entries,
@@ -67,7 +158,7 @@ def create_instrument(
     )
     db.session.add(instrument)
     db.session.commit()
-    return instrument
+    return Instrument.from_database(instrument)
 
 
 def get_instruments() -> typing.List[Instrument]:
@@ -76,27 +167,50 @@ def get_instruments() -> typing.List[Instrument]:
 
     :return: the list of instruments
     """
-    return Instrument.query.all()
+    return [
+        Instrument.from_database(instrument)
+        for instrument in models.Instrument.query.all()
+    ]
 
 
-def get_instrument(instrument_id: int, component_id: typing.Optional[int] = None) -> Instrument:
+def get_mutable_instrument(
+        instrument_id: int,
+        component_id: typing.Optional[int] = None
+) -> models.Instrument:
     """
-    Returns the instrument with the given instrument ID.
+    Get the mutable instrument instance to perform changes in the database on.
 
     :param instrument_id: the ID of an existing instrument
+    :param component_id: the ID of an existing component, or None
     :return: the instrument
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
     if component_id is None:
-        instrument = Instrument.query.get(instrument_id)
+        instrument = models.Instrument.query.get(instrument_id)
     else:
-        instrument = Instrument.query.filter_by(fed_id=instrument_id, component_id=component_id).first()
+        instrument = models.Instrument.query.filter_by(fed_id=instrument_id, component_id=component_id).first()
     if instrument is None:
         if component_id is not None:
             get_component(component_id)
         raise errors.InstrumentDoesNotExistError()
     return instrument
+
+
+def get_instrument(
+        instrument_id: int,
+        component_id: typing.Optional[int] = None
+) -> Instrument:
+    """
+    Return the instrument with the given instrument ID.
+
+    :param instrument_id: the ID of an existing instrument
+    :param component_id: the ID of an existing component, or None
+    :return: the instrument
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
+    """
+    return Instrument.from_database(get_mutable_instrument(instrument_id, component_id))
 
 
 def update_instrument(
@@ -130,7 +244,7 @@ def update_instrument(
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
-    instrument = Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.get(instrument_id)
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     if description_is_markdown is not None:
@@ -165,7 +279,7 @@ def add_instrument_responsible_user(instrument_id: int, user_id: int) -> None:
     :raise errors.UserAlreadyResponsibleForInstrumentError: when the user is
         already responsible for the instrument
     """
-    instrument = Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.get(instrument_id)
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     user = users.get_mutable_user(user_id)
@@ -190,7 +304,7 @@ def remove_instrument_responsible_user(instrument_id: int, user_id: int) -> None
     :raise errors.UserNotResponsibleForInstrumentError: when the user is not
         responsible for the instrument
     """
-    instrument = Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.get(instrument_id)
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     user = users.get_mutable_user(user_id)
@@ -212,7 +326,7 @@ def set_instrument_responsible_users(instrument_id: int, user_ids: typing.List[i
     :raise errors.UserDoesNotExistError: when no user with one of the given
         user IDs exists
     """
-    instrument = Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.get(instrument_id)
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     instrument.responsible_users.clear()
@@ -238,9 +352,9 @@ def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.L
     instrument_id_query = db.session.query(instrument_user_association_table.c.instrument_id).filter(instrument_user_association_table.c.user_id == user_id)
     if exclude_hidden:
         instrument_id_query = instrument_id_query.join(
-            Instrument,
-            instrument_user_association_table.c.instrument_id == Instrument.id
-        ).filter(Instrument.is_hidden == db.false())
+            models.Instrument,
+            instrument_user_association_table.c.instrument_id == models.Instrument.id
+        ).filter(models.Instrument.is_hidden == db.false())
     instrument_ids = [
         instrument_user_association[0]
         for instrument_user_association in instrument_id_query.order_by(instrument_user_association_table.c.instrument_id).all()
