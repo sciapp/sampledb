@@ -100,7 +100,7 @@ def validate_schema(
     elif schema['type'] == 'object_reference':
         return _validate_object_reference_schema(schema, path)
     elif schema['type'] == 'tags':
-        return _validate_tags_schema(schema, path)
+        return _validate_tags_schema(schema, path, strict=strict)
     elif schema['type'] == 'hazards':
         return _validate_hazards_schema(schema, path)
     elif schema['type'] == 'user':
@@ -217,15 +217,16 @@ def _validate_array_schema(
     if 'default' in schema:
         if has_default_items:
             raise ValidationError('default and defaultItems are mutually exclusive', path)
-        validate(schema['default'], schema, path + ['(default)'])
+        validate(schema['default'], schema, path + ['(default)'], strict=strict)
 
 
-def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_tags_schema(schema: dict, path: typing.List[str], strict: bool = False) -> None:
     """
     Validates the given tags schema and raises a ValidationError if it is invalid.
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'default', 'dataverse_export', 'scicat_export', 'may_copy', 'style'}
@@ -238,7 +239,7 @@ def _validate_tags_schema(schema: dict, path: typing.List[str]) -> None:
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
     if 'default' in schema:
-        validate({'_type': 'tags', 'tags': schema['default']}, schema, path + ['(default)'])
+        validate({'_type': 'tags', 'tags': schema['default']}, schema, path + ['(default)'], strict=strict)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
@@ -369,7 +370,7 @@ def _validate_object_schema(
                 raise ValidationError('duplicate propertyOrder property: {}'.format(property_name), path)
 
     if 'default' in schema:
-        validate(schema['default'], schema)
+        validate(schema['default'], schema, strict=strict)
 
     if 'displayProperties' in schema:
         if not isinstance(schema['displayProperties'], list):
@@ -420,7 +421,7 @@ def _validate_object_schema(
                 if schema['properties'][property_name]['type'] not in ['text', 'quantity', 'datetime', 'bool']:
                     raise ValidationError('unsupported type in recipe', path + ['(recipes)', property_name])
                 if recipe['property_values'][property_name] is not None:
-                    validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name])
+                    validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name], strict=strict)
                 elif schema['properties'][property_name]['type'] == 'bool':
                     raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
 

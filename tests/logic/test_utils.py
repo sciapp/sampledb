@@ -6,6 +6,8 @@
 import pytest
 
 from sampledb.logic import utils, errors
+from sampledb.models import Tag
+from sampledb import db
 
 
 def test_parse_url():
@@ -192,3 +194,19 @@ def test_parse_url():
         utils.parse_url('http://example.com-')
     with pytest.raises(errors.InvalidURLError):
         utils.parse_url('http://[2001::85a3:08d3::8a2e:0370:7344]')
+
+
+def test_do_numeric_tags_exist():
+    assert not utils.do_numeric_tags_exist()
+    db.session.add(Tag(name='test'))
+    db.session.commit()
+    assert not utils.do_numeric_tags_exist()
+    db.session.add(Tag(name=''))
+    db.session.commit()
+    assert not utils.do_numeric_tags_exist()
+    db.session.add(Tag(name='123'))
+    db.session.commit()
+    assert utils.do_numeric_tags_exist()
+    db.session.delete(Tag.query.filter_by(name='123').first())
+    db.session.commit()
+    assert not utils.do_numeric_tags_exist()

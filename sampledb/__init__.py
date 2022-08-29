@@ -190,6 +190,11 @@ def create_app():
     if app.config['BUILD_TRANSLATIONS']:
         build_translations(app.config['PYBABEL_PATH'])
 
+    if app.config['ENABLE_NUMERIC_TAGS'] is None:
+        with app.app_context():
+            # if ENABLE_NUMERIC_TAGS is not set explicitly, only enable numeric tags if they already exist
+            app.config['ENABLE_NUMERIC_TAGS'] = sampledb.logic.utils.do_numeric_tags_exist()
+
     with app.app_context():
         sampledb.logic.utils.print_deprecation_warnings()
 

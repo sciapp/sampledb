@@ -24,3 +24,8 @@ There are various pages in SampleDB that require loading the names, IDs and othe
 In version 0.15 the configuration value LOAD_OBJECTS_IN_BACKGROUND was added to allow loading these objects asynchronously and inserting them in the relevant select fiels on the client side. To preserve existing behavior, this variable was set to be False by default, even though loading the objects asynchronously leads to performance improvements and does not negatively impact the user experience.
 
 As of version 0.21, LOAD_OBJECTS_IN_BACKGROUND is set to True by default and setting it to False is deprecated.
+
+Numeric Tags
+------------
+
+Numeric tags, which only consist of digits, can cause confusion because the search syntax ``#tag`` will conflict with the ``#id`` search syntax for object and user references. To avoid these, numeric tags will be disabled in new instances of SampleDB and those instances which have not used numeric tags in the past, as of version 0.21. The configuration variable ENABLE_NUMERIC_TAGS can be used to explicitly enable support for numeric tags and if an existing object uses numeric tags already, this value will be ``True`` by default. Otherwise it will be ``False`` by default.

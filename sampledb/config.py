@@ -517,6 +517,8 @@ TIMEZONE = None
 
 ENABLE_ANONYMOUS_USERS = False
 
+ENABLE_NUMERIC_TAGS = None
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -563,6 +565,7 @@ for config_name in {
     'ENABLE_BACKGROUND_TASKS',
     'ENABLE_MONITORINGDASHBOARD',
     'ENABLE_ANONYMOUS_USERS',
+    'ENABLE_NUMERIC_TAGS',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

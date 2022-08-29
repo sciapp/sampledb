@@ -1702,6 +1702,26 @@ def test_validate_tags_duplicate_tags():
         validate(instance, schema)
 
 
+def test_validate_numeric_tags(app):
+    schema = {
+        'title': 'Example',
+        'type': 'tags'
+    }
+    instance = {
+        '_type': 'tags',
+        'tags': ['123']
+    }
+    app.config['ENABLE_NUMERIC_TAGS'] = True
+    validate(instance, schema)
+    validate(instance, schema, strict=False)
+    validate(instance, schema, strict=True)
+    app.config['ENABLE_NUMERIC_TAGS'] = False
+    validate(instance, schema)
+    validate(instance, schema, strict=False)
+    with pytest.raises(ValidationError):
+        validate(instance, schema, strict=True)
+
+
 def test_validate_hazards():
     schema = {
         'title': 'Object',

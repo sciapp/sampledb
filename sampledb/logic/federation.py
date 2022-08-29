@@ -1412,7 +1412,7 @@ def parse_object(object_data, component):
             if schema is not None:
                 validate_schema(schema, strict=True)
                 if data is not None:
-                    validate(data, schema, allow_disabled_languages=True)
+                    validate(data, schema, allow_disabled_languages=True, strict=False)
         except errors.ValidationError:
             raise errors.InvalidDataExportError('Invalid data or schema in version {} of object #{} @ {}'.format(fed_version_id, fed_object_id, component.uuid))
         parsed_versions.append({

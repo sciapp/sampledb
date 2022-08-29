@@ -32,7 +32,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.action_permissions import get_sorted_actions_for_user
@@ -593,6 +593,7 @@ def get_num_deprecation_warnings():
     return sum([
         show_admin_local_storage_warning(),
         show_load_objects_in_background_warning(),
+        show_numeric_tags_warning(),
     ])
 
 
