@@ -105,7 +105,7 @@ def test_add_database_button_admin(flask_server, admin):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find(id='addComponentModal') is not None
-    assert document.find('button', text='Add Database') is not None
+    assert document.find('button', string='Add Database') is not None
 
 
 def test_add_database_button_user(flask_server, user):
@@ -115,7 +115,7 @@ def test_add_database_button_user(flask_server, user):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('div', id='addComponentModal') is None
-    assert document.find('button', text='Add Database') is None
+    assert document.find('button', string='Add Database') is None
 
 
 def test_get_component_user(flask_server, user, component):
@@ -125,7 +125,7 @@ def test_get_component_user(flask_server, user, component):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('div', id='editComponentModal') is None
-    assert document.find('button', text='Edit Database') is None
+    assert document.find('button', string='Edit Database') is None
     assert document.find('button', form='syncComponentForm') is None
     assert document.find('div', id='apiTokenDiv') is None
     assert document.find('div', id='createApiTokenModal') is None
@@ -140,7 +140,7 @@ def test_get_component_admin(flask_server, admin, component):
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('div', id='editComponentModal') is not None
-    assert document.find('button', text='Edit Database') is not None
+    assert document.find('button', string='Edit Database') is not None
     assert document.find('button', form='syncComponentForm') is not None
     assert document.find('div', id='apiTokenDiv') is not None
     assert document.find('div', id='createApiTokenModal') is not None

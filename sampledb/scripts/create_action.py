@@ -39,10 +39,11 @@ def main(arguments):
             'measurement': models.ActionType.MEASUREMENT,
             'simulation': models.ActionType.SIMULATION
         }.get(action_type_id, None)
-    try:
-        get_action_type(action_type_id)
-    except ActionTypeDoesNotExistError:
-        action_type_id = None
+    if action_type_id is not None:
+        try:
+            get_action_type(action_type_id)
+        except ActionTypeDoesNotExistError:
+            action_type_id = None
     if action_type_id is None:
         print("Error: action type must be one of the following:", file=sys.stderr)
         print(f'- "sample" (for {get_action_type_with_translation_in_language(models.ActionType.SAMPLE_CREATION, Language.ENGLISH).translation.name})', file=sys.stderr)

@@ -463,7 +463,7 @@ def get_objects_with_permissions(
         """
         parameters['object_ids'] = tuple(object_ids)
 
-    table = sqlalchemy.sql.alias(db.text(stmt).columns(
+    table = db.text(stmt).columns(
         objects.Objects._current_table.c.object_id,
         objects.Objects._current_table.c.version_id,
         objects.Objects._current_table.c.action_id,
@@ -474,7 +474,7 @@ def get_objects_with_permissions(
         objects.Objects._current_table.c.fed_object_id,
         objects.Objects._current_table.c.fed_version_id,
         objects.Objects._current_table.c.component_id
-    ))
+    ).subquery()
 
     return objects.get_objects(
         filter_func=filter_func,
