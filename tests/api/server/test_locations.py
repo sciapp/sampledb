@@ -57,7 +57,8 @@ def test_get_location(flask_server, auth, user):
         name={'en': "Example Location"},
         description={'en': "This is an example location"},
         parent_location_id=None,
-        user_id=user.id
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
     )
     r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 403
@@ -69,21 +70,24 @@ def test_get_location(flask_server, auth, user):
         'location_id': location.id,
         'name': "Example Location",
         'description': "This is an example location",
-        'parent_location_id': None
+        'parent_location_id': None,
+        'type_id': location.type_id
     }
 
     parent_location = sampledb.logic.locations.create_location(
         name={'en': "Example Location"},
         description={'en': "This is an example location"},
         parent_location_id=None,
-        user_id=user.id
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
     )
     sampledb.logic.locations.update_location(
         location_id=location.id,
         name={'en': "Example Location"},
         description={'en': "This is an example location"},
         parent_location_id=parent_location.id,
-        user_id=user.id
+        user_id=user.id,
+        type_id=location.type_id
     )
     r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
@@ -91,7 +95,8 @@ def test_get_location(flask_server, auth, user):
         'location_id': location.id,
         'name': "Example Location",
         'description': "This is an example location",
-        'parent_location_id': parent_location.id
+        'parent_location_id': parent_location.id,
+        'type_id': location.type_id
     }
 
 
@@ -104,7 +109,8 @@ def test_get_locations(flask_server, auth, user):
         name={'en': "Example Location"},
         description={'en': "This is an example location"},
         parent_location_id=None,
-        user_id=user.id
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
     )
     r = requests.get(flask_server.base_url + 'api/v1/locations/', auth=auth)
     assert r.status_code == 200
@@ -118,7 +124,8 @@ def test_get_locations(flask_server, auth, user):
             'location_id': location.id,
             'name': "Example Location",
             'description': "This is an example location",
-            'parent_location_id': None
+            'parent_location_id': None,
+            'type_id': location.type_id
         }
     ]
 
@@ -141,7 +148,8 @@ def test_get_location_assignment(flask_server, auth, user, action):
         name={'en': "Example Location"},
         description={'en': "This is an example location"},
         parent_location_id=None,
-        user_id=user.id
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
     )
     sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, {'en': "This is an example description"})
 
@@ -176,7 +184,8 @@ def test_get_location_assignments(flask_server, auth, user, action):
         name={'en': "Example Location"},
         description={'en': "This is an example location"},
         parent_location_id=None,
-        user_id=user.id
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
     )
     sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, {'en': "This is an example description"})
 

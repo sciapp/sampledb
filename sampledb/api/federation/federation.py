@@ -4,13 +4,13 @@ RESTful API for SampleDB
 """
 
 import datetime
-import flask
 
+import flask
 from flask_restful import Resource
 
 from ...logic import errors
 from ...logic.shares import get_shares_for_component
-from ...logic.federation import import_updates, shared_action_preprocessor, shared_user_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_object_preprocessor, shared_action_type_preprocessor, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
+from ...logic.federation import import_updates, shared_action_preprocessor, shared_user_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_object_preprocessor, shared_action_type_preprocessor, shared_location_type_preprocessor, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
 from ...api.federation.authentication import http_token_auth
 from ...logic.users import get_user_aliases_for_component
 
@@ -19,6 +19,7 @@ preprocessors = {
     'users': shared_user_preprocessor,
     'instruments': shared_instrument_preprocessor,
     'locations': shared_location_preprocessor,
+    'location_types': shared_location_type_preprocessor,
     'action_types': shared_action_type_preprocessor
 }
 
@@ -80,11 +81,11 @@ class Objects(Resource):
         shares = get_shares_for_component(component.id)
 
         result = {
-            'header': _get_header(component), 'actions': [], 'users': [], 'instruments': [], 'locations': [], 'objects': [], 'action_types': [], 'markdown_images': {}
+            'header': _get_header(component), 'actions': [], 'users': [], 'instruments': [], 'locations': [], 'location_types': [], 'objects': [], 'action_types': [], 'markdown_images': {}
         }
         refs = []
         markdown_images = {}
-        ref_ids = {'actions': [], 'users': [], 'instruments': [], 'locations': [], 'action_types': []}
+        ref_ids = {'actions': [], 'users': [], 'instruments': [], 'locations': [], 'location_types': [], 'action_types': []}
 
         for share in shares:
             obj = shared_object_preprocessor(share.object_id, share.policy, refs, markdown_images)

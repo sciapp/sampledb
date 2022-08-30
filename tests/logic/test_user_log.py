@@ -99,7 +99,7 @@ def test_get_user_related_object_ids_with_location_assignments(user1, user2, act
             'text': 'Name'
         }
     }, user_id=user1.id)
-    location = sampledb.logic.locations.create_location('test', '', None, user1.id)
+    location = sampledb.logic.locations.create_location('test', '', None, user1.id, type_id=sampledb.logic.locations.LocationType.LOCATION)
     assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {object1.id}
     assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == set()
     sampledb.logic.locations.create_notification_for_being_assigned_as_responsible_user = lambda *args, **kwargs: None

@@ -30,6 +30,7 @@ Currently in development.
 - Allow giving anonymous users READ permissions for objects
 - Added SciCat export
 - Allow declining object responsibility assignments
+- Implemented location types, location responsible users and a location log
 
 Version 0.20
 ------------

@@ -13,7 +13,7 @@ from sampledb.logic.components import add_component
 from sampledb.logic.files import create_url_file
 from sampledb.logic.instrument_translations import set_instrument_translation
 from sampledb.logic.languages import get_language_by_lang_code
-from sampledb.logic.locations import Location, create_fed_assignment
+from sampledb.logic.locations import Location, create_fed_assignment, create_location, create_location_type, LocationType
 from sampledb.logic.objects import create_object
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
@@ -152,39 +152,67 @@ def objects(user, action):
 
 
 @pytest.fixture
-def location():
-    location = models.Location(
+def location_type():
+    return create_location_type(
+        name={
+            'en': 'Location Type'
+        },
+        location_name_singular={
+            'en': ''
+        },
+        location_name_plural={
+            'en': ''
+        },
+        admin_only=False,
+        enable_parent_location=True,
+        enable_sub_locations=True,
+        enable_object_assignments=True,
+        enable_responsible_users=True,
+        show_location_log=True
+    )
+
+
+@pytest.fixture
+def location(user):
+    return create_location(
         name={
             'en': 'Location'
         },
         description={
             'en': ''
-        })
-    db.session.add(location)
-    db.session.commit()
-    return Location.from_database(location)
+        },
+        parent_location_id=None,
+        user_id=user.id,
+        type_id=LocationType.LOCATION
+    )
 
 
 @pytest.fixture
-def locations():
-    location1 = models.Location(
-        name={
-            'en': 'Location 1'
-        },
-        description={
-            'en': ''
-        })
-    location2 = models.Location(
-        name={
-            'en': 'Location 2'
-        },
-        description={
-            'en': ''
-        })
-    db.session.add(location1)
-    db.session.add(location2)
-    db.session.commit()
-    return Location.from_database(location1), Location.from_database(location2)
+def locations(user, location_type):
+    return [
+        create_location(
+            name={
+                'en': 'Location 1'
+            },
+            description={
+                'en': ''
+            },
+            parent_location_id=None,
+            user_id=user.id,
+            type_id=LocationType.LOCATION
+        ),
+        create_location(
+            name={
+                'en': 'Location 2'
+            },
+            description={
+                'en': ''
+            },
+            parent_location_id=None,
+            user_id=user.id,
+            type_id=location_type.id
+        )
+    ]
 
 
 @pytest.fixture
@@ -2092,3 +2120,45 @@ def test_get_fed_object_location_assignment_log_entries_for_object_missing_data(
         fed_logs.get_fed_object_location_assignment_log_entries_for_object(invalid_object_id, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         fed_logs.get_fed_object_location_assignment_log_entries_for_object(object_id, component.id + 1)
+
+
+def test_import_location_type(location_type, component):
+    start_time = datetime.datetime.utcnow()
+    assert len(models.FedLocationTypeLogEntry.query.all()) == 0
+    fed_logs.import_location_type(location_type.id, component.id)
+    log_entries = models.FedLocationTypeLogEntry.query.all()
+    assert len(log_entries) == 1
+    assert log_entries[0].type == models.FedLocationTypeLogEntryType.IMPORT_LOCATION_TYPE
+    assert log_entries[0].location_type_id == location_type.id
+    assert log_entries[0].component_id == component.id
+    assert log_entries[0].data == {}
+    assert log_entries[0].utc_datetime >= start_time
+    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+
+
+def test_update_location_type(location_type, component):
+    start_time = datetime.datetime.utcnow()
+    assert len(models.FedLocationTypeLogEntry.query.all()) == 0
+    fed_logs.update_location_type(location_type.id, component.id)
+    log_entries = models.FedLocationTypeLogEntry.query.all()
+    assert len(log_entries) == 1
+    assert log_entries[0].type == models.FedLocationTypeLogEntryType.UPDATE_LOCATION_TYPE
+    assert log_entries[0].location_type_id == location_type.id
+    assert log_entries[0].component_id == component.id
+    assert log_entries[0].data == {}
+    assert log_entries[0].utc_datetime >= start_time
+    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+
+
+def test_create_ref_location_type(location_type, component):
+    start_time = datetime.datetime.utcnow()
+    assert len(models.FedLocationTypeLogEntry.query.all()) == 0
+    fed_logs.create_ref_location_type(location_type.id, component.id)
+    log_entries = models.FedLocationTypeLogEntry.query.all()
+    assert len(log_entries) == 1
+    assert log_entries[0].type == models.FedLocationTypeLogEntryType.CREATE_REF_LOCATION_TYPE
+    assert log_entries[0].location_type_id == location_type.id
+    assert log_entries[0].component_id == component.id
+    assert log_entries[0].data == {}
+    assert log_entries[0].utc_datetime >= start_time
+    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()

@@ -16,21 +16,21 @@ from sampledb.logic.action_type_translations import get_action_type_translations
 from sampledb.logic.actions import get_action, get_action_type, create_action_type, create_action
 from sampledb.logic.comments import get_comment, create_comment, get_comments_for_object
 from sampledb.logic.components import get_component_by_uuid, add_component, get_component
-from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
-from sampledb.logic.federation import parse_action, parse_instrument, parse_user, parse_location, parse_action_type, shared_object_preprocessor, shared_action_preprocessor, shared_action_type_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_user_preprocessor, locations_check_for_cyclic_dependencies, parse_import_action, parse_import_action_type, parse_import_instrument, parse_import_user, parse_import_location, parse_import_comment, parse_import_object_location_assignment, parse_import_object, parse_import_file, update_shares, parse_import_markdown_image
+from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_location_type_log_entries_for_location_type, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
+from sampledb.logic.federation import parse_action, parse_instrument, parse_user, parse_location, parse_action_type, shared_object_preprocessor, shared_action_preprocessor, shared_action_type_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_user_preprocessor, locations_check_for_cyclic_dependencies, parse_import_action, parse_import_action_type, parse_import_instrument, parse_import_user, parse_import_location, parse_import_location_type, parse_import_comment, parse_import_object_location_assignment, parse_import_object, parse_import_file, update_shares, parse_import_markdown_image
 from sampledb.logic.files import get_file, create_url_file, get_files_for_object
 from sampledb.logic.groups import create_group
 from sampledb.logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, get_instrument_translation_for_instrument_in_language
 from sampledb.logic.instruments import get_instrument
 from sampledb.logic.languages import get_language, get_language_by_lang_code
-from sampledb.logic.locations import get_location, get_fed_object_location_assignment, create_location, get_object_location_assignments
+from sampledb.logic.locations import get_location, get_fed_object_location_assignment, create_location, get_object_location_assignments, get_location_type
 from sampledb.logic.object_permissions import get_object_permissions_for_users, get_object_permissions_for_groups, get_object_permissions_for_projects
 from sampledb.logic.objects import create_object, get_fed_object, get_objects, get_object, get_object_versions, insert_fed_object_version
 from sampledb.logic.projects import create_project
 from sampledb.logic.tags import get_tags
 from sampledb.logic.users import get_user
 from sampledb.models import User, UserType, Action, ActionType, Comment, ObjectLocationAssignment, File, UserFederationAlias, Instrument, Location, InstrumentTranslation, ActionTranslation, ActionTypeTranslation, Permissions, MarkdownImage
-from sampledb.models.fed_logs import FedActionLogEntryType, FedInstrumentLogEntryType, FedInstrumentLogEntry, FedActionLogEntry, FedUserLogEntryType, FedUserLogEntry, FedLocationLogEntry, FedLocationLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedActionTypeLogEntryType, FedActionTypeLogEntry, FedObjectLogEntry, FedObjectLogEntryType
+from sampledb.models.fed_logs import FedActionLogEntryType, FedInstrumentLogEntryType, FedInstrumentLogEntry, FedActionLogEntry, FedUserLogEntryType, FedUserLogEntry, FedLocationLogEntry, FedLocationLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedActionTypeLogEntryType, FedActionTypeLogEntry, FedObjectLogEntry, FedObjectLogEntryType
 from tests.logic.schemas.test_validate_schema import wrap_into_basic_schema
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
@@ -46,7 +46,8 @@ ACTION_DATA: typing.Dict[typing.Any, typing.Any] = {'action_id': 2, 'component_u
 ACTION_TYPE_DATA: typing.Dict[typing.Any, typing.Any] = {'action_type_id': 1, 'component_uuid': UUID_1, 'admin_only': False, 'show_in_navbar': True, 'show_on_frontpage': False, 'enable_labels': True, 'enable_files': True, 'enable_locations': True, 'enable_publications': False, 'enable_comments': True, 'enable_activity_log': True, 'enable_related_objects': True, 'enable_project_link': False, 'translations': {'en': {'name': 'Action Type', 'description': 'Description', 'object_name': 'Action Object', 'object_name_plural': 'Action Objects', 'view_text': 'Show Action Objects', 'perform_text': 'Perform Action Type Action'}, 'de': {'name': 'Aktionstyp', 'description': 'Beschreibung', 'object_name': 'Aktionsobjekt', 'object_name_plural': 'Aktionsobjekte', 'view_text': 'Zeige Aktionsobjekte', 'perform_text': 'Führe Aktionstyp-Aktion aus'}}}
 INSTRUMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'instrument_id': 4, 'component_uuid': UUID_1, 'description_is_markdown': False, 'short_description_is_markdown': False, 'notes_is_markdown': False, 'is_hidden': False, 'translations': {'en': {'name': 'Example Instrument', 'description': 'Test instrument description', 'short_description': 'Test instrument short description', 'notes': 'Notes'}, 'de': {'name': 'Beispielinstrument', 'description': 'Beschreibung des Testinstrumentes', 'short_description': 'Kurzbeschreibung eines Beispielinstrumentes', 'notes': 'Notizen'}}}
 USER_DATA: typing.Dict[typing.Any, typing.Any] = {'user_id': 3, 'component_uuid': UUID_1, 'name': 'Example User', 'email': 'example@example.com', 'orcid': '0000-0002-1825-0097', 'affiliation': 'FZJ', 'role': 'Role', 'extra_fields': {'website': 'example.com'}}
-LOCATION_DATA: typing.Dict[typing.Any, typing.Any] = {'location_id': 2, 'component_uuid': UUID_1, 'name': {'en': 'Location', 'de': 'Ort'}, 'description': {'en': 'Example description', 'de': 'Beispielbeschreibung'}, 'parent_location': {'location_id': 1, 'component_uuid': UUID_1}}
+LOCATION_DATA: typing.Dict[typing.Any, typing.Any] = {'location_id': 2, 'component_uuid': UUID_1, 'name': {'en': 'Location', 'de': 'Ort'}, 'description': {'en': 'Example description', 'de': 'Beispielbeschreibung'}, 'parent_location': {'location_id': 1, 'component_uuid': UUID_1}, 'location_type': {'location_type_id': -99, 'component_uuid': UUID_1}, 'responsible_users': [{'user_id': 3, 'component_uuid': UUID_1}]}
+LOCATION_TYPE_DATA: typing.Dict[typing.Any, typing.Any] = {'location_type_id': 5,  'component_uuid': UUID_1, 'name': {'en': 'Location Type'}, 'location_name_singular': {'en': 'Location'}, 'location_name_plural': {'en': 'Locations'}, 'admin_only': False, 'enable_parent_location': True, 'enable_sub_locations': True, 'enable_object_assignments': True, 'enable_responsible_users': True, 'show_location_log': True}
 COMMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'comment_id': 1, 'component_uuid': UUID_1, 'user': {'user_id': 1, 'component_uuid': UUID_1}, 'content': 'Comment Text', 'utc_datetime': '2021-05-03 05:04:54.729462'}
 FILE_DATA: typing.Dict[typing.Any, typing.Any] = {'file_id': 1, 'component_uuid': UUID_1, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'data': {"storage": "url", "url": "https://example.com/file"}, 'utc_datetime': '2021-05-03 05:04:54.516344'}
 OBJECT_LOCATION_ASSIGNMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'id': 1, 'component_uuid': UUID_1, 'user': {'user_id': 1, 'component_uuid': UUID_1}, 'responsible_user': {'user_id': 1, 'component_uuid': UUID_1}, 'location': {'location_id': 1, 'component_uuid': UUID_1}, 'description': {'en': 'Object location assignment description'}, 'confirmed': False, 'utc_datetime': '2021-05-03 05:04:54.123450'}
@@ -364,7 +365,7 @@ def complex_object(complex_action, users, ref_objects):
     )
     create_comment(object_id=object.id, user_id=user3.id, content='Comment')
     create_url_file(object_id=object.id, user_id=user4.id, url='http://example.com/file')
-    location = create_location(name={'en': 'Location'}, description={'en': 'Description'}, parent_location_id=None, user_id=user5.id)
+    location = create_location(name={'en': 'Location'}, description={'en': 'Description'}, parent_location_id=None, user_id=user5.id, type_id=logic.locations.LocationType.LOCATION)
     ola = ObjectLocationAssignment(object_id=object.object_id, location_id=location.id, responsible_user_id=user6.id, user_id=user7.id, description={'en': 'Assignment description'})
     db.session.add(ola)
     db.session.commit()
@@ -455,7 +456,7 @@ def user_alias_setup(user, component):
 @pytest.fixture
 def locations():
     data = [({'en': 'Location ' + str(i), 'de': 'Ort ' + str(i)}, {'en': 'Text describing location ' + str(i), 'de': 'Beschreibungstext für Ort ' + str(i)}) for i in range(1, 4)]
-    locations = [Location(name=name, description=description) for name, description in data]
+    locations = [Location(name=name, description=description, type_id=logic.locations.LocationType.LOCATION) for name, description in data]
     for location in locations:
         db.session.add(location)
     db.session.commit()
@@ -644,6 +645,25 @@ def _check_user(user_data):
         assert user.extra_fields == {}
 
 
+def _check_location_type(location_type_data):
+    component = get_component_by_uuid(location_type_data.get('component_uuid'))
+    assert component is not None
+
+    location_type = get_location_type(location_type_data.get('location_type_id'), component.id)
+    assert location_type is not None
+    assert location_type.fed_id == location_type_data.get('location_type_id')
+    assert location_type.component.id == component.id
+
+    assert location_type.name == location_type_data.get('name')
+    assert location_type.location_name_singular == location_type_data.get('location_name_singular')
+    assert location_type.location_name_plural == location_type_data.get('location_name_plural')
+    assert location_type.admin_only == location_type_data.get('admin_only')
+    assert location_type.enable_parent_location == location_type_data.get('enable_parent_location')
+    assert location_type.enable_sub_locations == location_type_data.get('enable_sub_locations')
+    assert location_type.enable_object_assignments == location_type_data.get('enable_object_assignments')
+    assert location_type.enable_responsible_users == location_type_data.get('enable_responsible_users')
+
+
 def _check_location(location_data):
     component = get_component_by_uuid(location_data.get('component_uuid'))
     assert component is not None
@@ -655,6 +675,12 @@ def _check_location(location_data):
 
     assert location.name == location_data.get('name')
     assert location.description == location_data.get('description')
+    location_type_data = location_data.get('location_type')
+    if location_type_data is None:
+        assert location.type_id == logic.locations.LocationType.LOCATION
+    else:
+        assert location.type.fed_id == location_type_data.get('location_type_id')
+        assert location.type.component.uuid == location_type_data.get('component_uuid')
 
     if location_data.get('parent_location') is not None:
         parent_location_component = get_component_by_uuid(location_data['parent_location'].get('component_uuid'))
@@ -662,6 +688,13 @@ def _check_location(location_data):
         parent_location = get_location(location_data['parent_location'].get('location_id'), parent_location_component.id)
         assert parent_location is not None
         assert location.parent_location_id == parent_location.id
+
+    if location_data.get('responsible_users') is not None:
+        for responsible_user_data in location_data['responsible_users']:
+            responsible_user_component = get_component_by_uuid(responsible_user_data.get('component_uuid'))
+            assert responsible_user_component is not None
+            responsible_user = get_user(responsible_user_data.get('user_id'), responsible_user_component.id)
+            assert responsible_user is not None
 
 
 def _check_comment(comment_data):
@@ -2204,6 +2237,67 @@ def test_import_user_no_affiliation(component):
     assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
 
 
+def test_import_location_type(component):
+    num_default_location_types = len(logic.locations.get_location_types())
+    location_type_data = deepcopy(LOCATION_TYPE_DATA)
+    start_datetime = datetime.datetime.utcnow()
+    location_type = parse_import_location_type(location_type_data, component)
+    _check_location_type(location_type_data)
+
+    assert len(logic.locations.get_location_types()) == num_default_location_types + 1
+
+    log_entries = get_fed_location_type_log_entries_for_location_type(location_type.id)
+    assert len(log_entries) == 1
+    assert log_entries[0].type == FedLocationTypeLogEntryType.IMPORT_LOCATION_TYPE
+    assert log_entries[0].component_id == location_type.component.id
+    assert log_entries[0].location_type_id == location_type.id
+    assert log_entries[0].utc_datetime >= start_datetime
+    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+
+
+def test_update_location_type(component):
+    num_default_location_types = len(logic.locations.get_location_types())
+    old_location_type_data = deepcopy(LOCATION_TYPE_DATA)
+    start_datetime = datetime.datetime.utcnow()
+    old_location_type = parse_import_location_type(old_location_type_data, component)
+
+    location_type_data = deepcopy(LOCATION_TYPE_DATA)
+    location_type_data['name'] = {'en': 'Updated Location Type', 'de': 'Aktualisierter Ortstyp'}
+    location_type_data['admin_only'] = not old_location_type.admin_only
+
+    location_type = parse_import_location_type(location_type_data, component)
+    _check_location_type(location_type_data)
+
+    assert old_location_type.id == location_type.id
+    assert len(logic.locations.get_location_types()) == num_default_location_types + 1
+
+    log_entries = get_fed_location_type_log_entries_for_location_type(location_type.id)
+    assert len(log_entries) == 2
+    assert log_entries[1].type == FedLocationTypeLogEntryType.IMPORT_LOCATION_TYPE
+    assert log_entries[1].component_id == location_type.component.id
+    assert log_entries[1].location_type_id == location_type.id
+    assert log_entries[1].utc_datetime >= start_datetime
+    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].type == FedLocationTypeLogEntryType.UPDATE_LOCATION_TYPE
+    assert log_entries[0].component_id == location_type.component.id
+    assert log_entries[0].location_type_id == location_type.id
+    assert log_entries[0].utc_datetime >= start_datetime
+    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
+
+
+def test_parse_location_type_invalid_data():
+    num_default_location_types = len(logic.locations.get_location_types())
+    _invalid_component_uuid_test(LOCATION_TYPE_DATA, parse_location)
+    _invalid_id_test(LOCATION_TYPE_DATA, 'location_type_id', parse_location)
+    _invalid_translation_test(LOCATION_TYPE_DATA, 'name', parse_location)
+    _invalid_translation_test(LOCATION_TYPE_DATA, 'location_name_singular', parse_location)
+    _invalid_translation_test(LOCATION_TYPE_DATA, 'location_name_plural', parse_location)
+
+    assert len(logic.locations.get_location_types()) == num_default_location_types
+    assert len(FedLocationTypeLogEntry.query.all()) == 0
+
+
 def test_import_location(component):
     location_data = deepcopy(LOCATION_DATA)
     start_datetime = datetime.datetime.utcnow()
@@ -2340,6 +2434,24 @@ def test_import_location_no_parent_location(component):
     assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
 
 
+def test_import_location_no_location_type(component):
+    location_data = deepcopy(LOCATION_DATA)
+    del location_data['location_type']
+    start_datetime = datetime.datetime.utcnow()
+    location = parse_import_location(location_data, component)
+    _check_location(location_data)
+
+    assert len(logic.locations.get_locations()) == 2    # including parent
+
+    log_entries = get_fed_location_log_entries_for_location(location.id)
+    assert len(log_entries) == 1
+    assert log_entries[0].type == FedLocationLogEntryType.IMPORT_LOCATION
+    assert log_entries[0].component_id == location.component.id
+    assert log_entries[0].location_id == location.id
+    assert log_entries[0].utc_datetime >= start_datetime
+    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+
+
 def test_locations_check_for_cyclic_dependencies():
     location_data_parent = deepcopy(LOCATION_DATA)
     parsed_parent = parse_location(location_data_parent)
@@ -2402,13 +2514,15 @@ def test_locations_check_for_cyclic_dependencies_cyclic_including_local_location
         name={'en': 'Location 1'},
         description={},
         user_id=user.id,
-        parent_location_id=fed_location_1.id
+        parent_location_id=fed_location_1.id,
+        type_id=logic.locations.LocationType.LOCATION
     )   # l1
     location_2 = create_location(
         name={'en': 'Location 1'},
         description={},
         user_id=user.id,
-        parent_location_id=location_1.id
+        parent_location_id=location_1.id,
+        type_id=logic.locations.LocationType.LOCATION
     )   # l2
 
     # import new location f2, which is child of l2
@@ -3293,7 +3407,8 @@ def test_shared_location_preprocessor(locations, component):
     assert processed_location['parent_location'].get('component_uuid') == flask.current_app.config['FEDERATION_UUID']
 
     assert ('locations', parent_location.id) in refs
-    assert len(refs) == 1
+    assert ('location_types', logic.locations.LocationType.LOCATION) in refs
+    assert len(refs) == 2
     assert markdown_images == {}
 
 

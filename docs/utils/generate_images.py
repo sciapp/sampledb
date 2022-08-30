@@ -204,13 +204,9 @@ def activity_log(base_url, driver, object):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log_dontblock.png', (0, heading.location['y'] - y_offset, width, min(activity_log.location['y'] - y_offset + activity_log.rect['height'], max_height)))
 
 
-def locations(base_url, driver, object):
+def location_assignments(base_url, driver, object, room_42):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    campus = sampledb.logic.locations.create_location({"en": "Campus A"}, {"en": ""}, None, user.id)
-    b048 = sampledb.logic.locations.create_location({"en": "Building 1"}, {"en": ""}, campus.id, user.id)
-    r139b = sampledb.logic.locations.create_location({"en": "Room 42"}, {"en": ""}, b048.id, user.id)
-    sampledb.logic.locations.assign_location_to_object(object.id, r139b.id, None, user.id, {"en": "Shelf C"})
-
+    sampledb.logic.locations.assign_location_to_object(object.id, room_42.id, None, user.id, {"en": "Shelf C"})
     width = 1280
     max_height = 1000
     resize_for_screenshot(driver, width, max_height)
@@ -223,7 +219,23 @@ def locations(base_url, driver, object):
         assert False
     y_offset = scroll_to_element(driver, heading)
     location_form = driver.find_element(By.ID, 'assign-location-form')
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height']) - y_offset))
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/location_assignments.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, location_form.location['y'] + location_form.rect['height']) - y_offset))
+
+
+def locations(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'locations/')
+    main = driver.find_elements(By.ID, 'main')[0]
+    for last_location in driver.find_elements(By.TAG_NAME, 'a'):
+        if 'Box Demo-3' in last_location.text:
+            break
+    else:
+        assert False
+    y_offset = scroll_to_element(driver, main)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/locations.png', (0, main.location['y'] - y_offset, width, min(main.location['y'] + max_height, last_location.location['y'] + last_location.rect['height']) - y_offset))
 
 
 def unread_notification_icon(base_url, driver):
@@ -599,6 +611,62 @@ try:
         sampledb.logic.component_authentication.add_token_authentication(component.id, secrets.token_hex(32), 'Export Token')
         sampledb.logic.component_authentication.add_own_token_authentication(component.id, secrets.token_hex(32), 'Import Token')
 
+        campus = sampledb.logic.locations.create_location(
+            name={"en": "Campus A"},
+            description={"en": ""},
+            parent_location_id=None,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        building_1 = sampledb.logic.locations.create_location(
+            name={"en": "Building 1"},
+            description={"en": ""},
+            parent_location_id=campus.id,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        room_42 = sampledb.logic.locations.create_location(
+            name={"en": "Room 42"},
+            description={"en": "Demo Laboratory"},
+            parent_location_id=building_1.id,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        room_43 = sampledb.logic.locations.create_location(
+            name={"en": "Room 43"},
+            description={"en": "Demo Storage Room"},
+            parent_location_id=building_1.id,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        sampledb.logic.locations.create_location(
+            name={"en": "Box Demo-1"},
+            description={"en": ""},
+            parent_location_id=room_43.id,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        sampledb.logic.locations.create_location(
+            name={"en": "Box Demo-2"},
+            description={"en": ""},
+            parent_location_id=room_43.id,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        sampledb.logic.locations.create_location(
+            name={"en": "Box Demo-3"},
+            description={"en": ""},
+            parent_location_id=room_43.id,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        for location in sampledb.logic.locations.get_locations():
+            sampledb.logic.location_permissions.set_user_location_permissions(
+                location_id=location.id,
+                user_id=user.id,
+                permissions=sampledb.models.Permissions.GRANT
+            )
+
         os.makedirs('docs/static/img/generated', exist_ok=True)
         options = Options()
         options.add_argument("--lang=en-US")
@@ -624,7 +692,8 @@ try:
                 labels(flask_server.base_url, driver, object)
                 advanced_search_by_property(flask_server.base_url, driver, object)
                 advanced_search_visualization(flask_server.base_url, driver)
-                locations(flask_server.base_url, driver, object)
+                location_assignments(flask_server.base_url, driver, object, room_42)
+                locations(flask_server.base_url, driver)
                 schema_editor(flask_server.base_url, driver)
                 unread_notification_icon(flask_server.base_url, driver)
                 disable_schema_editor(flask_server.base_url, driver)

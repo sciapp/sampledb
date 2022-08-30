@@ -408,3 +408,7 @@ class ObjectLocationAssignmentAlreadyConfirmedError(Exception):
 
 class ObjectLocationAssignmentAlreadyDeclinedError(Exception):
     pass
+
+
+class LocationTypeDoesNotExistError(Exception):
+    pass

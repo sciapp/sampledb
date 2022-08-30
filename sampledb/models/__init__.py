@@ -14,6 +14,7 @@ from . import instruments
 from . import instrument_log_entries
 from . import instrument_translation
 from . import locations
+from . import location_log
 from . import location_permissions
 from . import markdown_to_html_cache
 from . import markdown_images
@@ -36,14 +37,15 @@ from .component_authentication import ComponentAuthentication, OwnComponentAuthe
 from .dataverse_export import DataverseExport
 from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
 from .favorites import FavoriteAction, FavoriteInstrument
-from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType
+from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType
 from .files import File
 from .groups import Group
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .instrument_translation import InstrumentTranslation
 from .languages import Language
-from .locations import Location, ObjectLocationAssignment
+from .locations import Location, ObjectLocationAssignment, LocationType
+from .location_log import LocationLogEntry, LocationLogEntryType
 from .location_permissions import AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
 from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
@@ -75,6 +77,7 @@ __all__ = [
     'instrument_log_entries',
     'instrument_translation',
     'locations',
+    'location_log',
     'location_permissions',
     'markdown_to_html_cache',
     'markdown_images',
@@ -109,6 +112,9 @@ __all__ = [
     'InstrumentLogEntry',
     'Language',
     'Location',
+    'LocationType',
+    'LocationLogEntry',
+    'LocationLogEntryType',
     'AllUserLocationPermissions',
     'UserLocationPermissions',
     'GroupLocationPermissions',
@@ -160,6 +166,8 @@ __all__ = [
     'FedObjectLogEntryType',
     'FedLocationLogEntry',
     'FedLocationLogEntryType',
+    'FedLocationTypeLogEntry',
+    'FedLocationTypeLogEntryType',
     'FedActionLogEntry',
     'FedActionLogEntryType',
     'FedActionTypeLogEntry',

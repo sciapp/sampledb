@@ -5,6 +5,7 @@
 {% if Permissions.READ in location_permissions %}
 <a href="{{ url_for('.location', location_id=location.id) }}">{{ location | get_location_name(False) }}</a>
 {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
+{% include "locations/responsible_users.html" %}
 {% if location.description %}
   <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description | get_translated_text }}</pre>
 {% endif %}

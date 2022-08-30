@@ -35,7 +35,7 @@
   {{ permissions_form.csrf_token }}
 {% endif %}
 <table class="table table-striped">
-  {% set show_special_groups = show_administrators or show_instrument_scientists or show_all_users %}
+  {% set show_special_groups = show_administrators or show_instrument_scientists or show_responsible_users or show_all_users %}
   {% if show_special_groups %}
   <thead>
     {{ permissions_table_header(_('Special Groups'), true) }}
@@ -46,6 +46,12 @@
     <tr>
       <td style="vertical-align: middle">{{ _('Administrators') }}</td>
       {{ permissions_table_fields('administrators', Permissions.GRANT, [Permissions.GRANT], true, none) }}
+    </tr>
+    {% endif %}
+    {% if show_responsible_users %}
+    <tr>
+      <td style="vertical-align: middle">{{ _('Responsible Users') }}</td>
+      {{ permissions_table_fields('responsible_users', Permissions.GRANT, [Permissions.GRANT], true, none) }}
     </tr>
     {% endif %}
     {% if show_instrument_scientists %}

@@ -17,6 +17,7 @@ User Guide
     user_guide/schemas.rst
     user_guide/objects.rst
     user_guide/search.rst
+    user_guide/locations.rst
     user_guide/export.rst
     user_guide/citations.rst
 

@@ -11,7 +11,7 @@ from .comments import ObjectComment, ObjectComments
 from .files import ObjectFile, ObjectFiles
 from .instruments import Instrument, Instruments
 from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
-from .locations import Location, Locations, ObjectLocationAssignment, ObjectLocationAssignments
+from .locations import Location, Locations, ObjectLocationAssignment, ObjectLocationAssignments, LocationType, LocationTypes
 from .object_permissions import UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions, AuthenticatedUserObjectPermissions, AnonymousUserObjectPermissions
 from .users import CurrentUser, User, Users
 
@@ -38,6 +38,8 @@ api.add_resource(InstrumentLogCategories, '/api/v1/instruments/<int:instrument_i
 api.add_resource(InstrumentLogCategory, '/api/v1/instruments/<int:instrument_id>/log_categories/<int:category_id>', endpoint='api.instrument_log_category')
 api.add_resource(Locations, '/api/v1/locations/', endpoint='api.locations')
 api.add_resource(Location, '/api/v1/locations/<int:location_id>', endpoint='api.location')
+api.add_resource(LocationTypes, '/api/v1/location_types/', endpoint='api.location_types')
+api.add_resource(LocationType, '/api/v1/location_types/<int(signed=True):location_type_id>', endpoint='api.location_type')
 api.add_resource(ObjectFiles, '/api/v1/objects/<int:object_id>/files/', endpoint='api.object_files')
 api.add_resource(ObjectFile, '/api/v1/objects/<int:object_id>/files/<int:file_id>', endpoint='api.object_file')
 api.add_resource(ObjectLocationAssignments, '/api/v1/objects/<int:object_id>/locations/', endpoint='api.object_location_assignments')
