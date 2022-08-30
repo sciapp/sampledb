@@ -13,7 +13,7 @@ variables:
 
 test:
   stage: test
-  image: ubuntu:20.04
+  image: debian:11
   services:
     - postgres:12
   tags:
@@ -21,7 +21,7 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0 gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext
     - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";

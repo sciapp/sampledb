@@ -14,7 +14,7 @@ cffi==1.15.0
 charset-normalizer==2.0.12
 cheroot==8.6.0
 CherryPy==18.6.1
-chromedriver-binary-auto==0.1.2
+chromedriver-binary-auto==0.2.0
 click==8.1.3
 colorhash==1.0.4
 configparser==5.2.0
