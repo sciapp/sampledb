@@ -26,6 +26,7 @@ from . import favicon
 from . import index
 from . import instruments
 from . import locations
+from . import location_types
 from . import markdown_images
 from . import languages
 from . import objects
@@ -54,6 +55,7 @@ __all__ = [
     'index',
     'instruments',
     'locations',
+    'location_types',
     'markdown_images',
     'languages',
     'objects',

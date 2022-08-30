@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-07-22 17:04+0200\n"
+"POT-Creation-Date: 2022-08-11 14:07+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -270,6 +270,9 @@ msgstr ""
 "Das Aktualisieren der Sprache ist fehlgeschlagen. Bitte versuchen Sie es "
 "erneut."
 
+msgid "Editing imported location types is not yet supported."
+msgstr "Das Bearbeiten importierter Ortstypen wird noch nicht unterstützt."
+
 msgid "Only administrators can edit locations."
 msgstr "Nur Administratoren können Orte bearbeiten."
 
@@ -339,6 +342,21 @@ msgstr "Bitte geben Sie zumindest einen englischen Namen ein."
 
 msgid "One of these languages is not supported."
 msgstr "Eine dieser Sprachen wird nicht unterstützt."
+
+msgid "Please select a valid location type."
+msgstr "Bitte wählen Sie einen gültigen Ortstyp aus."
+
+msgid "Only administrators may create locations of this type."
+msgstr "Nur Administratoren können Orte dieses Typs erstellen."
+
+msgid "Locations of this type may not have a parent location."
+msgstr "Orte dieses Typs dürfen keinen Eltern-Ort haben."
+
+msgid "This location may not have sub locations."
+msgstr "Dieser Ort darf keine Unter-Orte haben."
+
+msgid "This location may not have responsible users."
+msgstr "Dieser Ort darf keine verantwortlichen Nutzer haben."
 
 msgid "The location was created successfully."
 msgstr "Der Ort wurde erfolgreich erstellt."
@@ -1212,6 +1230,9 @@ msgstr "Andere Datenbanken"
 
 msgid "Action Types"
 msgstr "Aktionstypen"
+
+msgid "Location Types"
+msgstr "Ortstypen"
 
 msgid "Languages"
 msgstr "Sprachen"
@@ -3387,6 +3408,100 @@ msgstr "Eine neue Sprache hinzufügen"
 msgid "Disabled for input"
 msgstr "Für Eingabe deaktiviert"
 
+msgid "Location Type"
+msgstr "Ortstyp"
+
+msgid "Location Name (Singular)"
+msgstr "Ortsname (Singular)"
+
+msgid "Location Name (Plural)"
+msgstr "Ortsname (Plural)"
+
+msgid "Yes, only administrators can create locations of this type"
+msgstr "Ja, nur Administratoren können Orte dieses Typs erstellen"
+
+msgid "No, all users can create locations of this type"
+msgstr "Nein, alle Nutzer können Orte dieses Typs erstellen"
+
+msgid "Enable Parent Location"
+msgstr "Eltern-Ort aktivieren"
+
+msgid "Yes, locations of this type may have a parent location"
+msgstr "Ja, Orte dieses Typs dürfen einen Eltern-Ort haben"
+
+msgid "No, locations of this type may not have a parent location"
+msgstr "Nein, Orte dieses Typs dürfen keinen Eltern-Ort haben"
+
+msgid "Enable Sub-Locations"
+msgstr "Unter-Orte aktivieren"
+
+msgid "Yes, locations of this type may have sub-locations"
+msgstr "Ja, Orte dieses Typs dürfen Unter-Orte haben"
+
+msgid "No, locations of this type may not have sub-locations"
+msgstr "Nein, Orte dieses Typs dürfen keine Unter-Orte haben"
+
+msgid "Enable Object Assignemnts"
+msgstr "Ortszuweisungen aktivieren"
+
+msgid "Yes, objects may be assigned to locations of this type"
+msgstr "Ja, Orten dieses Typs dürfen Objekte zugewiesen werden"
+
+msgid "No, objects may not be assigned to locations of this type"
+msgstr "Nein, Orten dieses Typs dürfen keine Objekte zugewiesen werden"
+
+msgid "Enable Responsible Users"
+msgstr "Verantwortliche Nutzer aktivieren"
+
+msgid "Yes, locations of this type may have responsible users"
+msgstr "Ja, Orte dieses Typs dürfen verantwortliche Nutzer haben"
+
+msgid "No, locations of this type may not have responsible users"
+msgstr "Nein, Orte dieses Typs dürfen keine verantwortlichen Nutzer haben"
+
+msgid "Show Location Log"
+msgstr "Zeige Orts-Log"
+
+msgid "Yes, show a log for locations of this type"
+msgstr "Ja, zeige ein Log für Orte dieses Typs"
+
+msgid "No, do not show a log for locations of this type"
+msgstr "Nein, zeige kein Log für Orte dieses Typs"
+
+msgid "Modify the settings for this location type."
+msgstr "Einstellungen für diesen Ortstyp bearbeiten."
+
+msgid "Edit Location Type"
+msgstr "Ortstyp bearbeiten"
+
+msgid "Only administrators can create locations of this type"
+msgstr "Nur Administratoren können Orte dieses Typs erstellen"
+
+msgid "Locations of this type may have a parent location"
+msgstr "Orte dieses Typs dürfen einen Eltern-Ort haben"
+
+msgid "Locations of this type may have sub-locations"
+msgstr "Orte dieses Typs dürfen Unter-Orte haben"
+
+msgid "Objects may be assigned to locations of this type"
+msgstr "Objekte dürfen Orten dieses Typs zugewiesen werden"
+
+msgid "Locations of this type may have responsible users"
+msgstr "Orte dieses Typs dürfen verantwortliche Nutzer haben"
+
+msgid "Show a log for locations of this type"
+msgstr "Zeige ein Log für Orte dieses Typs"
+
+msgid ""
+"Location Types represent different kinds of locations, such as rooms or "
+"containers."
+msgstr ""
+"Ortstypen repräsentieren verschiedene Arten von Orten, wie z.B. Räume "
+"oder Container."
+
+msgid "Create Location Type"
+msgstr "Ortstyp erstellen"
+
 msgid "Sub-Locations"
 msgstr "Unter-Orte"
 
@@ -3403,6 +3518,113 @@ msgstr "Unter-Ort erstellen"
 msgid "Edit the permissions for this location."
 msgstr "Berechtigungen für diesen Ort bearbeiten."
 
+msgid "Location Log"
+msgstr "Orts-Log"
+
+#, python-format
+msgid "User #%(user_id)s"
+msgstr "Nutzer #%(user_id)s"
+
+msgid "An unknown user"
+msgstr "Ein unbekannter Nutzer"
+
+#, python-format
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> created the location."
+msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat den Ort erstellt."
+
+msgid "The location was created."
+msgstr "Der Ort wurde erstellt."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> updated the information for "
+"this location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Informationen für "
+"diesen Ort aktualisiert."
+
+msgid "The information for this location was updated."
+msgstr "Die Informationen für diesen Ort wurden aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned <a "
+"href=\"%(object_url)s\">%(object_name)s</a> to this location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
+"href=\"%(object_url)s\">%(object_name)s</a> diesem Ort zugewiesen."
+
+#, python-format
+msgid "%(object_name)s (#%(object_id)s)"
+msgstr "%(object_name)s (#%(object_id)s)"
+
+#, python-format
+msgid "Object #%(object_id)s"
+msgstr "Objekt #%(object_id)s"
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned an object to this "
+"location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat diesem Ort ein Objekt "
+"zugewiesen."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> updated the information for <a"
+" href=\"%(object_url)s\">%(object_name)s</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Informationen für <a "
+"href=\"%(object_url)s\">%(object_name)s</a> aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> updated the information for an"
+" object at this location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Information für ein "
+"Objekt an diesem Ort aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned <a "
+"href=\"%(object_url)s\">%(object_name)s</a> to <a "
+"href=\"%(location_url)s\">%(location_name)s</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
+"href=\"%(object_url)s\">%(object_name)s</a> zu dem Ort <a "
+"href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
+
+#, python-format
+msgid "%(location_name)s (#%(location_id)s)"
+msgstr "%(location_name)s (#%(location_id)s)"
+
+#, python-format
+msgid "Location #%(location_id)s"
+msgstr "Ort #%(location_id)s"
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned <a "
+"href=\"%(object_url)s\">%(object_name)s</a> to a different location or to"
+" a responsible user."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
+"href=\"%(object_url)s\">%(object_name)s</a> einem anderen Ort oder einem "
+"verantwortlichen Nutzer zugewiesen."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned an object from this "
+"location to a different location or to a responsible user."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat ein Objekt von diesem Ort "
+"einem anderen Ort oder einem verantwortlichen Nutzer zugewiesen."
+
+msgid "Unknown event"
+msgstr "Unbekanntes Ereignis"
+
 msgid ""
 "Please verify that the location you want to create does not exist already"
 " to avoid duplicates."
@@ -3416,11 +3638,20 @@ msgstr "Bitte geben Sie einen Ortsnamen ein."
 msgid "Please enter a shorter location name (at most 100 characters)."
 msgstr "Bitte geben Sie einen kürzeren Ortsnamen an (höchstens 100 Zeichen)."
 
+msgid "No location type selected"
+msgstr "Kein Ortstyp ausgewählt"
+
 msgid "Parent Location"
 msgstr "Eltern-Ort"
 
 msgid "No location selected"
 msgstr "Kein Ort ausgewählt"
+
+msgid "The previous parent location may not have any sub-locations."
+msgstr "Der bisherige Eltern-Ort darf keine Unter-Orte haben."
+
+msgid "Responsible Users"
+msgstr "Verantwortliche Nutzer"
 
 msgid "Location Permissions"
 msgstr "Ortsberechtigungen"
@@ -3450,6 +3681,9 @@ msgid ""
 msgstr ""
 "Manche Orte werden nicht angezeigt, weil Ihnen die benötigten "
 "Berechtigungen fehlen, um diese zu betrachten."
+
+msgid "Responsible Users:"
+msgstr "Verantwortliche Nutzer:"
 
 #, python-format
 msgid "Export to %(dataverse_name)s"
@@ -4521,9 +4755,6 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
 "Objekts mit <a href=\"%(project_url)s\">%(project_name)s "
 "(#%(project_id)s)</a> entfernt."
-
-msgid "Unknown event"
-msgstr "Unbekanntes Ereignis"
 
 #, python-format
 msgid ""

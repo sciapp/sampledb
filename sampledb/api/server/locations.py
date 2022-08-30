@@ -17,7 +17,15 @@ def location_to_json(location: locations.Location):
         'location_id': location.id,
         'name': location.name.get('en', None) if location.name else None,
         'description': location.description.get('en', ''),
-        'parent_location_id': location.parent_location_id
+        'parent_location_id': location.parent_location_id,
+        'type_id': location.type_id
+    }
+
+
+def location_type_to_json(location_type: locations.LocationType):
+    return {
+        'location_type_id': location_type.id,
+        'name': location_type.name.get('en', None) if location_type.name else None,
     }
 
 
@@ -64,6 +72,27 @@ class Locations(Resource):
                 user_id=flask.g.user.id,
                 permissions=location_permissions.Permissions.READ
             )
+        ]
+
+
+class LocationType(Resource):
+    @multi_auth.login_required
+    def get(self, location_type_id: int):
+        try:
+            location_type = locations.get_location_type(location_type_id=location_type_id)
+        except errors.LocationTypeDoesNotExistError:
+            return {
+                "message": "location type {} does not exist".format(location_type_id)
+            }, 404
+        return location_type_to_json(location_type)
+
+
+class LocationTypes(Resource):
+    @multi_auth.login_required
+    def get(self):
+        return [
+            location_type_to_json(location_type)
+            for location_type in locations.get_location_types()
         ]
 
 

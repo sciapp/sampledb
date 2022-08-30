@@ -9,7 +9,9 @@ import flask
 
 from . import locations, users
 from ..models import Permissions, AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
+from ..models.locations import location_user_association_table
 from .permissions import ResourcePermissions
+from .. import db
 
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -49,6 +51,10 @@ def get_user_location_permissions(
         # more than READ permissions
         if not (include_admin_permissions and user.has_admin_permissions):
             max_permissions = min(max_permissions, Permissions.READ)
+
+    # apply responsible user permissions
+    if db.session.query(location_user_association_table).filter(location_user_association_table.c.location_id == location_id).filter(location_user_association_table.c.user_id == user_id).first() is not None:
+        return min(Permissions.GRANT, max_permissions)
 
     # resource independent permissions
     permissions = location_permissions.get_permissions_for_user(

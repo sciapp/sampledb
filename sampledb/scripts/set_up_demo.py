@@ -511,10 +511,10 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.object_permissions.set_object_permissions_for_all_users(plotly_object.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
-        campus = sampledb.logic.locations.create_location({"en": "Campus"}, {"en": "Max Mustermann Campus"}, None, instrument_responsible_user.id)
-        building_a = sampledb.logic.locations.create_location({"en": "Building A", "de": "Gebäude A"}, {"en": "Building A on Max Mustermann Campus", "de": "Gebäude A auf dem Max Mustermann Campus"}, campus.id, instrument_responsible_user.id)
-        room_42a = sampledb.logic.locations.create_location({"en": "Room 42a", "de": "Raum 42a"}, {"en": "Building A, Room 42a", "de": "Gebäude A, Raum 42a"}, building_a.id, instrument_responsible_user.id)
-        room_42b = sampledb.logic.locations.create_location({"en": "Room 42b", "de": "Raum 42b"}, {"en": "Building A, Room 42b", "de": "Gebäude A, Raum 42b"}, building_a.id, instrument_responsible_user.id)
+        campus = sampledb.logic.locations.create_location({"en": "Campus"}, {"en": "Max Mustermann Campus"}, None, instrument_responsible_user.id, type_id=sampledb.models.LocationType.LOCATION)
+        building_a = sampledb.logic.locations.create_location({"en": "Building A", "de": "Gebäude A"}, {"en": "Building A on Max Mustermann Campus", "de": "Gebäude A auf dem Max Mustermann Campus"}, campus.id, instrument_responsible_user.id, type_id=sampledb.models.LocationType.LOCATION)
+        room_42a = sampledb.logic.locations.create_location({"en": "Room 42a", "de": "Raum 42a"}, {"en": "Building A, Room 42a", "de": "Gebäude A, Raum 42a"}, building_a.id, instrument_responsible_user.id, type_id=sampledb.models.LocationType.LOCATION)
+        room_42b = sampledb.logic.locations.create_location({"en": "Room 42b", "de": "Raum 42b"}, {"en": "Building A, Room 42b", "de": "Gebäude A, Raum 42b"}, building_a.id, instrument_responsible_user.id, type_id=sampledb.models.LocationType.LOCATION)
         sampledb.logic.locations.assign_location_to_object(measurement.id, room_42a.id, None, instrument_responsible_user.id, {"en": "Temporarily stored on table\n\nSome other text", "de": "Temporär auf einem Tisch gelagert \n\n Irgendein anderer Text"})
         sampledb.logic.locations.assign_location_to_object(measurement.id, room_42b.id, instrument_responsible_user.id, basic_user.id, {"en": "Stored in shelf K", "de": "In Regal K gelagert"})
         sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo.")
@@ -524,6 +524,27 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(building_a.id, sampledb.logic.location_permissions.Permissions.WRITE)
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42a.id, sampledb.logic.location_permissions.Permissions.WRITE)
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42b.id, sampledb.logic.location_permissions.Permissions.WRITE)
+
+        container_type = sampledb.logic.locations.create_location_type(
+            name={"en": "Container"},
+            location_name_singular={"en": "Container"},
+            location_name_plural={"en": "Containers"},
+            admin_only=True,
+            enable_parent_location=True,
+            enable_sub_locations=False,
+            enable_object_assignments=True,
+            enable_responsible_users=True,
+            show_location_log=True,
+        )
+        container = sampledb.logic.locations.create_location(
+            name={"en": "Box 1"},
+            description={"en": "An example container"},
+            parent_location_id=room_42b.id,
+            user_id=instrument_responsible_user.id,
+            type_id=container_type.id
+        )
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(container.id, sampledb.logic.location_permissions.Permissions.WRITE)
+        sampledb.logic.locations.set_location_responsible_users(container.id, [instrument_responsible_user.id, admin.id])
 
         for object in sampledb.logic.objects.get_objects():
             sampledb.logic.instrument_log_entries.create_instrument_log_object_attachment(

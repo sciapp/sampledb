@@ -28,7 +28,7 @@ from .comments import get_comment, get_comments_for_object, create_comment
 from .components import get_component_by_uuid, get_component, add_component
 from .groups import get_group
 from .instruments import create_instrument, get_instrument
-from .locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations
+from .locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations, get_location_type, create_location_type, update_location_type, set_location_responsible_users, LocationType
 from .objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from .projects import get_project
 from .users import get_user, get_mutable_user, get_user_alias, create_user, set_user_hidden
@@ -161,6 +161,11 @@ def update_shares(component, updates):
     for action_data in action_data_list:
         actions.append(parse_action(action_data))
 
+    location_types = []
+    location_type_data_list = _get_list(updates.get('location_types'), default=[])
+    for location_type_data in location_type_data_list:
+        location_types.append(parse_location_type(location_type_data))
+
     locations = {}
     location_data_list = _get_list(updates.get('locations'), default=[])
     for location_data in location_data_list:
@@ -190,9 +195,12 @@ def update_shares(component, updates):
     for action_data in actions:
         import_action(action_data, component)
 
+    for location_type_data in location_types:
+        import_location_type(location_type_data, component)
+
     while len(locations) > 0:
         key = list(locations)[0]
-        import_location(locations[key], component, locations)
+        import_location(locations[key], component, locations, users)
         if key in locations:
             locations.pop(key)
 
@@ -598,9 +606,41 @@ def _get_or_create_location_id(location_data):
     try:
         location = get_location(location_data['location_id'], component_id)
     except errors.LocationDoesNotExistError:
-        location = create_location(name=None, description=None, fed_id=location_data['location_id'], parent_location_id=None, user_id=None, component_id=component_id)
+        location = create_location(
+            name=None,
+            description=None,
+            parent_location_id=None,
+            user_id=None,
+            type_id=LocationType.LOCATION,
+            fed_id=location_data['location_id'],
+            component_id=component_id
+        )
         fed_logs.create_ref_location(location.id, component_id)
     return location.id
+
+
+def _get_or_create_location_type_id(location_type_data):
+    if location_type_data is None:
+        return None
+    component_id = _get_or_create_component_id(location_type_data['component_uuid'])
+    try:
+        location_type = get_location_type(location_type_data['location_type_id'], component_id)
+    except errors.LocationTypeDoesNotExistError:
+        location_type = create_location_type(
+            name=None,
+            location_name_singular=None,
+            location_name_plural=None,
+            admin_only=True,
+            enable_sub_locations=False,
+            enable_parent_location=False,
+            enable_object_assignments=False,
+            enable_responsible_users=False,
+            show_location_log=False,
+            fed_id=location_type_data['location_type_id'],
+            component_id=component_id
+        )
+        fed_logs.create_ref_location_type(location_type.id, component_id)
+    return location_type.id
 
 
 def import_action(action_data, component):
@@ -668,7 +708,55 @@ def import_action(action_data, component):
     return action
 
 
-def import_location(location_data, component, locations):
+def import_location_type(location_type_data, component):
+    component_id = _get_or_create_component_id(location_type_data['component_uuid'])
+
+    try:
+        location_type = get_location_type(location_type_data['fed_id'], component_id)
+
+        ignored_fields = [
+            'id',
+            'fed_id',
+            'component_id',
+            'component',
+        ]
+        if any(
+                location_type_data[field] != value
+                for field, value in location_type._asdict().items()
+                if field not in ignored_fields
+        ):
+            update_location_type(
+                location_type_id=location_type.id,
+                name=location_type_data['name'],
+                location_name_singular=location_type_data['location_name_singular'],
+                location_name_plural=location_type_data['location_name_plural'],
+                admin_only=location_type_data['admin_only'],
+                enable_parent_location=location_type_data['enable_parent_location'],
+                enable_sub_locations=location_type_data['enable_sub_locations'],
+                enable_object_assignments=location_type_data['enable_object_assignments'],
+                enable_responsible_users=location_type_data['enable_responsible_users'],
+                show_location_log=location_type_data['show_location_log'],
+            )
+            fed_logs.update_location_type(location_type.id, component.id)
+    except errors.LocationTypeDoesNotExistError:
+        location_type = create_location_type(
+            name=location_type_data['name'],
+            location_name_singular=location_type_data['location_name_singular'],
+            location_name_plural=location_type_data['location_name_plural'],
+            admin_only=location_type_data['admin_only'],
+            enable_parent_location=location_type_data['enable_parent_location'],
+            enable_sub_locations=location_type_data['enable_sub_locations'],
+            enable_object_assignments=location_type_data['enable_object_assignments'],
+            enable_responsible_users=location_type_data['enable_responsible_users'],
+            show_location_log=location_type_data['show_location_log'],
+            fed_id=location_type_data['fed_id'],
+            component_id=component_id,
+        )
+        fed_logs.import_location_type(location_type.id, component.id)
+    return location_type
+
+
+def import_location(location_data, component, locations, users):
     component_id = _get_or_create_component_id(location_data['component_uuid'])
 
     parent = _parse_location_ref(location_data.get('parent_location'))
@@ -676,10 +764,32 @@ def import_location(location_data, component, locations):
         parent_location_id = None
     else:
         if (parent['location_id'], parent['component_uuid']) in locations.keys():
-            parent_location_id = import_location(locations[(parent['location_id'], parent['component_uuid'])], component, locations).id
+            parent_location_id = import_location(locations[(parent['location_id'], parent['component_uuid'])], component, locations, users).id
             locations.pop((location_data['fed_id'], location_data['component_uuid']))
         else:
             parent_location_id = _get_or_create_location_id(location_data['parent_location'])
+    location_type = _parse_location_type_ref(location_data.get('location_type'))
+    if location_type is None:
+        location_type_id = LocationType.LOCATION
+    else:
+        location_type_id = _get_or_create_location_type_id(location_data['location_type'])
+    responsible_user_ids = []
+    if location_data.get('responsible_users'):
+        users_by_ids = {
+            (user['fed_id'], user['component_uuid']): user
+            for user in users
+        }
+        for responsible_user_data in location_data['responsible_users']:
+            responsible_user = _parse_user_ref(responsible_user_data)
+            if responsible_user is None:
+                responsible_user_id = None
+            else:
+                if (responsible_user['user_id'], responsible_user['component_uuid']) in users_by_ids.keys():
+                    responsible_user_id = import_user(users_by_ids[(responsible_user['user_id'], responsible_user['component_uuid'])], component).id
+                else:
+                    responsible_user_id = _get_or_create_user_id(responsible_user_data)
+            if responsible_user_id is not None:
+                responsible_user_ids.append(responsible_user_id)
     try:
         location = get_location(location_data['fed_id'], component_id)
         if location.name != location_data['name'] or location.description != location_data['description'] or location.parent_location_id != parent_location_id:
@@ -688,7 +798,12 @@ def import_location(location_data, component, locations):
                 name=location_data['name'],
                 description=location_data['description'],
                 parent_location_id=parent_location_id,
-                user_id=None
+                user_id=None,
+                type_id=location_type_id
+            )
+            set_location_responsible_users(
+                location_id=location.id,
+                responsible_user_ids=responsible_user_ids
             )
             fed_logs.update_location(location.id, component.id)
     except errors.LocationDoesNotExistError:
@@ -698,7 +813,12 @@ def import_location(location_data, component, locations):
             name=location_data['name'],
             description=location_data['description'],
             parent_location_id=parent_location_id,
-            user_id=None
+            user_id=None,
+            type_id=location_type_id
+        )
+        set_location_responsible_users(
+            location_id=location.id,
+            responsible_user_ids=responsible_user_ids
         )
         fed_logs.import_location(location.id, component.id)
     return location
@@ -887,6 +1007,15 @@ def _parse_action_type_ref(action_type_data):
     return {'action_type_id': action_type_id, 'component_uuid': component_uuid}
 
 
+def _parse_location_type_ref(location_type_data):
+    if location_type_data is None:
+        return None
+    location_type_id = _get_id(location_type_data.get('location_type_id'), special_values=[LocationType.LOCATION])
+    component_uuid = _get_uuid(location_type_data.get('component_uuid'))
+
+    return {'location_type_id': location_type_id, 'component_uuid': component_uuid}
+
+
 def _parse_schema(schema, path=[]):
     if schema is None:
         return
@@ -1039,12 +1168,39 @@ def parse_location(location_data):
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
         raise errors.InvalidDataExportError('Invalid update for local location {}'.format(fed_id))
+    responsible_users = _get_list(location_data.get('responsible_users'))
     return {
         'fed_id': fed_id,
         'component_uuid': uuid,
         'name': _get_translation(location_data.get('name')),
         'description': _get_translation(location_data.get('description')),
-        'parent_location': _parse_location_ref(_get_dict(location_data.get('parent_location')))
+        'parent_location': _parse_location_ref(_get_dict(location_data.get('parent_location'))),
+        'location_type': _parse_location_type_ref(_get_dict(location_data.get('location_type'))),
+        'responsible_users': [
+            _parse_user_ref(_get_dict(responsible_user))
+            for responsible_user in responsible_users
+        ] if responsible_users is not None else [],
+    }
+
+
+def parse_location_type(location_type_data):
+    fed_id = _get_id(location_type_data.get('location_type_id'), special_values=[LocationType.LOCATION])
+    uuid = _get_uuid(location_type_data.get('component_uuid'))
+    if uuid == flask.current_app.config['FEDERATION_UUID']:
+        # do not accept updates for own data
+        raise errors.InvalidDataExportError('Invalid update for local location type {}'.format(fed_id))
+    return {
+        'fed_id': fed_id,
+        'component_uuid': uuid,
+        'name': _get_translation(location_type_data.get('name')),
+        'location_name_singular': _get_translation(location_type_data.get('location_name_singular')),
+        'location_name_plural': _get_translation(location_type_data.get('location_name_plural')),
+        'admin_only': _get_bool(location_type_data.get('admin_only'), default=True),
+        'enable_parent_location': _get_bool(location_type_data.get('enable_parent_location'), default=False),
+        'enable_sub_locations': _get_bool(location_type_data.get('enable_sub_locations'), default=False),
+        'enable_object_assignments': _get_bool(location_type_data.get('enable_object_assignments'), default=False),
+        'enable_responsible_users': _get_bool(location_type_data.get('enable_responsible_users'), default=False),
+        'show_location_log': _get_bool(location_type_data.get('show_location_log'), default=False),
     }
 
 
@@ -1898,20 +2054,78 @@ def shared_location_preprocessor(location_id: int, _component: Component, refs: 
             }
     else:
         parent_location = None
+    if location.type_id is not None:
+        if ('location_types', location.type_id) not in refs:
+            refs.append(('location_types', location.type_id))
+        location_type = get_location_type(location.type_id)
+        if location_type.component_id is None:
+            location_type = {
+                'location_type_id': location_type.id,
+                'component_uuid': flask.current_app.config['FEDERATION_UUID']
+            }
+        else:
+            location_type = {
+                'location_type_id': location_type.fed_id,
+                'component_uuid': location_type.component.uuid
+            }
+    else:
+        location_type = None
+    responsible_users = []
+    if location.responsible_users:
+        for responsible_user in location.responsible_users:
+            if ('users', responsible_user.id) not in refs:
+                refs.append(('users', responsible_user.id))
+            if responsible_user.component_id is None:
+                responsible_user = {
+                    'user_id': responsible_user.id,
+                    'component_uuid': flask.current_app.config['FEDERATION_UUID']
+                }
+            else:
+                responsible_user = {
+                    'user_id': responsible_user.fed_id,
+                    'component_uuid': responsible_user.component.uuid
+                }
+            responsible_users.append(responsible_user)
     return {
         'location_id': location.id if location.fed_id is None else location.fed_id,
         'component_uuid': flask.current_app.config['FEDERATION_UUID'] if location.component is None else location.component.uuid,
         'name': location.name,
         'description': location.description,
-        'parent_location': parent_location
+        'parent_location': parent_location,
+        'location_type': location_type,
+        'responsible_users': responsible_users,
     }
+
+
+def shared_location_type_preprocessor(location_type_id: int, _component: Component, refs: list, _markdown_images):
+    location_type = get_location_type(location_type_id)
+    if location_type.component is not None:
+        return None
+    return {
+        'location_type_id': location_type.id if location_type.fed_id is None else location_type.fed_id,
+        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if location_type.component_id is None else get_component(location_type.component_id).uuid,
+        'name': location_type.name,
+        'location_name_singular': location_type.location_name_singular,
+        'location_name_plural': location_type.location_name_plural,
+        'admin_only': location_type.admin_only,
+        'enable_parent_location': location_type.enable_parent_location,
+        'enable_sub_locations': location_type.enable_sub_locations,
+        'enable_object_assignments': location_type.enable_object_assignments,
+        'enable_responsible_users': location_type.enable_responsible_users,
+        'show_location_log': location_type.show_location_log,
+    }
+
+
+def parse_import_location_type(location_type_data, component):
+    location_type_data = parse_location_type(location_type_data)
+    return import_location_type(location_type_data, component)
 
 
 def parse_import_location(location_data, component):
     location_data = parse_location(location_data)
     locations = {(location_data['fed_id'], location_data['component_uuid']): location_data}
     locations_check_for_cyclic_dependencies(locations)
-    return import_location(location_data, component, locations)
+    return import_location(location_data, component, locations, [])
 
 
 def parse_import_action(action_data, component):

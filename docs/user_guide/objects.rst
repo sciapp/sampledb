@@ -102,19 +102,19 @@ The activity log shows a timeline of the object's life cycle, containing events 
 
     Activity Log
 
-.. _locations:
+.. _location_assignments:
 
-Location
---------
+Location Log
+------------
 
 To indicate where a sample is stored, a location and/or a responsible user can be assigned to it. When a user is assigned responsibility for an object, they can confirm this either on the object's page or using the :ref:`Notification <notifications>` they received for the assignment.
 
 The location log shows where an object has been stored and when it was moved.
 
-.. figure:: ../static/img/generated/locations.png
-    :alt: Location
+.. figure:: ../static/img/generated/location_assignments.png
+    :alt: Location Log
 
-    Location
+    Location Log
 
 .. _permissions:
 

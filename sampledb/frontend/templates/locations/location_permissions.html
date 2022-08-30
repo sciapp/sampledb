@@ -25,6 +25,9 @@
   {% set fixed_user_permissions = {}  %}
   {% set show_administrators = True %}
   {% set show_instrument_scientists = False %}
+  {% if location.type.enable_responsible_users or location.responsible_users %}
+    {% set show_responsible_users = True %}
+  {% endif %}
   {% set show_all_users = True %}
   {% set read_permissions_description = _('Permission to view location information.') %}
   {% set write_permissions_description = _('Permission to edit locations and create sub-locations for them. Includes Read permissions.') %}

@@ -11,7 +11,7 @@ from sampledb.logic.comments import get_comment
 from sampledb.logic.components import get_component
 from sampledb.logic.files import get_file
 from sampledb.logic.instruments import get_instrument
-from sampledb.logic.locations import get_location, get_object_location_assignment
+from sampledb.logic.locations import get_location, get_object_location_assignment, get_location_type
 from sampledb.logic.objects import get_object
 from sampledb.logic.users import get_user
 from sampledb.models import fed_logs
@@ -154,6 +154,54 @@ def create_ref_location(location_id: int, component_id: int):
     _store_new_fed_location_log_entry(
         type=models.FedLocationLogEntryType.CREATE_REF_LOCATION,
         location_id=location_id,
+        component_id=component_id,
+        data=data
+    )
+
+
+def _store_new_fed_location_type_log_entry(
+        type: models.FedLocationTypeLogEntryType,
+        location_type_id: int,
+        component_id: int, data: dict
+) -> None:
+    get_location_type(location_type_id)
+    get_component(component_id)
+    log_entry = fed_logs.FedLocationTypeLogEntry(
+        type=type,
+        location_type_id=location_type_id,
+        component_id=component_id,
+        data=data,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    db.session.add(log_entry)
+    db.session.commit()
+
+
+def import_location_type(location_type_id: int, component_id: int):
+    data = {}
+    _store_new_fed_location_type_log_entry(
+        type=models.FedLocationTypeLogEntryType.IMPORT_LOCATION_TYPE,
+        location_type_id=location_type_id,
+        component_id=component_id,
+        data=data
+    )
+
+
+def update_location_type(location_type_id: int, component_id: int):
+    data = {}
+    _store_new_fed_location_type_log_entry(
+        type=models.FedLocationTypeLogEntryType.UPDATE_LOCATION_TYPE,
+        location_type_id=location_type_id,
+        component_id=component_id,
+        data=data
+    )
+
+
+def create_ref_location_type(location_type_id: int, component_id: int):
+    data = {}
+    _store_new_fed_location_type_log_entry(
+        type=models.FedLocationTypeLogEntryType.CREATE_REF_LOCATION_TYPE,
+        location_type_id=location_type_id,
         component_id=component_id,
         data=data
     )
@@ -448,6 +496,30 @@ def get_fed_location_log_entries_for_location(location_id: int, component_id: ty
 
 def get_fed_location_log_entries_for_component(component_id: int) -> typing.List[fed_logs.FedLocationLogEntry]:
     log_entries = fed_logs.FedLocationLogEntry.query.filter_by(component_id=component_id).order_by(db.desc(fed_logs.FedLocationLogEntry.utc_datetime)).all()
+    if len(log_entries) == 0:
+        get_component(component_id)
+    return log_entries
+
+
+def get_fed_location_type_log_entries_for_location_type(
+        location_type_id: int,
+        component_id: typing.Optional[int] = None
+) -> typing.List[fed_logs.FedLocationTypeLogEntry]:
+    if component_id is not None:
+        log_entries = fed_logs.FedLocationTypeLogEntry.query.filter_by(location_type_id=location_type_id, component_id=component_id).order_by(db.desc(fed_logs.FedLocationTypeLogEntry.utc_datetime)).all()
+    else:
+        log_entries = fed_logs.FedLocationTypeLogEntry.query.filter_by(location_type_id=location_type_id).order_by(db.desc(fed_logs.FedLocationTypeLogEntry.utc_datetime)).all()
+    if len(log_entries) == 0:
+        get_location_type(location_type_id)
+        if component_id is not None:
+            get_component(component_id)
+    return log_entries
+
+
+def get_fed_location_type_log_entries_for_component(
+        component_id: int
+) -> typing.List[fed_logs.FedLocationTypeLogEntry]:
+    log_entries = fed_logs.FedLocationTypeLogEntry.query.filter_by(component_id=component_id).order_by(db.desc(fed_logs.FedLocationTypeLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
         get_component(component_id)
     return log_entries

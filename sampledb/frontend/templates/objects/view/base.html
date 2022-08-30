@@ -736,8 +736,8 @@
         <div class="form-group {% if location_form.location.name in location_form.errors %}has-error{% endif %}">
           <label for="input-location" class="control-label">{{ _("Location") }}</label>
           <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
-            {% for location_id, location_name in location_form.location.choices %}
-            <option {% if location_is_fed[location_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+            {% for location_id, location_name in location_form.location.all_choices %}
+            <option {% if location_is_fed[location_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %} {% if (location_id, location_name) not in location_form.location.choices and location_id != '-1' %}disabled="disabled"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
             {% endfor %}
           </select>
         </div>

@@ -153,11 +153,13 @@ def test_status_codes(flask_server, user):
         instrument_log_object_attachment_id = sampledb.logic.instrument_log_entries.get_instrument_log_object_attachments(
             instrument_log_entry_id=instrument_log_entry_id
         )[0].id
+        location_type_id = sampledb.logic.locations.LocationType.LOCATION
         location_id = sampledb.logic.locations.create_location(
             name={'en': 'Test Location'},
             description={'en': ''},
             parent_location_id=None,
-            user_id=user_id
+            user_id=user_id,
+            type_id=location_type_id
         ).id
         sampledb.logic.location_permissions.set_user_location_permissions(
             location_id=location_id,
@@ -266,6 +268,8 @@ def test_status_codes(flask_server, user):
         f'api/v1/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/object_attachments/{instrument_log_object_attachment_id}': 200,
         'api/v1/locations/': 200,
         f'api/v1/locations/{location_id}': 200,
+        'api/v1/location_types/': 200,
+        f'api/v1/location_types/{location_type_id}': 200,
         'api/v1/objects/': 200,
         f'api/v1/objects/{object_id}': 302,
         f'api/v1/objects/{object_id}/comments/': 200,
@@ -325,6 +329,9 @@ def test_status_codes(flask_server, user):
         'locations/confirm_responsibility': 302,
         'locations/decline_responsibility': 302,
         'locations/new/': 200,
+        'location_types/': 200,
+        f'location_types/{location_type_id}': 200,
+        'location_types/new': 200,
         f'markdown_images/{markdown_image_file_name}': 200,
         f'markdown_images/{component.uuid}/{markdown_image_file_name}': 404,
         'objects/': 200,
@@ -431,6 +438,7 @@ def test_status_codes(flask_server, user):
         'file_id': file_id,
         'type_id': action_type_id,
         'location_id': location_id,
+        'location_type_id': location_type_id,
         'action_id': [action_id, other_action_id],
         'component': component.uuid,
         'component_id': component_id,

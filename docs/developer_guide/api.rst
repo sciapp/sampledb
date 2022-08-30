@@ -1720,6 +1720,77 @@ Reading an object's location
     :statuscode 404: the object or the object location assignment does not exist
 
 
+Location Types
+--------------
+
+
+Reading a list of all location types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/location_types/
+
+    Get a list of all location types.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/location_types/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "location_type_id": 1,
+                "name": "Example Location Type"
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading a location type
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/location_types/(int:location_type_id)
+
+    Get the specific location type (`location_type_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/location_types/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "location_type_id": 1,
+            "name": "Example Location Type"
+        }
+
+    :>json number location_type_id: the location type's ID
+    :>json string name: the location type's name
+    :statuscode 200: no error
+    :statuscode 404: the location type does not exist
+
+
 Files
 -----
 

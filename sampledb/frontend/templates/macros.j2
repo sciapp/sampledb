@@ -12,6 +12,8 @@
                 {% set fed_url = component_address + relative_url_for('frontend.action', action_id=fed_id) %}
             {% elif type == 'location' %}
                 {% set fed_url = component_address + relative_url_for('frontend.location', location_id=fed_id) %}
+            {% elif type == 'location_type' %}
+                {% set fed_url = component_address + relative_url_for('frontend.location_type', type_id=fed_id) %}
             {% elif type == 'object' %}
                 {% set fed_url = component_address + relative_url_for('frontend.object', object_id=fed_id) %}
             {% elif type == 'action_type' %}

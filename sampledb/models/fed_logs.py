@@ -114,6 +114,40 @@ class FedLocationLogEntry(db.Model):
 
 
 @enum.unique
+class FedLocationTypeLogEntryType(enum.Enum):
+    OTHER = 0
+    IMPORT_LOCATION_TYPE = 1
+    UPDATE_LOCATION_TYPE = 2
+    SHARE_LOCATION_TYPE = 3
+    UPDATE_SHARED_LOCATION_TYPE = 4
+    UPDATE_LOCATION_TYPE_POLICY = 5
+    CREATE_REF_LOCATION_TYPE = 6
+
+
+class FedLocationTypeLogEntry(db.Model):
+    __tablename__ = 'fed_location_type_log_entries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.Enum(FedLocationTypeLogEntryType), nullable=False)
+    location_type_id = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
+    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data = db.Column(db.JSON, nullable=False)
+    utc_datetime = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, type: FedLocationTypeLogEntryType, location_type_id: int, component_id: int, data: dict, utc_datetime=None):
+        self.type = type
+        self.location_type_id = location_type_id
+        self.component_id = component_id
+        self.data = data
+        if utc_datetime is None:
+            utc_datetime = datetime.datetime.utcnow()
+        self.utc_datetime = utc_datetime
+
+    def __repr__(self):
+        return '<{0}(id={1.id}, type={1.type}, location_type_id={1.location_type_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+
+
+@enum.unique
 class FedActionLogEntryType(enum.Enum):
     OTHER = 0
     IMPORT_ACTION = 1

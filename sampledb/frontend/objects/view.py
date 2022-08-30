@@ -320,6 +320,7 @@ def object(object_id):
         location_form = ObjectLocationAssignmentForm()
         locations_map, locations_tree = get_locations_tree()
         locations = [('-1', '—')]
+        valid_locations = []
         unvisited_location_ids_prefixes_and_subtrees = [
             (location_id, '', locations_tree[location_id])
             for location_id in locations_tree
@@ -331,10 +332,13 @@ def object(object_id):
             # in case any of them are readable
             if location_id in readable_location_ids:
                 locations.append((str(location_id), prefix + get_location_name(location, include_id=True)))
+                if location.type is None or location.type.enable_object_assignments:
+                    valid_locations.append(locations[-1])
             prefix = f'{prefix}{get_location_name(location)} / '
             for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
                 unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, prefix, subtree[location_id]))
-        location_form.location.choices = locations
+        location_form.location.all_choices = locations
+        location_form.location.choices = valid_locations
         possible_responsible_users = [('-1', '—')]
         user_is_fed = {}
         for user in get_users(exclude_hidden=True):
@@ -649,6 +653,7 @@ def post_object_location(object_id):
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), get_location_name(location, include_id=True))
         for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+        if location.type is None or location.type.enable_object_assignments
     ]
     possible_responsible_users = [('-1', '—')]
     for user in get_users(exclude_hidden=True):
