@@ -154,7 +154,7 @@ def get_component_by_uuid(component_uuid: str) -> Component:
     component = components.Component.query.filter_by(uuid=component_uuid).first()
     if component is None:
         raise errors.ComponentDoesNotExistError
-    return component
+    return Component.from_database(component)
 
 
 def update_component(component_id: int, name: typing.Optional[str] = None, address: typing.Optional[str] = None, description: typing.Optional[str] = '') -> None:

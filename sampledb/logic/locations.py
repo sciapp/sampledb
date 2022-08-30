@@ -136,7 +136,7 @@ class Location(collections.namedtuple(
             description=location.description,
             parent_location_id=location.parent_location_id,
             fed_id=location.fed_id,
-            component=location.component,
+            component=Component.from_database(location.component) if location.component is not None else None,
             type_id=location.type_id,
             type=LocationType.from_database(location.type),
             responsible_users=[
@@ -146,7 +146,20 @@ class Location(collections.namedtuple(
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', ['id', 'object_id', 'location_id', 'user_id', 'description', 'utc_datetime', 'responsible_user_id', 'confirmed', 'fed_id', 'component_id', 'declined'])):
+class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', [
+    'id',
+    'object_id',
+    'location_id',
+    'user_id',
+    'description',
+    'utc_datetime',
+    'responsible_user_id',
+    'confirmed',
+    'fed_id',
+    'component_id',
+    'declined',
+    'component'
+])):
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
@@ -163,9 +176,24 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             confirmed: bool,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
-            declined: bool = False
+            declined: bool = False,
+            component: typing.Optional[Component] = None
     ):
-        self = super(ObjectLocationAssignment, cls).__new__(cls, id, object_id, location_id, user_id, description, utc_datetime, responsible_user_id, confirmed, fed_id, component_id, declined)
+        self = super(ObjectLocationAssignment, cls).__new__(
+            cls,
+            id,
+            object_id,
+            location_id,
+            user_id,
+            description,
+            utc_datetime,
+            responsible_user_id,
+            confirmed,
+            fed_id,
+            component_id,
+            declined,
+            component
+        )
         return self
 
     @classmethod
@@ -181,7 +209,8 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             confirmed=object_location_assignment.confirmed,
             fed_id=object_location_assignment.fed_id,
             component_id=object_location_assignment.component_id,
-            declined=object_location_assignment.declined
+            declined=object_location_assignment.declined,
+            component=Component.from_database(object_location_assignment.component) if object_location_assignment.component is not None else None
         )
 
 
@@ -498,7 +527,7 @@ def create_fed_assignment(
         utc_datetime: typing.Optional[datetime.datetime],
         confirmed: typing.Optional[bool],
         declined: bool = False
-) -> ObjectLocationAssignment:
+) -> locations.ObjectLocationAssignment:
     if description is not None:
         if isinstance(description, str):
             description = {
@@ -552,7 +581,7 @@ def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocatio
     ]
 
 
-def get_fed_object_location_assignment(fed_id: int, component_id: int):
+def get_fed_object_location_assignment(fed_id: int, component_id: int) -> typing.Optional[locations.ObjectLocationAssignment]:
     object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(fed_id=fed_id, component_id=component_id).first()
     return object_location_assignment
 

@@ -705,7 +705,8 @@ def _check_comment(comment_data):
     assert comment is not None
     assert comment.fed_id == comment_data.get('comment_id')
     assert comment.component_id == component.id
-    assert comment.component == component
+    # TODO: wrap component in comment wrapper
+    assert Component.from_database(comment.component) == component
 
     assert comment.content == comment_data.get('content')
     assert comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') == comment_data.get('utc_datetime')
@@ -743,6 +744,7 @@ def _check_object_location_assignment(assignment_data):
     assert component is not None
 
     assignment = get_fed_object_location_assignment(assignment_data.get('id'), component.id)
+    assignment = logic.locations.ObjectLocationAssignment.from_database(assignment)
     assert assignment is not None
     assert assignment.fed_id == assignment_data.get('id')
     assert assignment.component_id == component.id
