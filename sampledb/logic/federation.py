@@ -24,7 +24,7 @@ from .. import db
 from . import errors, fed_logs, languages, markdown_to_html
 from .actions import get_action, create_action_type, get_action_type, update_action_type, create_action, get_mutable_action
 from .component_authentication import get_own_authentication
-from .comments import get_comment, get_comments_for_object, create_comment
+from .comments import get_comment, get_comments_for_object, create_comment, update_comment
 from .components import get_component_by_uuid, get_component, add_component
 from .groups import get_group
 from .instruments import create_instrument, get_instrument, get_mutable_instrument
@@ -472,10 +472,12 @@ def import_comment(comment_data, object, component):
         comment = get_comment(comment_data['fed_id'], component_id)
 
         if comment.user_id != user_id or comment.content != comment_data['content'] or comment.utc_datetime != comment_data['utc_datetime']:
-            comment.user_id = user_id
-            comment.content = comment_data['content']
-            comment.utc_datetime = comment_data['utc_datetime']
-            db.session.commit()
+            update_comment(
+                comment_id=comment.id,
+                user_id=user_id,
+                content=comment_data['content'],
+                utc_datetime=comment_data['utc_datetime']
+            )
             fed_logs.update_comment(comment.id, component.id)
 
     except errors.CommentDoesNotExistError:
