@@ -16,6 +16,7 @@ from . import component_authentication
 from . import datatypes
 from . import dataverse_export
 from . import default_permissions
+from . import eln_export
 from . import errors
 from . import export
 from . import favorites
@@ -71,6 +72,7 @@ __all__ = [
     'datatypes',
     'dataverse_export',
     'default_permissions',
+    'eln_export',
     'errors',
     'export',
     'favorites',

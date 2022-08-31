@@ -171,6 +171,8 @@ Users can export object information to a PDF file, e.g. for printing or offline 
 
 Alternatively, users can export object information as an archive, which contains the full object information as a JSON file and all files uploaded for the object.
 
+Users can also export the object information as an [.eln file](https://github.com/TheELNConsortium/TheELNFileFormat).
+
 Along with the current object, related objects can be exported along with it, e.g. a sample can be exported together with all measurements performed with it.
 
 Users can also export information for all objects which the user has **READ** permissions for (see :ref:`export`).

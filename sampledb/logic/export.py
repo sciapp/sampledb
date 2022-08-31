@@ -17,10 +17,15 @@ import flask
 from .. import logic
 
 
-def get_archive_files(
-        user_id: typing.Optional[int],
-        object_ids: typing.Optional[typing.List[int]] = None
-) -> typing.Dict[str, bytes]:
+def get_export_infos(
+        user_id: int,
+        object_ids: typing.Optional[typing.List[int]] = None,
+        include_actions: bool = True,
+        include_instruments: bool = True,
+        include_users: bool = True,
+        include_locations: bool = True,
+        include_rdf_files: bool = True
+) -> typing.Tuple[typing.Dict[str, typing.Union[bytes, str]], typing.Dict[str, typing.Any]]:
     archive_files = {}
     if object_ids is None:
         relevant_instrument_ids = {
@@ -43,7 +48,8 @@ def get_archive_files(
         if object_ids is not None and object.id not in object_ids:
             continue
 
-        archive_files[f"sampledb_export/{object.id}.rdf"] = logic.rdf.generate_rdf(user_id, object.id)
+        if include_rdf_files:
+            archive_files[f"sampledb_export/{object.id}.rdf"] = logic.rdf.generate_rdf(user_id, object.id)
 
         object_infos.append({
             'id': object.id,
@@ -153,115 +159,112 @@ def get_archive_files(
                 })
     infos['objects'] = object_infos
 
-    action_infos = []
-    for action_info in logic.actions.get_actions():
-        if action_info.id in relevant_action_ids:
-            action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
-            if logic.action_permissions.Permissions.READ in action_permissions:
-                relevant_user_ids.add(action_info.user_id)
-                relevant_instrument_ids.add(action_info.instrument_id)
-                action_translation = logic.action_translations.get_action_translation_for_action_in_language(
-                    action_id=action_info.id,
-                    language_id=logic.languages.Language.ENGLISH
-                )
-                action_type_translation = logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-                    action_type_id=action_info.type_id,
-                    language_id=logic.languages.Language.ENGLISH
-                )
-                action_infos.append({
-                    'id': action_info.id,
-                    'type': action_type_translation.object_name.lower(),
-                    'name': action_translation.name,
-                    'user_id': action_info.user_id,
-                    'instrument_id': action_info.instrument_id,
-                    'description': action_translation.description,
-                    'description_is_markdown': action_info.description_is_markdown,
-                    'short_description': action_translation.short_description,
-                    'short_description_is_markdown': action_info.short_description_is_markdown
-                })
-                if action_info.description_is_markdown:
-                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.description)))
-                if action_info.short_description_is_markdown:
-                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.short_description)))
-    infos['actions'] = action_infos
-
-    instrument_infos = []
-    for instrument_info in logic.instruments.get_instruments():
-        if instrument_info.id in relevant_instrument_ids:
-            relevant_user_ids.update({user.id for user in instrument_info.responsible_users})
-            instrument_translation = logic.instrument_translations.get_instrument_translation_for_instrument_in_language(
-                instrument_id=instrument_info.id,
-                language_id=logic.languages.Language.ENGLISH
-            )
-            instrument_infos.append({
-                'id': instrument_info.id,
-                'name': instrument_translation.name,
-                'description': instrument_translation.description,
-                'description_is_markdown': instrument_info.description_is_markdown,
-                'short_description': instrument_translation.short_description,
-                'short_description_is_markdown': instrument_info.short_description_is_markdown,
-                'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
-                'instrument_log_entries': []
-            })
-            user_is_instrument_responsible = user_id in [user.id for user in instrument_info.responsible_users]
-            if user_is_instrument_responsible:
-                instrument_infos[-1]['notes'] = instrument_translation.notes
-                instrument_infos[-1]['notes_is_markdown'] = instrument_info.notes_is_markdown
-            if instrument_info.users_can_view_log_entries or user_is_instrument_responsible:
-                for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
-                    relevant_user_ids.add(log_entry.user_id)
-                    instrument_infos[-1]['instrument_log_entries'].append({
-                        'id': log_entry.id,
-                        'author_id': log_entry.user_id,
-                        'file_attachments': [],
-                        'object_attachments': [],
-                        'versions': []
+    if include_actions:
+        action_infos = []
+        for action_info in logic.actions.get_actions():
+            if action_info.id in relevant_action_ids:
+                action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
+                if logic.action_permissions.Permissions.READ in action_permissions:
+                    relevant_user_ids.add(action_info.user_id)
+                    relevant_instrument_ids.add(action_info.instrument_id)
+                    action_translation = logic.action_translations.get_action_translation_for_action_in_language(
+                        action_id=action_info.id,
+                        language_id=logic.languages.Language.ENGLISH
+                    )
+                    action_type_translation = logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
+                        action_type_id=action_info.type_id,
+                        language_id=logic.languages.Language.ENGLISH
+                    )
+                    action_infos.append({
+                        'id': action_info.id,
+                        'type': action_type_translation.object_name.lower(),
+                        'name': action_translation.name,
+                        'user_id': action_info.user_id,
+                        'instrument_id': action_info.instrument_id,
+                        'description': action_translation.description,
+                        'description_is_markdown': action_info.description_is_markdown,
+                        'short_description': action_translation.short_description,
+                        'short_description_is_markdown': action_info.short_description_is_markdown
                     })
-                    for version in log_entry.versions:
-                        instrument_infos[-1]['instrument_log_entries'][-1]['versions'].append({
-                            'log_entry_id': log_entry.id,
-                            'version_id': version.version_id,
-                            'content': version.content,
-                            'utc_datetime': version.utc_datetime.isoformat(),
-                            'categories': []
-                        })
-                        for category in version.categories:
-                            instrument_infos[-1]['instrument_log_entries'][-1]['versions'][-1]['categories'].append({
-                                'id': category.id,
-                                'title': category.title
-                            })
-                    file_attachments = logic.instrument_log_entries.get_instrument_log_file_attachments(log_entry.id)
-                    for file_attachment in file_attachments:
-                        file_name = os.path.basename(file_attachment.file_name)
-                        file_path = f'instruments/{instrument_info.id}/log_entries/{log_entry.id}/files/{file_attachment.id}/{file_name}'
-                        instrument_infos[-1]['instrument_log_entries'][-1]['file_attachments'].append({
-                            'file_name': file_attachment.file_name,
-                            'path': file_path
-                        })
-                        archive_files["sampledb_export/" + file_path] = file_attachment.content
+                    if action_info.description_is_markdown:
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.description)))
+                    if action_info.short_description_is_markdown:
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.short_description)))
+        infos['actions'] = action_infos
 
-                    object_attachments = logic.instrument_log_entries.get_instrument_log_object_attachments(log_entry.id)
-                    for object_attachment in object_attachments:
-                        instrument_infos[-1]['instrument_log_entries'][-1]['object_attachments'].append({
-                            'object_id': object_attachment.object_id
-                        })
-            if instrument_info.description_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.description)))
-            if instrument_info.short_description_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.short_description)))
-            if user_is_instrument_responsible and instrument_info.notes_is_markdown:
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.notes)))
-    infos['instruments'] = instrument_infos
-
-    user_infos = []
-    for user_info in logic.users.get_users(exclude_hidden=False):
-        if user_info.id in relevant_user_ids:
-            if user_id is None:
-                user_infos.append({
-                    'id': user_info.id,
-                    'name': user_info.name
+    if include_instruments:
+        instrument_infos = []
+        for instrument_info in logic.instruments.get_instruments():
+            if instrument_info.id in relevant_instrument_ids:
+                relevant_user_ids.update({user.id for user in instrument_info.responsible_users})
+                instrument_translation = logic.instrument_translations.get_instrument_translation_for_instrument_in_language(
+                    instrument_id=instrument_info.id,
+                    language_id=logic.languages.Language.ENGLISH
+                )
+                instrument_infos.append({
+                    'id': instrument_info.id,
+                    'name': instrument_translation.name,
+                    'description': instrument_translation.description,
+                    'description_is_markdown': instrument_info.description_is_markdown,
+                    'short_description': instrument_translation.short_description,
+                    'short_description_is_markdown': instrument_info.short_description_is_markdown,
+                    'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
+                    'instrument_log_entries': []
                 })
-            else:
+                user_is_instrument_responsible = user_id in [user.id for user in instrument_info.responsible_users]
+                if user_is_instrument_responsible:
+                    instrument_infos[-1]['notes'] = instrument_translation.notes
+                    instrument_infos[-1]['notes_is_markdown'] = instrument_info.notes_is_markdown
+                if instrument_info.users_can_view_log_entries or user_is_instrument_responsible:
+                    for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
+                        relevant_user_ids.add(log_entry.user_id)
+                        instrument_infos[-1]['instrument_log_entries'].append({
+                            'id': log_entry.id,
+                            'author_id': log_entry.user_id,
+                            'file_attachments': [],
+                            'object_attachments': [],
+                            'versions': []
+                        })
+                        for version in log_entry.versions:
+                            instrument_infos[-1]['instrument_log_entries'][-1]['versions'].append({
+                                'log_entry_id': log_entry.id,
+                                'version_id': version.version_id,
+                                'content': version.content,
+                                'utc_datetime': version.utc_datetime.isoformat(),
+                                'categories': []
+                            })
+                            for category in version.categories:
+                                instrument_infos[-1]['instrument_log_entries'][-1]['versions'][-1]['categories'].append({
+                                    'id': category.id,
+                                    'title': category.title
+                                })
+                        file_attachments = logic.instrument_log_entries.get_instrument_log_file_attachments(log_entry.id)
+                        for file_attachment in file_attachments:
+                            file_name = os.path.basename(file_attachment.file_name)
+                            file_path = f'instruments/{instrument_info.id}/log_entries/{log_entry.id}/files/{file_attachment.id}/{file_name}'
+                            instrument_infos[-1]['instrument_log_entries'][-1]['file_attachments'].append({
+                                'file_name': file_attachment.file_name,
+                                'path': file_path
+                            })
+                            archive_files["sampledb_export/" + file_path] = file_attachment.content
+
+                        object_attachments = logic.instrument_log_entries.get_instrument_log_object_attachments(log_entry.id)
+                        for object_attachment in object_attachments:
+                            instrument_infos[-1]['instrument_log_entries'][-1]['object_attachments'].append({
+                                'object_id': object_attachment.object_id
+                            })
+                if instrument_info.description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.description)))
+                if instrument_info.short_description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.short_description)))
+                if user_is_instrument_responsible and instrument_info.notes_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.notes)))
+        infos['instruments'] = instrument_infos
+
+    if include_users:
+        user_infos = []
+        for user_info in logic.users.get_users(exclude_hidden=False):
+            if user_info.id in relevant_user_ids:
                 user_infos.append({
                     'id': user_info.id,
                     'name': user_info.name,
@@ -269,7 +272,7 @@ def get_archive_files(
                     'affiliation': user_info.affiliation if user_info.affiliation else None,
                     'role': user_info.role if user_info.role else None
                 })
-    infos['users'] = user_infos
+        infos['users'] = user_infos
 
     locations = logic.locations.get_locations()
     all_relevant_location_ids = set()
@@ -288,28 +291,34 @@ def get_archive_files(
             permissions=logic.location_permissions.Permissions.READ
         )
     ]
-    location_infos = []
-    for location_info in locations:
-        if location_info.id in all_relevant_location_ids:
-            if location_info.id in readable_location_ids:
-                location_infos.append({
-                    'id': location_info.id,
-                    'parent_id': location_info.parent_location_id,
-                    'name': location_info.name,
-                    'description': location_info.description
-                })
-            else:
-                location_infos.append({
-                    'id': location_info.id,
-                    'parent_id': location_info.parent_location_id,
-                })
-    infos['locations'] = location_infos
+
+    if include_locations:
+        location_infos = []
+        for location_info in locations:
+            if location_info.id in all_relevant_location_ids:
+                if location_info.id in readable_location_ids:
+                    location_infos.append({
+                        'id': location_info.id,
+                        'parent_id': location_info.parent_location_id,
+                        'name': location_info.name,
+                        'description': location_info.description
+                    })
+                else:
+                    location_infos.append({
+                        'id': location_info.id,
+                        'parent_id': location_info.parent_location_id,
+                    })
+        infos['locations'] = location_infos
 
     for file_name in relevant_markdown_images:
         content = logic.markdown_images.get_markdown_image(file_name, user_id)
         if content is not None:
             archive_files[f'sampledb_export/markdown_files/{file_name}'] = content
+    return archive_files, infos
 
+
+def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> typing.Dict[str, bytes]:
+    archive_files, infos = get_export_infos(user_id, object_ids)
     archive_files['sampledb_export/data.json'] = json.dumps(infos, indent=2)
 
     readme_text = f"""SampleDB Export
@@ -367,7 +376,26 @@ def get_tar_gz_archive(
     return tar_bytes.getvalue()
 
 
+def get_eln_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> bytes:
+    archive_files, infos = get_export_infos(
+        user_id=user_id,
+        object_ids=object_ids,
+        include_rdf_files=False,
+        include_users=True,
+        include_actions=False,
+        include_instruments=False,
+        include_locations=False,
+    )
+    archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos)
+    zip_bytes = io.BytesIO()
+    with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+        for file_name, file_content in archive_files.items():
+            zip_file.writestr(file_name, file_content)
+    return zip_bytes.getvalue()
+
+
 FILE_FORMATS = {
     '.zip': ('.zip Archive', get_zip_archive, 'application/zip'),
-    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive, 'application/gzip')
+    '.tar.gz': ('.tar.gz Archive', get_tar_gz_archive, 'application/gzip'),
+    '.eln': ('.eln File', get_eln_archive, 'application/zip')
 }
