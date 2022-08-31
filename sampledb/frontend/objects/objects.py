@@ -430,6 +430,16 @@ def objects():
                     query_string = ''
                 except logic.errors.InvalidDOIError:
                     pass
+        if query_string and len(query_string) > 1 and query_string.startswith('#'):
+            try:
+                object_id = int(query_string[1:])
+                if object_id > 0:
+                    logic.objects.check_object_exists(object_id)
+                    return flask.redirect(flask.url_for('.object', object_id=object_id))
+            except ValueError:
+                pass
+            except logic.errors.ObjectDoesNotExistError:
+                pass
         try:
             filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
         except Exception:
