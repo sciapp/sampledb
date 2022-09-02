@@ -15,7 +15,7 @@ from .languages import get_user_language
 from .. import db
 from .background_tasks.send_mail import post_send_mail_task, BackgroundTaskStatus
 from .security_tokens import generate_token
-from ..models import Authentication, AuthenticationType, User, File
+from ..models import Authentication, AuthenticationType, User, File, Tag
 from ..utils import ansi_color
 
 
@@ -273,6 +273,19 @@ def print_deprecation_warnings() -> None:
             file=sys.stderr,
             end='\n\n'
         )
+    if show_numeric_tags_warning():
+        print(
+            ansi_color(
+                "Numeric tags are enabled, please evaluate if these are "
+                "necessary for your use case and set the configuration value "
+                "ENABLE_NUMERIC_TAGS to False to disable them. To learn more,"
+                "see: "
+                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#numeric-tags",
+                color=33
+            ),
+            file=sys.stderr,
+            end='\n\n'
+        )
 
 
 def show_admin_local_storage_warning() -> bool:
@@ -281,3 +294,16 @@ def show_admin_local_storage_warning() -> bool:
 
 def show_load_objects_in_background_warning() -> bool:
     return not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']
+
+
+def show_numeric_tags_warning() -> bool:
+    return flask.current_app.config['ENABLE_NUMERIC_TAGS']
+
+
+def do_numeric_tags_exist() -> bool:
+    """
+    Return whether any numeric tags exist in the tags table.
+
+    :return: whether any numeric tags exist
+    """
+    return Tag.query.filter(Tag.name.op("~")(r'^[0-9\.]+$')).first() is not None

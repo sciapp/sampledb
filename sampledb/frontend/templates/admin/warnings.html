@@ -12,6 +12,16 @@
     {% if show_load_objects_in_background_warning %}
         <li>{{ _('Asynchronous loading of object lists is disabled, please do not set the configuration value <code>LOAD_OBJECTS_IN_BACKGROUND</code> or set it to <code>True</code> or <code>1</code>.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#synchronous-loading-of-object Lists">{{ _('Read more.') }}</a></li>
     {% endif %}
+    {% if show_numeric_tags_warning %}
+        <li>
+        {% if do_numeric_tags_exist %}
+          {{ _('There are numeric tags, please evaluate if these are necessary for your use case and set the configuration value <code>ENABLE_NUMERIC_TAGS</code> to <code>False</code> to disable them.') }}
+        {% else %}
+          {{ _('Numeric tags are enabled, please do not set the configuration value <code>ENABLE_NUMERIC_TAGS</code> or set it to <code>False</code>.') }}
+        {% endif %}
+          <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#numeric-tags">{{ _('Read more.') }}</a>
+        </li>
+    {% endif %}
     </ul>
   {% else %}
     <p class="text-muted">{{ _('There are no warnings for this installation of SampleDB.') }}</p>

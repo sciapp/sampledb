@@ -5,6 +5,7 @@ Implementation of validate(instance, schema)
 
 import re
 import datetime
+import string
 import typing
 import math
 import json
@@ -27,7 +28,8 @@ def validate(
         instance: typing.Union[dict, list],
         schema: dict,
         path: typing.Optional[typing.List[str]] = None,
-        allow_disabled_languages: bool = False
+        allow_disabled_languages: bool = False,
+        strict: bool = False
 ) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
@@ -36,6 +38,7 @@ def validate(
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
     :param allow_disabled_languages: whether disabled languages are allowed
+    :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
@@ -45,9 +48,9 @@ def validate(
     if 'type' not in schema:
         raise ValidationError('invalid schema (must contain type)', path)
     if schema['type'] == 'array':
-        return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages)
+        return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict)
     elif schema['type'] == 'object':
-        return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages)
+        return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict)
     elif schema['type'] == 'text':
         return _validate_text(instance, schema, path, allow_disabled_languages=allow_disabled_languages)
     elif schema['type'] == 'datetime':
@@ -63,7 +66,7 @@ def validate(
     elif schema['type'] == 'object_reference':
         return _validate_object_reference(instance, schema, path)
     elif schema['type'] == 'tags':
-        return _validate_tags(instance, schema, path)
+        return _validate_tags(instance, schema, path, strict=strict)
     elif schema['type'] == 'hazards':
         return _validate_hazards(instance, schema, path)
     elif schema['type'] == 'user':
@@ -74,13 +77,19 @@ def validate(
         raise ValidationError('invalid type', path)
 
 
-def _validate_array(instance: list, schema: dict, path: typing.List[str], allow_disabled_languages: bool = False) -> None:
+def _validate_array(
+        instance: list,
+        schema: dict, path: typing.List[str],
+        allow_disabled_languages: bool = False,
+        strict: bool = False
+) -> None:
     """
     Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
 
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
+    :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, list):
@@ -92,7 +101,7 @@ def _validate_array(instance: list, schema: dict, path: typing.List[str], allow_
     errors = []
     for index, item in enumerate(instance):
         try:
-            validate(item, schema['items'], path + [str(index)], allow_disabled_languages=allow_disabled_languages)
+            validate(item, schema['items'], path + [str(index)], allow_disabled_languages=allow_disabled_languages, strict=strict)
         except ValidationError as e:
             errors.append(e)
     if len(errors) == 1:
@@ -145,13 +154,18 @@ def _validate_hazards(instance: list, schema: dict, path: typing.List[str]) -> N
         raise ValidationMultiError(errors)
 
 
-def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None:
+def _validate_tags(
+        instance: list,
+        schema: dict, path: typing.List[str],
+        strict: bool = False
+) -> None:
     """
     Validates the given instance using the given tags schema and raises a ValidationError if it is invalid.
 
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
+    :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
@@ -180,6 +194,8 @@ def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None
             errors.append(ValidationError('tag not lowercase: {}'.format(item), path + ['tags', str(index)]))
         elif any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in item):
             errors.append(ValidationError('tag contains invalid character: {}'.format(item), path + ['tags', str(index)]))
+        elif strict and all(c in string.digits for c in item) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
+            errors.append(ValidationError('numeric tags are not supported', path + ['tags', str(index)]))
         else:
             tags.append(item)
 
@@ -189,13 +205,20 @@ def _validate_tags(instance: list, schema: dict, path: typing.List[str]) -> None
         raise ValidationMultiError(errors)
 
 
-def _validate_object(instance: dict, schema: dict, path: typing.List[str], allow_disabled_languages: bool = False) -> None:
+def _validate_object(
+        instance: dict,
+        schema: dict,
+        path: typing.List[str],
+        allow_disabled_languages: bool = False,
+        strict: bool = False
+) -> None:
     """
     Validates the given instance using the given object schema and raises a ValidationError if it is invalid.
 
     :param instance: the sampledb object
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
+    :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
@@ -221,7 +244,7 @@ def _validate_object(instance: dict, schema: dict, path: typing.List[str], allow
             if property_name not in schema['properties']:
                 raise ValidationError('unknown property "{}"'.format(property_name), path + [property_name])
             else:
-                validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages)
+                validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict)
         except ValidationError as e:
             errors.append(e)
     if len(errors) == 1:

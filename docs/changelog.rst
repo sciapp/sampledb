@@ -17,6 +17,7 @@ Currently in development.
 - Enabled asynchronous loading of object lists by default
 - Deprecated setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` to false
 - Deprecated local file storage
+- Deprecated numeric tags
 - Added recipes
 - Allow missing datetime entries if not marked as required
 - Fix negated text search

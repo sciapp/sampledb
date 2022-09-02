@@ -114,7 +114,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
             return None
     if schema.get('markdown'):
         data['is_markdown'] = True
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -172,7 +172,7 @@ def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
         '_type': 'tags',
         'tags': tags
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -195,7 +195,7 @@ def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False)
         '_type': 'sample',
         'object_id': object_id
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -218,7 +218,7 @@ def parse_measurement_form_data(form_data, schema, id_prefix, errors, required=F
         '_type': 'measurement',
         'object_id': object_id
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -241,7 +241,7 @@ def parse_object_reference_form_data(form_data, schema, id_prefix, errors, requi
         '_type': 'object_reference',
         'object_id': object_id
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -287,7 +287,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         'dimensionality': dimensionality,
         'units': units
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -316,7 +316,7 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=Fals
         '_type': 'datetime',
         'utc_datetime': utc_datetime
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -383,7 +383,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
                     placeholder if item is None else item
                     for item in items
                 ]
-    schemas.validate(items, schema)
+    schemas.validate(items, schema, strict=True)
     return items
 
 
@@ -400,7 +400,7 @@ def parse_object_form_data(form_data, schema, id_prefix, errors, required=False)
         property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
         if property is not None:
             data[property_name] = property
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -423,7 +423,7 @@ def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
         '_type': 'user',
         'user_id': user_id
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
     return data
 
 
@@ -436,7 +436,7 @@ def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=
         '_type': 'plotly_chart',
         'plotly': plotly_chart_data
     }
-    schemas.validate(data, schema)
+    schemas.validate(data, schema, strict=True)
 
     return data
 

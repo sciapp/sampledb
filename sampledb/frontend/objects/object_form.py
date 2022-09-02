@@ -208,7 +208,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                 }), 400
             if object_data is not None and not errors:
                 try:
-                    validate(object_data, schema)
+                    validate(object_data, schema, strict=True)
                 except ValidationError:
                     # TODO: proper logging
                     print('object schema validation failed')
