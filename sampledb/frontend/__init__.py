@@ -21,6 +21,7 @@ from . import admin_warnings
 from . import authentication_forms
 from . import background_tasks
 from . import dataverse_export
+from . import download_service
 from . import export
 from . import favicon
 from . import index
@@ -50,6 +51,7 @@ __all__ = [
     'authentication_forms',
     'background_tasks',
     'dataverse_export',
+    'download_service',
     'export',
     'favicon',
     'index',

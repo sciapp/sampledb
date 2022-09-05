@@ -33,6 +33,7 @@ Currently in development.
 - Added .eln file export
 - Allow declining object responsibility assignments
 - Implemented location types, location responsible users and a location log
+- Added download service
 
 Version 0.20
 ------------

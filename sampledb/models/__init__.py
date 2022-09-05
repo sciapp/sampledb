@@ -36,6 +36,7 @@ from .components import Component
 from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
 from .dataverse_export import DataverseExport
 from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
+from .download_service import DownloadServiceJobFile
 from .favorites import FavoriteAction, FavoriteInstrument
 from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType
 from .files import File
@@ -102,6 +103,7 @@ __all__ = [
     'AuthenticationType',
     'Comment',
     'DataverseExport',
+    'DownloadServiceJobFile',
     'FavoriteAction',
     'FavoriteInstrument',
     'File',

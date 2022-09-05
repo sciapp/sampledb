@@ -152,6 +152,27 @@ SciCat Export
 
 For more information on the SciCat export, see :ref:`scicat_export`.
 
+.. _download_service_configuration:
+
+Download Service
+-------------
+
+.. list-table:: Download Service Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - DOWNLOAD_SERVICE_URL
+     - The base URL of the Download Service
+   * - DOWNLOAD_SERVICE_SECRET
+     - The shared secret
+   * - DOWNLOAD_SERVICE_WHITELIST
+     - Whitelist in form of a json dict. Example: {"/normally/restricted/path/": [userID, userID2]}
+   * - DOWNLOAD_SERVICE_TIME_LIMIT
+     - Time the created download link is valid. In seconds. Default are 24h.
+
+For more information on the Download Service, see :ref:`download_service`.
+
 Administrator Account
 ---------------------
 

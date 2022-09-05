@@ -24,13 +24,17 @@ import io
 import os
 import typing
 
+import flask
+
+from . import components, errors, object_log, objects, user_log, users
+from .components import get_component
+from .errors import FileDoesNotExistError, FileNameTooLongError, \
+    InvalidFileStorageError, TooManyFilesForObjectError
+from .objects import get_object
+from .users import get_user
 from .. import db
-from . import user_log, object_log, objects, users, components, errors
 from ..models import files
 from ..models.file_log import FileLogEntry, FileLogEntryType
-from .components import get_component
-from .errors import FileNameTooLongError, TooManyFilesForObjectError, FileDoesNotExistError, InvalidFileStorageError
-from .objects import get_object
 
 FILE_STORAGE_PATH: str = None
 MAX_NUM_FILES: int = 10000
@@ -106,6 +110,13 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             raise InvalidFileStorageError()
 
     @property
+    def filepath(self):
+        if self.storage in {'local_reference'}:
+            return self.data['filepath']
+        else:
+            raise InvalidFileStorageError()
+
+    @property
     def url(self) -> str:
         if self.storage == 'url':
             if self._url is None:
@@ -135,6 +146,8 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             if self._title is None:
                 if self.storage in {'local', 'database'}:
                     return self.original_file_name
+                elif self.storage == 'local_reference':
+                    return self.filepath
                 elif self.storage == 'url':
                     return self.url
                 else:
@@ -271,6 +284,47 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         db.session.delete(db_file)
         db.session.commit()
         raise
+    _create_file_logs(file)
+    return file
+
+
+def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> File:
+    """
+    Create a file as a link to a local file and add it to the object and user
+    logs.
+
+    :param object_id: the ID of an existing object
+    :param user_id: the ID of an existing user
+    :param filepath: the filepath relative to the mounting directory of the
+        download service
+    :return: the newly created file
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given user ID
+        exists
+    :raise errors.TooManyFilesForObjectError: when there are already 10000
+        files for the object with the given id
+    :raise errors.UserNotAllowedError: when the current user is not allowed to
+        add this certain filepath
+    """
+    path_permissions: dict = flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST']
+    user = get_user(user_id)
+
+    filepath = os.path.normpath(filepath)
+    for path in path_permissions.keys():
+        if path.startswith(filepath + os.sep):
+            if not (user.is_admin or user_id in path_permissions[path]):
+                raise errors.UnauthorizedRequestError()
+
+    db_file = _create_db_file(
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'storage': 'local_reference',
+            'filepath': filepath
+        }
+    )
+    file = File.from_database(db_file)
     _create_file_logs(file)
     return file
 

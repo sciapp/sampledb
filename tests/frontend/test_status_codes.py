@@ -61,6 +61,8 @@ def test_status_codes(flask_server, user):
     flask_server.app.config['DATAVERSE_URL'] = 'http://localhost'
     flask_server.app.config['SCICAT_FRONTEND_URL'] = 'http://localhost'
     flask_server.app.config['SCICAT_API_URL'] = 'http://localhost'
+    flask_server.app.config['DOWNLOAD_SERVICE_URL'] = 'http://localhost'
+    flask_server.app.config['DOWNLOAD_SERVICE_SECRET'] = 'secret'
     with flask_server.app.app_context():
         user_id = user.id
         language_id = sampledb.logic.languages.Language.ENGLISH
@@ -338,6 +340,7 @@ def test_status_codes(flask_server, user):
         f'objects/{object_id}': 200,
         f'objects/{object_id}/dataverse_export/': 200,
         f'objects/{object_id}/dc.rdf': 200,
+        f'objects/{object_id}/download_service/': 302,
         f'objects/{object_id}/export': 200,
         f'objects/{object_id}/files/': 200,
         f'objects/{object_id}/files/{file_id}': 200,
@@ -351,6 +354,7 @@ def test_status_codes(flask_server, user):
         f'objects/{object_id}/versions/0/restore': 200,
         f'objects/{other_object_id}': 200,
         f'objects/{other_object_id}/dataverse_export/': 200,
+        f'objects/{other_object_id}/download_service/': 302,
         f'objects/{other_object_id}/dc.rdf': 200,
         f'objects/{other_object_id}/export': 200,
         f'objects/{other_object_id}/files/': 200,

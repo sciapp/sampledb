@@ -98,7 +98,7 @@ def test_create_invalid_file(flask_server, object, auth, tmpdir):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "storage must be 'local', 'database' or 'url'"
+        "message": "storage must be 'local', 'local_reference', 'database' or 'url'"
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)
