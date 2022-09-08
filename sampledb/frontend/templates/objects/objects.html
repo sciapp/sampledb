@@ -461,7 +461,7 @@
         {{ federation_information_symbol(object.component, object.fed_object_id, 'object') }}
       </td>
       {% if 'date' in creation_info %}
-      <td>{{ object.created_at | babel_format_date }}</td>
+      <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
       {% endif %}
       {% if 'user' in creation_info %}
       <td>{% if object.created_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.get_name() }}</a>
@@ -469,7 +469,7 @@
         {% else %}&mdash;{% endif %}</td>
       {% endif %}
       {% if 'date' in last_edit_info %}
-      <td>{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
+      <td class="nowrap">{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
       {% endif %}
       {% if 'user' in last_edit_info %}
       <td>{% if object.modified_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.get_name() }}</a>
