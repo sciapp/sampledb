@@ -38,7 +38,9 @@
       <tbody>
         {% for notification in notifications %}
           <tr {% if not notification.was_read %}class="unread-notification"{% endif %}>
-            <td>{{ notification.utc_datetime | babel_format_date }}</td>
+            <td class="nowrap">
+              {{ notification.utc_datetime | babel_format_date }}
+            </td>
             <td>
               {% if notification.type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER %}
                 {{ _('<a href="%(assigner_url)s">%(assigner_name)s</a> assigned you as responsible user for <a href="%(object_url)s">object #%(object_id)s</a>.', assigner_url=url_for('.user_profile', user_id=notification.data['assigner_id']), assigner_name=get_user(notification.data['assigner_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
