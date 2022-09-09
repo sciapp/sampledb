@@ -8,7 +8,6 @@ import typing
 from . import errors
 from . import actions
 from . import favorites
-from . import languages
 from . import users
 from . import instruments
 from .permissions import ResourcePermissions
@@ -160,7 +159,6 @@ def get_sorted_actions_for_user(
         exists
     """
     user = users.get_user(user_id)
-    user_language_id = languages.get_user_language(user).id
     visible_actions = []
     action_permissions = {}
     for action in actions.get_actions(
@@ -178,7 +176,7 @@ def get_sorted_actions_for_user(
     visible_actions.sort(key=lambda action: (
         0 if action.id in user_favorite_action_ids else 1,
         action.user.name.lower() if action.user and action.user.name is not None else '',
-        get_translated_text(action.instrument.name, user_language_id).lower() if action.instrument else '',
-        get_translated_text(action.name, user_language_id).lower()
+        get_translated_text(action.instrument.name).lower() if action.instrument else '',
+        get_translated_text(action.name).lower()
     ))
     return visible_actions

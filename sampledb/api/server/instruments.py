@@ -7,7 +7,6 @@ from flask_restful import Resource
 
 from .authentication import multi_auth
 from ...logic.instruments import get_instrument, get_instruments
-from ...logic.languages import Language
 from ...logic import errors, utils
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -16,8 +15,8 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def instrument_to_json(instrument):
     return {
         'instrument_id': instrument.id,
-        'name': utils.get_translated_text(instrument.name, Language.ENGLISH),
-        'description': utils.get_translated_text(instrument.description, Language.ENGLISH),
+        'name': utils.get_translated_text(instrument.name, 'en'),
+        'description': utils.get_translated_text(instrument.description, 'en'),
         'is_hidden': instrument.is_hidden,
         'instrument_scientists': [user.id for user in instrument.responsible_users]
     }

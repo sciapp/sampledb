@@ -13,7 +13,7 @@ from ...logic.actions import get_action_type, get_action
 from ...logic.object_permissions import Permissions, get_user_object_permissions
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object, get_object_versions
-from ...logic.languages import get_language_by_lang_code, get_user_language, get_languages_in_object_data, get_language, Language
+from ...logic.languages import get_language_by_lang_code, get_languages_in_object_data, get_language, Language
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
 from ...logic.utils import get_translated_text
@@ -37,7 +37,6 @@ def object_versions(object_id):
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_version(object_id, version_id):
-    user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
     form = None
@@ -71,7 +70,7 @@ def object_version(object_id, version_id):
         metadata_language=metadata_language,
         ENGLISH=english,
         is_archived=True,
-        object_type=get_translated_text(action_type.object_name, user_language_id) if action_type is not None else None,
+        object_type=get_translated_text(action_type.object_name) if action_type is not None else None,
         action=action,
         action_type=action_type,
         instrument=instrument,

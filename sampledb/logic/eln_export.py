@@ -8,7 +8,6 @@ import typing
 import flask
 
 from .utils import get_translated_text
-from .languages import Language
 
 
 def generate_ro_crate_metadata(
@@ -56,7 +55,7 @@ def generate_ro_crate_metadata(
         ro_crate_metadata["@graph"].append({
             "@id": f"./objects/{object_info['id']}",
             "@type": "Dataset",
-            "name": f"{get_translated_text(object_info['versions'][-1]['data'].get('name', {}).get('text', {}), Language.ENGLISH)}" if object_info['versions'][-1]['data'] is not None else '',
+            "name": f"{get_translated_text(object_info['versions'][-1]['data'].get('name', {}).get('text', {}), 'en')}" if object_info['versions'][-1]['data'] is not None else '',
             "description": f"Object #{object_info['id']}",
             "dateCreated": object_info['versions'][0]['utc_datetime'],
             "dateModified": object_info['versions'][-1]['utc_datetime'],
@@ -83,7 +82,7 @@ def generate_ro_crate_metadata(
             ro_crate_metadata["@graph"].append({
                 "@id": f"./objects/{object_info['id']}/version/{version_info['id']}",
                 "@type": "Dataset",
-                "name": f"{get_translated_text(version_info['data'].get('name', {}).get('text', {}), Language.ENGLISH)}" if version_info['data'] is not None else '',
+                "name": f"{get_translated_text(version_info['data'].get('name', {}).get('text', {}), 'en')}" if version_info['data'] is not None else '',
                 "description": f"Object #{object_info['id']} version #{version_info['id']}",
                 "dateCreated": version_info['utc_datetime'],
                 "author": {"@id": f"./users/{version_info['user_id']}"},

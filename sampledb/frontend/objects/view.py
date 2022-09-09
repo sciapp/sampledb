@@ -27,7 +27,7 @@ from ...logic.object_log import ObjectLogEntryType
 from ...logic.projects import get_project
 from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree
 from ...logic.location_permissions import get_locations_with_user_permissions
-from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
+from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.files import FileLogEntryType
 from ...logic.components import get_component
 from ...logic.notebook_templates import get_notebook_templates
@@ -107,7 +107,6 @@ def object(object_id):
     template_kwargs = {}
 
     # languages
-    user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
     all_languages = get_languages()
     languages_by_lang_code = {
@@ -134,7 +133,7 @@ def object(object_id):
         action = get_action(object.action_id)
         action_type = get_action_type(action.type_id) if action.type_id is not None else None
         instrument = action.instrument
-        object_type = get_translated_text(action_type.object_name, user_language_id) if action_type else None
+        object_type = get_translated_text(action_type.object_name) if action_type else None
         if action.schema is not None and action.schema != object.schema:
             new_schema_available = True
         else:
@@ -238,8 +237,8 @@ def object(object_id):
         favorite_measurement_actions.sort(
             key=lambda action: (
                 action.user.name.lower() if action.user else '',
-                get_translated_text(action.instrument.name, user_language_id).lower() if action.instrument else '',
-                get_translated_text(action.name, user_language_id).lower()
+                get_translated_text(action.instrument.name).lower() if action.instrument else '',
+                get_translated_text(action.name).lower()
             )
         )
     else:

@@ -46,11 +46,11 @@ def main(arguments):
             action_type_id = None
     if action_type_id is None:
         print("Error: action type must be one of the following:", file=sys.stderr)
-        print(f'- "sample" (for {get_translated_text(get_action_type(models.ActionType.SAMPLE_CREATION).name, Language.ENGLISH)})', file=sys.stderr)
-        print(f'- "measurement" (for {get_translated_text(get_action_type(models.ActionType.MEASUREMENT).name, Language.ENGLISH)})', file=sys.stderr)
-        print(f'- "simulation" (for {get_translated_text(get_action_type(models.ActionType.SIMULATION).name, Language.ENGLISH)})', file=sys.stderr)
+        print(f'- "sample" (for {get_translated_text(get_action_type(models.ActionType.SAMPLE_CREATION).name, "en")})', file=sys.stderr)
+        print(f'- "measurement" (for {get_translated_text(get_action_type(models.ActionType.MEASUREMENT).name, "en")})', file=sys.stderr)
+        print(f'- "simulation" (for {get_translated_text(get_action_type(models.ActionType.SIMULATION).name, "en")})', file=sys.stderr)
         for action_type in get_action_types():
-            print(f'- "{action_type.id}" (for {get_translated_text(action_type.name, Language.ENGLISH)})', file=sys.stderr)
+            print(f'- "{action_type.id}" (for {get_translated_text(action_type.name, "en")})', file=sys.stderr)
         exit(1)
     app = create_app()
     with app.app_context():

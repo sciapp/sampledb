@@ -9,7 +9,6 @@ from flask_restful import Resource
 from .authentication import multi_auth
 from ...logic.actions import get_action
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
-from ...logic.languages import Language
 from ...logic import errors, utils
 from ...models.actions import ActionType, Action
 
@@ -29,11 +28,11 @@ def action_to_json(action: Action):
         'type_id': action.type_id,
         'name': utils.get_translated_text(
             action.name,
-            language_code=Language.ENGLISH
+            language_code='en'
         ) or None,
         'description': utils.get_translated_text(
             action.description,
-            language_code=Language.ENGLISH
+            language_code='en'
         ) or None,
         'is_hidden': action.is_hidden,
         'schema': action.schema

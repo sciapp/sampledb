@@ -40,7 +40,6 @@ def objects():
     objects = []
     display_properties = []
     display_property_titles = {}
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
     if 'display_properties' in flask.request.args:
         for property_info in itertools.chain(*[
             display_properties_str.split(',')
@@ -647,7 +646,7 @@ def objects():
     if filter_action_type_ids:
         for action_type_id in filter_action_type_ids:
             action_type = get_action_type(action_type_id)
-            action_type_name = get_translated_text(action_type.name, user_language_id, default=_('Unnamed Action Type'))
+            action_type_name = get_translated_text(action_type.name, default=_('Unnamed Action Type'))
             action_type_component = get_component(action_type.component_id) if action_type.component_id is not None else None
             filter_action_type_infos.append({
                 'id': action_type_id,
@@ -658,15 +657,15 @@ def objects():
             })
 
             if filter_action_type_ids and len(filter_action_type_ids) == 1:
-                object_name_plural = get_translated_text(action_type.name, user_language_id, default=_('Objects'))
+                object_name_plural = get_translated_text(action_type.object_name_plural, default=_('Objects'))
     elif implicit_action_type is not None:
-        object_name_plural = get_translated_text(implicit_action_type.name, user_language_id, default=_('Objects'))
+        object_name_plural = get_translated_text(implicit_action_type.object_name_plural, default=_('Objects'))
 
     filter_action_infos = []
     if filter_action_ids:
         for action_id in filter_action_ids:
             action = get_action(action_id)
-            action_name = get_translated_text(action.name, user_language_id, _('Unnamed Action'))
+            action_name = get_translated_text(action.name, default=_('Unnamed Action'))
             action_name += f' (#{action_id})'
             filter_action_infos.append({
                 'name': action_name,
