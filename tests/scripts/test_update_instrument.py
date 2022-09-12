@@ -27,7 +27,7 @@ def test_update_instrument(capsys):
     instrument = instruments.get_instruments()[0]
     assert len(instrument.responsible_users) == 0
     assert instrument.name['en'] == name
-    assert instrument.description['en'] == ''
+    assert 'en' not in instrument.description
 
 
 def test_update_instrument_missing_arguments(capsys):

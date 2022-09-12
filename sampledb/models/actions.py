@@ -59,6 +59,7 @@ class ActionType(db.Model):
         return {
             translation.language.lang_code: translation.name
             for translation in self.translations
+            if translation.name
         }
 
     @property
@@ -66,6 +67,7 @@ class ActionType(db.Model):
         return {
             translation.language.lang_code: translation.description
             for translation in self.translations
+            if translation.description
         }
 
     @property
@@ -73,6 +75,7 @@ class ActionType(db.Model):
         return {
             translation.language.lang_code: translation.object_name
             for translation in self.translations
+            if translation.object_name
         }
 
     @property
@@ -80,6 +83,7 @@ class ActionType(db.Model):
         return {
             translation.language.lang_code: translation.object_name_plural
             for translation in self.translations
+            if translation.object_name_plural
         }
 
     @property
@@ -87,6 +91,7 @@ class ActionType(db.Model):
         return {
             translation.language.lang_code: translation.view_text
             for translation in self.translations
+            if translation.view_text
         }
 
     @property
@@ -94,6 +99,7 @@ class ActionType(db.Model):
         return {
             translation.language.lang_code: translation.perform_text
             for translation in self.translations
+            if translation.perform_text
         }
 
 
@@ -167,6 +173,7 @@ class Action(db.Model):
         return {
             translation.language.lang_code: translation.name
             for translation in self.translations
+            if translation.name
         }
 
     @property
@@ -174,6 +181,7 @@ class Action(db.Model):
         return {
             translation.language.lang_code: translation.description
             for translation in self.translations
+            if translation.description
         }
 
     @property
@@ -181,4 +189,5 @@ class Action(db.Model):
         return {
             translation.language.lang_code: translation.short_description
             for translation in self.translations
+            if translation.short_description
         }

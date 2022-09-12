@@ -82,6 +82,7 @@ class Instrument(db.Model):
         return {
             translation.language.lang_code: translation.name
             for translation in self.translations
+            if translation.name
         }
 
     @property
@@ -89,6 +90,7 @@ class Instrument(db.Model):
         return {
             translation.language.lang_code: translation.notes
             for translation in self.translations
+            if translation.notes
         }
 
     @property
@@ -96,6 +98,7 @@ class Instrument(db.Model):
         return {
             translation.language.lang_code: translation.description
             for translation in self.translations
+            if translation.description
         }
 
     @property
@@ -103,4 +106,5 @@ class Instrument(db.Model):
         return {
             translation.language.lang_code: translation.short_description
             for translation in self.translations
+            if translation.short_description
         }

@@ -147,7 +147,12 @@ def get_translated_text(
         return text
 
     if isinstance(text, dict):
-        return str(text.get(language_code, text.get('en', default)))
+        translated_text = text.get(language_code)
+        if translated_text:
+            return translated_text
+        translated_text = text.get('en')
+        if translated_text:
+            return translated_text
 
     return default
 
