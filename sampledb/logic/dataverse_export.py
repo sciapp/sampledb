@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 import flask
 import requests
 
-from .components import get_component_by_uuid
+from .components import get_component_by_uuid, Component
 from .. import db
 from .units import prettify_units
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
@@ -219,7 +219,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                 else:
                     object_name = None
                 if obj.component:
-                    component_name = obj.component.get_name()
+                    component_name = Component.from_database(obj.component).get_name()
                     fed_id = obj.fed_object_id
                 else:
                     component_name = None
@@ -381,7 +381,8 @@ def upload_object(
     if object.component is None or object.component.uuid == flask.current_app.config['SERVICE_NAME']:
         description = f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
     else:
-        description = f'Dataset exported as object #{object.object_id} from {flask.current_app.config["SERVICE_NAME"]} and created as object #{object.fed_object_id} at {object.component.get_name()}.'
+        object_component = Component.from_database(object.component)
+        description = f'Dataset exported as object #{object.object_id} from {flask.current_app.config["SERVICE_NAME"]} and created as object #{object.fed_object_id} at {object_component.get_name()}.'
 
     citation_metadata = {
         'displayName': 'Citation Metadata',

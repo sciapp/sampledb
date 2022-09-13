@@ -425,7 +425,7 @@ def project(project_id):
                 if action_type.enable_project_link:
                     linkable_action_ids.extend([
                         action.id
-                        for action in logic.actions.get_actions(action_type.id)
+                        for action in logic.actions.get_actions(action_type_id=action_type.id)
                     ])
                     if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
                         for object_info in logic.object_permissions.get_object_info_with_permissions(user_id, Permissions.GRANT, action_type_id=action_type.id):

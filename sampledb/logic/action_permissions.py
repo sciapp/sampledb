@@ -130,7 +130,7 @@ def get_actions_with_permissions(user_id: int, permissions: Permissions, action_
     if permissions == Permissions.NONE:
         return []
     actions_with_permissions = []
-    for action in actions.get_actions(action_type_id):
+    for action in actions.get_actions(action_type_id=action_type_id):
         if permissions in get_user_action_permissions(user_id=user_id, action_id=action.id):
             actions_with_permissions.append(action)
     return actions_with_permissions

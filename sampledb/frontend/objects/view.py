@@ -15,7 +15,6 @@ from flask_babel import _
 from .. import frontend
 from ... import logic
 from ... import models
-from ... import db
 from ...logic import object_log, comments, errors
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
@@ -443,7 +442,6 @@ def object(object_id):
         action_type_id_by_action_id = {}
         for action in sorted_actions:
             action_type_id_by_action_id[action.id] = action.type_id
-            db.session.expunge(action)
         template_kwargs.update({
             "sorted_actions": sorted_actions,
             "action_type_id_by_action_id": action_type_id_by_action_id,

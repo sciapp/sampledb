@@ -23,7 +23,7 @@ from ..logic.instruments import get_instrument, create_instrument, update_instru
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
-from ..logic.actions import ActionType
+from ..logic.actions import ActionType, get_actions
 from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
@@ -329,7 +329,7 @@ def instrument(instrument_id):
 
     instrument_actions = [
         action
-        for action in instrument.actions
+        for action in get_actions(instrument_id=instrument.id)
         if Permissions.READ in get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
     ]
     return flask.render_template(

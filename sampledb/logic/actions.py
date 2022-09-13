@@ -25,8 +25,99 @@ import typing
 
 from .. import db
 from .. import models
-from ..models import Action, SciCatExportType
+from ..models import SciCatExportType
 from . import errors, instruments, users, schemas, components
+
+
+class Action(collections.namedtuple('Action', [
+    'id',
+    'type_id',
+    'type',
+    'instrument_id',
+    'instrument',
+    'schema',
+    'user_id',
+    'user',
+    'is_hidden',
+    'name',
+    'description',
+    'description_is_markdown',
+    'short_description',
+    'short_description_is_markdown',
+    'fed_id',
+    'component_id',
+    'component'
+])):
+    """
+    This class provides an immutable wrapper around models.actions.Action.
+    """
+
+    def __new__(
+            cls,
+            id: int,
+            type_id: int,
+            type: typing.Optional['ActionType'],
+            instrument_id: int,
+            instrument: typing.Optional[instruments.Instrument],
+            schema: typing.Dict[str, typing.Any],
+            user_id: int,
+            user: typing.Optional[users.User],
+            is_hidden: bool,
+            name: typing.Dict[str, str],
+            description: typing.Dict[str, str],
+            description_is_markdown: bool,
+            short_description: typing.Dict[str, str],
+            short_description_is_markdown: bool,
+            fed_id: int,
+            component_id: int,
+            component: typing.Optional[components.Component]
+    ):
+        self = super(Action, cls).__new__(
+            cls,
+            id,
+            type_id,
+            type,
+            instrument_id,
+            instrument,
+            schema,
+            user_id,
+            user,
+            is_hidden,
+            name,
+            description,
+            description_is_markdown,
+            short_description,
+            short_description_is_markdown,
+            fed_id,
+            component_id,
+            component
+        )
+        return self
+
+    @classmethod
+    def from_database(cls, action: models.Action) -> 'Action':
+        return Action(
+            id=action.id,
+            type_id=action.type_id,
+            type=ActionType.from_database(action.type) if action.type is not None else None,
+            instrument_id=action.instrument_id,
+            instrument=instruments.Instrument.from_database(action.instrument) if action.instrument is not None else None,
+            schema=copy.deepcopy(action.schema) if action.schema is not None else None,
+            user_id=action.user_id,
+            user=users.User.from_database(action.user) if action.user is not None else None,
+            is_hidden=action.is_hidden,
+            name=action.name,
+            description=action.description,
+            description_is_markdown=action.description_is_markdown,
+            short_description=action.short_description,
+            short_description_is_markdown=action.short_description_is_markdown,
+            fed_id=action.fed_id,
+            component_id=action.component_id,
+            component=components.Component.from_database(action.component) if action.component is not None else None
+        )
+
+    def __repr__(self):
+        return f"<{type(self).__name__}(id={self.id!r})>"
 
 
 class ActionType(collections.namedtuple('ActionType', [
@@ -362,7 +453,7 @@ def create_action(
         # ensure that the component can be found
         components.get_component(component_id)
 
-    action = Action(
+    action = models.Action(
         action_type_id=action_type_id,
         description_is_markdown=description_is_markdown,
         is_hidden=is_hidden,
@@ -375,45 +466,82 @@ def create_action(
     )
     db.session.add(action)
     db.session.commit()
-    return action
+    return Action.from_database(action)
 
 
-def get_actions(action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
+def get_actions(
+        *,
+        action_type_id: typing.Optional[int] = None,
+        instrument_id: typing.Optional[int] = None,
+) -> typing.List[Action]:
     """
     Returns all actions, optionally only actions of a given type.
 
-    :param action_type_id: None or the ID of an existing action type
+    :param action_type_id: the ID of an existing action type, or None
+    :param instrument_id: the ID of an existing instrument, or None
     :return: the list of actions
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
     """
+    query = models.Action.query
     if action_type_id is not None:
-        actions = Action.query.filter_by(type_id=action_type_id).all()
-        if not actions:
+        query = query.filter_by(type_id=action_type_id)
+    if instrument_id is not None:
+        query = query.filter_by(instrument_id=instrument_id)
+    actions = query.all()
+    if not actions:
+        if action_type_id is not None:
             # ensure the action type exists
             get_action_type(action_type_id=action_type_id)
-        return actions
-    return Action.query.all()
+        if instrument_id is not None:
+            # ensure the instrument exists
+            instruments.get_instrument(instrument_id=instrument_id)
+    return [
+        Action.from_database(action)
+        for action in actions
+    ]
 
 
-def get_action(action_id: int, component_id: typing.Optional[int] = None) -> Action:
+def get_mutable_action(
+        action_id: int,
+        component_id: typing.Optional[int] = None
+) -> models.Action:
     """
-    Returns the action with the given action ID.
+    Get the mutable action instance to perform changes in the database on.
 
     :param action_id: the ID of an existing action
-    :return: the action
+    :param component_id: the ID of an existing component, or None
+    :return: the mutable action
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
     if component_id is None:
-        action = Action.query.get(action_id)
+        action = models.Action.query.get(action_id)
     else:
         # ensure that the component can be found
         components.get_component(component_id)
-        action = Action.query.filter_by(fed_id=action_id, component_id=component_id).first()
+        action = models.Action.query.filter_by(fed_id=action_id, component_id=component_id).first()
     if action is None:
         raise errors.ActionDoesNotExistError()
     return action
+
+
+def get_action(
+        action_id: int,
+        component_id: typing.Optional[int] = None
+) -> Action:
+    """
+    Return the action with the given action ID.
+
+    :param action_id: the ID of an existing action
+    :param component_id: the ID of an existing component, or None
+    :return: the action
+    :raise errors.ActionDoesNotExistError: when no action with the given
+        action ID exists
+    """
+    return Action.from_database(get_mutable_action(action_id, component_id))
 
 
 def update_action(
@@ -430,7 +558,7 @@ def update_action(
     :param action_id: the ID of an existing action
     :param schema: the new schema for objects created using this action
     :param description_is_markdown: whether the description contains Markdown
-    :param is_hidden: None or whether or not the action should be hidden
+    :param is_hidden: None or whether the action should be hidden
     :param short_description_is_markdown: whether the short description
         contains Markdown
     :raise errors.SchemaValidationError: when the schema is invalid
@@ -438,9 +566,7 @@ def update_action(
         and no instrument with the given instrument ID exists
     """
     schemas.validate_schema(schema, invalid_template_action_ids=[action_id], strict=True)
-    action = Action.query.get(action_id)
-    if action is None:
-        raise errors.ActionDoesNotExistError()
+    action = get_mutable_action(action_id)
     action.description_is_markdown = description_is_markdown
     action.schema = schema
     action.short_description_is_markdown = short_description_is_markdown
@@ -475,8 +601,9 @@ def update_actions_using_template_action(
                 schemas.validate_schema(updated_schema, strict=True)
             except errors.ValidationError:
                 continue
-            action.schema = updated_schema
-            db.session.add(action)
+            mutable_action = get_mutable_action(action.id)
+            mutable_action.schema = updated_schema
+            db.session.add(mutable_action)
             if action.type.is_template:
                 updated_template_action_ids.append(action.id)
     db.session.commit()

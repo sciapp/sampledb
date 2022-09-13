@@ -64,10 +64,12 @@ def test_instrument_responsible_users():
     instrument = instruments.create_instrument()
     assert len(instrument.responsible_users) == 0
     instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
+    instrument = instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 1
     with pytest.raises(errors.UserAlreadyResponsibleForInstrumentError):
         instruments.add_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
     instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
+    instrument = instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 0
     with pytest.raises(errors.UserNotResponsibleForInstrumentError):
         instruments.remove_instrument_responsible_user(instrument_id=instrument.id, user_id=user.id)
@@ -104,16 +106,20 @@ def test_set_instrument_responsible_users():
     instrument = instruments.create_instrument()
     assert len(instrument.responsible_users) == 0
     instruments.set_instrument_responsible_users(instrument.id, [user1.id])
+    instrument = instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 1
     assert user1 in instrument.responsible_users
     instruments.set_instrument_responsible_users(instrument.id, [user2.id])
+    instrument = instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 1
     assert user2 in instrument.responsible_users
     instruments.set_instrument_responsible_users(instrument.id, [user1.id, user2.id])
+    instrument = instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 2
     assert user1 in instrument.responsible_users
     assert user2 in instrument.responsible_users
     instruments.set_instrument_responsible_users(instrument.id, [])
+    instrument = instruments.get_instrument(instrument_id=instrument.id)
     assert len(instrument.responsible_users) == 0
 
 

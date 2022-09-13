@@ -314,7 +314,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
-        for action in get_actions(action_type.id):
+        for action in get_actions(action_type_id=action_type.id):
             if action_type.component_id is not None and action_type.fed_id < 0:
                 action_type_id_by_action_id[action.id] = action_type.fed_id
             else:

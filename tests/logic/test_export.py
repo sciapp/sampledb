@@ -117,7 +117,7 @@ def validate_data(data):
     del data['instruments'][0]['instrument_log_entries'][0]['versions'][0]['utc_datetime']
 
     user_id = sampledb.logic.users.get_users()[0].id
-    action_id = sampledb.logic.actions.get_actions(sampledb.models.ActionType.SAMPLE_CREATION)[0].id
+    action_id = sampledb.logic.actions.get_actions(action_type_id=sampledb.models.ActionType.SAMPLE_CREATION)[0].id
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
     instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id

@@ -17,7 +17,6 @@ import sampledb.__main__ as scripts
 def instrument():
     instrument = instruments.create_instrument()
     assert instrument.id is not None
-    db.session.expunge(instrument)
     return instrument
 
 
@@ -36,7 +35,6 @@ def action(instrument, schema_file_name):
         instrument_id=instrument.id
     )
     assert action.id is not None
-    db.session.expunge(action)
     return action
 
 

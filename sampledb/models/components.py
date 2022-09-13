@@ -3,9 +3,7 @@
 
 """
 import datetime
-import re
 import typing
-from flask_babel import _
 
 from .. import db
 
@@ -29,12 +27,3 @@ class Component(db.Model):
 
     def __repr__(self):
         return '<{0}(id={1.id}, address={1.address}, uuid={1.uuid}, name={1.name}, description={1.description})>'.format(type(self).__name__, self)
-
-    def get_name(self):
-        if self.name is None:
-            if self.address is not None:
-                regex = re.compile(r"^https?://(www\.)?")    # should usually be https
-                return regex.sub('', self.address).strip().strip('/')
-            return _('Database #%(id)s', id=self.id)
-        else:
-            return self.name

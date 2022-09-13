@@ -22,12 +22,12 @@ from .object_permissions import set_user_object_permissions, set_group_object_pe
 from .schemas import validate_schema, validate
 from .. import db
 from . import errors, fed_logs, languages, markdown_to_html
-from .actions import get_action, create_action_type, get_action_type, update_action_type, create_action
+from .actions import get_action, create_action_type, get_action_type, update_action_type, create_action, get_mutable_action
 from .component_authentication import get_own_authentication
-from .comments import get_comment, get_comments_for_object, create_comment
+from .comments import get_comment, get_comments_for_object, create_comment, update_comment
 from .components import get_component_by_uuid, get_component, add_component
 from .groups import get_group
-from .instruments import create_instrument, get_instrument
+from .instruments import create_instrument, get_instrument, get_mutable_instrument
 from .locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations, get_location_type, create_location_type, update_location_type, set_location_responsible_users, LocationType
 from .objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from .projects import get_project
@@ -300,7 +300,7 @@ def import_user(user_data, component):
 def import_instrument(instrument_data, component):
     component_id = _get_or_create_component_id(instrument_data['component_uuid'])
     try:
-        instrument = get_instrument(instrument_data['fed_id'], component_id)
+        instrument = get_mutable_instrument(instrument_data['fed_id'], component_id)
         if instrument.description_is_markdown != instrument_data['description_is_markdown'] or instrument.is_hidden != instrument_data['is_hidden'] or instrument.short_description_is_markdown != instrument_data['short_description_is_markdown']:
             instrument.description_is_markdown = instrument_data['description_is_markdown']
             instrument.is_hidden = instrument_data['is_hidden']
@@ -472,10 +472,12 @@ def import_comment(comment_data, object, component):
         comment = get_comment(comment_data['fed_id'], component_id)
 
         if comment.user_id != user_id or comment.content != comment_data['content'] or comment.utc_datetime != comment_data['utc_datetime']:
-            comment.user_id = user_id
-            comment.content = comment_data['content']
-            comment.utc_datetime = comment_data['utc_datetime']
-            db.session.commit()
+            update_comment(
+                comment_id=comment.id,
+                user_id=user_id,
+                content=comment_data['content'],
+                utc_datetime=comment_data['utc_datetime']
+            )
             fed_logs.update_comment(comment.id, component.id)
 
     except errors.CommentDoesNotExistError:
@@ -672,7 +674,7 @@ def import_action(action_data, component):
     schema = _import_schema(action_data['schema'])
 
     try:
-        action = get_action(action_data['fed_id'], component_id)
+        action = get_mutable_action(action_data['fed_id'], component_id)
         if action.type_id != action_type_id or action.schema != action_data['schema'] or action.instrument_id != instrument_id or action.user_id != user_id or action.description_is_markdown != action_data['description_is_markdown'] or action.is_hidden != action_data['is_hidden'] or action.short_description_is_markdown != action_data['short_description_is_markdown']:
             action.action_type_id = action_type_id
             action.schema = schema
