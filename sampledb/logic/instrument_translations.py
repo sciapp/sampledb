@@ -11,7 +11,7 @@ import typing
 from flask_babel import _
 
 from .. import db
-from ..models import Instrument, Language
+from ..models import Language
 from .. import models
 from ..logic import errors, languages, instruments
 
@@ -91,18 +91,6 @@ def set_instrument_translation(
     return InstrumentTranslation.from_database(instrument_translation)
 
 
-def get_instrument_translations() -> typing.List[InstrumentTranslation]:
-    """
-    Returns all instrument translations.
-
-    :return: a list of all instrument translations
-    """
-    return [
-        InstrumentTranslation.from_database(instrument_translation)
-        for instrument_translation in models.InstrumentTranslation.query.all()
-    ]
-
-
 def get_instrument_translations_for_instrument(instrument_id: int, use_fallback: bool = False) -> typing.List[InstrumentTranslation]:
     """
     Returns all instrument translations for an instrument
@@ -129,75 +117,6 @@ def get_instrument_translations_for_instrument(instrument_id: int, use_fallback:
     ]
 
 
-def get_instrument_translation_for_instrument_in_language(
-        instrument_id: int,
-        language_id: int,
-        use_fallback: bool = False
-) -> InstrumentTranslation:
-    """
-    Returns an instrument translation with the given instrument ID and language.
-    If the non english translation is not as complete as its english version, the missing parts will be
-    added from the english version as attributes.
-    If there is no translation for the given language the english translation will be returned.
-
-    :param instrument_id: the ID of an existing instrument
-    :param language_id: either the ID or the lang_code of an existing language
-    :return: the instrument translation, which may contain additional english attributes such as english_name etc.
-    :raise errors.InstrumentDoesNotExistError: when no instrument with the
-        given instrument ID exists
-    :raise errors.InstrumentTranslationDoesNotExistError: when no translation with the given language_id exists or
-        when there is no english translation
-    """
-    instrument_translation = models.InstrumentTranslation.query.filter_by(
-        instrument_id=instrument_id,
-        language_id=language_id
-    ).first()
-    if not use_fallback:
-        if instrument_translation is None:
-            raise errors.InstrumentTranslationDoesNotExistError()
-        else:
-            return InstrumentTranslation.from_database(instrument_translation)
-
-    if language_id == Language.ENGLISH:
-        english_translation = instrument_translation
-    else:
-        english_translation = models.InstrumentTranslation.query.filter_by(
-            instrument_id=instrument_id,
-            language_id=Language.ENGLISH
-        ).first()
-
-    result_translation = InstrumentTranslation(
-        instrument_id=instrument_id,
-        language_id=language_id if instrument_translation is not None else Language.ENGLISH,
-        name=_('Unnamed Instrument (#%(instrument_id)s)', instrument_id=instrument_id),
-        description='',
-        short_description='',
-        notes=''
-    )
-
-    if instrument_translation is not None and instrument_translation.name:
-        result_translation = result_translation._replace(name=instrument_translation.name)
-    elif english_translation is not None and english_translation.name:
-        result_translation = result_translation._replace(name=english_translation.name)
-
-    if instrument_translation is not None and instrument_translation.description:
-        result_translation = result_translation._replace(description=instrument_translation.description)
-    elif english_translation is not None and english_translation.description:
-        result_translation = result_translation._replace(description=english_translation.description)
-
-    if instrument_translation is not None and instrument_translation.short_description:
-        result_translation = result_translation._replace(short_description=instrument_translation.short_description)
-    elif english_translation is not None and english_translation.short_description:
-        result_translation = result_translation._replace(short_description=english_translation.short_description)
-
-    if instrument_translation is not None and instrument_translation.notes:
-        result_translation = result_translation._replace(notes=instrument_translation.notes)
-    elif english_translation is not None and english_translation.notes:
-        result_translation = result_translation._replace(notes=english_translation.notes)
-
-    return result_translation
-
-
 def delete_instrument_translation(
         instrument_id: int,
         language_id: int
@@ -218,40 +137,3 @@ def delete_instrument_translation(
         raise errors.InstrumentTranslationDoesNotExistError()
     db.session.delete(instrument_translation)
     db.session.commit()
-
-
-def get_instrument_with_translation_in_language(
-        instrument_id: int,
-        language_id: int
-) -> Instrument:
-    """
-    Return the instrument with the given instrument ID and translation.
-
-    :param instrument_id: the ID of an existing instrument
-    :param language_id: the ID of an existing language
-    :return: an instrument, with an additional attribute translation
-    """
-
-    instrument = instruments.get_instrument(instrument_id)
-    setattr(instrument, 'translation', get_instrument_translation_for_instrument_in_language(
-        instrument_id=instrument_id,
-        language_id=language_id,
-        use_fallback=True
-    ))
-    return instrument
-
-
-def get_instruments_with_translation_in_language(language_id: int):
-    """
-    Return all instruments with a translation in the given language.
-
-    :param language_id: the ID of an existing language
-    :return: a list of instruments, with an additional attribute translation
-    """
-    return [
-        get_instrument_with_translation_in_language(
-            instrument_id=instrument.id,
-            language_id=language_id
-        )
-        for instrument in Instrument.query.all()
-    ]

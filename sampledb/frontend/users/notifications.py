@@ -15,7 +15,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments, instrument_translations
+from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -127,7 +127,6 @@ def notifications(user_id):
         is_group_member=_is_group_member,
         get_project=_safe_get_project,
         get_instrument=_safe_get_instrument,
-        get_instrument_with_translation_in_language=_safe_get_instrument_with_translation_in_language,
         get_instrument_log_entry=_safe_get_instrument_log_entry,
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
@@ -176,16 +175,4 @@ def _safe_get_instrument_log_entry(instrument_log_entry_id: int) -> typing.Optio
     try:
         return instrument_log_entries.get_instrument_log_entry(instrument_log_entry_id)
     except errors.InstrumentLogEntryDoesNotExistError:
-        return None
-
-
-def _safe_get_instrument_with_translation_in_language(
-        instrument_id: int,
-        language_id: int
-) -> typing.Optional[instruments.Instrument]:
-    try:
-        return instrument_translations.get_instrument_with_translation_in_language(instrument_id, language_id)
-    except errors.InstrumentDoesNotExistError:
-        return None
-    except errors.InstrumentTranslationDoesNotExistError:
         return None

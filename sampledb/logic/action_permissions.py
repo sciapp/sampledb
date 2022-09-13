@@ -7,15 +7,12 @@ import typing
 
 from . import errors
 from . import actions
-from . import action_translations
-from . import action_type_translations
 from . import favorites
-from . import languages
 from . import users
 from . import instruments
-from . import instrument_translations
 from .permissions import ResourcePermissions
 from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions, Action
+from .utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -162,15 +159,10 @@ def get_sorted_actions_for_user(
         exists
     """
     user = users.get_user(user_id)
-    user_language_id = languages.get_user_language(user).id
     visible_actions = []
     action_permissions = {}
-    translated_instruments_by_id = {}
-    translated_action_types_by_id = {}
-    for action in action_translations.get_actions_with_translation_in_language(
-        language_id=user_language_id,
-        action_type_id=action_type_id,
-        use_fallback=True
+    for action in actions.get_actions(
+        action_type_id=action_type_id
     ):
         if owner_id is not None and action.user_id != owner_id:
             continue
@@ -178,25 +170,13 @@ def get_sorted_actions_for_user(
             continue
         permissions = get_user_action_permissions(user_id=user_id, action_id=action.id)
         if Permissions.READ in permissions:
-            # instrument translation
-            if action.instrument_id:
-                if action.instrument_id not in translated_instruments_by_id:
-                    translated_instruments_by_id[action.instrument_id] = instrument_translations.get_instrument_with_translation_in_language(action.instrument_id, user_language_id)
-                setattr(action, 'instrument', translated_instruments_by_id[action.instrument_id])
-
-            if action.type_id:
-                #  action type translation
-                if action.type_id not in translated_action_types_by_id:
-                    translated_action_types_by_id[action.type_id] = action_type_translations.get_action_type_with_translation_in_language(action.type.id, user_language_id)
-                setattr(action, 'type', translated_action_types_by_id[action.type_id])
-
             visible_actions.append(action)
             action_permissions[action.id] = permissions
     user_favorite_action_ids = favorites.get_user_favorite_action_ids(user_id)
     visible_actions.sort(key=lambda action: (
         0 if action.id in user_favorite_action_ids else 1,
         action.user.name.lower() if action.user and action.user.name is not None else '',
-        action.instrument.translation.name.lower() if action.instrument else '',
-        action.translation.name.lower()
+        get_translated_text(action.instrument.name).lower() if action.instrument else '',
+        get_translated_text(action.name).lower()
     ))
     return visible_actions

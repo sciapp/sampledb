@@ -361,7 +361,7 @@
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="action_type_ids" id="filter_action_type_ids" data-width="100%" data-none-selected-text="{{ _('All action types') }}">
                 {% for action_type in all_action_types %}
-                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.translation.name }}</option>
+                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -371,7 +371,7 @@
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on">
                 {% for action in all_actions %}
-                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>{{ action.translation.name }}</option>
+                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -479,7 +479,7 @@
       {% if object.action is not none %}
         {% if 'instrument' in action_info %}
         {% if object.action.instrument is not none %}
-          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ get_instrument_translation_for_instrument_in_language(object.action.instrument_id, get_user_language(current_user).id, use_fallback=True).name }}</a>
+          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
             {{ federation_information_symbol(object.action.instrument.component, object.action.instrument.fed_id, 'instrument') }}
           </td>
         {% else %}
@@ -489,7 +489,7 @@
         {% if 'action' in action_info %}
         <td>
           <a href="{{ url_for('.action', action_id=object.action.id) }}">
-            {{ action_translations[object.action.id].name }}
+            {{ object.action.name | get_translated_text(default=_('Unnamed Action')) }}
           </a>
           {{ federation_information_symbol(object.action.component, object.action.fed_id, 'action') }}
         </td>

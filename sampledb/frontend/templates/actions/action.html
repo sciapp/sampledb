@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Action") }} #{{ action.id }}: {{ title }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _("Action") }} #{{ action.id }}: {{ action.name | get_translated_text }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-
   <h1>
     {{ _("Action") }} #{{ action.id }}:
     {% if action.user_id is not none %}
@@ -12,10 +11,10 @@
       {{ federation_information_symbol(action_owner.component, action_owner.fed_id, 'user') }} /
     {% endif %}
     {% if action.instrument is not none %}
-      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ single_translation.instrument_translation.name }}">{{ single_translation.instrument_translation.name }}</a>
+      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
       {{ federation_information_symbol(action.instrument.component, action.instrument.fed_id, 'instrument') }} &mdash;
     {% endif %}
-    {{ single_translation.name }}
+    {{ action.name | get_translated_text }}
     {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
   </h1>
   {% if action.user_id is not none %}
@@ -25,9 +24,9 @@
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
   {% endif %}
 
-  {% if single_translation.description %}
+  {% if action.description | get_translated_text %}
     <div class="action-user-content">
-      {% if action.description_is_markdown %}{{ single_translation.description | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ single_translation.description }}</p>{% endif %}
+      {% if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
 
@@ -35,9 +34,9 @@
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
   {% if action.type_id is none or not action.type.disable_create_objects %}
-  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text if action.type_id else _('View Objects') }}</a>
+  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
   {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none %}
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text if action.type_id else _('Create Object') }}</a>
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) if action.type_id else _('Create Object') }}</a>
   {% endif %}
   {% endif %}
   {% if not current_user.is_readonly %}

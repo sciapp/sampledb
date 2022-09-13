@@ -285,9 +285,9 @@
       <div class="form-group {% if action_form.type.name in action_form.errors %}has-error{% endif %}">
         <label for="input-type" class="control-label">{{ _("Type") }}</label>
         <select class="selectpicker form-control" id="input-type" name="{{ action_form.type.name }}" {% if not may_change_type %}disabled="disabled"{% endif %}>
-          {% for action_type in action_types_with_translations%}
+          {% for action_type in action_types %}
             {% if not action_type.admin_only or current_user.is_admin or action_form.type.data == action_type.id %}
-          <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" data-is-template="{{ action_type.is_template }}" {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.translation.name}}</option>
+          <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" data-is-template="{{ action_type.is_template }}" {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</option>
             {% endif %}
           {% endfor %}
         </select>
@@ -411,8 +411,8 @@
             <option value="quantity">{{ _('Quantity') }}</option>
             <option value="bool">{{ _('Boolean') }}</option>
             <option value="datetime">{{ _('Datetime') }}</option>
-            <option value="sample">{{ sample_action_type.translation.object_name }}</option>
-            <option value="measurement">{{ measurement_action_type.translation.object_name }}</option>
+            <option value="sample">{{ sample_action_type.object_name | get_translated_text(default=_('Object')) }}</option>
+            <option value="measurement">{{ measurement_action_type.object_name | get_translated_text(default=_('Object')) }}</option>
             <option value="user">{{ _('User') }}</option>
             <option value="object_reference">{{ _('Object Reference') }}</option>
             <option value="plotly_chart">{{ _('Plotly Chart') }}</option>
@@ -552,7 +552,7 @@
             <option value="">&mdash;</option>
             {% for template in get_templates(current_user.id) %}
               {% if current_action is none or current_action.id != template.id %}
-                <option value="{{ template.id }}">{{ template.translation.name }}</option>
+                <option value="{{ template.id }}">{{ template.name | get_translated_text }}</option>
               {% endif %}
             {% endfor %}
           </select>

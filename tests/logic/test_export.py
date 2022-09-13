@@ -183,9 +183,9 @@ def validate_data(data):
                 'name': 'Example Action',
                 'user_id': None,
                 'instrument_id': None,
-                'description': '',
+                'description': None,
                 'description_is_markdown': False,
-                'short_description': '',
+                'short_description': None,
                 'short_description_is_markdown': False
             }
         ],
@@ -195,7 +195,7 @@ def validate_data(data):
                 'name': 'Example Instrument',
                 'description': 'Example Instrument Description',
                 'description_is_markdown': False,
-                'short_description': '',
+                'short_description': None,
                 'short_description_is_markdown': False,
                 'instrument_scientist_ids': [],
                 'instrument_log_entries': [

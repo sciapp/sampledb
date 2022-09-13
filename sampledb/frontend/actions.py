@@ -20,15 +20,12 @@ from . import frontend
 from .permission_forms import handle_permission_forms, set_up_permissions_forms
 from .. import models
 from ..logic.action_permissions import Permissions, get_action_permissions_for_all_users, get_user_action_permissions, set_action_permissions_for_all_users, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, get_sorted_actions_for_user
-from ..logic.actions import Action, create_action, get_action, update_action, get_action_type
-from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation, get_action_translation_for_action_in_language
-from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language, \
-    get_action_types_with_translations_in_language, get_action_type_with_translation_in_language
+from ..logic.actions import Action, create_action, get_action, update_action, get_action_type, get_action_types
+from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation
 from ..logic.languages import get_languages, get_language, Language
 from ..logic.components import get_component
 from ..logic.favorites import get_user_favorite_action_ids
 from ..logic.instruments import get_user_instruments, get_instrument
-from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users, languages
 from ..logic.schemas.validate_schema import validate_schema
@@ -40,6 +37,7 @@ from ..logic.projects import get_projects, get_project, get_project_id_hierarchy
 from .users.forms import ToggleFavoriteActionForm
 from .utils import check_current_user_is_not_readonly
 from ..logic.markdown_to_html import markdown_to_safe_html
+from ..logic.utils import get_translated_text
 from .. import logic
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -74,7 +72,6 @@ class ActionForm(FlaskForm):
 def actions():
     action_type_id = flask.request.args.get('t', None)
     action_type = None
-    user_language_id = languages.get_user_language(flask_login.current_user).id
 
     if action_type_id is not None:
         try:
@@ -87,9 +84,8 @@ def actions():
                 'simulations': models.ActionType.SIMULATION
             }.get(action_type_id, None)
         try:
-            action_type = get_action_type_with_translation_in_language(
-                action_type_id=action_type_id,
-                language_id=user_language_id
+            action_type = get_action_type(
+                action_type_id=action_type_id
             )
         except errors.ActionTypeDoesNotExistError:
             # fall back to all objects
@@ -146,10 +142,6 @@ def action(action_id):
         return flask.abort(403)
     may_edit = Permissions.WRITE in permissions and action.fed_id is None
 
-    translations = get_action_translations_for_action(action.id, use_fallback=True)
-
-    user_language_id = languages.get_user_language(flask_login.current_user).id
-
     if action.type_id is not None and action.type.admin_only and not flask_login.current_user.is_admin:
         may_edit = False
     may_grant = Permissions.GRANT in permissions
@@ -171,22 +163,12 @@ def action(action_id):
             return flask.abort(403)
         return show_action_form(action)
 
-    title = translations[0].name
-
-    single_translation = get_action_translation_for_action_in_language(action_id, language_id=user_language_id, use_fallback=True)
-    if action.instrument_id:
-        instrument_translation = get_instrument_translation_for_instrument_in_language(action.instrument_id, user_language_id, use_fallback=True)
-        setattr(single_translation, 'instrument_translation', instrument_translation)
-    action_type_translation = get_action_type_translation_for_action_type_in_language(action.type_id, user_language_id, use_fallback=True)
-    setattr(single_translation, 'action_type_translation', action_type_translation)
     return flask.render_template(
         'actions/action.html',
         action=action,
-        title=title,
         may_edit=may_edit,
         may_grant=may_grant,
         is_public=Permissions.READ in get_action_permissions_for_all_users(action_id),
-        single_translation=single_translation,
         get_user=get_user,
         get_component=get_component
     )
@@ -278,7 +260,6 @@ def _get_lines_for_path(schema: dict, path: typing.List[str]) -> typing.Optional
 
 
 def show_action_form(action: typing.Optional[Action] = None, previous_action: typing.Optional[Action] = None, action_type_id: typing.Optional[int] = None):
-    user_language_id = languages.get_user_language(flask_login.current_user).id
     action_translations = []
     load_translations = False
 
@@ -317,13 +298,11 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     action_form = ActionForm()
     instrument_is_fed = {}
 
-    sample_action_type = get_action_type_with_translation_in_language(
-        action_type_id=models.ActionType.SAMPLE_CREATION,
-        language_id=user_language_id
+    sample_action_type = get_action_type(
+        action_type_id=models.ActionType.SAMPLE_CREATION
     )
-    measurement_action_type = get_action_type_with_translation_in_language(
-        action_type_id=models.ActionType.MEASUREMENT,
-        language_id=user_language_id
+    measurement_action_type = get_action_type(
+        action_type_id=models.ActionType.MEASUREMENT
     )
     english = get_language(Language.ENGLISH)
     action_language_ids = [translation.language_id for translation in action_translations]
@@ -336,9 +315,9 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     if action is not None:
         if action.instrument_id:
             action_form.instrument.choices = [
-                (str(action.instrument_id), get_instrument_translation_for_instrument_in_language(action.instrument_id, user_language_id, use_fallback=True).name)
+                (str(action.instrument_id), get_translated_text(action.instrument.name, default=_('Unnamed Instrument')))
             ]
-            instrument_is_fed[str(action.instrument_id)] = get_instrument(action.instrument_id).component_id is not None
+            instrument_is_fed[str(action.instrument_id)] = action.instrument.component_id is not None
             action_form.instrument.data = str(action.instrument_id)
         else:
             action_form.instrument.choices = [('-1', '-')]
@@ -347,7 +326,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     else:
         user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
         action_form.instrument.choices = [('-1', '-')] + [
-            (str(instrument_id), get_instrument_translation_for_instrument_in_language(instrument_id, user_language_id, use_fallback=True).name)
+            (str(instrument_id), get_translated_text(get_instrument(instrument_id).name, default=_('Unnamed Instrument')))
             for instrument_id in user_instrument_ids
         ]
         for instrument_id in user_instrument_ids:
@@ -440,7 +419,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 action_form=action_form,
                 action_translations=action_translations,
                 action_language_ids=action_language_ids,
-                action_types_with_translations=get_action_types_with_translations_in_language(user_language_id),
+                action_types=get_action_types(),
                 pygments_output=pygments_output,
                 error_message=error_message,
                 schema_json=schema_json,
@@ -489,7 +468,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                             action_form=action_form,
                             action_translations=action_translations,
                             action_language_ids=action_language_ids,
-                            action_types_with_translations=get_action_types_with_translations_in_language(user_language_id),
+                            action_types=get_action_types(),
                             pygments_output=pygments_output,
                             error_message=error_message,
                             schema_json=schema_json,
@@ -603,7 +582,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         action_form=action_form,
         action_translations=action_translations,
         action_language_ids=action_language_ids,
-        action_types_with_translations=get_action_types_with_translations_in_language(user_language_id),
+        action_types=get_action_types(),
         pygments_output=pygments_output,
         error_message=error_message,
         schema_json=schema_json,

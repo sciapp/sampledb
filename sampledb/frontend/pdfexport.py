@@ -41,7 +41,6 @@ def create_pdfexport(
 ):
     exported_files = {}
 
-    language_id = logic.languages.get_language_by_lang_code(lang_code).id
     flask.g.override_locale = lang_code
     refresh()
 
@@ -286,14 +285,10 @@ def create_pdfexport(
         objects.append((object, action, activity_log_entries, locations_entries, publications, comments, files, qrcode_url))
 
     def get_object_type_name(action):
-        if action is None:
+        if action is None or action.type is None:
             return _('Object')
         else:
-            return logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-                action_type_id=action.type_id,
-                language_id=language_id,
-                use_fallback=True
-            ).object_name
+            return get_translated_text(action.type.object_name, default=_('Object'))
 
     html = flask.render_template(
         'pdfexport/export.html',

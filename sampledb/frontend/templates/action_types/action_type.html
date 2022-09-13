@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Action Type') }} #{{ action_type.id }}: {{ action_type.translation.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Action Type') }} #{{ action_type.id }}: {{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <h1>
-    <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
+    <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</a>
     {{ federation_information_symbol(component, action_type.fed_id, 'action_type') }}
   </h1>
 
   <dl>
-    <dt>{{ _('Description') }}</dt><dd>{{ action_type.translation.description or ('&mdash;' | safe) }}</dd>
-    <dt>{{ _('Object Name (Singular)') }}</dt><dd>{{ action_type.translation.object_name }}</dd>
-    <dt>{{ _('Object Name (Plural)') }}</dt><dd>{{ action_type.translation.object_name_plural }}</dd>
-    <dt>{{ _('View Text') }}</dt><dd>{{ action_type.translation.view_text }}</dd>
-    <dt>{{ _('Perform Text') }}</dt><dd>{{ action_type.translation.perform_text }}</dd>
+    <dt>{{ _('Description') }}</dt><dd>{{ action_type.description | get_translated_text(default=_('—')) }}</dd>
+    <dt>{{ _('Object Name (Singular)') }}</dt><dd>{{ action_type.object_name | get_translated_text(default=_('Object')) }}</dd>
+    <dt>{{ _('Object Name (Plural)') }}</dt><dd>{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }}</dd>
+    <dt>{{ _('View Text') }}</dt><dd>{{ action_type.view_text | get_translated_text(default=_('View Objects')) }}</dd>
+    <dt>{{ _('Perform Text') }}</dt><dd>{{ action_type.perform_text | get_translated_text(default=_('Create Object')) }}</dd>
     <dt>{{ _('Only for Administrators') }}</dt><dd>{% if action_type.admin_only %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, only administrators can create actions of this type') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, all users can create actions of this type') }}{% endif %}</dd>
     <dt>{{ _('Show on Frontpage') }}</dt><dd>{% if action_type.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this action type should be shown on the frontpage') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this action type should not be shown on the frontpage') }}{% endif %}</dd>
     <dt>{{ _('Show on Navbar') }}</dt><dd>{% if action_type.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, actions of this type should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, actions of this type should not be shown in the navbar') }}{% endif %}</dd>

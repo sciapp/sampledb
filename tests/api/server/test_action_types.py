@@ -32,17 +32,12 @@ def test_get_action_type(flask_server, auth):
     action_types = sampledb.logic.actions.get_action_types()
 
     for action_type in action_types:
-        action_type_translation = sampledb.logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-            action_type.id,
-            language_id=sampledb.logic.languages.Language.ENGLISH,
-            use_fallback=True
-        )
         r = requests.get(flask_server.base_url + 'api/v1/action_types/{}'.format(action_type.id), auth=auth)
         assert r.status_code == 200
         assert r.json() == {
             'type_id': action_type.id,
-            'name': action_type_translation.name,
-            'object_name': action_type_translation.object_name,
+            'name': action_type.name.get('en'),
+            'object_name': action_type.object_name.get('en'),
             'admin_only': action_type.admin_only
         }
 
@@ -52,15 +47,10 @@ def test_get_action_types(flask_server, auth):
     assert r.status_code == 200
     expected_json = []
     for action_type in sampledb.logic.actions.get_action_types():
-        action_type_translation = sampledb.logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-            action_type.id,
-            language_id=sampledb.logic.languages.Language.ENGLISH,
-            use_fallback=True
-        )
         expected_json.append({
             'type_id': action_type.id,
-            'name': action_type_translation.name,
-            'object_name': action_type_translation.object_name,
+            'name': action_type.name.get('en'),
+            'object_name': action_type.object_name.get('en'),
             'admin_only': action_type.admin_only
         })
     assert r.json() == expected_json

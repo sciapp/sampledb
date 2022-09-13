@@ -11,7 +11,7 @@
 
   {% for action_type in action_types %}
     <h2>
-      <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.translation.name }}">{{ action_type.translation.name }}</a>
+      <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</a>
       {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type') }}
     </h2>
     <p>

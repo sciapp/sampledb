@@ -114,7 +114,6 @@ def setup_jinja_environment(app):
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
         get_action_types=sampledb.logic.actions.get_action_types,
-        get_action_types_with_translations_in_language=sampledb.logic.action_type_translations.get_action_types_with_translations_in_language,
         get_translated_text=sampledb.logic.utils.get_translated_text,
         BeautifulSoup=BeautifulSoup,
         json=json,

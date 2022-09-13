@@ -6,8 +6,7 @@ Usage: python -m sampledb list_instruments
 """
 
 from .. import create_app
-from ..logic.instrument_translations import get_instruments_with_translation_in_language
-from ..logic.languages import Language
+from ..logic.instruments import get_instruments
 
 
 def main(arguments):
@@ -16,6 +15,6 @@ def main(arguments):
         exit(1)
     app = create_app()
     with app.app_context():
-        instruments = get_instruments_with_translation_in_language(Language.ENGLISH)
+        instruments = get_instruments()
         for instrument in instruments:
-            print(" - #{0.id}: {0.translation.name}".format(instrument))
+            print(f"- #{instrument.id}: {instrument.name.get('en', 'Unnamed Instrument')}")

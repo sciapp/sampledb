@@ -35,8 +35,7 @@ class Instrument(db.Model):
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
-
-    instrument_translations = db.relationship("InstrumentTranslation", back_populates="instruments")
+    translations = db.relationship('InstrumentTranslation')
 
     def __init__(
             self,
@@ -77,3 +76,35 @@ class Instrument(db.Model):
 
     def __repr__(self):
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+
+    @property
+    def name(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.name
+            for translation in self.translations
+            if translation.name
+        }
+
+    @property
+    def notes(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.notes
+            for translation in self.translations
+            if translation.notes
+        }
+
+    @property
+    def description(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.description
+            for translation in self.translations
+            if translation.description
+        }
+
+    @property
+    def short_description(self) -> typing.Dict[str, str]:
+        return {
+            translation.language.lang_code: translation.short_description
+            for translation in self.translations
+            if translation.short_description
+        }

@@ -14,9 +14,7 @@ from .. import frontend
 from ... import logic
 from ... import models
 from ...logic import user_log, object_sorting
-from ...logic.actions import get_action
-from ...logic.action_type_translations import get_action_type_with_translation_in_language
-from ...logic.action_translations import get_action_with_translation_in_language
+from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
 from ...logic.users import get_user, get_users_by_name
@@ -42,7 +40,6 @@ def objects():
     objects = []
     display_properties = []
     display_property_titles = {}
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
     if 'display_properties' in flask.request.args:
         for property_info in itertools.chain(*[
             display_properties_str.split(',')
@@ -60,8 +57,7 @@ def objects():
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
-    all_action_types = logic.action_type_translations.get_action_types_with_translations_in_language(
-        language_id=user_language_id,
+    all_action_types = logic.actions.get_action_types(
         filter_fed_defaults=True
     )
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
@@ -230,8 +226,8 @@ def objects():
         if action_id is None and filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
         if action_id is not None:
-            action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
-            implicit_action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id is not None else None
+            action = get_action(action_id)
+            implicit_action_type = get_action_type(action.type_id) if action.type_id is not None else None
             action_schema = action.schema
             if action_schema:
                 action_display_properties = action_schema.get('displayProperties', [])
@@ -254,9 +250,8 @@ def objects():
                     }.get(action_type_id, None)
             if action_type_id is not None:
                 try:
-                    action_type = get_action_type_with_translation_in_language(
-                        action_type_id=action_type_id,
-                        language_id=user_language_id
+                    action_type = get_action_type(
+                        action_type_id=action_type_id
                     )
                 except ActionTypeDoesNotExistError:
                     action_type = None
@@ -590,13 +585,6 @@ def objects():
     action_ids = {
         object['action'].id for object in objects if object['action'] is not None
     }
-    action_translations = {}
-    for id in action_ids:
-        action_translations[id] = logic.action_translations.get_action_translation_for_action_in_language(
-            action_id=id,
-            language_id=user_language_id,
-            use_fallback=True
-        )
 
     default_property_titles = {
         'tags': _('Tags'),
@@ -657,11 +645,9 @@ def objects():
     filter_action_type_infos = []
     if filter_action_type_ids:
         for action_type_id in filter_action_type_ids:
-            action_type = get_action_type_with_translation_in_language(action_type_id, user_language_id)
-            action_type_name = action_type.translation.name
+            action_type = get_action_type(action_type_id)
+            action_type_name = get_translated_text(action_type.name, default=_('Unnamed Action Type'))
             action_type_component = get_component(action_type.component_id) if action_type.component_id is not None else None
-            if not action_type_name:
-                action_type_name = _('Unnamed Action Type')
             filter_action_type_infos.append({
                 'id': action_type_id,
                 'name': action_type_name,
@@ -671,17 +657,15 @@ def objects():
             })
 
             if filter_action_type_ids and len(filter_action_type_ids) == 1:
-                object_name_plural = action_type.translation.object_name_plural
+                object_name_plural = get_translated_text(action_type.object_name_plural, default=_('Objects'))
     elif implicit_action_type is not None:
-        object_name_plural = implicit_action_type.translation.object_name_plural
+        object_name_plural = get_translated_text(implicit_action_type.object_name_plural, default=_('Objects'))
 
     filter_action_infos = []
     if filter_action_ids:
         for action_id in filter_action_ids:
-            action = get_action_with_translation_in_language(action_id, user_language_id, use_fallback=True)
-            action_name = action.translation.name
-            if not action_name:
-                action_name = _('Unnamed Action')
+            action = get_action(action_id)
+            action_name = get_translated_text(action.name, default=_('Unnamed Action'))
             action_name += f' (#{action_id})'
             filter_action_infos.append({
                 'name': action_name,
@@ -781,7 +765,6 @@ def objects():
         creation_info=creation_info,
         last_edit_info=last_edit_info,
         action_info=action_info,
-        action_translations=action_translations,
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
@@ -803,7 +786,6 @@ def objects():
         all_publications=all_publications,
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-        get_instrument_translation_for_instrument_in_language=logic.instrument_translations.get_instrument_translation_for_instrument_in_language,
         build_modified_url=build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,

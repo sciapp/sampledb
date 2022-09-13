@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Instrument') }} #{{ instrument.id }}: {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <h1>
-    {{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }}
+    {{ _('Instrument') }} #{{ instrument.id }}: {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}
     {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
   </h1>
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.')}}</p>
   {% endif %}
-  {% if single_instrument_translation.description %}
+  {% if instrument.description %}
     <div class="instrument-user-content">
-      {% if instrument.description_is_markdown %}{{ single_instrument_translation.description | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ single_instrument_translation.description }}</p>{% endif %}
+      {% if instrument.description_is_markdown %}{{ instrument.description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ instrument.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
   {% include "instruments/instrument_scientists.html" %}
@@ -25,17 +25,17 @@
   <h2>{{ _('Actions') }}</h2>
   {% for action in instrument_actions %}
       <h3>
-        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action_translations[action.id].name }}"> {{ action_translations[action.id].name }}</a>
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text }}"> {{ action.name | get_translated_text }}</a>
         {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
       </h3>
-      {% if action_translations[action.id].short_description %}
+      {% if action.short_description | get_translated_text %}
         <div class="action-user-content">
-          {% if action.short_description_is_markdown %}{{ action_translations[action.id].short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action_translations[action.id].short_description }}</p>{% endif %}
+          {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description | get_translated_text }}</p>{% endif %}
         </div>
       {% endif %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ get_action_type_translation_for_action_type_in_language(action.type_id, get_user_language(current_user).id, True).view_text }}</a>
+      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) }}</a>
       {% if not current_user.is_readonly and action.schema %}
-        <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ get_action_type_translation_for_action_type_in_language(action.type_id, get_user_language(current_user).id, True).perform_text}}</a>
+        <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
       {% endif %}
   {% endfor %}
   {% endif %}
@@ -47,12 +47,12 @@
     </p>
   {% with ns = namespace() %}
   {% set ns.has_notes = False %}
-  {% for translation in instrument_translations %}
-    {% if translation.notes %}
+  {% for language in languages %}
+    {% if language.lang_code in instrument.notes %}
       {% set ns.has_notes = True %}
       <div class="instrument-user-content">
-      <h2>{{ translation.language.names | get_translated_text }}</h2>
-      {% if instrument.notes_is_markdown %}{{ translation.notes | markdown_to_safe_html(anchor_prefix='instrument-notes') | safe }}{% else %}<p>{{ translation.notes }}</p>{% endif %}
+      <h2>{{ language.names | get_translated_text }}</h2>
+      {% if instrument.notes_is_markdown %}{{ instrument.notes[language.lang_code] | markdown_to_safe_html(anchor_prefix='instrument-notes') | safe }}{% else %}<p>{{ instrument.notes[language.lang_code] }}</p>{% endif %}
       </div>
     {% endif %}
   {% endfor %}

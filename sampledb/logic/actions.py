@@ -31,6 +31,12 @@ from . import errors, instruments, users, schemas, components
 
 class ActionType(collections.namedtuple('ActionType', [
     'id',
+    'name',
+    'description',
+    'object_name',
+    'object_name_plural',
+    'view_text',
+    'perform_text',
     'admin_only',
     'show_on_frontpage',
     'show_in_navbar',
@@ -55,6 +61,12 @@ class ActionType(collections.namedtuple('ActionType', [
     def __new__(
             cls,
             id: int,
+            name: typing.Dict[str, str],
+            description: typing.Dict[str, str],
+            object_name: typing.Dict[str, str],
+            object_name_plural: typing.Dict[str, str],
+            view_text: typing.Dict[str, str],
+            perform_text: typing.Dict[str, str],
             admin_only: bool,
             show_on_frontpage: bool,
             show_in_navbar: bool,
@@ -75,6 +87,12 @@ class ActionType(collections.namedtuple('ActionType', [
         self = super(ActionType, cls).__new__(
             cls,
             id,
+            name,
+            description,
+            object_name,
+            object_name_plural,
+            view_text,
+            perform_text,
             admin_only,
             show_on_frontpage,
             show_in_navbar,
@@ -98,6 +116,12 @@ class ActionType(collections.namedtuple('ActionType', [
     def from_database(cls, action_type: models.ActionType) -> 'ActionType':
         return ActionType(
             id=action_type.id,
+            name=action_type.name,
+            description=action_type.description,
+            object_name=action_type.object_name,
+            object_name_plural=action_type.object_name_plural,
+            view_text=action_type.view_text,
+            perform_text=action_type.perform_text,
             admin_only=action_type.admin_only,
             show_on_frontpage=action_type.show_on_frontpage,
             show_in_navbar=action_type.show_in_navbar,

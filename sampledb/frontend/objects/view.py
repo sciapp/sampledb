@@ -18,11 +18,8 @@ from ... import models
 from ... import db
 from ...logic import object_log, comments, errors
 from ...logic.actions import get_action, get_action_type
-from ...logic.action_type_translations import get_action_type_with_translation_in_language
-from ...logic.action_translations import get_action_with_translation_in_language
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
-from ...logic.instrument_translations import get_instrument_with_translation_in_language
 from ...logic.users import get_user, get_users
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
@@ -30,7 +27,7 @@ from ...logic.object_log import ObjectLogEntryType
 from ...logic.projects import get_project
 from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree
 from ...logic.location_permissions import get_locations_with_user_permissions
-from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language, get_user_language
+from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.files import FileLogEntryType
 from ...logic.components import get_component
 from ...logic.notebook_templates import get_notebook_templates
@@ -110,7 +107,6 @@ def object(object_id):
     template_kwargs = {}
 
     # languages
-    user_language_id = get_user_language(flask_login.current_user).id
     english = get_language(Language.ENGLISH)
     all_languages = get_languages()
     languages_by_lang_code = {
@@ -134,10 +130,10 @@ def object(object_id):
 
     # basic object and action information
     if object.action_id is not None:
-        action = get_action_with_translation_in_language(object.action_id, user_language_id, use_fallback=True)
-        action_type = get_action_type_with_translation_in_language(action.type_id, user_language_id) if action.type_id is not None else None
-        instrument = get_instrument_with_translation_in_language(action.instrument_id, user_language_id) if action.instrument_id is not None else None
-        object_type = action_type.translation.object_name if action_type else None
+        action = get_action(object.action_id)
+        action_type = get_action_type(action.type_id) if action.type_id is not None else None
+        instrument = action.instrument
+        object_type = get_translated_text(action_type.object_name) if action_type else None
         if action.schema is not None and action.schema != object.schema:
             new_schema_available = True
         else:
@@ -228,10 +224,8 @@ def object(object_id):
 
     if flask_login.current_user.is_authenticated:
         # use in measurement menu
-        measurement_actions = logic.action_translations.get_actions_with_translation_in_language(
-            language_id=user_language_id,
-            action_type_id=models.ActionType.MEASUREMENT,
-            use_fallback=True
+        measurement_actions = logic.actions.get_actions(
+            action_type_id=models.ActionType.MEASUREMENT
         )
         favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
         favorite_measurement_actions = [
@@ -243,22 +237,15 @@ def object(object_id):
         favorite_measurement_actions.sort(
             key=lambda action: (
                 action.user.name.lower() if action.user else '',
-                get_instrument_with_translation_in_language(
-                    instrument_id=action.instrument_id,
-                    language_id=user_language_id
-                ).translation.name.lower() if action.instrument else '',
-                action.translation.name.lower()
+                get_translated_text(action.instrument.name).lower() if action.instrument else '',
+                get_translated_text(action.name).lower()
             )
         )
     else:
         favorite_measurement_actions = []
     template_kwargs.update({
         "favorite_measurement_actions": favorite_measurement_actions,
-        "measurement_type_name": logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-            action_type_id=logic.actions.models.ActionType.MEASUREMENT,
-            language_id=logic.languages.get_user_language(flask_login.current_user).id,
-            use_fallback=True
-        ).name,
+        "measurement_type_name": get_translated_text(logic.actions.get_action_type(logic.actions.models.ActionType.MEASUREMENT).name),
     })
 
     # notebook templates
@@ -419,8 +406,6 @@ def object(object_id):
         "get_object_location_assignment": get_object_location_assignment,
         "get_project": get_project_if_it_exists,
         "get_action_type": get_action_type,
-        "get_action_type_with_translation_in_language": get_action_type_with_translation_in_language,
-        "get_instrument_with_translation_in_language": get_instrument_with_translation_in_language,
         "get_component": get_component,
     })
 

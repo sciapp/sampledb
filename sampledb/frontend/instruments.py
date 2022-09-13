@@ -17,13 +17,11 @@ from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFile
 from wtforms.validators import DataRequired, ValidationError
 
 from . import frontend
-from ..logic.action_translations import get_action_translation_for_action_in_language
 from ..logic.action_permissions import get_user_action_permissions
-from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language
 from ..logic.components import get_component
-from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
+from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
-from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language, get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation, get_instruments_with_translation_in_language
+from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
 from ..logic.actions import ActionType
 from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
@@ -102,8 +100,7 @@ class InstrumentLogOrderForm(FlaskForm):
 @frontend.route('/instruments/')
 @flask_login.login_required
 def instruments():
-    user_language_id = get_user_language(flask_login.current_user).id
-    all_instruments = get_instruments_with_translation_in_language(user_language_id)
+    all_instruments = get_instruments()
     instruments = []
     user_has_admin_permissions = flask_login.current_user.is_admin and get_user_settings(flask_login.current_user.id)["USE_ADMIN_PERMISSIONS"]
     for instrument in all_instruments:
@@ -115,7 +112,7 @@ def instruments():
     # Sort by: favorite / not favorite, instrument name
     instruments.sort(key=lambda instrument: (
         0 if instrument.id in user_favorite_instrument_ids else 1,
-        instrument.translation.name.lower()
+        get_translated_text(instrument.name).lower()
     ))
     toggle_favorite_instrument_form = ToggleFavoriteInstrumentForm()
     return flask.render_template(
@@ -136,10 +133,6 @@ def instrument(instrument_id):
     except InstrumentDoesNotExistError:
         return flask.abort(404)
     user_language = get_user_language(flask_login.current_user)
-    user_language_id = user_language.id
-
-    instrument_translations = get_instrument_translations_for_instrument(instrument_id=instrument.id)
-    single_instrument_translation = get_instrument_translation_for_instrument_in_language(instrument_id, user_language_id, use_fallback=True)
 
     is_instrument_responsible_user = any(
         responsible_user.id == flask_login.current_user.id
@@ -339,20 +332,10 @@ def instrument(instrument_id):
         for action in instrument.actions
         if Permissions.READ in get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
     ]
-
-    action_translations = {
-        action.id: get_action_translation_for_action_in_language(
-            action_id=action.id,
-            language_id=user_language_id,
-            use_fallback=True
-        )
-        for action in instrument_actions
-    }
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
         instrument_actions=instrument_actions,
-        instrument_translations=instrument_translations,
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
         instrument_log_categories=instrument_log_categories,
@@ -364,9 +347,7 @@ def instrument(instrument_id):
         mobile_upload_qrcode=mobile_upload_qrcode,
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
-        action_translations=action_translations,
-        single_instrument_translation=single_instrument_translation,
-        get_action_type_translation_for_action_type_in_language=get_action_type_translation_for_action_type_in_language,
+        languages=get_languages(),
         ActionType=ActionType,
         get_user=get_user,
         get_component=get_component

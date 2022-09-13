@@ -89,7 +89,7 @@
                     <label>
                       <input type="radio" name="search-filter-selection" id="button-search-project-id">
                       {% if action_type %}
-                        {{ _('Search %(objects)s from this project group', objects=action_type.translation.object_name_plural) }}
+                        {{ _('Search %(objects)s from this project group', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }}
                       {% else %}
                         {{ _('Search objects from this project group') }}
                       {% endif %}
@@ -103,7 +103,7 @@
                     <label>
                       <input type="radio" name="search-filter-selection" id="button-search-action-id">
                       {% if action_type %}
-                        {{ _('Search %(objects)s from this action', objects=action_type.translation.object_name_plural) }}
+                        {{ _('Search %(objects)s from this action', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }}
                       {% else %}
                         {{ _('Search objects from this action') }}
                       {% endif %}
@@ -116,7 +116,7 @@
                 <a class="button-search-filter">
                   <label>
                     <input type="radio" name="search-filter-selection" id="button-search-action-type">
-                    {{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}
+                    {{ _('Search all %(objects)s', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}
                   </label>
                 </a>
               </li>
@@ -139,9 +139,9 @@
         <li class="dropdown">
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
+            {% for action_type in get_action_types() %}
               {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
-              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
+              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
           </ul>
@@ -149,9 +149,9 @@
         <li class="dropdown">
           <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">{{ _('Objects') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
+            {% for action_type in get_action_types() %}
               {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
-              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.translation.object_name_plural }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
+              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
             <li role="separator" class="divider nav-search-link"></li>
@@ -175,14 +175,14 @@
             <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
             {% endif %}
             <li role="separator" class="divider template-separator" style="display: none"></li>
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
+            {% for action_type in get_action_types() %}
               {% if action_type.show_in_navbar and action_type.disable_create_objects and ((not action_type.fed_id) or action_type.fed_id > 0) %}
                 <script type="text/javascript">
                     window.onload = function() {
                         $('.template-separator').css('display', 'block');
                     }
                 </script>
-                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}{{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
+                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}{{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
             {% if current_user.is_admin %}

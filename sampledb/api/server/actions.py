@@ -7,16 +7,15 @@ import flask
 from flask_restful import Resource
 
 from .authentication import multi_auth
-from ...logic.action_translations import get_action_with_translation_in_language
+from ...logic.actions import get_action
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
-from ...logic.languages import Language
-from ...logic import errors
-from ...models.actions import ActionType
+from ...logic import errors, utils
+from ...models.actions import ActionType, Action
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def action_to_json(action):
+def action_to_json(action: Action):
     return {
         'action_id': action.id,
         'instrument_id': action.instrument_id,
@@ -27,8 +26,14 @@ def action_to_json(action):
             ActionType.SIMULATION: 'simulation'
         }.get(action.type_id, 'custom'),
         'type_id': action.type_id,
-        'name': action.translation.name,
-        'description': action.translation.description,
+        'name': utils.get_translated_text(
+            action.name,
+            language_code='en'
+        ) or None,
+        'description': utils.get_translated_text(
+            action.description,
+            language_code='en'
+        ) or None,
         'is_hidden': action.is_hidden,
         'schema': action.schema
     }
@@ -38,10 +43,8 @@ class Action(Resource):
     @multi_auth.login_required
     def get(self, action_id: int):
         try:
-            action = get_action_with_translation_in_language(
-                action_id=action_id,
-                language_id=Language.ENGLISH,
-                use_fallback=True
+            action = get_action(
+                action_id=action_id
             )
         except errors.ActionDoesNotExistError:
             return {
@@ -57,9 +60,6 @@ class Actions(Resource):
     def get(self):
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
         return [
-            action_to_json(get_action_with_translation_in_language(
-                action_id=action.id,
-                language_id=Language.ENGLISH,
-                use_fallback=True
-            )) for action in actions
+            action_to_json(action)
+            for action in actions
         ]

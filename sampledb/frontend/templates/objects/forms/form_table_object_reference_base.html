@@ -51,9 +51,9 @@
           {{ action.user.name }} /
         {% endif %}
         {% if action.instrument is not none %}
-          {{ action.instrument.translation.name }} &mdash;
+          {{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} &mdash;
         {% endif %}
-        {{ action.translation.name }} (#{{ action.id }}{% if action.component_id is not none %}, #{{action.fed_object_id}} @ {{ get_component(action.component_id).get_name() }}{% endif %})
+        {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }}{% if action.component_id is not none %}, #{{action.fed_object_id}} @ {{ get_component(action.component_id).get_name() }}{% endif %})
         {% endif %}
       </option>
       {% endfor %}

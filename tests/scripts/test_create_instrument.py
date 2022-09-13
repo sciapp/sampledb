@@ -18,12 +18,8 @@ def test_create_instrument(capsys):
 
     assert len(instruments.get_instruments()) == 1
     instrument = instruments.get_instruments()[0]
-    instrument = instrument_translations.get_instrument_with_translation_in_language(
-        instrument_id=instrument.id,
-        language_id=languages.Language.ENGLISH
-    )
-    assert instrument.translation.name == name
-    assert instrument.translation.description == description
+    assert instrument.name == {'en': name}
+    assert instrument.description == {'en': description}
     assert len(instrument.responsible_users) == 0
 
 

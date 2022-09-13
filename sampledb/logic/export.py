@@ -167,29 +167,21 @@ def get_export_infos(
                 if logic.action_permissions.Permissions.READ in action_permissions:
                     relevant_user_ids.add(action_info.user_id)
                     relevant_instrument_ids.add(action_info.instrument_id)
-                    action_translation = logic.action_translations.get_action_translation_for_action_in_language(
-                        action_id=action_info.id,
-                        language_id=logic.languages.Language.ENGLISH
-                    )
-                    action_type_translation = logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-                        action_type_id=action_info.type_id,
-                        language_id=logic.languages.Language.ENGLISH
-                    )
                     action_infos.append({
                         'id': action_info.id,
-                        'type': action_type_translation.object_name.lower(),
-                        'name': action_translation.name,
+                        'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
+                        'name': action_info.name.get('en'),
                         'user_id': action_info.user_id,
                         'instrument_id': action_info.instrument_id,
-                        'description': action_translation.description,
+                        'description': action_info.description.get('en'),
                         'description_is_markdown': action_info.description_is_markdown,
-                        'short_description': action_translation.short_description,
+                        'short_description': action_info.short_description.get('en'),
                         'short_description_is_markdown': action_info.short_description_is_markdown
                     })
                     if action_info.description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.description)))
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en'))))
                     if action_info.short_description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_translation.short_description)))
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en'))))
         infos['actions'] = action_infos
 
     if include_instruments:
@@ -197,23 +189,19 @@ def get_export_infos(
         for instrument_info in logic.instruments.get_instruments():
             if instrument_info.id in relevant_instrument_ids:
                 relevant_user_ids.update({user.id for user in instrument_info.responsible_users})
-                instrument_translation = logic.instrument_translations.get_instrument_translation_for_instrument_in_language(
-                    instrument_id=instrument_info.id,
-                    language_id=logic.languages.Language.ENGLISH
-                )
                 instrument_infos.append({
                     'id': instrument_info.id,
-                    'name': instrument_translation.name,
-                    'description': instrument_translation.description,
+                    'name': instrument_info.name.get('en'),
+                    'description': instrument_info.description.get('en'),
                     'description_is_markdown': instrument_info.description_is_markdown,
-                    'short_description': instrument_translation.short_description,
+                    'short_description': instrument_info.short_description.get('en'),
                     'short_description_is_markdown': instrument_info.short_description_is_markdown,
                     'instrument_scientist_ids': [user.id for user in instrument_info.responsible_users],
                     'instrument_log_entries': []
                 })
                 user_is_instrument_responsible = user_id in [user.id for user in instrument_info.responsible_users]
                 if user_is_instrument_responsible:
-                    instrument_infos[-1]['notes'] = instrument_translation.notes
+                    instrument_infos[-1]['notes'] = instrument_info.notes.get('en')
                     instrument_infos[-1]['notes_is_markdown'] = instrument_info.notes_is_markdown
                 if instrument_info.users_can_view_log_entries or user_is_instrument_responsible:
                     for log_entry in logic.instrument_log_entries.get_instrument_log_entries(instrument_info.id):
@@ -254,24 +242,29 @@ def get_export_infos(
                                 'object_id': object_attachment.object_id
                             })
                 if instrument_info.description_is_markdown:
-                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.description)))
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.description.get('en', ''))))
                 if instrument_info.short_description_is_markdown:
-                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.short_description)))
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.short_description.get('en', ''))))
                 if user_is_instrument_responsible and instrument_info.notes_is_markdown:
-                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_translation.notes)))
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.notes.get('en', ''))))
         infos['instruments'] = instrument_infos
-
     if include_users:
         user_infos = []
         for user_info in logic.users.get_users(exclude_hidden=False):
             if user_info.id in relevant_user_ids:
-                user_infos.append({
-                    'id': user_info.id,
-                    'name': user_info.name,
-                    'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None,
-                    'affiliation': user_info.affiliation if user_info.affiliation else None,
-                    'role': user_info.role if user_info.role else None
-                })
+                if user_id is None:
+                    user_infos.append({
+                        'id': user_info.id,
+                        'name': user_info.name
+                    })
+                else:
+                    user_infos.append({
+                        'id': user_info.id,
+                        'name': user_info.name,
+                        'orcid_id': f'https://orcid.org/{user_info.orcid}' if user_info.orcid else None,
+                        'affiliation': user_info.affiliation if user_info.affiliation else None,
+                        'role': user_info.role if user_info.role else None
+                    })
         infos['users'] = user_infos
 
     locations = logic.locations.get_locations()

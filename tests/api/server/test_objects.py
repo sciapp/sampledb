@@ -63,9 +63,8 @@ def action():
         name="Example Action",
         description="This is an example action"
     )
-    return sampledb.logic.action_translations.get_action_with_translation_in_language(
-        action_id=action.id,
-        language_id=sampledb.logic.action_translations.Language.ENGLISH
+    return sampledb.logic.actions.get_action(
+        action_id=action.id
     )
 
 
@@ -166,8 +165,8 @@ def test_get_object_version(flask_server, auth, user, action):
             'user_id': None,
             'type': 'sample',
             'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
-            'name': action.translation.name,
-            'description': action.translation.description,
+            'name': action.name['en'],
+            'description': action.description['en'],
             'is_hidden': action.is_hidden,
             'schema': action.schema
         },
