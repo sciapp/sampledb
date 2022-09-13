@@ -43,7 +43,7 @@
     <ul>
       {% for project_id in child_project_ids %}
         {% with project = get_project(project_id) %}
-          <li><a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>{% if child_project_ids_can_add_to_parent.get(project_id, False) %} <span class="label label-default"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Users of this child project group may invite other users to its parent project group.') }}">{{ _('GRANT') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></span>{% endif %}</li>
+          <li><a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>{% if child_project_ids_can_add_to_parent.get(project_id, False) %} <span class="label label-default"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Users of this child project group may invite other users to its parent project group.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></span>{% endif %}</li>
         {% endwith %}
       {% endfor %}
     </ul>
@@ -51,9 +51,14 @@
   {% endif %}
   <h2>{{ _('Members') }}</h2>
   <ul>
-    {% for user_id in project_member_user_ids_and_permissions %}
+    {% for user_id, user_permissions in project_member_user_ids_and_permissions.items() %}
       {% with user = get_user(user_id) %}
         <li><i class="fa fa-user" aria-hidden="true"></i> <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
+        <span class="label label-default">
+        {% if user_permissions == user_permissions.READ %}{{ _('Read') }}{% endif %}
+        {% if user_permissions == user_permissions.WRITE %}{{ _('Write') }}{% endif %}
+        {% if user_permissions == user_permissions.GRANT %}{{ _('Grant') }}{% endif %}
+        </span>
         {% if remove_project_member_form and user_id != current_user.id %}
         <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectMember{{ user_id }}Form">
           {{ remove_project_member_form.csrf_token() }}
