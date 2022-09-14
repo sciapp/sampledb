@@ -17,11 +17,11 @@ from .permission_forms import set_up_permissions_forms, handle_permission_forms
 from .. import logic
 from ..logic import errors
 from ..logic.components import get_component
-from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility
+from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility, get_object_location_assignments
 from ..logic.location_log import get_log_entries_for_location, LocationLogEntryType
 from ..logic.languages import Language, get_language, get_languages, get_language_by_lang_code
 from ..logic.security_tokens import verify_token
-from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read
+from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read, create_notification_for_a_declined_responsibility_assignment
 from ..logic.location_permissions import get_user_location_permissions, get_location_permissions_for_all_users, get_location_permissions_for_users, get_location_permissions_for_groups, get_location_permissions_for_projects, set_location_permissions_for_all_users, set_user_location_permissions
 from ..logic.users import get_user, get_users
 from ..logic.groups import get_group
@@ -347,12 +347,29 @@ def accept_responsibility_for_object():
 @frontend.route('/locations/decline_responsibility')
 @flask_login.login_required
 def decline_responsibility_for_object():
+    def _callback(object_location_assignment_id: int) -> None:
+        decline_object_responsibility(object_location_assignment_id)
+        object_location_assignment = get_object_location_assignment(object_location_assignment_id)
+        if object_location_assignment.user_id != object_location_assignment.responsible_user_id:
+            # notify the assigning user that the assignment was declined
+            create_notification_for_a_declined_responsibility_assignment(object_location_assignment.user_id, object_location_assignment_id)
+        all_object_location_assignments = get_object_location_assignments(object_id=object_location_assignment.object_id)
+        all_object_location_assignments.sort(key=lambda assignment: (assignment.utc_datetime, assignment.id), reverse=True)
+        for assignment in all_object_location_assignments:
+            if assignment.confirmed and assignment.responsible_user_id is not None:
+                current_responsible_user_id = assignment.responsible_user_id
+                break
+        else:
+            current_responsible_user_id = None
+        if current_responsible_user_id not in (None, object_location_assignment.responsible_user_id, object_location_assignment.user_id):
+            # notify the currently responsible user that the assignment was declined
+            create_notification_for_a_declined_responsibility_assignment(current_responsible_user_id, object_location_assignment_id)
     return _handle_object_location_assignment(
         token_salt='decline_responsibility',
         missing_token_text=_('The declination token is missing.'),
         invalid_token_text=_('The declination token is invalid.'),
         success_text=_('You have successfully declined this responsibility assignment.'),
-        callback=decline_object_responsibility
+        callback=_callback
     )
 
 

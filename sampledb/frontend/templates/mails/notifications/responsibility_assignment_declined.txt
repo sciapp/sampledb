@@ -1,0 +1,8 @@
+{% extends "mails/notifications/base.txt" %}
+
+
+{% block message %}
+{% set object_location_assignment = get_object_location_assignment(data['object_location_assignment_id']) %}
+{{ get_user(object_location_assignment.responsible_user_id).name }} (#{{ object_location_assignment.responsible_user_id }}) has declined responsibility for object #{{ object_location_assignment.object_id }}:
+{{ url_for('frontend.object', object_id=object_location_assignment.object_id, _external=True) }}
+{% endblock %}

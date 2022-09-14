@@ -227,6 +227,7 @@
         {% set notification_types = {
               NotificationType.ANNOUNCEMENT: (_("Announcements"), False),
               NotificationType.ASSIGNED_AS_RESPONSIBLE_USER: (_("Becoming responsible for an object"), True),
+              NotificationType.RESPONSIBILITY_ASSIGNMENT_DECLINED: (_("Responsibility for an object being declined"), True),
               NotificationType.INVITED_TO_GROUP: (_("Being invited to a basic group"), False),
               NotificationType.INVITED_TO_PROJECT: (_("Being invited to a project group"), False),
               NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST: (_("Receiving object permission requests"), False),

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-08-11 14:07+0200\n"
+"POT-Creation-Date: 2022-09-13 16:35+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -80,6 +80,9 @@ msgstr "Die angefragte Aktion existiert nicht."
 
 msgid "Only administrators can create actions of this type."
 msgstr "Nur Administratoren können Aktionen diesen Typs erstellen."
+
+msgid "Unnamed Instrument"
+msgstr "Unbenanntes Instrument"
 
 msgid "Unknown error: "
 msgstr "Unbekannter Fehler: "
@@ -510,7 +513,7 @@ msgid ""
 "metadata of <a href=\"%(object_url)s\">object #%(other_object_id)s</a>."
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten von <a href=\"%(object_url)s\">object #%(other_object_id)s</a> "
+"Metadaten von <a href=\"%(object_url)s\">Objekt #%(other_object_id)s</a> "
 "referenziert."
 
 #, python-format
@@ -1421,6 +1424,12 @@ msgstr "Willkommen bei %(service_name)s"
 msgid "Sign In"
 msgstr "Anmelden"
 
+msgid "Create Object"
+msgstr "Objekt erstellen"
+
+msgid "View Objects"
+msgstr "Objekte anzeigen"
+
 #, python-format
 msgid ""
 "To invite %(user)s to %(service_name)s, please submit their email address"
@@ -1513,7 +1522,7 @@ msgid ""
 "#%(object_id)s</a>."
 msgstr ""
 "<a href=\"%(assigner_url)s\">%(assigner_name)s</a> hat Sie als "
-"verantwortlichen Nutzer für <a href=\"%(object_url)s\">Object "
+"verantwortlichen Nutzer für <a href=\"%(object_url)s\">Objekt "
 "#%(object_id)s</a> eingetragen."
 
 msgid "Confirm"
@@ -1629,6 +1638,17 @@ msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat einen <a "
 "href=\"%(log_entry_url)s\">Log-Eintrag</a> für das Instrument <a "
 "href=\"%(instrument_url)s\">%(instrument_name)s</a> bearbeitet."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> has declined responsibility "
+"for <a href=\"%(object_url)s\">object #%(object_id)s</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verantwortung für <a "
+"href=\"%(object_url)s\">Object #%(object_id)s</a> abgelehnt."
+
+msgid "An unknown object responsibility assignment has been declined."
+msgstr "Eine unbekannte Verantwortungszuweisung wurde abgelehnt."
 
 msgid "Unknown notification type."
 msgstr "Unbekannter Benachrichtigungstyp."
@@ -1771,6 +1791,9 @@ msgstr "Ankündigungen"
 
 msgid "Becoming responsible for an object"
 msgstr "Für ein Objekt verantworlich werden"
+
+msgid "Responsibility for an object being declined"
+msgstr "Verantwortung für ein Objekt wird abgelehnt"
 
 msgid "Being invited to a basic group"
 msgstr "In eine einfache Gruppe eingeladen werden"
@@ -2024,9 +2047,6 @@ msgstr ""
 #, python-format
 msgid "User #%(user_id)s (%(component_name)s)"
 msgstr "Nutzer #%(user_id)s (%(component_name)s)"
-
-msgid "View Objects"
-msgstr "Objekte anzeigen"
 
 msgid "… with activity by this user"
 msgstr "… mit Aktivität dieses Nutzers"
@@ -2591,9 +2611,6 @@ msgstr "Diese benutzerdefinierte Aktion ist öffentlich."
 
 msgid "This action has been hidden from action lists."
 msgstr "Diese Aktion wurde aus Aktionslisten versteckt."
-
-msgid "Create Object"
-msgstr "Objekt erstellen"
 
 msgid "Modify the settings for this action."
 msgstr "Einstellungen für diese Aktion modifizieren."
@@ -4266,6 +4283,9 @@ msgstr "Erstelle eine neue Messung mit dieser Probe."
 msgid "Use in %(measurement_type_name)s"
 msgstr "In %(measurement_type_name)s nutzen"
 
+msgid "Measurement"
+msgstr "Messung"
+
 msgid "Favorites"
 msgstr "Favoriten"
 
@@ -5032,9 +5052,6 @@ msgstr ""
 "Nutzer dieser Kind-Projektgruppe können andere Nutzer zu ihrer Eltern-"
 "Projektgruppe einladen."
 
-msgid "GRANT"
-msgstr "RECHTEVERGABE"
-
 msgid "Edit Project Group"
 msgstr "Projektgruppe bearbeiten"
 
@@ -5071,6 +5088,9 @@ msgstr "LESEN"
 
 msgid "WRITE"
 msgstr "SCHREIBEN"
+
+msgid "GRANT"
+msgstr "RECHTEVERGABE"
 
 msgid ""
 "Permissions limit what a user can do, regarding the project group itself "

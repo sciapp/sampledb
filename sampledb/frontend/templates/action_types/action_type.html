@@ -9,7 +9,7 @@
   </h1>
 
   <dl>
-    <dt>{{ _('Description') }}</dt><dd>{{ action_type.description | get_translated_text(default=_('—')) }}</dd>
+    <dt>{{ _('Description') }}</dt><dd>{{ action_type.description | get_translated_text(default='—') }}</dd>
     <dt>{{ _('Object Name (Singular)') }}</dt><dd>{{ action_type.object_name | get_translated_text(default=_('Object')) }}</dd>
     <dt>{{ _('Object Name (Plural)') }}</dt><dd>{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }}</dd>
     <dt>{{ _('View Text') }}</dt><dd>{{ action_type.view_text | get_translated_text(default=_('View Objects')) }}</dd>
