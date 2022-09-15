@@ -8,6 +8,7 @@ import typing
 
 import flask
 import flask_login
+import werkzeug
 from flask_babel import _
 
 from .. import frontend
@@ -134,89 +135,55 @@ def objects():
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if 'location_ids' in flask.request.args or 'location' in flask.request.args:
-            if 'location_ids' in flask.request.args and 'location' in flask.request.args:
-                flask.flash(_('Only one of location_ids and location may be set.'), 'error')
-                return flask.abort(400)
-            try:
-                filter_location_ids = []
-                for param in ('location_ids', 'location'):
-                    for location_ids_str in flask.request.args.getlist(param):
-                        for location_id_str in location_ids_str.split(','):
-                            location_id_str = location_id_str.strip()
-                            location_id = int(location_id_str)
-                            filter_location_ids.append(location_id)
-            except ValueError:
-                flask.flash(_('Unable to parse location IDs.'), 'error')
-                return flask.abort(400)
-            all_location_ids = [
+
+        success, filter_location_ids = _parse_filter_id_params(
+            params=flask.request.args,
+            param_aliases=['location_ids', 'location'],
+            valid_ids=[
                 location.id
                 for location in all_locations
-            ]
-            if any(location_id not in all_location_ids for location_id in filter_location_ids):
-                flask.flash(_('Invalid location ID.'), 'error')
-                return flask.abort(400)
-        else:
-            filter_location_ids = None
+            ],
+            id_map={},
+            multi_params_error=_('Only one of location_ids and location may be set.'),
+            parse_error=_('Unable to parse location IDs.'),
+            invalid_id_error=_('Invalid location ID.')
+        )
+        if not success:
+            return flask.abort(400)
 
-        if 'action_ids' in flask.request.args or 'action' in flask.request.args:
-            if 'action_ids' in flask.request.args and 'action' in flask.request.args:
-                flask.flash(_('Only one of action_ids and action may be set.'), 'error')
-                return flask.abort(400)
-            try:
-                filter_action_ids = []
-                for param in ('action_ids', 'action'):
-                    for action_ids_str in flask.request.args.getlist(param):
-                        for action_id_str in action_ids_str.split(','):
-                            action_id_str = action_id_str.strip()
-                            action_id = int(action_id_str)
-                            filter_action_ids.append(action_id)
-            except ValueError:
-                flask.flash(_('Unable to parse action IDs.'), 'error')
-                return flask.abort(400)
-            all_action_ids = [
+        success, filter_action_ids = _parse_filter_id_params(
+            params=flask.request.args,
+            param_aliases=['action_ids', 'action'],
+            valid_ids=[
                 action.id
                 for action in all_actions
-            ]
-            if any(action_id not in all_action_ids for action_id in filter_action_ids):
-                flask.flash(_('Invalid action ID.'), 'error')
-                return flask.abort(400)
-        else:
-            filter_action_ids = None
+            ],
+            id_map={},
+            multi_params_error=_('Only one of action_ids and action may be set.'),
+            parse_error=_('Unable to parse action IDs.'),
+            invalid_id_error=_('Invalid action ID.')
+        )
+        if not success:
+            return flask.abort(400)
 
-        if 'action_type_ids' in flask.request.args or 't' in flask.request.args:
-            if 'action_type_ids' in flask.request.args and 't' in flask.request.args:
-                flask.flash(_('Only one of action_type_ids and t may be set.'), 'error')
-                return flask.abort(400)
-            # ensure old links still function by mapping names to IDs
-            action_type_ids_by_name = {
+        success, filter_action_type_ids = _parse_filter_id_params(
+            params=flask.request.args,
+            param_aliases=['action_type_ids', 't'],
+            valid_ids=[
+                action_type.id
+                for action_type in all_action_types
+            ],
+            id_map={
                 'samples': models.ActionType.SAMPLE_CREATION,
                 'measurements': models.ActionType.MEASUREMENT,
                 'simulations': models.ActionType.SIMULATION
-            }
-            try:
-                filter_action_type_ids = []
-                for param in ('action_type_ids', 't'):
-                    for action_type_ids_str in flask.request.args.getlist(param):
-                        for action_type_id_str in action_type_ids_str.split(','):
-                            action_type_id_str = action_type_id_str.strip()
-                            if action_type_id_str in action_type_ids_by_name:
-                                action_type_id = action_type_ids_by_name[action_type_id_str]
-                            else:
-                                action_type_id = int(action_type_id_str)
-                            filter_action_type_ids.append(action_type_id)
-            except ValueError:
-                flask.flash(_('Unable to parse action type IDs.'), 'error')
-                return flask.abort(400)
-            all_action_type_ids = [
-                action_type.id
-                for action_type in all_action_types
-            ]
-            if any(action_type_id not in all_action_type_ids for action_type_id in filter_action_type_ids):
-                flask.flash(_('Invalid action type ID.'), 'error')
-                return flask.abort(400)
-        else:
-            filter_action_type_ids = None
+            },
+            multi_params_error=_('Only one of action_type_ids and t may be set.'),
+            parse_error=_('Unable to parse action type IDs.'),
+            invalid_id_error=_('Invalid action type ID.')
+        )
+        if not success:
+            return flask.abort(400)
 
         if filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
@@ -823,3 +790,37 @@ def referencable_objects():
             for object in referencable_objects
         ]
     }
+
+
+def _parse_filter_id_params(
+        params: werkzeug.ImmutableMultiDict,
+        param_aliases: typing.List[str],
+        valid_ids: typing.List[int],
+        id_map: typing.Dict[str, int],
+        multi_params_error: str,
+        parse_error: str,
+        invalid_id_error: str
+) -> typing.Tuple[bool, typing.Optional[typing.List[int]]]:
+    num_used_param_aliases = sum(param_alias in params for param_alias in param_aliases)
+    if num_used_param_aliases == 0:
+        return True, None
+    if num_used_param_aliases > 1:
+        flask.flash(multi_params_error, 'error')
+        return False, None
+    try:
+        filter_ids = set()
+        for param_alias in param_aliases:
+            for ids_str in flask.request.args.getlist(param_alias):
+                for id_str in ids_str.split(','):
+                    id_str = id_str.strip()
+                    if id_str in id_map:
+                        filter_ids.add(id_map[id_str])
+                    else:
+                        filter_ids.add(int(id_str))
+    except ValueError:
+        flask.flash(parse_error, 'error')
+        return False, None
+    if any(id not in valid_ids for id in filter_ids):
+        flask.flash(invalid_id_error, 'error')
+        return False, None
+    return True, list(filter_ids)
