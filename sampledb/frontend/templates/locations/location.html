@@ -33,7 +33,7 @@
 
   <div class="button-row">
   {% if has_objects %}
-    <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
+    <a href="{{ url_for('.objects', location_ids=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
   {% endif %}
   {% if Permissions.WRITE in permissions %}
     {% if location.fed_id is none %}

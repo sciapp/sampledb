@@ -134,15 +134,18 @@ def objects():
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if 'location_ids' in flask.request.args:
+        if 'location_ids' in flask.request.args or 'location' in flask.request.args:
+            if 'location_ids' in flask.request.args and 'location' in flask.request.args:
+                flask.flash(_('Only one of location_ids and location may be set.'), 'error')
+                return flask.abort(400)
             try:
-                filter_location_ids = [
-                    int(id_str.strip())
-                    for id_str in itertools.chain(*[
-                        location_ids_str.split(',')
-                        for location_ids_str in flask.request.args.getlist('location_ids')
-                    ])
-                ]
+                filter_location_ids = []
+                for param in ('location_ids', 'location'):
+                    for location_ids_str in flask.request.args.getlist(param):
+                        for location_id_str in location_ids_str.split(','):
+                            location_id_str = location_id_str.strip()
+                            location_id = int(location_id_str)
+                            filter_location_ids.append(location_id)
             except ValueError:
                 flask.flash(_('Unable to parse location IDs.'), 'error')
                 return flask.abort(400)
@@ -153,22 +156,8 @@ def objects():
             if any(location_id not in all_location_ids for location_id in filter_location_ids):
                 flask.flash(_('Invalid location ID.'), 'error')
                 return flask.abort(400)
-            if 'location' in flask.request.args:
-                flask.flash(_('Only one of location_ids and location may be set.'), 'error')
-                return flask.abort(400)
         else:
             filter_location_ids = None
-        if 'location' in flask.request.args:
-            try:
-                location_id = int(flask.request.args.get('location', ''))
-                if Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id):
-                    filter_location_ids = [location_id]
-                else:
-                    flask.flash(_('You do not have the required permissions to access this location.'), 'error')
-            except ValueError:
-                flask.flash(_('Unable to parse location IDs.'), 'error')
-            except LocationDoesNotExistError:
-                flask.flash(_('No location with the given ID exists.'), 'error')
 
         if 'action_ids' in flask.request.args or 'action' in flask.request.args:
             if 'action_ids' in flask.request.args and 'action' in flask.request.args:
