@@ -195,15 +195,27 @@ def objects():
         else:
             filter_action_ids = None
 
-        if 'action_type_ids' in flask.request.args:
+        if 'action_type_ids' in flask.request.args or 't' in flask.request.args:
+            if 'action_type_ids' in flask.request.args and 't' in flask.request.args:
+                flask.flash(_('Only one of action_type_ids and t may be set.'), 'error')
+                return flask.abort(400)
+            # ensure old links still function by mapping names to IDs
+            action_type_ids_by_name = {
+                'samples': models.ActionType.SAMPLE_CREATION,
+                'measurements': models.ActionType.MEASUREMENT,
+                'simulations': models.ActionType.SIMULATION
+            }
             try:
-                filter_action_type_ids = [
-                    int(id_str.strip())
-                    for id_str in itertools.chain(*[
-                        action_type_ids_str.split(',')
-                        for action_type_ids_str in flask.request.args.getlist('action_type_ids')
-                    ])
-                ]
+                filter_action_type_ids = []
+                for param in ('action_type_ids', 't'):
+                    for action_type_ids_str in flask.request.args.getlist(param):
+                        for action_type_id_str in action_type_ids_str.split(','):
+                            action_type_id_str = action_type_id_str.strip()
+                            if action_type_id_str in action_type_ids_by_name:
+                                action_type_id = action_type_ids_by_name[action_type_id_str]
+                            else:
+                                action_type_id = int(action_type_id_str)
+                            filter_action_type_ids.append(action_type_id)
             except ValueError:
                 flask.flash(_('Unable to parse action type IDs.'), 'error')
                 return flask.abort(400)
@@ -214,11 +226,9 @@ def objects():
             if any(action_type_id not in all_action_type_ids for action_type_id in filter_action_type_ids):
                 flask.flash(_('Invalid action type ID.'), 'error')
                 return flask.abort(400)
-            if 't' in flask.request.args:
-                flask.flash(_('Only one of action_type_ids and t may be set.'), 'error')
-                return flask.abort(400)
         else:
             filter_action_type_ids = None
+
         try:
             action_id = int(flask.request.args.get('action', ''))
         except ValueError:
@@ -236,29 +246,6 @@ def objects():
                         display_properties.append(property_name)
                     if property_name not in display_property_titles:
                         display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
-        else:
-            action_type_id = flask.request.args.get('t', '')
-            if action_type_id is not None:
-                try:
-                    action_type_id = int(action_type_id)
-                except ValueError:
-                    # ensure old links still function
-                    action_type_id = {
-                        'samples': models.ActionType.SAMPLE_CREATION,
-                        'measurements': models.ActionType.MEASUREMENT,
-                        'simulations': models.ActionType.SIMULATION
-                    }.get(action_type_id, None)
-            if action_type_id is not None:
-                try:
-                    action_type = get_action_type(
-                        action_type_id=action_type_id
-                    )
-                except ActionTypeDoesNotExistError:
-                    action_type = None
-            else:
-                action_type = None
-            if filter_action_type_ids is None and action_type is not None:
-                filter_action_type_ids = [action_type.id]
 
         if filter_action_ids is None and action_id is not None:
             filter_action_ids = [action_id]
