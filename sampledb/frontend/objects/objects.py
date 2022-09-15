@@ -25,14 +25,30 @@ from ...logic.groups import get_group
 from ...logic.objects import get_object
 from ...logic.projects import get_project, get_user_project_permissions
 from ...logic.locations import get_location, get_object_ids_at_location
-from ...logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
-from ...logic.errors import UserDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
+from ...logic.location_permissions import get_locations_with_user_permissions
+from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component
 from ..utils import get_location_name, get_search_paths
 from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+OBJECT_LIST_FILTER_PARAMETERS = (
+    'object_list_filters',
+    'action_type_ids',
+    't',
+    'action_ids',
+    'action',
+    'user',
+    'user_permissions',
+    'all_users_permissions',
+    'anonymous_permissions',
+    'location_ids',
+    'location',
+    'doi',
+    'project',
+)
 
 
 @frontend.route('/objects/')
@@ -136,38 +152,95 @@ def objects():
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
 
-        (
-            success,
-            filter_location_ids,
-            filter_action_type_ids,
-            filter_action_ids,
-            filter_related_user_id,
-            filter_doi,
-            filter_anonymous_permissions,
-            filter_all_users_permissions,
-            filter_user_id,
-            filter_user_permissions,
-            filter_group_id,
-            filter_group_permissions,
-            filter_project_id,
-            filter_project_permissions,
-        ) = _parse_object_list_filters(
-            params=flask.request.args,
-            valid_location_ids=[
-                location.id
-                for location in all_locations
-            ],
-            valid_action_type_ids=[
-                action_type.id
-                for action_type in all_action_types
-            ],
-            valid_action_ids=[
-                action.id
-                for action in all_actions
-            ]
-        )
-        if not success:
-            return flask.abort(400)
+        valid_location_ids = [
+            location.id
+            for location in all_locations
+        ]
+        valid_action_type_ids = [
+            action_type.id
+            for action_type in all_action_types
+        ]
+        valid_action_ids = [
+            action.id
+            for action in all_actions
+        ]
+
+        user_settings = get_user_settings(user_id=flask_login.current_user.id)
+        if any(param in flask.request.args for param in OBJECT_LIST_FILTER_PARAMETERS):
+            (
+                success,
+                filter_location_ids,
+                filter_action_type_ids,
+                filter_action_ids,
+                filter_related_user_id,
+                filter_doi,
+                filter_anonymous_permissions,
+                filter_all_users_permissions,
+                filter_user_id,
+                filter_user_permissions,
+                filter_group_id,
+                filter_group_permissions,
+                filter_project_id,
+                filter_project_permissions,
+            ) = _parse_object_list_filters(
+                params=flask.request.args,
+                valid_location_ids=valid_location_ids,
+                valid_action_type_ids=valid_action_type_ids,
+                valid_action_ids=valid_action_ids
+            )
+            if not success:
+                return flask.abort(400)
+        else:
+            filter_location_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_location_ids')
+            if filter_location_ids is not None:
+                # remove location IDs which may have become invalid
+                filter_location_ids = [
+                    location_id
+                    for location_id in filter_location_ids
+                    if location_id in valid_location_ids
+                ]
+
+            filter_action_type_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_type_ids')
+            if filter_action_type_ids is not None:
+                # remove action type IDs which may have become invalid
+                filter_action_type_ids = [
+                    action_type_id
+                    for action_type_id in filter_action_type_ids
+                    if action_type_id in valid_action_type_ids
+                ]
+
+            filter_action_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_ids')
+            if filter_action_ids is not None:
+                # remove action IDs which may have become invalid
+                filter_action_ids = [
+                    action_id
+                    for action_id in filter_action_ids
+                    if action_id in valid_action_ids
+                ]
+
+            filter_doi = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_doi')
+
+            filter_anonymous_permissions = {
+                'read': Permissions.READ
+            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_anonymous_permissions'), None)
+
+            filter_all_users_permissions = {
+                'read': Permissions.READ
+            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_all_users_permissions'), None)
+
+            filter_user_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_id')
+
+            filter_user_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
+
+            filter_related_user_id = None
+            filter_group_id = None
+            filter_group_permissions = None
+            filter_project_id = None
+            filter_project_permissions = None
 
         if filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
@@ -205,7 +278,7 @@ def objects():
 
             # default objects per page
             if pagination_limit is None:
-                pagination_limit = get_user_settings(flask_login.current_user.id)['OBJECTS_PER_PAGE']
+                pagination_limit = user_settings['OBJECTS_PER_PAGE']
             else:
                 set_user_settings(flask_login.current_user.id, {'OBJECTS_PER_PAGE': pagination_limit})
 
@@ -424,15 +497,6 @@ def objects():
                 continue
             objects[i]['display_properties'][property_name] = (property_data, property_schema)
 
-    def build_modified_url(**query_parameters):
-        for key in flask.request.args:
-            if key not in query_parameters:
-                query_parameters[key] = flask.request.args.getlist(key)
-        return flask.url_for(
-            '.objects',
-            **query_parameters
-        )
-
     action_ids = {
         object['action'].id for object in objects if object['action'] is not None
     }
@@ -626,6 +690,7 @@ def objects():
         filter_project_permissions_info=filter_project_permissions_info,
         filter_all_users_permissions=filter_all_users_permissions,
         filter_anonymous_permissions=filter_anonymous_permissions,
+        filter_user_permissions=filter_user_permissions,
         filter_doi_info=filter_doi_info,
         show_filters=show_filters,
         all_actions=all_actions,
@@ -637,7 +702,7 @@ def objects():
         all_publications=all_publications,
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-        build_modified_url=build_modified_url,
+        build_modified_url=_build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
         limit=pagination_limit,
@@ -887,7 +952,7 @@ def _parse_object_list_filters(
                     user_id=flask_login.current_user.id,
                     include_groups=True
             ):
-                flask.flash(_('You need to be a member of this project to list its objects.'), 'error')
+                flask.flash(_('You need to be a member of this project group to list its objects.'), 'error')
                 return False, None, None, None, None, None, None, None, None, None, None, None, None, None
             filter_project_permissions = {
                 'read': Permissions.READ,
@@ -914,3 +979,90 @@ def _parse_object_list_filters(
         filter_project_id,
         filter_project_permissions,
     )
+
+
+def _build_modified_url(
+        blocked_parameters: typing.Sequence[str] = (),
+        **query_parameters: typing.Any
+) -> str:
+    for param in flask.request.args:
+        if param not in query_parameters:
+            query_parameters[param] = flask.request.args.getlist(param)
+    for param in blocked_parameters:
+        if param in query_parameters:
+            del query_parameters[param]
+    return flask.url_for(
+        '.objects',
+        **query_parameters
+    )
+
+
+@frontend.route('/objects/', methods=['POST'])
+@flask_login.login_required
+def save_object_list_defaults():
+    if 'save_default_filters' in flask.request.form:
+        all_locations = get_locations_with_user_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+        all_action_types = logic.actions.get_action_types(
+            filter_fed_defaults=True
+        )
+        all_actions = get_sorted_actions_for_user(
+            user_id=flask_login.current_user.id
+        )
+        (
+            success,
+            filter_location_ids,
+            filter_action_type_ids,
+            filter_action_ids,
+            filter_related_user_id,
+            filter_doi,
+            filter_anonymous_permissions,
+            filter_all_users_permissions,
+            filter_user_id,
+            filter_user_permissions,
+            filter_group_id,
+            filter_group_permissions,
+            filter_project_id,
+            filter_project_permissions,
+        ) = _parse_object_list_filters(
+            params=flask.request.form,
+            valid_location_ids=[
+                location.id
+                for location in all_locations
+            ],
+            valid_action_type_ids=[
+                action_type.id
+                for action_type in all_action_types
+            ],
+            valid_action_ids=[
+                action.id
+                for action in all_actions
+            ]
+        )
+        if not success:
+            return flask.abort(400)
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_FILTERS': {
+                    'filter_location_ids': filter_location_ids,
+                    'filter_action_type_ids': filter_action_type_ids,
+                    'filter_action_ids': filter_action_ids,
+                    'filter_doi': filter_doi,
+                    'filter_anonymous_permissions': None if filter_anonymous_permissions is None else filter_anonymous_permissions.name.lower(),
+                    'filter_all_users_permissions': None if filter_all_users_permissions is None else filter_all_users_permissions.name.lower(),
+                    'filter_user_id': filter_user_id,
+                    'filter_user_permissions': None if filter_user_permissions is None else filter_user_permissions.name.lower(),
+                }
+            }
+        )
+    if 'clear_default_filters' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_FILTERS': {}
+            }
+        )
+    return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))

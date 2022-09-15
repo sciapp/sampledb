@@ -34,6 +34,7 @@ Currently in development.
 - Allow declining object responsibility assignments
 - Implemented location types, location responsible users and a location log
 - Added download service
+- Allow saving object list filters
 
 Version 0.20
 ------------

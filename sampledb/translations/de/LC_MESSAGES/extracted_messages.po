@@ -924,39 +924,6 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
-msgid "Unable to parse location IDs."
-msgstr "Orts-IDs konnten nicht geparst werden."
-
-msgid "Invalid location ID."
-msgstr "Ungültige Orts-ID"
-
-msgid "Only one of location_ids and location may be set."
-msgstr "location_ids und location dürfen nicht beide gesetzt sein."
-
-msgid "You do not have the required permissions to access this location."
-msgstr "Ihnen fehlen die Berechtigungen um auf diesen Ort zuzugreifen."
-
-msgid "No location with the given ID exists."
-msgstr "Es existiert kein Ort mit dieser ID."
-
-msgid "Unable to parse action IDs."
-msgstr "Aktions-IDs konnten nicht geparst werden."
-
-msgid "Invalid action ID."
-msgstr "Ungültige Aktions-ID"
-
-msgid "Only one of action_ids and action may be set."
-msgstr "action_ids und action dürfen nicht beide gesetzt sein."
-
-msgid "Unable to parse action type IDs."
-msgstr "Aktionstyp-IDs konnten nicht geparst werden."
-
-msgid "Invalid action type ID."
-msgstr "Ungültige Aktionstyp-ID"
-
-msgid "Only one of action_type_ids and t may be set."
-msgstr "action_type_ids und t dürfen nicht beide gesetzt sein."
-
 #, python-format
 msgid ""
 "The advanced search was used automatically. Search for "
@@ -979,6 +946,60 @@ msgstr "Unbenannter Aktionstyp"
 
 msgid "Unnamed Action"
 msgstr "Unbenannte Aktion"
+
+msgid "Only one of location_ids and location may be set."
+msgstr "location_ids und location dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse location IDs."
+msgstr "Orts-IDs konnten nicht geparst werden."
+
+msgid "Invalid location ID."
+msgstr "Ungültige Orts-ID"
+
+msgid "Only one of action_ids and action may be set."
+msgstr "action_ids und action dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse action IDs."
+msgstr "Aktions-IDs konnten nicht geparst werden."
+
+msgid "Invalid action ID."
+msgstr "Ungültige Aktions-ID"
+
+msgid "Only one of action_type_ids and t may be set."
+msgstr "action_type_ids und t dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse action type IDs."
+msgstr "Aktionstyp-IDs konnten nicht geparst werden."
+
+msgid "Invalid action type ID."
+msgstr "Ungültige Aktionstyp-ID"
+
+msgid "Unable to parse related user ID."
+msgstr "Die ID des zugehörigen Nutzers konnte nicht geparst werden."
+
+msgid "Invalid related user ID."
+msgstr "Ungültige Zugehöriger-Nutzer-ID."
+
+msgid "Unable to parse user ID."
+msgstr "Nutzer-ID konnte nicht geparst werden."
+
+msgid "Unable to parse group ID."
+msgstr "Gruppen-ID konnte nicht geparst werden."
+
+msgid "Invalid group ID."
+msgstr "Ungültige Nutzer-ID."
+
+msgid "You need to be a member of this group to list its objects."
+msgstr "Sie müssen ein Mitglied dieser Gruppe sein, um ihre Objekte anzeigen zu können."
+
+msgid "Unable to parse project ID."
+msgstr "Projekt-ID konnte nicht geparst werden."
+
+msgid "Invalid project ID."
+msgstr "Ungültige Projekt-ID."
+
+msgid "You need to be a member of this project group to list its objects."
+msgstr "Sie müssen ein Mitglied dieser Projektgruppe sein, um ihre Objekte anzeigen zu können."
 
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
@@ -4044,6 +4065,9 @@ msgstr "Nach Publikation filtern"
 msgid "All publications"
 msgstr "Alle Publikationen"
 
+msgid "Clear"
+msgstr "Zurücksetzen"
+
 msgid "Created"
 msgstr "Erstellt"
 
@@ -5550,4 +5574,10 @@ msgid ""
 msgstr ""
 "Die plotly-Daten müssen gültig sein. Bitte prüfen Sie, welches Schema von"
 " plotly unterstützt wird."
+
+#~ msgid "You do not have the required permissions to access this location."
+#~ msgstr "Ihnen fehlen die Berechtigungen um auf diesen Ort zuzugreifen."
+
+#~ msgid "No location with the given ID exists."
+#~ msgstr "Es existiert kein Ort mit dieser ID."
 

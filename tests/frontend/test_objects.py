@@ -120,6 +120,10 @@ def test_get_objects_by_action_id(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action1.id,
+        permissions=sampledb.models.Permissions.READ
+    )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
         action_id=action1.id,
@@ -129,6 +133,10 @@ def test_get_objects_by_action_id(flask_server, user):
     action2 = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action2.id,
+        permissions=sampledb.models.Permissions.READ
     )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
@@ -250,6 +258,10 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action1.id,
+        permissions=sampledb.models.Permissions.READ
+    )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
         action_id=action1.id,
@@ -259,6 +271,10 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
     action2 = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
         schema=schema
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action2.id,
+        permissions=sampledb.models.Permissions.READ
     )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
