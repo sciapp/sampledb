@@ -170,15 +170,18 @@ def objects():
             except LocationDoesNotExistError:
                 flask.flash(_('No location with the given ID exists.'), 'error')
 
-        if 'action_ids' in flask.request.args:
+        if 'action_ids' in flask.request.args or 'action' in flask.request.args:
+            if 'action_ids' in flask.request.args and 'action' in flask.request.args:
+                flask.flash(_('Only one of action_ids and action may be set.'), 'error')
+                return flask.abort(400)
             try:
-                filter_action_ids = [
-                    int(id_str.strip())
-                    for id_str in itertools.chain(*[
-                        action_ids_str.split(',')
-                        for action_ids_str in flask.request.args.getlist('action_ids')
-                    ])
-                ]
+                filter_action_ids = []
+                for param in ('action_ids', 'action'):
+                    for action_ids_str in flask.request.args.getlist(param):
+                        for action_id_str in action_ids_str.split(','):
+                            action_id_str = action_id_str.strip()
+                            action_id = int(action_id_str)
+                            filter_action_ids.append(action_id)
             except ValueError:
                 flask.flash(_('Unable to parse action IDs.'), 'error')
                 return flask.abort(400)
@@ -188,9 +191,6 @@ def objects():
             ]
             if any(action_id not in all_action_ids for action_id in filter_action_ids):
                 flask.flash(_('Invalid action ID.'), 'error')
-                return flask.abort(400)
-            if 'action' in flask.request.args:
-                flask.flash(_('Only one of action_ids and action may be set.'), 'error')
                 return flask.abort(400)
         else:
             filter_action_ids = None
@@ -229,12 +229,10 @@ def objects():
         else:
             filter_action_type_ids = None
 
-        try:
-            action_id = int(flask.request.args.get('action', ''))
-        except ValueError:
-            action_id = None
-        if action_id is None and filter_action_ids is not None and len(filter_action_ids) == 1:
+        if filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
+        else:
+            action_id = None
         if action_id is not None:
             action = get_action(action_id)
             implicit_action_type = get_action_type(action.type_id) if action.type_id is not None else None
@@ -247,8 +245,6 @@ def objects():
                     if property_name not in display_property_titles:
                         display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
 
-        if filter_action_ids is None and action_id is not None:
-            filter_action_ids = [action_id]
         if display_properties:
             name_only = False
 
