@@ -12,7 +12,7 @@ from flask_babel import _
 
 from ... import logic
 from ... import models
-from ...logic.actions import get_actions, get_action_type, get_action_types
+from ...logic.actions import get_actions, get_action, get_action_type, get_action_types
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
 from ...logic.users import get_users
@@ -387,7 +387,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     insert_recipe_types(schema)
 
     if object is None:
-        if action_id not in action_type_id_by_action_id or get_action_type(action_type_id_by_action_id[action_id]).disable_create_objects:
+        action_type_id = action_type_id_by_action_id.get(action_id)
+        action = get_action(action_id)
+        if action_type_id is None or get_action_type(action_type_id).disable_create_objects or action.disable_create_objects or (action.admin_only and not flask_login.current_user.is_admin):
             flask.flash(_('Creating objects with this action has been disabled.'), 'error')
             return flask.redirect(flask.url_for('.action', action_id=action_id))
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:

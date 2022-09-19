@@ -53,6 +53,7 @@ class ActionForm(FlaskForm):
     is_hidden = BooleanField(default=None)
     short_description_is_markdown = BooleanField(default=None)
     translations = StringField(validators=[DataRequired()])
+    usable_by = SelectField(choices=['with_permissions', 'admins', 'nobody'])
 
     def validate_type(form, field):
         try:
@@ -114,6 +115,14 @@ def actions():
             action
             for action in actions
             if action.schema is not None and action.type_id is not None and not action.type.disable_create_objects
+        ]
+    filter_usable_actions = 'can_create_objects' in flask.request.args
+    if filter_usable_actions:
+        # exclude actions that cannot be used to create objects by the current user
+        actions = [
+            action
+            for action in actions
+            if action.schema is not None and action.type_id is not None and not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not flask_login.current_user.is_admin)
         ]
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
@@ -353,12 +362,19 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
             action_form.short_description_is_markdown.data = action.short_description_is_markdown
             action_form.type.data = action.type.id
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(action.id)
+            if action.disable_create_objects:
+                action_form.usable_by.data = 'nobody'
+            elif action.admin_only:
+                action_form.usable_by.data = 'admins'
+            else:
+                action_form.usable_by.data = 'with_permissions'
         elif previous_action is not None:
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
             action_form.short_description_is_markdown.data = previous_action.short_description_is_markdown
             action_form.type.data = previous_action.type_id
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
+            action_form.usable_by.data = 'with_permissions'
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -490,6 +506,8 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
         is_hidden = action_form.is_hidden.data
         is_markdown = action_form.is_markdown.data
         short_description_is_markdown = action_form.short_description_is_markdown.data
+        admin_only = action_form.usable_by.data == 'admins'
+        disable_create_objects = action_form.usable_by.data == 'nobody'
 
         try:
             instrument_id = int(instrument_id)
@@ -509,7 +527,9 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 user_id=user_id,
                 is_hidden=is_hidden,
                 description_is_markdown=is_markdown,
-                short_description_is_markdown=short_description_is_markdown
+                short_description_is_markdown=short_description_is_markdown,
+                admin_only=admin_only,
+                disable_create_objects=disable_create_objects
             )
         else:
             update_action(
@@ -517,7 +537,9 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
                 schema=schema,
                 is_hidden=is_hidden,
                 description_is_markdown=is_markdown,
-                short_description_is_markdown=short_description_is_markdown
+                short_description_is_markdown=short_description_is_markdown,
+                admin_only=admin_only,
+                disable_create_objects=disable_create_objects
             )
         set_action_permissions_for_all_users(action.id, Permissions.READ if is_public else Permissions.NONE)
 

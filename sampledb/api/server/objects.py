@@ -326,7 +326,7 @@ class Objects(Resource):
                 return {
                     "message": "action {} does not exist".format(action_id)
                 }, 400
-            if action.type.disable_create_objects:
+            if action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
                 return {
                     "message": "creating objects with action {} is disabled".format(action_id)
                 }, 400

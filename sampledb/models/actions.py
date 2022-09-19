@@ -129,6 +129,8 @@ class Action(db.Model):
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
     translations = db.relationship('ActionTranslation')
+    admin_only = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     def __init__(
             self,
@@ -140,7 +142,9 @@ class Action(db.Model):
             is_hidden: bool = False,
             short_description_is_markdown: bool = False,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            admin_only: bool = False,
+            disable_create_objects: bool = False
     ):
 
         self.type_id = action_type_id
@@ -152,6 +156,8 @@ class Action(db.Model):
         self.short_description_is_markdown = short_description_is_markdown
         self.fed_id = fed_id
         self.component_id = component_id
+        self.admin_only = admin_only
+        self.disable_create_objects = disable_create_objects
 
     def __eq__(self, other):
         return (

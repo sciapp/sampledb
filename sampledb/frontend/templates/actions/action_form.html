@@ -317,6 +317,25 @@
         </label>
       </div>
 
+      <div class="radio">
+        <label>
+          <input type="radio" name="{{ action_form.usable_by.name }}" value="with_permissions" {% if action_form.usable_by.data is none or action_form.usable_by.data == 'with_permissions' %}checked="checked"{% endif %}>
+          {{ _('All users with Read permissions can create objects using this action') }}
+        </label>
+      </div>
+      <div class="radio">
+        <label>
+          <input type="radio" name="{{ action_form.usable_by.name }}" value="admins" {% if action_form.usable_by.data == 'admins' %}checked="checked"{% endif %}>
+          {{ _('Only administrators can create objects using this action') }}
+        </label>
+      </div>
+      <div class="radio">
+        <label>
+          <input type="radio" name="{{ action_form.usable_by.name }}" value="nobody" {% if action_form.usable_by.data == 'nobody' %}checked="checked"{% endif %}>
+          {{ _('Creating objects using this action is disabled') }}
+        </label>
+      </div>
+
       <div class="form-group {% if action_form.schema.name in action_form.errors %}has-error{% endif %}">
         <label for="input-schema" class="control-label">{{ _('Schema') }}</label>
         <label class="pull-right">

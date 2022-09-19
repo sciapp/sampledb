@@ -46,7 +46,9 @@ class Action(collections.namedtuple('Action', [
     'short_description_is_markdown',
     'fed_id',
     'component_id',
-    'component'
+    'component',
+    'admin_only',
+    'disable_create_objects',
 ])):
     """
     This class provides an immutable wrapper around models.actions.Action.
@@ -70,7 +72,9 @@ class Action(collections.namedtuple('Action', [
             short_description_is_markdown: bool,
             fed_id: int,
             component_id: int,
-            component: typing.Optional[components.Component]
+            component: typing.Optional[components.Component],
+            admin_only: bool,
+            disable_create_objects: bool,
     ):
         self = super(Action, cls).__new__(
             cls,
@@ -90,7 +94,9 @@ class Action(collections.namedtuple('Action', [
             short_description_is_markdown,
             fed_id,
             component_id,
-            component
+            component,
+            admin_only,
+            disable_create_objects,
         )
         return self
 
@@ -113,7 +119,9 @@ class Action(collections.namedtuple('Action', [
             short_description_is_markdown=action.short_description_is_markdown,
             fed_id=action.fed_id,
             component_id=action.component_id,
-            component=components.Component.from_database(action.component) if action.component is not None else None
+            component=components.Component.from_database(action.component) if action.component is not None else None,
+            admin_only=action.admin_only,
+            disable_create_objects=action.disable_create_objects,
         )
 
     def __repr__(self):
@@ -149,6 +157,11 @@ class ActionType(collections.namedtuple('ActionType', [
     """
     This class provides an immutable wrapper around models.actions.ActionType.
     """
+
+    # make fixed IDs available from wrapper
+    SAMPLE_CREATION = models.ActionType.SAMPLE_CREATION
+    MEASUREMENT = models.ActionType.MEASUREMENT
+    SIMULATION = models.ActionType.SIMULATION
 
     def __new__(
             cls,
@@ -425,7 +438,9 @@ def create_action(
         is_hidden: bool = False,
         short_description_is_markdown: bool = False,
         fed_id: typing.Optional[int] = None,
-        component_id: typing.Optional[int] = None
+        component_id: typing.Optional[int] = None,
+        admin_only: bool = False,
+        disable_create_objects: bool = False,
 ) -> Action:
     """
     Creates a new action with the given type and schema. If
@@ -442,6 +457,8 @@ def create_action(
         contains Markdown
     :param fed_id: the ID of the related action at the exporting component
     :param component_id: the ID of the exporting component
+    :param admin_only: whether only admins may use the action to create objects
+    :param disable_create_objects: whether the action may not be used to create objects
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -480,7 +497,9 @@ def create_action(
         user_id=user_id,
         short_description_is_markdown=short_description_is_markdown,
         fed_id=fed_id,
-        component_id=component_id
+        component_id=component_id,
+        admin_only=admin_only,
+        disable_create_objects=disable_create_objects,
     )
     db.session.add(action)
     db.session.commit()
@@ -568,7 +587,9 @@ def update_action(
         schema: dict,
         description_is_markdown: bool = False,
         is_hidden: typing.Optional[bool] = None,
-        short_description_is_markdown: bool = False
+        short_description_is_markdown: bool = False,
+        admin_only: typing.Optional[bool] = None,
+        disable_create_objects: typing.Optional[bool] = None,
 ) -> None:
     """
     Updates the action with the given action ID, setting its schema.
@@ -579,6 +600,8 @@ def update_action(
     :param is_hidden: None or whether the action should be hidden
     :param short_description_is_markdown: whether the short description
         contains Markdown
+    :param admin_only: None or whether only admins may use the action to create objects
+    :param disable_create_objects: None or whether the action may not be used to create objects
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -590,6 +613,10 @@ def update_action(
     action.short_description_is_markdown = short_description_is_markdown
     if is_hidden is not None:
         action.is_hidden = is_hidden
+    if admin_only is not None:
+        action.admin_only = admin_only
+    if disable_create_objects is not None:
+        action.disable_create_objects = disable_create_objects
     db.session.add(action)
     db.session.commit()
     update_actions_using_template_action(action_id)
