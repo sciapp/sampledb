@@ -12,7 +12,7 @@ from wtforms import BooleanField, StringField
 from wtforms import validators
 
 from .. import frontend
-from ...logic import users, errors
+from ...logic import users, errors, groups, projects
 from ...logic.components import get_component
 
 
@@ -85,5 +85,7 @@ def user_profile(user_id):
         user_active_form=user_active_form,
         user=user,
         EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+        basic_groups=groups.get_user_groups(user.id),
+        project_groups=projects.get_user_projects(user.id, include_groups=True),
         get_component=get_component
     )
