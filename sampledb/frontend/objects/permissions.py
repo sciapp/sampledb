@@ -129,7 +129,7 @@ def object_permissions(object_id):
             existing_project_permissions=project_permissions
         )
 
-        users = get_users(exclude_hidden=True, exclude_fed=True)
+        users = get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
 

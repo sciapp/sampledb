@@ -43,7 +43,7 @@ def search():
         actions=actions,
         action_types=action_types,
         datetime=datetime,
-        users=get_users(exclude_hidden=True),
+        users=get_users(exclude_hidden=not flask_login.current_user.is_admin),
         referencable_objects=referencable_objects
     ), 200, {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
