@@ -159,7 +159,7 @@ class VersionedJSONSerializableObjectTables(object):
         self._data_validator = data_validator
         self._schema_validator = schema_validator
 
-    def create_object(self, data, schema, user_id, action_id, utc_datetime=None, fed_object_id=None, fed_version_id=None, component_id=None, connection=None):
+    def create_object(self, data, schema, user_id, action_id, utc_datetime=None, fed_object_id=None, fed_version_id=None, component_id=None, connection=None, validate_data=True):
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
 
@@ -172,6 +172,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param fed_version_id: the version ID of this object on a federated component
         :param component_id: the ID of the component that created this object
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :param validate_data: whether the data must be validated
         :return: the newly created object as object_type
         """
         if connection is None:
@@ -197,7 +198,7 @@ class VersionedJSONSerializableObjectTables(object):
             if self._schema_validator:
                 self._schema_validator(schema)
             if not (data is None and fed_object_id is not None and fed_version_id is not None):
-                if self._data_validator:
+                if self._data_validator and validate_data:
                     self._data_validator(data, schema)
         version_id = 0
         object_id = connection.execute(
@@ -349,16 +350,18 @@ class VersionedJSONSerializableObjectTables(object):
                     schema = None
             else:
                 schema = action[0]
+        validate_data = True
         if not (schema is None and fed_object_id is not None and fed_version_id is not None):
             if self._schema_validator:
                 self._schema_validator(schema)
             if not (data is None and fed_object_id is not None and fed_version_id is not None):
                 if self._data_validator:
                     self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages)
+                    validate_data = False
 
         current = self.get_current_fed_object(component_id, fed_object_id)
         if current is None:
-            object = self.create_object(data, schema, user_id, action_id, utc_datetime, fed_object_id, fed_version_id, component_id, connection=connection)
+            object = self.create_object(data, schema, user_id, action_id, utc_datetime, fed_object_id, fed_version_id, component_id, connection=connection, validate_data=validate_data)
             return object
         elif current.fed_version_id < fed_version_id:
             # Copy current version to previous versions
