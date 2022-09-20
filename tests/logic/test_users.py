@@ -137,12 +137,19 @@ def test_update_user():
     user = sampledb.logic.users.create_user(name='User', email='user@example.com', type=UserType.PERSON)
     assert len(User.query.all()) == 1
     ts = datetime.datetime.utcnow()
-    sampledb.logic.users.update_user(user.id, name='Updated User', email='up.user@example.com')
+    sampledb.logic.users.update_user(user.id, name='Updated User', email='up.user@example.com', updating_user_id=user.id)
     user = sampledb.logic.users.get_user(user.id)
     assert ts <= user.last_modified <= datetime.datetime.utcnow()
     assert len(User.query.all()) == 1
     assert user.name == 'Updated User'
     assert user.email == 'up.user@example.com'
+    previous_last_modified = user.last_modified
+    sampledb.logic.users.update_user(user.id, name='Updated User 2', email='up.user2@example.com', updating_user_id=None)
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.last_modified == previous_last_modified
+    assert len(User.query.all()) == 1
+    assert user.name == 'Updated User 2'
+    assert user.email == 'up.user2@example.com'
 
 
 def test_create_user_fed(component):
@@ -350,8 +357,8 @@ def test_get_user_aliases_for_component_use_real_data():
     assert len(user_aliases) == 0
 
     ts4 = datetime.datetime.utcnow()
-    sampledb.logic.users.update_user(user1.id, name='User Name')
-    sampledb.logic.users.update_user(user2.id, email='user@example.com')    # not using real data -> ignore profile update
+    sampledb.logic.users.update_user(user1.id, name='User Name', updating_user_id=user1.id)
+    sampledb.logic.users.update_user(user2.id, email='user@example.com', updating_user_id=user1.id)    # not using real data -> ignore profile update
     user_aliases = get_user_aliases_for_component(component.id, modified_since=ts4)
     alias_user1 = get_user_alias(user1.id, component.id)
     assert alias_user1.name == 'User Name'

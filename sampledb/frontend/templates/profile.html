@@ -94,6 +94,21 @@
       </ul>
     </dd>
   {% endif %}
+  {% if config['SHOW_LAST_PROFILE_UPDATE'] or last_modifying_user %}
+  <dt>
+    {{ _('Last Update') }}
+  </dt>
+  <dd>
+  {% if user.last_modified and user.last_modified_by_id %}
+    {{ user.last_modified | babel_format_datetime }}
+  {% elif not last_modifying_user %}
+    &mdash;
+  {% endif %}
+  {% if last_modifying_user %}
+    {{ _('by <a href="%(user_url)s">%(user_name)s</a>', user_url=url_for('.user_profile', user_id=last_modifying_user.id), user_name=last_modifying_user.get_name()) }}
+  {% endif %}
+  </dd>
+  {% endif %}
 </dl>
   <div class="btn-group">
     <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>
@@ -114,7 +129,7 @@
     {{ user_read_only_form.hidden_tag() }}
     <input type="hidden" value="toggle_read_only" name="{{ user_read_only_form.action.name }}" />
     <input type="checkbox" {% if user_read_only_form.should_be_read_only.default %}checked="checked"{% endif %} name="{{ user_read_only_form.should_be_read_only.name }}" style="display: none"/>
-    <button type="submit" class="btn btn-default" style="width: 12em">
+    <button type="submit" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
       {% if user_read_only_form.should_be_read_only.default %}{{ _('Mark as read only')}}{% else %}{{ _('Unmark as read only')}}{% endif %}
     </button>
   </form>
@@ -124,7 +139,7 @@
     {{ user_hidden_form.hidden_tag() }}
     <input type="hidden" value="toggle_hidden" name="{{ user_hidden_form.action.name }}" />
     <input type="checkbox" {% if user_hidden_form.should_be_hidden.default %}checked="checked"{% endif %} name="{{ user_hidden_form.should_be_hidden.name }}" style="display: none"/>
-    <button type="submit" class="btn btn-default" style="width: 12em">
+    <button type="submit" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
       {% if user_hidden_form.should_be_hidden.default %}{{ _('Mark as hidden')}}{% else %}{{ _('Unmark as hidden')}}{% endif %}
     </button>
   </form>
@@ -134,9 +149,73 @@
     {{ user_hidden_form.hidden_tag() }}
     <input type="hidden" value="toggle_active" name="{{ user_active_form.action.name }}" />
     <input type="checkbox" {% if user_active_form.should_be_active.default %}checked="checked"{% endif %} name="{{ user_active_form.should_be_active.name }}" style="display: none"/>
-    <button type="submit" class="btn btn-default" style="width: 12em">
+    <button type="submit" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
       {% if user_active_form.should_be_active.default %}{{ _('Activate') }}{% else %}{{ _('Deactivate') }}{% endif %}
     </button>
   </form>
+  {% endif %}
+  {% if user_profile_form and user.id != current_user.id %}
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#editProfileModal"  style="width: 12em; margin-bottom: 1px">
+      {{ _('Edit') }}
+    </button>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1" role="dialog" aria-labelledby="editProfileModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form method="post" action="{{ url_for('.user_profile', user_id=user.id) }}">
+            {{ user_profile_form.hidden_tag() }}
+            <input type="hidden" value="edit_profile" name="{{ user_profile_form.action.name }}" />
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="editProfileModalLabel">{{ _('Edit Profile Information') }}</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group {% if user_profile_form.orcid.errors %} has-error{% endif %}">
+                <label for="input-orcid" class="control-label">ORCID iD</label>
+                <div class="input-group">
+                  <span class="input-group-addon">https://orcid.org/</span>
+                  <input class="form-control" type="text" id="input-orcid" name="{{user_profile_form.orcid.name}}" value="{{ user_profile_form.orcid.data or '' }}" placeholder="xxxx-xxxx-xxxx-xxxx">
+                </div>
+                {% if user_profile_form.orcid.errors %}
+                  <span class="help-block">{{ _('Please enter an ORCID iD or leave this field blank.') }}</span>
+                {% endif %}
+              </div>
+              <div class="form-group {% if user_profile_form.affiliation.errors %} has-error{% endif %}">
+                <label for="input-affiliation" class="control-label">{{ _('Affiliation') }}</label>
+                <input class="form-control" type="text" id="input-affiliation" name="{{user_profile_form.affiliation.name}}" value="{{ user_profile_form.affiliation.data or ""}}" placeholder="{{ _('Affiliation, e.g. an institute, company or department') }}">
+              </div>
+              <div class="form-group {% if user_profile_form.role.errors %} has-error{% endif %}">
+                <label for="input-role" class="control-label">{{ _('Role') }}</label>
+                <input class="form-control" type="text" id="input-role" name="{{user_profile_form.role.name}}" value="{{ user_profile_form.role.data or ""}}" placeholder="{{ _('Role, e.g. PhD student, principal investigator or technician') }}">
+              </div>
+              {% for extra_field_id, extra_field in EXTRA_USER_FIELDS.items() %}
+              <div class="form-group">
+                <label for="extra_field_{{ extra_field_id }}" class="control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
+                <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (user.extra_fields or {}).get(extra_field_id, request.form.get('extra_field_' + extra_field_id, '')) }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+              </div>
+              {% endfor %}
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+              <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% elif user.id == current_user.id %}
+    <a href="{{ url_for('.user_preferences', user_id=user.id) }}" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
+      {{ _('Edit') }}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+
+  {% if user_profile_form and request.form.get(user_profile_form.action.name) == 'edit_profile' %}
+    <script>
+      $('#editProfileModal').modal();
+    </script>
   {% endif %}
 {% endblock %}

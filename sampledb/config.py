@@ -578,6 +578,8 @@ ENABLE_NUMERIC_TAGS = None
 
 SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS = True
 
+SHOW_LAST_PROFILE_UPDATE = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -626,6 +628,7 @@ for config_name in {
     'ENABLE_ANONYMOUS_USERS',
     'ENABLE_NUMERIC_TAGS',
     'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
+    'SHOW_LAST_PROFILE_UPDATE',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):

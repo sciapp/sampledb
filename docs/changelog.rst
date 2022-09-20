@@ -35,6 +35,8 @@ Currently in development.
 - Implemented location types, location responsible users and a location log
 - Added download service
 - Allow saving object list filters
+- Show last user profile update time
+- Allow administrators to update user profile information
 
 Version 0.20
 ------------

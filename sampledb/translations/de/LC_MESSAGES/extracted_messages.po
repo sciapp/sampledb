@@ -2091,6 +2091,13 @@ msgstr ""
 msgid "User #%(user_id)s (%(component_name)s)"
 msgstr "Nutzer #%(user_id)s (%(component_name)s)"
 
+msgid "Last Update"
+msgstr "Letzte Aktualisierung"
+
+#, python-format
+msgid "by <a href=\"%(user_url)s\">%(user_name)s</a>"
+msgstr "durch <a href=\"%(user_url)s\">%(user_name)s</a>"
+
 msgid "… with activity by this user"
 msgstr "… mit Aktivität dieses Nutzers"
 
@@ -2120,6 +2127,18 @@ msgstr "Aktivieren"
 
 msgid "Deactivate"
 msgstr "Deaktivieren"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Edit Profile Information"
+msgstr "Profil-Informationen bearbeiten"
+
+msgid "Please enter an ORCID iD or leave this field blank."
+msgstr "Bitte geben Sie eine ORCID iD ein oder lassen Sie dieses Feld leer."
+
+msgid "Affiliation, e.g. an institute, company or department"
+msgstr "Zugehörigkeit, z.B. ein Institut, ein Unternehmen oder eine Abteilung"
 
 msgid ""
 "Publications can be linked to objects to track where and how an object "
@@ -4503,9 +4522,6 @@ msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die Beschreibung "
 "aktualisiert zu:"
 
-msgid "Edit"
-msgstr "Bearbeiten"
-
 msgid "Hide"
 msgstr "Verstecken"
 
@@ -5489,6 +5505,9 @@ msgstr "Der Nutzer wurde aktiviert."
 
 msgid "The user has been deactivated."
 msgstr "Der Nutzer wurde deaktiviert."
+
+msgid "Successfully updated the user information."
+msgstr "Die Nutzerinformationen wurden erfolgreich geändert."
 
 msgid ""
 "You cannot set up a new two factor authentication method while another is"
