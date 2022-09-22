@@ -84,6 +84,16 @@
       &mdash;
     {% endif %}
   </dd>
+  {% if instruments %}
+    <dt>{{ _('Instruments') }}</dt>
+    <dd>
+     <ul style="margin-bottom: 0; padding-left: 0">
+      {% for instrument in instruments %}
+        <li><a href="{{ url_for('.instrument', instrument_id=instrument.id) }}">{{ instrument.name | get_translated_text }}</a></li>
+      {% endfor %}
+      </ul>
+    </dd>
+  {% endif %}
 </dl>
   <div class="btn-group">
     <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>
