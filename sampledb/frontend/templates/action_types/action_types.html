@@ -2,11 +2,63 @@
 
 {% block title %}{{ _('Action Types') }} — {{ service_name }}{% endblock %}
 
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ fingerprinted_static('js/Sortable.min.js') }}"></script>
+    {% if current_user.is_admin and not current_user.is_readonly %}
+        <script>
+            let sortable;
+            $(document).ready(function() {
+                let elem = document.getElementById('actionTypesModalList');
+                let options = {
+                    handle: '.handle',
+                    animation: 150,
+                    dataIdAttr: 'data-id'
+                }
+                sortable = new Sortable(elem, options);
+            })
+
+            function store_order() {
+                document.getElementById('encoded_order').value = sortable.toArray().join();
+            }
+        </script>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
   <h1>{{ _('Action Types') }}</h1>
   <p class="text-muted">{{ _('Action Types represent different kinds of actions, such as sample creation or measurements.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html#action-types"> {{ _('Read more.') }}</a></p>
   {% if current_user.is_admin and not current_user.is_readonly %}
     <a href="{{ url_for('.new_action_type') }}" class="btn btn-default"> {{ _('Create Action Type') }}</a>
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#sortingModal"> 
+        {{ _('Adjust sorting') }}
+    </button>
+    <div class="modal fade" id="sortingModal" tabindex="-1" role="dialog" aria-labelledby="sortingModalLabel">
+        <div class="modal-dialog" role="document">
+            <form method="post" class="form" onsubmit="store_order()">
+                {{ sorting_form.csrf_token }}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="sortingModalLabel">{{ _('Adjust sorting') }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <ul id="actionTypesModalList" class="list-group">
+                            {% for action_type in action_types %}
+                            <li data-id="{{ action_type.id }}" class="list-group-item"><i class="fa fa-reorder handle"></i>  {{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}
+                                {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type') }}</li>
+                            {% endfor %}
+                            <input type="hidden" value="" name="{{ sorting_form.encoded_order.name }}" id="encoded_order"/>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal"> {{ _('Cancel') }}</button>
+                        <button type="submit" class="btn btn-primary"> {{ _('Apply') }} </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
   {% endif %}
 
   {% for action_type in action_types %}

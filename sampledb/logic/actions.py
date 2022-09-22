@@ -141,9 +141,10 @@ class ActionType(collections.namedtuple('ActionType', [
     'enable_project_link',
     'disable_create_objects',
     'is_template',
+    'order_index',
     'fed_id',
     'component_id',
-    'scicat_export_type'
+    'scicat_export_type',
 ])):
     """
     This class provides an immutable wrapper around models.actions.ActionType.
@@ -171,6 +172,7 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_project_link: bool,
             disable_create_objects: bool,
             is_template: bool,
+            order_index: int,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             scicat_export_type: typing.Optional[SciCatExportType] = None
@@ -197,6 +199,7 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_project_link,
             disable_create_objects,
             is_template,
+            order_index,
             fed_id,
             component_id,
             scicat_export_type
@@ -226,6 +229,7 @@ class ActionType(collections.namedtuple('ActionType', [
             enable_project_link=action_type.enable_project_link,
             disable_create_objects=action_type.disable_create_objects,
             is_template=action_type.is_template,
+            order_index=action_type.order_index,
             fed_id=action_type.fed_id,
             component_id=action_type.component_id,
             scicat_export_type=action_type.scicat_export_type
@@ -241,16 +245,29 @@ def get_action_types(filter_fed_defaults: bool = False) -> typing.List[ActionTyp
 
     :return: the action types
     """
+    query = models.ActionType.query
+
     if filter_fed_defaults:
-        return [
-            ActionType.from_database(action_type)
-            for action_type in models.ActionType.query.filter(db.or_(models.ActionType.fed_id > 0, models.ActionType.fed_id.is_(None))).order_by(models.ActionType.id).all()
-        ]
-    else:
-        return [
-            ActionType.from_database(action_type)
-            for action_type in models.ActionType.query.order_by(models.ActionType.id).all()
-        ]
+        query = query.filter(db.or_(models.ActionType.fed_id > 0, models.ActionType.fed_id.is_(None)))
+
+    query = query.order_by(db.nullslast(models.ActionType.order_index), models.ActionType.id)
+
+    return [
+        ActionType.from_database(action_type)
+        for action_type in query.all()
+    ]
+
+
+def set_action_types_order(index_list: typing.List[int]) -> None:
+    """
+    Sets the `order_index` for all action types in the index_list, therefore the order in the list is used.
+
+    :param index_list: list of action type ids
+    """
+    for i, action_type_id in enumerate(index_list):
+        action_type = models.ActionType.query.filter_by(id=action_type_id).first()
+        action_type.order_index = i
+    db.session.commit()
 
 
 def get_action_type(action_type_id: int, component_id: typing.Optional[int] = None) -> ActionType:
@@ -329,6 +346,7 @@ def create_action_type(
         enable_project_link=enable_project_link,
         disable_create_objects=disable_create_objects,
         is_template=is_template,
+        order_index=None,
         fed_id=fed_id,
         component_id=component_id,
         scicat_export_type=scicat_export_type
