@@ -1345,6 +1345,9 @@ msgstr "Bestätigen"
 msgid "Decline"
 msgstr "Ablehnen"
 
+msgid "Remind me in 1 hour"
+msgstr "In 1 Stunde erinnern"
+
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
 
