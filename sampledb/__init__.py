@@ -121,6 +121,8 @@ def setup_jinja_environment(app):
         get_user_settings=lambda: sampledb.logic.settings.get_user_settings(current_user.id),
         TimezoneForm=sampledb.frontend.timezone.TimezoneForm,
         get_user_language=sampledb.logic.languages.get_user_language,
+        NotificationType=sampledb.models.NotificationType,
+        get_user=sampledb.logic.users.get_user,
     )
     app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
     app.jinja_env.globals.update(sampledb.frontend.utils.jinja_function.functions)

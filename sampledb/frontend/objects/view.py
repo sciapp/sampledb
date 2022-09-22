@@ -349,8 +349,6 @@ def object(object_id):
     template_kwargs.update({
         "user_may_assign_location": user_may_assign_location,
         "object_location_assignments": object_location_assignments,
-        "build_object_location_assignment_confirmation_url": build_object_location_assignment_confirmation_url,
-        "build_object_location_assignment_declination_url": build_object_location_assignment_declination_url,
         "location_form": location_form,
         "location_is_fed": location_is_fed,
         "user_is_fed": user_is_fed,

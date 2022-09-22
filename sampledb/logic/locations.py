@@ -692,6 +692,27 @@ def decline_object_responsibility(object_location_assignment_id: int) -> None:
     db.session.commit()
 
 
+def get_unhandled_object_responsibility_assignments(
+        user_id: int
+) -> typing.List[ObjectLocationAssignment]:
+    """
+    Get all object location assignments that assign responsibility to a given
+    user and have not yet been confirmed or declined.
+
+    :param user_id: the ID of an existing user
+    :return: the object location assignments
+    """
+    object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(
+        responsible_user_id=user_id,
+        confirmed=False,
+        declined=False
+    ).order_by(locations.ObjectLocationAssignment.utc_datetime.desc()).all()
+    return [
+        ObjectLocationAssignment.from_database(object_location_assignment)
+        for object_location_assignment in object_location_assignments
+    ]
+
+
 def create_location_type(
         name: typing.Optional[typing.Dict[str, str]],
         location_name_singular: typing.Optional[typing.Dict[str, str]],

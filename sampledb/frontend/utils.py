@@ -36,9 +36,12 @@ from ..logic.utils import get_translated_text, get_all_translated_texts, show_ad
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.action_permissions import get_sorted_actions_for_user
-from ..logic.locations import Location, get_location
-from ..logic.location_permissions import get_user_location_permissions, Permissions
+from ..logic.locations import Location, get_location, get_unhandled_object_responsibility_assignments
+from ..logic.location_permissions import get_user_location_permissions
 from ..logic.datatypes import JSONEncoder
+from ..logic.security_tokens import generate_token
+from ..logic.object_permissions import get_user_object_permissions, Permissions
+from ..logic.objects import get_object
 
 
 def jinja_filter(name: str = ''):
@@ -71,6 +74,7 @@ jinja_filter()(get_all_translated_texts)
 
 jinja_function.functions = {}
 jinja_function()(get_component_or_none)
+jinja_function()(get_unhandled_object_responsibility_assignments)
 
 
 qrcode_cache = {}
@@ -624,3 +628,45 @@ def get_search_query(attribute, data, metadata_language=None):
             return f'{attribute} == ""'
     # fallback: find all objects that have this attribute set
     return f'!({attribute} == null)'
+
+
+@jinja_function()
+def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> str:
+    confirmation_url = flask.url_for(
+        'frontend.accept_responsibility_for_object',
+        t=generate_token(
+            object_location_assignment_id,
+            salt='confirm_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
+    return confirmation_url
+
+
+@jinja_function()
+def build_object_location_assignment_declination_url(object_location_assignment_id: int) -> str:
+    confirmation_url = flask.url_for(
+        'frontend.decline_responsibility_for_object',
+        t=generate_token(
+            object_location_assignment_id,
+            salt='decline_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
+    return confirmation_url
+
+
+@jinja_function()
+def get_object_name_if_user_has_permissions(object_id: int) -> str:
+    fallback_name = f"{flask_babel.gettext('Object')} #{object_id}"
+    try:
+        permissions = get_user_object_permissions(object_id, flask_login.current_user.id)
+        if Permissions.READ in permissions:
+            object = get_object(object_id)
+            object_name = get_translated_text(object.data['name']['text'])
+            return f"{object_name} (#{object_id})"
+    except errors.ObjectDoesNotExistError:
+        pass
+    return fallback_name

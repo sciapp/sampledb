@@ -283,5 +283,7 @@ Miscellaneous
      - If set, the given timezone will be used for all users instead of using their browser timezone or the one set in their preferences.
    * - SAMPLEDB_ENABLE_ANONYMOUS_USERS
      - If set, objects may be set to be readable by anonymous users, without requiring them to sign in.
+   * - SAMPLEDB_SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS
+     - If set, any unhandled object responsibility assignment will be shown as an urgent notification on non-object pages (default: True).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.
