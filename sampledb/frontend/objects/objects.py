@@ -50,6 +50,13 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'project',
 )
 
+OBJECT_LIST_OPTION_PARAMETERS = (
+    'object_list_options',
+    'creation_info',
+    'last_edit_info',
+    'action_info',
+)
+
 
 @frontend.route('/objects/')
 @flask_login.login_required
@@ -93,6 +100,7 @@ def objects():
             'plotly_chart',
         )
     )
+    user_settings = get_user_settings(user_id=flask_login.current_user.id)
 
     name_only = True
     implicit_action_type = None
@@ -165,7 +173,6 @@ def objects():
             for action in all_actions
         ]
 
-        user_settings = get_user_settings(user_id=flask_login.current_user.id)
         if any(param in flask.request.args for param in OBJECT_LIST_FILTER_PARAMETERS):
             (
                 success,
@@ -520,13 +527,13 @@ def objects():
                 property_title = flask.escape(property_name)
             display_property_titles[property_name] = property_title
 
-    if 'object_list_options' in flask.request.args:
+    if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
         creation_info, last_edit_info, action_info = _parse_object_list_options(flask.request.args)
     else:
-        creation_info = ['user', 'date']
-        last_edit_info = ['user', 'date']
+        creation_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('creation_info', ['user', 'date'])
+        last_edit_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('last_edit_info', ['user', 'date'])
         if filter_action_ids is None or len(filter_action_ids) != 1:
-            action_info = ['instrument', 'action']
+            action_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('action_info', ['instrument', 'action'])
         else:
             action_info = []
 
@@ -1063,11 +1070,36 @@ def save_object_list_defaults():
                 }
             }
         )
+    if 'save_default_options' in flask.request.form:
+        (
+            creation_info,
+            last_edit_info,
+            action_info,
+        ) = _parse_object_list_options(
+            params=flask.request.form
+        )
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_OPTIONS': {
+                    'creation_info': creation_info,
+                    'last_edit_info': last_edit_info,
+                    'action_info': action_info,
+                }
+            }
+        )
     if 'clear_default_filters' in flask.request.form:
         set_user_settings(
             user_id=flask_login.current_user.id,
             data={
                 'DEFAULT_OBJECT_LIST_FILTERS': {}
+            }
+        )
+    if 'clear_default_options' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_OPTIONS': {}
             }
         )
     return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
