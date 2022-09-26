@@ -60,6 +60,30 @@
     {{ (user.extra_fields or {}).get(extra_field_id, '&mdash;') | safe }}
   </dd>
   {% endfor %}
+  <dt>{{ _('Basic Groups') }}</dt>
+  <dd>
+    {% if basic_groups %}
+    <ul style="margin-bottom: 0; padding-left: 0">
+    {% for group in basic_groups %}
+      <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+      &mdash;
+    {% endif %}
+  </dd>
+  <dt>{{ _('Project Groups') }}</dt>
+  <dd>
+    {% if project_groups %}
+    <ul style="margin-bottom: 0; padding-left: 0">
+    {% for group in project_groups %}
+      <li><a href="{{ url_for('.project', project_id=group.id) }}">{{ group.name | get_translated_text }}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+      &mdash;
+    {% endif %}
+  </dd>
 </dl>
   <div class="btn-group">
     <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>
