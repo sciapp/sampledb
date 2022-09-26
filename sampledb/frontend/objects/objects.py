@@ -520,36 +520,11 @@ def objects():
                 property_title = flask.escape(property_name)
             display_property_titles[property_name] = property_title
 
-    last_edit_info = None
-    creation_info = None
-    action_info = None
     if 'object_list_options' in flask.request.args:
-        creation_info = set()
-        for creation_info_str in flask.request.args.getlist('creation_info'):
-            creation_info_str = creation_info_str.strip().lower()
-            if creation_info_str in {'user', 'date'}:
-                creation_info.add(creation_info_str)
-        creation_info = list(creation_info)
-
-        last_edit_info = set()
-        for last_edit_info_str in flask.request.args.getlist('last_edit_info'):
-            last_edit_info_str = last_edit_info_str.strip().lower()
-            if last_edit_info_str in {'user', 'date'}:
-                last_edit_info.add(last_edit_info_str)
-        last_edit_info = list(last_edit_info)
-
-        action_info = set()
-        for action_info_str in flask.request.args.getlist('action_info'):
-            action_info_str = action_info_str.strip().lower()
-            if action_info_str in {'instrument', 'action'}:
-                action_info.add(action_info_str)
-        action_info = list(action_info)
-
-    if creation_info is None:
+        creation_info, last_edit_info, action_info = _parse_object_list_options(flask.request.args)
+    else:
         creation_info = ['user', 'date']
-    if last_edit_info is None:
         last_edit_info = ['user', 'date']
-    if action_info is None:
         if filter_action_ids is None or len(filter_action_ids) != 1:
             action_info = ['instrument', 'action']
         else:
@@ -979,6 +954,36 @@ def _parse_object_list_filters(
         filter_project_id,
         filter_project_permissions,
     )
+
+
+def _parse_object_list_options(
+        params: werkzeug.datastructures.ImmutableMultiDict,
+) -> typing.Tuple[
+    typing.List[str],
+    typing.List[str],
+    typing.List[str],
+]:
+    creation_info = set()
+    for creation_info_str in params.getlist('creation_info'):
+        creation_info_str = creation_info_str.strip().lower()
+        if creation_info_str in {'user', 'date'}:
+            creation_info.add(creation_info_str)
+    creation_info = list(creation_info)
+
+    last_edit_info = set()
+    for last_edit_info_str in params.getlist('last_edit_info'):
+        last_edit_info_str = last_edit_info_str.strip().lower()
+        if last_edit_info_str in {'user', 'date'}:
+            last_edit_info.add(last_edit_info_str)
+    last_edit_info = list(last_edit_info)
+
+    action_info = set()
+    for action_info_str in params.getlist('action_info'):
+        action_info_str = action_info_str.strip().lower()
+        if action_info_str in {'instrument', 'action'}:
+            action_info.add(action_info_str)
+    action_info = list(action_info)
+    return creation_info, last_edit_info, action_info
 
 
 def _build_modified_url(
