@@ -55,6 +55,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
     'creation_info',
     'last_edit_info',
     'action_info',
+    'display_properties',
 )
 
 
@@ -62,21 +63,13 @@ OBJECT_LIST_OPTION_PARAMETERS = (
 @flask_login.login_required
 def objects():
     objects = []
-    display_properties = []
-    display_property_titles = {}
-    if 'display_properties' in flask.request.args:
-        for property_info in itertools.chain(*[
-            display_properties_str.split(',')
-            for display_properties_str in flask.request.args.getlist('display_properties')
-        ]):
-            if ':' in property_info:
-                property_name, property_title = property_info.split(':', 1)
-            else:
-                property_name, property_title = property_info, None
-            if property_name not in display_properties:
-                display_properties.append(property_name)
-            if property_title is not None:
-                display_property_titles[property_name] = flask.escape(property_title)
+
+    user_settings = get_user_settings(user_id=flask_login.current_user.id)
+    if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
+        display_properties, display_property_titles = _parse_display_properties(flask.request.args)
+    else:
+        display_properties = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('display_properties', [])
+        display_property_titles = {}
 
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
@@ -100,7 +93,6 @@ def objects():
             'plotly_chart',
         )
     )
-    user_settings = get_user_settings(user_id=flask_login.current_user.id)
 
     name_only = True
     implicit_action_type = None
@@ -993,6 +985,29 @@ def _parse_object_list_options(
     return creation_info, last_edit_info, action_info
 
 
+def _parse_display_properties(
+        params: werkzeug.datastructures.ImmutableMultiDict,
+) -> typing.Tuple[
+    typing.List[str],
+    typing.Dict[str, str],
+]:
+    display_properties = []
+    display_property_titles = {}
+    for property_info in itertools.chain(*[
+        display_properties_str.split(',')
+        for display_properties_str in params.getlist('display_properties')
+    ]):
+        if ':' in property_info:
+            property_name, property_title = property_info.split(':', 1)
+        else:
+            property_name, property_title = property_info, None
+        if property_name not in display_properties:
+            display_properties.append(property_name)
+        if property_title is not None:
+            display_property_titles[property_name] = flask.escape(property_title)
+    return display_properties, display_property_titles
+
+
 def _build_modified_url(
         blocked_parameters: typing.Sequence[str] = (),
         **query_parameters: typing.Any
@@ -1078,6 +1093,9 @@ def save_object_list_defaults():
         ) = _parse_object_list_options(
             params=flask.request.form
         )
+        display_properties, display_property_titles = _parse_display_properties(
+            params=flask.request.form
+        )
         set_user_settings(
             user_id=flask_login.current_user.id,
             data={
@@ -1085,6 +1103,7 @@ def save_object_list_defaults():
                     'creation_info': creation_info,
                     'last_edit_info': last_edit_info,
                     'action_info': action_info,
+                    'display_properties': display_properties
                 }
             }
         )
