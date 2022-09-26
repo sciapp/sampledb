@@ -340,12 +340,12 @@ def import_action_type(action_type_data, component):
     try:
         action_type = get_action_type(action_type_data['fed_id'], component_id)
 
-        if action_type.admin_only != action_type_data['admin_only'] or action_type.show_on_frontpage != action_type_data['show_on_frontpage'] or action_type.show_in_navbar != action_type_data['show_in_navbar'] or action_type.enable_labels != action_type_data['enable_labels'] or action_type.enable_files != action_type_data['enable_files'] or action_type.enable_locations != action_type_data['enable_locations'] or action_type.enable_publications != action_type_data['enable_publications'] or action_type.enable_comments != action_type_data['enable_comments'] or action_type.enable_activity_log != action_type_data['enable_activity_log'] or action_type.enable_related_objects != action_type_data['enable_related_objects'] or action_type.enable_project_link != action_type_data['enable_project_link'] or action_type.disable_create_objects != action_type_data['disable_create_objects'] or action_type.is_template != action_type_data['is_template']:
+        if action_type.admin_only != action_type_data['admin_only'] or action_type.enable_labels != action_type_data['enable_labels'] or action_type.enable_files != action_type_data['enable_files'] or action_type.enable_locations != action_type_data['enable_locations'] or action_type.enable_publications != action_type_data['enable_publications'] or action_type.enable_comments != action_type_data['enable_comments'] or action_type.enable_activity_log != action_type_data['enable_activity_log'] or action_type.enable_related_objects != action_type_data['enable_related_objects'] or action_type.enable_project_link != action_type_data['enable_project_link'] or action_type.disable_create_objects != action_type_data['disable_create_objects'] or action_type.is_template != action_type_data['is_template']:
             update_action_type(
                 action_type_id=action_type.id,
                 admin_only=action_type_data['admin_only'],
-                show_on_frontpage=action_type_data['show_on_frontpage'],
-                show_in_navbar=action_type_data['show_in_navbar'],
+                show_on_frontpage=False,
+                show_in_navbar=False,
                 enable_labels=action_type_data['enable_labels'],
                 enable_files=action_type_data['enable_files'],
                 enable_locations=action_type_data['enable_locations'],
@@ -364,8 +364,8 @@ def import_action_type(action_type_data, component):
             fed_id=action_type_data['fed_id'],
             component_id=component_id,
             admin_only=action_type_data['admin_only'],
-            show_on_frontpage=action_type_data['show_on_frontpage'],
-            show_in_navbar=action_type_data['show_in_navbar'],
+            show_on_frontpage=False,
+            show_in_navbar=False,
             enable_labels=action_type_data['enable_labels'],
             enable_files=action_type_data['enable_files'],
             enable_locations=action_type_data['enable_locations'],
@@ -1124,8 +1124,6 @@ def parse_action_type(action_type_data):
         'fed_id': fed_id,
         'component_uuid': uuid,
         'admin_only': _get_bool(action_type_data.get('admin_only'), default=True),
-        'show_on_frontpage': _get_bool(action_type_data.get('show_on_frontpage'), default=False),
-        'show_in_navbar': _get_bool(action_type_data.get('show_in_navbar'), default=False),
         'enable_labels': _get_bool(action_type_data.get('enable_labels'), default=False),
         'enable_files': _get_bool(action_type_data.get('enable_files'), default=False),
         'enable_locations': _get_bool(action_type_data.get('enable_locations'), default=False),
@@ -1942,8 +1940,6 @@ def shared_action_type_preprocessor(action_type_id, _component, _refs, _markdown
         'action_type_id': action_type.id if action_type.component_id is None else action_type.fed_id,
         'component_uuid': flask.current_app.config['FEDERATION_UUID'] if action_type.component_id is None else get_component(action_type.component_id).uuid,
         'admin_only': action_type.admin_only,
-        'show_on_frontpage': action_type.show_on_frontpage,
-        'show_in_navbar': action_type.show_in_navbar,
         'enable_labels': action_type.enable_labels,
         'enable_files': action_type.enable_files,
         'enable_locations': action_type.enable_locations,
