@@ -1085,6 +1085,7 @@ def save_object_list_defaults():
                 }
             }
         )
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
     if 'save_default_options' in flask.request.form:
         (
             creation_info,
@@ -1107,6 +1108,7 @@ def save_object_list_defaults():
                 }
             }
         )
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
     if 'clear_default_filters' in flask.request.form:
         set_user_settings(
             user_id=flask_login.current_user.id,
@@ -1114,6 +1116,7 @@ def save_object_list_defaults():
                 'DEFAULT_OBJECT_LIST_FILTERS': {}
             }
         )
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
     if 'clear_default_options' in flask.request.form:
         set_user_settings(
             user_id=flask_login.current_user.id,
@@ -1121,4 +1124,4 @@ def save_object_list_defaults():
                 'DEFAULT_OBJECT_LIST_OPTIONS': {}
             }
         )
-    return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
