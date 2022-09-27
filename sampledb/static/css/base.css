@@ -1091,6 +1091,10 @@ code {
     width: 1%;
 }
 
+.handle:hover {
+    cursor: grab;
+}
+
 /* combined selectpicker and button for user alias form */
 .div-copy-from {
     display: flex;

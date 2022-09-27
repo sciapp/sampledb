@@ -8,28 +8,51 @@ import flask_login
 import json
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField, BooleanField, SelectField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, ValidationError
 from flask_babel import _
 
 from . import frontend
 from .. import logic
 from .utils import check_current_user_is_not_readonly
 from ..logic.actions import SciCatExportType
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 from ..logic.components import get_component_or_none
 
 
-@frontend.route('/action_types/')
+class ActionTypesSortingForm(FlaskForm):
+    encoded_order = StringField("Order-String", [DataRequired()])
+
+    def validate_encoded_order(form, field):
+        valid_action_type_ids = [action_type.id for action_type in logic.actions.get_action_types()]
+
+        try:
+            split_string = field.data.split(",")
+            sorted_action_type_ids = list(map(int, split_string))
+            for action_type_id in sorted_action_type_ids:
+                if action_type_id not in valid_action_type_ids:
+                    raise ValidationError(f"{action_type_id} is not a valid id")
+        except ValueError:
+            raise ValidationError("Invalid IDs.")
+
+        field.data = sorted_action_type_ids
+
+
+@frontend.route('/action_types/', methods=['GET', 'POST'])
 @flask_login.login_required
 def action_types():
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
+    sorting_form = ActionTypesSortingForm()
+
+    if sorting_form.validate_on_submit():
+        check_current_user_is_not_readonly()
+
+        logic.actions.set_action_types_order(sorting_form.encoded_order.data)
+
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=logic.actions.get_action_types()
+        action_types=logic.actions.get_action_types(),
+        sorting_form=sorting_form
     )
 
 

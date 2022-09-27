@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-09-14 13:03+0200\n"
+"POT-Creation-Date: 2022-09-22 11:14+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2617,6 +2617,9 @@ msgstr ""
 
 msgid "Create Action Type"
 msgstr "Aktionstyp erstellen"
+
+msgid "Adjust sorting"
+msgstr "Sortierung anpassen"
 
 msgid "Action"
 msgstr "Aktion"

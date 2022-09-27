@@ -46,6 +46,7 @@ class ActionType(db.Model):
     disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     is_template = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     fed_id = db.Column(db.Integer, nullable=True)
+    order_index = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
