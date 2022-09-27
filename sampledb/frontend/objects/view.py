@@ -334,7 +334,7 @@ def object(object_id):
         location_form.location.choices = valid_locations
         possible_responsible_users = [('-1', '—')]
         user_is_fed = {}
-        for user in get_users(exclude_hidden=True):
+        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
             possible_responsible_users.append((str(user.id), user.get_name()))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_responsible_users
@@ -459,7 +459,7 @@ def object(object_id):
         })
 
         # users
-        users = get_users(exclude_hidden=True)
+        users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
         users.sort(key=lambda user: user.id)
         template_kwargs.update({
             "users": users,
@@ -644,7 +644,7 @@ def post_object_location(object_id):
         if location.type is None or location.type.enable_object_assignments
     ]
     possible_responsible_users = [('-1', '—')]
-    for user in get_users(exclude_hidden=True):
+    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
         possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
     location_form.responsible_user.choices = possible_responsible_users
     if location_form.validate_on_submit():

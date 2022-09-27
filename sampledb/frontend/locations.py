@@ -177,7 +177,7 @@ def location_permissions(location_id):
             ]
         ]
 
-        users = logic.users.get_users(exclude_hidden=True, exclude_fed=True)
+        users = logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
         groups = logic.groups.get_groups()
