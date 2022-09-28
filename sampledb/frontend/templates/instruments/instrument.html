@@ -34,7 +34,7 @@
         </div>
       {% endif %}
       <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) }}</a>
-      {% if not current_user.is_readonly and action.schema %}
+      {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
         <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
       {% endif %}
   {% endfor %}

@@ -18,10 +18,15 @@
     {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
   </h1>
   {% if action.user_id is not none %}
-    <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} {% if not is_public %} {{ _("This custom action is not public.") }} {% else %}  {{ _("This custom action is public.") }} {% endif %}</p>
+    <p class="text-muted"><i class="fa {% if is_public %}fa-unlock{% else %}fa-lock{% endif %} fa-fw" aria-hidden="true"></i> {% if not is_public %} {{ _("This custom action is not public.") }} {% else %}  {{ _("This custom action is public.") }} {% endif %}</p>
   {% endif %}
   {% if action.is_hidden %}
-    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
+    <p class="text-muted"><i class="fa fa-eye-slash fa-fw" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
+  {% endif %}
+  {% if action.disable_create_objects %}
+    <p class="text-muted"><i class="fa fa-ban fa-fw" aria-hidden="true"></i> {{_("Creating objects with this action has been disabled.") }}</p>
+  {% elif action.admin_only %}
+    <p class="text-muted"><i class="fa fa-ban fa-fw" aria-hidden="true"></i> {{_("Only administrators can create objects with this action.") }}</p>
   {% endif %}
 
   {% if action.description | get_translated_text %}
@@ -35,7 +40,7 @@
   {% endwith %}
   {% if action.type_id is none or not action.type.disable_create_objects %}
   <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
-  {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none %}
+  {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
     <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) if action.type_id else _('Create Object') }}</a>
   {% endif %}
   {% endif %}

@@ -675,7 +675,7 @@ def import_action(action_data, component):
 
     try:
         action = get_mutable_action(action_data['fed_id'], component_id)
-        if action.type_id != action_type_id or action.schema != action_data['schema'] or action.instrument_id != instrument_id or action.user_id != user_id or action.description_is_markdown != action_data['description_is_markdown'] or action.is_hidden != action_data['is_hidden'] or action.short_description_is_markdown != action_data['short_description_is_markdown']:
+        if action.type_id != action_type_id or action.schema != action_data['schema'] or action.instrument_id != instrument_id or action.user_id != user_id or action.description_is_markdown != action_data['description_is_markdown'] or action.is_hidden != action_data['is_hidden'] or action.short_description_is_markdown != action_data['short_description_is_markdown'] or ('admin_only' in action_data and action.admin_only != action_data['admin_only']) or ('disable_create_objects' in action_data and action.disable_create_objects != action_data['disable_create_objects']):
             action.action_type_id = action_type_id
             action.schema = schema
             action.instrument_id = instrument_id
@@ -683,6 +683,10 @@ def import_action(action_data, component):
             action.description_is_markdown = action_data['description_is_markdown']
             action.is_hidden = action_data['is_hidden']
             action.short_description_is_markdown = action_data['short_description_is_markdown']
+            if 'admin_only' in action_data:
+                action.admin_only = action_data['admin_only']
+            if 'disable_create_objects' in action_data:
+                action.disable_create_objects = action_data['disable_create_objects']
             db.session.commit()
             fed_logs.update_action(action.id, component.id)
     except errors.ActionDoesNotExistError:
@@ -695,7 +699,9 @@ def import_action(action_data, component):
             user_id=user_id,
             description_is_markdown=action_data['description_is_markdown'],
             is_hidden=action_data['is_hidden'],
-            short_description_is_markdown=action_data['short_description_is_markdown']
+            short_description_is_markdown=action_data['short_description_is_markdown'],
+            admin_only=action_data.get('admin_only', False),
+            disable_create_objects=action_data.get('disable_create_objects', False),
         )
         fed_logs.import_action(action.id, component.id)
 
@@ -1091,6 +1097,12 @@ def parse_action(action_data):
         'short_description_is_markdown': _get_bool(action_data.get('short_description_is_markdown'), default=False),
         'translations': []
     }
+    admin_only = _get_bool(action_data.get('admin_only'))
+    if admin_only is not None:
+        result['admin_only'] = admin_only
+    disable_create_objects = _get_bool(action_data.get('disable_create_objects'))
+    if disable_create_objects is not None:
+        result['disable_create_objects'] = disable_create_objects
 
     allowed_language_ids = [language.id for language in get_languages(only_enabled_for_input=False)]
 
@@ -1915,7 +1927,9 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
         'description_is_markdown': action.description_is_markdown,
         'is_hidden': action.is_hidden,
         'short_description_is_markdown': action.short_description_is_markdown,
-        'translations': translations_data
+        'translations': translations_data,
+        'admin_only': action.admin_only,
+        'disable_create_objects': action.disable_create_objects,
     }
 
 

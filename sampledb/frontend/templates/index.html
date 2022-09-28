@@ -38,7 +38,7 @@
       <div class="row">
         {% if not current_user.is_readonly %}
         <div class="col-md-offset-2 col-md-4">
-          <a href="{{ url_for('frontend.actions', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
+          <a href="{{ url_for('frontend.actions', t=action_type.id, can_create_objects='') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
         </div>
         {% endif %}
         <div class="{% if current_user.is_readonly %}col-md-offset-4{% endif %} col-md-4">

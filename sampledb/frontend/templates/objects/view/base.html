@@ -114,11 +114,12 @@
 
         <div class="form-group">
           <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type(action.type.MEASUREMENT).name | get_translated_text(_('Measurement'))) }} <span class="caret"></span></button>
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type(action.type.MEASUREMENT).name | get_translated_text(default=_('Measurement'))) }} <span class="caret"></span></button>
             <ul class="dropdown-menu dropdown-menu-right">
               <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
               {% if favorite_measurement_actions %}
               {% for action in favorite_measurement_actions %}
+                {% if not action.type.disable_create_objects and not action.disable_crate_objects and not (action.admin_only and not current_user.is_admin) %}
               <li>
                 <a href="{{ url_for('.new_object', action_id=action.id, sample_id=object_id) }}">
                 {% if action.user_id is not none %}
@@ -132,12 +133,13 @@
                   {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
                 </a>
               </li>
+                {% endif %}
               {% endfor %}
               {% else %}
               <li><span style="padding: 3px 20px">&mdash;</span></li>
               {% endif %}
               <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('.actions', t='measurements', sample_id=object_id) }}">{{ _('See other %(measurement_type_name)s Actions...', measurement_type_name=measurement_type_name) }}</a></li>
+              <li><a href="{{ url_for('.actions', t='measurements', sample_id=object_id, can_create_objects='') }}">{{ _('See other %(measurement_type_name)s Actions...', measurement_type_name=measurement_type_name) }}</a></li>
             </ul>
           </div>
         </div>

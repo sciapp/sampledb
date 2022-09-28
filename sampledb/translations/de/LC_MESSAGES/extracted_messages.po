@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-09-28 07:50+0200\n"
+"POT-Creation-Date: 2022-09-28 14:33+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2661,6 +2661,9 @@ msgstr "Diese benutzerdefinierte Aktion ist öffentlich."
 msgid "This action has been hidden from action lists."
 msgstr "Diese Aktion wurde aus Aktionslisten versteckt."
 
+msgid "Only administrators can create objects with this action."
+msgstr "Nur Administratoren können mit dieser Aktion Objekte erstellen."
+
 msgid "Modify the settings for this action."
 msgstr "Einstellungen für diese Aktion modifizieren."
 
@@ -2795,6 +2798,17 @@ msgstr "Kein Instrument ausgewählt"
 
 msgid "Hide this action from action lists"
 msgstr "Diese Aktion aus Aktionslisten verstecken"
+
+msgid "All users with Read permissions can create objects using this action"
+msgstr ""
+"Alle Nutzer mit Lese-Berechtigungen können mit dieser Aktion Objekte "
+"erstellen"
+
+msgid "Only administrators can create objects using this action"
+msgstr "Nur Administratoren können mit dieser Aktion Objekte erstellen"
+
+msgid "Creating objects using this action is disabled"
+msgstr "Das Erzeugen von Objekten mit dieser Aktion ist deaktiviert"
 
 msgid "Schema"
 msgstr "Schema"
@@ -4036,6 +4050,9 @@ msgstr "Instrument anzeigen"
 msgid "Show Action"
 msgstr "Aktion anzeigen"
 
+msgid "Clear"
+msgstr "Zurücksetzen"
+
 msgid "Filters"
 msgstr "Filter"
 
@@ -4071,9 +4088,6 @@ msgstr "Nach Publikation filtern"
 
 msgid "All publications"
 msgstr "Alle Publikationen"
-
-msgid "Clear"
-msgstr "Zurücksetzen"
 
 msgid "Created"
 msgstr "Erstellt"
