@@ -6,17 +6,15 @@
 import collections
 import datetime
 import typing
-import smtplib
 
 import flask
-import flask_mail
 
 from . import errors
 from .. import logic
 from ..models import notifications
 from ..models.notifications import NotificationType, NotificationMode
+from .background_tasks.send_mail import post_send_mail_task
 from .. import db
-from .. import mail
 
 
 class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_id', 'data', 'was_read', 'utc_datetime'])):
@@ -202,16 +200,13 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
     )
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
-    try:
-        mail.send(flask_mail.Message(
-            subject,
-            sender=flask.current_app.config['MAIL_SENDER'],
-            recipients=[user.email],
-            body=text,
-            html=html
-        ))
-    except smtplib.SMTPRecipientsRefused:
-        pass
+
+    post_send_mail_task(
+        subject=subject,
+        recipients=[user.email],
+        text=text,
+        html=html
+    )
 
 
 def mark_notification_as_read(notification_id: int) -> None:
