@@ -138,7 +138,7 @@
             {{ _('for action types:') }}
           {% endif %}
           {% for action_type_info in filter_action_type_infos %}
-            <a href="{{ action_type_info.url }}">{{ action_type_info.name }}</a>{% if action_type_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_type_info.fed_id }} @ {{ action_type_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_type_infos | length %},{% elif loop.index + 1 == filter_action_type_infos | length %} or {% endif %}
+            <a href="{{ action_type_info.url }}">{{ action_type_info.name }}</a>{% if action_type_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_type_info.fed_id }} @ {{ action_type_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_type_infos | length %},{% elif loop.index + 1 == filter_action_type_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
@@ -150,7 +150,7 @@
             {{ _('for actions:') }}
           {% endif %}
           {% for action_info in filter_action_infos %}
-            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} or {% endif %}
+            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
@@ -162,7 +162,7 @@
             {{ _('for locations:') }}
           {% endif %}
           {% for location_info in filter_location_infos %}
-            <a href="{{ location_info.url }}">{{ location_info.name }}</a>{% if location_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ location_info.fed_id }} @ {{ location_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_location_infos | length %},{% elif loop.index + 1 == filter_location_infos | length %} or {% endif %}
+            <a href="{{ location_info.url }}">{{ location_info.name }}</a>{% if location_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ location_info.fed_id }} @ {{ location_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_location_infos | length %},{% elif loop.index + 1 == filter_location_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
