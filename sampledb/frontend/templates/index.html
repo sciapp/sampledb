@@ -42,7 +42,7 @@
         </div>
         {% endif %}
         <div class="{% if current_user.is_readonly %}col-md-offset-4{% endif %} col-md-4">
-          <a href="{{ url_for('frontend.objects', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.view_text | get_translated_text(default=_('View Objects')) }}</a>
+          <a href="{{ url_for('frontend.objects', action_type_ids=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.view_text | get_translated_text(default=_('View Objects')) }}</a>
         </div>
       </div>
       {% endif %}

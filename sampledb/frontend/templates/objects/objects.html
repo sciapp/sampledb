@@ -138,7 +138,7 @@
             {{ _('for action types:') }}
           {% endif %}
           {% for action_type_info in filter_action_type_infos %}
-            <a href="{{ action_type_info.url }}">{{ action_type_info.name }}</a>{% if action_type_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_type_info.fed_id }} @ {{ action_type_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_type_infos | length %},{% elif loop.index + 1 == filter_action_type_infos | length %} or {% endif %}
+            <a href="{{ action_type_info.url }}">{{ action_type_info.name }}</a>{% if action_type_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_type_info.fed_id }} @ {{ action_type_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_type_infos | length %},{% elif loop.index + 1 == filter_action_type_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
@@ -150,7 +150,7 @@
             {{ _('for actions:') }}
           {% endif %}
           {% for action_info in filter_action_infos %}
-            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} or {% endif %}
+            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
@@ -162,7 +162,7 @@
             {{ _('for locations:') }}
           {% endif %}
           {% for location_info in filter_location_infos %}
-            <a href="{{ location_info.url }}">{{ location_info.name }}</a>{% if location_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ location_info.fed_id }} @ {{ location_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_location_infos | length %},{% elif loop.index + 1 == filter_location_infos | length %} or {% endif %}
+            <a href="{{ location_info.url }}">{{ location_info.name }}</a>{% if location_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ location_info.fed_id }} @ {{ location_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_location_infos | length %},{% elif loop.index + 1 == filter_location_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
@@ -327,7 +327,7 @@
               </label>
               <select class="selectpicker form-control" name="user_permissions" id="filter_permissions" data-width="100%">
                 {% for permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-                  <option value="{{ permissions.name.lower() }}" {% if permissions.name.lower() == request.args.get('user_permissions', Permissions.READ.name).lower() %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
+                  <option value="{{ permissions.name.lower() }}" {% if permissions == filter_user_permissions or (permissions == Permissions.READ and filter_user_permissions is none) %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -336,9 +336,9 @@
                 {{ _('Filter by Permissions for All Signed-In Users') }}
               </label>
               <select class="selectpicker form-control" name="all_users_permissions" id="filter_all_users_permissions" data-width="100%">
-                <option value="" {% if not request.args.get('all_users_permissions') %}selected="selected"{% endif %}>&mdash;</option>
+                <option value="" {% if filter_all_users_permissions is none %}selected="selected"{% endif %}>&mdash;</option>
                 {% for permissions in [Permissions.READ] %}
-                  <option value="{{ permissions.name.lower() }}" {% if permissions.name.lower() == request.args.get('all_users_permissions', '').lower() %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
+                  <option value="{{ permissions.name.lower() }}" {% if permissions == filter_all_users_permissions %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -348,9 +348,9 @@
                 {{ _('Filter by Permissions for Anonymous Users') }}
               </label>
               <select class="selectpicker form-control" name="anonymous_permissions" id="filter_anonymous_permissions" data-width="100%">
-                <option value="" {% if not request.args.get('anonymous_permissions') %}selected="selected"{% endif %}>&mdash;</option>
+                <option value="" {% if filter_anonymous_permissions is none %}selected="selected"{% endif %}>&mdash;</option>
                 {% for permissions in [Permissions.READ] %}
-                  <option value="{{ permissions.name.lower() }}" {% if permissions.name.lower() == request.args.get('anonymous_permissions', '').lower() %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
+                  <option value="{{ permissions.name.lower() }}" {% if permissions == filter_anonymous_permissions %}selected="selected"{% endif %}>{{ _(permissions.name.title()) }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -398,6 +398,8 @@
             </div>
           </div>
           <div class="modal-footer">
+            <button type="submit" class="btn btn-default" name="save_default_filters" formmethod="post">{{ _('Save') }}</button>
+            <button type="submit" class="btn btn-default" name="clear_default_filters" formmethod="post">{{ _('Clear') }}</button>
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
             <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
           </div>

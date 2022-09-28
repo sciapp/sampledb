@@ -45,7 +45,7 @@
     {% endwith %}
     {% if action.type_id is none or not action.type.disable_create_objects %}
     <p>
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
+      <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
       {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none %}
       <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) if action.type_id else _('Create Object') }}</a>
       {% endif %}

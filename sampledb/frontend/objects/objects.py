@@ -8,6 +8,7 @@ import typing
 
 import flask
 import flask_login
+import werkzeug
 from flask_babel import _
 
 from .. import frontend
@@ -24,14 +25,30 @@ from ...logic.groups import get_group
 from ...logic.objects import get_object
 from ...logic.projects import get_project, get_user_project_permissions
 from ...logic.locations import get_location, get_object_ids_at_location
-from ...logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
-from ...logic.errors import UserDoesNotExistError, LocationDoesNotExistError, ActionTypeDoesNotExistError
+from ...logic.location_permissions import get_locations_with_user_permissions
+from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component
 from ..utils import get_location_name, get_search_paths
 from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+OBJECT_LIST_FILTER_PARAMETERS = (
+    'object_list_filters',
+    'action_type_ids',
+    't',
+    'action_ids',
+    'action',
+    'user',
+    'user_permissions',
+    'all_users_permissions',
+    'anonymous_permissions',
+    'location_ids',
+    'location',
+    'doi',
+    'project',
+)
 
 
 @frontend.route('/objects/')
@@ -134,97 +151,101 @@ def objects():
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if 'location_ids' in flask.request.args:
-            try:
+
+        valid_location_ids = [
+            location.id
+            for location in all_locations
+        ]
+        valid_action_type_ids = [
+            action_type.id
+            for action_type in all_action_types
+        ]
+        valid_action_ids = [
+            action.id
+            for action in all_actions
+        ]
+
+        user_settings = get_user_settings(user_id=flask_login.current_user.id)
+        if any(param in flask.request.args for param in OBJECT_LIST_FILTER_PARAMETERS):
+            (
+                success,
+                filter_location_ids,
+                filter_action_type_ids,
+                filter_action_ids,
+                filter_related_user_id,
+                filter_doi,
+                filter_anonymous_permissions,
+                filter_all_users_permissions,
+                filter_user_id,
+                filter_user_permissions,
+                filter_group_id,
+                filter_group_permissions,
+                filter_project_id,
+                filter_project_permissions,
+            ) = _parse_object_list_filters(
+                params=flask.request.args,
+                valid_location_ids=valid_location_ids,
+                valid_action_type_ids=valid_action_type_ids,
+                valid_action_ids=valid_action_ids
+            )
+            if not success:
+                return flask.abort(400)
+        else:
+            filter_location_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_location_ids')
+            if filter_location_ids is not None:
+                # remove location IDs which may have become invalid
                 filter_location_ids = [
-                    int(id_str.strip())
-                    for id_str in itertools.chain(*[
-                        location_ids_str.split(',')
-                        for location_ids_str in flask.request.args.getlist('location_ids')
-                    ])
+                    location_id
+                    for location_id in filter_location_ids
+                    if location_id in valid_location_ids
                 ]
-            except ValueError:
-                flask.flash(_('Unable to parse location IDs.'), 'error')
-                return flask.abort(400)
-            all_location_ids = [
-                location.id
-                for location in all_locations
-            ]
-            if any(location_id not in all_location_ids for location_id in filter_location_ids):
-                flask.flash(_('Invalid location ID.'), 'error')
-                return flask.abort(400)
-            if 'location' in flask.request.args:
-                flask.flash(_('Only one of location_ids and location may be set.'), 'error')
-                return flask.abort(400)
-        else:
-            filter_location_ids = None
-        if 'location' in flask.request.args:
-            try:
-                location_id = int(flask.request.args.get('location', ''))
-                if Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id):
-                    filter_location_ids = [location_id]
-                else:
-                    flask.flash(_('You do not have the required permissions to access this location.'), 'error')
-            except ValueError:
-                flask.flash(_('Unable to parse location IDs.'), 'error')
-            except LocationDoesNotExistError:
-                flask.flash(_('No location with the given ID exists.'), 'error')
 
-        if 'action_ids' in flask.request.args:
-            try:
-                filter_action_ids = [
-                    int(id_str.strip())
-                    for id_str in itertools.chain(*[
-                        action_ids_str.split(',')
-                        for action_ids_str in flask.request.args.getlist('action_ids')
-                    ])
-                ]
-            except ValueError:
-                flask.flash(_('Unable to parse action IDs.'), 'error')
-                return flask.abort(400)
-            all_action_ids = [
-                action.id
-                for action in all_actions
-            ]
-            if any(action_id not in all_action_ids for action_id in filter_action_ids):
-                flask.flash(_('Invalid action ID.'), 'error')
-                return flask.abort(400)
-            if 'action' in flask.request.args:
-                flask.flash(_('Only one of action_ids and action may be set.'), 'error')
-                return flask.abort(400)
-        else:
-            filter_action_ids = None
-
-        if 'action_type_ids' in flask.request.args:
-            try:
+            filter_action_type_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_type_ids')
+            if filter_action_type_ids is not None:
+                # remove action type IDs which may have become invalid
                 filter_action_type_ids = [
-                    int(id_str.strip())
-                    for id_str in itertools.chain(*[
-                        action_type_ids_str.split(',')
-                        for action_type_ids_str in flask.request.args.getlist('action_type_ids')
-                    ])
+                    action_type_id
+                    for action_type_id in filter_action_type_ids
+                    if action_type_id in valid_action_type_ids
                 ]
-            except ValueError:
-                flask.flash(_('Unable to parse action type IDs.'), 'error')
-                return flask.abort(400)
-            all_action_type_ids = [
-                action_type.id
-                for action_type in all_action_types
-            ]
-            if any(action_type_id not in all_action_type_ids for action_type_id in filter_action_type_ids):
-                flask.flash(_('Invalid action type ID.'), 'error')
-                return flask.abort(400)
-            if 't' in flask.request.args:
-                flask.flash(_('Only one of action_type_ids and t may be set.'), 'error')
-                return flask.abort(400)
-        else:
-            filter_action_type_ids = None
-        try:
-            action_id = int(flask.request.args.get('action', ''))
-        except ValueError:
-            action_id = None
-        if action_id is None and filter_action_ids is not None and len(filter_action_ids) == 1:
+
+            filter_action_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_ids')
+            if filter_action_ids is not None:
+                # remove action IDs which may have become invalid
+                filter_action_ids = [
+                    action_id
+                    for action_id in filter_action_ids
+                    if action_id in valid_action_ids
+                ]
+
+            filter_doi = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_doi')
+
+            filter_anonymous_permissions = {
+                'read': Permissions.READ
+            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_anonymous_permissions'), None)
+
+            filter_all_users_permissions = {
+                'read': Permissions.READ
+            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_all_users_permissions'), None)
+
+            filter_user_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_id')
+
+            filter_user_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
+
+            filter_related_user_id = None
+            filter_group_id = None
+            filter_group_permissions = None
+            filter_project_id = None
+            filter_project_permissions = None
+
+        if filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
+        else:
+            action_id = None
         if action_id is not None:
             action = get_action(action_id)
             implicit_action_type = get_action_type(action.type_id) if action.type_id is not None else None
@@ -236,108 +257,11 @@ def objects():
                         display_properties.append(property_name)
                     if property_name not in display_property_titles:
                         display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
-        else:
-            action_type_id = flask.request.args.get('t', '')
-            if action_type_id is not None:
-                try:
-                    action_type_id = int(action_type_id)
-                except ValueError:
-                    # ensure old links still function
-                    action_type_id = {
-                        'samples': models.ActionType.SAMPLE_CREATION,
-                        'measurements': models.ActionType.MEASUREMENT,
-                        'simulations': models.ActionType.SIMULATION
-                    }.get(action_type_id, None)
-            if action_type_id is not None:
-                try:
-                    action_type = get_action_type(
-                        action_type_id=action_type_id
-                    )
-                except ActionTypeDoesNotExistError:
-                    action_type = None
-            else:
-                action_type = None
-            if filter_action_type_ids is None and action_type is not None:
-                filter_action_type_ids = [action_type.id]
 
-        if filter_action_ids is None and action_id is not None:
-            filter_action_ids = [action_id]
         if display_properties:
             name_only = False
 
-        try:
-            filter_related_user_id = int(flask.request.args.get('related_user', ''))
-            get_user(filter_related_user_id)
-        except ValueError:
-            filter_related_user_id = None
-        except UserDoesNotExistError:
-            filter_related_user_id = None
-
         all_publications = logic.publications.get_publications_for_user(flask_login.current_user.id)
-        try:
-            filter_doi = logic.publications.simplify_doi(flask.request.args.get('doi', ''))
-        except logic.errors.InvalidDOIError:
-            filter_doi = None
-
-        filter_user_permissions = None
-        try:
-            filter_user_id = int(flask.request.args.get('user', ''))
-            get_user(filter_user_id)
-        except ValueError:
-            filter_user_id = None
-        except UserDoesNotExistError:
-            filter_user_id = None
-        else:
-            filter_user_permissions = {
-                'read': Permissions.READ,
-                'write': Permissions.WRITE,
-                'grant': Permissions.GRANT
-            }.get(flask.request.args.get('user_permissions', '').lower(), Permissions.READ)
-
-        filter_all_users_permissions = {
-            'read': Permissions.READ
-        }.get(flask.request.args.get('all_users_permissions', '').lower(), None)
-
-        if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
-            filter_anonymous_permissions = {
-                'read': Permissions.READ
-            }.get(flask.request.args.get('anonymous_permissions', '').lower(), None)
-        else:
-            filter_anonymous_permissions = None
-
-        filter_group_permissions = None
-        try:
-            filter_group_id = int(flask.request.args.get('group', ''))
-            group_member_ids = logic.groups.get_group_member_ids(filter_group_id)
-        except ValueError:
-            filter_group_id = None
-        except logic.errors.GroupDoesNotExistError:
-            filter_group_id = None
-        else:
-            if flask_login.current_user.id not in group_member_ids:
-                return flask.abort(403)
-            filter_group_permissions = {
-                'read': Permissions.READ,
-                'write': Permissions.WRITE,
-                'grant': Permissions.GRANT
-            }.get(flask.request.args.get('group_permissions', '').lower(), Permissions.READ)
-
-        filter_project_permissions = None
-        try:
-            filter_project_id = int(flask.request.args.get('project', ''))
-            get_project(filter_project_id)
-        except ValueError:
-            filter_project_id = None
-        except logic.errors.ProjectDoesNotExistError:
-            filter_project_id = None
-        else:
-            if Permissions.READ not in get_user_project_permissions(project_id=filter_project_id, user_id=flask_login.current_user.id, include_groups=True):
-                return flask.abort(403)
-            filter_project_permissions = {
-                'read': Permissions.READ,
-                'write': Permissions.WRITE,
-                'grant': Permissions.GRANT
-            }.get(flask.request.args.get('project_permissions', '').lower(), Permissions.READ)
 
         if flask.request.args.get('limit', '') == 'all':
             pagination_limit = None
@@ -354,7 +278,7 @@ def objects():
 
             # default objects per page
             if pagination_limit is None:
-                pagination_limit = get_user_settings(flask_login.current_user.id)['OBJECTS_PER_PAGE']
+                pagination_limit = user_settings['OBJECTS_PER_PAGE']
             else:
                 set_user_settings(flask_login.current_user.id, {'OBJECTS_PER_PAGE': pagination_limit})
 
@@ -573,15 +497,6 @@ def objects():
                 continue
             objects[i]['display_properties'][property_name] = (property_data, property_schema)
 
-    def build_modified_url(**query_parameters):
-        for key in flask.request.args:
-            if key not in query_parameters:
-                query_parameters[key] = flask.request.args.getlist(key)
-        return flask.url_for(
-            '.objects',
-            **query_parameters
-        )
-
     action_ids = {
         object['action'].id for object in objects if object['action'] is not None
     }
@@ -775,6 +690,7 @@ def objects():
         filter_project_permissions_info=filter_project_permissions_info,
         filter_all_users_permissions=filter_all_users_permissions,
         filter_anonymous_permissions=filter_anonymous_permissions,
+        filter_user_permissions=filter_user_permissions,
         filter_doi_info=filter_doi_info,
         show_filters=show_filters,
         all_actions=all_actions,
@@ -786,7 +702,7 @@ def objects():
         all_publications=all_publications,
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-        build_modified_url=build_modified_url,
+        build_modified_url=_build_modified_url,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
         limit=pagination_limit,
@@ -851,3 +767,302 @@ def referencable_objects():
             for object in referencable_objects
         ]
     }
+
+
+def _parse_filter_id_params(
+        params: werkzeug.datastructures.ImmutableMultiDict,
+        param_aliases: typing.List[str],
+        valid_ids: typing.List[int],
+        id_map: typing.Dict[str, int],
+        multi_params_error: str,
+        parse_error: str,
+        invalid_id_error: str
+) -> typing.Tuple[bool, typing.Optional[typing.List[int]]]:
+    num_used_param_aliases = sum(param_alias in params for param_alias in param_aliases)
+    if num_used_param_aliases == 0:
+        return True, None
+    if num_used_param_aliases > 1:
+        flask.flash(multi_params_error, 'error')
+        return False, None
+    try:
+        filter_ids = set()
+        for param_alias in param_aliases:
+            for ids_str in params.getlist(param_alias):
+                for id_str in ids_str.split(','):
+                    id_str = id_str.strip()
+                    if id_str in id_map:
+                        filter_ids.add(id_map[id_str])
+                    else:
+                        filter_ids.add(int(id_str))
+    except ValueError:
+        flask.flash(parse_error, 'error')
+        return False, None
+    if any(id not in valid_ids for id in filter_ids):
+        flask.flash(invalid_id_error, 'error')
+        return False, None
+    return True, list(filter_ids)
+
+
+def _parse_object_list_filters(
+        params: werkzeug.datastructures.ImmutableMultiDict,
+        valid_location_ids: typing.List[int],
+        valid_action_type_ids: typing.List[int],
+        valid_action_ids: typing.List[int]
+) -> typing.Tuple[
+    bool,
+    typing.Optional[typing.List[int]],
+    typing.Optional[typing.List[int]],
+    typing.Optional[typing.List[int]],
+    typing.Optional[int],
+    typing.Optional[str],
+    typing.Optional[Permissions],
+    typing.Optional[Permissions],
+    typing.Optional[int],
+    typing.Optional[Permissions],
+    typing.Optional[int],
+    typing.Optional[Permissions],
+    typing.Optional[int],
+    typing.Optional[Permissions],
+]:
+    success, filter_location_ids = _parse_filter_id_params(
+        params=params,
+        param_aliases=['location_ids', 'location'],
+        valid_ids=valid_location_ids,
+        id_map={},
+        multi_params_error=_('Only one of location_ids and location may be set.'),
+        parse_error=_('Unable to parse location IDs.'),
+        invalid_id_error=_('Invalid location ID.')
+    )
+    if not success:
+        return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+
+    success, filter_action_ids = _parse_filter_id_params(
+        params=params,
+        param_aliases=['action_ids', 'action'],
+        valid_ids=valid_action_ids,
+        id_map={},
+        multi_params_error=_('Only one of action_ids and action may be set.'),
+        parse_error=_('Unable to parse action IDs.'),
+        invalid_id_error=_('Invalid action ID.')
+    )
+    if not success:
+        return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+
+    success, filter_action_type_ids = _parse_filter_id_params(
+        params=params,
+        param_aliases=['action_type_ids', 't'],
+        valid_ids=valid_action_type_ids,
+        id_map={
+            'samples': models.ActionType.SAMPLE_CREATION,
+            'measurements': models.ActionType.MEASUREMENT,
+            'simulations': models.ActionType.SIMULATION
+        },
+        multi_params_error=_('Only one of action_type_ids and t may be set.'),
+        parse_error=_('Unable to parse action type IDs.'),
+        invalid_id_error=_('Invalid action type ID.')
+    )
+    if not success:
+        return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+
+    if 'related_user' in params:
+        try:
+            filter_related_user_id = int(params.get('related_user'))
+            get_user(filter_related_user_id)
+        except ValueError:
+            flask.flash(_('Unable to parse related user ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        except UserDoesNotExistError:
+            flask.flash(_('Invalid related user ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+    else:
+        filter_related_user_id = None
+
+    try:
+        filter_doi = logic.publications.simplify_doi(params.get('doi', ''))
+    except logic.errors.InvalidDOIError:
+        filter_doi = None
+
+    if flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+        filter_anonymous_permissions = {
+            'read': Permissions.READ
+        }.get(params.get('anonymous_permissions', '').lower(), None)
+    else:
+        filter_anonymous_permissions = None
+
+    filter_all_users_permissions = {
+        'read': Permissions.READ
+    }.get(params.get('all_users_permissions', '').lower(), None)
+
+    if 'user' in params:
+        try:
+            filter_user_id = int(params.get('user'))
+            get_user(filter_user_id)
+        except ValueError:
+            flask.flash(_('Unable to parse user ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        except UserDoesNotExistError:
+            flask.flash(_('Invalid user ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        else:
+            filter_user_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(params.get('user_permissions', '').lower(), Permissions.READ)
+    else:
+        filter_user_id = None
+        filter_user_permissions = None
+
+    if 'group' in params:
+        try:
+            filter_group_id = int(params.get('group'))
+            group_member_ids = logic.groups.get_group_member_ids(filter_group_id)
+        except ValueError:
+            flask.flash(_('Unable to parse group ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        except logic.errors.GroupDoesNotExistError:
+            flask.flash(_('Invalid group ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        else:
+            if flask_login.current_user.id not in group_member_ids:
+                flask.flash(_('You need to be a member of this group to list its objects.'), 'error')
+                return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            filter_group_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(params.get('group_permissions', '').lower(), Permissions.READ)
+    else:
+        filter_group_id = None
+        filter_group_permissions = None
+
+    if 'project' in params:
+        try:
+            filter_project_id = int(params.get('project'))
+            get_project(filter_project_id)
+        except ValueError:
+            flask.flash(_('Unable to parse project ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        except logic.errors.ProjectDoesNotExistError:
+            flask.flash(_('Invalid project ID.'), 'error')
+            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        else:
+            if Permissions.READ not in get_user_project_permissions(
+                    project_id=filter_project_id,
+                    user_id=flask_login.current_user.id,
+                    include_groups=True
+            ):
+                flask.flash(_('You need to be a member of this project group to list its objects.'), 'error')
+                return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            filter_project_permissions = {
+                'read': Permissions.READ,
+                'write': Permissions.WRITE,
+                'grant': Permissions.GRANT
+            }.get(params.get('project_permissions', '').lower(), Permissions.READ)
+    else:
+        filter_project_id = None
+        filter_project_permissions = None
+
+    return (
+        True,
+        filter_location_ids,
+        filter_action_type_ids,
+        filter_action_ids,
+        filter_related_user_id,
+        filter_doi,
+        filter_anonymous_permissions,
+        filter_all_users_permissions,
+        filter_user_id,
+        filter_user_permissions,
+        filter_group_id,
+        filter_group_permissions,
+        filter_project_id,
+        filter_project_permissions,
+    )
+
+
+def _build_modified_url(
+        blocked_parameters: typing.Sequence[str] = (),
+        **query_parameters: typing.Any
+) -> str:
+    for param in flask.request.args:
+        if param not in query_parameters:
+            query_parameters[param] = flask.request.args.getlist(param)
+    for param in blocked_parameters:
+        if param in query_parameters:
+            del query_parameters[param]
+    return flask.url_for(
+        '.objects',
+        **query_parameters
+    )
+
+
+@frontend.route('/objects/', methods=['POST'])
+@flask_login.login_required
+def save_object_list_defaults():
+    if 'save_default_filters' in flask.request.form:
+        all_locations = get_locations_with_user_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+        all_action_types = logic.actions.get_action_types(
+            filter_fed_defaults=True
+        )
+        all_actions = get_sorted_actions_for_user(
+            user_id=flask_login.current_user.id
+        )
+        (
+            success,
+            filter_location_ids,
+            filter_action_type_ids,
+            filter_action_ids,
+            filter_related_user_id,
+            filter_doi,
+            filter_anonymous_permissions,
+            filter_all_users_permissions,
+            filter_user_id,
+            filter_user_permissions,
+            filter_group_id,
+            filter_group_permissions,
+            filter_project_id,
+            filter_project_permissions,
+        ) = _parse_object_list_filters(
+            params=flask.request.form,
+            valid_location_ids=[
+                location.id
+                for location in all_locations
+            ],
+            valid_action_type_ids=[
+                action_type.id
+                for action_type in all_action_types
+            ],
+            valid_action_ids=[
+                action.id
+                for action in all_actions
+            ]
+        )
+        if not success:
+            return flask.abort(400)
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_FILTERS': {
+                    'filter_location_ids': filter_location_ids,
+                    'filter_action_type_ids': filter_action_type_ids,
+                    'filter_action_ids': filter_action_ids,
+                    'filter_doi': filter_doi,
+                    'filter_anonymous_permissions': None if filter_anonymous_permissions is None else filter_anonymous_permissions.name.lower(),
+                    'filter_all_users_permissions': None if filter_all_users_permissions is None else filter_all_users_permissions.name.lower(),
+                    'filter_user_id': filter_user_id,
+                    'filter_user_permissions': None if filter_user_permissions is None else filter_user_permissions.name.lower(),
+                }
+            }
+        )
+    if 'clear_default_filters' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_FILTERS': {}
+            }
+        )
+    return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))

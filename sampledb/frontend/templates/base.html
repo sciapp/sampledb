@@ -163,7 +163,7 @@
           <ul class="dropdown-menu">
             {% for action_type in get_action_types() %}
               {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
-              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
+              <li><a href="{{ url_for('frontend.objects', action_type_ids=action_type.id) }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }} {{ federation_information_symbol(get_component_or_none(action_type.component_id), action_type.fed_id, 'action_type', nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
             <li role="separator" class="divider nav-search-link"></li>

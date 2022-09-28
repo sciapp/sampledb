@@ -33,6 +33,7 @@ DEFAULT_SETTINGS = {
     "INSTRUMENT_LOG_ORDER_ATTRIBUTE": "datetime",
     "DATAVERSE_API_TOKEN": "",
     "SCICAT_API_TOKEN": "",
+    "DEFAULT_OBJECT_LIST_FILTERS": {},
     "AUTO_LC": True,
     "TIMEZONE": "UTC",
     "AUTO_TZ": True,
