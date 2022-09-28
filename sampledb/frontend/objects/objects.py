@@ -50,26 +50,26 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'project',
 )
 
+OBJECT_LIST_OPTION_PARAMETERS = (
+    'object_list_options',
+    'creation_info',
+    'last_edit_info',
+    'action_info',
+    'display_properties',
+)
+
 
 @frontend.route('/objects/')
 @flask_login.login_required
 def objects():
     objects = []
-    display_properties = []
-    display_property_titles = {}
-    if 'display_properties' in flask.request.args:
-        for property_info in itertools.chain(*[
-            display_properties_str.split(',')
-            for display_properties_str in flask.request.args.getlist('display_properties')
-        ]):
-            if ':' in property_info:
-                property_name, property_title = property_info.split(':', 1)
-            else:
-                property_name, property_title = property_info, None
-            if property_name not in display_properties:
-                display_properties.append(property_name)
-            if property_title is not None:
-                display_property_titles[property_name] = flask.escape(property_title)
+
+    user_settings = get_user_settings(user_id=flask_login.current_user.id)
+    if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
+        display_properties, display_property_titles = _parse_display_properties(flask.request.args)
+    else:
+        display_properties = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('display_properties', [])
+        display_property_titles = {}
 
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
@@ -165,7 +165,6 @@ def objects():
             for action in all_actions
         ]
 
-        user_settings = get_user_settings(user_id=flask_login.current_user.id)
         if any(param in flask.request.args for param in OBJECT_LIST_FILTER_PARAMETERS):
             (
                 success,
@@ -520,38 +519,13 @@ def objects():
                 property_title = flask.escape(property_name)
             display_property_titles[property_name] = property_title
 
-    last_edit_info = None
-    creation_info = None
-    action_info = None
-    if 'object_list_options' in flask.request.args:
-        creation_info = set()
-        for creation_info_str in flask.request.args.getlist('creation_info'):
-            creation_info_str = creation_info_str.strip().lower()
-            if creation_info_str in {'user', 'date'}:
-                creation_info.add(creation_info_str)
-        creation_info = list(creation_info)
-
-        last_edit_info = set()
-        for last_edit_info_str in flask.request.args.getlist('last_edit_info'):
-            last_edit_info_str = last_edit_info_str.strip().lower()
-            if last_edit_info_str in {'user', 'date'}:
-                last_edit_info.add(last_edit_info_str)
-        last_edit_info = list(last_edit_info)
-
-        action_info = set()
-        for action_info_str in flask.request.args.getlist('action_info'):
-            action_info_str = action_info_str.strip().lower()
-            if action_info_str in {'instrument', 'action'}:
-                action_info.add(action_info_str)
-        action_info = list(action_info)
-
-    if creation_info is None:
-        creation_info = ['user', 'date']
-    if last_edit_info is None:
-        last_edit_info = ['user', 'date']
-    if action_info is None:
+    if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
+        creation_info, last_edit_info, action_info = _parse_object_list_options(flask.request.args)
+    else:
+        creation_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('creation_info', ['user', 'date'])
+        last_edit_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('last_edit_info', ['user', 'date'])
         if filter_action_ids is None or len(filter_action_ids) != 1:
-            action_info = ['instrument', 'action']
+            action_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('action_info', ['instrument', 'action'])
         else:
             action_info = []
 
@@ -981,6 +955,59 @@ def _parse_object_list_filters(
     )
 
 
+def _parse_object_list_options(
+        params: werkzeug.datastructures.ImmutableMultiDict,
+) -> typing.Tuple[
+    typing.List[str],
+    typing.List[str],
+    typing.List[str],
+]:
+    creation_info = set()
+    for creation_info_str in params.getlist('creation_info'):
+        creation_info_str = creation_info_str.strip().lower()
+        if creation_info_str in {'user', 'date'}:
+            creation_info.add(creation_info_str)
+    creation_info = list(creation_info)
+
+    last_edit_info = set()
+    for last_edit_info_str in params.getlist('last_edit_info'):
+        last_edit_info_str = last_edit_info_str.strip().lower()
+        if last_edit_info_str in {'user', 'date'}:
+            last_edit_info.add(last_edit_info_str)
+    last_edit_info = list(last_edit_info)
+
+    action_info = set()
+    for action_info_str in params.getlist('action_info'):
+        action_info_str = action_info_str.strip().lower()
+        if action_info_str in {'instrument', 'action'}:
+            action_info.add(action_info_str)
+    action_info = list(action_info)
+    return creation_info, last_edit_info, action_info
+
+
+def _parse_display_properties(
+        params: werkzeug.datastructures.ImmutableMultiDict,
+) -> typing.Tuple[
+    typing.List[str],
+    typing.Dict[str, str],
+]:
+    display_properties = []
+    display_property_titles = {}
+    for property_info in itertools.chain(*[
+        display_properties_str.split(',')
+        for display_properties_str in params.getlist('display_properties')
+    ]):
+        if ':' in property_info:
+            property_name, property_title = property_info.split(':', 1)
+        else:
+            property_name, property_title = property_info, None
+        if property_name not in display_properties:
+            display_properties.append(property_name)
+        if property_title is not None:
+            display_property_titles[property_name] = flask.escape(property_title)
+    return display_properties, display_property_titles
+
+
 def _build_modified_url(
         blocked_parameters: typing.Sequence[str] = (),
         **query_parameters: typing.Any
@@ -1058,6 +1085,30 @@ def save_object_list_defaults():
                 }
             }
         )
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
+    if 'save_default_options' in flask.request.form:
+        (
+            creation_info,
+            last_edit_info,
+            action_info,
+        ) = _parse_object_list_options(
+            params=flask.request.form
+        )
+        display_properties, display_property_titles = _parse_display_properties(
+            params=flask.request.form
+        )
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_OPTIONS': {
+                    'creation_info': creation_info,
+                    'last_edit_info': last_edit_info,
+                    'action_info': action_info,
+                    'display_properties': display_properties
+                }
+            }
+        )
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
     if 'clear_default_filters' in flask.request.form:
         set_user_settings(
             user_id=flask_login.current_user.id,
@@ -1065,4 +1116,12 @@ def save_object_list_defaults():
                 'DEFAULT_OBJECT_LIST_FILTERS': {}
             }
         )
-    return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
+    if 'clear_default_options' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_OBJECT_LIST_OPTIONS': {}
+            }
+        )
+        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
