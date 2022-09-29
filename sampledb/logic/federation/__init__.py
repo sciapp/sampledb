@@ -23,7 +23,7 @@ from .. import errors, fed_logs, languages, markdown_to_html
 from ..actions import get_action, create_action_type, get_action_type, update_action_type, create_action, get_mutable_action
 from ..component_authentication import get_own_authentication
 from ..comments import get_comment, get_comments_for_object, create_comment, update_comment
-from ..components import get_component_by_uuid, get_component, add_component
+from ..components import get_component_by_uuid, get_component
 from ..groups import get_group
 from ..instruments import create_instrument, get_instrument, get_mutable_instrument
 from ..locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations, get_location_type, create_location_type, update_location_type, set_location_responsible_users, LocationType
@@ -34,6 +34,7 @@ from ...models import Permissions, ComponentAuthenticationType, Component, Actio
 from ...models.file_log import FileLogEntry, FileLogEntryType
 
 from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict, _get_list, _get_utc_datetime, _get_translation, _get_permissions
+from .components import _get_or_create_component_id
 
 PROTOCOL_VERSION_MAJOR = 0
 PROTOCOL_VERSION_MINOR = 1
@@ -829,16 +830,6 @@ def import_location(location_data, component, locations, users):
         )
         fed_logs.import_location(location.id, component.id)
     return location
-
-
-def _get_or_create_component_id(component_uuid):
-    if component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        return None
-    try:
-        component = get_component_by_uuid(component_uuid)
-    except errors.ComponentDoesNotExistError:
-        component = add_component(uuid=component_uuid, description='', name=None, address=None)
-    return component.id
 
 
 def _parse_user_ref(user_data):
