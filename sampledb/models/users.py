@@ -43,6 +43,8 @@ class User(db.Model):
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     last_modified = db.Column(db.DateTime, nullable=False)
     component = db.relationship('Component')
+    last_modified_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    # TODO: migration
 
     def __init__(self, name, email, type, orcid: typing.Optional[str] = None, affiliation: typing.Optional[str] = None, role: typing.Optional[str] = None, extra_fields: typing.Optional[dict] = {}, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None, last_modified: typing.Optional[datetime] = None):
         self.name = name

@@ -10,6 +10,7 @@ import hashlib
 import typing
 from io import BytesIO
 import os
+import re
 from urllib.parse import quote_plus
 from datetime import datetime
 from math import log10, floor
@@ -670,3 +671,15 @@ def get_object_name_if_user_has_permissions(object_id: int) -> str:
     except errors.ObjectDoesNotExistError:
         pass
     return fallback_name
+
+
+def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
+    # accept full ORCID iDs
+    orcid_prefix = 'https://orcid.org/'
+    if orcid.startswith(orcid_prefix):
+        orcid = orcid[len(orcid_prefix):]
+    # check ORCID iD syntax
+    if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
+        return False, None
+    # return sanitized ORCID iD on success
+    return True, orcid

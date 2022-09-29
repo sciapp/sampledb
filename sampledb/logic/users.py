@@ -42,7 +42,24 @@ class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id
         return datetime.datetime.utcnow() >= expiration_datetime
 
 
-class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_admin', 'is_readonly', 'is_hidden', 'is_active', 'orcid', 'affiliation', 'role', 'extra_fields', 'fed_id', 'component_id', 'last_modified']), flask_login.UserMixin):
+class User(collections.namedtuple('User', [
+    'id',
+    'name',
+    'email',
+    'type',
+    'is_admin',
+    'is_readonly',
+    'is_hidden',
+    'is_active',
+    'orcid',
+    'affiliation',
+    'role',
+    'extra_fields',
+    'fed_id',
+    'component_id',
+    'last_modified',
+    'last_modified_by_id',
+]), flask_login.UserMixin):
     """
     This class provides an immutable wrapper around models.users.User.
     """
@@ -63,7 +80,8 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             extra_fields: typing.Dict[str, typing.Any],
             fed_id: int,
             component_id: int,
-            last_modified: datetime.datetime
+            last_modified: datetime.datetime,
+            last_modified_by_id: typing.Optional[int],
     ):
         self = super(User, cls).__new__(
             cls,
@@ -81,7 +99,8 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             extra_fields,
             fed_id,
             component_id,
-            last_modified
+            last_modified,
+            last_modified_by_id,
         )
         return self
 
@@ -102,7 +121,8 @@ class User(collections.namedtuple('User', ['id', 'name', 'email', 'type', 'is_ad
             extra_fields=copy.deepcopy(user.extra_fields),
             fed_id=user.fed_id,
             component_id=user.component_id,
-            last_modified=user.last_modified
+            last_modified=user.last_modified,
+            last_modified_by_id=user.last_modified_by_id,
         )
 
     @property
@@ -270,15 +290,19 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
     return user
 
 
-def update_user(user_id: int, **attributes: typing.Dict[str, typing.Any]) -> None:
+def update_user(
+        user_id: int,
+        updating_user_id: typing.Optional[int],
+        **attributes: typing.Dict[str, typing.Any]) -> None:
     """
     Update one or multiple attributes of an existing user in the database.
 
     :param user_id: the user ID of an existing user
+    :param updating_user_id: the ID of the user causing the update, or None
     :param attributes: a mapping of attribute names and values
     :raise AttributeError: when a non-existing attribute is set
     :raise errors.UserDoesNotExistError: when no user with the given
-        user ID exists
+        user ID or updating user ID exists
     """
     user = get_mutable_user(user_id)
     for name in attributes:
@@ -299,9 +323,16 @@ def update_user(user_id: int, **attributes: typing.Dict[str, typing.Any]) -> Non
         }:
             raise AttributeError(f"'User' object has no attribute '{name}'")
 
+    if updating_user_id is not None:
+        # ensure the updating user exists
+        get_user(updating_user_id)
+
+        user.last_modified = datetime.datetime.utcnow()
+        user.last_modified_by_id = updating_user_id
+
     for name, value in attributes.items():
         setattr(user, name, value)
-    user.last_modified = datetime.datetime.utcnow()
+
     db.session.add(user)
     db.session.commit()
 
@@ -409,7 +440,11 @@ def set_user_readonly(user_id: int, readonly: bool) -> None:
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    update_user(user_id, is_readonly=readonly)
+    update_user(
+        user_id,
+        updating_user_id=None,
+        is_readonly=readonly
+    )
 
 
 def set_user_hidden(user_id: int, hidden: bool) -> None:
@@ -421,7 +456,11 @@ def set_user_hidden(user_id: int, hidden: bool) -> None:
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    update_user(user_id, is_hidden=hidden)
+    update_user(
+        user_id,
+        updating_user_id=None,
+        is_hidden=hidden
+    )
 
 
 def set_user_active(user_id: int, active: bool) -> None:
@@ -433,7 +472,11 @@ def set_user_active(user_id: int, active: bool) -> None:
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    update_user(user_id, is_active=active)
+    update_user(
+        user_id,
+        updating_user_id=None,
+        is_active=active
+    )
 
 
 def set_user_administrator(user_id: int, is_admin: bool) -> None:
@@ -445,7 +488,11 @@ def set_user_administrator(user_id: int, is_admin: bool) -> None:
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    update_user(user_id, is_admin=is_admin)
+    update_user(
+        user_id,
+        updating_user_id=None,
+        is_admin=is_admin
+    )
 
 
 def get_user_invitation(invitation_id: int) -> UserInvitation:

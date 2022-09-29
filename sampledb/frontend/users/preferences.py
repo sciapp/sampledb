@@ -261,6 +261,7 @@ def change_preferences(user, user_id):
             if change_user_form.name.data != user.name:
                 logic.users.update_user(
                     user.id,
+                    updating_user_id=user.id,
                     name=str(change_user_form.name.data)
                 )
                 user_log.edit_user_preferences(user_id=user_id)
@@ -301,6 +302,7 @@ def change_preferences(user, user_id):
                 if change_orcid or change_affiliation or change_role or change_extra_fields:
                     logic.users.update_user(
                         user.id,
+                        updating_user_id=user.id,
                         orcid=orcid,
                         affiliation=affiliation,
                         role=role,
@@ -639,6 +641,7 @@ def confirm_email():
         if salt == 'edit_profile':
             logic.users.update_user(
                 user_id,
+                updating_user_id=user_id,
                 email=email
             )
         elif salt == 'add_login':
