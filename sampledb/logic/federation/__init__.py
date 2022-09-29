@@ -26,7 +26,7 @@ from ..comments import get_comment, get_comments_for_object, create_comment, upd
 from ..components import get_component_by_uuid, get_component
 from ..groups import get_group
 from ..instruments import create_instrument, get_instrument, get_mutable_instrument
-from ..locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations, get_location_type, create_location_type, update_location_type, set_location_responsible_users, LocationType
+from ..locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments, update_location, create_location, get_locations, get_location_type, set_location_responsible_users, LocationType
 from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from ..projects import get_project
 from ..users import get_user
@@ -36,6 +36,7 @@ from ...models.file_log import FileLogEntry, FileLogEntryType
 from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict, _get_list, _get_utc_datetime, _get_translation, _get_permissions
 from .components import _get_or_create_component_id
 from .users import import_user, parse_import_user, parse_user, _parse_user_ref, _get_or_create_user_id, shared_user_preprocessor
+from .location_types import import_location_type, parse_import_location_type, parse_location_type, _parse_location_type_ref, _get_or_create_location_type_id, shared_location_type_preprocessor
 
 
 PROTOCOL_VERSION_MAJOR = 0
@@ -579,30 +580,6 @@ def _get_or_create_location_id(location_data):
     return location.id
 
 
-def _get_or_create_location_type_id(location_type_data):
-    if location_type_data is None:
-        return None
-    component_id = _get_or_create_component_id(location_type_data['component_uuid'])
-    try:
-        location_type = get_location_type(location_type_data['location_type_id'], component_id)
-    except errors.LocationTypeDoesNotExistError:
-        location_type = create_location_type(
-            name=None,
-            location_name_singular=None,
-            location_name_plural=None,
-            admin_only=True,
-            enable_sub_locations=False,
-            enable_parent_location=False,
-            enable_object_assignments=False,
-            enable_responsible_users=False,
-            show_location_log=False,
-            fed_id=location_type_data['location_type_id'],
-            component_id=component_id
-        )
-        fed_logs.create_ref_location_type(location_type.id, component_id)
-    return location_type.id
-
-
 def import_action(action_data, component):
     def _import_schema(schema, path=[]):
         if schema is None:
@@ -672,54 +649,6 @@ def import_action(action_data, component):
             short_description=action_translation['short_description']
         )
     return action
-
-
-def import_location_type(location_type_data, component):
-    component_id = _get_or_create_component_id(location_type_data['component_uuid'])
-
-    try:
-        location_type = get_location_type(location_type_data['fed_id'], component_id)
-
-        ignored_fields = [
-            'id',
-            'fed_id',
-            'component_id',
-            'component',
-        ]
-        if any(
-                location_type_data[field] != value
-                for field, value in location_type._asdict().items()
-                if field not in ignored_fields
-        ):
-            update_location_type(
-                location_type_id=location_type.id,
-                name=location_type_data['name'],
-                location_name_singular=location_type_data['location_name_singular'],
-                location_name_plural=location_type_data['location_name_plural'],
-                admin_only=location_type_data['admin_only'],
-                enable_parent_location=location_type_data['enable_parent_location'],
-                enable_sub_locations=location_type_data['enable_sub_locations'],
-                enable_object_assignments=location_type_data['enable_object_assignments'],
-                enable_responsible_users=location_type_data['enable_responsible_users'],
-                show_location_log=location_type_data['show_location_log'],
-            )
-            fed_logs.update_location_type(location_type.id, component.id)
-    except errors.LocationTypeDoesNotExistError:
-        location_type = create_location_type(
-            name=location_type_data['name'],
-            location_name_singular=location_type_data['location_name_singular'],
-            location_name_plural=location_type_data['location_name_plural'],
-            admin_only=location_type_data['admin_only'],
-            enable_parent_location=location_type_data['enable_parent_location'],
-            enable_sub_locations=location_type_data['enable_sub_locations'],
-            enable_object_assignments=location_type_data['enable_object_assignments'],
-            enable_responsible_users=location_type_data['enable_responsible_users'],
-            show_location_log=location_type_data['show_location_log'],
-            fed_id=location_type_data['fed_id'],
-            component_id=component_id,
-        )
-        fed_logs.import_location_type(location_type.id, component.id)
-    return location_type
 
 
 def import_location(location_data, component, locations, users):
@@ -819,15 +748,6 @@ def _parse_action_type_ref(action_type_data):
     component_uuid = _get_uuid(action_type_data.get('component_uuid'))
 
     return {'action_type_id': action_type_id, 'component_uuid': component_uuid}
-
-
-def _parse_location_type_ref(location_type_data):
-    if location_type_data is None:
-        return None
-    location_type_id = _get_id(location_type_data.get('location_type_id'), special_values=[LocationType.LOCATION])
-    component_uuid = _get_uuid(location_type_data.get('component_uuid'))
-
-    return {'location_type_id': location_type_id, 'component_uuid': component_uuid}
 
 
 def _parse_schema(schema, path=[]):
@@ -998,27 +918,6 @@ def parse_location(location_data):
             _parse_user_ref(_get_dict(responsible_user))
             for responsible_user in responsible_users
         ] if responsible_users is not None else [],
-    }
-
-
-def parse_location_type(location_type_data):
-    fed_id = _get_id(location_type_data.get('location_type_id'), special_values=[LocationType.LOCATION])
-    uuid = _get_uuid(location_type_data.get('component_uuid'))
-    if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local location type {}'.format(fed_id))
-    return {
-        'fed_id': fed_id,
-        'component_uuid': uuid,
-        'name': _get_translation(location_type_data.get('name')),
-        'location_name_singular': _get_translation(location_type_data.get('location_name_singular')),
-        'location_name_plural': _get_translation(location_type_data.get('location_name_plural')),
-        'admin_only': _get_bool(location_type_data.get('admin_only'), default=True),
-        'enable_parent_location': _get_bool(location_type_data.get('enable_parent_location'), default=False),
-        'enable_sub_locations': _get_bool(location_type_data.get('enable_sub_locations'), default=False),
-        'enable_object_assignments': _get_bool(location_type_data.get('enable_object_assignments'), default=False),
-        'enable_responsible_users': _get_bool(location_type_data.get('enable_responsible_users'), default=False),
-        'show_location_log': _get_bool(location_type_data.get('show_location_log'), default=False),
     }
 
 
@@ -1871,30 +1770,6 @@ def shared_location_preprocessor(location_id: int, _component: Component, refs: 
         'location_type': location_type,
         'responsible_users': responsible_users,
     }
-
-
-def shared_location_type_preprocessor(location_type_id: int, _component: Component, refs: list, _markdown_images):
-    location_type = get_location_type(location_type_id)
-    if location_type.component is not None:
-        return None
-    return {
-        'location_type_id': location_type.id if location_type.fed_id is None else location_type.fed_id,
-        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if location_type.component_id is None else get_component(location_type.component_id).uuid,
-        'name': location_type.name,
-        'location_name_singular': location_type.location_name_singular,
-        'location_name_plural': location_type.location_name_plural,
-        'admin_only': location_type.admin_only,
-        'enable_parent_location': location_type.enable_parent_location,
-        'enable_sub_locations': location_type.enable_sub_locations,
-        'enable_object_assignments': location_type.enable_object_assignments,
-        'enable_responsible_users': location_type.enable_responsible_users,
-        'show_location_log': location_type.show_location_log,
-    }
-
-
-def parse_import_location_type(location_type_data, component):
-    location_type_data = parse_location_type(location_type_data)
-    return import_location_type(location_type_data, component)
 
 
 def parse_import_location(location_data, component):
