@@ -19,7 +19,7 @@ from ..component_authentication import get_own_authentication
 from ..comments import get_comments_for_object
 from ..components import get_component_by_uuid, get_component
 from ..groups import get_group
-from ..locations import create_fed_assignment, get_fed_object_location_assignment, get_location, get_object_location_assignments
+from ..locations import get_location, get_object_location_assignments
 from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from ..projects import get_project
 from ..users import get_user
@@ -37,6 +37,7 @@ from .markdown_images import parse_markdown_image, import_markdown_image, parse_
 from .actions import import_action, parse_action, parse_import_action, _parse_action_ref, _get_or_create_action_id, shared_action_preprocessor, schema_entry_preprocessor, _parse_schema
 from .comments import import_comment, parse_comment, parse_import_comment
 from .files import import_file, parse_file, parse_import_file
+from .object_location_assignments import import_object_location_assignment, parse_object_location_assignment, parse_import_object_location_assignment
 
 
 PROTOCOL_VERSION_MAJOR = 0
@@ -280,56 +281,6 @@ def import_object(object_data, component):
         set_object_permissions_for_all_users(object.object_id, permission)
 
     return object
-
-
-def import_object_location_assignment(assignment_data, object, component):
-    component_id = _get_or_create_component_id(assignment_data['component_uuid'])
-    assignment = get_fed_object_location_assignment(assignment_data['fed_id'], component_id)
-
-    user_id = _get_or_create_user_id(assignment_data['user'])
-    responsible_user_id = _get_or_create_user_id(assignment_data['responsible_user'])
-    location_id = _get_or_create_location_id(assignment_data['location'])
-
-    if assignment is None:
-        assignment = create_fed_assignment(assignment_data['fed_id'], component_id, object.object_id, location_id, responsible_user_id, user_id, assignment_data['description'], assignment_data['utc_datetime'], assignment_data['confirmed'], assignment_data.get('declined', False))
-        fed_logs.import_object_location_assignment(assignment.id, component.id)
-    elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.utc_datetime != assignment_data['utc_datetime']:
-        assignment.location_id = location_id
-        assignment.responsible_user_id = responsible_user_id
-        assignment.user_id = user_id
-        assignment.description = assignment_data['description']
-        assignment.object_id = object.object_id
-        assignment.confirmed = assignment_data['confirmed']
-        assignment.utc_datetime = assignment_data['utc_datetime']
-        assignment.declined = assignment_data.get('declined', False)
-        db.session.commit()
-        fed_logs.update_object_location_assignment(assignment.id, component.id)
-    return assignment
-
-
-def parse_object_location_assignment(assignment_data):
-    uuid = _get_uuid(assignment_data.get('component_uuid'))
-    fed_id = _get_id(assignment_data.get('id'))
-    if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local object location assignment {} @ {}'.format(fed_id, uuid))
-
-    responsible_user_data = _get_dict(assignment_data.get('responsible_user'))
-    location_data = _get_dict(assignment_data.get('location'))
-    description = _get_translation(assignment_data.get('description'))
-    if responsible_user_data is None and location_data is None and description is None:
-        raise errors.InvalidDataExportError('Empty object location assignment {} @ {}'.format(fed_id, uuid))
-
-    return {
-        'fed_id': fed_id,
-        'component_uuid': uuid,
-        'location': _parse_location_ref(location_data),
-        'responsible_user': _parse_user_ref(responsible_user_data),
-        'user': _parse_user_ref(_get_dict(assignment_data.get('user'))),
-        'description': description,
-        'utc_datetime': _get_utc_datetime(assignment_data.get('utc_datetime'), mandatory=True),
-        'confirmed': _get_bool(assignment_data.get('confirmed'), default=False)
-    }
 
 
 def parse_entry(entry_data, component):
@@ -790,10 +741,6 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                         for k in modification['update']['schema'][key]:
                             result['versions'][-1]['schema']['properties'][key][k] = modification['update']['schema'][key][k]
     return result
-
-
-def parse_import_object_location_assignment(assignment_data, object, component):
-    return import_object_location_assignment(parse_object_location_assignment(assignment_data), object, component)
 
 
 def parse_import_object(object_data, component):
