@@ -163,6 +163,7 @@ class ActionType(collections.namedtuple('ActionType', [
     SAMPLE_CREATION = models.ActionType.SAMPLE_CREATION
     MEASUREMENT = models.ActionType.MEASUREMENT
     SIMULATION = models.ActionType.SIMULATION
+    TEMPLATE = models.ActionType.TEMPLATE
 
     def __new__(
             cls,
