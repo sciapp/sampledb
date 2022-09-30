@@ -3,7 +3,6 @@
 Logic module handling communication with other components in a SampleDB federation
 """
 import base64
-import binascii
 from datetime import datetime
 
 import requests
@@ -27,7 +26,7 @@ from ..locations import create_fed_assignment, get_fed_object_location_assignmen
 from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from ..projects import get_project
 from ..users import get_user
-from ...models import Permissions, ComponentAuthenticationType, Component, MarkdownImage
+from ...models import Permissions, ComponentAuthenticationType, Component
 from ...models.file_log import FileLogEntry, FileLogEntryType
 
 from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict, _get_list, _get_utc_datetime, _get_translation, _get_permissions
@@ -37,6 +36,7 @@ from .location_types import import_location_type, parse_import_location_type, pa
 from .instruments import import_instrument, parse_instrument, parse_import_instrument, _parse_instrument_ref, _get_or_create_instrument_id, shared_instrument_preprocessor
 from .action_types import import_action_type, parse_action_type, parse_import_action_type, _parse_action_type_ref, _get_or_create_action_type_id, shared_action_type_preprocessor
 from .locations import import_location, parse_location, parse_import_location, _get_or_create_location_id, _parse_location_ref, shared_location_preprocessor, locations_check_for_cyclic_dependencies
+from .markdown_images import parse_markdown_image, import_markdown_image, parse_import_markdown_image
 
 PROTOCOL_VERSION_MAJOR = 0
 PROTOCOL_VERSION_MINOR = 1
@@ -208,14 +208,6 @@ def update_shares(component, updates):
 
     for object_data in objects:
         import_object(object_data, component)
-
-
-def import_markdown_image(markdown_image_data, component):
-    filename, data = markdown_image_data
-    if get_markdown_image(filename, None, component.id) is None:
-        md_image = MarkdownImage(filename, data, None, permanent=True, component_id=component.id)
-        db.session.add(md_image)
-        db.session.commit()
 
 
 def import_object(object_data, component):
@@ -486,15 +478,6 @@ def _parse_schema(schema, path=[]):
                 if template:
                     template_action = _parse_action_ref(template)
                     property_schema['template'] = template_action
-
-
-def parse_markdown_image(markdown_image_data, component):
-    filename, data = markdown_image_data
-    try:
-        md_image_data = base64.b64decode(data)
-    except binascii.Error:
-        raise errors.InvalidDataExportError('Invalid markdown image \'{}\''.format(filename))
-    return (filename, md_image_data)
 
 
 def parse_action(action_data):
@@ -1225,7 +1208,3 @@ def parse_import_object_location_assignment(assignment_data, object, component):
 
 def parse_import_object(object_data, component):
     return import_object(parse_object(object_data, component), component)
-
-
-def parse_import_markdown_image(markdown_image_data, component):
-    return import_markdown_image(parse_markdown_image(markdown_image_data, component), component)
