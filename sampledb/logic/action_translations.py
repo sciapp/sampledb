@@ -23,7 +23,7 @@ class ActionTranslation(collections.namedtuple(
     This class provides an immutable wrapper around models.action_translations.ActionTranslation.
     """
 
-    def __new__(cls, action_id: int, language_id: int, name: str, description: str, short_description: str):
+    def __new__(cls, action_id: int, language_id: int, name: str, description: str, short_description: str) -> 'ActionTranslation':
         self = super(ActionTranslation, cls).__new__(cls, action_id, language_id, name, description, short_description)
         self._language = None
         return self
@@ -39,7 +39,8 @@ class ActionTranslation(collections.namedtuple(
         )
 
     @property
-    def language(self):
+    def language(self) -> Language:
+        self._language: typing.Optional[Language]
         if self._language is None:
             self._language = languages.get_language(self.language_id)
         return self._language

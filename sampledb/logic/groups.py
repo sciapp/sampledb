@@ -38,7 +38,12 @@ class Group(collections.namedtuple('Group', ['id', 'name', 'description'])):
     This class provides an immutable wrapper around models.groups.Group.
     """
 
-    def __new__(cls, id: int, name: dict, description: dict):
+    def __new__(
+            cls,
+            id: int,
+            name: typing.Dict[str, str],
+            description: typing.Dict[str, str]
+    ) -> 'Group':
         self = super(Group, cls).__new__(cls, id, name, description)
         return self
 
@@ -52,7 +57,7 @@ class GroupInvitation(collections.namedtuple('GroupInvitation', ['id', 'group_id
     This class provides an immutable wrapper around models.groups.GroupInvitation.
     """
 
-    def __new__(cls, id: int, group_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
+    def __new__(cls, id: int, group_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool) -> 'GroupInvitation':
         self = super(GroupInvitation, cls).__new__(cls, id, group_id, user_id, inviter_id, utc_datetime, accepted)
         return self
 
@@ -68,12 +73,16 @@ class GroupInvitation(collections.namedtuple('GroupInvitation', ['id', 'group_id
         )
 
     @property
-    def expired(self):
+    def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return datetime.datetime.utcnow() >= expiration_datetime
+        return bool(datetime.datetime.utcnow() >= expiration_datetime)
 
 
-def create_group(name: typing.Union[str, dict], description: typing.Union[str, dict], initial_user_id: int) -> Group:
+def create_group(
+        name: typing.Union[str, typing.Dict[str, str]],
+        description: typing.Union[str, typing.Dict[str, str]],
+        initial_user_id: int
+) -> Group:
     """
     Creates a new group with the given names and descriptions and adds an
     initial user to it.
@@ -138,7 +147,11 @@ def create_group(name: typing.Union[str, dict], description: typing.Union[str, d
     return group
 
 
-def update_group(group_id: int, name: dict, description: dict) -> None:
+def update_group(
+        group_id: int,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str]
+) -> None:
     """
     Updates the group's names and descriptions.
 
@@ -340,9 +353,9 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
         include_accepted_invitations=False
     )
     for invitation in invitations:
-        invitation = groups.GroupInvitation.query.filter_by(id=invitation.id).first()
-        invitation.accepted = True
-        db.session.add(invitation)
+        mutable_invitation = groups.GroupInvitation.query.filter_by(id=invitation.id).first()
+        mutable_invitation.accepted = True
+        db.session.add(mutable_invitation)
     db.session.commit()
 
 

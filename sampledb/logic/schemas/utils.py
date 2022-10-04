@@ -49,7 +49,7 @@ def get_property_paths_for_schema(
         path_depth_limit: typing.Optional[int] = None
 ) -> typing.Dict[
     typing.Sequence[typing.Optional[str]],
-    typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+    typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
 ]:
     """
     Get a dict mapping property paths to the type used in the given schema.
@@ -68,7 +68,7 @@ def get_property_paths_for_schema(
     property_type = schema.get('type')
     property_paths: typing.Dict[
         typing.Sequence[typing.Optional[str]],
-        typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+        typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
     ] = {}
     if path_depth_limit is not None and len(path) > path_depth_limit:
         return property_paths
@@ -101,7 +101,7 @@ def _get_property_paths_for_object_schema(
         path_depth_limit: typing.Optional[int] = None
 ) -> typing.Dict[
     typing.Sequence[typing.Optional[str]],
-    typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+    typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
 ]:
     path = list(path)
     if path_depth_limit is not None and len(path) + 1 > path_depth_limit:
@@ -131,7 +131,7 @@ def _get_property_paths_for_array_schema(
         path_depth_limit: typing.Optional[int] = None
 ) -> typing.Dict[
     typing.Sequence[typing.Optional[str]],
-    typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]
+    typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
 ]:
     path = list(path)
     if path_depth_limit is not None and len(path) + 1 > path_depth_limit:
@@ -141,9 +141,9 @@ def _get_property_paths_for_array_schema(
         return {}
     if not schema.get('type') == 'array':
         return {}
-    if not isinstance(schema.get('items'), dict):
-        return {}
     property_schema = schema.get('items')
+    if not isinstance(property_schema, dict):
+        return {}
 
     property_paths = {}
     property_paths.update(get_property_paths_for_schema(

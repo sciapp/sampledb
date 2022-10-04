@@ -48,9 +48,10 @@ analyze:
     # set up Python 3
     - apt-get install -y git python3-pip
     # install static analysis packages
-    - python3 -m pip install pycodestyle pyflakes
+    - python3 -m pip install pycodestyle pyflakes mypy
     - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
     - python3 -m pyflakes sampledb
+    - python3 -m mypy --ignore-missing-imports --strict  sampledb/logic
 
 documentation:
   stage: test

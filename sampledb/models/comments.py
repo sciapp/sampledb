@@ -29,7 +29,15 @@ class Comment(db.Model):
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
 
-    def __init__(self, object_id: int, user_id: int, content: str, utc_datetime: typing.Optional[datetime.datetime] = None, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None):
+    def __init__(
+            self,
+            object_id: int,
+            user_id: typing.Optional[int],
+            content: str,
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None
+    ) -> None:
         self.object_id = object_id
         self.user_id = user_id
         self.content = content
@@ -39,5 +47,5 @@ class Comment(db.Model):
         self.fed_id = fed_id
         self.component_id = component_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, object_id={1.object_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, content="{1.content}")>'.format(type(self).__name__, self)

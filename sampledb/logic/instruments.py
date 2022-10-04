@@ -60,7 +60,7 @@ class Instrument(collections.namedtuple('Instrument', [
             fed_id: int,
             component_id: int,
             component: typing.Optional[components.Component]
-    ):
+    ) -> 'Instrument':
         self = super(Instrument, cls).__new__(
             cls,
             id,
@@ -106,7 +106,7 @@ class Instrument(collections.namedtuple('Instrument', [
             component=components.Component.from_database(instrument.component) if instrument.component is not None else None
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__}(id={self.id!r})>"
 
 
@@ -186,6 +186,7 @@ def get_mutable_instrument(
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
+    instrument: typing.Optional[models.Instrument]
     if component_id is None:
         instrument = models.Instrument.query.get(instrument_id)
     else:

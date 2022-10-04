@@ -57,7 +57,7 @@ class LocationType(collections.namedtuple(
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             component: typing.Optional[Component] = None
-    ):
+    ) -> 'LocationType':
         self = super(LocationType, cls).__new__(
             cls,
             id,
@@ -126,7 +126,7 @@ class Location(collections.namedtuple(
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             component: typing.Optional[Component] = None
-    ):
+    ) -> 'Location':
         self = super(Location, cls).__new__(cls, id, name, description, type_id, type, responsible_users, parent_location_id, fed_id, component_id, component)
         return self
 
@@ -181,7 +181,7 @@ class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment'
             component_id: typing.Optional[int] = None,
             declined: bool = False,
             component: typing.Optional[Component] = None
-    ):
+    ) -> 'ObjectLocationAssignment':
         self = super(ObjectLocationAssignment, cls).__new__(
             cls,
             id,
@@ -295,7 +295,8 @@ def create_location(
     db.session.add(location)
     db.session.commit()
     if component_id is None:
-        user_log.create_location(user_id, location.id)
+        if user_id is not None:
+            user_log.create_location(user_id, location.id)
     location_log.create_location(user_id, location.id)
     return Location.from_database(location)
 
@@ -412,8 +413,8 @@ def get_locations_tree() -> typing.Tuple[typing.Dict[int, Location], typing.Any]
         location.id: location
         for location in locations
     }
-    locations_tree = {}
-    locations_tree_helper = {None: locations_tree}
+    locations_tree: typing.Dict[typing.Optional[int], typing.Any] = {}
+    locations_tree_helper: typing.Dict[typing.Optional[int], typing.Any] = {None: locations_tree}
     unvisited_locations = locations
     while unvisited_locations:
         locations = unvisited_locations
@@ -528,7 +529,7 @@ def create_fed_assignment(
         user_id: typing.Optional[int],
         description: typing.Optional[typing.Dict[str, str]],
         utc_datetime: typing.Optional[datetime.datetime],
-        confirmed: typing.Optional[bool],
+        confirmed: bool = False,
         declined: bool = False
 ) -> locations.ObjectLocationAssignment:
     if description is not None:
@@ -556,7 +557,7 @@ def create_fed_assignment(
         user_id=user_id,
         description=description,
         utc_datetime=utc_datetime,
-        confirmed=confirmed,
+        confirmed=confirmed or False,
         declined=declined,
         fed_id=fed_id,
         component_id=component_id
@@ -585,7 +586,7 @@ def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocatio
 
 
 def get_fed_object_location_assignment(fed_id: int, component_id: int) -> typing.Optional[locations.ObjectLocationAssignment]:
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(fed_id=fed_id, component_id=component_id).first()
+    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(fed_id=fed_id, component_id=component_id).first()
     return object_location_assignment
 
 
@@ -600,10 +601,10 @@ def get_current_object_location_assignment(object_id: int) -> typing.Optional[Ob
     """
     # ensure the object exists
     objects.get_object(object_id)
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime.desc()).first()
-    if object_location_assignment is not None:
-        object_location_assignment = ObjectLocationAssignment.from_database(object_location_assignment)
-    return object_location_assignment
+    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime.desc()).first()
+    if object_location_assignment is None:
+        return None
+    return ObjectLocationAssignment.from_database(object_location_assignment)
 
 
 def get_object_location_assignment(object_location_assignment_id: int) -> locations.ObjectLocationAssignment:
@@ -616,7 +617,7 @@ def get_object_location_assignment(object_location_assignment_id: int) -> locati
     :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
         location assignment with the given object location assignment ID exists
     """
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
+    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
     if object_location_assignment is None:
         raise errors.ObjectLocationAssignmentDoesNotExistError()
     return object_location_assignment
@@ -636,7 +637,8 @@ def any_objects_at_location(location_id: int) -> bool:
     object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(location_id=location_id).all()
     for object_location_assignment in object_location_assignments:
         object_id = object_location_assignment.object_id
-        if get_current_object_location_assignment(object_id).location_id == location_id:
+        current_object_location_assignment = get_current_object_location_assignment(object_id)
+        if current_object_location_assignment is not None and current_object_location_assignment.location_id == location_id:
             return True
     return False
 
@@ -656,7 +658,8 @@ def get_object_ids_at_location(location_id: int) -> typing.Set[int]:
     object_ids = set()
     for object_location_assignment in object_location_assignments:
         object_id = object_location_assignment.object_id
-        if get_current_object_location_assignment(object_id).location_id == location_id:
+        current_object_location_assignment = get_current_object_location_assignment(object_id)
+        if current_object_location_assignment is not None and current_object_location_assignment.location_id == location_id:
             object_ids.add(object_id)
     return object_ids
 

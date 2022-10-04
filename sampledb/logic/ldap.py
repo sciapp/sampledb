@@ -9,7 +9,7 @@ import flask
 
 import typing
 
-from ..models import Authentication, AuthenticationType
+from ..models import Authentication, AuthenticationType, UserType
 from .. import db
 from . import errors
 from . import users
@@ -129,6 +129,6 @@ def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
         return users.create_user(
             name=name,
             email=email,
-            type=users.UserType.PERSON
+            type=UserType.PERSON
         )
     return users.get_user(authentication_methods[0].user_id)

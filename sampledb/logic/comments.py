@@ -35,13 +35,13 @@ class Comment(collections.namedtuple('Comment', [
             id: int,
             object_id: int,
             user_id: int,
-            author: users.User,
+            author: typing.Optional[users.User],
             content: str,
             utc_datetime: datetime.datetime,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             component: typing.Optional[components.Component] = None
-    ):
+    ) -> 'Comment':
         self = super(Comment, cls).__new__(
             cls,
             id,
@@ -71,7 +71,13 @@ class Comment(collections.namedtuple('Comment', [
         )
 
 
-def create_comment(object_id: int, user_id: typing.Optional[int], content: str, utc_datetime: typing.Optional[datetime.datetime] = None, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None) -> int:
+def create_comment(
+        object_id: int,
+        user_id: typing.Optional[int],
+        content: str, utc_datetime: typing.Optional[datetime.datetime] = None,
+        fed_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None
+) -> int:
     """
     Creates a new comment and adds it to the object and user logs.
 
@@ -107,9 +113,12 @@ def create_comment(object_id: int, user_id: typing.Optional[int], content: str, 
     db.session.add(comment)
     db.session.commit()
     if component_id is None:
+        # ensured by the if at the start of the function
+        assert user_id is not None
         object_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)
         user_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)
-    return comment.id
+    comment_id: int = comment.id
+    return comment_id
 
 
 def get_comment(comment_id: int, component_id: typing.Optional[int] = None) -> Comment:
@@ -136,7 +145,7 @@ def get_comment(comment_id: int, component_id: typing.Optional[int] = None) -> C
 
 def update_comment(
         comment_id: int,
-        user_id: int,
+        user_id: typing.Optional[int],
         content: str,
         utc_datetime: datetime.datetime
 ) -> None:
@@ -151,6 +160,8 @@ def update_comment(
     comment = models.Comment.query.get(comment_id)
     if comment is None:
         raise errors.CommentDoesNotExistError()
+    if comment.component_id is None and user_id is None:
+        raise ValueError('user_id must not be None for local comments.')
     comment.user_id = user_id
     comment.content = content
     comment.utc_datetime = utc_datetime

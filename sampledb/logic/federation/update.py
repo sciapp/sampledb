@@ -2,6 +2,7 @@
 """
 Logic module handling communication with other components in a SampleDB federation
 """
+import typing
 from datetime import datetime
 
 import requests
@@ -16,6 +17,7 @@ from .locations import import_location, parse_location, locations_check_for_cycl
 from .markdown_images import parse_markdown_image, import_markdown_image
 from .actions import import_action, parse_action
 from .objects import import_object, parse_object
+from ..components import Component
 from ..component_authentication import get_own_authentication
 from .. import errors
 from ...models import ComponentAuthenticationType
@@ -24,7 +26,12 @@ PROTOCOL_VERSION_MAJOR = 0
 PROTOCOL_VERSION_MINOR = 1
 
 
-def post(endpoint, component, payload=None, headers=None):
+def post(
+        endpoint: str,
+        component: Component,
+        payload: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        headers: typing.Optional[typing.Dict[str, str]] = None
+) -> None:
     if component.address is None:
         raise errors.MissingComponentAddressError()
     if headers is None:
@@ -36,7 +43,11 @@ def post(endpoint, component, payload=None, headers=None):
     requests.post(component.address.rstrip('/') + endpoint, data=payload, headers=headers)
 
 
-def get(endpoint, component, headers=None):
+def get(
+        endpoint: str,
+        component: Component,
+        headers: typing.Optional[typing.Dict[str, str]] = None
+) -> typing.Dict[str, typing.Any]:
     if component.address is None:
         raise errors.MissingComponentAddressError()
     if headers is None:
@@ -56,24 +67,30 @@ def get(endpoint, component, headers=None):
     if req.status_code in [500, 501, 502, 503, 504]:
         raise errors.RequestServerError()
     try:
-        return req.json()
+        return req.json()  # type: ignore
     except ValueError:
         raise errors.InvalidJSONError()
 
 
-def update_poke_component(component):
+def update_poke_component(
+        component: Component
+) -> None:
     post('/federation/v1/hooks/update/', component)
 
 
-def _validate_header(header, component):
+def _validate_header(
+        header: typing.Optional[typing.Dict[str, typing.Any]],
+        component: Component
+) -> None:
     if header is not None:
         if header.get('db_uuid') != component.uuid:
             raise errors.InvalidDataExportError('UUID of exporting database ({}) does not match expected UUID ({}).'.format(header.get('db_uuid'), component.uuid))
-        if header.get('protocol_version') is not None:
-            if header.get('protocol_version').get('major') is None or header.get('protocol_version').get('minor') is None:
+        protocol_version = header.get('protocol_version')
+        if protocol_version is not None:
+            if 'major' not in protocol_version or 'minor' not in protocol_version:
                 raise errors.InvalidDataExportError('Invalid protocol version \'{}\''.format(header.get('protocol_version')))
             try:
-                major, minor = int(header.get('protocol_version').get('major')), int(header.get('protocol_version').get('minor'))
+                major, minor = int(protocol_version['major']), int(protocol_version['minor'])
                 if major > PROTOCOL_VERSION_MAJOR or (major <= PROTOCOL_VERSION_MAJOR and minor > PROTOCOL_VERSION_MINOR):
                     raise errors.InvalidDataExportError('Unsupported protocol version {}'.format(header.get('protocol_version')))
             except ValueError:
@@ -82,10 +99,13 @@ def _validate_header(header, component):
             raise errors.InvalidDataExportError('Missing protocol_version.')
 
 
-def import_updates(component):
+def import_updates(
+        component: Component
+) -> None:
     if flask.current_app.config['FEDERATION_UUID'] is None:
         raise errors.ComponentNotConfiguredForFederationError()
     timestamp = datetime.utcnow()
+    users = None
     try:
         users = get('/federation/v1/shares/users/', component)
     except errors.InvalidJSONError:
@@ -94,16 +114,21 @@ def import_updates(component):
         pass
     except errors.UnauthorizedRequestError:
         pass
+    if users:
+        update_users(component, users)
     try:
         updates = get('/federation/v1/shares/objects/', component)
     except errors.InvalidJSONError:
         raise errors.InvalidDataExportError('Received an invalid JSON string.')
-    update_users(component, users)
-    update_shares(component, updates)
+    if updates:
+        update_shares(component, updates)
     component.update_last_sync_timestamp(timestamp)
 
 
-def update_users(component, updates):
+def update_users(
+        component: Component,
+        updates: typing.Dict[str, typing.Any]
+) -> None:
     _get_dict(updates, mandatory=True)
     _validate_header(updates.get('header'), component)
 
@@ -115,7 +140,10 @@ def update_users(component, updates):
         import_user(user_data, component)
 
 
-def update_shares(component, updates):
+def update_shares(
+        component: Component,
+        updates: typing.Dict[str, typing.Any]
+) -> None:
     # parse and validate
     _get_dict(updates, mandatory=True)
     _validate_header(updates.get('header'), component)

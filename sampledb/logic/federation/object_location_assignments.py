@@ -1,23 +1,48 @@
+from datetime import datetime
+import typing
+
 import flask
 
 from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_bool, _get_utc_datetime, _get_translation, _get_dict
-from .users import _parse_user_ref, _get_or_create_user_id
-from .locations import _get_or_create_location_id, _parse_location_ref
-from ..locations import create_fed_assignment, get_fed_object_location_assignment
+from .users import _parse_user_ref, _get_or_create_user_id, UserRef
+from .locations import _get_or_create_location_id, _parse_location_ref, LocationRef
+from ..locations import create_fed_assignment, get_fed_object_location_assignment, ObjectLocationAssignment, get_object_location_assignment
+from ..components import Component
 from .. import errors, fed_logs
+from ...models import Object
 from ... import db
 
 
-def import_object_location_assignment(assignment_data, object, component):
+class ObjectLocationAssignmentData(typing.TypedDict):
+    fed_id: int
+    component_uuid: str
+    location: typing.Optional[LocationRef]
+    responsible_user: typing.Optional[UserRef]
+    user: UserRef
+    description: typing.Optional[typing.Dict[str, str]]
+    utc_datetime: datetime
+    confirmed: bool
+    declined: bool
+
+
+def import_object_location_assignment(
+        assignment_data: ObjectLocationAssignmentData,
+        object: Object,
+        component: Component
+) -> ObjectLocationAssignment:
     component_id = _get_or_create_component_id(assignment_data['component_uuid'])
-    assignment = get_fed_object_location_assignment(assignment_data['fed_id'], component_id)
+    if component_id is not None:
+        assignment = get_fed_object_location_assignment(assignment_data['fed_id'], component_id)
+    else:
+        assignment = get_object_location_assignment(assignment_data['fed_id'])
 
     user_id = _get_or_create_user_id(assignment_data['user'])
     responsible_user_id = _get_or_create_user_id(assignment_data['responsible_user'])
     location_id = _get_or_create_location_id(assignment_data['location'])
 
     if assignment is None:
+        assert component_id is not None
         assignment = create_fed_assignment(assignment_data['fed_id'], component_id, object.object_id, location_id, responsible_user_id, user_id, assignment_data['description'], assignment_data['utc_datetime'], assignment_data['confirmed'], assignment_data.get('declined', False))
         fed_logs.import_object_location_assignment(assignment.id, component.id)
     elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.utc_datetime != assignment_data['utc_datetime']:
@@ -34,7 +59,9 @@ def import_object_location_assignment(assignment_data, object, component):
     return assignment
 
 
-def parse_object_location_assignment(assignment_data):
+def parse_object_location_assignment(
+        assignment_data: typing.Dict[str, typing.Any]
+) -> ObjectLocationAssignmentData:
     uuid = _get_uuid(assignment_data.get('component_uuid'))
     fed_id = _get_id(assignment_data.get('id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
@@ -47,17 +74,22 @@ def parse_object_location_assignment(assignment_data):
     if responsible_user_data is None and location_data is None and description is None:
         raise errors.InvalidDataExportError('Empty object location assignment {} @ {}'.format(fed_id, uuid))
 
-    return {
-        'fed_id': fed_id,
-        'component_uuid': uuid,
-        'location': _parse_location_ref(location_data),
-        'responsible_user': _parse_user_ref(responsible_user_data),
-        'user': _parse_user_ref(_get_dict(assignment_data.get('user'))),
-        'description': description,
-        'utc_datetime': _get_utc_datetime(assignment_data.get('utc_datetime'), mandatory=True),
-        'confirmed': _get_bool(assignment_data.get('confirmed'), default=False)
-    }
+    return ObjectLocationAssignmentData(
+        fed_id=fed_id,
+        component_uuid=uuid,
+        location=_parse_location_ref(location_data),
+        responsible_user=_parse_user_ref(responsible_user_data),
+        user=_parse_user_ref(_get_dict(assignment_data.get('user'), mandatory=True)),
+        description=description,
+        utc_datetime=_get_utc_datetime(assignment_data.get('utc_datetime'), mandatory=True),
+        confirmed=_get_bool(assignment_data.get('confirmed'), default=False),
+        declined=_get_bool(assignment_data.get('declined'), default=False)
+    )
 
 
-def parse_import_object_location_assignment(assignment_data, object, component):
+def parse_import_object_location_assignment(
+        assignment_data: typing.Dict[str, typing.Any],
+        object: Object,
+        component: Component
+) -> ObjectLocationAssignment:
     return import_object_location_assignment(parse_object_location_assignment(assignment_data), object, component)

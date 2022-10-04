@@ -1,13 +1,14 @@
 import base64
+import typing
 
 import flask
 
 from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict
-from .action_types import _parse_action_type_ref, _get_or_create_action_type_id
-from .instruments import _parse_instrument_ref, _get_or_create_instrument_id
-from .users import _parse_user_ref, _get_or_create_user_id
-from ..actions import get_action, get_mutable_action, create_action
+from .action_types import _parse_action_type_ref, _get_or_create_action_type_id, ActionTypeRef
+from .instruments import _parse_instrument_ref, _get_or_create_instrument_id, InstrumentRef
+from .users import _parse_user_ref, _get_or_create_user_id, UserRef
+from ..actions import get_action, get_mutable_action, create_action, Action
 from ..action_translations import set_action_translation, get_action_translations_for_action
 from ..languages import get_languages, get_language, get_language_by_lang_code
 from ..instruments import get_instrument
@@ -19,7 +20,57 @@ from .. import errors, fed_logs, markdown_to_html
 from ... import db
 
 
-def parse_action(action_data):
+class ActionRef(typing.TypedDict):
+    action_id: int
+    component_uuid: str
+
+
+class ActionTranslationData(typing.TypedDict):
+    language_id: int
+    name: str
+    description: str
+    short_description: str
+
+
+class ActionData(typing.TypedDict):
+    fed_id: int
+    component_uuid: str
+    action_type: ActionTypeRef
+    schema: typing.Dict[str, typing.Any]
+    instrument: typing.Optional[InstrumentRef]
+    user: typing.Optional[UserRef]
+    description_is_markdown: bool
+    short_description_is_markdown: bool
+    is_hidden: bool
+    translations: typing.List[ActionTranslationData]
+    admin_only: bool
+    disable_create_objects: bool
+
+
+class SharedActionTranslationData(typing.TypedDict):
+    name: str
+    description: str
+    short_description: str
+
+
+class SharedActionData(typing.TypedDict):
+    action_id: int
+    component_uuid: str
+    action_type: ActionTypeRef
+    schema: typing.Dict[str, typing.Any]
+    instrument: typing.Optional[InstrumentRef]
+    user: typing.Optional[UserRef]
+    description_is_markdown: bool
+    short_description_is_markdown: bool
+    is_hidden: bool
+    translations: typing.Optional[typing.Dict[str, SharedActionTranslationData]]
+    admin_only: bool
+    disable_create_objects: bool
+
+
+def parse_action(
+        action_data: typing.Dict[str, typing.Any]
+) -> ActionData:
     schema = _get_dict(action_data.get('schema'))
     _parse_schema(schema)
     fed_id = _get_id(action_data.get('action_id'))
@@ -33,24 +84,20 @@ def parse_action(action_data):
         except errors.ValidationError as e:
             raise errors.InvalidDataExportError('Invalid schema in action #{} @ {} ({})'.format(fed_id, uuid, e))
 
-    result = {
-        'fed_id': fed_id,
-        'component_uuid': uuid,
-        'action_type': _parse_action_type_ref(_get_dict(action_data.get('action_type'), mandatory=True)),
-        'schema': schema,
-        'instrument': _parse_instrument_ref(_get_dict(action_data.get('instrument'))),
-        'user': _parse_user_ref(_get_dict(action_data.get('user'))),
-        'description_is_markdown': _get_bool(action_data.get('description_is_markdown'), default=False),
-        'is_hidden': _get_bool(action_data.get('is_hidden'), default=False),
-        'short_description_is_markdown': _get_bool(action_data.get('short_description_is_markdown'), default=False),
-        'translations': []
-    }
-    admin_only = _get_bool(action_data.get('admin_only'))
-    if admin_only is not None:
-        result['admin_only'] = admin_only
-    disable_create_objects = _get_bool(action_data.get('disable_create_objects'))
-    if disable_create_objects is not None:
-        result['disable_create_objects'] = disable_create_objects
+    result = ActionData(
+        fed_id=fed_id,
+        component_uuid=uuid,
+        action_type=_parse_action_type_ref(_get_dict(action_data.get('action_type'), mandatory=True)),
+        schema=schema,
+        instrument=_parse_instrument_ref(_get_dict(action_data.get('instrument'))),
+        user=_parse_user_ref(_get_dict(action_data.get('user'))),
+        description_is_markdown=_get_bool(action_data.get('description_is_markdown'), default=False),
+        is_hidden=_get_bool(action_data.get('is_hidden'), default=False),
+        short_description_is_markdown=_get_bool(action_data.get('short_description_is_markdown'), default=False),
+        translations=[],
+        admin_only=_get_bool(action_data.get('admin_only'), default=False),
+        disable_create_objects=_get_bool(action_data.get('disable_create_objects'), default=False)
+    )
 
     allowed_language_ids = [language.id for language in get_languages(only_enabled_for_input=False)]
 
@@ -65,19 +112,27 @@ def parse_action(action_data):
             if language_id not in allowed_language_ids:
                 continue
 
-            result['translations'].append({
-                'language_id': language_id,
-                'name': _get_str(translation.get('name')),
-                'description': _get_str(translation.get('description')),
-                'short_description': _get_str(translation.get('short_description'))
-            })
+            result['translations'].append(ActionTranslationData(
+                language_id=language_id,
+                name=_get_str(translation.get('name'), default=''),
+                description=_get_str(translation.get('description'), default=''),
+                short_description=_get_str(translation.get('short_description'), default='')
+            ))
     return result
 
 
-def import_action(action_data, component):
-    def _import_schema(schema, path=[]):
+def import_action(
+        action_data: ActionData,
+        component: Component
+) -> Action:
+    def _import_schema(
+            schema: typing.Dict[str, typing.Any],
+            path: typing.Optional[typing.List[str]] = None
+    ) -> typing.Optional[typing.Dict[str, typing.Any]]:
         if schema is None:
             return None
+        if path is None:
+            path = []
         if schema.get('type') == 'array' and 'items' in schema:
             _import_schema(schema['items'], path + ['[?]'])
         if schema.get('type') == 'object':
@@ -103,21 +158,22 @@ def import_action(action_data, component):
     schema = _import_schema(action_data['schema'])
 
     try:
-        action = get_mutable_action(action_data['fed_id'], component_id)
-        if action.type_id != action_type_id or action.schema != action_data['schema'] or action.instrument_id != instrument_id or action.user_id != user_id or action.description_is_markdown != action_data['description_is_markdown'] or action.is_hidden != action_data['is_hidden'] or action.short_description_is_markdown != action_data['short_description_is_markdown'] or ('admin_only' in action_data and action.admin_only != action_data['admin_only']) or ('disable_create_objects' in action_data and action.disable_create_objects != action_data['disable_create_objects']):
-            action.action_type_id = action_type_id
-            action.schema = schema
-            action.instrument_id = instrument_id
-            action.user_id = user_id
-            action.description_is_markdown = action_data['description_is_markdown']
-            action.is_hidden = action_data['is_hidden']
-            action.short_description_is_markdown = action_data['short_description_is_markdown']
+        mutable_action = get_mutable_action(action_data['fed_id'], component_id)
+        if mutable_action.type_id != action_type_id or mutable_action.schema != action_data['schema'] or mutable_action.instrument_id != instrument_id or mutable_action.user_id != user_id or mutable_action.description_is_markdown != action_data['description_is_markdown'] or mutable_action.is_hidden != action_data['is_hidden'] or mutable_action.short_description_is_markdown != action_data['short_description_is_markdown'] or ('admin_only' in action_data and mutable_action.admin_only != action_data['admin_only']) or ('disable_create_objects' in action_data and mutable_action.disable_create_objects != action_data['disable_create_objects']):
+            mutable_action.action_type_id = action_type_id
+            mutable_action.schema = schema
+            mutable_action.instrument_id = instrument_id
+            mutable_action.user_id = user_id
+            mutable_action.description_is_markdown = action_data['description_is_markdown']
+            mutable_action.is_hidden = action_data['is_hidden']
+            mutable_action.short_description_is_markdown = action_data['short_description_is_markdown']
             if 'admin_only' in action_data:
-                action.admin_only = action_data['admin_only']
+                mutable_action.admin_only = action_data['admin_only']
             if 'disable_create_objects' in action_data:
-                action.disable_create_objects = action_data['disable_create_objects']
+                mutable_action.disable_create_objects = action_data['disable_create_objects']
             db.session.commit()
-            fed_logs.update_action(action.id, component.id)
+            fed_logs.update_action(mutable_action.id, component.id)
+        action = Action.from_database(mutable_action)
     except errors.ActionDoesNotExistError:
         action = create_action(
             fed_id=action_data['fed_id'],
@@ -145,31 +201,49 @@ def import_action(action_data, component):
     return action
 
 
-def parse_import_action(action_data, component):
+def parse_import_action(
+        action_data: typing.Dict[str, typing.Any],
+        component: Component
+) -> Action:
     return import_action(parse_action(action_data), component)
 
 
-def _parse_action_ref(action_data):
+def _parse_action_ref(
+        action_data: typing.Optional[typing.Union[ActionRef, typing.Dict[str, typing.Any]]]
+) -> typing.Optional[ActionRef]:
     if action_data is None:
         return None
     action_id = _get_id(action_data.get('action_id'))
     component_uuid = _get_uuid(action_data.get('component_uuid'))
-    return {'action_id': action_id, 'component_uuid': component_uuid}
+    return ActionRef(
+        action_id=action_id,
+        component_uuid=component_uuid
+    )
 
 
-def _get_or_create_action_id(action_data):
+def _get_or_create_action_id(
+        action_data: typing.Optional[ActionRef]
+) -> typing.Optional[int]:
     if action_data is None:
         return None
     component_id = _get_or_create_component_id(action_data['component_uuid'])
     try:
         action = get_action(action_data['action_id'], component_id)
     except errors.ActionDoesNotExistError:
+        assert component_id is not None
         action = create_action(action_type_id=None, schema=None, fed_id=action_data['action_id'], component_id=component_id)
         fed_logs.create_ref_action(action.id, component_id)
-    return action.id
+    # TODO: type hint Action wrapper
+    action_id: int = action.id
+    return action_id
 
 
-def shared_action_preprocessor(action_id: int, _component: Component, refs: list, markdown_images: dict):
+def shared_action_preprocessor(
+        action_id: int,
+        _component: Component,
+        refs: typing.List[typing.Tuple[str, int]],
+        markdown_images: typing.Dict[str, str]
+) -> typing.Optional[SharedActionData]:
     action = get_action(action_id)
     if action.component_id is not None:
         return None
@@ -195,13 +269,13 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
                     markdown_images[file_name] = base64.b64encode(markdown_image_b).decode('utf-8')
 
             lang_code = get_language(translation.language_id).lang_code
-            translations_data[lang_code] = {
-                'name': translation.name,
-                'description': description,
-                'short_description': short_description
-            }
+            translations_data[lang_code] = SharedActionTranslationData(
+                name=translation.name,
+                description=description,
+                short_description=short_description
+            )
     except errors.ActionTranslationDoesNotExistError:
-        translations_data = None
+        translations_data = {}
 
     if action.instrument_id is not None and ('instruments', action.instrument_id) not in refs:
         refs.append(('instruments', action.instrument_id))
@@ -212,27 +286,27 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
     else:
         i = get_instrument(action.instrument_id)
         if i.component_id is None:
-            instrument = {
-                'instrument_id': i.id,
-                'component_uuid': flask.current_app.config['FEDERATION_UUID']
-            }
+            instrument = InstrumentRef(
+                instrument_id=i.id,
+                component_uuid=flask.current_app.config['FEDERATION_UUID']
+            )
         else:
             comp = i.component
-            instrument = {
-                'instrument_id': i.fed_id,
-                'component_uuid': comp.uuid
-            }
+            instrument = InstrumentRef(
+                instrument_id=i.fed_id,
+                component_uuid=comp.uuid
+            )
     if action.type.component_id is None:
-        action_type = {
-            'action_type_id': action.type.id,
-            'component_uuid': flask.current_app.config['FEDERATION_UUID']
-        }
+        action_type = ActionTypeRef(
+            action_type_id=action.type.id,
+            component_uuid=flask.current_app.config['FEDERATION_UUID']
+        )
     else:
         comp = get_component(action.type.component_id)
-        action_type = {
-            'action_type_id': action.type.fed_id,
-            'component_uuid': comp.uuid
-        }
+        action_type = ActionTypeRef(
+            action_type_id=action.type.fed_id,
+            component_uuid=comp.uuid
+        )
     if ('action_types', action.type_id) not in refs:
         refs.append(('action_types', action.type_id))
     if action.user_id is None:
@@ -240,37 +314,42 @@ def shared_action_preprocessor(action_id: int, _component: Component, refs: list
     else:
         u = get_user(action.user_id)
         if u.component_id is None:
-            user = {
-                'user_id': u.id,
-                'component_uuid': flask.current_app.config['FEDERATION_UUID']
-            }
+            user = UserRef(
+                user_id=u.id,
+                component_uuid=flask.current_app.config['FEDERATION_UUID']
+            )
         else:
             comp = u.component
-            user = {
-                'user_id': u.fed_id,
-                'component_uuid': comp.uuid
-            }
+            user = UserRef(
+                user_id=u.fed_id,
+                component_uuid=comp.uuid
+            )
     schema = action.schema.copy()
     schema_entry_preprocessor(schema, refs)
-    return {
-        'action_id': action.id if action.fed_id is None else action.fed_id,
-        'component_uuid': flask.current_app.config['FEDERATION_UUID'] if action.component_id is None else action.component.uuid,
-        'action_type': action_type,
-        'instrument': instrument,
-        'schema': schema,
-        'user': user,
-        'description_is_markdown': action.description_is_markdown,
-        'is_hidden': action.is_hidden,
-        'short_description_is_markdown': action.short_description_is_markdown,
-        'translations': translations_data,
-        'admin_only': action.admin_only,
-        'disable_create_objects': action.disable_create_objects,
-    }
+    return SharedActionData(
+        action_id=action.id if action.fed_id is None else action.fed_id,
+        component_uuid=flask.current_app.config['FEDERATION_UUID'] if action.component_id is None else action.component.uuid,
+        action_type=action_type,
+        instrument=instrument,
+        schema=schema,
+        user=user,
+        description_is_markdown=action.description_is_markdown,
+        is_hidden=action.is_hidden,
+        short_description_is_markdown=action.short_description_is_markdown,
+        translations=translations_data if translations_data else None,
+        admin_only=action.admin_only,
+        disable_create_objects=action.disable_create_objects,
+    )
 
 
-def _parse_schema(schema, path=[]):
+def _parse_schema(
+        schema: typing.Dict[str, typing.Any],
+        path: typing.Optional[typing.List[str]] = None
+) -> None:
     if schema is None:
         return
+    if path is None:
+        path = []
     all_language_codes = {
         language.lang_code
         for language in get_languages()
@@ -306,7 +385,10 @@ def _parse_schema(schema, path=[]):
                     property_schema['template'] = template_action
 
 
-def schema_entry_preprocessor(schema, refs):
+def schema_entry_preprocessor(
+        schema: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
+        refs: typing.List[typing.Tuple[str, int]]
+) -> None:
     if type(schema) == list:
         for entry in schema:
             schema_entry_preprocessor(entry, refs)
@@ -315,20 +397,23 @@ def schema_entry_preprocessor(schema, refs):
             for key in schema:
                 schema_entry_preprocessor(schema[key], refs)
         if schema.get('type') == 'object':
-            if schema.get('template'):
-                if ('actions', schema.get('template')) not in refs:
-                    refs.append(('actions', schema.get('template')))
-                action = get_action(schema.get('template'))
+            template_action_id = schema.get('template')
+            if type(template_action_id) is int:
+                if ('actions', template_action_id) not in refs:
+                    refs.append(('actions', template_action_id))
+                action = get_action(template_action_id)
                 if action.component_id is not None:
                     comp = action.component
-                    schema['template'] = {
-                        'action_id': action.fed_id,
-                        'component_uuid': comp.uuid
-                    }
+                    schema['template'] = ActionRef(
+                        action_id=action.fed_id,
+                        component_uuid=comp.uuid
+                    )
                 else:
-                    schema['template'] = {
-                        'action_id': action.id,
-                        'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                    }
-            for property in schema.get('properties'):
-                schema_entry_preprocessor(schema['properties'][property], refs)
+                    schema['template'] = ActionRef(
+                        action_id=action.id,
+                        component_uuid=flask.current_app.config['FEDERATION_UUID']
+                    )
+            schema_properties = schema.get('properties')
+            if type(schema_properties) is list:
+                for property in schema_properties:
+                    schema_entry_preprocessor(schema['properties'][property], refs)

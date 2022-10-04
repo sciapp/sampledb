@@ -7,7 +7,54 @@ from uuid import UUID
 from .. import errors
 
 
-def _get_id(id, min=1, special_values: typing.Optional[typing.List[int]] = None, convert=True, default=None, mandatory=True) -> typing.Optional[int]:
+@typing.overload
+def _get_id(
+        id: typing.Any,
+        *,
+        min: int = 1,
+        special_values: typing.Optional[typing.List[int]] = None,
+        convert: bool = True,
+        default: int,
+        mandatory: bool = True,
+) -> int:
+    ...
+
+
+@typing.overload
+def _get_id(
+        id: typing.Any,
+        *,
+        min: int = 1,
+        special_values: typing.Optional[typing.List[int]] = None,
+        convert: bool = True,
+        default: typing.Optional[int] = None,
+        mandatory: typing.Literal[True] = True
+) -> int:
+    ...
+
+
+@typing.overload
+def _get_id(
+        id: typing.Any,
+        *,
+        min: int = 1,
+        special_values: typing.Optional[typing.List[int]] = None,
+        convert: bool = True,
+        default: typing.Optional[int] = None,
+        mandatory: bool = True
+) -> typing.Optional[int]:
+    ...
+
+
+def _get_id(
+        id: typing.Any,
+        *,
+        min: int = 1,
+        special_values: typing.Optional[typing.List[int]] = None,
+        convert: bool = True,
+        default: typing.Optional[int] = None,
+        mandatory: bool = True
+) -> typing.Optional[int]:
     if id is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing ID')
@@ -16,6 +63,8 @@ def _get_id(id, min=1, special_values: typing.Optional[typing.List[int]] = None,
         if convert:
             try:
                 id = int(id)
+                # mypy type narrowing
+                assert type(id) is int
             except ValueError:
                 raise errors.InvalidDataExportError('ID "{}" could not be converted to an integer'.format(id))
         else:
@@ -27,7 +76,42 @@ def _get_id(id, min=1, special_values: typing.Optional[typing.List[int]] = None,
     return id
 
 
-def _get_uuid(uuid, default=None, mandatory=True) -> typing.Optional[str]:
+@typing.overload
+def _get_uuid(
+        uuid: typing.Any,
+        *,
+        default: str,
+        mandatory: bool = True
+) -> str:
+    ...
+
+
+@typing.overload
+def _get_uuid(
+        uuid: typing.Any,
+        *,
+        default: typing.Optional[str] = None,
+        mandatory: typing.Literal[True] = True
+) -> str:
+    ...
+
+
+@typing.overload
+def _get_uuid(
+        uuid: typing.Any,
+        *,
+        default: typing.Optional[str] = None,
+        mandatory: bool = True
+) -> typing.Optional[str]:
+    ...
+
+
+def _get_uuid(
+        uuid: typing.Any,
+        *,
+        default: typing.Optional[str] = None,
+        mandatory: bool = True
+) -> typing.Optional[str]:
     if uuid is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing UUID')
@@ -43,7 +127,42 @@ def _get_uuid(uuid, default=None, mandatory=True) -> typing.Optional[str]:
         raise errors.InvalidDataExportError('Invalid UUID "{}"'.format(uuid))
 
 
-def _get_bool(bool_in, default=None, mandatory=False) -> typing.Optional[bool]:
+@typing.overload
+def _get_bool(
+        bool_in: typing.Any,
+        *,
+        default: bool,
+        mandatory: bool = False
+) -> bool:
+    ...
+
+
+@typing.overload
+def _get_bool(
+        bool_in: typing.Any,
+        *,
+        default: typing.Optional[bool] = None,
+        mandatory: typing.Literal[True]
+) -> bool:
+    ...
+
+
+@typing.overload
+def _get_bool(
+        bool_in: typing.Any,
+        *,
+        default: typing.Optional[bool] = None,
+        mandatory: bool = False
+) -> typing.Optional[bool]:
+    ...
+
+
+def _get_bool(
+        bool_in: typing.Any,
+        *,
+        default: typing.Optional[bool] = None,
+        mandatory: bool = False
+) -> typing.Optional[bool]:
     if bool_in is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing boolean')
@@ -53,7 +172,12 @@ def _get_bool(bool_in, default=None, mandatory=False) -> typing.Optional[bool]:
     return bool_in
 
 
-def _get_translation(translation, default=None, mandatory=False):
+def _get_translation(
+        translation: typing.Any,
+        *,
+        default: typing.Optional[typing.Dict[str, str]] = None,
+        mandatory: bool = False
+) -> typing.Optional[typing.Dict[str, str]]:
     if translation is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing text')
@@ -68,7 +192,42 @@ def _get_translation(translation, default=None, mandatory=False):
     return {'en': translation}
 
 
-def _get_dict(dict_in, default=None, mandatory=False) -> typing.Optional[dict]:
+@typing.overload
+def _get_dict(
+        dict_in: typing.Any,
+        *,
+        default: typing.Dict[typing.Any, typing.Any],
+        mandatory: bool = False
+) -> typing.Dict[typing.Any, typing.Any]:
+    ...
+
+
+@typing.overload
+def _get_dict(
+        dict_in: typing.Any,
+        *,
+        default: None = None,
+        mandatory: typing.Literal[True] = True
+) -> typing.Dict[typing.Any, typing.Any]:
+    ...
+
+
+@typing.overload
+def _get_dict(
+        dict_in: typing.Any,
+        *,
+        default: None = None,
+        mandatory: bool = False
+) -> typing.Optional[typing.Dict[typing.Any, typing.Any]]:
+    ...
+
+
+def _get_dict(
+        dict_in: typing.Any,
+        *,
+        default: typing.Optional[typing.Dict[typing.Any, typing.Any]] = None,
+        mandatory: bool = False
+) -> typing.Optional[typing.Dict[typing.Any, typing.Any]]:
     if dict_in is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing dict')
@@ -78,10 +237,14 @@ def _get_dict(dict_in, default=None, mandatory=False) -> typing.Optional[dict]:
     return dict_in
 
 
-def _get_permissions(permissions, default=None):
-    if permissions is None:
+def _get_permissions(
+        permissions_in: typing.Any,
+        *,
+        default: typing.Optional[typing.Dict[str, typing.Union[str, typing.Dict[int, str]]]] = None
+) -> typing.Optional[typing.Dict[str, typing.Union[str, typing.Dict[int, str]]]]:
+    if permissions_in is None:
         return default
-    _get_dict(permissions)
+    permissions = _get_dict(permissions_in, mandatory=True)
     users = _get_dict(permissions.get('users'), default={})
     groups = _get_dict(permissions.get('groups'), default={})
     projects = _get_dict(permissions.get('projects'), default={})
@@ -98,7 +261,42 @@ def _get_permissions(permissions, default=None):
     return permissions
 
 
-def _get_list(list_in, default=None, mandatory=False) -> typing.Optional[list]:
+@typing.overload
+def _get_list(
+        list_in: typing.Any,
+        *,
+        default: typing.List[typing.Any],
+        mandatory: bool = False
+) -> typing.List[typing.Any]:
+    ...
+
+
+@typing.overload
+def _get_list(
+        list_in: typing.Any,
+        *,
+        default: typing.Optional[typing.List[typing.Any]] = None,
+        mandatory: typing.Literal[True]
+) -> typing.List[typing.Any]:
+    ...
+
+
+@typing.overload
+def _get_list(
+        list_in: typing.Any,
+        *,
+        default: typing.Optional[typing.List[typing.Any]] = None,
+        mandatory: bool = False
+) -> typing.Optional[typing.List[typing.Any]]:
+    ...
+
+
+def _get_list(
+        list_in: typing.Any,
+        *,
+        default: typing.Optional[typing.List[typing.Any]] = None,
+        mandatory: bool = False
+) -> typing.Optional[typing.List[typing.Any]]:
     if list_in is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing list')
@@ -108,7 +306,50 @@ def _get_list(list_in, default=None, mandatory=False) -> typing.Optional[list]:
     return list_in
 
 
-def _get_str(str_in, default=None, mandatory=False, allow_empty=True, convert=False) -> typing.Optional[str]:
+@typing.overload
+def _get_str(
+        str_in: typing.Any,
+        *,
+        default: str,
+        mandatory: bool = False,
+        allow_empty: bool = True,
+        convert: bool = False
+) -> str:
+    ...
+
+
+@typing.overload
+def _get_str(
+        str_in: typing.Any,
+        *,
+        default: typing.Optional[str] = None,
+        mandatory: typing.Literal[True],
+        allow_empty: bool = True,
+        convert: bool = False
+) -> str:
+    ...
+
+
+@typing.overload
+def _get_str(
+        str_in: typing.Any,
+        *,
+        default: typing.Optional[str] = None,
+        mandatory: bool = False,
+        allow_empty: bool = True,
+        convert: bool = False
+) -> typing.Optional[str]:
+    ...
+
+
+def _get_str(
+        str_in: typing.Any,
+        *,
+        default: typing.Optional[str] = None,
+        mandatory: bool = False,
+        allow_empty: bool = True,
+        convert: bool = False
+) -> typing.Optional[str]:
     if str_in is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing string')
@@ -118,6 +359,8 @@ def _get_str(str_in, default=None, mandatory=False, allow_empty=True, convert=Fa
             raise errors.InvalidDataExportError('"{}" is not a string'.format(str_in))
         try:
             str_in = str(str_in)
+            # mypy type narrowing
+            assert type(str_in) is str
         except ValueError:
             raise errors.InvalidDataExportError('Cannot convert "{}" to string'.format(str_in))
     if not allow_empty and str_in == '':
@@ -125,7 +368,42 @@ def _get_str(str_in, default=None, mandatory=False, allow_empty=True, convert=Fa
     return str_in
 
 
-def _get_utc_datetime(utc_datetime_str, default=None, mandatory=False) -> typing.Optional[datetime]:
+@typing.overload
+def _get_utc_datetime(
+        utc_datetime_str: typing.Any,
+        *,
+        default: datetime,
+        mandatory: bool = False
+) -> datetime:
+    ...
+
+
+@typing.overload
+def _get_utc_datetime(
+        utc_datetime_str: typing.Any,
+        *,
+        default: typing.Optional[datetime] = None,
+        mandatory: typing.Literal[True]
+) -> datetime:
+    ...
+
+
+@typing.overload
+def _get_utc_datetime(
+        utc_datetime_str: typing.Any,
+        *,
+        default: typing.Optional[datetime] = None,
+        mandatory: bool = False
+) -> typing.Optional[datetime]:
+    ...
+
+
+def _get_utc_datetime(
+        utc_datetime_str: typing.Any,
+        *,
+        default: typing.Optional[datetime] = None,
+        mandatory: bool = False
+) -> typing.Optional[datetime]:
     if utc_datetime_str is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing timestamp')

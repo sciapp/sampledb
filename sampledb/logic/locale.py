@@ -1,3 +1,5 @@
+import typing
+
 import flask
 
 from . import languages
@@ -29,7 +31,7 @@ def guess_request_locale() -> str:
         return DEFAULT_LOCALE
 
 
-def get_allowed_language_codes():
+def get_allowed_language_codes() -> typing.List[str]:
     supported_language_codes = list(SUPPORTED_LOCALES.keys())
     language_codes_allowed = {
         language.lang_code: language.enabled_for_user_interface

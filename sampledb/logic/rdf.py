@@ -9,7 +9,8 @@ import flask
 import jinja2
 
 from . import objects, object_log, users
-from ..frontend.utils import get_translated_text
+from .utils import get_translated_text
+from ..models import ObjectLogEntryType
 
 RDF_TEMPLATE = jinja2.Template("""<?xml version="1.0"?>
 <rdf:RDF
@@ -60,7 +61,7 @@ xmlns:foaf="http://xmlns.com/foaf/0.1/"
 """)
 
 
-def generate_rdf(user_id: int, object_id: int, version_id: typing.Optional[int] = None) -> str:
+def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typing.Optional[int] = None) -> str:
     """
     Generate an XML file for an object.
 
@@ -91,24 +92,24 @@ def generate_rdf(user_id: int, object_id: int, version_id: typing.Optional[int] 
         if entry.utc_datetime > modification_datetime:
             modification_datetime = entry.utc_datetime
         if entry.type in {
-            object_log.ObjectLogEntryType.CREATE_BATCH,
-            object_log.ObjectLogEntryType.CREATE_OBJECT,
-            object_log.ObjectLogEntryType.EDIT_OBJECT,
-            object_log.ObjectLogEntryType.RESTORE_OBJECT_VERSION,
+            ObjectLogEntryType.CREATE_BATCH,
+            ObjectLogEntryType.CREATE_OBJECT,
+            ObjectLogEntryType.EDIT_OBJECT,
+            ObjectLogEntryType.RESTORE_OBJECT_VERSION,
         }:
             if entry.user_id not in creator_ids:
                 creator_ids.append(entry.user_id)
             if entry.type in {
-                object_log.ObjectLogEntryType.CREATE_OBJECT,
-                object_log.ObjectLogEntryType.CREATE_BATCH
+                ObjectLogEntryType.CREATE_OBJECT,
+                ObjectLogEntryType.CREATE_BATCH
             }:
                 creation_datetime = entry.utc_datetime
                 if version_id == 0:
                     break
 
             if entry.type in {
-                object_log.ObjectLogEntryType.EDIT_OBJECT,
-                object_log.ObjectLogEntryType.RESTORE_OBJECT_VERSION,
+                ObjectLogEntryType.EDIT_OBJECT,
+                ObjectLogEntryType.RESTORE_OBJECT_VERSION,
             } and entry.data['version_id'] == version_id:
                 break
         else:

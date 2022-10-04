@@ -24,7 +24,15 @@ class Component(collections.namedtuple('FederationComponent', ['id', 'address', 
     This class provides an immutable wrapper around models.federation.FederationComponent.
     """
 
-    def __new__(cls, id: int, uuid: str, name: typing.Optional[str], address: typing.Optional[str], description: typing.Optional[str], last_sync_timestamp: typing.Optional[datetime.datetime]):
+    def __new__(
+            cls,
+            id: int,
+            uuid: str,
+            name: typing.Optional[str],
+            address: typing.Optional[str],
+            description: typing.Optional[str],
+            last_sync_timestamp: typing.Optional[datetime.datetime]
+    ) -> 'Component':
         self = super(Component, cls).__new__(cls, id, address, uuid, name, description, last_sync_timestamp)
         return self
 
@@ -32,23 +40,30 @@ class Component(collections.namedtuple('FederationComponent', ['id', 'address', 
     def from_database(cls, component: components.Component) -> 'Component':
         return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp)
 
-    def get_name(self):
+    def get_name(self) -> str:
         if self.name is None:
             if self.address is not None:
                 regex = re.compile(r"https?://(www\.)?")    # should usually be https
                 return regex.sub('', self.address).strip().strip('/')
-            return _('Database #%(id)s', id=self.id)
+            return _('Database #%(id)s', id=self.id)  # type: ignore
         else:
-            return self.name
+            return self.name  # type: ignore
 
-    def update_last_sync_timestamp(self, last_sync_timestamp: datetime.datetime):
+    def update_last_sync_timestamp(
+            self,
+            last_sync_timestamp: datetime.datetime
+    ) -> None:
         component = components.Component.query.get(self.id)
         component.last_sync_timestamp = last_sync_timestamp
         db.session.add(component)
         db.session.commit()
 
 
-def validate_address(address, max_length=100, allow_http=False):
+def validate_address(
+        address: str,
+        max_length: int = 100,
+        allow_http: bool = False
+) -> str:
     if not 1 <= len(address) <= max_length:
         raise errors.InvalidComponentAddressError()
     if address[:8] != 'https://' and address[:7] != 'http://':
@@ -75,7 +90,12 @@ def get_components() -> typing.List[Component]:
     return [Component.from_database(component) for component in components.Component.query.order_by(db.asc(components.Component.name)).all()]
 
 
-def add_component(uuid: str, name: typing.Optional[str] = None, address: typing.Optional[str] = None, description: typing.Optional[str] = '') -> Component:
+def add_component(
+        uuid: str,
+        name: typing.Optional[str] = None,
+        address: typing.Optional[str] = None,
+        description: typing.Optional[str] = ''
+) -> Component:
     """
     Adds a new component with the given address, name and description.
 
@@ -119,7 +139,9 @@ def add_component(uuid: str, name: typing.Optional[str] = None, address: typing.
     return Component.from_database(component)
 
 
-def get_component(component_id: int) -> Component:
+def get_component(
+        component_id: int
+) -> Component:
     """
     Returns the federation component with the given ID.
 
@@ -134,7 +156,9 @@ def get_component(component_id: int) -> Component:
     return Component.from_database(component)
 
 
-def get_component_or_none(component_id: typing.Optional[int]) -> typing.Optional[Component]:
+def get_component_or_none(
+        component_id: typing.Optional[int]
+) -> typing.Optional[Component]:
     if component_id is None:
         return None
     try:
@@ -143,7 +167,9 @@ def get_component_or_none(component_id: typing.Optional[int]) -> typing.Optional
         return None
 
 
-def get_component_by_uuid(component_uuid: str) -> Component:
+def get_component_by_uuid(
+        component_uuid: str
+) -> Component:
     try:
         uuid_obj = UUID(component_uuid)
         component_uuid = str(uuid_obj)

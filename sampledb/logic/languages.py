@@ -8,6 +8,7 @@ import typing
 
 from .. import db
 from . import errors, settings, locale
+from .users import User
 from .. import models
 
 
@@ -183,7 +184,7 @@ def get_language_by_lang_code(lang_code: str) -> Language:
     return Language.from_database(language)
 
 
-def get_user_language(user) -> Language:
+def get_user_language(user: User) -> Language:
     """
     Return the language of the current user.
 
@@ -212,7 +213,7 @@ def get_user_language(user) -> Language:
 
 
 def get_languages_in_object_data(
-        data: typing.Union[str, dict]
+        data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]
 ) -> typing.Set[str]:
     language_codes = set()
 

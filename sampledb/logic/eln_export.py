@@ -13,8 +13,8 @@ from .utils import get_translated_text
 def generate_ro_crate_metadata(
         archive_files: typing.Dict[str, typing.Union[str, bytes]],
         infos: typing.Dict[str, typing.Any]
-) -> typing.Dict[str, typing.Any]:
-    result_files = {}
+) -> typing.Dict[str, bytes]:
+    result_files: typing.Dict[str, bytes] = {}
     ro_crate_metadata: typing.Dict[str, typing.Any] = {
         "@context": "https://w3id.org/ro/crate/1.1/context",
         "@graph": [
@@ -202,5 +202,5 @@ def generate_ro_crate_metadata(
         if user_info.get('orcid_id'):
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
 
-    result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(ro_crate_metadata, indent=2)
+    result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(ro_crate_metadata, indent=2).encode('utf-8')
     return result_files

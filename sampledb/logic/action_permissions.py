@@ -11,7 +11,8 @@ from . import favorites
 from . import users
 from . import instruments
 from .permissions import ResourcePermissions
-from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions, Action
+from .actions import Action
+from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -36,11 +37,11 @@ def set_action_permissions_for_all_users(action_id: int, permissions: Permission
     action_permissions.set_permissions_for_all_users(resource_id=action_id, permissions=permissions)
 
 
-def get_action_permissions_for_users(action_id) -> typing.Dict[int, Permissions]:
+def get_action_permissions_for_users(action_id: int) -> typing.Dict[int, Permissions]:
     return action_permissions.get_permissions_for_users(resource_id=action_id)
 
 
-def set_user_action_permissions(action_id: int, user_id: int, permissions: Permissions):
+def set_user_action_permissions(action_id: int, user_id: int, permissions: Permissions) -> None:
     action_permissions.set_permissions_for_user(resource_id=action_id, user_id=user_id, permissions=permissions)
 
 
@@ -48,7 +49,7 @@ def get_action_permissions_for_groups(action_id: int) -> typing.Dict[int, Permis
     return action_permissions.get_permissions_for_groups(resource_id=action_id)
 
 
-def set_group_action_permissions(action_id: int, group_id: int, permissions: Permissions):
+def set_group_action_permissions(action_id: int, group_id: int, permissions: Permissions) -> None:
     action_permissions.set_permissions_for_group(resource_id=action_id, group_id=group_id, permissions=permissions)
 
 

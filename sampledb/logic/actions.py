@@ -61,7 +61,7 @@ class Action(collections.namedtuple('Action', [
             type: typing.Optional['ActionType'],
             instrument_id: int,
             instrument: typing.Optional[instruments.Instrument],
-            schema: typing.Dict[str, typing.Any],
+            schema: typing.Optional[typing.Dict[str, typing.Any]],
             user_id: int,
             user: typing.Optional[users.User],
             is_hidden: bool,
@@ -75,7 +75,7 @@ class Action(collections.namedtuple('Action', [
             component: typing.Optional[components.Component],
             admin_only: bool,
             disable_create_objects: bool,
-    ):
+    ) -> 'Action':
         self = super(Action, cls).__new__(
             cls,
             id,
@@ -124,7 +124,7 @@ class Action(collections.namedtuple('Action', [
             disable_create_objects=action.disable_create_objects,
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__}(id={self.id!r})>"
 
 
@@ -194,7 +194,7 @@ class ActionType(collections.namedtuple('ActionType', [
             component_id: typing.Optional[int] = None,
             component: typing.Optional[components.Component] = None,
             scicat_export_type: typing.Optional[SciCatExportType] = None
-    ):
+    ) -> 'ActionType':
         self = super(ActionType, cls).__new__(
             cls,
             id,
@@ -257,7 +257,7 @@ class ActionType(collections.namedtuple('ActionType', [
             scicat_export_type=action_type.scicat_export_type
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__}(id={self.id!r})>"
 
 
@@ -450,7 +450,7 @@ def update_action_type(
 def create_action(
         *,
         action_type_id: typing.Optional[int],
-        schema: typing.Optional[dict],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
         instrument_id: typing.Optional[int] = None,
         user_id: typing.Optional[int] = None,
         description_is_markdown: bool = False,
@@ -573,6 +573,7 @@ def get_mutable_action(
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
+    action: typing.Optional[models.Action]
     if component_id is None:
         action = models.Action.query.get(action_id)
     else:
@@ -603,7 +604,7 @@ def get_action(
 def update_action(
         *,
         action_id: int,
-        schema: dict,
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
         description_is_markdown: bool = False,
         is_hidden: typing.Optional[bool] = None,
         short_description_is_markdown: bool = False,
@@ -625,7 +626,8 @@ def update_action(
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
     """
-    schemas.validate_schema(schema, invalid_template_action_ids=[action_id], strict=True)
+    if schema is not None:
+        schemas.validate_schema(schema, invalid_template_action_ids=[action_id], strict=True)
     action = get_mutable_action(action_id)
     action.description_is_markdown = description_is_markdown
     action.schema = schema

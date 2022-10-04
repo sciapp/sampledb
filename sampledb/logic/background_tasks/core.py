@@ -26,7 +26,7 @@ from .send_mail import handle_send_mail_task
 TASK_WAIT_TIMEOUT = 30
 NUM_HANDLER_THREADS = 4
 
-HANDLERS = {
+HANDLERS: typing.Dict[str, typing.Callable[[typing.Dict[str, typing.Any]], bool]] = {
     'send_mail': handle_send_mail_task
 }
 
@@ -37,11 +37,11 @@ handler_threads: typing.List[threading.Thread] = []
 
 
 def get_background_tasks() -> typing.Sequence[BackgroundTask]:
-    return BackgroundTask.query.order_by(BackgroundTask.id).all()
+    return typing.cast(typing.Sequence[BackgroundTask], BackgroundTask.query.order_by(BackgroundTask.id).all())
 
 
 def get_background_task(task_id: int) -> BackgroundTask:
-    task = BackgroundTask.query.filter_by(id=task_id).first()
+    task: typing.Optional[BackgroundTask] = BackgroundTask.query.filter_by(id=task_id).first()
     if task is None:
         raise errors.BackgroundTaskDoesNotExistError()
     return task
@@ -82,7 +82,7 @@ def post_background_task(
         return _handle_background_task(type, data), None
 
 
-def start_handler_threads(app):
+def start_handler_threads(app: flask.Flask) -> None:
     """
     Start handler threads for background tasks.
 
@@ -111,7 +111,7 @@ def start_handler_threads(app):
         handler_threads.append(handler_thread)
 
 
-def stop_handler_threads(app):
+def stop_handler_threads(app: flask.Flask) -> None:
     """
     Stop handler threads for background tasks.
 
@@ -140,7 +140,7 @@ def stop_handler_threads(app):
                 running_threads.remove(handler_thread)
 
 
-def _handle_background_tasks(app):
+def _handle_background_tasks(app: flask.Flask) -> None:
     with app.app_context():
         while not should_stop:
             try:
@@ -173,7 +173,7 @@ def _claim_background_task(
                 status=BackgroundTaskStatus.CLAIMED
             )
         )
-        return db.session.execute(stmt).rowcount == 1
+        return bool(db.session.execute(stmt).rowcount == 1)
     except Exception:
         # database might be temporarily unavailable, assume task was not claimed
         return False

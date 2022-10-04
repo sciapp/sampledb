@@ -1,31 +1,117 @@
 import base64
+from datetime import datetime
+import typing
 
 import flask
 
 from .utils import _get_id, _get_uuid, _get_str, _get_dict, _get_list, _get_utc_datetime, _get_permissions
-from .users import _parse_user_ref, _get_or_create_user_id
-from .actions import _parse_action_ref, _get_or_create_action_id, schema_entry_preprocessor, _parse_schema
-from .comments import import_comment, parse_comment
-from .files import import_file, parse_file
-from .object_location_assignments import import_object_location_assignment, parse_object_location_assignment
+from .users import _parse_user_ref, _get_or_create_user_id, UserRef
+from .actions import _parse_action_ref, _get_or_create_action_id, schema_entry_preprocessor, _parse_schema, ActionRef
+from .comments import import_comment, parse_comment, CommentData
+from .files import import_file, parse_file, FileData
+from .object_location_assignments import import_object_location_assignment, parse_object_location_assignment, ObjectLocationAssignmentData
+from .locations import LocationRef
 from ..files import get_files_for_object
 from ..markdown_images import find_referenced_markdown_images, get_markdown_image
 from ..object_permissions import set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, set_object_permissions_for_all_users, object_permissions
 from ..schemas import validate_schema, validate
 from ..actions import get_action
 from ..comments import get_comments_for_object
-from ..components import get_component_by_uuid, get_component
+from ..components import get_component_by_uuid, get_component, Component
 from ..groups import get_group
 from ..locations import get_location, get_object_location_assignments
 from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from ..projects import get_project
 from ..users import get_user
 from .. import errors, fed_logs, languages, markdown_to_html
-from ...models import Permissions
+from ...models import Permissions, Object
 from ...models.file_log import FileLogEntry, FileLogEntryType
 
 
-def import_object(object_data, component):
+class ObjectVersionData(typing.TypedDict):
+    fed_version_id: int
+    user: typing.Optional[UserRef]
+    data: typing.Optional[typing.Dict[str, typing.Any]]
+    schema: typing.Optional[typing.Dict[str, typing.Any]]
+    utc_datetime: typing.Optional[datetime]
+
+
+class ObjectPermissionsData(typing.TypedDict):
+    users: typing.Dict[int, Permissions]
+    groups: typing.Dict[int, Permissions]
+    projects: typing.Dict[int, Permissions]
+    all_users: Permissions
+
+
+class ObjectData(typing.TypedDict):
+    fed_object_id: int
+    component_id: int
+    action: typing.Optional[ActionRef]
+    versions: typing.List[ObjectVersionData]
+    comments: typing.List[CommentData]
+    files: typing.List[FileData]
+    object_location_assignments: typing.List[ObjectLocationAssignmentData]
+    permissions: ObjectPermissionsData
+
+
+class SharedFileHideData(typing.TypedDict):
+    user: UserRef
+    reason: str
+    utc_datetime: datetime
+
+
+class SharedFileData(typing.TypedDict):
+    file_id: int
+    component_uuid: str
+    user: typing.Optional[UserRef]
+    data: typing.Optional[typing.Dict[str, typing.Any]]
+    utc_datetime: datetime
+    hidden: typing.Optional[SharedFileHideData]
+
+
+class SharedCommentData(typing.TypedDict):
+    comment_id: int
+    component_uuid: str
+    user: typing.Optional[UserRef]
+    content: typing.Optional[str]
+    utc_datetime: datetime
+
+
+class SharedObjectVersionData(typing.TypedDict):
+    version_id: int
+    user: typing.Optional[UserRef]
+    data: typing.Optional[typing.Dict[str, typing.Any]]
+    schema: typing.Optional[typing.Dict[str, typing.Any]]
+    utc_datetime: typing.Optional[datetime]
+
+
+class SharedObjectLocationAssignmentData(typing.TypedDict):
+    id: int
+    component_uuid: str
+    location: typing.Optional[LocationRef]
+    responsible_user: typing.Optional[UserRef]
+    user: UserRef
+    description: typing.Optional[typing.Dict[str, str]]
+    utc_datetime: datetime
+    confirmed: bool
+    declined: bool
+
+
+class SharedObjectData(typing.TypedDict):
+    object_id: int
+    component_uuid: str
+    action: typing.Optional[ActionRef]
+    versions: typing.List[SharedObjectVersionData]
+    comments: typing.List[SharedCommentData]
+    files: typing.List[SharedFileData]
+    object_location_assignments: typing.List[SharedObjectLocationAssignmentData]
+    policy: typing.Dict[str, typing.Any]
+
+
+def import_object(
+        object_data: ObjectData,
+        component: Component
+) -> Object:
     action_id = _get_or_create_action_id(object_data['action'])
     for version in object_data['versions']:
         try:
@@ -62,6 +148,10 @@ def import_object(object_data, component):
                 allow_disabled_languages=True
             )
             fed_logs.update_object(object.id, component.id)
+    object = get_fed_object(
+        fed_object_id=object_data['fed_object_id'],
+        component_id=object_data['component_id']
+    )
 
     for comment_data in object_data['comments']:
         import_comment(comment_data, object, component)
@@ -96,7 +186,10 @@ def import_object(object_data, component):
     return object
 
 
-def parse_object(object_data, component):
+def parse_object(
+        object_data: typing.Dict[str, typing.Any],
+        component: Component
+) -> ObjectData:
     fed_object_id = _get_id(object_data.get('object_id'))
     versions = _get_list(object_data.get('versions'), mandatory=True)
     parsed_versions = []
@@ -114,24 +207,29 @@ def parse_object(object_data, component):
                     validate(data, schema, allow_disabled_languages=True, strict=False)
         except errors.ValidationError:
             raise errors.InvalidDataExportError('Invalid data or schema in version {} of object #{} @ {}'.format(fed_version_id, fed_object_id, component.uuid))
-        parsed_versions.append({
-            'fed_version_id': fed_version_id,
-            'data': data,
-            'schema': schema,
-            'user': _parse_user_ref(_get_dict(version.get('user'))),
-            'utc_datetime': _get_utc_datetime(version.get('utc_datetime'), default=None),
-        })
+        parsed_versions.append(ObjectVersionData(
+            fed_version_id=fed_version_id,
+            data=data,
+            schema=schema,
+            user=_parse_user_ref(_get_dict(version.get('user'))),
+            utc_datetime=_get_utc_datetime(version.get('utc_datetime'), default=None),
+        ))
 
-    result = {
-        'fed_object_id': fed_object_id,
-        'component_id': component.id,
-        'versions': parsed_versions,
-        'action': _parse_action_ref(_get_dict(object_data.get('action'))),
-        'comments': [],
-        'files': [],
-        'object_location_assignments': [],
-        'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': Permissions.NONE}
-    }
+    result = ObjectData(
+        fed_object_id=fed_object_id,
+        component_id=component.id,
+        versions=parsed_versions,
+        action=_parse_action_ref(_get_dict(object_data.get('action'))),
+        comments=[],
+        files=[],
+        object_location_assignments=[],
+        permissions=ObjectPermissionsData(
+            users={},
+            groups={},
+            projects={},
+            all_users=Permissions.NONE
+        )
+    )
 
     comments = _get_list(object_data.get('comments'))
     if comments is not None:
@@ -198,19 +296,29 @@ def parse_object(object_data, component):
     return result
 
 
-def parse_import_object(object_data, component):
+def parse_import_object(
+        object_data: typing.Dict[str, typing.Any],
+        component: Component
+) -> Object:
     return import_object(parse_object(object_data, component), component)
 
 
-def shared_object_preprocessor(object_id, policy, refs, markdown_images):
-    result = {
-        'object_id': object_id,
-        'versions': [],
-        'component_uuid': flask.current_app.config['FEDERATION_UUID'],
-        'action': None,
-        'comments': [], 'object_location_assignments': [], 'files': [],
-        'policy': policy
-    }
+def shared_object_preprocessor(
+        object_id: int,
+        policy: typing.Dict[str, typing.Any],
+        refs: typing.List[typing.Tuple[str, int]],
+        markdown_images: typing.Dict[str, str]
+) -> SharedObjectData:
+    result = SharedObjectData(
+        object_id=object_id,
+        versions=[],
+        component_uuid=flask.current_app.config['FEDERATION_UUID'],
+        action=None,
+        comments=[],
+        object_location_assignments=[],
+        files=[],
+        policy=policy
+    )
     object = get_object(object_id)
     object_versions = get_object_versions(object_id)
     if 'access' in policy:
@@ -220,15 +328,15 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
             action = get_action(object.action_id)
             if action.component_id is not None:
                 comp = action.component
-                result['action'] = {
-                    'action_id': action.fed_id,
-                    'component_uuid': comp.uuid
-                }
+                result['action'] = ActionRef(
+                    action_id=action.fed_id,
+                    component_uuid=comp.uuid
+                )
             else:
-                result['action'] = {
-                    'action_id': action.id,
-                    'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                }
+                result['action'] = ActionRef(
+                    action_id=action.id,
+                    component_uuid=flask.current_app.config['FEDERATION_UUID']
+                )
         if 'comments' in policy['access'] and policy['access']['comments']:
             comments = get_comments_for_object(object_id)
             result['comments'] = []
@@ -261,7 +369,13 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                             'user_id': comment.user_id,
                             'component_uuid': flask.current_app.config['FEDERATION_UUID']
                         }
-                result['comments'].append(res_comment)
+                result['comments'].append(SharedCommentData(
+                    comment_id=res_comment['comment_id'],
+                    component_uuid=res_comment['component_uuid'],
+                    user=res_comment.get('user'),
+                    content=res_comment['content'],
+                    utc_datetime=res_comment['utc_datetime']
+                ))
         if 'files' in policy['access'] and policy['access']['files']:
             files = get_files_for_object(object_id)
             result['files'] = []
@@ -321,7 +435,14 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                         }
                 else:
                     res_file['data'] = file.data
-                result['files'].append(res_file)
+                result['files'].append(SharedFileData(
+                    file_id=res_file['file_id'],
+                    component_uuid=res_file['component_uuid'],
+                    user=res_file.get('user'),
+                    data=res_file.get('data'),
+                    utc_datetime=res_file['utc_datetime'],
+                    hidden=res_file.get('hidden')
+                ))
         if 'object_location_assignments' in policy['access'] and policy['access']['object_location_assignments']:
             olas = get_object_location_assignments(object_id)
             for ola in olas:
@@ -335,118 +456,126 @@ def shared_object_preprocessor(object_id, policy, refs, markdown_images):
                     location = get_location(ola.location_id)
                     if location.component is not None:
                         comp = location.component
-                        loc = {
-                            'location_id': location.fed_id,
-                            'component_uuid': comp.uuid
-                        }
+                        location_ref = LocationRef(
+                            location_id=location.fed_id,
+                            component_uuid=comp.uuid
+                        )
                     else:
-                        loc = {
-                            'location_id': location.id,
-                            'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                        }
+                        location_ref = LocationRef(
+                            location_id=location.id,
+                            component_uuid=flask.current_app.config['FEDERATION_UUID']
+                        )
                 else:
-                    loc = None
+                    location_ref = None
                 if ola.responsible_user_id is not None:
                     responsible_user = get_user(ola.responsible_user_id)
                     if responsible_user.component_id is not None:
                         comp = responsible_user.component
-                        r_user = {
-                            'user_id': responsible_user.fed_id,
-                            'component_uuid': comp.uuid
-                        }
+                        responsible_user_ref = UserRef(
+                            user_id=responsible_user.fed_id,
+                            component_uuid=comp.uuid
+                        )
                     else:
-                        r_user = {
-                            'user_id': responsible_user.id,
-                            'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                        }
+                        responsible_user_ref = UserRef(
+                            user_id=responsible_user.id,
+                            component_uuid=flask.current_app.config['FEDERATION_UUID']
+                        )
                 else:
-                    r_user = None
+                    responsible_user_ref = None
                 ola_user = get_user(ola.user_id)
                 if ola_user.component_id is not None:
                     comp = ola_user.component
-                    c_user = {
-                        'user_id': ola_user.fed_id,
-                        'component_uuid': comp.uuid
-                    }
+                    c_user = UserRef(
+                        user_id=ola_user.fed_id,
+                        component_uuid=comp.uuid
+                    )
                 else:
-                    c_user = {
-                        'user_id': ola_user.id,
-                        'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                    }
+                    c_user = UserRef(
+                        user_id=ola_user.id,
+                        component_uuid=flask.current_app.config['FEDERATION_UUID']
+                    )
                 if ola.component_id is None:
                     component_uuid = flask.current_app.config['FEDERATION_UUID']
                 else:
                     comp = get_component(ola.component_id)
                     component_uuid = comp.uuid
-                result['object_location_assignments'].append({
-                    'id': ola.id,
-                    'component_uuid': component_uuid,
-                    'location': loc,
-                    'responsible_user': r_user,
-                    'user': c_user,
-                    'description': ola.description,
-                    'utc_datetime': ola.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f'),
-                    'confirmed': ola.confirmed,
-                })
+                result['object_location_assignments'].append(SharedObjectLocationAssignmentData(
+                    id=ola.id,
+                    component_uuid=component_uuid,
+                    location=location_ref,
+                    responsible_user=responsible_user_ref,
+                    user=c_user,
+                    description=ola.description,
+                    utc_datetime=ola.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    confirmed=ola.confirmed,
+                    declined=ola.declined,
+                ))
     for version in object_versions:
-        result['versions'].append({
-            'version_id': version.version_id, 'schema': None, 'data': None, 'user': None,
-            'utc_datetime': version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
-        })
-        if 'access' in policy:
-            if 'data' not in policy['access'] or ('data' in policy['access'] and policy['access']['data']):
-                result['versions'][-1]['data'] = version.data.copy()
-                result['versions'][-1]['schema'] = version.schema.copy()
-                entry_preprocessor(result['versions'][-1]['data'], refs, markdown_images)
-                schema_entry_preprocessor(result['versions'][-1]['schema'], refs)
-            if 'users' in policy['access'] and policy['access']['users']:
-                if ('users', version.user_id) not in refs:
-                    refs.append(('users', version.user_id))
-                user = get_user(version.user_id)
-                if user.component_id is not None:
-                    comp = user.component
-                    result['versions'][-1]['user'] = {
-                        'user_id': user.fed_id,
-                        'component_uuid': comp.uuid
-                    }
-                else:
-                    result['versions'][-1]['user'] = {
-                        'user_id': user.id,
-                        'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                    }
-        else:
-            result['versions'][-1]['data'] = object.data.copy()
-            result['versions'][-1]['schema'] = object.schema.copy()
-            entry_preprocessor(result['versions'][-1]['data'], refs, markdown_images)
-            schema_entry_preprocessor(result['versions'][-1]['schema'], refs)
+        version_data: typing.Optional[typing.Dict[str, typing.Any]] = None
+        version_schema: typing.Optional[typing.Dict[str, typing.Any]] = None
+        version_user: typing.Optional[UserRef] = None
+        if policy.get('access', {'data': True}).get('data', True):
+            version_data = version.data.copy()
+            if version_data is not None:
+                entry_preprocessor(version_data, refs, markdown_images)
+            version_schema = version.schema.copy()
+            if version_schema is not None:
+                schema_entry_preprocessor(version_schema, refs)
+        if policy.get('access', {}).get('users', False):
+            if ('users', version.user_id) not in refs:
+                refs.append(('users', version.user_id))
+            user = get_user(version.user_id)
+            if user.component_id is not None:
+                comp = user.component
+                version_user = UserRef(
+                    user_id=user.fed_id,
+                    component_uuid=comp.uuid
+                )
+            else:
+                version_user = UserRef(
+                    user_id=user.id,
+                    component_uuid=flask.current_app.config['FEDERATION_UUID']
+                )
         if 'modification' in policy:
             modification = policy['modification']
             if 'insert' in modification:
-                if 'data' in modification['insert']:
+                if 'data' in modification['insert'] and version_data is not None:
                     for key in modification['insert']['data']:
-                        result['versions'][-1]['data'][key] = modification['insert']['data'][key]
-                if 'schema' in modification['insert']:
+                        version_data[key] = modification['insert']['data'][key]
+                if 'schema' in modification['insert'] and version_schema is not None:
                     for key in modification['insert']['schema']:
-                        result['versions'][-1]['schema']['properties'][key] = modification['insert']['schema'][key]
+                        version_schema['properties'][key] = modification['insert']['schema'][key]
 
             if 'update' in modification:
-                if 'data' in modification['update']:
+                if 'data' in modification['update'] and version_data is not None:
                     for key in modification['update']['data']:
-                        if key not in result['versions'][-1]['data']:
+                        if key not in version_data:
                             pass
                         for k in modification['update']['data'][key]:
-                            result['versions'][-1]['data'][key][k] = modification['update']['data'][key][k]
-                if 'schema' in modification['update']:
+                            version_data[key][k] = modification['update']['data'][key][k]
+                if 'schema' in modification['update'] and version_schema is not None:
                     for key in modification['update']['schema']:
-                        if key not in result['versions'][-1]['schema']['properties']:
+                        if key not in version_schema['properties']:
                             pass
-                        result['versions'][-1]['schema']['properties'][key] = {}
-                        for k in modification['update']['schema'][key]:
-                            result['versions'][-1]['schema']['properties'][key][k] = modification['update']['schema'][key][k]
+                        version_schema['properties'][key] = {
+                            key: value
+                            for key, value in modification['update']['schema'][key].items()
+                        }
+        result['versions'].append(SharedObjectVersionData(
+            version_id=version.version_id,
+            schema=version_schema,
+            data=version_data,
+            user=version_user,
+            utc_datetime=version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+        ))
     return result
 
 
-def entry_preprocessor(data, refs, markdown_images):
+def entry_preprocessor(
+        data: typing.Any,
+        refs: typing.List[typing.Tuple[str, int]],
+        markdown_images: typing.Dict[str, str]
+) -> None:
     if type(data) == list:
         for entry in data:
             entry_preprocessor(entry, refs, markdown_images)
@@ -467,7 +596,7 @@ def entry_preprocessor(data, refs, markdown_images):
             if data['_type'] == 'user':
                 if data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']:
                     try:
-                        u = get_user(data.get('user_id'))
+                        u = get_user(data.get('user_id'))  # type: ignore
                         if u.component_id is not None:
                             c = get_component(u.component_id)
                             data['user_id'] = u.fed_id
@@ -495,7 +624,10 @@ def entry_preprocessor(data, refs, markdown_images):
                                 markdown_images[file_name] = base64.b64encode(markdown_image_b).decode('utf-8')
 
 
-def parse_entry(entry_data, component):
+def parse_entry(
+        entry_data: typing.Any,
+        component: Component
+) -> None:
     if type(entry_data) == list:
         for entry in entry_data:
             parse_entry(entry, component)
@@ -504,6 +636,7 @@ def parse_entry(entry_data, component):
             for key in entry_data:
                 parse_entry(entry_data[key], component)
         else:
+            data_component_uuid: typing.Optional[str]
             if entry_data.get('_type') == 'user':
                 user_id = _get_id(entry_data.get('user_id'), mandatory=False)
                 if user_id is None:
@@ -554,7 +687,8 @@ def parse_entry(entry_data, component):
             all_lang_codes = [lang.lang_code for lang in languages.get_languages()]
 
             if entry_data.get('_type') == 'text':
-                if entry_data.get('text') and isinstance(entry_data.get('text'), dict):
-                    for lang_code in list(entry_data.get('text').keys()):
+                text_data = entry_data.get('text')
+                if isinstance(text_data, dict):
+                    for lang_code in list(text_data.keys()):
                         if lang_code not in all_lang_codes:
                             del entry_data['text'][lang_code]

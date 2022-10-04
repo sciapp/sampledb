@@ -37,8 +37,8 @@ class InstrumentLogEntry(
             id: int,
             instrument_id: int,
             user_id: int,
-            versions: typing.Tuple['InstrumentLogEntryVersion'] = ()
-    ):
+            versions: typing.Sequence['InstrumentLogEntryVersion'] = ()
+    ) -> 'InstrumentLogEntry':
         self = super(InstrumentLogEntry, cls).__new__(
             cls, id, instrument_id, user_id, versions
         )
@@ -57,7 +57,7 @@ class InstrumentLogEntry(
         )
 
     @property
-    def author(self):
+    def author(self) -> users.User:
         return users.get_user(self.user_id)
 
     @property
@@ -88,7 +88,7 @@ class InstrumentLogEntryVersion(
             categories: typing.List['InstrumentLogCategory'],
             content_is_markdown: bool = False,
             event_utc_datetime: typing.Optional[datetime.datetime] = None
-    ):
+    ) -> 'InstrumentLogEntryVersion':
         self = super(InstrumentLogEntryVersion, cls).__new__(
             cls, log_entry_id, version_id, content, utc_datetime, categories, content_is_markdown, event_utc_datetime
         )
@@ -103,7 +103,7 @@ class InstrumentLogEntryVersion(
             utc_datetime=instrument_log_entry_version.utc_datetime,
             categories=[
                 InstrumentLogCategory.from_database(category)
-                for category in sorted(instrument_log_entry_version.categories, key=lambda category: category.theme.value)
+                for category in sorted(instrument_log_entry_version.categories, key=lambda category: typing.cast(int, category.theme.value))
             ],
             content_is_markdown=instrument_log_entry_version.content_is_markdown,
             event_utc_datetime=instrument_log_entry_version.event_utc_datetime
@@ -127,7 +127,7 @@ class InstrumentLogFileAttachment(
             file_name: str,
             content: bytes,
             is_hidden: bool = False
-    ):
+    ) -> 'InstrumentLogFileAttachment':
         self = super(InstrumentLogFileAttachment, cls).__new__(
             cls, id, log_entry_id, file_name, content, is_hidden
         )
@@ -163,7 +163,7 @@ class InstrumentLogObjectAttachment(
             log_entry_id: int,
             object_id: int,
             is_hidden: bool = False
-    ):
+    ) -> 'InstrumentLogObjectAttachment':
         self = super(InstrumentLogObjectAttachment, cls).__new__(
             cls, id, log_entry_id, object_id, is_hidden
         )
@@ -198,7 +198,7 @@ class InstrumentLogCategory(
             instrument_id: int,
             title: str,
             theme: instrument_log_entries.InstrumentLogCategoryTheme
-    ):
+    ) -> 'InstrumentLogCategory':
         self = super(InstrumentLogCategory, cls).__new__(
             cls, id, instrument_id, title, theme
         )

@@ -15,10 +15,11 @@ import zipfile
 import flask
 
 from .. import logic
+from ..models import Permissions, ObjectLogEntryType
 
 
 def get_export_infos(
-        user_id: int,
+        user_id: typing.Optional[int],
         object_ids: typing.Optional[typing.List[int]] = None,
         include_actions: bool = True,
         include_instruments: bool = True,
@@ -26,7 +27,7 @@ def get_export_infos(
         include_locations: bool = True,
         include_rdf_files: bool = True
 ) -> typing.Tuple[typing.Dict[str, typing.Union[bytes, str]], typing.Dict[str, typing.Any]]:
-    archive_files = {}
+    archive_files: typing.Dict[str, typing.Union[bytes, str]] = {}
     if object_ids is None:
         relevant_instrument_ids = {
             instrument.id
@@ -40,7 +41,7 @@ def get_export_infos(
     relevant_markdown_images = set()
     objects = logic.object_permissions.get_objects_with_permissions(
         user_id,
-        logic.object_permissions.Permissions.READ
+        Permissions.READ
     )
     infos = {}
     object_infos = []
@@ -115,7 +116,7 @@ def get_export_infos(
         publication_log_entries = {
             (log_entry.data['doi'], log_entry.data['title']): log_entry
             for log_entry in log_entries
-            if log_entry.type == logic.object_log.ObjectLogEntryType.LINK_PUBLICATION
+            if log_entry.type == ObjectLogEntryType.LINK_PUBLICATION
         }
         for publication_info in logic.publications.get_publications_for_object(object.id):
             object_infos[-1]['publications'].append({
@@ -164,7 +165,7 @@ def get_export_infos(
         for action_info in logic.actions.get_actions():
             if action_info.id in relevant_action_ids:
                 action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
-                if logic.action_permissions.Permissions.READ in action_permissions:
+                if Permissions.READ in action_permissions:
                     relevant_user_ids.add(action_info.user_id)
                     relevant_instrument_ids.add(action_info.instrument_id)
                     action_infos.append({
@@ -281,7 +282,7 @@ def get_export_infos(
         location.id
         for location in logic.location_permissions.get_locations_with_user_permissions(
             user_id=user_id,
-            permissions=logic.location_permissions.Permissions.READ
+            permissions=Permissions.READ
         )
     ]
 
@@ -310,7 +311,7 @@ def get_export_infos(
     return archive_files, infos
 
 
-def get_archive_files(user_id: int, object_ids: typing.Optional[typing.List[int]] = None) -> typing.Dict[str, bytes]:
+def get_archive_files(user_id: typing.Optional[int], object_ids: typing.Optional[typing.List[int]] = None) -> typing.Dict[str, bytes]:
     archive_files, infos = get_export_infos(user_id, object_ids)
     archive_files['sampledb_export/data.json'] = json.dumps(infos, indent=2)
 
@@ -334,11 +335,14 @@ This archive was created for an anonymous user at {datetime.datetime.now().isofo
 
     archive_files["sampledb_export/README.txt"] = readme_text
 
+    binary_archive_files = {}
     for file_name, file_content in archive_files.items():
         if isinstance(file_content, str):
-            archive_files[file_name] = file_content.encode('utf-8')
+            binary_archive_files[file_name] = file_content.encode('utf-8')
+        else:
+            binary_archive_files[file_name] = file_content
 
-    return archive_files
+    return binary_archive_files
 
 
 def get_zip_archive(
@@ -364,7 +368,7 @@ def get_tar_gz_archive(
             tar_info = tarfile.TarInfo(file_name)
             tar_info.size = len(file_content)
             tar_info.mode = 0o444
-            tar_info.mtime = time.time()
+            tar_info.mtime = int(time.time())
             tar_file.addfile(tar_info, fileobj=io.BytesIO(file_content))
     return tar_bytes.getvalue()
 
@@ -379,10 +383,10 @@ def get_eln_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] 
         include_instruments=False,
         include_locations=False,
     )
-    archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos)
+    binary_archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos)
     zip_bytes = io.BytesIO()
     with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
-        for file_name, file_content in archive_files.items():
+        for file_name, file_content in binary_archive_files.items():
             zip_file.writestr(file_name, file_content)
     return zip_bytes.getvalue()
 

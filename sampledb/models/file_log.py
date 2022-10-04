@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .. import db
 from .files import File
@@ -35,7 +36,15 @@ class FileLogEntry(db.Model):
 
     __table_args__ = (db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]), {})
 
-    def __init__(self, object_id, file_id, user_id, type, data, utc_datetime=None):
+    def __init__(
+            self,
+            object_id: int,
+            file_id: int,
+            user_id: int,
+            type: FileLogEntryType,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.object_id = object_id
         self.file_id = file_id
         self.user_id = user_id
@@ -45,5 +54,5 @@ class FileLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, file_id={1.file_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

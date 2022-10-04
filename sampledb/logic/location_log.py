@@ -27,7 +27,7 @@ def get_log_entries_for_location(
     """
 
     log_entries = []
-    users_by_id = {None: None}
+    users_by_id: typing.Dict[typing.Optional[int], typing.Optional[users.User]] = {None: None}
     locations_by_id = {}
     objects_by_id = {}
     for log_entry in models.LocationLogEntry.query.filter_by(
@@ -84,7 +84,12 @@ def get_log_entries_for_location(
     return log_entries
 
 
-def _store_new_log_entry(type: LocationLogEntryType, location_id, user_id: int, data: dict):
+def _store_new_log_entry(
+        type: LocationLogEntryType,
+        location_id: int,
+        user_id: typing.Optional[int],
+        data: typing.Dict[str, typing.Any]
+) -> None:
     user_log_entry = models.LocationLogEntry(
         type=type,
         location_id=location_id,
@@ -96,7 +101,7 @@ def _store_new_log_entry(type: LocationLogEntryType, location_id, user_id: int, 
     db.session.commit()
 
 
-def create_location(user_id: int, location_id: int):
+def create_location(user_id: typing.Optional[int], location_id: int) -> None:
     _store_new_log_entry(
         type=LocationLogEntryType.CREATE_LOCATION,
         location_id=location_id,
@@ -106,7 +111,7 @@ def create_location(user_id: int, location_id: int):
     )
 
 
-def update_location(user_id: int, location_id: int):
+def update_location(user_id: typing.Optional[int], location_id: int) -> None:
     _store_new_log_entry(
         type=LocationLogEntryType.UPDATE_LOCATION,
         location_id=location_id,
@@ -116,7 +121,7 @@ def update_location(user_id: int, location_id: int):
     )
 
 
-def add_object(user_id: int, location_id: int, object_location_assignment_id: int):
+def add_object(user_id: typing.Optional[int], location_id: int, object_location_assignment_id: int) -> None:
     _store_new_log_entry(
         type=LocationLogEntryType.ADD_OBJECT,
         location_id=location_id,
@@ -127,7 +132,7 @@ def add_object(user_id: int, location_id: int, object_location_assignment_id: in
     )
 
 
-def change_object(user_id: int, location_id: int, object_location_assignment_id: int):
+def change_object(user_id: typing.Optional[int], location_id: int, object_location_assignment_id: int) -> None:
     _store_new_log_entry(
         type=LocationLogEntryType.CHANGE_OBJECT,
         location_id=location_id,
@@ -138,7 +143,7 @@ def change_object(user_id: int, location_id: int, object_location_assignment_id:
     )
 
 
-def remove_object(user_id: int, location_id: int, object_location_assignment_id: int):
+def remove_object(user_id: typing.Optional[int], location_id: int, object_location_assignment_id: int) -> None:
     _store_new_log_entry(
         type=LocationLogEntryType.REMOVE_OBJECT,
         location_id=location_id,

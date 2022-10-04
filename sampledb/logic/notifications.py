@@ -22,7 +22,15 @@ class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_i
     This class provides an immutable wrapper around models.notifications.Notification.
     """
 
-    def __new__(cls, id: int, type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any], was_read: bool, utc_datetime: typing.Optional[datetime.datetime] = None):
+    def __new__(
+            cls,
+            id: int,
+            type: NotificationType,
+            user_id: int,
+            data: typing.Dict[str, typing.Any],
+            was_read: bool,
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> 'Notification':
         self = super(Notification, cls).__new__(cls, id, type, user_id, data, was_read, utc_datetime)
         return self
 
@@ -96,13 +104,15 @@ def get_num_notifications(user_id: int, unread_only: bool = False) -> int:
     """
     # ensure the user exists
     logic.users.get_user(user_id)
+    num_notifications: int
     if unread_only:
-        return notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
+        num_notifications = notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
     else:
-        return notifications.Notification.query.filter_by(user_id=user_id).count()
+        num_notifications = notifications.Notification.query.filter_by(user_id=user_id).count()
+    return num_notifications
 
 
-def get_notification(notification_id) -> Notification:
+def get_notification(notification_id: int) -> Notification:
     """
     Get a specific notification.
 
@@ -315,10 +325,10 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
     logic.users.get_user(user_id)
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
-        return notification_mode_for_type.mode
+        return typing.cast(NotificationMode, notification_mode_for_type.mode)
     notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
     if notification_mode_for_all_types is not None:
-        return notification_mode_for_all_types.mode
+        return typing.cast(NotificationMode, notification_mode_for_all_types.mode)
     if type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED:
         return NotificationMode.IGNORE
     return NotificationMode.WEBAPP
@@ -431,7 +441,7 @@ def create_notification_for_being_invited_to_a_group(
             'group_id': group_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
-            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None
         }
     )
 
@@ -467,7 +477,7 @@ def create_notification_for_being_invited_to_a_project(
             'project_id': project_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
-            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None
         }
     )
 

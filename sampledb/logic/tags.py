@@ -19,7 +19,7 @@ class Tag(collections.namedtuple('Tag', ['id', 'name', 'uses'])):
     This class provides an immutable wrapper around models.tags.Tag.
     """
 
-    def __new__(cls, id: int, name: str, uses: int):
+    def __new__(cls, id: int, name: str, uses: int) -> 'Tag':
         self = super(Tag, cls).__new__(cls, id, name, uses)
         return self
 
@@ -36,25 +36,29 @@ def get_object_tags(object: objects.Object) -> typing.Sequence[str]:
     return ()
 
 
-def update_object_tag_usage(object: objects.Object, new_subversion=False) -> None:
-    previous_tags = ()
+def update_object_tag_usage(object: objects.Object, new_subversion: bool = False) -> None:
+    previous_tags: typing.Sequence[str] = ()
     new_tags = get_object_tags(object)
     if object.fed_version_id is None:
         if object.version_id > 0:
-            previous_object = objects.Objects.get_object_version(object.object_id, object.version_id - 1)
-            previous_tags = get_object_tags(previous_object)
+            previous_object = typing.cast(typing.Optional[objects.Object], objects.Objects.get_object_version(object.object_id, object.version_id - 1))
+            if previous_object is not None:
+                previous_tags = get_object_tags(previous_object)
     else:
         current = objects.Objects.get_current_fed_object(object.component_id, object.fed_object_id)
+        if current is None:
+            return
         if current.version_id != object.version_id:
             return
         if new_subversion:
-            previous_object = objects.Objects.get_previous_subversion(object.object_id, object.version_id)
-            previous_tags = get_object_tags(previous_object)
+            previous_object = typing.cast(typing.Optional[objects.Object], objects.Objects.get_previous_subversion(object.object_id, object.version_id))
+            if previous_object is not None:
+                previous_tags = get_object_tags(previous_object)
         elif object.fed_version_id > 0:
             previous_object = None
             prev_version = object.fed_version_id - 1
             while previous_object is None and prev_version >= 0:
-                previous_object = objects.Objects.get_fed_object_version(object.component_id, object.fed_object_id, prev_version)
+                previous_object = typing.cast(typing.Optional[objects.Object], objects.Objects.get_fed_object_version(object.component_id, object.fed_object_id, prev_version))
                 prev_version -= 1
             if previous_object is not None:
                 previous_tags = get_object_tags(previous_object)

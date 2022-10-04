@@ -5,10 +5,10 @@
 
 import collections
 import datetime
+import typing
+
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 class VersionedJSONSerializableObjectTables(object):
@@ -159,7 +159,19 @@ class VersionedJSONSerializableObjectTables(object):
         self._data_validator = data_validator
         self._schema_validator = schema_validator
 
-    def create_object(self, data, schema, user_id, action_id, utc_datetime=None, fed_object_id=None, fed_version_id=None, component_id=None, connection=None, validate_data=True):
+    def create_object(
+            self,
+            data: typing.Dict[str, typing.Any],
+            schema: typing.Optional[typing.Dict[str, typing.Any]],
+            user_id: int,
+            action_id: int,
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            fed_object_id: typing.Optional[int] = None,
+            fed_version_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None,
+            connection: typing.Optional[db.engine.Connection] = None,
+            validate_data: bool = True
+    ) -> VersionedJSONSerializableObject:
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
 
@@ -235,7 +247,17 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return obj
 
-    def update_object(self, object_id, data, schema, user_id, utc_datetime=None, connection=None, validate_schema=True, validate_data=True):
+    def update_object(
+            self,
+            object_id: int,
+            data: typing.Dict[str, typing.Any],
+            schema: typing.Optional[typing.Dict[str, typing.Any]],
+            user_id: int,
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            connection: typing.Optional[db.engine.Connection] = None,
+            validate_schema: bool = True,
+            validate_data: bool = True
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         """
         Updates an existing object using the given data, user id and datetime.
 
@@ -311,10 +333,17 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return self.get_current_object(object_id, connection=connection)
 
-    def restore_object_version(self, object_id, version_id, user_id, utc_datetime=None, connection=None):
+    def restore_object_version(
+            self,
+            object_id: int,
+            version_id: int,
+            user_id: int,
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         object_version = self.get_object_version(object_id=object_id, version_id=version_id, connection=connection)
         if object_version is None:
-            return
+            return None
         if self._schema_validator:
             self._schema_validator(object_version.schema)
         if self._data_validator:
@@ -331,7 +360,19 @@ class VersionedJSONSerializableObjectTables(object):
             validate_data=False
         )
 
-    def insert_fed_object_version(self, fed_object_id, fed_version_id, component_id, action_id, data, schema, user_id, utc_datetime, connection=None, allow_disabled_languages: bool = False):
+    def insert_fed_object_version(
+            self,
+            fed_object_id: int,
+            fed_version_id: int,
+            component_id: typing.Optional[int],
+            action_id: typing.Optional[int],
+            data: typing.Optional[typing.Dict[str, typing.Any]],
+            schema: typing.Optional[typing.Dict[str, typing.Any]],
+            user_id: typing.Optional[int],
+            utc_datetime: typing.Optional[datetime.datetime],
+            connection: typing.Optional[db.engine.Connection] = None,
+            allow_disabled_languages: bool = False
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         if connection is None:
             connection = self.bind.connect()
 
@@ -434,7 +475,19 @@ class VersionedJSONSerializableObjectTables(object):
                 return None
         return self.get_fed_object_version(component_id, fed_object_id, fed_version_id, connection=connection)
 
-    def update_object_version(self, object_id, version_id, action_id, schema, data, user_id, utc_datetime, utc_datetime_subversion=None, connection=None, allow_disabled_languages: bool = False):
+    def update_object_version(
+            self,
+            object_id: int,
+            version_id: int,
+            action_id: typing.Optional[int],
+            schema: typing.Optional[typing.Dict[str, typing.Any]],
+            data: typing.Optional[typing.Dict[str, typing.Any]],
+            user_id: typing.Optional[int],
+            utc_datetime: typing.Optional[datetime.datetime],
+            utc_datetime_subversion: typing.Optional[datetime.datetime] = None,
+            connection: typing.Optional[db.engine.Connection] = None,
+            allow_disabled_languages: bool = False
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         """
         Updates an existing object version using the given data, user id and datetime.
 
@@ -443,6 +496,7 @@ class VersionedJSONSerializableObjectTables(object):
 
         :param object_id: the ID of the existing object
         :param version_id: the version ID of the existing object
+        :param action_id: the ID of the existing action
         :param data: a JSON serializable object containing the updated object data
         :param schema: a JSON schema describing data (optional, defaults to the current object schema)
         :param user_id: the ID of the user who updated the object
@@ -555,7 +609,11 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return self.get_object_version(object_id, version_id, connection=connection)
 
-    def is_existing_object(self, object_id: int, connection=None) -> bool:
+    def is_existing_object(
+            self,
+            object_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> bool:
         """
         Return whether an object with the given ID exists.
 
@@ -569,7 +627,11 @@ class VersionedJSONSerializableObjectTables(object):
             db.select([self._current_table.c.object_id]).where(self._current_table.c.object_id == object_id)
         ).fetchone() is not None
 
-    def get_current_object(self, object_id, connection=None):
+    def get_current_object(
+            self,
+            object_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         """
         Queries and returns an object by its ID.
 
@@ -599,7 +661,12 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
-    def get_previous_subversion(self, object_id, version_id, connection=None):
+    def get_previous_subversion(
+            self,
+            object_id: int,
+            version_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         if connection is None:
             connection = self.bind.connect()
         previous_object_subversion = connection.execute(
@@ -623,9 +690,16 @@ class VersionedJSONSerializableObjectTables(object):
             )
             .order_by(db.desc(self._subversions_table.c.subversion_id))
         ).first()
+        if previous_object_subversion is None:
+            return None
         return self.object_type(*previous_object_subversion)
 
-    def get_current_fed_object(self, component_id, fed_object_id, connection=None):
+    def get_current_fed_object(
+            self,
+            component_id: int,
+            fed_object_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         """
         """
         if connection is None:
@@ -653,7 +727,13 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
-    def get_fed_object_version(self, component_id, fed_object_id, fed_version_id, connection=None):
+    def get_fed_object_version(
+            self,
+            component_id: int,
+            fed_object_id: int,
+            fed_version_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[VersionedJSONSerializableObject]:
         """
         """
         if connection is None:
@@ -685,7 +765,19 @@ class VersionedJSONSerializableObjectTables(object):
             return current_object
         return None
 
-    def get_current_objects(self, filter_func=lambda data: True, action_table=None, action_filter=None, connection=None, table=None, parameters=None, sorting_func=None, limit=None, offset=None, num_objects_found=None):
+    def get_current_objects(
+            self,
+            filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
+            action_table: typing.Any = None,
+            action_filter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+            connection: typing.Optional[db.engine.Connection] = None,
+            table: typing.Any = None,
+            parameters: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            sorting_func: typing.Optional[typing.Callable[[typing.Any, typing.Any], typing.Any]] = None,
+            limit: typing.Optional[int] = None,
+            offset: typing.Optional[int] = None,
+            num_objects_found: typing.Optional[typing.List[int]] = None
+    ) -> typing.Sequence[VersionedJSONSerializableObject]:
         """
         Queries and returns all objects matching a given filter.
 
@@ -764,7 +856,11 @@ class VersionedJSONSerializableObjectTables(object):
                 num_objects_found.append(0)
         return [self.object_type(*obj[:-1]) for obj in objects]
 
-    def get_object_versions(self, object_id, connection=None):
+    def get_object_versions(
+            self,
+            object_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.List[VersionedJSONSerializableObject]:
         """
         Queries and returns all versions of an object with a given ID, sorted ascendingly by the version ID, from first
         version to current version.
@@ -802,7 +898,12 @@ class VersionedJSONSerializableObjectTables(object):
         objects.append(current_object)
         return objects
 
-    def get_object_version(self, object_id, version_id, connection=None):
+    def get_object_version(
+            self,
+            object_id: int,
+            version_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> VersionedJSONSerializableObject:
         """
         Queries and returns an individual version of an object with a given object and version ID.
 

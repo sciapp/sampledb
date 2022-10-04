@@ -626,14 +626,14 @@ This example shows how Markdown can be used for instrument Notes.
 
         UUID = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
         component = sampledb.logic.components.add_component(UUID, 'Example SampleDB', None, 'Example component database for demonstration purposes. Do not expect it to function.')
-        sampledb.logic.federation.parse_import_location({
+        sampledb.logic.federation.locations.parse_import_location({
             'location_id': 1,
             'component_uuid': UUID,
             'name': {'en': 'Collaborating Institute', 'de': 'Partnerinstitut'},
             'description': {'en': 'A collaborating partner’s site.',
                             'de': 'Gelände eines Kooperationspartners.'},
         }, component)
-        sampledb.logic.federation.parse_import_location({
+        sampledb.logic.federation.locations.parse_import_location({
             'location_id': 2,
             'component_uuid': UUID,
             'name': {'en': 'Room 123', 'de': 'Raum 123'},
@@ -641,21 +641,21 @@ This example shows how Markdown can be used for instrument Notes.
                             'de': 'Raum 123 auf dem Gelände eines Kooperationspartners'},
             'parent_location': {'location_id': 1, 'component_uuid': UUID}
         }, component)
-        sampledb.logic.federation.parse_import_user({
+        sampledb.logic.federation.users.parse_import_user({
             'user_id': 1,
             'component_uuid': UUID,
             'name': 'Partnering User',
             'email': 'partner@example.com',
             'affiliation': 'Collaborating Partner LLC',
         }, component)
-        sampledb.logic.federation.parse_import_user({
+        sampledb.logic.federation.users.parse_import_user({
             'user_id': 2,
             'component_uuid': UUID,
             'name': None,
             'email': None,
             'affiliation': 'Collaborating Partner LLC',
         }, component)
-        sampledb.logic.federation.parse_import_instrument({
+        sampledb.logic.federation.instruments.parse_import_instrument({
             'instrument_id': 1,
             'component_uuid': UUID,
             'description_is_markdown': False,
@@ -671,7 +671,7 @@ This example shows how Markdown can be used for instrument Notes.
                                     'short_description': '',
                                     'notes': ''}}
         }, component)
-        sampledb.logic.federation.parse_import_action_type({
+        sampledb.logic.federation.action_types.parse_import_action_type({
             'action_type_id': ActionType.SAMPLE_CREATION,
             'component_uuid': UUID,
             'admin_only': False,
@@ -696,7 +696,7 @@ This example shows how Markdown can be used for instrument Notes.
                                     'view_text': 'Proben anzeigen',
                                     'perform_text': 'Probe erstellen'}}
         }, component)
-        sampledb.logic.federation.parse_import_action({
+        sampledb.logic.federation.actions.parse_import_action({
             'action_id': 1,
             'component_uuid': UUID,
             'action_type': {'action_type_id': ActionType.SAMPLE_CREATION, 'component_uuid': UUID},
@@ -711,7 +711,7 @@ This example shows how Markdown can be used for instrument Notes.
                                     'description': 'Probenentnahmeverfahren.',
                                     'short_description': 'Probenentnahmeverfahren.'}}
         }, component)
-        sampledb.logic.federation.parse_import_action({
+        sampledb.logic.federation.actions.parse_import_action({
             'action_id': 2,
             'component_uuid': UUID,
             'action_type': {'action_type_id': ActionType.MEASUREMENT, 'component_uuid': UUID},
@@ -726,7 +726,7 @@ This example shows how Markdown can be used for instrument Notes.
                                     'description': 'Eine spezielle Messung, die nur beim Kooperationspartner ausgeführt werden kann.',
                                     'short_description': 'Eine spezielle Messung, die nur beim Kooperationspartner ausgeführt werden kann.'}}
         }, component)
-        sampledb.logic.federation.parse_import_object({
+        sampledb.logic.federation.objects.parse_import_object({
             'object_id': 1,
             'versions': [{
                 'version_id': 0,
@@ -741,7 +741,7 @@ This example shows how Markdown can be used for instrument Notes.
                 'permissions': {'users': {basic_user.id: 'read'}, 'groups': {group_id: 'read'}, 'projects': {project_id: 'read'}}
             }
         }, component)
-        sampledb.logic.federation.parse_import_object({
+        sampledb.logic.federation.objects.parse_import_object({
             'object_id': 2,
             'versions': [{
                 'version_id': 0,
@@ -810,7 +810,7 @@ This example shows how Markdown can be used for instrument Notes.
                 }
             ]
         }, component)
-        sampledb.logic.federation.parse_import_object({
+        sampledb.logic.federation.objects.parse_import_object({
             'object_id': 3,
             'versions': [{
                 'version_id': 0,

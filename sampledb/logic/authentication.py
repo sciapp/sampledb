@@ -4,7 +4,7 @@ import flask
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, User
+from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, User, HTTPMethod
 from . import errors, api_log
 
 
@@ -189,8 +189,8 @@ def login_via_api_token(api_token: str) -> typing.Optional[User]:
         if not authentication_method.confirmed:
             continue
         if _validate_password_authentication(authentication_method, password):
-            api_log.create_log_entry(authentication_method.id, getattr(api_log.HTTPMethod, flask.request.method, api_log.HTTPMethod.OTHER), flask.request.path)
-            return authentication_method.user
+            api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
+            return authentication_method.user  # type: ignore
     return None
 
 
@@ -307,7 +307,7 @@ def get_two_factor_authentication_methods(
     :param user_id: the ID of an existing user
     :return: a list containing all methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()  # type: ignore
 
 
 def get_active_two_factor_authentication_method(
@@ -319,7 +319,7 @@ def get_active_two_factor_authentication_method(
     :param user_id: the ID of an existing user
     :return: the active method
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()  # type: ignore
 
 
 def activate_two_factor_authentication_method(

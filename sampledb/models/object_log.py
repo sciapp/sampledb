@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .. import db
 from .objects import Objects
@@ -41,7 +42,14 @@ class ObjectLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type, object_id, user_id, data, utc_datetime=None):
+    def __init__(
+            self,
+            type: ObjectLogEntryType,
+            object_id: int,
+            user_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.object_id = object_id
         self.user_id = user_id

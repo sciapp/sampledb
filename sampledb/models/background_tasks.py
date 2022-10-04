@@ -10,7 +10,7 @@ class BackgroundTaskStatus(enum.Enum):
     DONE = 2,
     FAILED = 3
 
-    def is_final(self):
+    def is_final(self) -> bool:
         return self in {
             BackgroundTaskStatus.DONE,
             BackgroundTaskStatus.FAILED

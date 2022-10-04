@@ -4,6 +4,8 @@
 """
 
 import enum
+import typing
+
 import sqlalchemy.dialects.postgresql as postgresql
 from .. import db
 
@@ -22,12 +24,17 @@ class ComponentAuthentication(db.Model):
     type = db.Column(db.Enum(ComponentAuthenticationType))
     component = db.relationship('Component')
 
-    def __init__(self, login, authentication_type, component_id):
+    def __init__(
+            self,
+            login: typing.Dict[str, typing.Any],
+            authentication_type: ComponentAuthenticationType,
+            component_id: int
+    ) -> None:
         self.login = login
         self.type = authentication_type
         self.component_id = component_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
 
 
@@ -40,10 +47,15 @@ class OwnComponentAuthentication(db.Model):
     type = db.Column(db.Enum(ComponentAuthenticationType))
     component = db.relationship('Component')
 
-    def __init__(self, login, authentication_type, component_id):
+    def __init__(
+            self,
+            login: typing.Dict[str, typing.Any],
+            authentication_type: ComponentAuthenticationType,
+            component_id: int
+    ) -> None:
         self.login = login
         self.type = authentication_type
         self.component_id = component_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
