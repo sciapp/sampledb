@@ -106,6 +106,7 @@ class Location(collections.namedtuple(
         'responsible_users',
         'parent_location_id',
         'fed_id',
+        'component_id',
         'component',
     ]
 )):
@@ -123,9 +124,10 @@ class Location(collections.namedtuple(
             responsible_users: typing.List[users.User],
             parent_location_id: typing.Optional[int] = None,
             fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None,
             component: typing.Optional[Component] = None
     ):
-        self = super(Location, cls).__new__(cls, id, name, description, type_id, type, responsible_users, parent_location_id, fed_id, component)
+        self = super(Location, cls).__new__(cls, id, name, description, type_id, type, responsible_users, parent_location_id, fed_id, component_id, component)
         return self
 
     @classmethod
@@ -137,6 +139,7 @@ class Location(collections.namedtuple(
             parent_location_id=location.parent_location_id,
             fed_id=location.fed_id,
             component=Component.from_database(location.component) if location.component is not None else None,
+            component_id=location.component_id,
             type_id=location.type_id,
             type=LocationType.from_database(location.type),
             responsible_users=[
@@ -300,7 +303,7 @@ def create_location(
 def update_location(
         location_id: int,
         name: typing.Optional[typing.Dict[str, str]],
-        description: dict,
+        description: typing.Optional[typing.Dict[str, str]],
         parent_location_id: typing.Optional[int],
         user_id: typing.Optional[int],
         type_id: int
@@ -603,7 +606,7 @@ def get_current_object_location_assignment(object_id: int) -> typing.Optional[Ob
     return object_location_assignment
 
 
-def get_object_location_assignment(object_location_assignment_id: int) -> ObjectLocationAssignment:
+def get_object_location_assignment(object_location_assignment_id: int) -> locations.ObjectLocationAssignment:
     """
     Get an object location assignment with a given ID.
 
@@ -758,7 +761,7 @@ def create_location_type(
     )
     db.session.add(location_type)
     db.session.commit()
-    return location_type
+    return LocationType.from_database(location_type)
 
 
 def update_location_type(
@@ -809,7 +812,7 @@ def update_location_type(
 def get_location_type(
         location_type_id: int,
         component_id: typing.Optional[int] = None
-) -> locations.LocationType:
+) -> LocationType:
     """
     Get a location type.
 
@@ -830,7 +833,7 @@ def get_location_type(
     return LocationType.from_database(location_type)
 
 
-def get_location_types() -> typing.List[locations.LocationType]:
+def get_location_types() -> typing.List[LocationType]:
     """
     Get all location types.
 
