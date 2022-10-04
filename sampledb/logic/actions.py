@@ -153,6 +153,7 @@ class ActionType(collections.namedtuple('ActionType', [
     'usable_in_action_types',
     'fed_id',
     'component_id',
+    'component',
     'scicat_export_type',
 ])):
     """
@@ -191,6 +192,7 @@ class ActionType(collections.namedtuple('ActionType', [
             usable_in_action_types: typing.Optional[typing.Tuple[models.ActionType]],
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
+            component: typing.Optional[components.Component] = None,
             scicat_export_type: typing.Optional[SciCatExportType] = None
     ):
         self = super(ActionType, cls).__new__(
@@ -219,6 +221,7 @@ class ActionType(collections.namedtuple('ActionType', [
             usable_in_action_types,
             fed_id,
             component_id,
+            component,
             scicat_export_type
         )
         return self
@@ -250,6 +253,7 @@ class ActionType(collections.namedtuple('ActionType', [
             usable_in_action_types=action_type.usable_in_action_types,
             fed_id=action_type.fed_id,
             component_id=action_type.component_id,
+            component=action_type.component,
             scicat_export_type=action_type.scicat_export_type
         )
 
