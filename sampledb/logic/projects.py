@@ -18,7 +18,6 @@ As the project models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
 
-import collections
 import dataclasses
 import datetime
 import typing
@@ -53,22 +52,17 @@ class Project:
         return Project(id=project.id, name=project.name, description=project.description)
 
 
-class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'project_id', 'user_id', 'inviter_id', 'utc_datetime', 'accepted'])):
+@dataclasses.dataclass(frozen=True)
+class ProjectInvitation:
     """
     This class provides an immutable wrapper around models.projects.ProjectInvitation.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            project_id: int,
-            user_id: int,
-            inviter_id: int,
-            utc_datetime: datetime.datetime,
-            accepted: bool
-    ) -> 'ProjectInvitation':
-        self = super(ProjectInvitation, cls).__new__(cls, id, project_id, user_id, inviter_id, utc_datetime, accepted)
-        return self
+    id: int
+    project_id: int
+    user_id: int
+    inviter_id: int
+    utc_datetime: datetime.datetime
+    accepted: bool
 
     @classmethod
     def from_database(cls, project_invitation: projects.ProjectInvitation) -> 'ProjectInvitation':
