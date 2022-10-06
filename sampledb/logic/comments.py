@@ -7,7 +7,7 @@ comments are immutable and therefore this module only allows the creation and
 querying of comments.
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
 
@@ -15,46 +15,20 @@ from .. import db, models
 from . import user_log, object_log, objects, users, errors, components
 
 
-class Comment(collections.namedtuple('Comment', [
-    'id',
-    'object_id',
-    'user_id',
-    'author',
-    'content',
-    'utc_datetime',
-    'fed_id',
-    'component_id',
-    'component'
-])):
+@dataclasses.dataclass(frozen=True)
+class Comment:
     """
     This class provides an immutable wrapper around models.comments.Comment.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            object_id: int,
-            user_id: int,
-            author: typing.Optional[users.User],
-            content: str,
-            utc_datetime: datetime.datetime,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None,
-            component: typing.Optional[components.Component] = None
-    ) -> 'Comment':
-        self = super(Comment, cls).__new__(
-            cls,
-            id,
-            object_id,
-            user_id,
-            author,
-            content,
-            utc_datetime,
-            fed_id,
-            component_id,
-            component
-        )
-        return self
+    id: int
+    object_id: int
+    user_id: int
+    author: typing.Optional[users.User]
+    content: str
+    utc_datetime: datetime.datetime
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    component: typing.Optional[components.Component] = None
 
     @classmethod
     def from_database(cls, comment: models.Comment) -> 'Comment':

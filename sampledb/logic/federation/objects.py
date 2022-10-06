@@ -341,7 +341,7 @@ def shared_object_preprocessor(
             comments = get_comments_for_object(object_id)
             result['comments'] = []
             for comment in comments:
-                if comment.component_id is None:
+                if comment.component is None or comment.fed_id is None:
                     res_comment = {
                         'comment_id': comment.id,
                         'component_uuid': flask.current_app.config['FEDERATION_UUID']
