@@ -3,8 +3,7 @@
 """
 import datetime
 from uuid import UUID
-
-import collections
+import dataclasses
 import typing
 import re
 from flask_babel import _
@@ -19,22 +18,17 @@ MAX_COMPONENT_NAME_LENGTH = 100
 MAX_COMPONENT_ADDRESS_LENGTH = 100
 
 
-class Component(collections.namedtuple('FederationComponent', ['id', 'address', 'uuid', 'name', 'description', 'last_sync_timestamp'])):
+@dataclasses.dataclass(frozen=True)
+class Component:
     """
     This class provides an immutable wrapper around models.federation.FederationComponent.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            uuid: str,
-            name: typing.Optional[str],
-            address: typing.Optional[str],
-            description: typing.Optional[str],
-            last_sync_timestamp: typing.Optional[datetime.datetime]
-    ) -> 'Component':
-        self = super(Component, cls).__new__(cls, id, address, uuid, name, description, last_sync_timestamp)
-        return self
+    id: int
+    uuid: str
+    name: typing.Optional[str]
+    address: typing.Optional[str]
+    description: typing.Optional[str]
+    last_sync_timestamp: typing.Optional[datetime.datetime]
 
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
@@ -47,7 +41,7 @@ class Component(collections.namedtuple('FederationComponent', ['id', 'address', 
                 return regex.sub('', self.address).strip().strip('/')
             return _('Database #%(id)s', id=self.id)  # type: ignore
         else:
-            return self.name  # type: ignore
+            return self.name
 
     def update_last_sync_timestamp(
             self,
