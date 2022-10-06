@@ -10,7 +10,7 @@ Similar to actions, instruments cannot be deleted. However, all information
 about an instrument may be altered.
 """
 
-import collections
+import dataclasses
 import typing
 
 from .components import get_component
@@ -20,67 +20,27 @@ from ..models.instruments import instrument_user_association_table
 from . import users, errors, components
 
 
-class Instrument(collections.namedtuple('Instrument', [
-    'id',
-    'responsible_users',
-    'users_can_create_log_entries',
-    'users_can_view_log_entries',
-    'create_log_entry_default',
-    'is_hidden',
-    'name',
-    'notes',
-    'notes_is_markdown',
-    'description',
-    'description_is_markdown',
-    'short_description',
-    'short_description_is_markdown',
-    'fed_id',
-    'component_id',
-    'component'
-])):
+@dataclasses.dataclass(frozen=True)
+class Instrument:
     """
     This class provides an immutable wrapper around models.instruments.Instrument.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            responsible_users: typing.List[users.User],
-            users_can_create_log_entries: bool,
-            users_can_view_log_entries: bool,
-            create_log_entry_default: bool,
-            is_hidden: bool,
-            name: typing.Dict[str, str],
-            notes: typing.Dict[str, str],
-            notes_is_markdown: bool,
-            description: typing.Dict[str, str],
-            description_is_markdown: bool,
-            short_description: typing.Dict[str, str],
-            short_description_is_markdown: bool,
-            fed_id: int,
-            component_id: int,
-            component: typing.Optional[components.Component]
-    ) -> 'Instrument':
-        self = super(Instrument, cls).__new__(
-            cls,
-            id,
-            responsible_users,
-            users_can_create_log_entries,
-            users_can_view_log_entries,
-            create_log_entry_default,
-            is_hidden,
-            name,
-            notes,
-            notes_is_markdown,
-            description,
-            description_is_markdown,
-            short_description,
-            short_description_is_markdown,
-            fed_id,
-            component_id,
-            component
-        )
-        return self
+    id: int
+    responsible_users: typing.List[users.User]
+    users_can_create_log_entries: bool
+    users_can_view_log_entries: bool
+    create_log_entry_default: bool
+    is_hidden: bool
+    name: typing.Dict[str, str]
+    notes: typing.Dict[str, str]
+    notes_is_markdown: bool
+    description: typing.Dict[str, str]
+    description_is_markdown: bool
+    short_description: typing.Dict[str, str]
+    short_description_is_markdown: bool
+    fed_id: int
+    component_id: int
+    component: typing.Optional[components.Component]
 
     @classmethod
     def from_database(cls, instrument: models.Instrument) -> 'Instrument':

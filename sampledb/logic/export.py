@@ -186,7 +186,7 @@ def get_export_infos(
         infos['actions'] = action_infos
 
     if include_instruments:
-        instrument_infos = []
+        instrument_infos: typing.List[typing.Dict[str, typing.Any]] = []
         for instrument_info in logic.instruments.get_instruments():
             if instrument_info.id in relevant_instrument_ids:
                 relevant_user_ids.update({user.id for user in instrument_info.responsible_users})
