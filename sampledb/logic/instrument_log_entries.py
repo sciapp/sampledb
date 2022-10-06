@@ -12,6 +12,7 @@ with control files or photographs of an experiment setup.
 """
 
 import collections
+import dataclasses
 import datetime
 import typing
 
@@ -22,27 +23,15 @@ from ..models import instrument_log_entries
 from ..models.instrument_log_entries import InstrumentLogCategoryTheme
 
 
-class InstrumentLogEntry(
-    collections.namedtuple(
-        'InstrumentLogEntry',
-        ['id', 'instrument_id', 'user_id', 'versions']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogEntry:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogEntry.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            instrument_id: int,
-            user_id: int,
-            versions: typing.Sequence['InstrumentLogEntryVersion'] = ()
-    ) -> 'InstrumentLogEntry':
-        self = super(InstrumentLogEntry, cls).__new__(
-            cls, id, instrument_id, user_id, versions
-        )
-        return self
+    id: int
+    instrument_id: int
+    user_id: int
+    versions: typing.Sequence['InstrumentLogEntryVersion'] = ()
 
     @classmethod
     def from_database(cls, instrument_log_entry: instrument_log_entries.InstrumentLogEntry) -> 'InstrumentLogEntry':
