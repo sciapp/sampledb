@@ -19,6 +19,7 @@ module should be called from within a Flask application context.
 """
 
 import collections
+import dataclasses
 import datetime
 import typing
 import flask
@@ -38,19 +39,14 @@ from .languages import get_language_by_lang_code, Language
 MAX_PROJECT_NAME_LENGTH = 100
 
 
-class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
+@dataclasses.dataclass(frozen=True)
+class Project:
     """
     This class provides an immutable wrapper around models.projects.Project.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            name: typing.Dict[str, str],
-            description: typing.Dict[str, str]
-    ) -> 'Project':
-        self = super(Project, cls).__new__(cls, id, name, description)
-        return self
+    id: int
+    name: typing.Dict[str, str]
+    description: typing.Dict[str, str]
 
     @classmethod
     def from_database(cls, project: projects.Project) -> 'Project':
