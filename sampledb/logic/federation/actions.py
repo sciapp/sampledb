@@ -402,7 +402,7 @@ def schema_entry_preprocessor(
                 if ('actions', template_action_id) not in refs:
                     refs.append(('actions', template_action_id))
                 action = get_action(template_action_id)
-                if action.component_id is not None:
+                if action.component is not None and action.fed_id is not None:
                     comp = action.component
                     schema['template'] = ActionRef(
                         action_id=action.fed_id,

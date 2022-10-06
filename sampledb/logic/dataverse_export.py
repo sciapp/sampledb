@@ -319,7 +319,7 @@ def upload_object(
     schema = object.schema
 
     action = actions.get_action(object.action_id)
-    if action.instrument_id:
+    if action.instrument:
         instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')
     else:
         instrument_name = None

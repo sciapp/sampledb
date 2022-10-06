@@ -180,9 +180,9 @@ def get_export_infos(
                         'short_description_is_markdown': action_info.short_description_is_markdown
                     })
                     if action_info.description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en'))))
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en', ''))))
                     if action_info.short_description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en'))))
+                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en', ''))))
         infos['actions'] = action_infos
 
     if include_instruments:

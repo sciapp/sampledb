@@ -21,6 +21,7 @@ action can be altered as long as the type and instrument stay the same.
 
 import copy
 import collections
+import dataclasses
 import typing
 
 from .. import db
@@ -29,76 +30,30 @@ from ..models import SciCatExportType
 from . import errors, instruments, users, schemas, components
 
 
-class Action(collections.namedtuple('Action', [
-    'id',
-    'type_id',
-    'type',
-    'instrument_id',
-    'instrument',
-    'schema',
-    'user_id',
-    'user',
-    'is_hidden',
-    'name',
-    'description',
-    'description_is_markdown',
-    'short_description',
-    'short_description_is_markdown',
-    'fed_id',
-    'component_id',
-    'component',
-    'admin_only',
-    'disable_create_objects',
-])):
+@dataclasses.dataclass(frozen=True)
+class Action:
     """
     This class provides an immutable wrapper around models.actions.Action.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            type_id: int,
-            type: typing.Optional['ActionType'],
-            instrument_id: int,
-            instrument: typing.Optional[instruments.Instrument],
-            schema: typing.Optional[typing.Dict[str, typing.Any]],
-            user_id: int,
-            user: typing.Optional[users.User],
-            is_hidden: bool,
-            name: typing.Dict[str, str],
-            description: typing.Dict[str, str],
-            description_is_markdown: bool,
-            short_description: typing.Dict[str, str],
-            short_description_is_markdown: bool,
-            fed_id: int,
-            component_id: int,
-            component: typing.Optional[components.Component],
-            admin_only: bool,
-            disable_create_objects: bool,
-    ) -> 'Action':
-        self = super(Action, cls).__new__(
-            cls,
-            id,
-            type_id,
-            type,
-            instrument_id,
-            instrument,
-            schema,
-            user_id,
-            user,
-            is_hidden,
-            name,
-            description,
-            description_is_markdown,
-            short_description,
-            short_description_is_markdown,
-            fed_id,
-            component_id,
-            component,
-            admin_only,
-            disable_create_objects,
-        )
-        return self
+    id: int
+    type_id: int
+    type: typing.Optional['ActionType']
+    instrument_id: int
+    instrument: typing.Optional[instruments.Instrument]
+    schema: typing.Optional[typing.Dict[str, typing.Any]]
+    user_id: int
+    user: typing.Optional[users.User]
+    is_hidden: bool
+    name: typing.Dict[str, str]
+    description: typing.Dict[str, str]
+    description_is_markdown: bool
+    short_description: typing.Dict[str, str]
+    short_description_is_markdown: bool
+    fed_id: int
+    component_id: int
+    component: typing.Optional[components.Component]
+    admin_only: bool
+    disable_create_objects: bool
 
     @classmethod
     def from_database(cls, action: models.Action) -> 'Action':
@@ -652,6 +607,8 @@ def update_actions_using_template_action(
     :param template_action_id: the ID of a template action
     """
     template_action_schema = get_action(template_action_id).schema
+    if template_action_schema is None:
+        return
     template_action_schema = schemas.templates.process_template_action_schema(template_action_schema)
     actions = get_actions()
     updated_template_action_ids = []
@@ -670,7 +627,7 @@ def update_actions_using_template_action(
             mutable_action = get_mutable_action(action.id)
             mutable_action.schema = updated_schema
             db.session.add(mutable_action)
-            if action.type.is_template:
+            if action.type is not None and action.type.is_template:
                 updated_template_action_ids.append(action.id)
     db.session.commit()
     for other_template_action_id in updated_template_action_ids:

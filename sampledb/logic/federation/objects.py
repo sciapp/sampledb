@@ -326,7 +326,7 @@ def shared_object_preprocessor(
             if ('actions', object.action_id) not in refs:
                 refs.append(('actions', object.action_id))
             action = get_action(object.action_id)
-            if action.component_id is not None:
+            if action.component is not None and action.fed_id is not None:
                 comp = action.component
                 result['action'] = ActionRef(
                     action_id=action.fed_id,
@@ -358,7 +358,7 @@ def shared_object_preprocessor(
                     if ('users', comment.user_id) not in refs:
                         refs.append(('users', comment.user_id))
                     user = get_user(comment.user_id)
-                    if user.fed_id is not None:
+                    if user.fed_id is not None and user.component is not None:
                         comp = user.component
                         res_comment['user'] = {
                             'user_id': user.fed_id,
@@ -398,7 +398,7 @@ def shared_object_preprocessor(
                     if ('users', file.user_id) not in refs:
                         refs.append(('users', file.user_id))
                     user = get_user(file.user_id)
-                    if user.fed_id is not None:
+                    if user.fed_id is not None and user.component is not None:
                         comp = user.component
                         res_file['user'] = {
                             'user_id': user.fed_id,
@@ -422,7 +422,7 @@ def shared_object_preprocessor(
                     if ('users', log_entry.user_id) not in refs:
                         refs.append(('users', log_entry.user_id))
                     user = get_user(file.user_id)
-                    if user.fed_id is not None:
+                    if user.fed_id is not None and user.component is not None:
                         comp = user.component
                         res_file['hidden']['user'] = {
                             'user_id': user.fed_id,
@@ -469,7 +469,7 @@ def shared_object_preprocessor(
                     location_ref = None
                 if ola.responsible_user_id is not None:
                     responsible_user = get_user(ola.responsible_user_id)
-                    if responsible_user.component_id is not None and responsible_user.fed_id is not None:
+                    if responsible_user.component is not None and responsible_user.fed_id is not None:
                         comp = responsible_user.component
                         responsible_user_ref = UserRef(
                             user_id=responsible_user.fed_id,
@@ -483,7 +483,7 @@ def shared_object_preprocessor(
                 else:
                     responsible_user_ref = None
                 ola_user = get_user(ola.user_id)
-                if ola_user.component_id is not None and ola_user.fed_id is not None:
+                if ola_user.component is not None and ola_user.fed_id is not None:
                     comp = ola_user.component
                     c_user = UserRef(
                         user_id=ola_user.fed_id,
@@ -525,7 +525,7 @@ def shared_object_preprocessor(
             if ('users', version.user_id) not in refs:
                 refs.append(('users', version.user_id))
             user = get_user(version.user_id)
-            if user.component_id is not None and user.fed_id is not None:
+            if user.component is not None and user.fed_id is not None:
                 comp = user.component
                 version_user = UserRef(
                     user_id=user.fed_id,

@@ -67,7 +67,7 @@ def substitute_templates(
             template_action = actions.get_action(schema['template'])
         except ActionDoesNotExistError:
             raise
-        if not template_action.type.is_template and not template_action.type.fed_id == ActionType.TEMPLATE:
+        if template_action.schema is None or template_action.type is None or not (template_action.type.is_template or template_action.type.fed_id == ActionType.TEMPLATE):
             raise InvalidTemplateIDError()
         template_schema = template_action.schema
         template_schema = process_template_action_schema(template_schema)
