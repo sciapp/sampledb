@@ -87,28 +87,16 @@ class InstrumentLogEntryVersion:
         )
 
 
-class InstrumentLogFileAttachment(
-    collections.namedtuple(
-        'InstrumentLogFileAttachment',
-        ['id', 'log_entry_id', 'file_name', 'content', 'is_hidden']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogFileAttachment:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogFileAttachment.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            log_entry_id: int,
-            file_name: str,
-            content: bytes,
-            is_hidden: bool = False
-    ) -> 'InstrumentLogFileAttachment':
-        self = super(InstrumentLogFileAttachment, cls).__new__(
-            cls, id, log_entry_id, file_name, content, is_hidden
-        )
-        return self
+    id: int
+    log_entry_id: int
+    file_name: str
+    content: bytes
+    is_hidden: bool = False
 
     @classmethod
     def from_database(
