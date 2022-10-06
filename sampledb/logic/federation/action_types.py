@@ -276,7 +276,7 @@ def shared_action_type_preprocessor(
         translations_data = {}
     return SharedActionTypeData(
         action_type_id=action_type.id if action_type.component_id is None else action_type.fed_id,
-        component_uuid=flask.current_app.config['FEDERATION_UUID'] if action_type.component_id is None else action_type.component.uuid,
+        component_uuid=flask.current_app.config['FEDERATION_UUID'] if action_type.component is None else action_type.component.uuid,
         admin_only=action_type.admin_only,
         enable_labels=action_type.enable_labels,
         enable_files=action_type.enable_files,
