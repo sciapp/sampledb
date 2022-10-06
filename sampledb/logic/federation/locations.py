@@ -179,9 +179,7 @@ def _get_or_create_location_id(
             component_id=component_id
         )
         fed_logs.create_ref_location(location.id, component_id)
-    # TODO: type hint Location wrapper
-    location_id: int = location.id
-    return location_id
+    return location.id
 
 
 def shared_location_preprocessor(
@@ -197,7 +195,7 @@ def shared_location_preprocessor(
         if ('locations', location.parent_location_id) not in refs:
             refs.append(('locations', location.parent_location_id))
         parent = get_location(location.parent_location_id)
-        if parent.component is None:
+        if parent.component is None or parent.fed_id is None:
             parent_location = LocationRef(
                 location_id=parent.id,
                 component_uuid=flask.current_app.config['FEDERATION_UUID']
@@ -226,22 +224,22 @@ def shared_location_preprocessor(
             )
     else:
         location_type_ref = None
-    responsible_users = []
+    responsible_users: typing.List[UserRef] = []
     if location.responsible_users:
         for responsible_user in location.responsible_users:
             if ('users', responsible_user.id) not in refs:
                 refs.append(('users', responsible_user.id))
-            if responsible_user.component_id is None:
-                responsible_user = {
-                    'user_id': responsible_user.id,
-                    'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                }
+            if responsible_user.component is None or responsible_user.fed_id is None:
+                responsible_user_ref = UserRef(
+                    user_id=responsible_user.id,
+                    component_uuid=flask.current_app.config['FEDERATION_UUID']
+                )
             else:
-                responsible_user = {
-                    'user_id': responsible_user.fed_id,
-                    'component_uuid': responsible_user.component.uuid
-                }
-            responsible_users.append(responsible_user)
+                responsible_user_ref = UserRef(
+                    user_id=responsible_user.fed_id,
+                    component_uuid=responsible_user.component.uuid
+                )
+            responsible_users.append(responsible_user_ref)
     return SharedLocationData(
         location_id=location.id if location.fed_id is None else location.fed_id,
         component_uuid=flask.current_app.config['FEDERATION_UUID'] if location.component is None else location.component.uuid,
@@ -283,7 +281,7 @@ def locations_check_for_cyclic_dependencies(
     data = copy.deepcopy(locations_data)
     local_locations = get_locations()
     for location in local_locations:
-        if location.component is not None:
+        if location.component is not None and location.fed_id is not None:
             if (location.fed_id, location.component.uuid) in data.keys():
                 continue
             if location.parent_location_id is None:
@@ -298,7 +296,7 @@ def locations_check_for_cyclic_dependencies(
                 )
             else:
                 parent_location = get_location(location.parent_location_id)
-                if parent_location.component is not None:
+                if parent_location.component is not None and parent_location.fed_id is not None:
                     data[(location.fed_id, location.component.uuid)] = LocationData(
                         fed_id=location.fed_id,
                         component_uuid=location.component.uuid,
@@ -338,7 +336,7 @@ def locations_check_for_cyclic_dependencies(
                 )
             else:
                 parent_location = get_location(location.parent_location_id)
-                if parent_location.component is not None:
+                if parent_location.component is not None and parent_location.fed_id is not None:
                     data[(location.id, flask.current_app.config['FEDERATION_UUID'])] = LocationData(
                         fed_id=location.id,
                         component_uuid=flask.current_app.config['FEDERATION_UUID'],

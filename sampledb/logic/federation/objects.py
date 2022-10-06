@@ -454,7 +454,7 @@ def shared_object_preprocessor(
                     refs.append(('users', ola.responsible_user_id))
                 if ola.location_id is not None:
                     location = get_location(ola.location_id)
-                    if location.component is not None:
+                    if location.component is not None and location.fed_id is not None:
                         comp = location.component
                         location_ref = LocationRef(
                             location_id=location.fed_id,

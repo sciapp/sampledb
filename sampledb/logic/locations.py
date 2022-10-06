@@ -59,40 +59,21 @@ class LocationType:
         )
 
 
-class Location(collections.namedtuple(
-    'Location',
-    [
-        'id',
-        'name',
-        'description',
-        'type_id',
-        'type',
-        'responsible_users',
-        'parent_location_id',
-        'fed_id',
-        'component_id',
-        'component',
-    ]
-)):
+@dataclasses.dataclass(frozen=True)
+class Location:
     """
     This class provides an immutable wrapper around models.locations.Location.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            name: typing.Optional[typing.Dict[str, str]],
-            description: typing.Optional[typing.Dict[str, str]],
-            type_id: int,
-            type: LocationType,
-            responsible_users: typing.List[users.User],
-            parent_location_id: typing.Optional[int] = None,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None,
-            component: typing.Optional[Component] = None
-    ) -> 'Location':
-        self = super(Location, cls).__new__(cls, id, name, description, type_id, type, responsible_users, parent_location_id, fed_id, component_id, component)
-        return self
+    id: int
+    name: typing.Optional[typing.Dict[str, str]]
+    description: typing.Optional[typing.Dict[str, str]]
+    type_id: int
+    type: LocationType
+    responsible_users: typing.List[users.User]
+    parent_location_id: typing.Optional[int] = None
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    component: typing.Optional[Component] = None
 
     @classmethod
     def from_database(cls, location: locations.Location) -> 'Location':
@@ -403,9 +384,10 @@ def _get_location_ancestors(location_id: int) -> typing.List[int]:
         location ID exists
     """
     ancestor_location_ids = []
-    while location_id is not None:
-        ancestor_location_ids.append(location_id)
-        location_id = get_location(location_id).parent_location_id
+    ancestor_location_id: typing.Optional[int] = location_id
+    while ancestor_location_id is not None:
+        ancestor_location_ids.append(ancestor_location_id)
+        ancestor_location_id = get_location(ancestor_location_id).parent_location_id
     return ancestor_location_ids[1:]
 
 
