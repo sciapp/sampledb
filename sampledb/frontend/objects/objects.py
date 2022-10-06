@@ -65,7 +65,7 @@ def objects():
     objects = []
 
     user_settings = get_user_settings(user_id=flask_login.current_user.id)
-    if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
+    if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_OPTION_PARAMETERS):
         display_properties, display_property_titles = _parse_display_properties(flask.request.args)
     else:
         display_properties = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('display_properties', [])
@@ -165,7 +165,7 @@ def objects():
             for action in all_actions
         ]
 
-        if any(param in flask.request.args for param in OBJECT_LIST_FILTER_PARAMETERS):
+        if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_FILTER_PARAMETERS):
             (
                 success,
                 filter_location_ids,
@@ -764,6 +764,8 @@ def _parse_filter_id_params(
             for ids_str in params.getlist(param_alias):
                 for id_str in ids_str.split(','):
                     id_str = id_str.strip()
+                    if not id_str:
+                        continue
                     if id_str in id_map:
                         filter_ids.add(id_map[id_str])
                     else:
