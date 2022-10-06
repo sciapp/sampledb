@@ -4,6 +4,7 @@
 """
 
 import collections
+import dataclasses
 import typing
 
 from .. import db
@@ -16,14 +17,14 @@ from .objects import get_object
 from .users import get_user
 
 
-class Publication(collections.namedtuple('Publication', ['doi', 'title', 'object_name'])):
+@dataclasses.dataclass(frozen=True)
+class Publication:
     """
     This class provides an immutable wrapper around models.object_publications.ObjectPublication.
     """
-
-    def __new__(cls, doi: str, title: str, object_name: str) -> 'Publication':
-        self = super(Publication, cls).__new__(cls, doi, title, object_name)
-        return self
+    doi: str
+    title: str
+    object_name: str
 
     @classmethod
     def from_database(cls, publication: models.object_publications.ObjectPublication) -> 'Publication':
