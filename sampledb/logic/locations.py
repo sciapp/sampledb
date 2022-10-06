@@ -7,7 +7,6 @@ WRITE permissions for an object can assign it to a location with an optional
 description for details on where the object is stored.
 """
 
-import collections
 import dataclasses
 import datetime
 import typing
@@ -94,55 +93,23 @@ class Location:
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', [
-    'id',
-    'object_id',
-    'location_id',
-    'user_id',
-    'description',
-    'utc_datetime',
-    'responsible_user_id',
-    'confirmed',
-    'fed_id',
-    'component_id',
-    'declined',
-    'component'
-])):
+@dataclasses.dataclass(frozen=True)
+class ObjectLocationAssignment:
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            object_id: int,
-            location_id: int,
-            user_id: int,
-            description: typing.Optional[typing.Dict[str, str]],
-            utc_datetime: datetime.datetime,
-            responsible_user_id: int,
-            confirmed: bool,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None,
-            declined: bool = False,
-            component: typing.Optional[Component] = None
-    ) -> 'ObjectLocationAssignment':
-        self = super(ObjectLocationAssignment, cls).__new__(
-            cls,
-            id,
-            object_id,
-            location_id,
-            user_id,
-            description,
-            utc_datetime,
-            responsible_user_id,
-            confirmed,
-            fed_id,
-            component_id,
-            declined,
-            component
-        )
-        return self
+    id: int
+    object_id: int
+    location_id: typing.Optional[int]
+    user_id: int
+    description: typing.Optional[typing.Dict[str, str]]
+    utc_datetime: datetime.datetime
+    responsible_user_id: typing.Optional[int]
+    confirmed: bool
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    declined: bool = False
+    component: typing.Optional[Component] = None
 
     @classmethod
     def from_database(cls, object_location_assignment: locations.ObjectLocationAssignment) -> 'ObjectLocationAssignment':

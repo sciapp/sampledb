@@ -92,7 +92,7 @@ class SharedObjectLocationAssignmentData(typing.TypedDict):
     responsible_user: typing.Optional[UserRef]
     user: UserRef
     description: typing.Optional[typing.Dict[str, str]]
-    utc_datetime: datetime
+    utc_datetime: str
     confirmed: bool
     declined: bool
 

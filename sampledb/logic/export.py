@@ -92,8 +92,10 @@ def get_export_infos(
 
         for location_assignment in logic.locations.get_object_location_assignments(object.id):
             relevant_user_ids.add(location_assignment.user_id)
-            relevant_user_ids.add(location_assignment.responsible_user_id)
-            relevant_location_ids.add(location_assignment.location_id)
+            if location_assignment.responsible_user_id:
+                relevant_user_ids.add(location_assignment.responsible_user_id)
+            if location_assignment.location_id:
+                relevant_location_ids.add(location_assignment.location_id)
             if location_assignment.responsible_user_id:
                 if location_assignment.confirmed:
                     status = 'confirmed'
@@ -269,12 +271,13 @@ def get_export_infos(
         infos['users'] = user_infos
 
     locations = logic.locations.get_locations()
-    all_relevant_location_ids = set()
+    all_relevant_location_ids: typing.Set[int] = set()
     while relevant_location_ids:
-        new_relevant_location_ids = set()
+        new_relevant_location_ids: typing.Set[int] = set()
         for location_info in locations:
             if location_info.id in relevant_location_ids:
-                new_relevant_location_ids.add(location_info.parent_location_id)
+                if location_info.parent_location_id is not None:
+                    new_relevant_location_ids.add(location_info.parent_location_id)
         all_relevant_location_ids.update(relevant_location_ids)
         relevant_location_ids = new_relevant_location_ids - all_relevant_location_ids
 
