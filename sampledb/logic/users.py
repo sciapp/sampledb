@@ -19,14 +19,15 @@ from . import errors, settings
 from .. models import users, UserType
 
 
-class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id', 'utc_datetime', 'accepted'])):
+@dataclasses.dataclass(frozen=True)
+class UserInvitation:
     """
     This class provides an immutable wrapper around models.users.UserInvitation.
     """
-
-    def __new__(cls, id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool) -> 'UserInvitation':
-        self = super(UserInvitation, cls).__new__(cls, id, inviter_id, utc_datetime, accepted)
-        return self
+    id: int
+    inviter_id: int
+    utc_datetime: datetime.datetime
+    accepted: bool
 
     @classmethod
     def from_database(cls, user_invitation: users.UserInvitation) -> 'UserInvitation':
