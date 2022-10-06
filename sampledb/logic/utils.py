@@ -125,7 +125,7 @@ def build_confirm_url(
     user_id = authentication_method.user_id
     token = generate_token(authentication_method.id, salt=salt,
                            secret_key=flask.current_app.config['SECRET_KEY'])
-    return flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True)
+    return str(flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True))
 
 
 def get_translated_text(

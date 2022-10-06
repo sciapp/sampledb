@@ -57,7 +57,7 @@ def get_user_related_object_ids(user_id: int) -> typing.Set[int]:
         elif 'object_location_assignment_id' in user_log_entry.data:
             object_location_assignment_ids.add(user_log_entry.data['object_location_assignment_id'])
     if object_location_assignment_ids:
-        object_location_assignment_object_ids = db.session.query(
+        object_location_assignment_object_ids = db.session.query(  # type: ignore
             ObjectLocationAssignment.object_id
         ).filter(
             ObjectLocationAssignment.id.in_(object_location_assignment_ids)

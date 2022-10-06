@@ -53,7 +53,7 @@ def get_user_location_permissions(
             max_permissions = min(max_permissions, Permissions.READ)
 
     # apply responsible user permissions
-    if db.session.query(location_user_association_table).filter(location_user_association_table.c.location_id == location_id).filter(location_user_association_table.c.user_id == user_id).first() is not None:
+    if db.session.query(location_user_association_table).filter(location_user_association_table.c.location_id == location_id).filter(location_user_association_table.c.user_id == user_id).first() is not None:  # type: ignore
         return min(Permissions.GRANT, max_permissions)
 
     # resource independent permissions

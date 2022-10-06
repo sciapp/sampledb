@@ -529,7 +529,7 @@ def _create_db_file(
         # ensure that the component exists
         components.get_component(component_id)
     # calculate the next file id
-    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
+    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()  # type: ignore
     if previous_file_id is None:
         file_id = 0
     else:

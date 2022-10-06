@@ -4,7 +4,7 @@ import flask
 
 from . import languages
 
-SUPPORTED_LOCALES = {
+SUPPORTED_LOCALES: typing.Dict[str, typing.Dict[str, str]] = {
     'de': {"english_name": "German", "native_name": "Deutsch"},
     'en': {"english_name": "English", "native_name": "English"}
 }
@@ -22,10 +22,10 @@ def guess_request_locale() -> str:
     """
     allowed_language_codes = get_allowed_language_codes()
     try:
-        best_match_locale = flask.request.accept_languages.best_match(allowed_language_codes)
+        best_match_locale: typing.Optional[str] = flask.request.accept_languages.best_match(allowed_language_codes)
     except Exception:
         return DEFAULT_LOCALE
-    if best_match_locale in SUPPORTED_LOCALES:
+    if best_match_locale is not None and best_match_locale in SUPPORTED_LOCALES:
         return best_match_locale
     else:
         return DEFAULT_LOCALE

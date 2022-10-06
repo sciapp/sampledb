@@ -310,7 +310,9 @@ def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.L
     """
     # ensure that the user exists
     users.get_user(user_id)
-    instrument_id_query = db.session.query(instrument_user_association_table.c.instrument_id).filter(instrument_user_association_table.c.user_id == user_id)
+    instrument_id_query = db.session.query(
+        instrument_user_association_table.c.instrument_id
+    ).filter(instrument_user_association_table.c.user_id == user_id)  # type: ignore
     if exclude_hidden:
         instrument_id_query = instrument_id_query.join(
             models.Instrument,
