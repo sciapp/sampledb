@@ -65,7 +65,7 @@ class SharedFileData(typing.TypedDict):
     component_uuid: str
     user: typing.Optional[UserRef]
     data: typing.Optional[typing.Dict[str, typing.Any]]
-    utc_datetime: datetime
+    utc_datetime: typing.Optional[str]
     hidden: typing.Optional[SharedFileHideData]
 
 
@@ -393,7 +393,7 @@ def shared_object_preprocessor(
                         'file_id': file.fed_id,
                         'component_uuid': comp.uuid
                     }
-                res_file['utc_datetime'] = file.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+                res_file['utc_datetime'] = file.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if file.utc_datetime else None
                 if 'users' in policy['access'] and policy['access']['users']:
                     if ('users', file.user_id) not in refs:
                         refs.append(('users', file.user_id))

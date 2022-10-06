@@ -18,7 +18,7 @@ The files are stored in a directory named after the object's ID, which in turn
 will be inside folders named after the action's ID.
 """
 
-import collections
+import dataclasses
 import datetime
 import io
 import os
@@ -40,30 +40,29 @@ FILE_STORAGE_PATH: typing.Optional[str] = None
 MAX_NUM_FILES: int = 10000
 
 
-class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data', 'binary_data', 'fed_id', 'component_id'])):
+@dataclasses.dataclass(frozen=True)
+class File:
     """
     This class provides an immutable wrapper around models.files.File.
     """
+    id: int
+    object_id: int
+    user_id: int
+    utc_datetime: typing.Optional[datetime.datetime] = None
+    data: typing.Optional[typing.Dict[str, typing.Any]] = None
+    binary_data: typing.Optional[bytes] = None
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
 
-    def __new__(
-            cls,
-            id: int,
-            object_id: int,
-            user_id: int,
-            utc_datetime: typing.Optional[datetime.datetime] = None,
-            data: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            binary_data: typing.Optional[bytes] = None,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
-    ) -> 'File':
-        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data, binary_data, fed_id, component_id)
-        self._is_hidden = None
-        self._hide_reason = None
-        self._hide_datetime = None
-        self._title = None
-        self._url = None
-        self._description = None
-        return self
+    @dataclasses.dataclass
+    class InfoCache:
+        is_hidden: typing.Optional[bool] = None
+        hide_reason: typing.Optional[str] = None
+        title: typing.Optional[str] = None
+        url: typing.Optional[str] = None
+        description: typing.Optional[str] = None
+
+    _cache: InfoCache = dataclasses.field(default_factory=InfoCache, kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, file: files.File) -> 'File':
@@ -87,11 +86,13 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def storage(self) -> str:
+        if self.data is None:
+            return 'none'
         return str(self.data.get('storage', 'local'))
 
     @property
     def original_file_name(self) -> str:
-        if self.storage in {'local', 'database'}:
+        if self.data is not None and self.storage in {'local', 'database'}:
             return str(self.data.get('original_file_name', ''))
         else:
             raise InvalidFileStorageError()
@@ -111,26 +112,25 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def filepath(self) -> str:
-        if self.storage in {'local_reference'}:
+        if self.data is not None and self.storage in {'local_reference'}:
             return str(self.data.get('filepath', ''))
         else:
             raise InvalidFileStorageError()
 
     @property
     def url(self) -> str:
-        self._url: typing.Optional[str]
-        if self.storage == 'url':
-            if self._url is None:
+        if self.data is not None and self.storage == 'url':
+            if self._cache.url is None:
                 log_entry = FileLogEntry.query.filter_by(
                     object_id=self.object_id,
                     file_id=self.id,
                     type=FileLogEntryType.EDIT_URL
                 ).order_by(FileLogEntry.utc_datetime.desc()).first()
                 if log_entry is not None:
-                    self._url = log_entry.data['url']
+                    self._cache.url = log_entry.data['url']
                 else:
-                    self._url = self.data['url']
-            return self._url
+                    self._cache.url = self.data['url']
+            return self._cache.url
         else:
             raise InvalidFileStorageError()
 
@@ -142,10 +142,9 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def title(self) -> typing.Optional[str]:
-        self._title: typing.Optional[str]
-        if self._title is None:
-            self._title = self.real_title
-            if self._title is None:
+        if self._cache.title is None:
+            self._cache.title = self.real_title
+            if self._cache.title is None:
                 if self.storage in {'local', 'database'}:
                     return self.original_file_name
                 elif self.storage == 'local_reference':
@@ -154,7 +153,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
                     return self.url
                 else:
                     raise InvalidFileStorageError()
-        return self._title
+        return self._cache.title
 
     @property
     def real_title(self) -> typing.Optional[str]:
@@ -171,8 +170,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def description(self) -> typing.Union[str, None]:
-        self._description: typing.Optional[str]
-        if self._description is None:
+        if self._cache.description is None:
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
@@ -180,8 +178,8 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
                 return None
-            self._description = log_entry.data['description']
-        return self._description
+            self._cache.description = log_entry.data['description']
+        return self._cache.description
 
     @property
     def log_entries(self) -> typing.List[FileLogEntry]:
@@ -199,37 +197,33 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def is_hidden(self) -> bool:
-        self._is_hidden: typing.Optional[bool]
-        self._hide_reason: typing.Optional[str]
-        # is this used anywhere?
-        self._hide_datetime: typing.Optional[datetime.datetime]
-        if self._is_hidden is None:
+        if self._cache.is_hidden is None:
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
                 type=FileLogEntryType.HIDE_FILE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                self._is_hidden = False
+                self._cache.is_hidden = False
                 return False
             hide_time = log_entry.utc_datetime
-            self._hide_reason = log_entry.data['reason']
+            self._cache.hide_reason = log_entry.data['reason']
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
                 type=FileLogEntryType.UNHIDE_FILE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                self._is_hidden = True
+                self._cache.is_hidden = True
                 return True
             unhide_time = log_entry.utc_datetime
-            self._is_hidden = hide_time > unhide_time
-        return bool(self._is_hidden)
+            self._cache.is_hidden = hide_time > unhide_time
+        return bool(self._cache.is_hidden)
 
     @property
     def hide_reason(self) -> typing.Optional[str]:
         if self.is_hidden:
-            return self._hide_reason
+            return self._cache.hide_reason
         return None
 
     def open(self, read_only: bool = True) -> typing.BinaryIO:

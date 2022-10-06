@@ -140,7 +140,7 @@ def get_export_infos(
                     'title': file_info.title,
                     'description': file_info.description,
                     'uploader_id': file_info.user_id,
-                    'utc_datetime': file_info.utc_datetime.isoformat()
+                    'utc_datetime': file_info.utc_datetime.isoformat() if file_info.utc_datetime else None
                 })
                 if file_info.storage in {'local', 'database'}:
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
