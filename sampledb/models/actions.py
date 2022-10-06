@@ -8,6 +8,13 @@ import typing
 
 from .. import db
 
+usable_in_action_types_table = db.Table(
+    'usable_in_action_types', db.metadata,
+    db.Column('owner_usable_in_action_types_id', db.Integer, primary_key=True),
+    db.Column('owner_action_type', db.Integer, db.ForeignKey('action_types.id')),
+    db.Column('usable_in_action_types', db.Integer, db.ForeignKey('action_types.id'))
+)
+
 
 # defined here to avoid circular import dependency (actions -> scicat_export -> objects -> actions)
 @enum.unique
@@ -48,6 +55,9 @@ class ActionType(db.Model):
     fed_id = db.Column(db.Integer, nullable=True)
     order_index = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    usable_in_action_types = db.relationship('ActionType', secondary=usable_in_action_types_table,
+                                             primaryjoin=id == usable_in_action_types_table.c.owner_action_type,
+                                             secondaryjoin=id == usable_in_action_types_table.c.usable_in_action_types)
     component = db.relationship('Component')
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
     translations = db.relationship('ActionTypeTranslation')

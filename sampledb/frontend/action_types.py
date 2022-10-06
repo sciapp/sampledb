@@ -7,13 +7,13 @@ import flask
 import flask_login
 import json
 from flask_wtf import FlaskForm
-from wtforms.fields import StringField, BooleanField, SelectField
+from wtforms.fields import StringField, BooleanField, SelectField, SelectMultipleField
 from wtforms.validators import DataRequired, ValidationError
 from flask_babel import _
 
 from . import frontend
 from .. import logic
-from .utils import check_current_user_is_not_readonly
+from .utils import check_current_user_is_not_readonly, get_translated_text
 from ..logic.actions import SciCatExportType
 from ..logic.components import get_component_or_none
 
@@ -113,6 +113,7 @@ class ActionTypeForm(FlaskForm):
     enable_project_link = BooleanField()
     disable_create_objects = BooleanField()
     is_template = BooleanField()
+    select_usable_in_action_types = SelectMultipleField(coerce=int)
     scicat_export_type = SelectField(choices=[
         ('none', '—'),
         (SciCatExportType.SAMPLE.name.lower(), _('Sample')),
@@ -120,12 +121,24 @@ class ActionTypeForm(FlaskForm):
         (SciCatExportType.DERIVED_DATASET.name.lower(), _('Derived Dataset')),
     ])
 
+    def set_select_usable_in_action_types_attributes(self):
+        self.select_usable_in_action_types.choices = [
+            (action_type.id, get_translated_text(action_type.name, default=_('Unnamed Action Type')))
+            for action_type in logic.actions.get_action_types()
+            if not action_type.disable_create_objects
+        ]
+
+        self.select_usable_in_action_types.shared_action_types = [action_type.id
+                                                                  for action_type in logic.actions.get_action_types()
+                                                                  if action_type.component_id is not None]
+
 
 def show_action_type_form(type_id):
     check_current_user_is_not_readonly()
     action_type_translations = []
     action_type_language_ids = []
     action_type_form = ActionTypeForm()
+    action_type_form.set_select_usable_in_action_types_attributes()
 
     english = logic.languages.get_language(logic.languages.Language.ENGLISH)
 
@@ -169,6 +182,7 @@ def show_action_type_form(type_id):
             action_type_form.enable_related_objects.data = action_type.enable_related_objects
             action_type_form.enable_project_link.data = action_type.enable_project_link
             action_type_form.disable_create_objects.data = action_type.disable_create_objects
+            action_type_form.select_usable_in_action_types.data = [element.id for element in action_type.usable_in_action_types]
             action_type_form.is_template.data = action_type.is_template
             if action_type.scicat_export_type is None:
                 action_type_form.scicat_export_type.data = 'none'
@@ -229,6 +243,7 @@ def show_action_type_form(type_id):
                     enable_project_link=action_type_form.enable_project_link.data,
                     disable_create_objects=action_type_form.disable_create_objects.data,
                     is_template=action_type_form.is_template.data,
+                    usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,
                     scicat_export_type={
                         type.name.lower(): type
                         for type in [
@@ -261,6 +276,7 @@ def show_action_type_form(type_id):
                     )
 
         else:
+
             action_type = logic.actions.update_action_type(
                 action_type_id=type_id,
                 admin_only=action_type_form.admin_only.data,
@@ -276,6 +292,7 @@ def show_action_type_form(type_id):
                 enable_project_link=action_type_form.enable_project_link.data,
                 disable_create_objects=action_type_form.disable_create_objects.data,
                 is_template=action_type_form.is_template.data,
+                usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,
                 scicat_export_type={
                     'sample': SciCatExportType.SAMPLE,
                     'raw_dataset': SciCatExportType.RAW_DATASET,

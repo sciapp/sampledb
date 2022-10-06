@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-09-28 14:33+0200\n"
+"POT-Creation-Date: 2022-10-06 10:05+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -29,6 +29,9 @@ msgstr "Rohdatensatz"
 
 msgid "Derived Dataset"
 msgstr "Abgeleiteter Datensatz"
+
+msgid "Unnamed Action Type"
+msgstr "Unbenannter Aktionstyp"
 
 msgid "Please fill out the form."
 msgstr "Bitte füllen Sie das Formular aus."
@@ -940,9 +943,6 @@ msgstr "Gefahren"
 
 msgid "Objects"
 msgstr "Objekte"
-
-msgid "Unnamed Action Type"
-msgstr "Unbenannter Aktionstyp"
 
 msgid "Unnamed Action"
 msgstr "Unbenannte Aktion"
@@ -2541,6 +2541,9 @@ msgstr ""
 "Nein, verhindere das Einbinden von Aktionen dieses Typs als Schema-"
 "Vorlage in anderen Aktionen"
 
+msgid "Usable in"
+msgstr "Verwendbar in"
+
 msgid "SciCat Export Type"
 msgstr "SciCat-Export-Typ"
 
@@ -2651,6 +2654,9 @@ msgid "Allow actions of this type as schema templates in other actions"
 msgstr ""
 "Erlaube das Einbinden von Aktionen dieses Typs als Schema-Vorlage in "
 "anderen Aktionen"
+
+msgid "Nothing selected"
+msgstr "Nichts ausgewählt"
 
 msgid ""
 "Action Types represent different kinds of actions, such as sample "
@@ -4228,6 +4234,9 @@ msgstr "setzt:"
 msgid "New Object"
 msgstr "Neues Objekt"
 
+msgid "Select fields to insert reference"
+msgstr "Wähle die Felder für die Referenz aus"
+
 msgid "Batch Information"
 msgstr "Chargeninformationen"
 
@@ -4361,22 +4370,24 @@ msgstr "Projektgruppe anzeigen"
 msgid "Create a new object based on the information for this object."
 msgstr "Ein neues Objekt anhand der Informationen des Objektes erstellen."
 
-msgid "Create a new measurement using this sample."
-msgstr "Erstelle eine neue Messung mit dieser Probe."
+#, python-format
+msgid ""
+"Create a new %(new_object_name_singular)s using this "
+"%(current_object_name_singular)s."
+msgstr ""
+"Aus dieser %(current_object_name_singular)s eine neue "
+"%(new_object_name_singular)s erstellen."
 
 #, python-format
-msgid "Use in %(measurement_type_name)s"
-msgstr "In %(measurement_type_name)s nutzen"
-
-msgid "Measurement"
-msgstr "Messung"
+msgid "Use in %(action_type_name)s"
+msgstr "In %(action_type_name)s nutzen"
 
 msgid "Favorites"
 msgstr "Favoriten"
 
 #, python-format
-msgid "See other %(measurement_type_name)s Actions..."
-msgstr "Andere %(measurement_type_name)s-Aktionen anzeigen..."
+msgid "See other %(action_type_name)s Actions..."
+msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
 
 msgid "Generate a PDF containing labels for this object."
 msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren."

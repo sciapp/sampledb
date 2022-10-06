@@ -150,6 +150,7 @@ class ActionType(collections.namedtuple('ActionType', [
     'disable_create_objects',
     'is_template',
     'order_index',
+    'usable_in_action_types',
     'fed_id',
     'component_id',
     'scicat_export_type',
@@ -186,6 +187,7 @@ class ActionType(collections.namedtuple('ActionType', [
             disable_create_objects: bool,
             is_template: bool,
             order_index: int,
+            usable_in_action_types: typing.Optional[typing.Tuple[models.ActionType]],
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             scicat_export_type: typing.Optional[SciCatExportType] = None
@@ -213,6 +215,7 @@ class ActionType(collections.namedtuple('ActionType', [
             disable_create_objects,
             is_template,
             order_index,
+            usable_in_action_types,
             fed_id,
             component_id,
             scicat_export_type
@@ -243,6 +246,7 @@ class ActionType(collections.namedtuple('ActionType', [
             disable_create_objects=action_type.disable_create_objects,
             is_template=action_type.is_template,
             order_index=action_type.order_index,
+            usable_in_action_types=action_type.usable_in_action_types,
             fed_id=action_type.fed_id,
             component_id=action_type.component_id,
             scicat_export_type=action_type.scicat_export_type
@@ -317,6 +321,7 @@ def create_action_type(
         enable_project_link: bool,
         disable_create_objects: bool,
         is_template: bool,
+        usable_in_action_type_ids: typing.Sequence[int] = [],
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None,
         scicat_export_type: typing.Optional[SciCatExportType] = None
@@ -360,6 +365,10 @@ def create_action_type(
         disable_create_objects=disable_create_objects,
         is_template=is_template,
         order_index=None,
+        usable_in_action_types=[
+            models.ActionType.query.filter_by(id=action_type_id).first()
+            for action_type_id in usable_in_action_type_ids
+        ],
         fed_id=fed_id,
         component_id=component_id,
         scicat_export_type=scicat_export_type
@@ -384,6 +393,7 @@ def update_action_type(
         enable_project_link: bool,
         disable_create_objects: bool,
         is_template: bool,
+        usable_in_action_type_ids: typing.Sequence[int] = [],
         scicat_export_type: typing.Optional[SciCatExportType] = None
 ) -> ActionType:
     """
@@ -422,6 +432,10 @@ def update_action_type(
     action_type.enable_project_link = enable_project_link
     action_type.disable_create_objects = disable_create_objects
     action_type.is_template = is_template
+    action_type.usable_in_action_types = [
+        models.ActionType.query.filter_by(id=action_type_id).first()
+        for action_type_id in usable_in_action_type_ids
+    ]
     action_type.scicat_export_type = scicat_export_type
     db.session.add(action_type)
     db.session.commit()
@@ -654,3 +668,10 @@ def update_actions_using_template_action(
     db.session.commit()
     for other_template_action_id in updated_template_action_ids:
         update_actions_using_template_action(other_template_action_id)
+
+
+def is_usable_in_action_types_table_empty() -> bool:
+    """
+    Check if the usable in action types table has entries.
+    """
+    return db.session.query(models.actions.usable_in_action_types_table).first() is None

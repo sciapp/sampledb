@@ -3,6 +3,34 @@
 {% block title %}{{ _('New Object') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
+  {% if possible_properties|length > 1 and passed_object_id and show_selecting_modal %}
+  <div class="modal fade" id="selectionModal" tabindex="-1" role="dialog" data-target="selectionModalLabel">
+    <div class="modal-dialog" role="document">
+      <form class="form" method="post" action="{{ url_for('.new_object', action_id=action_id, object_id=passed_object_id, fields_selected=True) }}">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="selectionModalLabel">{{ _('Select fields to insert reference') }}</h4>
+          </div>
+          <div class="modal-body">
+            <ul id="fieldsModalList" class="list-group">
+              {% for property_name, property_data in possible_properties.items() %}
+                <li class="list-group-item">
+                  <input type="checkbox" name="{{ property_name }}" id="propertyCheckbox{{loop.index}}" data-value="{{ property_name }}">
+                  <label for="propertyCheckbox{{loop.index}}">{{ property_data['title'] | get_translated_text }}</label>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal"> {{ _('Cancel') }} </button>
+            <button type="submit" class="btn btn-primary"> {{ _('Apply') }} </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <form class="form-horizontal" method="post" action="{% if previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
     {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
@@ -180,6 +208,10 @@
         permissions_object_id_select.selectpicker('val', null);
     }
     {% endif %}
+    {% if possible_properties|length > 1 and passed_object_id and show_selecting_modal %}
+      $('#selectionModal').modal('show');
+    {% endif %}
+
   });
   </script>
 {% endblock%}
