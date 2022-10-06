@@ -172,9 +172,7 @@ def _get_or_create_location_type_id(
             component_id=component_id
         )
         fed_logs.create_ref_location_type(location_type.id, component_id)
-    # TODO: type hint LocationType wrapper
-    location_type_id: int = location_type.id
-    return location_type_id
+    return location_type.id
 
 
 def shared_location_type_preprocessor(
@@ -188,7 +186,7 @@ def shared_location_type_preprocessor(
         return None
     return SharedLocationTypeData(
         location_type_id=location_type.id if location_type.fed_id is None else location_type.fed_id,
-        component_uuid=flask.current_app.config['FEDERATION_UUID'] if location_type.component_id is None else location_type.component.uuid,
+        component_uuid=flask.current_app.config['FEDERATION_UUID'] if location_type.component is None else location_type.component.uuid,
         name=location_type.name,
         location_name_singular=location_type.location_name_singular,
         location_name_plural=location_type.location_name_plural,

@@ -8,6 +8,7 @@ description for details on where the object is stored.
 """
 
 import collections
+import dataclasses
 import datetime
 import typing
 
@@ -18,63 +19,26 @@ from .notifications import create_notification_for_being_assigned_as_responsible
 from ..models import locations
 
 
-class LocationType(collections.namedtuple(
-    'LocationType',
-    [
-        'id',
-        'name',
-        'location_name_singular',
-        'location_name_plural',
-        'admin_only',
-        'enable_parent_location',
-        'enable_sub_locations',
-        'enable_object_assignments',
-        'enable_responsible_users',
-        'show_location_log',
-        'fed_id',
-        'component_id',
-        'component'
-    ]
-)):
+@dataclasses.dataclass(frozen=True)
+class LocationType:
     """
     This class provides an immutable wrapper around models.locations.LocationType.
     """
+    id: int
+    name: typing.Optional[typing.Dict[str, str]]
+    location_name_singular: typing.Optional[typing.Dict[str, str]]
+    location_name_plural: typing.Optional[typing.Dict[str, str]]
+    admin_only: bool
+    enable_parent_location: bool
+    enable_sub_locations: bool
+    enable_object_assignments: bool
+    enable_responsible_users: bool
+    show_location_log: bool
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    component: typing.Optional[Component] = None
 
     LOCATION = locations.LocationType.LOCATION
-
-    def __new__(
-            cls,
-            id: int,
-            name: typing.Optional[typing.Dict[str, str]],
-            location_name_singular: typing.Optional[typing.Dict[str, str]],
-            location_name_plural: typing.Optional[typing.Dict[str, str]],
-            admin_only: bool,
-            enable_parent_location: bool,
-            enable_sub_locations: bool,
-            enable_object_assignments: bool,
-            enable_responsible_users: bool,
-            show_location_log: bool,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None,
-            component: typing.Optional[Component] = None
-    ) -> 'LocationType':
-        self = super(LocationType, cls).__new__(
-            cls,
-            id,
-            name,
-            location_name_singular,
-            location_name_plural,
-            admin_only,
-            enable_parent_location,
-            enable_sub_locations,
-            enable_object_assignments,
-            enable_responsible_users,
-            show_location_log,
-            fed_id,
-            component_id,
-            component
-        )
-        return self
 
     @classmethod
     def from_database(cls, location_type: locations.LocationType) -> 'LocationType':

@@ -214,7 +214,7 @@ def shared_location_preprocessor(
         if ('location_types', location.type_id) not in refs:
             refs.append(('location_types', location.type_id))
         location_type = get_location_type(location.type_id)
-        if location_type.component_id is None:
+        if location_type.component is None or location_type.fed_id is None:
             location_type_ref = LocationTypeRef(
                 location_type_id=location_type.id,
                 component_uuid=flask.current_app.config['FEDERATION_UUID']
