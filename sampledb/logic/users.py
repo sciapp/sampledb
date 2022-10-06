@@ -5,6 +5,7 @@
 
 import collections
 import copy
+import dataclasses
 import datetime
 import typing
 
@@ -42,67 +43,30 @@ class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id
         return bool(datetime.datetime.utcnow() >= expiration_datetime)
 
 
-class User(collections.namedtuple('User', [
-    'id',
-    'name',
-    'email',
-    'type',
-    'is_admin',
-    'is_readonly',
-    'is_hidden',
-    'is_active',
-    'orcid',
-    'affiliation',
-    'role',
-    'extra_fields',
-    'fed_id',
-    'component_id',
-    'last_modified',
-    'last_modified_by_id',
-]), flask_login.UserMixin):  # type: ignore
+@dataclasses.dataclass(frozen=True)
+class User:
     """
     This class provides an immutable wrapper around models.users.User.
     """
 
-    def __new__(
-            cls,
-            id: int,
-            name: str,
-            email: str,
-            type: UserType,
-            is_admin: bool,
-            is_readonly: bool,
-            is_hidden: bool,
-            is_active: bool,
-            orcid: str,
-            affiliation: str,
-            role: str,
-            extra_fields: typing.Dict[str, typing.Any],
-            fed_id: int,
-            component_id: int,
-            last_modified: datetime.datetime,
-            last_modified_by_id: typing.Optional[int],
-    ) -> 'User':
-        self = super(User, cls).__new__(
-            cls,
-            id,
-            name,
-            email,
-            type,
-            is_admin,
-            is_readonly,
-            is_hidden,
-            is_active,
-            orcid,
-            affiliation,
-            role,
-            extra_fields,
-            fed_id,
-            component_id,
-            last_modified,
-            last_modified_by_id,
-        )
-        return self
+    id: int
+    name: typing.Optional[str]
+    email: typing.Optional[str]
+    type: UserType
+    is_admin: bool
+    is_readonly: bool
+    is_hidden: bool
+    is_active: bool
+    orcid: typing.Optional[str]
+    affiliation: typing.Optional[str]
+    role: typing.Optional[str]
+    extra_fields: typing.Dict[str, typing.Any]
+    fed_id: typing.Optional[int]
+    component_id: typing.Optional[int]
+    last_modified: datetime.datetime
+    last_modified_by_id: typing.Optional[int]
+    # for use by .languages.get_user_language, no type hint to avoid circular import
+    language_cache: typing.List[typing.Optional[typing.Any]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, user: users.User) -> 'User':
@@ -132,8 +96,26 @@ class User(collections.namedtuple('User', [
         return get_component(self.component_id)
 
     def get_id(self) -> int:
-        # TODO: type hint User wrapper
-        return typing.cast(int, self.id)
+        return self.id
+
+    @property
+    def is_authenticated(self) -> bool:
+        return self.is_active
+
+    @property
+    def is_anonymous(self) -> bool:
+        return False
+
+    def __eq__(self, other: typing.Any) -> bool:
+        if isinstance(other, (flask_login.UserMixin, User)):
+            return bool(self.get_id() == other.get_id())
+        return NotImplemented
+
+    def __ne__(self, other: typing.Any) -> bool:
+        equal = self.__eq__(other)
+        if equal is NotImplemented:
+            return NotImplemented
+        return not equal
 
     def get_name(self, include_ref: bool = False) -> str:
         if include_ref and self.component_id is not None:

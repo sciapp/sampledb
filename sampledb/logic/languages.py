@@ -197,7 +197,7 @@ def get_user_language(user: User) -> Language:
         except errors.LanguageDoesNotExistError:
             return get_language(models.Language.ENGLISH)
 
-    language = getattr(user, 'language', None)
+    language = user.language_cache[0]
     if language is None:
         auto_lc = settings.get_user_settings(user.id)['AUTO_LC']
         if auto_lc:
@@ -208,7 +208,7 @@ def get_user_language(user: User) -> Language:
             language = get_language_by_lang_code(language_code)
         except errors.LanguageDoesNotExistError:
             language = get_language(models.Language.ENGLISH)
-        user.language = language
+        user.language_cache[0] = language
     return language
 
 

@@ -313,7 +313,7 @@ def shared_action_preprocessor(
         user = None
     else:
         u = get_user(action.user_id)
-        if u.component_id is None:
+        if u.component_id is None or u.fed_id is None:
             user = UserRef(
                 user_id=u.id,
                 component_uuid=flask.current_app.config['FEDERATION_UUID']

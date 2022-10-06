@@ -97,16 +97,16 @@ def parse_user(
     if uuid != component.uuid:
         # only accept user data from original source
         raise errors.InvalidDataExportError('User data update for user #{} @ {}'.format(fed_id, uuid))
-    return {
-        'fed_id': fed_id,
-        'component_uuid': uuid,
-        'name': _get_str(user_data.get('name')),
-        'email': _get_str(user_data.get('email')),
-        'orcid': _get_str(user_data.get('orcid')),
-        'affiliation': _get_str(user_data.get('affiliation')),
-        'role': _get_str(user_data.get('role')),
-        'extra_fields': _get_dict(user_data.get('extra_fields'), default={})
-    }
+    return UserData(
+        fed_id=fed_id,
+        component_uuid=uuid,
+        name=_get_str(user_data.get('name')),
+        email=_get_str(user_data.get('email')),
+        orcid=_get_str(user_data.get('orcid')),
+        affiliation=_get_str(user_data.get('affiliation')),
+        role=_get_str(user_data.get('role')),
+        extra_fields=_get_dict(user_data.get('extra_fields'), default={})
+    )
 
 
 @typing.overload

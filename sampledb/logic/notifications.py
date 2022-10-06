@@ -179,6 +179,9 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         exists
     """
     user = logic.users.get_user(user_id)
+    if user.email is None:
+        return None
+
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Notification"
 
@@ -321,8 +324,10 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    # ensure the user exists
-    logic.users.get_user(user_id)
+    user = logic.users.get_user(user_id)
+    if user.component_id is not None:
+        # disable notifications for users from other components
+        return NotificationMode.IGNORE
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
         return typing.cast(NotificationMode, notification_mode_for_type.mode)

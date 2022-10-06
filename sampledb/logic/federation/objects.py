@@ -469,7 +469,7 @@ def shared_object_preprocessor(
                     location_ref = None
                 if ola.responsible_user_id is not None:
                     responsible_user = get_user(ola.responsible_user_id)
-                    if responsible_user.component_id is not None:
+                    if responsible_user.component_id is not None and responsible_user.fed_id is not None:
                         comp = responsible_user.component
                         responsible_user_ref = UserRef(
                             user_id=responsible_user.fed_id,
@@ -483,7 +483,7 @@ def shared_object_preprocessor(
                 else:
                     responsible_user_ref = None
                 ola_user = get_user(ola.user_id)
-                if ola_user.component_id is not None:
+                if ola_user.component_id is not None and ola_user.fed_id is not None:
                     comp = ola_user.component
                     c_user = UserRef(
                         user_id=ola_user.fed_id,
@@ -525,7 +525,7 @@ def shared_object_preprocessor(
             if ('users', version.user_id) not in refs:
                 refs.append(('users', version.user_id))
             user = get_user(version.user_id)
-            if user.component_id is not None:
+            if user.component_id is not None and user.fed_id is not None:
                 comp = user.component
                 version_user = UserRef(
                     user_id=user.fed_id,
