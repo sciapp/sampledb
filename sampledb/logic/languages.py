@@ -195,7 +195,7 @@ def get_language_by_lang_code(lang_code: str) -> Language:
     return Language.from_database(language)
 
 
-def get_user_language(user: User) -> Language:
+def get_user_language(user: typing.Optional[User]) -> Language:
     """
     Return the language of the current user.
 

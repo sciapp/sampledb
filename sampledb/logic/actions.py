@@ -124,7 +124,7 @@ class ActionType:
     def from_database(
             cls,
             action_type: models.ActionType,
-            previously_wrapped_action_types: typing.Dict[int, 'ActionType'] = None
+            previously_wrapped_action_types: typing.Optional[typing.Dict[int, 'ActionType']] = None
     ) -> 'ActionType':
         if previously_wrapped_action_types is None:
             previously_wrapped_action_types = {}
@@ -593,4 +593,4 @@ def is_usable_in_action_types_table_empty() -> bool:
     """
     Check if the usable in action types table has entries.
     """
-    return db.session.query(models.actions.usable_in_action_types_table).first() is None
+    return db.session.query(models.actions.usable_in_action_types_table).first() is None  # type: ignore

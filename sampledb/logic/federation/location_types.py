@@ -53,7 +53,7 @@ def import_location_type(
 
         ignored_keys = {
             'fed_id',
-            'component_id'
+            'component_uuid'
         }
         if any(
                 value != getattr(location_type, key)

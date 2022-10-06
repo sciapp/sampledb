@@ -48,7 +48,8 @@ class Comment:
 def create_comment(
         object_id: int,
         user_id: typing.Optional[int],
-        content: str, utc_datetime: typing.Optional[datetime.datetime] = None,
+        content: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None
 ) -> int:

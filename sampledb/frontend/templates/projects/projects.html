@@ -17,10 +17,10 @@
   <ul id="projects_list">
   {% for level, project_id in project_id_hierarchy_list %}
     {% with project = projects_by_id[project_id] %}
-    <li><a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name | get_translated_text }}</a>{% if project.permissions != Permissions.NONE %} <span class="label label-default">{{ _('Member') }}
-    {% if project.permissions == Permissions.READ %}({{ _('Read') }}){% endif %}
-    {% if project.permissions == Permissions.WRITE %}({{ _('Write') }}){% endif %}
-    {% if project.permissions == Permissions.GRANT %}({{ _('Grant') }}){% endif %}
+    <li><a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name | get_translated_text }}</a>{% if project_permissions_by_id[project.id] != Permissions.NONE %} <span class="label label-default">{{ _('Member') }}
+    {% if project_permissions_by_id[project.id] == Permissions.READ %}({{ _('Read') }}){% endif %}
+    {% if project_permissions_by_id[project.id] == Permissions.WRITE %}({{ _('Write') }}){% endif %}
+    {% if project_permissions_by_id[project.id] == Permissions.GRANT %}({{ _('Grant') }}){% endif %}
     </span>{% endif %}
     {% if not config['DISABLE_SUBPROJECTS'] %}
       {% if loop.index < project_id_hierarchy_list | length %}

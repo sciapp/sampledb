@@ -452,7 +452,7 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator]]) -
     new_tokens: typing.List[typing.Union[Text, Operator, Literal]] = []
     for token in previous_tokens:
         if not isinstance(token, Token):
-            tokens.append(token)
+            new_tokens.append(token)
             continue
 
         start = token.start_position

@@ -47,7 +47,7 @@ def import_user(
         mutable_user = get_mutable_user(user_data['fed_id'], component_id)
         ignored_keys = {
             'fed_id',
-            'component_id'
+            'component_uuid'
         }
         if any(
                 value != getattr(mutable_user, key)
@@ -118,8 +118,8 @@ def _parse_user_ref(
 
 @typing.overload
 def _parse_user_ref(
-        user_data: typing.Optional[typing.Union[UserRef, typing.Dict[str, typing.Any]]]
-) -> typing.Optional[UserRef]:
+        user_data: None
+) -> None:
     ...
 
 
@@ -169,9 +169,7 @@ def _get_or_create_user_id(
         )
         set_user_hidden(user.id, True)
         fed_logs.create_ref_user(user.id, component_id)
-    # TODO: type hint User wrapper
-    user_id: int = user.id
-    return user_id
+    return user.id
 
 
 def shared_user_preprocessor(

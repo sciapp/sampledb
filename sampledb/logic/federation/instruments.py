@@ -111,7 +111,7 @@ def import_instrument(
 
         ignored_keys = {
             'fed_id',
-            'component_id'
+            'component_uuid'
         }
         if any(
                 value != getattr(mutable_instrument, key)
@@ -170,9 +170,7 @@ def _get_or_create_instrument_id(
         assert component_id is not None
         instrument = create_instrument(fed_id=instrument_data['instrument_id'], component_id=component_id)
         fed_logs.create_ref_instrument(instrument.id, component_id)
-    # TODO: type hint Instrument wrapper
-    instrument_id: int = instrument.id
-    return instrument_id
+    return instrument.id
 
 
 def _parse_instrument_ref(

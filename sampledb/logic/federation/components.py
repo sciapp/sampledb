@@ -15,6 +15,4 @@ def _get_or_create_component_id(
         component = get_component_by_uuid(component_uuid)
     except errors.ComponentDoesNotExistError:
         component = add_component(uuid=component_uuid, description='', name=None, address=None)
-    # TODO: type hint Component wrapper
-    component_id: int = component.id
-    return component_id
+    return component.id

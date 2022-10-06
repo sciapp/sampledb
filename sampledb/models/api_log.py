@@ -48,7 +48,8 @@ class APILogEntry(db.Model):
             api_token_id: int,
             method: HTTPMethod,
             route: str,
-            utc_datetime: typing.Optional[datetime.datetime] = None) -> None:
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.api_token_id = api_token_id
         self.method = method
         self.route = route

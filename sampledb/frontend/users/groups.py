@@ -37,8 +37,10 @@ def groups():
         groups = logic.groups.get_user_groups(user_id)
     else:
         groups = logic.groups.get_groups()
-    for group in groups:
-        group.is_member = (flask_login.current_user.id in logic.groups.get_group_member_ids(group.id))
+    group_membership_by_id = {
+        group.id: (flask_login.current_user.id in logic.groups.get_group_member_ids(group.id))
+        for group in groups
+    }
     create_group_form = CreateGroupForm()
     show_create_form = False
     if 'create' in flask.request.form:
@@ -87,6 +89,7 @@ def groups():
     return flask.render_template(
         "groups/groups.html",
         groups=groups,
+        group_membership_by_id=group_membership_by_id,
         create_group_form=create_group_form,
         show_create_form=show_create_form,
         ENGLISH=english,

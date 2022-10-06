@@ -227,22 +227,22 @@ def test_get_user_language():
     db.session.add(user)
     db.session.commit()
     user = users.get_user(user.id)
-    assert getattr(user, 'language', None) is None
+    assert user.language_cache[0] is None
 
     assert languages.get_user_language(user) == english
-    assert getattr(user, 'language', None) == english
+    assert user.language_cache[0] == english
 
     settings.set_user_settings(user.id, {'LOCALE': 'de', 'AUTO_LC': False})
     assert languages.get_user_language(user) == english
 
-    delattr(user, 'language')
+    user.language_cache[0] = None
     assert languages.get_user_language(user) == german
-    assert getattr(user, 'language', None) == german
+    assert user.language_cache[0] == german
 
-    delattr(user, 'language')
+    user.language_cache[0] = None
     settings.set_user_settings(user.id, {'LOCALE': 'xy'})
     assert languages.get_user_language(user) == english
-    assert getattr(user, 'language', None) == english
+    assert user.language_cache[0] == english
 
 
 def test_get_languages_in_object_data():

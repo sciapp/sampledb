@@ -101,7 +101,7 @@ class ObjectLocationAssignment:
     id: int
     object_id: int
     location_id: typing.Optional[int]
-    user_id: int
+    user_id: typing.Optional[int]
     description: typing.Optional[typing.Dict[str, str]]
     utc_datetime: datetime.datetime
     responsible_user_id: typing.Optional[int]

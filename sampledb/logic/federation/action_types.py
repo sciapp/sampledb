@@ -80,7 +80,7 @@ def import_action_type(
 
         ignored_keys = {
             'fed_id',
-            'component_id'
+            'component_uuid'
         }
         if any(
                 value != getattr(action_type, key)
@@ -245,9 +245,7 @@ def _get_or_create_action_type_id(
             scicat_export_type=None
         )
         fed_logs.create_ref_action_type(action_type.id, component_id)
-    # TODO: type hint ActionType wrapper
-    action_type_id: int = action_type.id
-    return action_type_id
+    return action_type.id
 
 
 def shared_action_type_preprocessor(

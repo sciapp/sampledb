@@ -159,18 +159,28 @@ def import_action(
 
     try:
         mutable_action = get_mutable_action(action_data['fed_id'], component_id)
-        if mutable_action.type_id != action_type_id or mutable_action.schema != action_data['schema'] or mutable_action.instrument_id != instrument_id or mutable_action.user_id != user_id or mutable_action.description_is_markdown != action_data['description_is_markdown'] or mutable_action.is_hidden != action_data['is_hidden'] or mutable_action.short_description_is_markdown != action_data['short_description_is_markdown'] or ('admin_only' in action_data and mutable_action.admin_only != action_data['admin_only']) or ('disable_create_objects' in action_data and mutable_action.disable_create_objects != action_data['disable_create_objects']):
-            mutable_action.action_type_id = action_type_id
+        ignored_keys = {
+            'fed_id',
+            'component_uuid',
+            'action_type',
+            'instrument',
+            'user',
+            'schema'
+        }
+        if any(
+                value != getattr(mutable_action, key)
+                for key, value in action_data.items()
+                if key not in ignored_keys
+        ) or mutable_action.type_id != action_type_id or mutable_action.instrument_id != instrument_id or mutable_action.user_id != user_id or mutable_action.schema != schema:
+            mutable_action.type_id = action_type_id
             mutable_action.schema = schema
             mutable_action.instrument_id = instrument_id
             mutable_action.user_id = user_id
             mutable_action.description_is_markdown = action_data['description_is_markdown']
             mutable_action.is_hidden = action_data['is_hidden']
             mutable_action.short_description_is_markdown = action_data['short_description_is_markdown']
-            if 'admin_only' in action_data:
-                mutable_action.admin_only = action_data['admin_only']
-            if 'disable_create_objects' in action_data:
-                mutable_action.disable_create_objects = action_data['disable_create_objects']
+            mutable_action.admin_only = action_data['admin_only']
+            mutable_action.disable_create_objects = action_data['disable_create_objects']
             db.session.commit()
             fed_logs.update_action(mutable_action.id, component.id)
         action = Action.from_database(mutable_action)
@@ -233,9 +243,7 @@ def _get_or_create_action_id(
         assert component_id is not None
         action = create_action(action_type_id=None, schema=None, fed_id=action_data['action_id'], component_id=component_id)
         fed_logs.create_ref_action(action.id, component_id)
-    # TODO: type hint Action wrapper
-    action_id: int = action.id
-    return action_id
+    return action.id
 
 
 def shared_action_preprocessor(

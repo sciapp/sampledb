@@ -84,8 +84,8 @@ def test_get_users(flask_server):
     assert result['header']['db_uuid'] == uuid
     assert result['header']['target_uuid'] == component.uuid
     assert result['header']['protocol_version'] == {
-        'major': logic.federation.PROTOCOL_VERSION_MAJOR,
-        'minor': logic.federation.PROTOCOL_VERSION_MINOR
+        'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
+        'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
     assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
 
@@ -101,8 +101,8 @@ def test_get_users(flask_server):
     assert result['header']['db_uuid'] == uuid
     assert result['header']['target_uuid'] == component.uuid
     assert result['header']['protocol_version'] == {
-        'major': logic.federation.PROTOCOL_VERSION_MAJOR,
-        'minor': logic.federation.PROTOCOL_VERSION_MINOR
+        'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
+        'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
     assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
 
@@ -118,8 +118,8 @@ def test_get_users(flask_server):
     assert result['header']['db_uuid'] == uuid
     assert result['header']['target_uuid'] == component.uuid
     assert result['header']['protocol_version'] == {
-        'major': logic.federation.PROTOCOL_VERSION_MAJOR,
-        'minor': logic.federation.PROTOCOL_VERSION_MINOR
+        'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
+        'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
     assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
 
@@ -135,7 +135,7 @@ def test_get_users(flask_server):
     assert result['header']['db_uuid'] == uuid
     assert result['header']['target_uuid'] == component.uuid
     assert result['header']['protocol_version'] == {
-        'major': logic.federation.PROTOCOL_VERSION_MAJOR,
-        'minor': logic.federation.PROTOCOL_VERSION_MINOR
+        'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
+        'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
     assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync

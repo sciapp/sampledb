@@ -19,7 +19,7 @@ class ObjectLocationAssignmentData(typing.TypedDict):
     component_uuid: str
     location: typing.Optional[LocationRef]
     responsible_user: typing.Optional[UserRef]
-    user: UserRef
+    user: typing.Optional[UserRef]
     description: typing.Optional[typing.Dict[str, str]]
     utc_datetime: datetime
     confirmed: bool
@@ -79,7 +79,7 @@ def parse_object_location_assignment(
         component_uuid=uuid,
         location=_parse_location_ref(location_data),
         responsible_user=_parse_user_ref(responsible_user_data),
-        user=_parse_user_ref(_get_dict(assignment_data.get('user'), mandatory=True)),
+        user=_parse_user_ref(_get_dict(assignment_data.get('user'))),
         description=description,
         utc_datetime=_get_utc_datetime(assignment_data.get('utc_datetime'), mandatory=True),
         confirmed=_get_bool(assignment_data.get('confirmed'), default=False),

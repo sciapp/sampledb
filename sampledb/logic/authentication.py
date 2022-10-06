@@ -9,7 +9,7 @@ from . import errors, api_log
 
 
 def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return str(bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))
 
 
 def _validate_password_hash(password: str, password_hash: str) -> bool:

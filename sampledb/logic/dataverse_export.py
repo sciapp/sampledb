@@ -338,7 +338,6 @@ def upload_object(
         users.get_user(author_id)
         for author_id in author_ids
     ]
-    # TODO: type hint User wrapper
     authors.sort(key=lambda author: author.name)  # type: ignore
 
     tags = set()

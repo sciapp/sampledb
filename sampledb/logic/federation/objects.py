@@ -90,7 +90,7 @@ class SharedObjectLocationAssignmentData(typing.TypedDict):
     component_uuid: str
     location: typing.Optional[LocationRef]
     responsible_user: typing.Optional[UserRef]
-    user: UserRef
+    user: typing.Optional[UserRef]
     description: typing.Optional[typing.Dict[str, str]]
     utc_datetime: str
     confirmed: bool
@@ -113,6 +113,7 @@ def import_object(
         component: Component
 ) -> Object:
     action_id = _get_or_create_action_id(object_data['action'])
+    object = None
     for version in object_data['versions']:
         try:
             object = get_fed_object(object_data['fed_object_id'], component.id, version['fed_version_id'])
@@ -148,10 +149,11 @@ def import_object(
                 allow_disabled_languages=True
             )
             fed_logs.update_object(object.id, component.id)
-    object = get_fed_object(
-        fed_object_id=object_data['fed_object_id'],
-        component_id=object_data['component_id']
-    )
+    if object is None:
+        object = get_fed_object(
+            fed_object_id=object_data['fed_object_id'],
+            component_id=object_data['component_id']
+        )
 
     for comment_data in object_data['comments']:
         import_comment(comment_data, object, component)
@@ -482,18 +484,21 @@ def shared_object_preprocessor(
                         )
                 else:
                     responsible_user_ref = None
-                ola_user = get_user(ola.user_id)
-                if ola_user.component is not None and ola_user.fed_id is not None:
-                    comp = ola_user.component
-                    c_user = UserRef(
-                        user_id=ola_user.fed_id,
-                        component_uuid=comp.uuid
-                    )
+                if ola.user_id is not None:
+                    ola_user = get_user(ola.user_id)
+                    if ola_user.component is not None and ola_user.fed_id is not None:
+                        comp = ola_user.component
+                        c_user = UserRef(
+                            user_id=ola_user.fed_id,
+                            component_uuid=comp.uuid
+                        )
+                    else:
+                        c_user = UserRef(
+                            user_id=ola_user.id,
+                            component_uuid=flask.current_app.config['FEDERATION_UUID']
+                        )
                 else:
-                    c_user = UserRef(
-                        user_id=ola_user.id,
-                        component_uuid=flask.current_app.config['FEDERATION_UUID']
-                    )
+                    c_user = None
                 if ola.component_id is None:
                     component_uuid = flask.current_app.config['FEDERATION_UUID']
                 else:

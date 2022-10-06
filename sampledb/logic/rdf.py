@@ -159,7 +159,7 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
 
     object_name = object.data.get('name', {}).get('text', 'Unnamed Object') if object.data is not None else 'Unnamed Object'
 
-    return RDF_TEMPLATE.render(
+    return str(RDF_TEMPLATE.render(
         object_url=object_url,
         object_name=object_name,
         object_name_is_str=isinstance(object_name, str),
@@ -182,4 +182,4 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
         version_urls=version_urls,
         current_object_url=current_object_url,
         get_translated_text=get_translated_text
-    )
+    ))
