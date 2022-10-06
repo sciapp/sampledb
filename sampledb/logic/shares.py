@@ -2,7 +2,7 @@
 """
 
 """
-import collections
+import dataclasses
 import datetime
 import typing
 
@@ -13,21 +13,16 @@ from ..models import Object
 from .. import db, models
 
 
-class ObjectShare(collections.namedtuple('ObjectShare', ['object_id', 'component_id', 'policy', 'utc_datetime', 'component'])):
+@dataclasses.dataclass(frozen=True)
+class ObjectShare:
     """
     This class provides an immutable wrapper around models.shares.ObjectShare.
     """
-
-    def __new__(
-            cls,
-            object_id: int,
-            component_id: int,
-            policy: typing.Dict[str, typing.Any],
-            utc_datetime: typing.Optional[datetime.datetime],
-            component: typing.Optional[Component]
-    ) -> 'ObjectShare':
-        self = super(ObjectShare, cls).__new__(cls, object_id, component_id, policy, utc_datetime, component)
-        return self
+    object_id: int
+    component_id: int
+    policy: typing.Dict[str, typing.Any]
+    utc_datetime: typing.Optional[datetime.datetime]
+    component: typing.Optional[Component]
 
     @classmethod
     def from_database(cls, object_share: models.ObjectShare) -> 'ObjectShare':
