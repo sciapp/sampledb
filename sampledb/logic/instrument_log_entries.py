@@ -11,7 +11,6 @@ Files can be attached to these log entries, e.g. to supply the instrument scient
 with control files or photographs of an experiment setup.
 """
 
-import collections
 import dataclasses
 import datetime
 import typing
@@ -135,27 +134,15 @@ class InstrumentLogObjectAttachment:
         )
 
 
-class InstrumentLogCategory(
-    collections.namedtuple(
-        'InstrumentLogCategory',
-        ['id', 'instrument_id', 'title', 'theme']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogCategory:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogCategory.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            instrument_id: int,
-            title: str,
-            theme: instrument_log_entries.InstrumentLogCategoryTheme
-    ) -> 'InstrumentLogCategory':
-        self = super(InstrumentLogCategory, cls).__new__(
-            cls, id, instrument_id, title, theme
-        )
-        return self
+    id: int
+    instrument_id: int
+    title: str
+    theme: instrument_log_entries.InstrumentLogCategoryTheme
 
     @classmethod
     def from_database(
