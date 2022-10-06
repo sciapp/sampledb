@@ -14,7 +14,6 @@ SQLAlchemy ORM class.
 As the group models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
-import collections
 import dataclasses
 import datetime
 import typing
@@ -48,14 +47,17 @@ class Group:
         return Group(id=group.id, name=group.name, description=group.description)
 
 
-class GroupInvitation(collections.namedtuple('GroupInvitation', ['id', 'group_id', 'user_id', 'inviter_id', 'utc_datetime', 'accepted'])):
+@dataclasses.dataclass(frozen=True)
+class GroupInvitation:
     """
     This class provides an immutable wrapper around models.groups.GroupInvitation.
     """
-
-    def __new__(cls, id: int, group_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool) -> 'GroupInvitation':
-        self = super(GroupInvitation, cls).__new__(cls, id, group_id, user_id, inviter_id, utc_datetime, accepted)
-        return self
+    id: int
+    group_id: int
+    user_id: int
+    inviter_id: int
+    utc_datetime: datetime.datetime
+    accepted: bool
 
     @classmethod
     def from_database(cls, group_invitation: groups.GroupInvitation) -> 'GroupInvitation':
