@@ -8,20 +8,20 @@ a more unified vocabulary without strictly enforcing a whitelist of tags.
 """
 
 
-import collections
+import dataclasses
 import typing
 from .. import db
 from ..models import tags, objects
 
 
-class Tag(collections.namedtuple('Tag', ['id', 'name', 'uses'])):
+@dataclasses.dataclass(frozen=True)
+class Tag:
     """
     This class provides an immutable wrapper around models.tags.Tag.
     """
-
-    def __new__(cls, id: int, name: str, uses: int) -> 'Tag':
-        self = super(Tag, cls).__new__(cls, id, name, uses)
-        return self
+    id: int
+    name: str
+    uses: int
 
     @classmethod
     def from_database(cls, tag: tags.Tag) -> 'Tag':
