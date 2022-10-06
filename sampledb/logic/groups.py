@@ -15,6 +15,7 @@ As the group models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
 import collections
+import dataclasses
 import datetime
 import typing
 
@@ -33,19 +34,14 @@ from . import errors
 MAX_GROUP_NAME_LENGTH = 100
 
 
-class Group(collections.namedtuple('Group', ['id', 'name', 'description'])):
+@dataclasses.dataclass(frozen=True)
+class Group:
     """
     This class provides an immutable wrapper around models.groups.Group.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            name: typing.Dict[str, str],
-            description: typing.Dict[str, str]
-    ) -> 'Group':
-        self = super(Group, cls).__new__(cls, id, name, description)
-        return self
+    id: int
+    name: typing.Dict[str, str]
+    description: typing.Dict[str, str]
 
     @classmethod
     def from_database(cls, group: groups.Group) -> 'Group':
