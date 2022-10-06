@@ -3,7 +3,6 @@
 
 """
 
-import collections
 import copy
 import dataclasses
 import datetime
@@ -168,46 +167,25 @@ class AnonymousUser(flask_login.AnonymousUserMixin):  # type: ignore
         return False
 
 
-class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields', 'last_modified'])):
+@dataclasses.dataclass(frozen=True)
+class UserFederationAlias:
     """
     This class provides an immutable wrapper around models.users.UserFederationAlias.
     """
-
-    def __new__(
-            cls,
-            user_id: int,
-            component_id: int,
-            name: typing.Optional[str],
-            use_real_name: bool,
-            email: typing.Optional[str],
-            use_real_email: bool,
-            orcid: typing.Optional[str],
-            use_real_orcid: bool,
-            affiliation: typing.Optional[str],
-            use_real_affiliation: bool,
-            role: typing.Optional[str],
-            use_real_role: bool,
-            extra_fields: typing.Dict[str, typing.Any],
-            last_modified: datetime.datetime
-    ) -> 'UserFederationAlias':
-        self = super(UserFederationAlias, cls).__new__(
-            cls,
-            user_id,
-            component_id,
-            name,
-            use_real_name,
-            email,
-            use_real_email,
-            orcid,
-            use_real_orcid,
-            affiliation,
-            use_real_affiliation,
-            role,
-            use_real_role,
-            extra_fields,
-            last_modified
-        )
-        return self
+    user_id: int
+    component_id: int
+    name: typing.Optional[str]
+    use_real_name: bool
+    email: typing.Optional[str]
+    use_real_email: bool
+    orcid: typing.Optional[str]
+    use_real_orcid: bool
+    affiliation: typing.Optional[str]
+    use_real_affiliation: bool
+    role: typing.Optional[str]
+    use_real_role: bool
+    extra_fields: typing.Dict[str, typing.Any]
+    last_modified: datetime.datetime
 
     @classmethod
     def from_database(cls, alias: users.UserFederationAlias) -> 'UserFederationAlias':
