@@ -58,30 +58,18 @@ class InstrumentLogEntry:
         return get_instrument_log_object_attachments(self.id)
 
 
-class InstrumentLogEntryVersion(
-    collections.namedtuple(
-        'InstrumentLogEntryVersion',
-        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories', 'content_is_markdown', 'event_utc_datetime']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogEntryVersion:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogEntryVersion.
     """
-
-    def __new__(
-            cls,
-            log_entry_id: int,
-            version_id: int,
-            content: str,
-            utc_datetime: datetime.datetime,
-            categories: typing.List['InstrumentLogCategory'],
-            content_is_markdown: bool = False,
-            event_utc_datetime: typing.Optional[datetime.datetime] = None
-    ) -> 'InstrumentLogEntryVersion':
-        self = super(InstrumentLogEntryVersion, cls).__new__(
-            cls, log_entry_id, version_id, content, utc_datetime, categories, content_is_markdown, event_utc_datetime
-        )
-        return self
+    log_entry_id: int
+    version_id: int
+    content: str
+    utc_datetime: datetime.datetime
+    categories: typing.List['InstrumentLogCategory']
+    content_is_markdown: bool = False
+    event_utc_datetime: typing.Optional[datetime.datetime] = None
 
     @classmethod
     def from_database(cls, instrument_log_entry_version: instrument_log_entries.InstrumentLogEntryVersion) -> 'InstrumentLogEntryVersion':
