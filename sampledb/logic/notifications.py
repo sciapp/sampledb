@@ -3,7 +3,7 @@
 
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
 
@@ -17,22 +17,17 @@ from .background_tasks.send_mail import post_send_mail_task
 from .. import db
 
 
-class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_id', 'data', 'was_read', 'utc_datetime'])):
+@dataclasses.dataclass(frozen=True)
+class Notification:
     """
     This class provides an immutable wrapper around models.notifications.Notification.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            type: NotificationType,
-            user_id: int,
-            data: typing.Dict[str, typing.Any],
-            was_read: bool,
-            utc_datetime: typing.Optional[datetime.datetime] = None
-    ) -> 'Notification':
-        self = super(Notification, cls).__new__(cls, id, type, user_id, data, was_read, utc_datetime)
-        return self
+    id: int
+    type: NotificationType
+    user_id: int
+    data: typing.Dict[str, typing.Any]
+    was_read: bool
+    utc_datetime: typing.Optional[datetime.datetime] = None
 
     @classmethod
     def from_database(cls, notification: notifications.Notification) -> 'Notification':
