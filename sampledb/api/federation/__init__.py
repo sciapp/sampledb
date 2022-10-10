@@ -3,10 +3,10 @@
 API for data exchange in SampleDB federations
 """
 
-from flask_restful import Api
+from flask import Blueprint
 from .federation import UpdateHook, Objects, Users
 
-api = Api()
-api.add_resource(UpdateHook, '/federation/v1/hooks/update/', endpoint='federation.hooks.update')
-api.add_resource(Objects, '/federation/v1/shares/objects/', endpoint='federation.object_updates')
-api.add_resource(Users, '/federation/v1/shares/users/', endpoint='federation.users')
+federation_api = Blueprint('federation_api', __name__)
+federation_api.add_url_rule('/federation/v1/hooks/update/', endpoint='hooks_update', view_func=UpdateHook.as_view('update_hook'))
+federation_api.add_url_rule('/federation/v1/shares/objects/', endpoint='object_updates', view_func=Objects.as_view('objects'))
+federation_api.add_url_rule('/federation/v1/shares/users/', endpoint='users', view_func=Users.as_view('users'))

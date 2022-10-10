@@ -7,8 +7,8 @@ import datetime
 import typing
 
 import flask
-from flask_restful import Resource
 
+from ..utils import Resource
 from ...logic import errors
 from ...logic.shares import get_shares_for_component
 from ...logic.federation.action_types import shared_action_type_preprocessor

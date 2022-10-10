@@ -31,7 +31,6 @@ Flask-HTTPAuth==4.7.0
 Flask-Login==0.6.1
 Flask-Mail==0.9.1
 Flask-MonitoringDashboard==3.1.1
-Flask-RESTful==0.3.9
 Flask-SQLAlchemy==2.5.1
 Flask-WTF==1.0.1
 fonttools==4.33.3

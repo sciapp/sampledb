@@ -7,9 +7,9 @@ import base64
 import json
 
 import flask
-from flask_restful import Resource
 
 from .authentication import multi_auth
+from ..utils import Resource
 from ...logic.instruments import get_instrument
 from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, InstrumentLogEntry, InstrumentLogEntryVersion, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, InstrumentLogCategory
 from ...logic import errors

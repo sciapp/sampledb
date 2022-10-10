@@ -5,9 +5,8 @@ RESTful API for SampleDB
 
 import flask
 
-from flask_restful import Resource
-
 from .authentication import object_permissions_required, Permissions
+from ..utils import Resource
 from ...logic.comments import Comment, create_comment, get_comments_for_object, get_comment_for_object
 from ...logic import errors
 
