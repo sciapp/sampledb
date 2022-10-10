@@ -282,7 +282,7 @@ def _validate_object_schema(
     if schema.get('template') is not None:
         invalid_template_action_ids = list(invalid_template_action_ids) + [typing.cast(int, schema['template'])]
 
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note'}
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note', 'show_more'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
@@ -424,6 +424,13 @@ def _validate_object_schema(
                     validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name], strict=strict)
                 elif schema['properties'][property_name]['type'] == 'bool':
                     raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
+
+    if 'show_more' in schema:
+        if not isinstance(schema['show_more'], list):
+            raise ValidationError('show_more must be list', path)
+        for property_name in schema['show_more']:
+            if property_name not in schema['properties'].keys():
+                raise ValidationError('unknown property: {}'.format(property_name), path)
 
     _validate_note_in_schema(schema, path)
 

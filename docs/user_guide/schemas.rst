@@ -215,6 +215,11 @@ conditions
 
 This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
 
+show_more
+^^^^^^^^^
+
+This attribute is a string array describing which properties to hide in the object view until a "show more"-button is pressed.
+
 Arrays
 ``````
 

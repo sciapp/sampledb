@@ -33,6 +33,7 @@
                     {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
                     {% set data = item %}
                     {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+                    {% set hidden = False %}
                     <li>{% include "objects/inline_edit/inline_edit_any.html" %}</li>
                 {% endfor %}
             </ul>

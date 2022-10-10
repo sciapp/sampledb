@@ -2774,3 +2774,38 @@ def test_validate_invalid_property_names_schema():
     with pytest.raises(ValidationError):
         validate_schema(schema, strict=True)
     del schema["properties"]["te.st"]
+
+
+def test_validate_show_more():
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "1"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text",
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity", "text"],
+        "show_more": ["quantity"]
+    }
+
+    validate_schema(schema)
+
+    schema['show_more'] = 'quantity'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['show_more'] = ['quant']
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

@@ -35,6 +35,7 @@
                 {% set item_property_names = schema["items"].properties.keys() %}
                 {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
                 {% for property_name in property_order %}
+                    {% set hidden = False %}
                     {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
                     {% if property_name in item_property_names %}
                         <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
@@ -60,6 +61,7 @@
                     {% endif %}
                 {% endfor %}
                 {% for property_name in item_property_names %}
+                    {% set hidden = False %}
                     {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
                     {% if property_name not in property_order %}
                         {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
@@ -99,6 +101,7 @@
                     {% set data = item %}
                     <tr>
                         {% for property_name in property_order %}
+                            {% set hidden = False %}
                             {% if property_name in item_property_names %}
                                 <td>
                                     {% set name = property_name %}
@@ -127,6 +130,7 @@
                             {% endif %}
                         {% endfor %}
                         {% for property_name in item_property_names %}
+                            {% set hidden = False %}
                             {% if property_name not in property_order %}
                                 <td>
                                     {% set name = property_name %}

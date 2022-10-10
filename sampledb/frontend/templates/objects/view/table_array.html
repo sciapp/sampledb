@@ -73,12 +73,15 @@
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
             {% set z = schema.update({'parent_style': tmp_style}) %}
+            {% set parent_id_prefix = id_prefix %}
+            {% set id_prefix = id_prefix + '_' + name + '_' %}
             {% if data is not none and property_name in data %}
-            {% set data = data[property_name] %}
+              {% set data = data[property_name] %}
             {% else %}
-            {% set data = none %}
+              {% set data = none %}
             {% endif %}
             {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+            {% set hidden = False %}
             {% include "objects/view/any.html" %}
           </td>
           {% endif %}
@@ -89,12 +92,15 @@
             {% set name = property_name %}
             {% set schema = schema.properties[property_name] %}
             {% set z = schema.update({'parent_style': tmp_style}) %}
+            {% set parent_id_prefix = id_prefix %}
+            {% set id_prefix = id_prefix + '_' + name + '_' %}
             {% if data is not none and property_name in data %}
-            {% set data = data[property_name] %}
+              {% set data = data[property_name] %}
             {% else %}
-            {% set data = none %}
+              {% set data = none %}
             {% endif %}
             {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+            {% set hidden = False %}
             {% include "objects/view/any.html" %}
           </td>
           {% endif %}
@@ -139,8 +145,10 @@
           {% set tmp_style = schema['style'] %}
           {% set schema = schema["items"]["items"] %}
           {% set z = schema.update({'parent_style': tmp_style}) %}
+          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
           {% set data = field %}
           {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+          {% set hidden = False %}
           {% include "objects/view/any.html" %}
       </td>
     {% endfor %}

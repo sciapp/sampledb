@@ -1,1 +1,7 @@
+{% if hidden %}
+<div class="hidden show-more-{{ parent_id_prefix }}">
+{% endif %}
 {% include get_view_template(schema) %}
+{% if hidden %}
+</div>
+{% endif %}

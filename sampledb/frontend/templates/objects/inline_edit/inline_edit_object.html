@@ -2,7 +2,7 @@
 {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title) and schema.title %}
     <span style="font-size:1.5em; padding-left: 15px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
-<div style="">
+<div>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
     {% if search_query_attribute %}
         {% set base_search_query_attribute = search_query_attribute %}
@@ -11,6 +11,7 @@
     {% endif %}
     {% if "propertyOrder" not in schema %}
         {% for property_name, property_schema in schema.properties.items() %}
+            {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
             {% set is_required = ('required' in schema and property_name in schema['required']) %}
             {% set name = property_name %}
             {% set schema = property_schema %}
@@ -38,6 +39,7 @@
     {% else %}
         {% for property_name in schema.propertyOrder %}
             {% if property_name in schema.properties %}
+                {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
                 {% set is_required = ('required' in schema and property_name in schema['required']) %}
                 {% set name = property_name %}
                 {% set schema = schema.properties[property_name] %}
@@ -65,6 +67,7 @@
         {% endfor %}
         {% for property_name, property_schema in schema.properties.items() %}
             {% if property_name not in schema.propertyOrder %}
+                {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
                 {% set is_required = ('required' in schema and property_name in schema['required']) %}
                 {% set name = property_name %}
                 {% set schema = property_schema %}
@@ -92,6 +95,14 @@
                 {% endif %}
             {% endif %}
         {% endfor %}
+    {% endif %}
+    {% if schema.get("show_more") %}
+        <div class="row">
+            <div class="col-md-3" style="padding-rigth: 0px;"></div>
+            <div class="col-md-9" style="padding-left: 5px;">
+                <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs" onclick="toggleShowMore('{{id_prefix}}');">{{ _('Show more') }}</button>
+            </div>
+        </div>
     {% endif %}
 </div>
 <!-- object end-->
