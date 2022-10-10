@@ -322,7 +322,6 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
     tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
     users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
-    users.sort(key=lambda user: user.id)
 
     english = get_language(Language.ENGLISH)
 
