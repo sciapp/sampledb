@@ -138,6 +138,10 @@ def object(object_id):
         else:
             new_schema_available = False
         user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
+        if logic.actions.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT'] and action_type and action_type.id == models.ActionType.SAMPLE_CREATION:
+            usable_in_action_types = [logic.actions.get_action_type(models.ActionType.MEASUREMENT)]
+        else:
+            usable_in_action_types = action_type.usable_in_action_types if action_type is not None else None
     else:
         action = None
         action_type = None
@@ -145,12 +149,14 @@ def object(object_id):
         object_type = None
         new_schema_available = False
         user_may_use_as_template = False
+        usable_in_action_types = None
     template_kwargs.update({
         "object_id": object_id,
         "version_id": object.version_id,
         "object_type": object_type,
         "action": action,
         "action_type": action_type,
+        "usable_in_action_types": usable_in_action_types,
         "instrument": instrument,
         "schema": object.schema,
         "data": object.data,
@@ -222,29 +228,45 @@ def object(object_id):
     })
 
     if flask_login.current_user.is_authenticated:
-        # use in measurement menu
-        measurement_actions = logic.actions.get_actions(
-            action_type_id=models.ActionType.MEASUREMENT
-        )
-        favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
-        favorite_measurement_actions = [
-            action
-            for action in measurement_actions
-            if action.id in favorite_action_ids and not action.is_hidden
-        ]
-        # sort by: instrument name (independent actions first), action name
-        favorite_measurement_actions.sort(
-            key=lambda action: (
-                action.user.name.lower() if action.user else '',
-                get_translated_text(action.instrument.name).lower() if action.instrument else '',
-                get_translated_text(action.name).lower()
-            )
-        )
+        favorite_actions_by_action_type_id = {}
+
+        if usable_in_action_types:
+            all_favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+            for action_type in usable_in_action_types:
+                all_action_type_actions = logic.actions.get_actions(action_type_id=action_type.id)
+
+                favorite_actions_by_action_type_id[action_type.id] = [
+                    action
+                    for action in all_action_type_actions
+                    if action.id in all_favorite_action_ids and not action.is_hidden
+                ]
+
+                favorite_actions_by_action_type_id[action_type.id].sort(
+                    key=lambda action: (
+                        action.user.name.lower() if action.user else '',
+                        get_translated_text(action.instrument.name).lower() if action.instrument else '',
+                        get_translated_text(action.name).lower()
+                    )
+                )
     else:
-        favorite_measurement_actions = []
+        favorite_actions_by_action_type_id = None
+
+    if logic.actions.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
+        action_type_name_by_action_type_id = {
+            models.ActionType.MEASUREMENT: get_translated_text(
+                logic.actions.get_action_type(models.ActionType.MEASUREMENT).name, default="Unnamed Action Type"
+            )
+        }
+    elif usable_in_action_types:
+        action_type_name_by_action_type_id = {
+            action_type.id: get_translated_text(logic.actions.get_action_type(action_type.id).name, default="Unnamed Action Type")
+            for action_type in usable_in_action_types}
+    else:
+        action_type_name_by_action_type_id = {}
+
     template_kwargs.update({
-        "favorite_measurement_actions": favorite_measurement_actions,
-        "measurement_type_name": get_translated_text(logic.actions.get_action_type(logic.actions.models.ActionType.MEASUREMENT).name),
+        "favorite_actions_by_action_type_id": favorite_actions_by_action_type_id,
+        "action_type_name_by_action_type_id": action_type_name_by_action_type_id
     })
 
     # notebook templates
@@ -796,7 +818,7 @@ def new_object():
     if not action_id and not previous_object_id:
         return flask.abort(404)
 
-    sample_id = flask.request.args.get('sample_id', None)
+    object_id = flask.request.args.get('object_id', None)
 
     previous_object = None
     action = None
@@ -828,27 +850,76 @@ def new_object():
             flask.flash(_("Creating objects with this action has been disabled."), 'error')
             return flask.redirect(flask.url_for('.action', action_id=action_id))
 
-    placeholder_data = {}
+    fields_selected = flask.request.args.get('fields_selected', None) is not None
 
-    if sample_id is not None:
+    placeholder_data = {}
+    possible_properties = {}
+
+    if object_id is not None:
         try:
-            sample_id = int(sample_id)
+            object_id = int(object_id)
         except ValueError:
-            sample_id = None
+            object_id = None
         else:
-            if sample_id <= 0:
-                sample_id = None
-    if sample_id is not None:
+            if object_id <= 0:
+                object_id = None
+    if object_id is not None:
         try:
-            get_object(sample_id)
+            passed_object = get_object(object_id)
         except errors.ObjectDoesNotExistError:
-            sample_id = None
-    if sample_id is not None and action is not None and action.schema is not None:
-        sample_type = action.schema.get('properties', {}).get('sample', {}).get('type', '')
-        if sample_type in ('sample', 'object_reference'):
+            object_id = None
+    if object_id is not None and action is not None and action.schema is not None:
+        passed_object_action = logic.actions.get_action(passed_object.action_id)
+
+        allowed_types = ["object_reference"]
+        if models.ActionType.MEASUREMENT in [passed_object_action.type_id, passed_object_action.type.fed_id]:
+            allowed_types.append("measurement")
+
+        if models.ActionType.SAMPLE_CREATION in [passed_object_action.type_id, passed_object_action.type.fed_id]:
+            allowed_types.append("sample")
+
+        possible_properties = {}
+
+        for property_name, property_data in action.schema.get('properties', {}).items():
+            property_type = property_data.get('type', '')
+            property_action_id = property_data.get('action_id', None)
+            property_action_type_id = property_data.get('action_type_id', None)
+
+            if property_type not in allowed_types:
+                continue
+
+            if property_action_id:
+                valid_action_ids = [property_action_id] if type(property_action_id) == int else property_action_id
+                if valid_action_ids and passed_object_action.id not in valid_action_ids:
+                    continue
+
+            if property_action_type_id:
+                valid_action_type_ids = [property_action_type_id] if type(property_action_type_id) == int else property_action_type_id
+                if valid_action_type_ids and passed_object_action.type_id not in valid_action_type_ids:
+                    continue
+
+            possible_properties[property_name] = property_data
+
+        if len(possible_properties) == 1:
+            property_key = list(possible_properties.keys())[0]
             placeholder_data = {
-                ('sample', ): {'_type': sample_type, 'object_id': sample_id}
+                (property_key, ): {
+                    '_type': possible_properties[property_key].get('type', ''),
+                    'object_id': object_id
+                }
             }
+        elif len(possible_properties) > 1:
+            if fields_selected:
+                placeholder_data = {
+                    (property_key, ): {
+                        '_type': possible_properties[property_key].get('type', ''),
+                        'object_id': object_id
+                    }
+                    for property_key in flask.request.form
+                    if property_key in possible_properties
+                }
+            else:
+                placeholder_data = None
 
     # TODO: check instrument permissions
-    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data)
+    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data, possible_properties=possible_properties, passed_object_id=object_id, show_selecting_modal=(not fields_selected))

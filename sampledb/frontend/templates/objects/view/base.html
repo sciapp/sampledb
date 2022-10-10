@@ -110,39 +110,40 @@
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
       {% endif %}
-      {% if (action is not none and action.type_id == action.type.SAMPLE_CREATION) and not config['DISABLE_USE_IN_MEASUREMENT'] and not current_user.is_readonly and current_user.is_authenticated %}
-
-        <div class="form-group">
-          <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type(action.type.MEASUREMENT).name | get_translated_text(default=_('Measurement'))) }} <span class="caret"></span></button>
-            <ul class="dropdown-menu dropdown-menu-right">
-              <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
-              {% if favorite_measurement_actions %}
-              {% for action in favorite_measurement_actions %}
-                {% if not action.type.disable_create_objects and not action.disable_crate_objects and not (action.admin_only and not current_user.is_admin) %}
-              <li>
-                <a href="{{ url_for('.new_object', action_id=action.id, sample_id=object_id) }}">
-                {% if action.user_id is not none %}
-                  {% set action_owner = get_user(action.user_id) %}
-                  {{ action_owner.get_name() }} /
+      {% if action is not none and usable_in_action_types and not current_user.is_readonly and current_user.is_authenticated %}
+        {% for usable_in_action_type in usable_in_action_types %}
+          <div class="form-group">
+            <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new %(new_object_name_singular)s using this %(current_object_name_singular)s.', new_object_name_singular=usable_in_action_type.object_name|get_translated_text, current_object_name_singular=action.type.object_name|get_translated_text) }}">
+              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(action_type_name)s', action_type_name=usable_in_action_type.name | get_translated_text(default=_('Unnamed Action Type'))) }} <span class="caret"></span></button>
+              <ul class="dropdown-menu dropdown-menu-right">
+                <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
+                {% if favorite_actions_by_action_type_id %}
+                  {% for action in favorite_actions_by_action_type_id[usable_in_action_type.id] %}
+                  {% if not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not current_user.is_admin) %}
+                  <li>
+                    <a href="{{ url_for('.new_object', action_id=action.id, object_id=object_id) }}">
+                    {% if action.user_id is not none %}
+                      {% set action_owner = get_user(action.user_id) %}
+                      {{ action_owner.get_name() }} /
+                    {% endif %}
+                    {% if action.instrument is not none %}
+                      {{ action.instrument.name | get_translated_text  }}
+                      &mdash;
+                    {% endif %}
+                      {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
+                    </a>
+                  </li>
+                  {% endif %}
+                  {% endfor %}
+                {% else %}
+                <li><span style="padding: 3px 20px">&mdash;</span></li>
                 {% endif %}
-                {% if action.instrument is not none %}
-                  {{ action.instrument.name | get_translated_text  }}
-                  &mdash;
-                {% endif %}
-                  {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
-                </a>
-              </li>
-                {% endif %}
-              {% endfor %}
-              {% else %}
-              <li><span style="padding: 3px 20px">&mdash;</span></li>
-              {% endif %}
-              <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('.actions', t='measurements', sample_id=object_id, can_create_objects='') }}">{{ _('See other %(measurement_type_name)s Actions...', measurement_type_name=measurement_type_name) }}</a></li>
-            </ul>
+                <li role="separator" class="divider"></li>
+                <li><a href="{{ url_for('.actions', t=usable_in_action_type.id, object_id=object_id, can_create_objects='') }}">{{ _('See other %(action_type_name)s Actions...', action_type_name=usable_in_action_type.name|get_translated_text(default="Unnamed Action Type")) }}</a></li>
+              </ul>
+            </div>
           </div>
-        </div>
+        {% endfor %}
       {% endif %}
     {% endif %}
     {% if action is not none and action.type.enable_labels %}

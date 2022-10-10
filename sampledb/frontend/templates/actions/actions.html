@@ -13,7 +13,7 @@
     {% endif %}
   {% endif %}
   {% for action in actions %}
-    <form action="{{ url_for('.toggle_favorite_action', sample_id=request.args.get('sample_id', None), t=request.args.get('t', None)) }}" method="post">
+    <form action="{{ url_for('.toggle_favorite_action', object_id=request.args.get('object_id', None), t=request.args.get('t', None)) }}" method="post">
       <input type="hidden" name="action_id" value="{{ action.id }}">
       {{ toggle_favorite_action_form.csrf_token() }}
       <h2>
@@ -47,7 +47,7 @@
     <p>
       <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
       {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
-      <a href="{{ url_for('.new_object', action_id=action.id, sample_id=request.args.get('sample_id', None)) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) if action.type_id else _('Create Object') }}</a>
+      <a href="{{ url_for('.new_object', action_id=action.id, object_id=request.args.get('object_id', None)) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) if action.type_id else _('Create Object') }}</a>
       {% endif %}
     </p>
     {% endif %}

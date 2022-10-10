@@ -28,7 +28,7 @@ from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
 
 
-def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None):
+def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None, possible_properties=None, passed_object_id=None, show_selecting_modal=False):
     if object is None and previous_object is None:
         data = generate_placeholder(action.schema)
         if placeholder_data:
@@ -429,7 +429,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             has_grant_for_previous_object=has_grant_for_previous_object,
             languages=get_languages(only_enabled_for_input=True),
             get_component=get_component,
-            ENGLISH=english
+            ENGLISH=english,
+            possible_properties=possible_properties,
+            passed_object_id=passed_object_id,
+            show_selecting_modal=show_selecting_modal
         )
     else:
         return flask.render_template(
@@ -452,7 +455,8 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             mode=mode,
             languages=get_languages(),
             get_component=get_component,
-            ENGLISH=english
+            ENGLISH=english,
+            possible_properties=None
         )
 
 
