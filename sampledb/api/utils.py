@@ -8,6 +8,10 @@ import werkzeug
 import werkzeug.exceptions
 
 
+ResponseContent = typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.Dict[int, typing.Any], typing.List[typing.Any], str, bool, int]]
+ResponseData = typing.Union[werkzeug.Response, ResponseContent, typing.Tuple[ResponseContent], typing.Tuple[ResponseContent, int], typing.Tuple[ResponseContent, int, typing.Dict[str, str]]]
+
+
 class Resource(MethodView):
     @classmethod
     def as_view(cls, name: typing.Any, *class_args: typing.Any, **class_kwargs: typing.Any) -> typing.Any:
@@ -21,7 +25,7 @@ def _resource_decorator(cls: typing.Type[Resource]) -> typing.Type[Resource]:
     return cls
 
 
-def _resource_method_decorator(f: typing.Callable[[typing.Any], typing.Any]) -> typing.Callable[[typing.Any], typing.Any]:
+def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -> typing.Callable[[typing.Any], typing.Any]:
     @wraps(f)
     def decorator(*args: typing.Any, **kwargs: typing.Any) -> werkzeug.Response:
         flask.request.on_json_loading_failed = _on_json_loading_failed_replacement  # type: ignore
@@ -30,14 +34,18 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], typing.Any]) -> 
             if isinstance(response_data, werkzeug.Response):
                 response = response_data
             else:
+                message: ResponseContent
                 status = 200
-                headers = {}
-                if isinstance(response_data, tuple) and 1 <= len(response_data) <= 3:
-                    message = response_data[0]
-                    if len(response_data) >= 2:
-                        status = response_data[1]
-                    if len(response_data) >= 3:
-                        headers = response_data[2]
+                headers: typing.Dict[str, str] = {}
+                if isinstance(response_data, tuple):
+                    if len(response_data) == 1:
+                        message, = typing.cast(typing.Tuple[ResponseContent], response_data)
+                    elif len(response_data) == 2:
+                        message, status = typing.cast(typing.Tuple[ResponseContent, int], response_data)
+                    elif len(response_data) == 3:
+                        message, status, headers = typing.cast(typing.Tuple[ResponseContent, int, typing.Dict[str, str]], response_data)
+                    else:
+                        message = None
                 else:
                     message = response_data
                 if message is None:

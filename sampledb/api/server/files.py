@@ -4,23 +4,23 @@ RESTful API for SampleDB
 """
 
 import base64
+import typing
 
 import flask
 
-from .authentication import object_permissions_required, Permissions
-from ..utils import Resource
+from .authentication import object_permissions_required
+from ..utils import Resource, ResponseData
 from ...logic import errors
 from ...logic.actions import get_action
-from ...logic.files import create_database_file, create_local_file, \
-    create_local_file_reference, create_url_file, File, get_file_for_object, \
-    get_files_for_object
+from ...logic.files import create_database_file, create_local_file, create_local_file_reference, create_url_file, File, get_file_for_object, get_files_for_object
 from ...logic.objects import get_object
 from ...logic.utils import parse_url
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def file_info_to_json(file_info: File, include_content: bool = True):
+def file_info_to_json(file_info: File, include_content: bool = True) -> typing.Dict[str, typing.Any]:
     file_json = {
         'object_id': file_info.object_id,
         'file_id': file_info.id,
@@ -36,7 +36,7 @@ def file_info_to_json(file_info: File, include_content: bool = True):
             file_json.update({
                 'base64_content': base64_content.decode('utf-8')
             })
-    if file_info.storage == 'url':
+    if file_info.storage == 'url' and file_info.data is not None:
         file_json.update({
             'url': file_info.data['url']
         })
@@ -45,7 +45,7 @@ def file_info_to_json(file_info: File, include_content: bool = True):
 
 class ObjectFile(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, file_id: int):
+    def get(self, object_id: int, file_id: int) -> ResponseData:
         try:
             file_info = get_file_for_object(object_id=object_id, file_id=file_id)
             if file_info is None:
@@ -63,7 +63,7 @@ class ObjectFile(Resource):
 
 class ObjectFiles(Resource):
     @object_permissions_required(Permissions.WRITE)
-    def post(self, object_id: int):
+    def post(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, dict):
             return {
@@ -71,7 +71,7 @@ class ObjectFiles(Resource):
             }, 400
         object = get_object(object_id=object_id)
         action = get_action(action_id=object.action_id)
-        if not action.type.enable_files:
+        if action.type is None or not action.type.enable_files:
             return {
                 "message": "Adding files is not enabled for objects of this type"
             }, 403
@@ -116,14 +116,14 @@ class ObjectFiles(Resource):
                     object_id=object_id,
                     user_id=flask.g.user.id,
                     file_name=original_file_name,
-                    save_content=lambda stream: stream.write(content)
+                    save_content=lambda stream: typing.cast(None, stream.write(content))
                 )
             else:
                 file = create_database_file(
                     object_id=object_id,
                     user_id=flask.g.user.id,
                     file_name=original_file_name,
-                    save_content=lambda stream: stream.write(content)
+                    save_content=lambda stream: typing.cast(None, stream.write(content))
                 )
         if storage == 'local_reference':
             for key in request_json:
@@ -188,7 +188,7 @@ class ObjectFiles(Resource):
         return flask.redirect(file_url, code=201)
 
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         return [
             file_info_to_json(file_info, include_content=False)
             for file_info in get_files_for_object(object_id)

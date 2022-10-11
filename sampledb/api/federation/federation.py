@@ -8,9 +8,10 @@ import typing
 
 import flask
 
-from ..utils import Resource
+from ..utils import Resource, ResponseData
 from ...logic import errors
-from ...logic.shares import get_shares_for_component
+from ...logic.components import Component
+from ...logic.shares import get_shares_for_component, ObjectShare
 from ...logic.federation.action_types import shared_action_type_preprocessor
 from ...logic.federation.actions import shared_action_preprocessor
 from ...logic.federation.instruments import shared_instrument_preprocessor
@@ -32,7 +33,7 @@ preprocessors = {
 }
 
 
-def _get_header(component):
+def _get_header(component: Component) -> typing.Dict[str, typing.Any]:
     return {
         'db_uuid': flask.current_app.config['FEDERATION_UUID'],
         'target_uuid': component.uuid,
@@ -44,7 +45,7 @@ def _get_header(component):
     }
 
 
-def _get_last_sync(args):
+def _get_last_sync(args: typing.Dict[str, typing.Any]) -> typing.Optional[datetime.datetime]:
     if 'last_sync_timestamp' not in args.keys():
         return None
     try:
@@ -53,17 +54,17 @@ def _get_last_sync(args):
         return None
 
 
-def share_to_json(share):
+def share_to_json(share: ObjectShare) -> typing.Dict[str, typing.Any]:
     return {
         'object_id': share.object_id,
         'policy': share.policy,
-        'utc_datetime': share.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+        'utc_datetime': share.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if share.utc_datetime else None
     }
 
 
 class UpdateHook(Resource):
     @http_token_auth.login_required
-    def post(self):
+    def post(self) -> ResponseData:
         try:
             import_updates(flask.g.component)
         except errors.UnauthorizedRequestError:
@@ -80,51 +81,70 @@ class UpdateHook(Resource):
             pass
         except ConnectionError:
             pass
+        return None
 
 
 class Objects(Resource):
     @http_token_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         component = flask.g.component
         shares = get_shares_for_component(component.id)
-
-        result = {
-            'header': _get_header(component), 'actions': [], 'users': [], 'instruments': [], 'locations': [], 'location_types': [], 'objects': [], 'action_types': [], 'markdown_images': {}
-        }
         refs: typing.List[typing.Tuple[str, int]] = []
         markdown_images: typing.Dict[str, str] = {}
-        ref_ids = {'actions': [], 'users': [], 'instruments': [], 'locations': [], 'location_types': [], 'action_types': []}
+        ref_ids: typing.Dict[str, typing.List[int]] = {
+            'actions': [],
+            'users': [],
+            'instruments': [],
+            'locations': [],
+            'location_types': [],
+            'action_types': []
+        }
+
+        result_lists: typing.Dict[str, typing.List[typing.Any]] = {
+            'actions': [],
+            'users': [],
+            'instruments': [],
+            'locations': [],
+            'location_types': [],
+            'objects': [],
+            'action_types': []
+        }
 
         for share in shares:
             obj = shared_object_preprocessor(share.object_id, share.policy, refs, markdown_images)
-            result['objects'].append(obj)
+            result_lists['objects'].append(obj)
 
         while len(refs) > 0:
             type, id = refs.pop()
             if type in ref_ids and id not in ref_ids[type]:
                 processed = preprocessors[type](id, component, refs, markdown_images)
                 if processed is not None:
-                    result[type].append(processed)
+                    result_lists[type].append(processed)
                 ref_ids[type].append(id)
 
-        result['markdown_images'] = markdown_images
-        return result
+        return {
+            'header': _get_header(component),
+            'markdown_images': markdown_images,
+            'actions': result_lists['actions'],
+            'users': result_lists['users'],
+            'instruments': result_lists['instruments'],
+            'locations': result_lists['locations'],
+            'location_types': result_lists['location_types'],
+            'objects': result_lists['objects'],
+            'action_types': result_lists['action_types']
+        }
 
 
 class Users(Resource):
     @http_token_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         last_sync = _get_last_sync(flask.request.args)
         component = flask.g.component
 
-        result = {
-            'header': _get_header(component),
-            'users': []
-        }
-
+        result_users = []
         shared_user_aliases = get_user_aliases_for_component(component.id, modified_since=last_sync)
         for alias in shared_user_aliases:
-            result['users'].append(
+            result_users.append(
                 {
                     'user_id': alias.user_id,
                     'component_uuid': flask.current_app.config['FEDERATION_UUID'],
@@ -136,4 +156,7 @@ class Users(Resource):
                     'extra_fields': alias.extra_fields
                 }
             )
-        return result
+        return {
+            'header': _get_header(component),
+            'users': result_users
+        }

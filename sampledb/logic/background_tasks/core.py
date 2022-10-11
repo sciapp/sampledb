@@ -101,8 +101,9 @@ def start_handler_threads(app: flask.Flask) -> None:
             handler_threads.remove(handler_thread)
 
     # get actual app instead of thread local proxy from this thread to pass it to the new thread
-    if hasattr(app, '_get_current_object'):
-        app = app._get_current_object()
+    get_current_app = getattr(app, '_get_current_object', None)
+    if get_current_app is not None:
+        app = get_current_app()
     # use daemon threads during testing, as a failed test may circumvent the thread stop signal
     daemon = app.config.get('TESTING', False)
     while len(handler_threads) < NUM_HANDLER_THREADS:

@@ -5,14 +5,14 @@ RESTful API for SampleDB
 import typing
 
 from .authentication import multi_auth
-from ..utils import Resource
-from ...logic.actions import get_action_types, get_action_type, ActionType
-from ...logic import errors, utils
+from ..utils import Resource, ResponseData
+from ...logic.actions import get_action_types, get_action_type
+from ...logic import errors, utils, actions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def action_type_to_json(action_type: ActionType) -> typing.Dict[str, typing.Any]:
+def action_type_to_json(action_type: actions.ActionType) -> typing.Dict[str, typing.Any]:
     return {
         'type_id': action_type.id,
         'name': utils.get_translated_text(
@@ -31,7 +31,7 @@ def action_type_to_json(action_type: ActionType) -> typing.Dict[str, typing.Any]
 
 class ActionType(Resource):
     @multi_auth.login_required
-    def get(self, type_id: int):
+    def get(self, type_id: int) -> ResponseData:
         try:
             action_type = get_action_type(
                 action_type_id=type_id
@@ -45,7 +45,7 @@ class ActionType(Resource):
 
 class ActionTypes(Resource):
     @multi_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         action_types = get_action_types()
         return [
             action_type_to_json(action_type)
