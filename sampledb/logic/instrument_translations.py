@@ -6,27 +6,28 @@ Instrument translations complement instruments.
 Translations contain all linguistic elements of instruments such as names.
 """
 
-import collections
+import dataclasses
 import typing
 from flask_babel import _
 
 from .. import db
-from ..models import Language
+from .languages import Language
 from .. import models
-from ..logic import errors, languages, instruments
+from . import errors, languages, instruments
 
 
-class InstrumentTranslation(collections.namedtuple(
-    'InstrumentTranslation', ['instrument_id', 'language_id', 'name', 'description', 'short_description', 'notes']
-)):
+@dataclasses.dataclass(frozen=True)
+class InstrumentTranslation:
     """
     This class provides an immutable wrapper around models.instrument_translations.InstrumentTranslation.
     """
-
-    def __new__(cls, instrument_id: int, language_id: int, name: str, description: str, short_description: str, notes: str):
-        self = super(InstrumentTranslation, cls).__new__(cls, instrument_id, language_id, name, description, short_description, notes)
-        self._language = None
-        return self
+    instrument_id: int
+    language_id: int
+    name: str
+    description: str
+    short_description: str
+    notes: str
+    _language_cache: typing.List[languages.Language] = dataclasses.field(default_factory=list, kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, instrument_translation: models.InstrumentTranslation) -> 'InstrumentTranslation':
@@ -40,10 +41,10 @@ class InstrumentTranslation(collections.namedtuple(
         )
 
     @property
-    def language(self):
-        if self._language is None:
-            self._language = languages.get_language(self.language_id)
-        return self._language
+    def language(self) -> Language:
+        if not self._language_cache:
+            self._language_cache.append(languages.get_language(self.language_id))
+        return self._language_cache[0]
 
 
 def set_instrument_translation(

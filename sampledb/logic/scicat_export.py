@@ -9,10 +9,10 @@ import flask
 import requests
 
 from .objects import get_object
-from .object_permissions import get_user_object_permissions, Permissions
+from .object_permissions import get_user_object_permissions
 from .datatypes import DateTime, Quantity
 from . import settings, users, errors
-from ..models import SciCatExport, SciCatExportType
+from ..models import SciCatExport, SciCatExportType, Permissions
 from .. import db
 
 
@@ -28,10 +28,10 @@ def get_scicat_url(
     :param object_id: the ID of an existing object
     :return: the URL or None
     """
-    scicat_export = SciCatExport.query.filter_by(object_id=object_id).first()
+    scicat_export: typing.Optional[SciCatExport] = SciCatExport.query.filter_by(object_id=object_id).first()
     if scicat_export is None:
         return None
-    return scicat_export.scicat_url
+    return typing.cast(str, scicat_export.scicat_url)
 
 
 def _convert_metadata(
@@ -39,7 +39,7 @@ def _convert_metadata(
         schema: typing.Dict[str, typing.Any],
         property_whitelist: typing.List[typing.List[typing.Union[str, int]]],
         user_id: int
-) -> typing.Optional[typing.Union[str, int, typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
+) -> typing.Optional[typing.Union[str, float, int, typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     if property_whitelist is None:
         property_whitelist = [['name']]
 
@@ -90,29 +90,31 @@ def _convert_metadata(
     def _convert_datetime(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
+    ) -> str:
         return datetime.datetime.strptime(data['utc_datetime'], DateTime.FORMAT_STRING).isoformat()
 
     def _convert_bool(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
-        return data['value']
+    ) -> bool:
+        return bool(data['value'])
 
     def _convert_text(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
+    ) -> str:
         if isinstance(data['text'], dict):
             return data['text'].get('en', data['text'])
-        return data['text']
+        if isinstance(data['text'], str):
+            return data['text']
+        return ''
 
     def _convert_quantity(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
+    ) -> typing.Union[float, int, typing.Dict[str, typing.Any]]:
         if data['units'] in {'1', ''}:
-            return data['magnitude_in_base_units']
+            return typing.cast(typing.Union[float, int], data['magnitude_in_base_units'])
         quantity = Quantity.from_json(data)
         return {
             'value': str(round(quantity.magnitude, 13)),
@@ -122,7 +124,7 @@ def _convert_metadata(
     def _convert_object_reference(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
+    ) -> str:
         object_id = data['object_id']
         if Permissions.READ in get_user_object_permissions(object_id=object_id, user_id=user_id):
             object_name = get_object(object_id).name
@@ -149,7 +151,7 @@ def _convert_metadata(
     def _convert_user(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
+    ) -> str:
         try:
             user = users.get_user(data['user_id'])
             return user.get_name(include_ref=True)
@@ -159,7 +161,7 @@ def _convert_metadata(
     def _convert_hazards(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
-    ):
+    ) -> str:
         hazard_names = {
             1: 'Explosive',
             2: 'Flammable',
@@ -173,23 +175,23 @@ def _convert_metadata(
         }
         return ', '.join(hazard_names[hazard_id] for hazard_id in sorted(data['hazards']))
 
-    if schema['type'] == 'object':
+    if schema['type'] == 'object' and isinstance(data, dict):
         return _convert_object(data, schema, property_whitelist)
-    if schema['type'] == 'array':
+    if schema['type'] == 'array' and isinstance(data, list):
         return _convert_array(data, schema, property_whitelist)
-    if schema['type'] == 'datetime':
+    if schema['type'] == 'datetime' and isinstance(data, dict):
         return _convert_datetime(data, schema)
-    if schema['type'] == 'bool':
+    if schema['type'] == 'bool' and isinstance(data, dict):
         return _convert_bool(data, schema)
-    if schema['type'] == 'text':
+    if schema['type'] == 'text' and isinstance(data, dict):
         return _convert_text(data, schema)
-    if schema['type'] == 'quantity':
+    if schema['type'] == 'quantity' and isinstance(data, dict):
         return _convert_quantity(data, schema)
-    if schema['type'] in {'sample', 'measurement', 'object_reference'}:
+    if schema['type'] in {'sample', 'measurement', 'object_reference'} and isinstance(data, dict):
         return _convert_object_reference(data, schema)
-    if schema['type'] == 'user':
+    if schema['type'] == 'user' and isinstance(data, dict):
         return _convert_user(data, schema)
-    if schema['type'] == 'hazards':
+    if schema['type'] == 'hazards' and isinstance(data, dict):
         return _convert_hazards(data, schema)
     if schema['type'] == 'tags':
         # tags are exported as keywords
@@ -211,7 +213,7 @@ def upload_object(
         instrument_pid: typing.Optional[str] = None,
         sample_pid: typing.Optional[str] = None,
         input_dataset_pids: typing.Optional[typing.List[str]] = None
-):
+) -> typing.Optional[str]:
     user = users.get_user(user_id)
     object = get_object(object_id)
     original_object_version = get_object(object_id, version_id=0)
@@ -324,7 +326,7 @@ def get_user_valid_api_token(api_url: str, user_id: int) -> typing.Optional[str]
     :raise errors.SciCatNotReachableError: if there was an error during
         communication with the SciCat API
     """
-    api_token = settings.get_user_settings(user_id)['SCICAT_API_TOKEN']
+    api_token: typing.Optional[str] = settings.get_user_settings(user_id)['SCICAT_API_TOKEN']
     if not api_token:
         # make sure the user even exists
         users.get_user(user_id)
@@ -465,7 +467,7 @@ def get_instruments(
 def get_scicat_export_for_object(
         object_id: int
 ) -> typing.Optional[SciCatExport]:
-    return SciCatExport.query.filter_by(object_id=object_id).first()
+    return typing.cast(typing.Optional[SciCatExport], SciCatExport.query.filter_by(object_id=object_id).first())
 
 
 def get_exported_referenced_objects(
@@ -473,19 +475,19 @@ def get_exported_referenced_objects(
         schema: typing.Dict[str, typing.Any],
         user_id: int
 ) -> typing.Set[SciCatExport]:
-    exports = set()
-    if schema['type'] == 'object':
+    exports: typing.Set[SciCatExport] = set()
+    if schema['type'] == 'object' and isinstance(data, dict):
         for property_name in schema['properties']:
             if property_name not in data:
                 continue
             property_data = data[property_name]
             property_schema = schema['properties'][property_name]
             exports.update(get_exported_referenced_objects(property_data, property_schema, user_id))
-    if schema['type'] == 'array':
+    if schema['type'] == 'array' and isinstance(data, list):
         item_schema = schema['items']
         for item_data in data:
             exports.update(get_exported_referenced_objects(item_data, item_schema, user_id))
-    if schema['type'] in {'sample', 'measurement', 'object_reference'}:
+    if schema['type'] in {'sample', 'measurement', 'object_reference'} and isinstance(data, dict):
         export = get_scicat_export_for_object(data['object_id'])
         if export is not None:
             exports.add(export)

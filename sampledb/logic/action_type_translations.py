@@ -6,7 +6,7 @@ Action type translations contain all language-dependent attributes of an
 action type for a specific language.
 """
 
-import collections
+import dataclasses
 import typing
 
 from .. import db
@@ -15,17 +15,20 @@ from ..logic.languages import Language
 from .. import models
 
 
-class ActionTypeTranslation(collections.namedtuple(
-    'ActionTypeTranslation', ['action_type_id', 'language_id', 'name', 'description', 'object_name', 'object_name_plural', 'view_text', 'perform_text']
-)):
+@dataclasses.dataclass(frozen=True)
+class ActionTypeTranslation:
     """
     This class provides an immutable wrapper around models.action_translations.ActionTypeTranslation.
     """
-
-    def __new__(cls, action_type_id: int, language_id: int, name: str, description: str, object_name: str, object_name_plural: str, view_text: str, perform_text: str):
-        self = super(ActionTypeTranslation, cls).__new__(cls, action_type_id, language_id, name, description, object_name, object_name_plural, view_text, perform_text)
-        self._language = None
-        return self
+    action_type_id: int
+    language_id: int
+    name: str
+    description: str
+    object_name: str
+    object_name_plural: str
+    view_text: str
+    perform_text: str
+    _language_cache: typing.List[languages.Language] = dataclasses.field(default_factory=list, kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, action_type_translation: models.ActionTypeTranslation) -> 'ActionTypeTranslation':
@@ -41,10 +44,10 @@ class ActionTypeTranslation(collections.namedtuple(
         )
 
     @property
-    def language(self):
-        if self._language is None:
-            self._language = languages.get_language(self.language_id)
-        return self._language
+    def language(self) -> Language:
+        if not self._language_cache:
+            self._language_cache.append(languages.get_language(self.language_id))
+        return self._language_cache[0]
 
 
 def get_action_type_translations_for_action_type(
@@ -142,7 +145,7 @@ def set_action_type_translation(
 def delete_action_type_translation(
         action_type_id: int,
         language_id: int
-):
+) -> None:
     """
     Deletes the action type translation with the given action type translation ID
 

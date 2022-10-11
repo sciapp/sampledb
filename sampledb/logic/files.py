@@ -18,7 +18,7 @@ The files are stored in a directory named after the object's ID, which in turn
 will be inside folders named after the action's ID.
 """
 
-import collections
+import dataclasses
 import datetime
 import io
 import os
@@ -36,34 +36,33 @@ from .. import db
 from ..models import files
 from ..models.file_log import FileLogEntry, FileLogEntryType
 
-FILE_STORAGE_PATH: str = None
+FILE_STORAGE_PATH: typing.Optional[str] = None
 MAX_NUM_FILES: int = 10000
 
 
-class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_datetime', 'data', 'binary_data', 'fed_id', 'component_id'])):
+@dataclasses.dataclass(frozen=True)
+class File:
     """
     This class provides an immutable wrapper around models.files.File.
     """
+    id: int
+    object_id: int
+    user_id: int
+    utc_datetime: typing.Optional[datetime.datetime] = None
+    data: typing.Optional[typing.Dict[str, typing.Any]] = None
+    binary_data: typing.Optional[bytes] = None
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
 
-    def __new__(
-            cls,
-            id: int,
-            object_id: int,
-            user_id: int,
-            utc_datetime: typing.Optional[datetime.datetime] = None,
-            data: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            binary_data: typing.Optional[bytes] = None,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
-    ):
-        self = super(File, cls).__new__(cls, id, object_id, user_id, utc_datetime, data, binary_data, fed_id, component_id)
-        self._is_hidden = None
-        self._hide_reason = None
-        self._hide_datetime = None
-        self._title = None
-        self._url = None
-        self._description = None
-        return self
+    @dataclasses.dataclass
+    class InfoCache:
+        is_hidden: typing.Optional[bool] = None
+        hide_reason: typing.Optional[str] = None
+        title: typing.Optional[str] = None
+        url: typing.Optional[str] = None
+        description: typing.Optional[str] = None
+
+    _cache: InfoCache = dataclasses.field(default_factory=InfoCache, kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, file: files.File) -> 'File':
@@ -87,12 +86,14 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
 
     @property
     def storage(self) -> str:
-        return self.data.get('storage', 'local')
+        if self.data is None:
+            return 'none'
+        return str(self.data.get('storage', 'local'))
 
     @property
-    def original_file_name(self):
-        if self.storage in {'local', 'database'}:
-            return self.data['original_file_name']
+    def original_file_name(self) -> str:
+        if self.data is not None and self.storage in {'local', 'database'}:
+            return str(self.data.get('original_file_name', ''))
         else:
             raise InvalidFileStorageError()
 
@@ -105,45 +106,45 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             object = objects.get_object(self.object_id)
             action_id = object.action_id
             prefixed_file_name = '{file_id:04d}_{file_name}'.format(file_id=self.id, file_name=self.original_file_name)
-            return os.path.join(FILE_STORAGE_PATH, str(action_id), str(self.object_id), prefixed_file_name)
+            return os.path.join(FILE_STORAGE_PATH or '', str(action_id), str(self.object_id), prefixed_file_name)
         else:
             raise InvalidFileStorageError()
 
     @property
-    def filepath(self):
-        if self.storage in {'local_reference'}:
-            return self.data['filepath']
+    def filepath(self) -> str:
+        if self.data is not None and self.storage in {'local_reference'}:
+            return str(self.data.get('filepath', ''))
         else:
             raise InvalidFileStorageError()
 
     @property
     def url(self) -> str:
-        if self.storage == 'url':
-            if self._url is None:
+        if self.data is not None and self.storage == 'url':
+            if self._cache.url is None:
                 log_entry = FileLogEntry.query.filter_by(
                     object_id=self.object_id,
                     file_id=self.id,
                     type=FileLogEntryType.EDIT_URL
                 ).order_by(FileLogEntry.utc_datetime.desc()).first()
                 if log_entry is not None:
-                    self._url = log_entry.data['url']
+                    self._cache.url = log_entry.data['url']
                 else:
-                    self._url = self.data['url']
-            return self._url
+                    self._cache.url = self.data['url']
+            return self._cache.url
         else:
             raise InvalidFileStorageError()
 
     @property
-    def uploader(self) -> users.User:
+    def uploader(self) -> typing.Optional[users.User]:
         if self.user_id is None:
             return None
         return users.get_user(self.user_id)
 
     @property
-    def title(self) -> typing.Union[str, None]:
-        if self._title is None:
-            self._title = self.real_title
-            if self._title is None:
+    def title(self) -> typing.Optional[str]:
+        if self._cache.title is None:
+            self._cache.title = self.real_title
+            if self._cache.title is None:
                 if self.storage in {'local', 'database'}:
                     return self.original_file_name
                 elif self.storage == 'local_reference':
@@ -152,10 +153,10 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
                     return self.url
                 else:
                     raise InvalidFileStorageError()
-        return self._title
+        return self._cache.title
 
     @property
-    def real_title(self):
+    def real_title(self) -> typing.Optional[str]:
         log_entry = FileLogEntry.query.filter_by(
             object_id=self.object_id,
             file_id=self.id,
@@ -163,12 +164,13 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
         ).order_by(FileLogEntry.utc_datetime.desc()).first()
         if log_entry is None:
             return None
-        else:
-            return log_entry.data['title']
+        if 'title' not in log_entry.data:
+            return None
+        return str(log_entry.data['title'])
 
     @property
     def description(self) -> typing.Union[str, None]:
-        if self._description is None:
+        if self._cache.description is None:
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
@@ -176,12 +178,12 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
                 return None
-            self._description = log_entry.data['description']
-        return self._description
+            self._cache.description = log_entry.data['description']
+        return self._cache.description
 
     @property
-    def log_entries(self):
-        users_by_id = {None: None}
+    def log_entries(self) -> typing.List[FileLogEntry]:
+        users_by_id: typing.Dict[typing.Optional[int], typing.Optional[users.User]] = {None: None}
         log_entries = []
         for log_entry in FileLogEntry.query.filter_by(
             object_id=self.object_id,
@@ -194,34 +196,34 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
         return log_entries
 
     @property
-    def is_hidden(self):
-        if self._is_hidden is None:
+    def is_hidden(self) -> bool:
+        if self._cache.is_hidden is None:
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
                 type=FileLogEntryType.HIDE_FILE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                self._is_hidden = False
+                self._cache.is_hidden = False
                 return False
             hide_time = log_entry.utc_datetime
-            self._hide_reason = log_entry.data['reason']
+            self._cache.hide_reason = log_entry.data['reason']
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
                 type=FileLogEntryType.UNHIDE_FILE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                self._is_hidden = True
+                self._cache.is_hidden = True
                 return True
             unhide_time = log_entry.utc_datetime
-            self._is_hidden = hide_time > unhide_time
-        return self._is_hidden
+            self._cache.is_hidden = hide_time > unhide_time
+        return bool(self._cache.is_hidden)
 
     @property
-    def hide_reason(self):
+    def hide_reason(self) -> typing.Optional[str]:
         if self.is_hidden:
-            return self._hide_reason
+            return self._cache.hide_reason
         return None
 
     def open(self, read_only: bool = True) -> typing.BinaryIO:
@@ -233,7 +235,7 @@ class File(collections.namedtuple('File', ['id', 'object_id', 'user_id', 'utc_da
                 # before creating the file, the parent directories need exist
                 os.makedirs(os.path.dirname(file_name), exist_ok=True)
                 mode = 'xb'
-            return open(file_name, mode)
+            return typing.cast(typing.BinaryIO, open(file_name, mode))
         elif self.storage == 'database':
             if self.binary_data is not None:
                 return io.BytesIO(self.binary_data)
@@ -307,7 +309,7 @@ def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> 
     :raise errors.UserNotAllowedError: when the current user is not allowed to
         add this certain filepath
     """
-    path_permissions: dict = flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST']
+    path_permissions: typing.Dict[str, typing.List[int]] = flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST']
     user = get_user(user_id)
 
     filepath = os.path.normpath(filepath)
@@ -399,13 +401,18 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
     return file
 
 
-def get_file(file_id: int, object_id: int, component_id: typing.Optional[int] = None, get_db_file: bool = False):
+def get_mutable_file(
+        file_id: int,
+        object_id: int,
+        component_id: typing.Optional[int] = None
+) -> files.File:
     """
     :param file_id: the federated ID of the file
     :param object_id: ID of the object the requested file is assigned to
     :param component_id: the components ID (source)
     :return: the file
     """
+    db_file: typing.Optional[files.File]
     if component_id is None:
         db_file = files.File.query.filter_by(id=file_id, object_id=object_id).first()
     else:
@@ -415,9 +422,21 @@ def get_file(file_id: int, object_id: int, component_id: typing.Optional[int] = 
         if component_id is not None:
             get_component(component_id)
         raise errors.FileDoesNotExistError
-    if get_db_file:
-        return db_file
-    return File.from_database(db_file)
+    return db_file
+
+
+def get_file(
+        file_id: int,
+        object_id: int,
+        component_id: typing.Optional[int] = None
+) -> File:
+    """
+    :param file_id: the federated ID of the file
+    :param object_id: ID of the object the requested file is assigned to
+    :param component_id: the components ID (source)
+    :return: the file
+    """
+    return File.from_database(get_mutable_file(file_id=file_id, object_id=object_id, component_id=component_id))
 
 
 def create_fed_file(
@@ -510,7 +529,7 @@ def _create_db_file(
         # ensure that the component exists
         components.get_component(component_id)
     # calculate the next file id
-    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
+    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()  # type: ignore
     if previous_file_id is None:
         file_id = 0
     else:
@@ -572,7 +591,13 @@ def update_file_information(object_id: int, file_id: int, user_id: int, title: s
         db.session.commit()
 
 
-def hide_file(object_id: int, file_id: int, user_id: int, reason: str, utc_datetime: typing.Optional[int] = None) -> None:
+def hide_file(
+        object_id: int,
+        file_id: int,
+        user_id: int,
+        reason: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None
+) -> None:
     """
     Hides a file.
 

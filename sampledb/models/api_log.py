@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .. import db
 
@@ -22,6 +23,15 @@ class HTTPMethod(enum.Enum):
     OPTIONS = 6
     OTHER = 7
 
+    @staticmethod
+    def from_name(
+            name: str
+    ) -> 'HTTPMethod':
+        for member in HTTPMethod:
+            if member.name.lower() == name.lower():
+                return member
+        return HTTPMethod.OTHER
+
 
 class APILogEntry(db.Model):
     __tablename__ = 'api_log_entries'
@@ -33,7 +43,13 @@ class APILogEntry(db.Model):
     utc_datetime = db.Column(db.DateTime, nullable=False)
     api_token = db.relationship('Authentication', backref=db.backref("api_log_entries", cascade="all,delete"))
 
-    def __init__(self, api_token_id, method, route, utc_datetime=None):
+    def __init__(
+            self,
+            api_token_id: int,
+            method: HTTPMethod,
+            route: str,
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.api_token_id = api_token_id
         self.method = method
         self.route = route
@@ -41,5 +57,5 @@ class APILogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, api_token_id={1.api_token_id}, method={1.method}, route={1.route}, utc_datetime={1.utc_datetime})>'.format(type(self).__name__, self)

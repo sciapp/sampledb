@@ -7,7 +7,7 @@ WRITE permissions for an object can assign it to a location with an optional
 description for details on where the object is stored.
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
 
@@ -18,63 +18,26 @@ from .notifications import create_notification_for_being_assigned_as_responsible
 from ..models import locations
 
 
-class LocationType(collections.namedtuple(
-    'LocationType',
-    [
-        'id',
-        'name',
-        'location_name_singular',
-        'location_name_plural',
-        'admin_only',
-        'enable_parent_location',
-        'enable_sub_locations',
-        'enable_object_assignments',
-        'enable_responsible_users',
-        'show_location_log',
-        'fed_id',
-        'component_id',
-        'component'
-    ]
-)):
+@dataclasses.dataclass(frozen=True)
+class LocationType:
     """
     This class provides an immutable wrapper around models.locations.LocationType.
     """
+    id: int
+    name: typing.Optional[typing.Dict[str, str]]
+    location_name_singular: typing.Optional[typing.Dict[str, str]]
+    location_name_plural: typing.Optional[typing.Dict[str, str]]
+    admin_only: bool
+    enable_parent_location: bool
+    enable_sub_locations: bool
+    enable_object_assignments: bool
+    enable_responsible_users: bool
+    show_location_log: bool
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    component: typing.Optional[Component] = None
 
     LOCATION = locations.LocationType.LOCATION
-
-    def __new__(
-            cls,
-            id: int,
-            name: typing.Optional[typing.Dict[str, str]],
-            location_name_singular: typing.Optional[typing.Dict[str, str]],
-            location_name_plural: typing.Optional[typing.Dict[str, str]],
-            admin_only: bool,
-            enable_parent_location: bool,
-            enable_sub_locations: bool,
-            enable_object_assignments: bool,
-            enable_responsible_users: bool,
-            show_location_log: bool,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None,
-            component: typing.Optional[Component] = None
-    ):
-        self = super(LocationType, cls).__new__(
-            cls,
-            id,
-            name,
-            location_name_singular,
-            location_name_plural,
-            admin_only,
-            enable_parent_location,
-            enable_sub_locations,
-            enable_object_assignments,
-            enable_responsible_users,
-            show_location_log,
-            fed_id,
-            component_id,
-            component
-        )
-        return self
 
     @classmethod
     def from_database(cls, location_type: locations.LocationType) -> 'LocationType':
@@ -95,38 +58,21 @@ class LocationType(collections.namedtuple(
         )
 
 
-class Location(collections.namedtuple(
-    'Location',
-    [
-        'id',
-        'name',
-        'description',
-        'type_id',
-        'type',
-        'responsible_users',
-        'parent_location_id',
-        'fed_id',
-        'component',
-    ]
-)):
+@dataclasses.dataclass(frozen=True)
+class Location:
     """
     This class provides an immutable wrapper around models.locations.Location.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            name: typing.Optional[typing.Dict[str, str]],
-            description: typing.Optional[typing.Dict[str, str]],
-            type_id: int,
-            type: LocationType,
-            responsible_users: typing.List[users.User],
-            parent_location_id: typing.Optional[int] = None,
-            fed_id: typing.Optional[int] = None,
-            component: typing.Optional[Component] = None
-    ):
-        self = super(Location, cls).__new__(cls, id, name, description, type_id, type, responsible_users, parent_location_id, fed_id, component)
-        return self
+    id: int
+    name: typing.Optional[typing.Dict[str, str]]
+    description: typing.Optional[typing.Dict[str, str]]
+    type_id: int
+    type: LocationType
+    responsible_users: typing.List[users.User]
+    parent_location_id: typing.Optional[int] = None
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    component: typing.Optional[Component] = None
 
     @classmethod
     def from_database(cls, location: locations.Location) -> 'Location':
@@ -137,6 +83,7 @@ class Location(collections.namedtuple(
             parent_location_id=location.parent_location_id,
             fed_id=location.fed_id,
             component=Component.from_database(location.component) if location.component is not None else None,
+            component_id=location.component_id,
             type_id=location.type_id,
             type=LocationType.from_database(location.type),
             responsible_users=[
@@ -146,55 +93,23 @@ class Location(collections.namedtuple(
         )
 
 
-class ObjectLocationAssignment(collections.namedtuple('ObjectLocationAssignment', [
-    'id',
-    'object_id',
-    'location_id',
-    'user_id',
-    'description',
-    'utc_datetime',
-    'responsible_user_id',
-    'confirmed',
-    'fed_id',
-    'component_id',
-    'declined',
-    'component'
-])):
+@dataclasses.dataclass(frozen=True)
+class ObjectLocationAssignment:
     """
     This class provides an immutable wrapper around models.locations.ObjectLocationAssignment.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            object_id: int,
-            location_id: int,
-            user_id: int,
-            description: typing.Optional[typing.Dict[str, str]],
-            utc_datetime: datetime.datetime,
-            responsible_user_id: int,
-            confirmed: bool,
-            fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None,
-            declined: bool = False,
-            component: typing.Optional[Component] = None
-    ):
-        self = super(ObjectLocationAssignment, cls).__new__(
-            cls,
-            id,
-            object_id,
-            location_id,
-            user_id,
-            description,
-            utc_datetime,
-            responsible_user_id,
-            confirmed,
-            fed_id,
-            component_id,
-            declined,
-            component
-        )
-        return self
+    id: int
+    object_id: int
+    location_id: typing.Optional[int]
+    user_id: typing.Optional[int]
+    description: typing.Optional[typing.Dict[str, str]]
+    utc_datetime: datetime.datetime
+    responsible_user_id: typing.Optional[int]
+    confirmed: bool
+    fed_id: typing.Optional[int] = None
+    component_id: typing.Optional[int] = None
+    declined: bool = False
+    component: typing.Optional[Component] = None
 
     @classmethod
     def from_database(cls, object_location_assignment: locations.ObjectLocationAssignment) -> 'ObjectLocationAssignment':
@@ -292,7 +207,8 @@ def create_location(
     db.session.add(location)
     db.session.commit()
     if component_id is None:
-        user_log.create_location(user_id, location.id)
+        if user_id is not None:
+            user_log.create_location(user_id, location.id)
     location_log.create_location(user_id, location.id)
     return Location.from_database(location)
 
@@ -300,7 +216,7 @@ def create_location(
 def update_location(
         location_id: int,
         name: typing.Optional[typing.Dict[str, str]],
-        description: dict,
+        description: typing.Optional[typing.Dict[str, str]],
         parent_location_id: typing.Optional[int],
         user_id: typing.Optional[int],
         type_id: int
@@ -409,8 +325,8 @@ def get_locations_tree() -> typing.Tuple[typing.Dict[int, Location], typing.Any]
         location.id: location
         for location in locations
     }
-    locations_tree = {}
-    locations_tree_helper = {None: locations_tree}
+    locations_tree: typing.Dict[typing.Optional[int], typing.Any] = {}
+    locations_tree_helper: typing.Dict[typing.Optional[int], typing.Any] = {None: locations_tree}
     unvisited_locations = locations
     while unvisited_locations:
         locations = unvisited_locations
@@ -435,9 +351,10 @@ def _get_location_ancestors(location_id: int) -> typing.List[int]:
         location ID exists
     """
     ancestor_location_ids = []
-    while location_id is not None:
-        ancestor_location_ids.append(location_id)
-        location_id = get_location(location_id).parent_location_id
+    ancestor_location_id: typing.Optional[int] = location_id
+    while ancestor_location_id is not None:
+        ancestor_location_ids.append(ancestor_location_id)
+        ancestor_location_id = get_location(ancestor_location_id).parent_location_id
     return ancestor_location_ids[1:]
 
 
@@ -525,7 +442,7 @@ def create_fed_assignment(
         user_id: typing.Optional[int],
         description: typing.Optional[typing.Dict[str, str]],
         utc_datetime: typing.Optional[datetime.datetime],
-        confirmed: typing.Optional[bool],
+        confirmed: bool = False,
         declined: bool = False
 ) -> locations.ObjectLocationAssignment:
     if description is not None:
@@ -553,7 +470,7 @@ def create_fed_assignment(
         user_id=user_id,
         description=description,
         utc_datetime=utc_datetime,
-        confirmed=confirmed,
+        confirmed=confirmed or False,
         declined=declined,
         fed_id=fed_id,
         component_id=component_id
@@ -582,7 +499,7 @@ def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocatio
 
 
 def get_fed_object_location_assignment(fed_id: int, component_id: int) -> typing.Optional[locations.ObjectLocationAssignment]:
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(fed_id=fed_id, component_id=component_id).first()
+    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(fed_id=fed_id, component_id=component_id).first()
     return object_location_assignment
 
 
@@ -597,13 +514,13 @@ def get_current_object_location_assignment(object_id: int) -> typing.Optional[Ob
     """
     # ensure the object exists
     objects.get_object(object_id)
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime.desc()).first()
-    if object_location_assignment is not None:
-        object_location_assignment = ObjectLocationAssignment.from_database(object_location_assignment)
-    return object_location_assignment
+    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime.desc()).first()
+    if object_location_assignment is None:
+        return None
+    return ObjectLocationAssignment.from_database(object_location_assignment)
 
 
-def get_object_location_assignment(object_location_assignment_id: int) -> ObjectLocationAssignment:
+def get_object_location_assignment(object_location_assignment_id: int) -> locations.ObjectLocationAssignment:
     """
     Get an object location assignment with a given ID.
 
@@ -613,7 +530,7 @@ def get_object_location_assignment(object_location_assignment_id: int) -> Object
     :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
         location assignment with the given object location assignment ID exists
     """
-    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
+    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
     if object_location_assignment is None:
         raise errors.ObjectLocationAssignmentDoesNotExistError()
     return object_location_assignment
@@ -633,7 +550,8 @@ def any_objects_at_location(location_id: int) -> bool:
     object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(location_id=location_id).all()
     for object_location_assignment in object_location_assignments:
         object_id = object_location_assignment.object_id
-        if get_current_object_location_assignment(object_id).location_id == location_id:
+        current_object_location_assignment = get_current_object_location_assignment(object_id)
+        if current_object_location_assignment is not None and current_object_location_assignment.location_id == location_id:
             return True
     return False
 
@@ -653,7 +571,8 @@ def get_object_ids_at_location(location_id: int) -> typing.Set[int]:
     object_ids = set()
     for object_location_assignment in object_location_assignments:
         object_id = object_location_assignment.object_id
-        if get_current_object_location_assignment(object_id).location_id == location_id:
+        current_object_location_assignment = get_current_object_location_assignment(object_id)
+        if current_object_location_assignment is not None and current_object_location_assignment.location_id == location_id:
             object_ids.add(object_id)
     return object_ids
 
@@ -758,7 +677,7 @@ def create_location_type(
     )
     db.session.add(location_type)
     db.session.commit()
-    return location_type
+    return LocationType.from_database(location_type)
 
 
 def update_location_type(
@@ -809,7 +728,7 @@ def update_location_type(
 def get_location_type(
         location_type_id: int,
         component_id: typing.Optional[int] = None
-) -> locations.LocationType:
+) -> LocationType:
     """
     Get a location type.
 
@@ -830,7 +749,7 @@ def get_location_type(
     return LocationType.from_database(location_type)
 
 
-def get_location_types() -> typing.List[locations.LocationType]:
+def get_location_types() -> typing.List[LocationType]:
     """
     Get all location types.
 

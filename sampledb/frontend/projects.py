@@ -497,8 +497,10 @@ def projects():
         projects = logic.projects.get_user_projects(user_id)
     else:
         projects = logic.projects.get_projects()
-    for project in projects:
-        project.permissions = logic.projects.get_user_project_permissions(project_id=project.id, user_id=flask_login.current_user.id, include_groups=True)
+    project_permissions_by_id = {
+        project.id: logic.projects.get_user_project_permissions(project_id=project.id, user_id=flask_login.current_user.id, include_groups=True)
+        for project in projects
+    }
     create_project_form = CreateProjectForm()
     show_create_form = False
     if 'create' in flask.request.form:
@@ -562,6 +564,7 @@ def projects():
         show_create_form=show_create_form,
         Permissions=logic.projects.Permissions,
         projects_by_id=projects_by_id,
+        project_permissions_by_id=project_permissions_by_id,
         project_id_hierarchy_list=project_id_hierarchy_list,
         languages=get_languages(only_enabled_for_input=True),
         ENGLISH=english

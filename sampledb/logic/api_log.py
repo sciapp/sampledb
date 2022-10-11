@@ -18,10 +18,14 @@ def get_api_log_entries(api_token_id: int) -> typing.List[APILogEntry]:
     :param api_token_id: the ID of an existing API token
     :return: a list of API log entries for this token
     """
-    return APILogEntry.query.filter_by(api_token_id=api_token_id).order_by(db.desc(APILogEntry.utc_datetime)).all()
+    return APILogEntry.query.filter_by(api_token_id=api_token_id).order_by(db.desc(APILogEntry.utc_datetime)).all()  # type: ignore
 
 
-def create_log_entry(api_token_id: int, method: HTTPMethod, route: str):
+def create_log_entry(
+        api_token_id: int,
+        method: HTTPMethod,
+        route: str
+) -> None:
     """
     Create a new API log entry.
 

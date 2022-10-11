@@ -13,14 +13,14 @@ ureg = pint.UnitRegistry()
 ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
 
 
-def prettify_units(units: typing.Union[str, ureg.Unit]) -> str:
+def prettify_units(units: typing.Union[str, pint.Unit]) -> str:
     """
     Returns a prettified version of the units, if defined, otherwise returns the units unaltered.
     :param units: The pint units or their string representation
     :return: The prettified units
     """
-    units = str(units).strip()
-    units = {
+    units_str = str(units).strip()
+    units_str = {
         'degC': '\xb0C',
         'degree_Celsius': '\xb0C',
         'deg': '\xb0',
@@ -28,5 +28,5 @@ def prettify_units(units: typing.Union[str, ureg.Unit]) -> str:
         'percent': '%',
         '': '—',
         '1': '—'
-    }.get(units, units)
-    return units
+    }.get(units_str, units_str)
+    return units_str

@@ -25,10 +25,10 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 def validate_schema(
-        schema: dict,
+        schema: typing.Dict[str, typing.Any],
         path: typing.Optional[typing.List[str]] = None,
         *,
-        parent_conditions: typing.Optional[typing.List[typing.Tuple]] = None,
+        parent_conditions: typing.Optional[typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]]] = None,
         invalid_template_action_ids: typing.Sequence[int] = (),
         strict: bool = False
 ) -> None:
@@ -111,7 +111,7 @@ def validate_schema(
         raise ValidationError('invalid type', path)
 
 
-def _validate_note_in_schema(schema: dict, path: typing.List[str]):
+def _validate_note_in_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     all_language_codes = {
         language.lang_code
         for language in get_languages()
@@ -129,7 +129,7 @@ def _validate_note_in_schema(schema: dict, path: typing.List[str]):
                 raise ValidationError('note must only contain text', path)
 
 
-def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_hazards_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validate the given GHS hazards schema and raise a ValidationError if it is invalid.
 
@@ -157,7 +157,7 @@ def _validate_hazards_schema(schema: dict, path: typing.List[str]) -> None:
 
 
 def _validate_array_schema(
-        schema: dict,
+        schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         invalid_template_action_ids: typing.Sequence[int] = (),
         strict: bool = False
@@ -220,7 +220,7 @@ def _validate_array_schema(
         validate(schema['default'], schema, path + ['(default)'], strict=strict)
 
 
-def _validate_tags_schema(schema: dict, path: typing.List[str], strict: bool = False) -> None:
+def _validate_tags_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str], strict: bool = False) -> None:
     """
     Validates the given tags schema and raises a ValidationError if it is invalid.
 
@@ -249,7 +249,7 @@ def _validate_tags_schema(schema: dict, path: typing.List[str], strict: bool = F
 
 
 def _validate_object_schema(
-        schema: dict,
+        schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         invalid_template_action_ids: typing.Sequence[int] = (),
         strict: bool = False
@@ -280,7 +280,7 @@ def _validate_object_schema(
     }
 
     if schema.get('template') is not None:
-        invalid_template_action_ids = list(invalid_template_action_ids) + [schema.get('template')]
+        invalid_template_action_ids = list(invalid_template_action_ids) + [typing.cast(int, schema['template'])]
 
     valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note'}
     if not path:
@@ -303,7 +303,7 @@ def _validate_object_schema(
 
     if not isinstance(schema['properties'], dict):
         raise ValidationError('properties must be dict', path)
-    property_conditions = []
+    property_conditions: typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]] = []
     property_schemas = {}
     for property_name, property_schema in schema['properties'].items():
         property_name_valid = True
@@ -428,7 +428,7 @@ def _validate_object_schema(
     _validate_note_in_schema(schema, path)
 
 
-def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_text_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given text object schema and raises a ValidationError if it is invalid.
 
@@ -453,7 +453,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
             for language in schema['languages']:
                 if not isinstance(language, str) or language not in all_language_codes:
                     raise ValidationError('languages must be a list of known language codes or "all"', path)
-            allowed_language_codes = schema['languages']
+            allowed_language_codes = set(schema['languages'])
         else:
             allowed_language_codes = all_language_codes
     else:
@@ -547,7 +547,7 @@ def _validate_text_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_datetime_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given datetime object schema and raises a ValidationError if it is invalid.
 
@@ -576,7 +576,7 @@ def _validate_datetime_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_bool_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given boolean object schema and raises a ValidationError if it is invalid.
 
@@ -599,7 +599,7 @@ def _validate_bool_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_quantity_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given quantity object schema and raises a ValidationError if it is invalid.
 
@@ -683,7 +683,7 @@ def _validate_quantity_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_sample_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given sample object schema and raises a ValidationError if it is invalid.
 
@@ -708,7 +708,7 @@ def _validate_sample_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_measurement_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given measurement object schema and raises a ValidationError if it is invalid.
 
@@ -733,7 +733,7 @@ def _validate_measurement_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_object_reference_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_object_reference_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given object reference object schema and raises a ValidationError if it is invalid.
 
@@ -824,7 +824,7 @@ def _validate_notebook_templates(notebook_templates: typing.Any) -> None:
                     raise ValidationError('notebook template param value must be a list or one of {}'.format(valid_param_values), path)
 
 
-def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_user_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given user object schema and raises a ValidationError if it is invalid.
 
@@ -850,7 +850,7 @@ def _validate_user_schema(schema: dict, path: typing.List[str]) -> None:
     _validate_note_in_schema(schema, path)
 
 
-def _validate_plotly_chart_schema(schema: dict, path: typing.List[str]) -> None:
+def _validate_plotly_chart_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given plotly_chart object schema and raises a ValidationError if it is invalid.
 

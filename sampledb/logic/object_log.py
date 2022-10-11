@@ -18,7 +18,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
     object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
     processed_object_log_entries = []
-    users_by_id = {None: None}
+    users_by_id: typing.Dict[typing.Optional[int], typing.Optional[users.User]] = {None: None}
     for object_log_entry in object_log_entries:
         use_object_entry = False
         using_object_type = ''
@@ -52,7 +52,7 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
     return processed_object_log_entries
 
 
-def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int, data: dict):
+def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     object_log_entry = ObjectLogEntry(
         type=type,
         object_id=object_id,
@@ -64,7 +64,7 @@ def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int,
     db.session.commit()
 
 
-def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int] = None):
+def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int] = None) -> None:
     data = {}
     if previous_object_id:
         data['previous_object_id'] = previous_object_id
@@ -76,7 +76,7 @@ def create_object(user_id: int, object_id: int, previous_object_id: typing.Optio
     )
 
 
-def edit_object(user_id: int, object_id: int, version_id: int):
+def edit_object(user_id: int, object_id: int, version_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.EDIT_OBJECT,
         object_id=object_id,
@@ -87,7 +87,7 @@ def edit_object(user_id: int, object_id: int, version_id: int):
     )
 
 
-def restore_object_version(user_id: int, object_id: int, version_id: int, restored_version_id: int):
+def restore_object_version(user_id: int, object_id: int, version_id: int, restored_version_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.RESTORE_OBJECT_VERSION,
         object_id=object_id,
@@ -99,7 +99,7 @@ def restore_object_version(user_id: int, object_id: int, version_id: int, restor
     )
 
 
-def use_object_in_measurement(user_id: int, object_id: int, measurement_id: int):
+def use_object_in_measurement(user_id: int, object_id: int, measurement_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT,
         object_id=object_id,
@@ -110,7 +110,7 @@ def use_object_in_measurement(user_id: int, object_id: int, measurement_id: int)
     )
 
 
-def use_object_in_sample(user_id: int, object_id: int, sample_id: int):
+def use_object_in_sample(user_id: int, object_id: int, sample_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION,
         object_id=object_id,
@@ -121,7 +121,7 @@ def use_object_in_sample(user_id: int, object_id: int, sample_id: int):
     )
 
 
-def post_comment(user_id: int, object_id: int, comment_id: int):
+def post_comment(user_id: int, object_id: int, comment_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.POST_COMMENT,
         object_id=object_id,
@@ -132,7 +132,7 @@ def post_comment(user_id: int, object_id: int, comment_id: int):
     )
 
 
-def upload_file(user_id: int, object_id: int, file_id: int):
+def upload_file(user_id: int, object_id: int, file_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.UPLOAD_FILE,
         object_id=object_id,
@@ -143,7 +143,7 @@ def upload_file(user_id: int, object_id: int, file_id: int):
     )
 
 
-def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int]):
+def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int]) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.CREATE_BATCH,
         object_id=object_id,
@@ -154,7 +154,7 @@ def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int
     )
 
 
-def assign_location(user_id: int, object_id: int, object_location_assignment_id: int):
+def assign_location(user_id: int, object_id: int, object_location_assignment_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.ASSIGN_LOCATION,
         object_id=object_id,
@@ -171,7 +171,7 @@ def link_publication(
         doi: str,
         title: typing.Optional[str] = None,
         object_name: typing.Optional[str] = None
-):
+) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.LINK_PUBLICATION,
         object_id=object_id,
@@ -184,7 +184,7 @@ def link_publication(
     )
 
 
-def reference_object_in_metadata(user_id: int, object_id: int, referencing_object_id: int):
+def reference_object_in_metadata(user_id: int, object_id: int, referencing_object_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA,
         object_id=object_id,
@@ -195,7 +195,7 @@ def reference_object_in_metadata(user_id: int, object_id: int, referencing_objec
     )
 
 
-def export_to_dataverse(user_id: int, object_id: int, dataverse_url: str):
+def export_to_dataverse(user_id: int, object_id: int, dataverse_url: str) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.EXPORT_TO_DATAVERSE,
         object_id=object_id,
@@ -206,7 +206,7 @@ def export_to_dataverse(user_id: int, object_id: int, dataverse_url: str):
     )
 
 
-def link_project(user_id: int, object_id: int, project_id: int):
+def link_project(user_id: int, object_id: int, project_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.LINK_PROJECT,
         object_id=object_id,
@@ -217,7 +217,7 @@ def link_project(user_id: int, object_id: int, project_id: int):
     )
 
 
-def unlink_project(user_id: int, object_id: int, project_id: int, project_deleted: bool = False):
+def unlink_project(user_id: int, object_id: int, project_id: int, project_deleted: bool = False) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.UNLINK_PROJECT,
         object_id=object_id,

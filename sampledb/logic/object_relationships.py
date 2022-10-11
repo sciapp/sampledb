@@ -2,13 +2,13 @@
 """
 
 """
-
 import typing
 
 from .objects import get_object, find_object_references
-from .object_log import get_object_log_entries, ObjectLogEntryType
-from .object_permissions import get_user_object_permissions, Permissions
+from .object_log import get_object_log_entries
+from .object_permissions import get_user_object_permissions
 from . import errors
+from ..models import ObjectLogEntryType, Permissions
 
 
 def get_related_object_ids(
@@ -17,7 +17,7 @@ def get_related_object_ids(
         include_referencing_objects: bool,
         user_id: typing.Optional[int] = None
 ) -> typing.Tuple[
-    typing.List[typing.Tuple], typing.List[int]
+    typing.List[typing.Tuple[int, typing.Optional[int]]], typing.List[typing.Tuple[int, typing.Optional[str]]]
 ]:
     """
     Get IDs of objects related to a given object.
@@ -37,8 +37,8 @@ def get_related_object_ids(
     :param user_id: the ID of an existing user (optional)
     :return: lists of previous object IDs, measurement IDs and sample IDs
     """
-    referenced_object_ids = []
-    referencing_object_ids = []
+    referenced_object_ids: typing.List[typing.Tuple[int, typing.Optional[str]]] = []
+    referencing_object_ids: typing.List[typing.Tuple[int, typing.Optional[int]]] = []
     if include_referenced_objects:
         object = get_object(object_id)
         for referenced_object_id, previously_referenced_object_id, schema_type in find_object_references(object, include_fed_references=True):
@@ -64,10 +64,10 @@ def get_related_object_ids(
 
 def build_related_objects_tree(
         object_id: int,
-        component_uuid: str = None,
+        component_uuid: typing.Optional[str] = None,
         user_id: typing.Optional[int] = None,
-        path: typing.Optional[typing.List[typing.Tuple]] = None,
-        visited_paths: typing.Dict[int, typing.List[int]] = None
+        path: typing.Optional[typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]] = None,
+        visited_paths: typing.Optional[typing.Dict[int, typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]]] = None
 ) -> typing.Any:
     """
     Get the tree of related objects for a given object.

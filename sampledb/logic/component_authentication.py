@@ -1,21 +1,27 @@
 import typing
 
 from .. import db
-from ..models import Component, ComponentAuthentication, ComponentAuthenticationType, OwnComponentAuthentication
+from ..models import ComponentAuthentication, ComponentAuthenticationType, OwnComponentAuthentication
 from .errors import NoAuthenticationMethodError, InvalidTokenError, AuthenticationMethodDoesNotExistError, \
     TokenExistsError
 from .authentication import _hash_password, _validate_password_authentication
-from . import components
+from .components import Component
 
 
-def get_own_authentication(component_id, type=ComponentAuthenticationType.TOKEN):
-    auth = OwnComponentAuthentication.query.filter_by(component_id=component_id, type=type).first()
+def get_own_authentication(
+        component_id: int,
+        type: ComponentAuthenticationType = ComponentAuthenticationType.TOKEN
+) -> OwnComponentAuthentication:
+    auth: typing.Optional[OwnComponentAuthentication] = OwnComponentAuthentication.query.filter_by(component_id=component_id, type=type).first()
     if auth is None:
         raise NoAuthenticationMethodError()
     return auth
 
 
-def own_token_exists(component_id, token):
+def own_token_exists(
+        component_id: int,
+        token: str
+) -> bool:
     authentication_methods = OwnComponentAuthentication.query.filter(
         db.and_(OwnComponentAuthentication.login['token'].astext == token,
                 db.and_(OwnComponentAuthentication.type == ComponentAuthenticationType.TOKEN,
@@ -24,7 +30,11 @@ def own_token_exists(component_id, token):
     return authentication_methods is not None
 
 
-def add_token_authentication(component_id: int, token: str, description: str):
+def add_token_authentication(
+        component_id: int,
+        token: str,
+        description: str
+) -> None:
     if len(token) != 64:
         raise InvalidTokenError()
     token = token.lower()
@@ -43,7 +53,11 @@ def add_token_authentication(component_id: int, token: str, description: str):
     db.session.commit()
 
 
-def add_own_token_authentication(component_id: int, token: str, description: str):
+def add_own_token_authentication(
+        component_id: int,
+        token: str,
+        description: str
+) -> None:
     token = token.lower().strip()
     if len(token) != 64:
         raise InvalidTokenError()
@@ -61,7 +75,9 @@ def add_own_token_authentication(component_id: int, token: str, description: str
     db.session.commit()
 
 
-def login_via_component_token(component_token: str) -> typing.Optional[Component]:
+def login_via_component_token(
+        component_token: str
+) -> typing.Optional[Component]:
     """
     Authenticate a component using an API token.
 
@@ -79,11 +95,13 @@ def login_via_component_token(component_token: str) -> typing.Optional[Component
     for authentication_method in authentication_methods:
         if _validate_password_authentication(authentication_method, password):
             if authentication_method.component:
-                return components.Component.from_database(authentication_method.component)
+                return Component.from_database(authentication_method.component)
     return None
 
 
-def remove_component_authentication_method(authentication_method_id: int):
+def remove_component_authentication_method(
+        authentication_method_id: int
+) -> None:
     """
     Remove an component authentication method.
 
@@ -98,7 +116,9 @@ def remove_component_authentication_method(authentication_method_id: int):
     db.session.commit()
 
 
-def remove_own_component_authentication_method(authentication_method_id: int):
+def remove_own_component_authentication_method(
+        authentication_method_id: int
+) -> None:
     """
     Remove an component authentication method.
 

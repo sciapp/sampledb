@@ -144,8 +144,8 @@ class Action(db.Model):
 
     def __init__(
             self,
-            action_type_id: int,
-            schema: dict,
+            action_type_id: typing.Optional[int],
+            schema: typing.Optional[typing.Dict[str, typing.Any]],
             instrument_id: typing.Optional[int] = None,
             user_id: typing.Optional[int] = None,
             description_is_markdown: bool = False,

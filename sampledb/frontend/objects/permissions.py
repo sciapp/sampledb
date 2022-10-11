@@ -9,7 +9,7 @@ import flask_login
 import requests
 from flask_babel import _
 
-from ...logic.federation import update_poke_component
+from ...logic.federation.update import update_poke_component
 from .. import frontend
 from ... import logic
 from ...logic import user_log

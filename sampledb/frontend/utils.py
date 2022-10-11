@@ -37,6 +37,7 @@ from ..logic.utils import get_translated_text, get_all_translated_texts, show_ad
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.action_permissions import get_sorted_actions_for_user
+from ..logic.languages import get_user_language
 from ..logic.locations import Location, get_location, get_unhandled_object_responsibility_assignments
 from ..logic.location_permissions import get_user_location_permissions
 from ..logic.datatypes import JSONEncoder
@@ -318,7 +319,8 @@ def convert_datetime_input(datetime_input):
     if not datetime_input:
         return ''
     try:
-        local_datetime = datetime.strptime(datetime_input, flask_login.current_user.language.datetime_format_datetime)
+        user_language = get_user_language(flask_login.current_user)
+        local_datetime = datetime.strptime(datetime_input, user_language.datetime_format_datetime)
         return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
     except Exception:
         return ''

@@ -71,7 +71,7 @@ class ResourcePermissions(object):
         if permissions is None:
             self._check_resource_exists(resource_id)
             return Permissions.NONE
-        return permissions.permissions
+        return typing.cast(Permissions, permissions.permissions)
 
     def _set_user_independent_permissions(
             self,

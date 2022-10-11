@@ -16,17 +16,18 @@ import typing
 import datetime
 import flask
 
+import sqlalchemy.exc
+
 from .components import get_component_by_uuid
-from ..models import Objects, Object, Action, ActionType
+from ..models import Objects, Object, Action, ActionType, Permissions
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
-import sqlalchemy.exc
 
 
 def create_object(
         action_id: int,
-        data: dict,
+        data: typing.Dict[str, typing.Any],
         user_id: int,
         previous_object_id: typing.Optional[int] = None,
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
@@ -57,11 +58,16 @@ def create_object(
         user ID exists
     """
     action = actions.get_action(action_id)
-    if action.type_id is not None and action.type.disable_create_objects:
+    if action.type is not None and action.type.disable_create_objects:
         raise CreatingObjectsDisabledError()
     users.get_user(user_id)
     try:
-        object = Objects.create_object(data=data, schema=schema, user_id=user_id, action_id=action_id)
+        object = typing.cast(Object, Objects.create_object(
+            data=data,
+            schema=schema,
+            user_id=user_id,
+            action_id=action_id
+        ))
     except sqlalchemy.exc.IntegrityError:
         raise
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
@@ -70,11 +76,11 @@ def create_object(
     _send_user_references_notifications(object, user_id)
     if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
-        object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
+        object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
     elif permissions_for_group_id is not None:
-        object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, object_permissions.Permissions.GRANT)
+        object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, Permissions.GRANT)
     elif permissions_for_project_id is not None:
-        object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, object_permissions.Permissions.GRANT)
+        object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
     else:
         object_permissions.set_initial_permissions(object)
     tags.update_object_tag_usage(object)
@@ -87,7 +93,7 @@ def insert_fed_object_version(
         component_id: int,
         action_id: typing.Optional[int],
         schema: typing.Optional[typing.Dict[str, typing.Any]],
-        data: typing.Optional[dict],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
         user_id: typing.Optional[int],
         utc_datetime: typing.Optional[datetime.datetime],
         allow_disabled_languages: bool = False
@@ -104,6 +110,8 @@ def insert_fed_object_version(
     :param data: the object's data, which must fit to the action's schema, optional
     :param user_id: the ID of the user who created the object, optional
     :param utc_datetime: the creation datetime of the version to insert
+    :param allow_disabled_languages: whether disabled languages may be allowed
+        in data
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -114,14 +122,24 @@ def insert_fed_object_version(
         actions.get_action(action_id)
     if user_id is not None:
         users.get_user(user_id)
-    object = Objects.insert_fed_object_version(data=data, schema=schema, user_id=user_id, action_id=action_id, utc_datetime=utc_datetime, fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_id=component_id, allow_disabled_languages=allow_disabled_languages)
+    object = typing.cast(Object, Objects.insert_fed_object_version(
+        data=data,
+        schema=schema,
+        user_id=user_id,
+        action_id=action_id,
+        utc_datetime=utc_datetime,
+        fed_object_id=fed_object_id,
+        fed_version_id=fed_version_id,
+        component_id=component_id,
+        allow_disabled_languages=allow_disabled_languages
+    ))
     tags.update_object_tag_usage(object)
     return object
 
 
 def create_object_batch(
         action_id: int,
-        data_sequence: typing.Sequence[dict],
+        data_sequence: typing.Sequence[typing.Dict[str, typing.Any]],
         user_id: int,
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
@@ -149,13 +167,13 @@ def create_object_batch(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    objects = []
+    objects: typing.List[Object] = []
     actions.get_action(action_id)
     users.get_user(user_id)
     try:
         for data in data_sequence:
             try:
-                object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
+                object = typing.cast(Object, Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id))
             except sqlalchemy.exc.IntegrityError:
                 raise
             objects.append(object)
@@ -170,18 +188,23 @@ def create_object_batch(
                 _send_user_references_notifications(object, user_id)
                 if copy_permissions_object_id is not None:
                     object_permissions.copy_permissions(object.id, copy_permissions_object_id)
-                    object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
+                    object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
                 elif permissions_for_group_id is not None:
-                    object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, object_permissions.Permissions.GRANT)
+                    object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, Permissions.GRANT)
                 elif permissions_for_project_id is not None:
-                    object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, object_permissions.Permissions.GRANT)
+                    object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
                 else:
                     object_permissions.set_initial_permissions(object)
                 tags.update_object_tag_usage(object)
     return objects
 
 
-def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optional[typing.Dict[str, typing.Any]] = None) -> None:
+def update_object(
+        object_id: int,
+        data: typing.Dict[str, typing.Any],
+        user_id: int,
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = None
+) -> None:
     """
     Updates the object to a new version. This function also handles logging
     and object references.
@@ -195,7 +218,7 @@ def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optio
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = Objects.update_object(object_id=object_id, data=data, schema=schema, user_id=user_id)
+    object = typing.cast(typing.Optional[Object], Objects.update_object(object_id=object_id, data=data, schema=schema, user_id=user_id))
     if object is None:
         raise errors.ObjectDoesNotExistError()
     user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
@@ -205,8 +228,26 @@ def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optio
     tags.update_object_tag_usage(object)
 
 
-def update_object_version(object_id: int, version_id: int, action_id: typing.Optional[int], data: dict, user_id: typing.Optional[int], schema: typing.Optional[typing.Dict[str, typing.Any]] = None, utc_datetime: typing.Optional[datetime.datetime] = None, allow_disabled_languages: bool = False) -> Object:
-    object = Objects.update_object_version(object_id=object_id, version_id=version_id, action_id=action_id, schema=schema, data=data, user_id=user_id, utc_datetime=utc_datetime, allow_disabled_languages=allow_disabled_languages)
+def update_object_version(
+        object_id: int,
+        version_id: int,
+        action_id: typing.Optional[int],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        user_id: typing.Optional[int],
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        allow_disabled_languages: bool = False
+) -> Object:
+    object = typing.cast(typing.Optional[Object], Objects.update_object_version(
+        object_id=object_id,
+        version_id=version_id,
+        action_id=action_id,
+        schema=schema,
+        data=data,
+        user_id=user_id,
+        utc_datetime=utc_datetime,
+        allow_disabled_languages=allow_disabled_languages
+    ))
     if object is None:
         get_object(object_id, version_id)
         raise errors.ObjectNotFederatedError()
@@ -232,14 +273,15 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = Objects.restore_object_version(
+    object = typing.cast(typing.Optional[Object], Objects.restore_object_version(
         object_id=object_id,
         version_id=version_id,
         user_id=user_id
-    )
+    ))
     if object is None:
         # ensure the object actually exists
         get_object(object_id=object_id, version_id=version_id)
+        return
     user_log.restore_object_version(user_id=user_id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
     object_log.restore_object_version(object_id=object_id, user_id=user_id, restored_version_id=version_id, version_id=object.version_id)
     tags.update_object_tag_usage(object)
@@ -272,11 +314,16 @@ def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Objec
         version ID
     """
     if version_id is None:
-        object = Objects.get_current_object(object_id=object_id)
+        object = typing.cast(typing.Optional[Object], Objects.get_current_object(
+            object_id=object_id
+        ))
         if object is None:
             raise errors.ObjectDoesNotExistError()
     else:
-        object = Objects.get_object_version(object_id=object_id, version_id=version_id)
+        object = typing.cast(typing.Optional[Object], Objects.get_object_version(
+            object_id=object_id,
+            version_id=version_id
+        ))
         if object is None:
             if Objects.get_current_object(object_id=object_id) is None:
                 raise errors.ObjectDoesNotExistError()
@@ -300,11 +347,18 @@ def get_fed_object(fed_object_id: int, component_id: int, fed_version_id: typing
         version ID
     """
     if fed_version_id is None:
-        object = Objects.get_current_fed_object(fed_object_id=fed_object_id, component_id=component_id)
+        object = typing.cast(typing.Optional[Object], Objects.get_current_fed_object(
+            fed_object_id=fed_object_id,
+            component_id=component_id
+        ))
         if object is None:
             raise errors.ObjectDoesNotExistError()
     else:
-        object = Objects.get_fed_object_version(component_id=component_id, fed_object_id=fed_object_id, fed_version_id=fed_version_id)
+        object = typing.cast(typing.Optional[Object], Objects.get_fed_object_version(
+            component_id=component_id,
+            fed_object_id=fed_object_id,
+            fed_version_id=fed_version_id
+        ))
         if object is None:
             if Objects.get_current_fed_object(fed_object_id=fed_object_id, component_id=component_id) is None:
                 raise errors.ObjectDoesNotExistError()
@@ -325,10 +379,14 @@ def get_object_versions(object_id: int) -> typing.List[Object]:
     object_versions = Objects.get_object_versions(object_id=object_id)
     if not object_versions:
         raise errors.ObjectDoesNotExistError()
-    return object_versions
+    return list(typing.cast(typing.Sequence[Object], object_versions))
 
 
-def get_objects(filter_func=lambda data: True, action_filter=None, **kwargs) -> typing.List[Object]:
+def get_objects(
+        filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
+        action_filter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        **kwargs: typing.Any
+) -> typing.List[Object]:
     """
     Returns all objects, optionally after filtering the objects by their data
     or by their actions' information.
@@ -343,10 +401,17 @@ def get_objects(filter_func=lambda data: True, action_filter=None, **kwargs) -> 
         action_table = None
     else:
         action_table = Action.__table__
-    return Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter, **kwargs)
+    return list(typing.cast(typing.Sequence[Object], Objects.get_current_objects(
+        filter_func=filter_func,
+        action_table=action_table,
+        action_filter=action_filter,
+        **kwargs
+    )))
 
 
-def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.List[str], dict, dict]]:
+def _get_object_properties(
+        object: Object
+) -> typing.List[typing.Tuple[typing.List[typing.Union[str, int]], typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]]:
     """
     Returns a list of all properties of an object, as 3-tuples consisting of
     the path to the property, its schema and the actual data.
@@ -354,7 +419,11 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
     :param object: the object
     :return: a list of one 3-tuples for reach of the object's properties
     """
-    def iter_object_properties(previous_path, schema, data):
+    def iter_object_properties(
+            previous_path: typing.List[typing.Union[str, int]],
+            schema: typing.Dict[str, typing.Any],
+            data: typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]
+    ) -> typing.Iterator[typing.Tuple[typing.List[typing.Union[str, int]], typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]]:
         if schema is None or data is None:
             return
         if schema['type'] == 'object':
@@ -367,16 +436,41 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
                 for property in iter_object_properties(previous_path + [index], schema['items'], item):
                     yield property
         else:
-            yield previous_path, schema, data
+            # cast as data cannot be a list unless schema type is array
+            yield previous_path, schema, typing.cast(typing.Dict[str, typing.Any], data)
 
-    return list(iter_object_properties([], object.schema, object.data))
+    return list([
+        (path, schema, data)
+        for path, schema, data in iter_object_properties([], object.schema, object.data)
+    ])
+
+
+@typing.overload
+def find_object_references(
+        object: Object,
+        find_previous_referenced_object_ids: bool = True,
+        *,
+        include_fed_references: typing.Literal[True]
+) -> typing.Sequence[typing.Tuple[typing.Tuple[int, typing.Optional[str]], typing.Optional[int], str]]:
+    ...
+
+
+@typing.overload
+def find_object_references(
+        object: Object,
+        find_previous_referenced_object_ids: bool = True,
+        *,
+        include_fed_references: typing.Literal[False] = False
+) -> typing.Sequence[typing.Tuple[int, typing.Optional[int], str]]:
+    ...
 
 
 def find_object_references(
         object: Object,
         find_previous_referenced_object_ids: bool = True,
+        *,
         include_fed_references: bool = False
-) -> typing.List[typing.Tuple[int, typing.Optional[int], str]]:
+) -> typing.Sequence[typing.Tuple[typing.Union[int, typing.Tuple[int, typing.Optional[str]]], typing.Optional[int], str]]:
     """
     Searches for references to other objects.
 

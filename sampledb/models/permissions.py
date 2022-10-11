@@ -7,6 +7,8 @@ import enum
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
+import typing
+
 
 class Permissions(enum.Enum):
     NONE = 0
@@ -27,7 +29,9 @@ class Permissions(enum.Enum):
         return self.value < other.value
 
     @staticmethod
-    def from_name(name):
+    def from_name(
+            name: str
+    ) -> 'Permissions':
         members = {
             'none': Permissions.NONE,
             'read': Permissions.READ,
@@ -40,7 +44,9 @@ class Permissions(enum.Enum):
             raise ValueError('Invalid name')
 
     @staticmethod
-    def from_value(value):
+    def from_value(
+            value: typing.Optional[int]
+    ) -> 'Permissions':
         if value is None:
             return Permissions.NONE
         for member in Permissions:

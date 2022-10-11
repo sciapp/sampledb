@@ -19,6 +19,7 @@ setting JSONEncoder.STRICT = True, but the verification will greatly reduce the 
 import datetime
 import json
 import pint
+import typing
 
 from .units import ureg
 
@@ -31,7 +32,7 @@ class _ReducingEncoder(json.JSONEncoder):
 
     This class is used for the _contains_type(obj) function and should not be re-used for other purposes.
     """
-    def default(self, obj):
+    def default(self, obj: typing.Any) -> typing.Any:
         for type_name, cls in JSONEncoder.serializable_types.items():
             if isinstance(obj, cls):
                 return {}
@@ -39,7 +40,7 @@ class _ReducingEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def _contains_type(obj):
+def _contains_type(obj: typing.Any) -> bool:
     """
     This function checks whether a JSON-serializable object does not contain any "_type" attributes or keys.
 
@@ -58,17 +59,17 @@ class JSONEncoder(json.JSONEncoder):
     A JSONEncoder with support for registering additional JSON-serializable types.
     """
 
-    STRICT = False
-    serializable_types = {}
+    STRICT: bool = False
+    serializable_types: typing.Dict[str, typing.Any] = {}
 
-    def encode(self, obj):
+    def encode(self, obj: typing.Any) -> typing.Any:
         if JSONEncoder.STRICT:
             # Create a version of the object without any objects that are instances of the serializable types
             reduced_obj = json.loads(json.dumps(obj, cls=_ReducingEncoder))
             assert not _contains_type(reduced_obj)
         return super(JSONEncoder, self).encode(obj)
 
-    def default(self, obj):
+    def default(self, obj: typing.Any) -> typing.Any:
         for type_name, cls in JSONEncoder.serializable_types.items():
             if isinstance(obj, cls):
                 obj = obj.to_json()
@@ -78,7 +79,7 @@ class JSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
     @classmethod
-    def object_hook(cls, obj):
+    def object_hook(cls, obj: typing.Any) -> typing.Any:
         """
         Function for json.loads() that will deserialize the objects serialized using default().
 
@@ -90,12 +91,17 @@ class JSONEncoder(json.JSONEncoder):
                 return cls.serializable_types[obj['_type']].from_json(obj)
         return obj
 
+    T = typing.TypeVar('T')
+
     @classmethod
-    def serializable_type(cls, type_name):
+    def serializable_type(cls, type_name: str) -> typing.Callable[[T], T]:
         """
         Parameterized decorator that adds a class to the dictionary of serializable types using the given type name.
         """
-        def serializable_type_decorator(c):
+
+        T2 = typing.TypeVar('T2')
+
+        def serializable_type_decorator(c: T2) -> T2:
             cls.serializable_types[type_name] = c
             return c
         return serializable_type_decorator
@@ -120,22 +126,24 @@ class DateTime(object):
 
     FORMAT_STRING = '%Y-%m-%d %H:%M:%S'
 
-    def __init__(self, utc_datetime=None):
+    def __init__(self, utc_datetime: typing.Optional[datetime.datetime] = None) -> None:
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime.replace(microsecond=0)
 
-    def __repr__(self):
-        return '<{0}(utc_datetime={1})>'.format(type(self).__name__, self.utc_datetime.strftime(DateTime.FORMAT_STRING))
+    def __repr__(self) -> str:
+        return '<{0}(utc_datetime={1})>'.format(type(self).__name__, self.utc_datetime.strftime(self.FORMAT_STRING))
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
         return self.utc_datetime == other.utc_datetime
 
-    def to_json(self):
-        return {'utc_datetime': self.utc_datetime.strftime(DateTime.FORMAT_STRING)}
+    def to_json(self) -> typing.Dict[str, str]:
+        return {'utc_datetime': self.utc_datetime.strftime(self.FORMAT_STRING)}
 
     @classmethod
-    def from_json(cls, obj):
+    def from_json(cls, obj: typing.Dict[str, str]) -> 'DateTime':
         return cls(datetime.datetime.strptime(obj['utc_datetime'], cls.FORMAT_STRING))
 
 
@@ -168,7 +176,12 @@ class Quantity(object):
         'additionalProperties': False
     }
 
-    def __init__(self, magnitude, units, already_in_base_units=False):
+    def __init__(
+            self,
+            magnitude: typing.Union[int, float],
+            units: typing.Optional[str],
+            already_in_base_units: bool = False
+    ) -> None:
         self.magnitude = float(magnitude)
         if units is None:
             self.units = None
@@ -192,13 +205,15 @@ class Quantity(object):
                 self.magnitude = ureg.Quantity(self.magnitude_in_base_units, pint_base_units).to(self.pint_units).magnitude
         self.dimensionality = self.pint_units.dimensionality
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(magnitude={1.magnitude}, units="{1.units}")>'.format(type(self).__name__, self)
 
-    def __eq__(self, other):
-        return ureg.Quantity(self.magnitude, self.pint_units) == ureg.Quantity(other.magnitude, other.pint_units)
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return bool(ureg.Quantity(self.magnitude, self.pint_units) == ureg.Quantity(other.magnitude, other.pint_units))
 
-    def to_json(self):
+    def to_json(self) -> typing.Dict[str, typing.Any]:
         return {
             'magnitude': self.magnitude,
             'magnitude_in_base_units': self.magnitude_in_base_units,
@@ -207,7 +222,7 @@ class Quantity(object):
         }
 
     @classmethod
-    def from_json(cls, obj):
+    def from_json(cls, obj: typing.Dict[str, typing.Any]) -> 'Quantity':
         magnitude_in_base_units = obj['magnitude_in_base_units']
         units = obj['units']
         if units is None:
@@ -248,20 +263,22 @@ class Boolean(object):
         'additionalProperties': False
     }
 
-    def __init__(self, value):
+    def __init__(self, value: bool) -> None:
         self.value = bool(value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(value={1.value})>'.format(type(self).__name__, self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
         return self.value == other.value
 
-    def to_json(self):
+    def to_json(self) -> typing.Dict[str, bool]:
         return {'value': self.value}
 
     @classmethod
-    def from_json(cls, obj):
+    def from_json(cls, obj: typing.Dict[str, bool]) -> 'Boolean':
         return cls(obj['value'])
 
 
@@ -281,18 +298,23 @@ class Text(object):
         'additionalProperties': False
     }
 
-    def __init__(self, text):
+    def __init__(
+            self,
+            text: typing.Union[str, typing.Dict[str, str]]
+    ) -> None:
         self.text = text
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(text="{1.text}")>'.format(type(self).__name__, self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
         return self.text == other.text
 
-    def to_json(self):
+    def to_json(self) -> typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]:
         return {'text': self.text}
 
     @classmethod
-    def from_json(cls, obj):
+    def from_json(cls, obj: typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]) -> 'Text':
         return cls(obj['text'])

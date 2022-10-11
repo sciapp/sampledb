@@ -29,8 +29,8 @@ location_permissions = ResourcePermissions(
 
 
 def get_user_location_permissions(
-        location_id,
-        user_id,
+        location_id: int,
+        user_id: typing.Optional[int],
         *,
         include_groups: bool = True,
         include_projects: bool = True,
@@ -53,7 +53,7 @@ def get_user_location_permissions(
             max_permissions = min(max_permissions, Permissions.READ)
 
     # apply responsible user permissions
-    if db.session.query(location_user_association_table).filter(location_user_association_table.c.location_id == location_id).filter(location_user_association_table.c.user_id == user_id).first() is not None:
+    if db.session.query(location_user_association_table).filter(location_user_association_table.c.location_id == location_id).filter(location_user_association_table.c.user_id == user_id).first() is not None:  # type: ignore
         return min(Permissions.GRANT, max_permissions)
 
     # resource independent permissions
@@ -78,11 +78,11 @@ def set_location_permissions_for_all_users(location_id: int, permissions: Permis
     location_permissions.set_permissions_for_all_users(resource_id=location_id, permissions=permissions)
 
 
-def get_location_permissions_for_users(location_id) -> typing.Dict[int, Permissions]:
+def get_location_permissions_for_users(location_id: int) -> typing.Dict[int, Permissions]:
     return location_permissions.get_permissions_for_users(resource_id=location_id)
 
 
-def set_user_location_permissions(location_id: int, user_id: int, permissions: Permissions):
+def set_user_location_permissions(location_id: int, user_id: int, permissions: Permissions) -> None:
     location_permissions.set_permissions_for_user(resource_id=location_id, user_id=user_id, permissions=permissions)
 
 
@@ -90,7 +90,7 @@ def get_location_permissions_for_groups(location_id: int) -> typing.Dict[int, Pe
     return location_permissions.get_permissions_for_groups(resource_id=location_id)
 
 
-def set_group_location_permissions(location_id: int, group_id: int, permissions: Permissions):
+def set_group_location_permissions(location_id: int, group_id: int, permissions: Permissions) -> None:
     location_permissions.set_permissions_for_group(resource_id=location_id, group_id=group_id, permissions=permissions)
 
 

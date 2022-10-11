@@ -4,13 +4,21 @@ RESTful API for SampleDB
 """
 
 import datetime
+import typing
 
 import flask
 from flask_restful import Resource
 
 from ...logic import errors
 from ...logic.shares import get_shares_for_component
-from ...logic.federation import import_updates, shared_action_preprocessor, shared_user_preprocessor, shared_instrument_preprocessor, shared_location_preprocessor, shared_object_preprocessor, shared_action_type_preprocessor, shared_location_type_preprocessor, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
+from ...logic.federation.action_types import shared_action_type_preprocessor
+from ...logic.federation.actions import shared_action_preprocessor
+from ...logic.federation.instruments import shared_instrument_preprocessor
+from ...logic.federation.location_types import shared_location_type_preprocessor
+from ...logic.federation.locations import shared_location_preprocessor
+from ...logic.federation.objects import shared_object_preprocessor
+from ...logic.federation.update import import_updates, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
+from ...logic.federation.users import shared_user_preprocessor
 from ...api.federation.authentication import http_token_auth
 from ...logic.users import get_user_aliases_for_component
 
@@ -83,8 +91,8 @@ class Objects(Resource):
         result = {
             'header': _get_header(component), 'actions': [], 'users': [], 'instruments': [], 'locations': [], 'location_types': [], 'objects': [], 'action_types': [], 'markdown_images': {}
         }
-        refs = []
-        markdown_images = {}
+        refs: typing.List[typing.Tuple[str, int]] = []
+        markdown_images: typing.Dict[str, str] = {}
         ref_ids = {'actions': [], 'users': [], 'instruments': [], 'locations': [], 'location_types': [], 'action_types': []}
 
         for share in shares:

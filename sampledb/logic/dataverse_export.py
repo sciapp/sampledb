@@ -20,7 +20,7 @@ from .components import get_component_by_uuid, Component
 from .. import db
 from .units import prettify_units
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
-from ..models import DataverseExport
+from ..models import DataverseExport, Permissions, ObjectLogEntryType
 
 
 DATAVERSE_TIMEOUT = 30
@@ -65,7 +65,7 @@ def _flatten_metadata_object(
 
 def _translations_to_str(
         content: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
-) -> str:
+) -> typing.Optional[str]:
     if isinstance(content, dict):
         if len(content) == 1:
             content = content[list(content)[0]]
@@ -75,7 +75,7 @@ def _translations_to_str(
 
 
 def get_title_for_property(
-        path: typing.List[str],
+        path: typing.List[typing.Union[str, int]],
         schema: typing.Dict[str, typing.Any]
 ) -> str:
     """
@@ -131,7 +131,12 @@ def get_property_export_default(
         return False
 
 
-def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
+def _convert_metadata_to_process(
+        metadata: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        user_id: int,
+        property_whitelist: typing.Sequence[typing.List[typing.Union[str, int]]]
+) -> typing.List[typing.Dict[str, typing.Any]]:
     fields = []
     for value, path in flatten_metadata(metadata):
         if path not in property_whitelist:
@@ -148,7 +153,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                 units = ''
             magnitude = f"{datatypes.Quantity.from_json(value).magnitude:g}"
         elif value['_type'] == 'text':
-            text_value = _translations_to_str(datatypes.Text.from_json(value).text)
+            text_value = _translations_to_str(datatypes.Text.from_json(value).text) or ''
         elif value['_type'] == 'bool':
             text_value = str(datatypes.Boolean.from_json(value).value)
         elif value['_type'] == 'datetime':
@@ -214,7 +219,7 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
                     obj = objects.get_fed_object(object_id, component_id)
                 else:
                     obj = objects.get_object(object_id)
-                if object_permissions.Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
+                if Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
                     object_name = _translations_to_str(obj.data.get('name', {}).get('text'))
                 else:
                     object_name = None
@@ -314,7 +319,7 @@ def upload_object(
     schema = object.schema
 
     action = actions.get_action(object.action_id)
-    if action.instrument_id:
+    if action.instrument:
         instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')
     else:
         instrument_name = None
@@ -322,10 +327,10 @@ def upload_object(
     author_ids = set()
     for entry in object_log.get_object_log_entries(object.id, user_id):
         if entry.type in {
-            object_log.ObjectLogEntryType.CREATE_BATCH,
-            object_log.ObjectLogEntryType.CREATE_OBJECT,
-            object_log.ObjectLogEntryType.EDIT_OBJECT,
-            object_log.ObjectLogEntryType.RESTORE_OBJECT_VERSION,
+            ObjectLogEntryType.CREATE_BATCH,
+            ObjectLogEntryType.CREATE_OBJECT,
+            ObjectLogEntryType.EDIT_OBJECT,
+            ObjectLogEntryType.RESTORE_OBJECT_VERSION,
         }:
             author_ids.add(entry.user_id)
 
@@ -333,7 +338,7 @@ def upload_object(
         users.get_user(author_id)
         for author_id in author_ids
     ]
-    authors.sort(key=lambda author: author.name)
+    authors.sort(key=lambda author: author.name)  # type: ignore
 
     tags = set()
     for property in object.data.values():
@@ -341,8 +346,8 @@ def upload_object(
             for tag in property['tags']:
                 if tag in tag_whitelist:
                     tags.add(tag)
-    tags = list(tags)
-    tags.sort()
+    sorted_tags = list(tags)
+    sorted_tags.sort()
 
     author_metadata = []
 
@@ -484,7 +489,7 @@ def upload_object(
     }
 
     if object.component is not None:
-        citation_metadata['fields'].append({
+        citation_metadata['fields'].append({  # type: ignore
             'typeName': 'otherId',
             'multiple': True,
             'typeClass': 'compound',
@@ -506,8 +511,8 @@ def upload_object(
             ]
         })
 
-    if tags:
-        citation_metadata['fields'].append({
+    if sorted_tags:
+        citation_metadata['fields'].append({  # type: ignore
             "typeName": "keyword",
             "multiple": True,
             "typeClass": "compound",
@@ -519,7 +524,7 @@ def upload_object(
                         "typeClass": "primitive",
                         "value": tag
                     }
-                } for tag in tags
+                } for tag in sorted_tags
             ]
         })
 
@@ -529,7 +534,7 @@ def upload_object(
     }
 
     if method_parameters:
-        process_metadata['fields'].append({
+        process_metadata['fields'].append({  # type: ignore
             'typeName': 'processMethodsPar',
             'multiple': True,
             'typeClass': 'compound',
@@ -537,7 +542,7 @@ def upload_object(
         })
 
     if instrument_name:
-        process_metadata['fields'].append({
+        process_metadata['fields'].append({  # type: ignore
             "typeName": "processInstru",
             "multiple": True,
             "typeClass": "compound",
@@ -618,7 +623,7 @@ def _upload_files_to_dataset(
             continue
         if file.is_hidden:
             continue
-        if file.data.get('storage') in {'local', 'database'}:
+        if file.storage in {'local', 'database'}:
             file_name = file.original_file_name
             file_content = file.open(read_only=True).read()
             if file.title and file.description:
@@ -788,10 +793,10 @@ def get_dataverse_url(object_id: int) -> typing.Optional[str]:
     :param object_id: the ID of an existing object
     :return: the URL or None
     """
-    dataverse_export = DataverseExport.query.filter_by(object_id=object_id).first()
+    dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
     if dataverse_export is None:
         return None
-    return dataverse_export.dataverse_url
+    return dataverse_export.dataverse_url  # type: ignore
 
 
 def get_user_valid_api_token(server_url: str, user_id: int) -> typing.Optional[str]:
@@ -806,7 +811,7 @@ def get_user_valid_api_token(server_url: str, user_id: int) -> typing.Optional[s
     :raise errors.DataverseNotReachableError: if there was an error during
         communication with the Dataverse API
     """
-    api_token = settings.get_user_settings(user_id)['DATAVERSE_API_TOKEN']
+    api_token: typing.Optional[str] = settings.get_user_settings(user_id)['DATAVERSE_API_TOKEN']
     if not api_token:
         # make sure the user even exists
         users.get_user(user_id)

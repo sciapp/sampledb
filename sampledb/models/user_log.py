@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .. import db
 
@@ -41,7 +42,13 @@ class UserLogEntry(db.Model):
     utc_datetime = db.Column(db.DateTime, nullable=False)
     user = db.relationship('User', backref="log_entries")
 
-    def __init__(self, type, user_id, data, utc_datetime=None):
+    def __init__(
+            self,
+            type: UserLogEntryType,
+            user_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.user_id = user_id
         self.data = data
@@ -49,5 +56,5 @@ class UserLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

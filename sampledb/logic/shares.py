@@ -2,34 +2,36 @@
 """
 
 """
-import collections
+import dataclasses
 import datetime
 import typing
 
-from ..models import shares
 from .objects import get_object
 from .components import get_component, Component
 from . import errors, fed_logs
+from ..models import Object
 from .. import db, models
 
 
-class ObjectShare(collections.namedtuple('ObjectShare', ['object_id', 'component_id', 'policy', 'utc_datetime', 'component'])):
+@dataclasses.dataclass(frozen=True)
+class ObjectShare:
     """
     This class provides an immutable wrapper around models.shares.ObjectShare.
     """
-
-    def __new__(cls, object_id: int, component_id: int, policy: typing.Dict[str, typing.Any], utc_datetime: typing.Optional[datetime.datetime], component: Component):
-        self = super(ObjectShare, cls).__new__(cls, object_id, component_id, policy, utc_datetime, component)
-        return self
+    object_id: int
+    component_id: int
+    policy: typing.Dict[str, typing.Any]
+    utc_datetime: typing.Optional[datetime.datetime]
+    component: typing.Optional[Component]
 
     @classmethod
-    def from_database(cls, object_share: shares.ObjectShare) -> 'ObjectShare':
+    def from_database(cls, object_share: models.ObjectShare) -> 'ObjectShare':
         return ObjectShare(
             object_id=object_share.object_id,
             component_id=object_share.component_id,
             policy=object_share.policy,
             utc_datetime=object_share.utc_datetime,
-            component=Component.from_database(object_share.component) if object_share.component else None,
+            component=Component.from_database(object_share.component) if object_share.component is not None else None,
         )
 
 
@@ -71,7 +73,7 @@ def get_shares_for_object(object_id: int) -> typing.List[ObjectShare]:
     ]
 
 
-def get_object_if_shared(object_id: int, component_id: int):
+def get_object_if_shared(object_id: int, component_id: int) -> Object:
     obj = get_object(object_id)
     share = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).all()
     if len(share) == 0:
@@ -80,8 +82,8 @@ def get_object_if_shared(object_id: int, component_id: int):
     return obj
 
 
-def _get_mutable_share(object_id: int, component_id: int) -> ObjectShare:
-    share = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).first()
+def _get_mutable_share(object_id: int, component_id: int) -> models.ObjectShare:
+    share: typing.Optional[models.ObjectShare] = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).first()
     if share is None:
         get_object(object_id)
         get_component(component_id)
@@ -94,7 +96,11 @@ def get_share(object_id: int, component_id: int) -> ObjectShare:
     return ObjectShare.from_database(share)
 
 
-def add_object_share(object_id: int, component_id: int, policy: dict) -> ObjectShare:
+def add_object_share(
+        object_id: int,
+        component_id: int,
+        policy: typing.Dict[str, typing.Any]
+) -> ObjectShare:
     get_object(object_id)
     get_component(component_id)
     share = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).first()
@@ -107,7 +113,11 @@ def add_object_share(object_id: int, component_id: int, policy: dict) -> ObjectS
     return ObjectShare.from_database(share)
 
 
-def update_object_share(object_id: int, component_id: int, policy: dict) -> ObjectShare:
+def update_object_share(
+        object_id: int,
+        component_id: int,
+        policy: typing.Dict[str, typing.Any]
+) -> ObjectShare:
     share = _get_mutable_share(object_id, component_id)
     if share.policy != policy:
         share.policy = policy

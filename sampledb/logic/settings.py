@@ -21,7 +21,7 @@ from ..models import Settings
 from . import users
 
 
-DEFAULT_SETTINGS = {
+DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "OBJECTS_PER_PAGE": 25,
     "USE_SCHEMA_EDITOR": True,
     "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE": None,

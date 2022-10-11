@@ -4,6 +4,7 @@
 """
 
 import collections
+import dataclasses
 import typing
 
 from .. import db
@@ -16,14 +17,14 @@ from .objects import get_object
 from .users import get_user
 
 
-class Publication(collections.namedtuple('Publication', ['doi', 'title', 'object_name'])):
+@dataclasses.dataclass(frozen=True)
+class Publication:
     """
     This class provides an immutable wrapper around models.object_publications.ObjectPublication.
     """
-
-    def __new__(cls, doi: str, title: str, object_name: str):
-        self = super(Publication, cls).__new__(cls, doi, title, object_name)
-        return self
+    doi: str
+    title: str
+    object_name: str
 
     @classmethod
     def from_database(cls, publication: models.object_publications.ObjectPublication) -> 'Publication':
@@ -40,7 +41,7 @@ def link_publication_to_object(
         doi: str,
         title: typing.Optional[str] = None,
         object_name: typing.Optional[str] = None
-):
+) -> None:
     """
     Link a publication to an object.
 
@@ -131,7 +132,7 @@ def simplify_doi(doi: str) -> str:
     return doi
 
 
-def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, str]]:
+def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, typing.Optional[str]]]:
     """
     Get a list of DOIs and titles for publications linked to objects readable by the given user.
 
@@ -143,7 +144,7 @@ def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, str
     """
     readable_objects = object_permissions.get_objects_with_permissions(
         user_id=user_id,
-        permissions=object_permissions.Permissions.READ,
+        permissions=models.Permissions.READ,
         name_only=True
     )
     readable_object_ids = {
@@ -153,7 +154,7 @@ def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, str
     publication_links = models.object_publications.ObjectPublication.query.filter(
         models.object_publications.ObjectPublication.object_id.in_(readable_object_ids)
     ).all()
-    publication_titles = {}
+    publication_titles: typing.Dict[str, typing.List[str]] = {}
     for link in publication_links:
         if link.doi not in publication_titles:
             publication_titles[link.doi] = []
@@ -161,6 +162,7 @@ def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, str
             publication_titles[link.doi].append(link.title)
     publications = []
     for doi in publication_titles:
+        title: typing.Optional[str]
         if publication_titles[doi]:
             # sort titles lexicographically, then find most commonly used title
             publication_titles[doi].sort()

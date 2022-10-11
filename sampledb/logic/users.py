@@ -3,8 +3,8 @@
 
 """
 
-import collections
 import copy
+import dataclasses
 import datetime
 import typing
 
@@ -12,20 +12,21 @@ import flask
 import flask_login
 from flask_babel import gettext
 
-from .components import get_component
+from .components import get_component, Component
 from .. import db
 from . import errors, settings
 from .. models import users, UserType
 
 
-class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id', 'utc_datetime', 'accepted'])):
+@dataclasses.dataclass(frozen=True)
+class UserInvitation:
     """
     This class provides an immutable wrapper around models.users.UserInvitation.
     """
-
-    def __new__(cls, id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
-        self = super(UserInvitation, cls).__new__(cls, id, inviter_id, utc_datetime, accepted)
-        return self
+    id: int
+    inviter_id: int
+    utc_datetime: datetime.datetime
+    accepted: bool
 
     @classmethod
     def from_database(cls, user_invitation: users.UserInvitation) -> 'UserInvitation':
@@ -37,72 +38,35 @@ class UserInvitation(collections.namedtuple('UserInvitation', ['id', 'inviter_id
         )
 
     @property
-    def expired(self):
+    def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return datetime.datetime.utcnow() >= expiration_datetime
+        return bool(datetime.datetime.utcnow() >= expiration_datetime)
 
 
-class User(collections.namedtuple('User', [
-    'id',
-    'name',
-    'email',
-    'type',
-    'is_admin',
-    'is_readonly',
-    'is_hidden',
-    'is_active',
-    'orcid',
-    'affiliation',
-    'role',
-    'extra_fields',
-    'fed_id',
-    'component_id',
-    'last_modified',
-    'last_modified_by_id',
-]), flask_login.UserMixin):
+@dataclasses.dataclass(frozen=True)
+class User:
     """
     This class provides an immutable wrapper around models.users.User.
     """
 
-    def __new__(
-            cls,
-            id: int,
-            name: str,
-            email: str,
-            type: UserType,
-            is_admin: bool,
-            is_readonly: bool,
-            is_hidden: bool,
-            is_active: bool,
-            orcid: str,
-            affiliation: str,
-            role: str,
-            extra_fields: typing.Dict[str, typing.Any],
-            fed_id: int,
-            component_id: int,
-            last_modified: datetime.datetime,
-            last_modified_by_id: typing.Optional[int],
-    ):
-        self = super(User, cls).__new__(
-            cls,
-            id,
-            name,
-            email,
-            type,
-            is_admin,
-            is_readonly,
-            is_hidden,
-            is_active,
-            orcid,
-            affiliation,
-            role,
-            extra_fields,
-            fed_id,
-            component_id,
-            last_modified,
-            last_modified_by_id,
-        )
-        return self
+    id: int
+    name: typing.Optional[str]
+    email: typing.Optional[str]
+    type: UserType
+    is_admin: bool
+    is_readonly: bool
+    is_hidden: bool
+    is_active: bool
+    orcid: typing.Optional[str]
+    affiliation: typing.Optional[str]
+    role: typing.Optional[str]
+    extra_fields: typing.Dict[str, typing.Any]
+    fed_id: typing.Optional[int]
+    component_id: typing.Optional[int]
+    last_modified: datetime.datetime
+    last_modified_by_id: typing.Optional[int]
+    # for use by .languages.get_user_language, no type hint to avoid circular import
+    language_cache: typing.List[typing.Optional[typing.Any]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, user: users.User) -> 'User':
@@ -126,21 +90,40 @@ class User(collections.namedtuple('User', [
         )
 
     @property
-    def component(self):
+    def component(self) -> typing.Optional[Component]:
         if self.component_id is None:
             return None
         return get_component(self.component_id)
 
-    def get_id(self):
+    def get_id(self) -> int:
         return self.id
 
-    def get_name(self, include_ref=False):
+    @property
+    def is_authenticated(self) -> bool:
+        return self.is_active
+
+    @property
+    def is_anonymous(self) -> bool:
+        return False
+
+    def __eq__(self, other: typing.Any) -> bool:
+        if isinstance(other, (flask_login.UserMixin, User)):
+            return bool(self.get_id() == other.get_id())
+        return NotImplemented
+
+    def __ne__(self, other: typing.Any) -> bool:
+        equal = self.__eq__(other)
+        if equal is NotImplemented:
+            return NotImplemented
+        return not equal
+
+    def get_name(self, include_ref: bool = False) -> str:
         if include_ref and self.component_id is not None:
-            db_ref = ', #{} @ {}'.format(self.fed_id, self.component.get_name())
+            db_ref = ', #{} @ {}'.format(self.fed_id, typing.cast(Component, self.component).get_name())
         else:
             db_ref = ''
         if self.name is None:
-            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
+            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)  # type: ignore
         else:
             return '{} (#{}{})'.format(self.name, self.id, db_ref)
 
@@ -154,28 +137,28 @@ class User(collections.namedtuple('User', [
         if not self.is_admin:
             return False
         user_settings = settings.get_user_settings(self.id)
-        return user_settings['USE_ADMIN_PERMISSIONS']
+        return bool(user_settings['USE_ADMIN_PERMISSIONS'])
 
     @property
-    def timezone(self):
+    def timezone(self) -> typing.Optional[str]:
         if flask.current_app.config['TIMEZONE']:
-            return flask.current_app.config['TIMEZONE']
-        return settings.get_user_settings(self.id)['TIMEZONE']
+            return typing.cast(str, flask.current_app.config['TIMEZONE'])
+        return typing.cast(typing.Optional[str], settings.get_user_settings(self.id)['TIMEZONE'])
 
 
-class AnonymousUser(flask_login.AnonymousUserMixin):
+class AnonymousUser(flask_login.AnonymousUserMixin):  # type: ignore
     @property
     def id(self) -> typing.Optional[int]:
-        return self.get_id()
+        return None
 
     @property
     def has_admin_permissions(self) -> bool:
         return False
 
     @property
-    def timezone(self):
+    def timezone(self) -> typing.Optional[str]:
         if flask.current_app.config['TIMEZONE']:
-            return flask.current_app.config['TIMEZONE']
+            return typing.cast(str, flask.current_app.config['TIMEZONE'])
         return None
 
     @property
@@ -184,46 +167,25 @@ class AnonymousUser(flask_login.AnonymousUserMixin):
         return False
 
 
-class UserFederationAlias(collections.namedtuple('UserFederationAlias', ['user_id', 'component_id', 'name', 'use_real_name', 'email', 'use_real_email', 'orcid', 'use_real_orcid', 'affiliation', 'use_real_affiliation', 'role', 'use_real_role', 'extra_fields', 'last_modified'])):
+@dataclasses.dataclass(frozen=True)
+class UserFederationAlias:
     """
     This class provides an immutable wrapper around models.users.UserFederationAlias.
     """
-
-    def __new__(
-            cls,
-            user_id: int,
-            component_id: int,
-            name: typing.Optional[str],
-            use_real_name: bool,
-            email: typing.Optional[str],
-            use_real_email: bool,
-            orcid: typing.Optional[str],
-            use_real_orcid: bool,
-            affiliation: typing.Optional[str],
-            use_real_affiliation: bool,
-            role: typing.Optional[str],
-            use_real_role: bool,
-            extra_fields: typing.Dict[str, typing.Any],
-            last_modified: datetime.datetime
-    ):
-        self = super(UserFederationAlias, cls).__new__(
-            cls,
-            user_id,
-            component_id,
-            name,
-            use_real_name,
-            email,
-            use_real_email,
-            orcid,
-            use_real_orcid,
-            affiliation,
-            use_real_affiliation,
-            role,
-            use_real_role,
-            extra_fields,
-            last_modified
-        )
-        return self
+    user_id: int
+    component_id: int
+    name: typing.Optional[str]
+    use_real_name: bool
+    email: typing.Optional[str]
+    use_real_email: bool
+    orcid: typing.Optional[str]
+    use_real_orcid: bool
+    affiliation: typing.Optional[str]
+    use_real_affiliation: bool
+    role: typing.Optional[str]
+    use_real_role: bool
+    extra_fields: typing.Dict[str, typing.Any]
+    last_modified: datetime.datetime
 
     @classmethod
     def from_database(cls, alias: users.UserFederationAlias) -> 'UserFederationAlias':
@@ -287,13 +249,14 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
         if component_id is not None:
             get_component(component_id)
         raise errors.UserDoesNotExistError()
-    return user
+    return typing.cast(users.User, user)
 
 
 def update_user(
         user_id: int,
         updating_user_id: typing.Optional[int],
-        **attributes: typing.Dict[str, typing.Any]) -> None:
+        **attributes: typing.Any
+) -> None:
     """
     Update one or multiple attributes of an existing user in the database.
 
@@ -337,7 +300,11 @@ def update_user(
     db.session.commit()
 
 
-def get_users(exclude_hidden: bool = False, order_by: typing.Optional[db.Column] = users.User.name, exclude_fed: bool = False) -> typing.List[User]:
+def get_users(
+        exclude_hidden: bool = False,
+        order_by: typing.Optional[db.Column] = users.User.name,  # type: ignore
+        exclude_fed: bool = False
+) -> typing.List[User]:
     """
     Returns all users.
 
@@ -358,7 +325,11 @@ def get_users(exclude_hidden: bool = False, order_by: typing.Optional[db.Column]
     ]
 
 
-def get_users_for_component(component_id: int, exclude_hidden: bool = False, order_by: typing.Optional[db.Column] = users.User.name):
+def get_users_for_component(
+        component_id: int,
+        exclude_hidden: bool = False,
+        order_by: typing.Optional[db.Column] = users.User.name  # type: ignore
+) -> typing.List[User]:
     user_query = users.User.query.filter_by(component_id=component_id)
     if exclude_hidden:
         user_query = user_query.filter_by(is_hidden=False)
@@ -402,7 +373,7 @@ def create_user(
         orcid: typing.Optional[str] = None,
         affiliation: typing.Optional[str] = None,
         role: typing.Optional[str] = None,
-        extra_fields: typing.Optional[dict] = None,
+        extra_fields: typing.Optional[typing.Dict[str, str]] = None,
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None
 ) -> User:

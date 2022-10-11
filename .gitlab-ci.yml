@@ -13,7 +13,7 @@ variables:
 
 test:
   stage: test
-  image: debian:11
+  image: python:3.10-slim-bullseye
   services:
     - postgres:12
   tags:
@@ -42,19 +42,22 @@ test:
 
 analyze:
   stage: test
-  image: ubuntu:20.04
+  image: python:3.10-slim-bullseye
   script:
     - apt-get update
     # set up Python 3
     - apt-get install -y git python3-pip
     # install static analysis packages
-    - python3 -m pip install pycodestyle pyflakes
+    - python3 -m pip install pycodestyle pyflakes mypy
+    # install library stub files
+    - python3 -m pip install types-babel types-beautifulsoup4 types-bleach types-Flask-SQLAlchemy types-Markdown types-requests types-SQLAlchemy types-ldap3
     - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
     - python3 -m pyflakes sampledb
+    - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/logic/
 
 documentation:
   stage: test
-  image: debian:11
+  image: python:3.10-slim-bullseye
   services:
     - postgres:latest
   tags:

@@ -15,7 +15,7 @@ from .default_permissions import get_default_permissions_for_users, get_default_
 from .instruments import get_instrument
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
-from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, AnonymousUserObjectPermissions, Action, Object
+from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, AnonymousUserObjectPermissions, Action, Object, Objects
 from .users import get_user
 from .permissions import ResourcePermissions
 
@@ -57,7 +57,7 @@ def get_object_permissions_for_users(
         include_projects: bool = True,
         include_readonly: bool = True,
         include_admin_permissions: bool = True
-):
+) -> typing.Dict[int, Permissions]:
     additional_permissions = {}
     if include_instrument_responsible_users:
         for user_id in _get_object_responsible_user_ids(object_id):
@@ -72,7 +72,7 @@ def get_object_permissions_for_users(
     )
 
 
-def set_user_object_permissions(object_id: int, user_id: int, permissions: Permissions):
+def set_user_object_permissions(object_id: int, user_id: int, permissions: Permissions) -> None:
     object_permissions.set_permissions_for_user(resource_id=object_id, user_id=user_id, permissions=permissions)
 
 
@@ -80,7 +80,7 @@ def get_object_permissions_for_groups(object_id: int, include_projects: bool = F
     return object_permissions.get_permissions_for_groups(resource_id=object_id, include_projects=include_projects)
 
 
-def set_group_object_permissions(object_id: int, group_id: int, permissions: Permissions):
+def set_group_object_permissions(object_id: int, group_id: int, permissions: Permissions) -> None:
     object_permissions.set_permissions_for_group(resource_id=object_id, group_id=group_id, permissions=permissions)
 
 
@@ -92,7 +92,7 @@ def set_project_object_permissions(object_id: int, project_id: int, permissions:
     object_permissions.set_permissions_for_project(resource_id=object_id, project_id=project_id, permissions=permissions)
 
 
-def _get_object_responsible_user_ids(object_id):
+def _get_object_responsible_user_ids(object_id: int) -> typing.List[int]:
     object = objects.get_object(object_id)
     try:
         action = actions.get_action(object.action_id)
@@ -178,7 +178,7 @@ def get_user_object_permissions(
     )
 
 
-def set_initial_permissions(obj):
+def set_initial_permissions(obj: Object) -> None:
     default_user_permissions = get_default_permissions_for_users(creator_id=obj.user_id)
     for user_id, permissions in default_user_permissions.items():
         set_user_object_permissions(object_id=obj.object_id, user_id=user_id, permissions=permissions)
@@ -249,9 +249,9 @@ def get_object_info_with_permissions(
         """)
 
     stmt = stmt.columns(
-        objects.Objects._current_table.c.object_id,
+        Objects._current_table.c.object_id,
         sqlalchemy.sql.expression.column('name_json'),
-        objects.Objects._current_table.c.action_id,
+        Objects._current_table.c.action_id,
         sqlalchemy.sql.expression.column('max_permission'),
         sqlalchemy.sql.expression.column('tags'),
         sqlalchemy.sql.expression.column('fed_object_id'),
@@ -282,13 +282,13 @@ def get_object_info_with_permissions(
 
     object_infos = db.session.execute(table, parameters).fetchall()
 
-    return object_infos
+    return typing.cast(typing.List[Object], object_infos)
 
 
 def get_objects_with_permissions(
         user_id: typing.Optional[int],
         permissions: Permissions,
-        filter_func: typing.Callable = lambda data: True,
+        filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
         sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
@@ -305,7 +305,7 @@ def get_objects_with_permissions(
         object_ids: typing.Optional[typing.Sequence[int]] = None,
         num_objects_found: typing.Optional[typing.List[int]] = None,
         name_only: bool = False,
-        **kwargs
+        **kwargs: typing.Dict[str, typing.Any]
 ) -> typing.List[Object]:
     if user_id is None:
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
@@ -321,7 +321,7 @@ def get_objects_with_permissions(
     if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
         # include federated equivalents for default action types
         all_action_types = actions.get_action_types()
-        fed_default_action_types = {}
+        fed_default_action_types: typing.Dict[int, typing.List[int]] = {}
         for action_type in all_action_types:
             if action_type.fed_id is not None and action_type.fed_id <= 0:
                 if action_type.fed_id not in fed_default_action_types:
@@ -464,16 +464,16 @@ def get_objects_with_permissions(
         parameters['object_ids'] = tuple(object_ids)
 
     table = db.text(stmt).columns(
-        objects.Objects._current_table.c.object_id,
-        objects.Objects._current_table.c.version_id,
-        objects.Objects._current_table.c.action_id,
-        objects.Objects._current_table.c.data,
-        objects.Objects._current_table.c.schema,
-        objects.Objects._current_table.c.user_id,
-        objects.Objects._current_table.c.utc_datetime,
-        objects.Objects._current_table.c.fed_object_id,
-        objects.Objects._current_table.c.fed_version_id,
-        objects.Objects._current_table.c.component_id
+        Objects._current_table.c.object_id,
+        Objects._current_table.c.version_id,
+        Objects._current_table.c.action_id,
+        Objects._current_table.c.data,
+        Objects._current_table.c.schema,
+        Objects._current_table.c.user_id,
+        Objects._current_table.c.utc_datetime,
+        Objects._current_table.c.fed_object_id,
+        Objects._current_table.c.fed_version_id,
+        Objects._current_table.c.component_id
     ).subquery()
 
     return objects.get_objects(

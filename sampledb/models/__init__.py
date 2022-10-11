@@ -25,7 +25,7 @@ from . import scicat_export
 from . import settings
 from . import users
 
-from .actions import Action, ActionType
+from .actions import Action, ActionType, SciCatExportType
 from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .api_log import APILogEntry, HTTPMethod
@@ -57,7 +57,7 @@ from .object_permissions import UserObjectPermissions, GroupObjectPermissions, P
 from .object_publications import ObjectPublication
 from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
-from .scicat_export import SciCatExport, SciCatExportType
+from .scicat_export import SciCatExport
 from .settings import Settings
 from .shares import ObjectShare
 from .tags import Tag

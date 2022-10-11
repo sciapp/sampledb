@@ -6,7 +6,7 @@ Action translations contain all language-dependent attributes of an action
 for a specific language.
 """
 
-import collections
+import dataclasses
 import typing
 from flask_babel import _
 
@@ -16,17 +16,17 @@ from .languages import Language
 from .. import models
 
 
-class ActionTranslation(collections.namedtuple(
-    'ActionTranslation', ['action_id', 'language_id', 'name', 'description', 'short_description']
-)):
+@dataclasses.dataclass(frozen=True)
+class ActionTranslation:
     """
     This class provides an immutable wrapper around models.action_translations.ActionTranslation.
     """
-
-    def __new__(cls, action_id: int, language_id: int, name: str, description: str, short_description: str):
-        self = super(ActionTranslation, cls).__new__(cls, action_id, language_id, name, description, short_description)
-        self._language = None
-        return self
+    action_id: int
+    language_id: int
+    name: str
+    description: str
+    short_description: str
+    _language_cache: typing.List[languages.Language] = dataclasses.field(default_factory=list, kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, action_translation: models.ActionTranslation) -> 'ActionTranslation':
@@ -39,10 +39,10 @@ class ActionTranslation(collections.namedtuple(
         )
 
     @property
-    def language(self):
-        if self._language is None:
-            self._language = languages.get_language(self.language_id)
-        return self._language
+    def language(self) -> Language:
+        if not self._language_cache:
+            self._language_cache.append(languages.get_language(self.language_id))
+        return self._language_cache[0]
 
 
 def set_action_translation(
@@ -159,30 +159,31 @@ def get_action_translation_for_action_in_language(
             language_id=Language.ENGLISH
         ).first()
 
-    result_translation = ActionTranslation(
+    name = _('Unnamed Action (#%(action_id)s)', action_id=action_id)
+    if action_translation is not None and action_translation.name:
+        name = action_translation.name
+    elif english_translation is not None and english_translation.name:
+        name = english_translation.name
+
+    description = ''
+    if action_translation is not None and action_translation.description:
+        description = action_translation.description
+    elif english_translation is not None and english_translation.description:
+        description = english_translation.description
+
+    short_description = ''
+    if action_translation is not None and action_translation.short_description:
+        short_description = action_translation.short_description
+    elif english_translation is not None and english_translation.short_description:
+        short_description = english_translation.short_description
+
+    return ActionTranslation(
         action_id=action_id,
         language_id=language_id if action_translation is not None else Language.ENGLISH,
-        name=_('Unnamed Action (#%(action_id)s)', action_id=action_id),
-        description='',
-        short_description=''
+        name=name,
+        description=description,
+        short_description=short_description
     )
-
-    if action_translation is not None and action_translation.name:
-        result_translation = result_translation._replace(name=action_translation.name)
-    elif english_translation is not None and english_translation.name:
-        result_translation = result_translation._replace(name=english_translation.name)
-
-    if action_translation is not None and action_translation.description:
-        result_translation = result_translation._replace(description=action_translation.description)
-    elif english_translation is not None and english_translation.description:
-        result_translation = result_translation._replace(description=english_translation.description)
-
-    if action_translation is not None and action_translation.short_description:
-        result_translation = result_translation._replace(short_description=action_translation.short_description)
-    elif english_translation is not None and english_translation.short_description:
-        result_translation = result_translation._replace(short_description=english_translation.short_description)
-
-    return result_translation
 
 
 def delete_action_translation(

@@ -8,14 +8,14 @@ sampledb/frontend/templates/objects/forms/conditional_wrapper_script.html
 
 import typing
 
-from .validate_schema import ValidationError
+from ..errors import ValidationError
 
 
 def validate_condition_schema(
         condition: typing.Dict[str, typing.Any],
         property_schemas: typing.Dict[str, typing.Any],
         path: typing.List[str]
-):
+) -> None:
     """
     Validate a condition from a property schema.
 

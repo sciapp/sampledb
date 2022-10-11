@@ -25,8 +25,8 @@ opt_federation_keys = {'export_edit_note', 'component_uuid'}
 
 
 def validate(
-        instance: typing.Union[dict, list],
-        schema: dict,
+        instance: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
+        schema: typing.Dict[str, typing.Any],
         path: typing.Optional[typing.List[str]] = None,
         allow_disabled_languages: bool = False,
         strict: bool = False
@@ -47,39 +47,39 @@ def validate(
         raise ValidationError('invalid schema (must be dict)', path)
     if 'type' not in schema:
         raise ValidationError('invalid schema (must contain type)', path)
-    if schema['type'] == 'array':
+    if schema['type'] == 'array' and isinstance(instance, list):
         return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict)
-    elif schema['type'] == 'object':
+    elif schema['type'] == 'object' and isinstance(instance, dict):
         return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict)
-    elif schema['type'] == 'text':
+    elif schema['type'] == 'text' and isinstance(instance, dict):
         return _validate_text(instance, schema, path, allow_disabled_languages=allow_disabled_languages)
-    elif schema['type'] == 'datetime':
+    elif schema['type'] == 'datetime' and isinstance(instance, dict):
         return _validate_datetime(instance, schema, path)
-    elif schema['type'] == 'bool':
+    elif schema['type'] == 'bool' and isinstance(instance, dict):
         return _validate_bool(instance, schema, path)
-    elif schema['type'] == 'quantity':
+    elif schema['type'] == 'quantity' and isinstance(instance, dict):
         return _validate_quantity(instance, schema, path)
-    elif schema['type'] == 'sample':
+    elif schema['type'] == 'sample' and isinstance(instance, dict):
         return _validate_sample(instance, schema, path)
-    elif schema['type'] == 'measurement':
+    elif schema['type'] == 'measurement' and isinstance(instance, dict):
         return _validate_measurement(instance, schema, path)
-    elif schema['type'] == 'object_reference':
+    elif schema['type'] == 'object_reference' and isinstance(instance, dict):
         return _validate_object_reference(instance, schema, path)
-    elif schema['type'] == 'tags':
+    elif schema['type'] == 'tags' and isinstance(instance, dict):
         return _validate_tags(instance, schema, path, strict=strict)
-    elif schema['type'] == 'hazards':
+    elif schema['type'] == 'hazards' and isinstance(instance, dict):
         return _validate_hazards(instance, schema, path)
-    elif schema['type'] == 'user':
+    elif schema['type'] == 'user' and isinstance(instance, dict):
         return _validate_user(instance, schema, path)
-    elif schema['type'] == 'plotly_chart':
+    elif schema['type'] == 'plotly_chart' and isinstance(instance, dict):
         return _validate_plotly_chart(instance, schema, path)
     else:
         raise ValidationError('invalid type', path)
 
 
 def _validate_array(
-        instance: list,
-        schema: dict, path: typing.List[str],
+        instance: typing.List[typing.Any],
+        schema: typing.Dict[str, typing.Any], path: typing.List[str],
         allow_disabled_languages: bool = False,
         strict: bool = False
 ) -> None:
@@ -110,7 +110,7 @@ def _validate_array(
         raise ValidationMultiError(errors)
 
 
-def _validate_hazards(instance: list, schema: dict, path: typing.List[str]) -> None:
+def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validate the given instance using the given GHS hazards schema and raise a ValidationError if it is invalid.
 
@@ -155,8 +155,8 @@ def _validate_hazards(instance: list, schema: dict, path: typing.List[str]) -> N
 
 
 def _validate_tags(
-        instance: list,
-        schema: dict, path: typing.List[str],
+        instance: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any], path: typing.List[str],
         strict: bool = False
 ) -> None:
     """
@@ -206,8 +206,8 @@ def _validate_tags(
 
 
 def _validate_object(
-        instance: dict,
-        schema: dict,
+        instance: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         allow_disabled_languages: bool = False,
         strict: bool = False
@@ -253,7 +253,7 @@ def _validate_object(
         raise ValidationMultiError(errors)
 
 
-def _validate_text(instance: dict, schema: dict, path: typing.List[str], allow_disabled_languages: bool = False) -> None:
+def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], allow_disabled_languages: bool = False) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
 
@@ -322,18 +322,20 @@ def _validate_text(instance: dict, schema: dict, path: typing.List[str], allow_d
             if lang not in allowed_language_codes:
                 raise ValidationError(_('The language "%(lang_code)s" is not allowed for this field.', lang_code=language_names.get(lang, lang)), path)
     if 'pattern' in schema:
+        if not isinstance(schema['pattern'], str):
+            raise ValidationError('pattern must be str', path)
         if isinstance(instance['text'], dict):
             for text in instance['text'].values():
                 if re.match(schema['pattern'], text) is None:
                     raise ValidationError(_('Input must match: %(pattern)s', pattern=schema['pattern']), path)
-        else:
+        if isinstance(instance['text'], str):
             if re.match(schema['pattern'], instance['text']) is None:
                 raise ValidationError(_('Input must match: %(pattern)s', pattern=schema['pattern']), path)
     if 'is_markdown' in instance and not isinstance(instance['is_markdown'], bool):
         raise ValidationError('is_markdown must be bool', path)
 
 
-def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given datetime object schema and raises a ValidationError if it is invalid.
 
@@ -363,7 +365,7 @@ def _validate_datetime(instance: dict, schema: dict, path: typing.List[str]) -> 
         raise ValidationError(_('Please enter the date and time in the format: %(datetime_format)s', datetime_format='YYYY-MM-DD HH:MM:SS'), path)
 
 
-def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given boolean object schema and raises a ValidationError if it is invalid.
 
@@ -389,7 +391,7 @@ def _validate_bool(instance: dict, schema: dict, path: typing.List[str]) -> None
         raise ValidationError('value must be bool', path)
 
 
-def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given quantity object schema and raises a ValidationError if it is invalid.
 
@@ -445,28 +447,27 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
         if not math.isfinite(instance['magnitude_in_base_units']):
             raise ValidationError('magnitude_in_base_units must be a finite number', path)
         try:
-            quantity_magnitude_in_base_units = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'],
-                                                                  already_in_base_units=True)
+            quantity_magnitude_in_base_units = datatypes.Quantity(instance['magnitude_in_base_units'], units=instance['units'], already_in_base_units=True)
         except Exception:
             raise ValidationError('Unable to create quantity based on given magnitude_in_base_units', path)
 
-    if 'min_magnitude' in schema and quantity_magnitude_in_base_units.magnitude_in_base_units < schema['min_magnitude']:
+    if 'min_magnitude' in schema and quantity_magnitude_in_base_units is not None and quantity_magnitude_in_base_units.magnitude_in_base_units < schema['min_magnitude']:
         min_magnitude = datatypes.Quantity(schema["min_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
         min_value = f'{min_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
         raise ValidationError(_('Must be greater than or equal to %(value)s', value=min_value), path)
 
-    if 'max_magnitude' in schema and quantity_magnitude_in_base_units.magnitude_in_base_units > schema['max_magnitude']:
+    if 'max_magnitude' in schema and quantity_magnitude_in_base_units is not None and quantity_magnitude_in_base_units.magnitude_in_base_units > schema['max_magnitude']:
         max_magnitude = datatypes.Quantity(schema["max_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
         max_value = f'{max_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
         raise ValidationError(_('Must be less than or equal to %(value)s', value=max_value), path)
 
-    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None \
-            and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
+    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
         raise ValidationError('magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
-    elif quantity_magnitude is None and quantity_magnitude_in_base_units is None:
-        raise ValidationError('missing keys in schema: either magnitude or magnitude_in_base_units has to be given', path)
-    elif quantity_magnitude is None:
-        quantity_magnitude = quantity_magnitude_in_base_units
+    if quantity_magnitude is None:
+        if quantity_magnitude_in_base_units is None:
+            raise ValidationError('missing keys in schema: either magnitude or magnitude_in_base_units has to be given', path)
+        else:
+            quantity_magnitude = quantity_magnitude_in_base_units
 
     # automatically add dimensionality and either magnitude oder magnitude_in_base_units, if they haven't been given yet
     for key, value in quantity_magnitude.to_json().items():
@@ -481,7 +482,7 @@ def _validate_quantity(instance: dict, schema: dict, path: typing.List[str]) -> 
         raise ValidationError('Invalid dimensionality, expected "{}"'.format(str(schema_quantity.dimensionality)), path)
 
 
-def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given sample object schema and raises a ValidationError if it is invalid.
 
@@ -523,7 +524,7 @@ def _validate_sample(instance: dict, schema: dict, path: typing.List[str]) -> No
                 raise ValidationError('object must be sample', path)
 
 
-def _validate_measurement(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given measurement object schema and raises a ValidationError if it is invalid.
 
@@ -565,7 +566,7 @@ def _validate_measurement(instance: dict, schema: dict, path: typing.List[str]) 
                 raise ValidationError('object must be measurement', path)
 
 
-def _validate_user(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given user object schema and raises a ValidationError if it is invalid.
 
@@ -598,7 +599,7 @@ def _validate_user(instance: dict, schema: dict, path: typing.List[str]) -> None
             raise ValidationError('user does not exist', path)
 
 
-def _validate_object_reference(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given object reference object schema and raises a ValidationError if it is invalid.
 
@@ -643,11 +644,11 @@ def _validate_object_reference(instance: dict, schema: dict, path: typing.List[s
                 valid_action_type_ids = schema['action_type_id']
             if valid_action_type_ids is not None:
                 action = actions.get_action(object.action_id)
-                if action.type_id not in valid_action_type_ids and not (action.type.fed_id is not None and action.type.fed_id < 0 and action.type.fed_id in valid_action_type_ids):
+                if action.type is None or (action.type_id not in valid_action_type_ids and not (action.type.fed_id is not None and action.type.fed_id < 0 and action.type.fed_id in valid_action_type_ids)):
                     raise ValidationError('object has wrong action type', path)
 
 
-def _validate_plotly_chart(instance: dict, schema: dict, path: typing.List[str]) -> None:
+def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
 

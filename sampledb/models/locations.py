@@ -152,9 +152,9 @@ class ObjectLocationAssignment(db.Model):
     def __init__(
             self,
             object_id: int,
-            location_id: int,
-            user_id: int,
-            description: dict,
+            location_id: typing.Optional[int],
+            user_id: typing.Optional[int],
+            description: typing.Optional[typing.Dict[str, str]],
             utc_datetime: typing.Optional[datetime.datetime] = None,
             responsible_user_id: typing.Optional[int] = None,
             confirmed: bool = False,

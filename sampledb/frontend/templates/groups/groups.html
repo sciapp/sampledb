@@ -17,7 +17,7 @@
   {% endif %}
   <ul id="groups_list">
     {% for group in groups %}
-    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a>{% if group.is_member %} <span class="label label-default">{{ _('Member') }}</span>{% endif %}</li>
+    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a>{% if group_membership_by_id[group.id] %} <span class="label label-default">{{ _('Member') }}</span>{% endif %}</li>
     {% endfor %}
   </ul>
   {% if not current_user.is_readonly %}

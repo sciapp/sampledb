@@ -18,12 +18,12 @@ As the project models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
 import flask
 from .. import db
-from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
+from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship, Object
 from .users import get_user
 from .security_tokens import generate_token
 from . import groups
@@ -38,28 +38,31 @@ from .languages import get_language_by_lang_code, Language
 MAX_PROJECT_NAME_LENGTH = 100
 
 
-class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
+@dataclasses.dataclass(frozen=True)
+class Project:
     """
     This class provides an immutable wrapper around models.projects.Project.
     """
-
-    def __new__(cls, id: int, name: dict, description: dict):
-        self = super(Project, cls).__new__(cls, id, name, description)
-        return self
+    id: int
+    name: typing.Dict[str, str]
+    description: typing.Dict[str, str]
 
     @classmethod
     def from_database(cls, project: projects.Project) -> 'Project':
         return Project(id=project.id, name=project.name, description=project.description)
 
 
-class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'project_id', 'user_id', 'inviter_id', 'utc_datetime', 'accepted'])):
+@dataclasses.dataclass(frozen=True)
+class ProjectInvitation:
     """
     This class provides an immutable wrapper around models.projects.ProjectInvitation.
     """
-
-    def __new__(cls, id: int, project_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
-        self = super(ProjectInvitation, cls).__new__(cls, id, project_id, user_id, inviter_id, utc_datetime, accepted)
-        return self
+    id: int
+    project_id: int
+    user_id: int
+    inviter_id: int
+    utc_datetime: datetime.datetime
+    accepted: bool
 
     @classmethod
     def from_database(cls, project_invitation: projects.ProjectInvitation) -> 'ProjectInvitation':
@@ -73,12 +76,16 @@ class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'proj
         )
 
     @property
-    def expired(self):
+    def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return datetime.datetime.utcnow() >= expiration_datetime
+        return bool(datetime.datetime.utcnow() >= expiration_datetime)
 
 
-def create_project(name: typing.Union[str, dict], description: typing.Union[str, dict], initial_user_id: int) -> Project:
+def create_project(
+        name: typing.Union[str, typing.Dict[str, str]],
+        description: typing.Union[str, typing.Dict[str, str]],
+        initial_user_id: int
+) -> Project:
     """
     Creates a new project with the given name and description and adds an
     initial user to it.
@@ -143,7 +150,11 @@ def create_project(name: typing.Union[str, dict], description: typing.Union[str,
     return Project.from_database(project)
 
 
-def update_project(project_id: int, name: dict, description: dict) -> None:
+def update_project(
+        project_id: int,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str]
+) -> None:
     """
     Updates the project's name and description.
 
@@ -289,7 +300,7 @@ def get_user_project_permissions(project_id: int, user_id: int, include_groups: 
     """
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id, user_id=user_id).first()
     if user_permissions:
-        permissions = user_permissions.permissions
+        permissions = typing.cast(Permissions, user_permissions.permissions)
     else:
         # verify that project exists or raise error
         get_project(project_id)
@@ -426,7 +437,7 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
     :raise errors.UserAlreadyMemberOfProjectError: when the user is already
         a member of the project
     """
-    if permissions == permissions.NONE:
+    if permissions == Permissions.NONE:
         # project members with no permissions are not stored
         return
     project = projects.Project.query.get(project_id)
@@ -448,9 +459,9 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
         include_accepted_invitations=False
     )
     for invitation in invitations:
-        invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
-        invitation.accepted = True
-        db.session.add(invitation)
+        mutable_invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
+        mutable_invitation.accepted = True
+        db.session.add(mutable_invitation)
     db.session.commit()
     if other_project_ids:
         ancestor_project_ids = get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
@@ -476,7 +487,7 @@ def add_group_to_project(project_id: int, group_id: int, permissions: Permission
     :raise errors.GroupAlreadyMemberOfProjectError: when the group is already
         a member of the project
     """
-    if permissions == permissions.NONE:
+    if permissions == Permissions.NONE:
         # project members with no permissions are not stored
         return
     project = projects.Project.query.get(project_id)
@@ -827,7 +838,7 @@ def can_child_add_users_to_parent_project(child_project_id: int, parent_project_
     ).first()
     if subproject_relationship is None:
         return False
-    return subproject_relationship.child_can_add_users_to_parent
+    return bool(subproject_relationship.child_can_add_users_to_parent)
 
 
 def get_project_invitations(
@@ -1039,7 +1050,7 @@ def get_project_linked_to_object(object_id: int) -> typing.Optional[Project]:
     return get_project(association.project_id)
 
 
-def get_object_linked_to_project(project_id: int) -> typing.Optional[objects.Object]:
+def get_object_linked_to_project(project_id: int) -> typing.Optional[Object]:
     """
     Return the object linked to a given project, or None.
 

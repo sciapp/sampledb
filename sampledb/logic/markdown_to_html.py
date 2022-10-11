@@ -2,10 +2,11 @@
 """
 
 """
+import typing
 
 import bleach
 from markdown import markdown as _markdown_to_html
-from markdown.extensions.toc import TocExtension, slugify_unicode
+from markdown.extensions.toc import TocExtension, slugify_unicode  # type: ignore
 
 from .. import db
 from ..logic import errors
@@ -36,7 +37,7 @@ def markdown_to_safe_html(markdown: str, use_cache: bool = True, anchor_prefix: 
             MarkdownToHTMLCacheEntry.parameters['anchor_prefix'].astext == anchor_prefix
         ).first()
         if cache_entry is not None and cache_entry.html is not None:
-            return cache_entry.html
+            return cache_entry.html  # type: ignore
 
     toc_extension = TocExtension(
         marker='',
@@ -89,7 +90,7 @@ def clear_cache() -> None:
     db.session.commit()
 
 
-def get_markdown_from_object_data(data):
+def get_markdown_from_object_data(data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]) -> typing.List[str]:
     """
     Extract Markdown text properties from object data.
 
@@ -98,7 +99,7 @@ def get_markdown_from_object_data(data):
     """
     markdown_texts = []
     if isinstance(data, dict):
-        properties = data.values()
+        properties = list(data.values())
     elif isinstance(data, list):
         properties = data
     else:
@@ -112,7 +113,7 @@ def get_markdown_from_object_data(data):
                     for text in property['text'].values():
                         markdown_texts.append(text)
                 else:
-                    raise errors.ValidationError('text must be str or a dictionary')
+                    raise errors.ValidationError('text must be str or a dictionary', ['?'])
                 continue
         else:
             markdown_texts.extend(get_markdown_from_object_data(property))

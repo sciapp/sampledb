@@ -13,9 +13,9 @@ import flask_login
 from . import errors
 from .languages import get_user_language
 from .. import db
-from .background_tasks.send_mail import post_send_mail_task, BackgroundTaskStatus
+from .background_tasks.send_mail import post_send_mail_task
 from .security_tokens import generate_token
-from ..models import Authentication, AuthenticationType, User, File, Tag
+from ..models import Authentication, AuthenticationType, User, File, Tag, BackgroundTaskStatus, BackgroundTask
 from ..utils import ansi_color
 
 
@@ -48,7 +48,11 @@ def send_user_invitation_email(
     )[0]
 
 
-def send_email_confirmation_email(email, user_id, salt):
+def send_email_confirmation_email(
+        email: str,
+        user_id: int,
+        salt: str
+) -> typing.Tuple[BackgroundTaskStatus, typing.Optional[BackgroundTask]]:
     token_data = {
         'email': email,
         'user_id': user_id
@@ -74,14 +78,16 @@ def send_email_confirmation_email(email, user_id, salt):
     )
 
 
-def send_recovery_email(email):
+def send_recovery_email(
+        email: str
+) -> typing.Optional[typing.Tuple[BackgroundTaskStatus, typing.Optional[BackgroundTask]]]:
     users = User.query.filter_by(email=email).all()
     email_authentication = Authentication.query.filter(db.and_(Authentication.login['login'].astext == email, Authentication.type == AuthenticationType.EMAIL)).first()
     if email_authentication is not None and email_authentication.user not in users:
         users.append(email_authentication.user)
 
     if not users:
-        return
+        return None
 
     password_reset_urls = {}
     for user in users:
@@ -89,7 +95,7 @@ def send_recovery_email(email):
             if authentication_method.type not in {AuthenticationType.LDAP, AuthenticationType.API_TOKEN}:
                 password_reset_urls[authentication_method] = build_confirm_url(authentication_method)
 
-    def filter_printable_authentication_methods(authentication_methods):
+    def filter_printable_authentication_methods(authentication_methods: typing.Iterable[Authentication]) -> typing.List[Authentication]:
         printable_authentication_methods = []
         for authentication_method in authentication_methods:
             if authentication_method.type in {AuthenticationType.LDAP, AuthenticationType.EMAIL, AuthenticationType.OTHER}:
@@ -110,13 +116,16 @@ def send_recovery_email(email):
     )
 
 
-def build_confirm_url(authentication_method, salt='password'):
+def build_confirm_url(
+        authentication_method: Authentication,
+        salt: str = 'password'
+) -> str:
     assert authentication_method.type != AuthenticationType.LDAP
 
     user_id = authentication_method.user_id
     token = generate_token(authentication_method.id, salt=salt,
                            secret_key=flask.current_app.config['SECRET_KEY'])
-    return flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True)
+    return str(flask.url_for("frontend.user_preferences", user_id=user_id, token=token, _external=True))
 
 
 def get_translated_text(
@@ -139,14 +148,12 @@ def get_translated_text(
     :param default: a text to return if the input text is None or empty
     :return: the translation
     """
-
-    if language_code is None:
-        language_code = get_user_language(flask_login.current_user).lang_code
-
     if isinstance(text, str):
         return text
 
     if isinstance(text, dict):
+        if language_code is None:
+            language_code = get_user_language(flask_login.current_user).lang_code
         translated_text = text.get(language_code)
         if translated_text:
             return translated_text
@@ -191,7 +198,11 @@ def get_all_translated_texts(
     return default
 
 
-def parse_url(url, max_length=2048, valid_schemes=['http', 'https', 'ftp', 'file', 'sftp', 'smb']):
+def parse_url(
+        url: str,
+        max_length: int = 2048,
+        valid_schemes: typing.Sequence[str] = ('http', 'https', 'ftp', 'file', 'sftp', 'smb')
+) -> typing.Dict[str, str]:
     """
     Validate and parse a given URI/URL.
 
@@ -302,7 +313,7 @@ def show_load_objects_in_background_warning() -> bool:
 
 
 def show_numeric_tags_warning() -> bool:
-    return flask.current_app.config['ENABLE_NUMERIC_TAGS']
+    return bool(flask.current_app.config['ENABLE_NUMERIC_TAGS'])
 
 
 def do_numeric_tags_exist() -> bool:

@@ -3,17 +3,29 @@
 Logic module for management of languages
 """
 
-import collections
+import dataclasses
 import typing
 
 from .. import db
 from . import errors, settings, locale
+from .users import User
 from .. import models
 
 
-class Language(collections.namedtuple(
-    'Language', ['id', 'lang_code', 'names', 'datetime_format_datetime', 'datetime_format_moment', 'datetime_format_moment_output', 'enabled_for_input', 'enabled_for_user_interface']
-)):
+@dataclasses.dataclass(frozen=True)
+class Language:
+    """
+    This class provides an immutable wrapper around models.languages.Language.
+    """
+    id: int
+    lang_code: str
+    names: typing.Dict[str, str]
+    datetime_format_datetime: str
+    datetime_format_moment: str
+    datetime_format_moment_output: str
+    enabled_for_input: bool
+    enabled_for_user_interface: bool
+
     ENGLISH = models.Language.ENGLISH
     GERMAN = models.Language.GERMAN
 
@@ -183,7 +195,7 @@ def get_language_by_lang_code(lang_code: str) -> Language:
     return Language.from_database(language)
 
 
-def get_user_language(user) -> Language:
+def get_user_language(user: typing.Optional[User]) -> Language:
     """
     Return the language of the current user.
 
@@ -196,7 +208,7 @@ def get_user_language(user) -> Language:
         except errors.LanguageDoesNotExistError:
             return get_language(models.Language.ENGLISH)
 
-    language = getattr(user, 'language', None)
+    language = user.language_cache[0]
     if language is None:
         auto_lc = settings.get_user_settings(user.id)['AUTO_LC']
         if auto_lc:
@@ -207,12 +219,12 @@ def get_user_language(user) -> Language:
             language = get_language_by_lang_code(language_code)
         except errors.LanguageDoesNotExistError:
             language = get_language(models.Language.ENGLISH)
-        user.language = language
+        user.language_cache[0] = language
     return language
 
 
 def get_languages_in_object_data(
-        data: typing.Union[str, dict]
+        data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]
 ) -> typing.Set[str]:
     language_codes = set()
 
