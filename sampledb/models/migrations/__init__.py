@@ -5,10 +5,12 @@
 
 import logging
 
+import flask_sqlalchemy
+
 from .utils import find_migrations, should_skip_by_index, update_migration_index
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> None:
     logger = logging.getLogger('sampledb.migrations')
     for index, name, function in find_migrations():
         logger.info('Migration #{} "{}":'.format(index, name))

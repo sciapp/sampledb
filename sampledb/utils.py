@@ -19,7 +19,7 @@ from .models import Permissions, migrations
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def ansi_color(text: str, color: int):
+def ansi_color(text: str, color: int) -> str:
     """
     Add ANSI color codes to text.
 
@@ -33,13 +33,22 @@ def ansi_color(text: str, color: int):
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
-        user_id_callable: typing.Callable[[], int] = lambda: flask_login.current_user.get_id() if flask_login.current_user else None,
+        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: typing.cast(int, flask_login.current_user.get_id()) if flask_login.current_user else None,
         on_unauthorized: typing.Callable[[int], None] = lambda object_id: flask.abort(403),
-        may_enable_anonymous_users=True
-):
-    def decorator(func, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized):
+        may_enable_anonymous_users: bool = True
+) -> typing.Callable[[typing.Any], typing.Any]:
+    def decorator(
+            func: typing.Callable[[typing.Any], typing.Any],
+            user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
+            on_unauthorized: typing.Callable[[int], None] = on_unauthorized
+    ) -> typing.Callable[[typing.Any], typing.Any]:
         @functools.wraps(func)
-        def wrapper(*args, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized, **kwargs):
+        def wrapper(
+                *args: typing.Any,
+                user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
+                on_unauthorized: typing.Callable[[int], None] = on_unauthorized,
+                **kwargs: typing.Any
+        ) -> typing.Any:
             assert 'object_id' in kwargs
             object_id = kwargs['object_id']
             version_id = kwargs.get('version_id')
@@ -71,7 +80,7 @@ def object_permissions_required(
     return decorator
 
 
-def load_environment_configuration(env_prefix):
+def load_environment_configuration(env_prefix: str) -> typing.Dict[str, typing.Any]:
     """
     Loads configuration data from environment variables with a given prefix.
     If the prefixed environment variable B64_JSON_ENV exists, its content
@@ -93,7 +102,7 @@ def load_environment_configuration(env_prefix):
     return config
 
 
-def generate_secret_key(num_bits):
+def generate_secret_key(num_bits: int) -> str:
     """
     Generates a secure, random key for the application.
 
@@ -106,7 +115,11 @@ def generate_secret_key(num_bits):
     return base64_key
 
 
-def empty_database(engine, recreate=False, only_delete=True):
+def empty_database(
+        engine: sqlalchemy.engine.Engine,
+        recreate: bool = False,
+        only_delete: bool = True
+) -> None:
     metadata = sqlalchemy.MetaData(bind=engine)
     # delete views, as SQLAlchemy cannot reflect them
     engine.execute("DROP VIEW IF EXISTS user_object_permissions_by_all")
