@@ -58,6 +58,31 @@ def validate_condition_schema(
             raise ValidationError('property_name does not belong to a object_reference, sample or measurement property', path)
         if condition['object_id'] is not None and not isinstance(condition['object_id'], int):
             raise ValidationError('object_id must be integer or None', path)
+    elif condition['type'] == 'calculate':
+        valid_keys = {'type', 'property_names', 'formula', 'digits'}
+        required_keys = {'type', 'property_names', 'formula'}
+        condition_keys = set(condition.keys())
+        invalid_keys = condition_keys - valid_keys
+        if invalid_keys:
+            raise ValidationError('unexpected keys in condition: {}'.format(invalid_keys), path)
+        missing_keys = required_keys - condition_keys
+        if missing_keys:
+            raise ValidationError('missing keys in condition: {}'.format(missing_keys), path)
+        if not isinstance(condition['property_names'], list):
+            raise ValidationError('property_names must be list', path)
+        if not isinstance(condition['formula'], str):
+            raise ValidationError('formula must be string', path)
+        if 'digits' in condition and not isinstance(condition['digits'], int):
+            raise ValidationError('digits must be an integer value', path)
+        for property_name in condition['property_names']:
+            if '__' in property_name:
+                if property_name.split("__", 1)[0] not in property_schemas:
+                    raise ValidationError('unknown property_name', path)
+            else:
+                if property_name not in property_schemas:
+                    raise ValidationError('unknown property_name', path)
+                if property_schemas[property_name].get('type') != 'quantity':
+                    raise ValidationError('property_name does not belong to a quantity property', path)
     elif condition['type'] in ('any', 'all'):
         if set(condition.keys()) != {'type', 'conditions'}:
             raise ValidationError('expected type and conditions in condition', path)
@@ -120,6 +145,10 @@ def is_condition_fulfilled(
             condition['property_name'] in instance and
             isinstance(instance[condition['property_name']], dict) and
             instance[condition['property_name']].get('object_id') == condition['object_id']
+        )
+    if condition['type'] == 'calculate':
+        return (
+            all(property_name in instance for property_name in condition['property_names'])
         )
     if condition['type'] == 'any':
         for sub_condition in condition['conditions']:
