@@ -37,6 +37,7 @@ Currently in development.
 - Allow saving object list filters
 - Show last user profile update time
 - Allow administrators to update user profile information
+- Added ``show_more`` option for objects
 
 Version 0.20
 ------------

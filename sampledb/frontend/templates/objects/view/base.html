@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-treeview.min.css') }}" />
 {% endblock %}
 
+{% set id_prefix = "object_" %}
+
 {% block content %}
 
   {% if is_archived %}
@@ -1272,7 +1274,6 @@
     {% endfor %}
   ]
     $(function () {
-
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
         $('#input-object_location-translations').val(translation_json);
@@ -1823,6 +1824,18 @@
     updateLabelsForm();
     {% endif %}
   {% endif %}
+
+    function toggleShowMore(prefix) {
+      let properties = $('.show-more-' + prefix);
+      let btn = $('#show-more-' + prefix + '-btn');
+      if (properties.hasClass('hidden')) {
+        properties.addClass('show').removeClass('hidden');
+        btn.text('{{ _("Show less") }}');
+      } else {
+        properties.addClass('hidden').removeClass('show');
+        btn.text('{{ _("Show more") }}');
+      }
+    }
 
     $( document ).ready(function() {
       $(plotly_charts).each(function(index, element) {
