@@ -4,9 +4,9 @@ RESTful API for SampleDB
 """
 
 import flask
-from flask_restful import Resource
 
 from .authentication import object_permissions_required, Permissions
+from ..utils import Resource
 from ...logic import users, groups, projects, errors, object_permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'

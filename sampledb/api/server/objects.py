@@ -6,8 +6,7 @@ RESTful API for SampleDB
 import json
 import flask
 
-from flask_restful import Resource
-
+from ..utils import Resource
 from ...api.server.authentication import multi_auth, object_permissions_required, Permissions
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_user_action_permissions

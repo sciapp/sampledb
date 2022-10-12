@@ -6,9 +6,9 @@ RESTful API for SampleDB
 import base64
 
 import flask
-from flask_restful import Resource
 
 from .authentication import object_permissions_required, Permissions
+from ..utils import Resource
 from ...logic import errors
 from ...logic.actions import get_action
 from ...logic.files import create_database_file, create_local_file, \

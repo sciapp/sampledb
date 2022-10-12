@@ -3,9 +3,8 @@
 RESTful API for SampleDB
 """
 
-from flask_restful import Resource
-
 from .authentication import multi_auth
+from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
 from ...logic import errors, utils
 
