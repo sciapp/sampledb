@@ -111,7 +111,8 @@ def import_instrument(
 
         ignored_keys = {
             'fed_id',
-            'component_uuid'
+            'component_uuid',
+            'translations'
         }
         if any(
                 value != getattr(mutable_instrument, key)

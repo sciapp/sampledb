@@ -80,7 +80,8 @@ def import_action_type(
 
         ignored_keys = {
             'fed_id',
-            'component_uuid'
+            'component_uuid',
+            'translations'
         }
         if any(
                 value != getattr(action_type, key)
