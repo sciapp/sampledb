@@ -165,7 +165,8 @@ def import_action(
             'action_type',
             'instrument',
             'user',
-            'schema'
+            'schema',
+            'translations'
         }
         if any(
                 value != getattr(mutable_action, key)
