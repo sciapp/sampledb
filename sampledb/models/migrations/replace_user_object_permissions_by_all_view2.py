@@ -12,7 +12,7 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Perform migration
-    db.engine.execute("""
+    db.engine.execute(db.text("""
     CREATE OR REPLACE VIEW user_object_permissions_by_all
     AS SELECT
     u.user_id AS user_id,
@@ -122,5 +122,5 @@ def run(db):
         JOIN project_object_permissions AS project_object_permissions ON group_project_permissions.project_id = project_object_permissions.project_id
     ) AS u
     GROUP BY (u.object_id, u.user_id)
-    """)
+    """))
     return True

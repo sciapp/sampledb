@@ -14,10 +14,10 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 def run(db):
     existing_location_type_ids = [
         location_type[0]
-        for location_type in db.session.execute("""
+        for location_type in db.session.execute(db.text("""
                     SELECT id
                     FROM location_types;
-                """).fetchall()
+                """)).fetchall()
     ]
 
     # checks if translatable columns still exist in action_types
@@ -43,10 +43,10 @@ def run(db):
             continue
 
         # Perform migration
-        db.session.execute("""
+        db.session.execute(db.text("""
             INSERT INTO location_types (id, name, location_name_singular, location_name_plural, admin_only, enable_parent_location, enable_sub_locations, enable_object_assignments, enable_responsible_users, show_location_log)
             VALUES (:id, :name, :location_name_singular, :location_name_plural, :admin_only, :enable_parent_location, :enable_sub_locations, :enable_object_assignments, :enable_responsible_users, :show_location_log)
-        """, params=location_type)
+        """), params=location_type)
         performed_migration = True
 
     return performed_migration

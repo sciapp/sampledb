@@ -11,21 +11,21 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    column_names = db.session.execute("""
+    column_names = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'objects_current'
-    """).fetchall()
+    """)).fetchall()
     if ('tags_cache',) in column_names:
         return False
 
     # Perform migration
-    db.engine.execute("""
+    db.engine.execute(db.text("""
     ALTER TABLE objects_current
     ADD COLUMN tags_cache JSON NULL
-    """)
-    db.engine.execute("""
+    """))
+    db.engine.execute(db.text("""
     UPDATE objects_current
     SET tags_cache = data -> 'tags'
-    """)
+    """))
     return True

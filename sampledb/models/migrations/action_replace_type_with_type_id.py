@@ -13,19 +13,19 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    column_names = db.session.execute("""
+    column_names = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'actions'
-    """).fetchall()
+    """)).fetchall()
     if ('type_id',) in column_names:
         return False
 
     # Perform migration
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE actions
         ADD type_id INTEGER NULL
-    """)
+    """))
 
     default_action_types = [
         {
@@ -42,24 +42,24 @@ def run(db):
         }
     ]
     for action_type in default_action_types:
-        db.session.execute("""
+        db.session.execute(db.text("""
             UPDATE actions
             SET type_id = :type_id
             WHERE type::text = :type
-        """, params=action_type)
+        """), params=action_type)
 
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE actions
         ALTER type_id SET NOT NULL
-    """)
+    """))
 
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE actions
         ADD CONSTRAINT fk_actions_type_id FOREIGN KEY (type_id) REFERENCES action_types (id)
-    """)
+    """))
 
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE actions
         DROP type
-    """)
+    """))
     return True

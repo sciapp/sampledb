@@ -13,18 +13,18 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    location_log_entries_exist = db.session.execute("""
+    location_log_entries_exist = db.session.execute(db.text("""
         SELECT id
         FROM location_log_entries
-    """).fetchone() is not None
+    """)).fetchone() is not None
     if location_log_entries_exist:
         return False
 
-    object_location_assignments = db.session.execute("""
+    object_location_assignments = db.session.execute(db.text("""
         SELECT id, location_id, user_id, object_id, utc_datetime
         FROM object_location_assignments
         ORDER BY utc_datetime ASC
-    """).fetchall()
+    """)).fetchall()
 
     if not object_location_assignments:
         return False
@@ -67,10 +67,10 @@ def run(db):
                     })
                 })
     for log_entry in log_entries:
-        db.session.execute("""
+        db.session.execute(db.text("""
             INSERT INTO location_log_entries
             (type, location_id, utc_datetime, user_id, data)
             VALUES
             (CAST(:type AS locationlogentrytype), :location_id, :utc_datetime, :user_id, CAST(:data AS JSONB))
-        """, params=log_entry)
+        """), params=log_entry)
     return True

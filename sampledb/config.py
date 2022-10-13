@@ -224,15 +224,15 @@ def check_config(
             )
         elif can_run:
             engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'])
-            user_table_exists = bool(engine.execute(
+            user_table_exists = bool(engine.execute(sqlalchemy.text(
                 "SELECT * "
                 "FROM information_schema.columns "
                 "WHERE table_name = 'users'"
-            ).fetchall())
+            )).fetchall())
             if user_table_exists:
-                users_exist = bool(engine.execute(
+                users_exist = bool(engine.execute(sqlalchemy.text(
                     "SELECT * FROM users"
-                ).fetchall())
+                )).fetchall())
             else:
                 users_exist = False
             if users_exist:
