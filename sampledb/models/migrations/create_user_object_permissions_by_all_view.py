@@ -23,7 +23,7 @@ def run(db):
         return False
 
     # Perform migration
-    db.engine.execute(db.text("""
+    db.session.execute(db.text("""
     CREATE OR REPLACE VIEW user_object_permissions_by_all
     AS
         SELECT

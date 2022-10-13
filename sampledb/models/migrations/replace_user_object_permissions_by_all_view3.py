@@ -13,7 +13,7 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Perform migration
-    db.engine.execute(db.text("""
+    db.session.execute(db.text("""
     CREATE OR REPLACE VIEW user_object_permissions_by_all
     AS SELECT
     u.user_id AS user_id,

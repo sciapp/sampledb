@@ -141,7 +141,7 @@ def get_user_object_permissions(
         FROM user_object_permissions_by_all
         WHERE (user_id = :user_id OR user_id IS NULL) AND (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE)
         """)
-        permissions_int = db.engine.execute(stmt, {
+        permissions_int = db.session.execute(stmt, {
             'user_id': user_id,
             'object_id': object_id,
             'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS']

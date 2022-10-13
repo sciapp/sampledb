@@ -20,11 +20,11 @@ def run(db):
         return False
 
     # Perform migration
-    db.engine.execute(db.text("""
+    db.session.execute(db.text("""
     ALTER TABLE objects_current
     ADD COLUMN name_cache JSON NULL
     """))
-    db.engine.execute(db.text("""
+    db.session.execute(db.text("""
     UPDATE objects_current
     SET name_cache = data -> 'name' -> 'text'
     """))
