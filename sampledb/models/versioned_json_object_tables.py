@@ -868,7 +868,7 @@ class VersionedJSONSerializableObjectTables(object):
 
         objects = connection.execute(
             select_statement,
-            **parameters
+            parameters
         ).fetchall()
         if num_objects_found is not None:
             num_objects_found.clear()
