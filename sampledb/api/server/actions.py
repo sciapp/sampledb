@@ -2,28 +2,29 @@
 """
 RESTful API for SampleDB
 """
+import typing
 
 import flask
 
 from .authentication import multi_auth
-from ..utils import Resource
+from ..utils import Resource, ResponseData
 from ...logic.actions import get_action
-from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
-from ...logic import errors, utils
-from ...models.actions import ActionType, Action
+from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions
+from ...logic import errors, utils, actions
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def action_to_json(action: Action):
+def action_to_json(action: actions.Action) -> typing.Dict[str, typing.Any]:
     return {
         'action_id': action.id,
         'instrument_id': action.instrument_id,
         'user_id': action.user_id,
         'type': {
-            ActionType.SAMPLE_CREATION: 'sample',
-            ActionType.MEASUREMENT: 'measurement',
-            ActionType.SIMULATION: 'simulation'
+            actions.ActionType.SAMPLE_CREATION: 'sample',
+            actions.ActionType.MEASUREMENT: 'measurement',
+            actions.ActionType.SIMULATION: 'simulation'
         }.get(action.type_id, 'custom'),
         'type_id': action.type_id,
         'name': utils.get_translated_text(
@@ -41,7 +42,7 @@ def action_to_json(action: Action):
 
 class Action(Resource):
     @multi_auth.login_required
-    def get(self, action_id: int):
+    def get(self, action_id: int) -> ResponseData:
         try:
             action = get_action(
                 action_id=action_id
@@ -57,7 +58,7 @@ class Action(Resource):
 
 class Actions(Resource):
     @multi_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
         return [
             action_to_json(action)

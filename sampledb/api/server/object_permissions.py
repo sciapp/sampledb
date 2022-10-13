@@ -5,16 +5,17 @@ RESTful API for SampleDB
 
 import flask
 
-from .authentication import object_permissions_required, Permissions
-from ..utils import Resource
+from .authentication import object_permissions_required
+from ..utils import Resource, ResponseData
 from ...logic import users, groups, projects, errors, object_permissions
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 class UserObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, user_id: int):
+    def get(self, object_id: int, user_id: int) -> ResponseData:
         include_instrument_responsible_users = 'include_instrument_responsible_users' in flask.request.args
         include_groups = 'include_groups' in flask.request.args
         include_projects = 'include_projects' in flask.request.args
@@ -36,7 +37,7 @@ class UserObjectPermissions(Resource):
         return permissions.name.lower()
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int, user_id: int):
+    def put(self, object_id: int, user_id: int) -> ResponseData:
         try:
             users.get_user(user_id)
         except errors.UserDoesNotExistError:
@@ -60,7 +61,7 @@ class UserObjectPermissions(Resource):
 
 class UsersObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         include_instrument_responsible_users = 'include_instrument_responsible_users' in flask.request.args
         include_groups = 'include_groups' in flask.request.args
         include_projects = 'include_projects' in flask.request.args
@@ -80,7 +81,7 @@ class UsersObjectPermissions(Resource):
 
 class GroupObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, group_id: int):
+    def get(self, object_id: int, group_id: int) -> ResponseData:
         include_projects = 'include_projects' in flask.request.args
         permissions = object_permissions.get_object_permissions_for_groups(
             object_id=object_id,
@@ -96,7 +97,7 @@ class GroupObjectPermissions(Resource):
         return permissions.name.lower()
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int, group_id: int):
+    def put(self, object_id: int, group_id: int) -> ResponseData:
         try:
             groups.get_group(group_id)
         except errors.GroupDoesNotExistError:
@@ -120,7 +121,7 @@ class GroupObjectPermissions(Resource):
 
 class GroupsObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         include_projects = 'include_projects' in flask.request.args
         permissions = object_permissions.get_object_permissions_for_groups(
             object_id=object_id,
@@ -134,7 +135,7 @@ class GroupsObjectPermissions(Resource):
 
 class ProjectObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, project_id: int):
+    def get(self, object_id: int, project_id: int) -> ResponseData:
         permissions = object_permissions.get_object_permissions_for_projects(
             object_id=object_id
         ).get(project_id, Permissions.NONE)
@@ -148,7 +149,7 @@ class ProjectObjectPermissions(Resource):
         return permissions.name.lower()
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int, project_id: int):
+    def put(self, object_id: int, project_id: int) -> ResponseData:
         try:
             projects.get_project(project_id)
         except errors.ProjectDoesNotExistError:
@@ -172,7 +173,7 @@ class ProjectObjectPermissions(Resource):
 
 class ProjectsObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         permissions = object_permissions.get_object_permissions_for_projects(
             object_id=object_id,
         )
@@ -184,14 +185,14 @@ class ProjectsObjectPermissions(Resource):
 
 class PublicObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         is_public = Permissions.READ in object_permissions.get_object_permissions_for_all_users(
             object_id=object_id
         )
         return is_public, 200
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int):
+    def put(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, bool):
             return {
@@ -207,14 +208,14 @@ class PublicObjectPermissions(Resource):
 
 class AuthenticatedUserObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         permissions = object_permissions.get_object_permissions_for_all_users(
             object_id=object_id
         )
         return permissions.name.lower(), 200
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int):
+    def put(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):
             return {
@@ -237,7 +238,7 @@ class AuthenticatedUserObjectPermissions(Resource):
 
 class AnonymousUserObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
             return {
                 "message": "anonymous users are disabled"
@@ -248,7 +249,7 @@ class AnonymousUserObjectPermissions(Resource):
         return permissions.name.lower(), 200
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int):
+    def put(self, object_id: int) -> ResponseData:
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
             return {
                 "message": "anonymous users are disabled"

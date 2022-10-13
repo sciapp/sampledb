@@ -1602,8 +1602,8 @@ def generate_filter_func(
 
 
 def wrap_filter_func(
-        filter_func: typing.Any
-) -> typing.Tuple[typing.Any, typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]]:
+        filter_func: typing.Callable[[typing.Any, typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]], typing.Any]
+) -> typing.Tuple[typing.Callable[[typing.Any], typing.Any], typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]]:
     """
     Wrap a filter function so that a new list will be filled with the search notes.
 
