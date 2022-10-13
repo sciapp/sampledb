@@ -139,6 +139,7 @@ def create_group(
 
     user = get_mutable_user(initial_user_id)
     group = groups.Group(name=name, description=description)
+    db.session.add(group)
     group.members.append(user)
     db.session.add(group)
     db.session.commit()
