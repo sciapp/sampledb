@@ -206,9 +206,9 @@ class VersionedJSONSerializableObjectTables(object):
         if schema is None and self._action_schema_column is not None:
             action = connection.execute(
                 db
-                .select([
+                .select(
                     self._action_schema_column
-                ])
+                )
                 .where(self._action_id_column == action_id)
             ).fetchone()
             if action is None:
@@ -293,7 +293,7 @@ class VersionedJSONSerializableObjectTables(object):
             utc_datetime = datetime.datetime.utcnow()
         if schema is None:
             schema = connection.execute(
-                db.select([self._current_table.c.schema]).where(self._current_table.c.object_id == object_id)
+                db.select(self._current_table.c.schema).where(self._current_table.c.object_id == object_id)
             ).fetchone()
             if schema is None:
                 return None
@@ -394,9 +394,9 @@ class VersionedJSONSerializableObjectTables(object):
         if schema is None and self._action_schema_column is not None:
             action = connection.execute(
                 db
-                .select([
+                .select(
                     self._action_schema_column
-                ])
+                )
                 .where(self._action_id_column == action_id)
             ).fetchone()
             if action is None:
@@ -528,9 +528,9 @@ class VersionedJSONSerializableObjectTables(object):
         if schema is None and self._action_schema_column is not None:
             action = connection.execute(
                 db
-                .select([
+                .select(
                     self._action_schema_column
-                ])
+                )
                 .where(self._action_id_column == action_id)
             ).fetchone()
             if action is None:
@@ -548,7 +548,7 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         previous_objects = connection.execute(
             db
-            .select([
+            .select(
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
                 self._previous_table.c.action_id,
@@ -559,7 +559,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
                 self._previous_table.c.component_id
-            ])
+            )
             .where(db.and_(
                 self._previous_table.c.object_id == object_id,
                 self._previous_table.c.version_id == version_id
@@ -641,7 +641,7 @@ class VersionedJSONSerializableObjectTables(object):
         if connection is None:
             connection = self.bind.connect()
         return connection.execute(
-            db.select([self._current_table.c.object_id]).where(self._current_table.c.object_id == object_id)
+            db.select(self._current_table.c.object_id).where(self._current_table.c.object_id == object_id)
         ).fetchone() is not None
 
     @_use_transaction
@@ -661,7 +661,7 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         current_object = connection.execute(
             db
-            .select([
+            .select(
                 self._current_table.c.object_id,
                 self._current_table.c.version_id,
                 self._current_table.c.action_id,
@@ -672,7 +672,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.fed_object_id,
                 self._current_table.c.fed_version_id,
                 self._current_table.c.component_id
-            ])
+            )
             .where(self._current_table.c.object_id == object_id)
         ).fetchone()
         if current_object is None:
@@ -689,7 +689,7 @@ class VersionedJSONSerializableObjectTables(object):
         if connection is None:
             connection = self.bind.connect()
         previous_object_subversion = connection.execute(
-            db.select([
+            db.select(
                 self._subversions_table.c.object_id,
                 self._subversions_table.c.version_id,
                 self._subversions_table.c.action_id,
@@ -700,7 +700,7 @@ class VersionedJSONSerializableObjectTables(object):
                 None,
                 None,
                 None
-            ])
+            )
             .where(
                 db.and_(
                     self._subversions_table.c.object_id == object_id,
@@ -726,7 +726,7 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         current_object = connection.execute(
             db
-            .select([
+            .select(
                 self._current_table.c.object_id,
                 self._current_table.c.version_id,
                 self._current_table.c.action_id,
@@ -737,7 +737,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._current_table.c.fed_object_id,
                 self._current_table.c.fed_version_id,
                 self._current_table.c.component_id
-            ])
+            )
             .where(db.and_(
                 self._current_table.c.component_id == component_id,
                 self._current_table.c.fed_object_id == fed_object_id
@@ -761,7 +761,7 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         previous_objects = connection.execute(
             db
-            .select([
+            .select(
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
                 self._previous_table.c.action_id,
@@ -772,7 +772,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
                 self._previous_table.c.component_id
-            ])
+            )
             .where(db.and_(db.and_(
                 self._previous_table.c.component_id == component_id,
                 self._previous_table.c.fed_object_id == fed_object_id),
@@ -819,7 +819,7 @@ class VersionedJSONSerializableObjectTables(object):
         if table is None:
             table = self._current_table
 
-        select_statement = db.select([
+        select_statement = db.select(
             table.c.object_id,
             table.c.version_id,
             table.c.action_id,
@@ -831,7 +831,7 @@ class VersionedJSONSerializableObjectTables(object):
             table.c.fed_version_id,
             table.c.component_id,
             db.sql.expression.text('COUNT(*) OVER()')
-        ])
+        )
 
         selectable = table
 
@@ -899,7 +899,7 @@ class VersionedJSONSerializableObjectTables(object):
             return []
         previous_objects = connection.execute(
             db
-            .select([
+            .select(
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
                 self._previous_table.c.action_id,
@@ -910,7 +910,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
                 self._previous_table.c.component_id
-            ])
+            )
             .where(self._previous_table.c.object_id == object_id)
             # .order_by(db.asc(self._previous_table.c.version_id))
             .order_by(db.asc(self._previous_table.c.utc_datetime))
@@ -940,7 +940,7 @@ class VersionedJSONSerializableObjectTables(object):
             connection = self.bind.connect()
         previous_objects = connection.execute(
             db
-            .select([
+            .select(
                 self._previous_table.c.object_id,
                 self._previous_table.c.version_id,
                 self._previous_table.c.action_id,
@@ -951,7 +951,7 @@ class VersionedJSONSerializableObjectTables(object):
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
                 self._previous_table.c.component_id
-            ])
+            )
             .where(db.and_(
                 self._previous_table.c.object_id == object_id,
                 self._previous_table.c.version_id == version_id
