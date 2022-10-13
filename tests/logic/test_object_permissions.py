@@ -651,3 +651,55 @@ def test_get_readonly_user_object_permissions(user, independent_action_object):
     assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.READ
     sampledb.logic.users.set_user_readonly(user_id, readonly=False)
     assert object_permissions.get_user_object_permissions(user_id=user_id, object_id=object_id) == Permissions.WRITE
+
+
+def test_get_object_info_with_permissions(user, independent_action_object):
+    user_id = user.id
+    object_id = independent_action_object.object_id
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ
+    )
+    assert object_infos == []
+
+    object_permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.READ)
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ
+    )
+    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.READ.value, None, None, None)]
+
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ,
+        action_id=independent_action_object.action_id
+    )
+    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.READ.value, None, None, None)]
+
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ,
+        action_id=independent_action_object.action_id + 1
+    )
+    assert object_infos == []
+
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ,
+        object_ids=[independent_action_object.object_id]
+    )
+    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.READ.value, None, None, None)]
+
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ,
+        object_ids=[independent_action_object.object_id + 1]
+    )
+    assert object_infos == []
+
+    object_permissions.set_user_object_permissions(object_id=object_id, user_id=user_id, permissions=Permissions.GRANT)
+    object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
+        user_id,
+        permissions=Permissions.READ,
+    )
+    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.GRANT.value, None, None, None)]
