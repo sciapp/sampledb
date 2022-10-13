@@ -10,8 +10,7 @@ import jsonschema.exceptions
 import pytest
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 import sampledb
 import sampledb.utils
