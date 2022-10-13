@@ -311,7 +311,7 @@ class VersionedJSONSerializableObjectTables(object):
                 ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime', 'fed_object_id', 'fed_version_id', 'component_id'],
                 self._current_table
                 .select()
-                .with_only_columns([
+                .with_only_columns(
                     self._current_table.c.object_id,
                     self._current_table.c.version_id,
                     self._current_table.c.action_id,
@@ -322,7 +322,7 @@ class VersionedJSONSerializableObjectTables(object):
                     self._current_table.c.fed_object_id,
                     self._current_table.c.fed_version_id,
                     self._current_table.c.component_id
-                ])
+                )
                 .where(self._current_table.c.object_id == db.bindparam('oid'))
             ),
             [{'oid': object_id}]
@@ -428,7 +428,7 @@ class VersionedJSONSerializableObjectTables(object):
                     ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime', 'fed_object_id', 'fed_version_id', 'component_id'],
                     self._current_table
                     .select()
-                    .with_only_columns([
+                    .with_only_columns(
                         self._current_table.c.object_id,
                         self._current_table.c.version_id,
                         self._current_table.c.action_id,
@@ -439,7 +439,7 @@ class VersionedJSONSerializableObjectTables(object):
                         self._current_table.c.fed_object_id,
                         self._current_table.c.fed_version_id,
                         self._current_table.c.component_id
-                    ])
+                    )
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
                 ),
                 [{'oid': current.object_id}]
