@@ -84,7 +84,7 @@ def property_value(property_name: str) -> typing.Callable[[typing.Any, typing.An
     """
     def sorting_func(current_columns: typing.Any, original_columns: typing.Any) -> typing.Any:
         columns = current_columns
-        return sqlalchemy.sql.expression.case([
+        return sqlalchemy.sql.expression.case(
             (
                 columns.data[property_name]['_type'].astext == 'text',
                 columns.data[property_name]['text'].astext
@@ -112,6 +112,7 @@ def property_value(property_name: str) -> typing.Callable[[typing.Any, typing.An
             (
                 columns.data[property_name]['_type'].astext == 'object_reference',
                 columns.data[property_name]['object_id'].astext
-            )
-        ], else_=sqlalchemy.sql.null())
+            ),
+            else_=sqlalchemy.sql.null()
+        )
     return sorting_func
