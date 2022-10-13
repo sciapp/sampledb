@@ -55,10 +55,6 @@ def users():
     return users
 
 
-def get_authentication_methods(userid):
-    return Authentication.query.get(userid)
-
-
 def test_login_user(flask_server, users):
 
     name = users[0].id

@@ -18,7 +18,7 @@ def test_create_component():
     component_id = add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', address='https://example.com', description='').id
 
     assert len(models.components.Component.query.all()) == 1
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.address == 'https://example.com'
@@ -70,7 +70,7 @@ def test_create_component_with_long_name():
     component_id = add_component(name='A' * 100, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', description='').id
 
     assert len(models.components.Component.query.all()) == 1
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.name == 'A' * 100
@@ -160,7 +160,7 @@ def test_update_component():
 
     update_component(component_id=component_id, address='https://example.com/sampledb', name='Test Component', description='Test Description')
 
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.address == 'https://example.com/sampledb'
@@ -177,7 +177,7 @@ def test_update_component_that_does_not_exist():
     with pytest.raises(ComponentDoesNotExistError):
         update_component(component_id=component_id + 1, address='https://example.com', name='Test Component', description='Test Description')
 
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.name == 'Example Component'
@@ -193,7 +193,7 @@ def test_update_component_with_existing_name():
     with pytest.raises(ComponentAlreadyExistsError):
         update_component(component_id=component_id, address='https://example.com/sampledb', name='Example Component', description='')
 
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.address == 'https://example.com/sampledb'
@@ -210,7 +210,7 @@ def test_update_component_with_empty_address():
     with pytest.raises(InvalidComponentAddressError):
         update_component(component_id=component_id, address='', name='Test Component', description='Test Description')
 
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.address == 'https://example.com'
@@ -226,7 +226,7 @@ def test_update_component_with_long_name():
     with pytest.raises(InvalidComponentNameError):
         update_component(component_id=component_id, name='A' * 101, description='')
 
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.address == 'https://example.com'
@@ -236,7 +236,7 @@ def test_update_component_with_long_name():
 
     update_component(component_id=component_id, name='A' * 100, description='')
 
-    component = models.components.Component.query.get(component_id)
+    component = models.components.Component.query.filter_by(id=component_id).first()
     assert component is not None
     assert component.id == component_id
     assert component.name == 'A' * 100

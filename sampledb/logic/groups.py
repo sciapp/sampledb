@@ -189,7 +189,7 @@ def update_group(
     if 'en' not in name:
         raise errors.MissingEnglishTranslationError()
 
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
 
@@ -215,7 +215,7 @@ def delete_group(group_id: int) -> None:
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists
     """
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
     # group permissions and group default permissions will be deleted due to
@@ -233,7 +233,7 @@ def get_group(group_id: int) -> Group:
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists
     """
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
     return Group.from_database(group)
@@ -258,7 +258,7 @@ def get_group_member_ids(group_id: int) -> typing.List[int]:
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists
     """
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
     return [user.id for user in group.members]
@@ -294,7 +294,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
     """
     # ensure the inviter exists
     get_user(inviter_id)
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
     user = get_mutable_user(user_id)
@@ -337,7 +337,7 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
     :raise errors.UserAlreadyMemberOfGroupError: when the user is already
         a member of the group
     """
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
     user = get_mutable_user(user_id)
@@ -374,7 +374,7 @@ def remove_user_from_group(group_id: int, user_id: int) -> None:
     :raise errors.UserNotMemberOfGroupError: when the user is not a member of
         the group
     """
-    group = groups.Group.query.get(group_id)
+    group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()
     user = get_mutable_user(user_id)

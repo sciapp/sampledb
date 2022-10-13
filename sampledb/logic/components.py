@@ -47,7 +47,7 @@ class Component:
             self,
             last_sync_timestamp: datetime.datetime
     ) -> None:
-        component = components.Component.query.get(self.id)
+        component = components.Component.query.filter_by(id=self.id).first()
         component.last_sync_timestamp = last_sync_timestamp
         db.session.add(component)
         db.session.commit()
@@ -144,7 +144,7 @@ def get_component(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    component = components.Component.query.get(component_id)
+    component = components.Component.query.filter_by(id=component_id).first()
     if component is None:
         raise errors.ComponentDoesNotExistError()
     return Component.from_database(component)
@@ -200,7 +200,7 @@ def update_component(component_id: int, name: typing.Optional[str] = None, addre
     if address is not None:
         address = validate_address(address, max_length=MAX_COMPONENT_ADDRESS_LENGTH, allow_http=flask.current_app.config['ALLOW_HTTP'])
 
-    component = components.Component.query.get(component_id)
+    component = components.Component.query.filter_by(id=component_id).first()
     if component is None:
         raise errors.ComponentDoesNotExistError()
     if component.name != name and name is not None:

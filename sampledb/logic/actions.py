@@ -212,7 +212,7 @@ def get_action_type(action_type_id: int, component_id: typing.Optional[int] = No
         given action type ID exists
     """
     if component_id is None:
-        action_type = models.ActionType.query.get(action_type_id)
+        action_type = models.ActionType.query.filter_by(id=action_type_id).first()
     else:
         # ensure that the component can be found
         components.get_component(component_id)
@@ -331,7 +331,7 @@ def update_action_type(
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     """
-    action_type = models.ActionType.query.get(action_type_id)
+    action_type = models.ActionType.query.filter_by(id=action_type_id).first()
     if action_type is None:
         raise errors.ActionTypeDoesNotExistError()
     action_type.admin_only = admin_only
@@ -485,7 +485,7 @@ def get_mutable_action(
     """
     action: typing.Optional[models.Action]
     if component_id is None:
-        action = models.Action.query.get(action_id)
+        action = models.Action.query.filter_by(id=action_id).first()
     else:
         # ensure that the component can be found
         components.get_component(component_id)

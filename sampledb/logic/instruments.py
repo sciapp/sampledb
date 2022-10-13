@@ -148,7 +148,7 @@ def get_mutable_instrument(
     """
     instrument: typing.Optional[models.Instrument]
     if component_id is None:
-        instrument = models.Instrument.query.get(instrument_id)
+        instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     else:
         instrument = models.Instrument.query.filter_by(fed_id=instrument_id, component_id=component_id).first()
     if instrument is None:
@@ -205,7 +205,7 @@ def update_instrument(
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
-    instrument = models.Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     if description_is_markdown is not None:
@@ -240,7 +240,7 @@ def add_instrument_responsible_user(instrument_id: int, user_id: int) -> None:
     :raise errors.UserAlreadyResponsibleForInstrumentError: when the user is
         already responsible for the instrument
     """
-    instrument = models.Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     user = users.get_mutable_user(user_id)
@@ -265,7 +265,7 @@ def remove_instrument_responsible_user(instrument_id: int, user_id: int) -> None
     :raise errors.UserNotResponsibleForInstrumentError: when the user is not
         responsible for the instrument
     """
-    instrument = models.Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     user = users.get_mutable_user(user_id)
@@ -287,7 +287,7 @@ def set_instrument_responsible_users(instrument_id: int, user_ids: typing.List[i
     :raise errors.UserDoesNotExistError: when no user with one of the given
         user IDs exists
     """
-    instrument = models.Instrument.query.get(instrument_id)
+    instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     instrument.responsible_users.clear()

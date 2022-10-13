@@ -585,7 +585,7 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
         parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
         project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
         sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
-        project = sampledb.models.projects.Project.query.get(project_id)
+        project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
 
         sampledb.logic.projects.invite_user_to_project(project.id, user_session.user_id, inviting_user.id, [parent_project_id])
 

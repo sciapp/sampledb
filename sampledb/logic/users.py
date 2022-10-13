@@ -242,7 +242,7 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
     if user_id is None:
         raise TypeError("user_id must be int")
     if component_id is None or component_id == 0:
-        user = users.User.query.get(user_id)
+        user = users.User.query.filter_by(id=user_id).first()
     else:
         user = users.User.query.filter_by(fed_id=user_id, component_id=component_id).first()
     if user is None:
@@ -508,7 +508,7 @@ def get_user_alias(user_id: int, component_id: int) -> UserFederationAlias:
     :raise errors.ComponentDoesNotExistError: when no component with given ID exists
     :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
     """
-    alias = users.UserFederationAlias.query.get((user_id, component_id))
+    alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
         get_user(user_id)
         get_component(component_id)
@@ -593,7 +593,7 @@ def create_user_alias(
     :raise errors.ComponentDoesNotExistError: when no component with given ID exists
     :raise errors.UserAliasAlreadyExistsError: when an alias with given IDs already exists
     """
-    alias = users.UserFederationAlias.query.get((user_id, component_id))
+    alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is not None:
         get_user(user_id)
         get_component(component_id)
@@ -647,7 +647,7 @@ def update_user_alias(
     :raise errors.ComponentDoesNotExistError: when no component with given ID exists
     :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
     """
-    alias = users.UserFederationAlias.query.get((user_id, component_id))
+    alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
         get_user(user_id)
         get_component(component_id)
@@ -687,7 +687,7 @@ def delete_user_alias(user_id: int, component_id: int) -> None:
     :raise errors.ComponentDoesNotExistError: when no component with given ID exists
     :raise errors.UserAliasDoesNotExistError: when no alias with given IDs exists
     """
-    alias = users.UserFederationAlias.query.get((user_id, component_id))
+    alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
         get_user(user_id)
         get_component(component_id)
