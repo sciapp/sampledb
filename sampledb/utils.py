@@ -121,15 +121,17 @@ def empty_database(
         only_delete: bool = True
 ) -> None:
     metadata = sqlalchemy.MetaData(bind=engine)
-    # delete views, as SQLAlchemy cannot reflect them
-    engine.execute(db.text("DROP VIEW IF EXISTS user_object_permissions_by_all"))
+    with engine.begin() as connection:
+        # delete views, as SQLAlchemy cannot reflect them
+        connection.execute(db.text("DROP VIEW IF EXISTS user_object_permissions_by_all"))
     # delete tables, etc
     metadata.reflect()
     if only_delete:
-        for table in reversed(metadata.sorted_tables):
-            engine.execute(table.delete())
-        # migration_index needs to be dropped so migration #0 will run
-        engine.execute(db.text("DROP TABLE IF EXISTS migration_index"))
+        with engine.begin() as connection:
+            for table in reversed(metadata.sorted_tables):
+                connection.execute(table.delete())
+            # migration_index needs to be dropped so migration #0 will run
+            connection.execute(db.text("DROP TABLE IF EXISTS migration_index"))
     else:
         metadata.drop_all()
     if recreate:

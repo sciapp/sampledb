@@ -18,14 +18,9 @@ def run(db):
         return False
 
     # Perform migration
-    # Use connection and run COMMIT as ALTER TYPE cannot run in a transaction
-    connection = db.engine.connect()
-    connection.detach()
-    connection.execution_options(autocommit=False)
-    connection.execute(db.text("COMMIT"))
-    connection.execute(db.text("""
-        ALTER TYPE usertype
-        ADD VALUE 'FEDERATION_USER'
-    """))
-    connection.close()
+    with db.engine.begin() as connection:
+        connection.execute(db.text("""
+            ALTER TYPE usertype
+            ADD VALUE 'FEDERATION_USER'
+        """))
     return True

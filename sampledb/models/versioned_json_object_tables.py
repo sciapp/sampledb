@@ -5,10 +5,21 @@
 
 import collections
 import datetime
+import functools
 import typing
 
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
+
+
+def _use_transaction(func):
+    @functools.wraps(func)
+    def wrapped_func(self, *args, connection: typing.Optional[db.engine.Connection] = None, **kwargs):
+        if connection is not None:
+            return func(self, *args, connection=connection, **kwargs)
+        with self.bind.begin() as connection:
+            return func(self, *args, connection=connection, **kwargs)
+    return wrapped_func
 
 
 class VersionedJSONSerializableObjectTables(object):
@@ -159,6 +170,7 @@ class VersionedJSONSerializableObjectTables(object):
         self._data_validator = data_validator
         self._schema_validator = schema_validator
 
+    @_use_transaction
     def create_object(
             self,
             data: typing.Dict[str, typing.Any],
@@ -247,6 +259,7 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return obj
 
+    @_use_transaction
     def update_object(
             self,
             object_id: int,
@@ -333,6 +346,7 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return self.get_current_object(object_id, connection=connection)
 
+    @_use_transaction
     def restore_object_version(
             self,
             object_id: int,
@@ -360,6 +374,7 @@ class VersionedJSONSerializableObjectTables(object):
             validate_data=False
         )
 
+    @_use_transaction
     def insert_fed_object_version(
             self,
             fed_object_id: int,
@@ -475,6 +490,7 @@ class VersionedJSONSerializableObjectTables(object):
                 return None
         return self.get_fed_object_version(component_id, fed_object_id, fed_version_id, connection=connection)
 
+    @_use_transaction
     def update_object_version(
             self,
             object_id: int,
@@ -609,6 +625,7 @@ class VersionedJSONSerializableObjectTables(object):
         )
         return self.get_object_version(object_id, version_id, connection=connection)
 
+    @_use_transaction
     def is_existing_object(
             self,
             object_id: int,
@@ -627,6 +644,7 @@ class VersionedJSONSerializableObjectTables(object):
             db.select([self._current_table.c.object_id]).where(self._current_table.c.object_id == object_id)
         ).fetchone() is not None
 
+    @_use_transaction
     def get_current_object(
             self,
             object_id: int,
@@ -661,6 +679,7 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
+    @_use_transaction
     def get_previous_subversion(
             self,
             object_id: int,
@@ -694,6 +713,7 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*previous_object_subversion)
 
+    @_use_transaction
     def get_current_fed_object(
             self,
             component_id: int,
@@ -727,6 +747,7 @@ class VersionedJSONSerializableObjectTables(object):
             return None
         return self.object_type(*current_object)
 
+    @_use_transaction
     def get_fed_object_version(
             self,
             component_id: int,
@@ -765,6 +786,7 @@ class VersionedJSONSerializableObjectTables(object):
             return current_object
         return None
 
+    @_use_transaction
     def get_current_objects(
             self,
             filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
@@ -856,6 +878,7 @@ class VersionedJSONSerializableObjectTables(object):
                 num_objects_found.append(0)
         return [self.object_type(*obj[:-1]) for obj in objects]
 
+    @_use_transaction
     def get_object_versions(
             self,
             object_id: int,
@@ -898,6 +921,7 @@ class VersionedJSONSerializableObjectTables(object):
         objects.append(current_object)
         return objects
 
+    @_use_transaction
     def get_object_version(
             self,
             object_id: int,
