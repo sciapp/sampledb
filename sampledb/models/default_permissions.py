@@ -11,7 +11,7 @@ from .permissions import Permissions
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class DefaultUserPermissions(db.Model):
+class DefaultUserPermissions(db.Model):  # type: ignore
     __tablename__ = 'default_user_permissions'
 
     creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
@@ -20,11 +20,10 @@ class DefaultUserPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(creator_id, user_id),
-        {},
     )
 
 
-class DefaultGroupPermissions(db.Model):
+class DefaultGroupPermissions(db.Model):  # type: ignore
     __tablename__ = 'default_group_permissions'
 
     creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
@@ -33,11 +32,10 @@ class DefaultGroupPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(creator_id, group_id),
-        {},
     )
 
 
-class DefaultProjectPermissions(db.Model):
+class DefaultProjectPermissions(db.Model):  # type: ignore
     __tablename__ = 'default_project_permissions'
 
     creator_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
@@ -46,11 +44,10 @@ class DefaultProjectPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(creator_id, project_id),
-        {},
     )
 
 
-class AllUserDefaultPermissions(db.Model):
+class AllUserDefaultPermissions(db.Model):  # type: ignore
     __tablename__ = 'all_user_default_permissions'
 
     creator_id = db.Column(db.Integer, db.ForeignKey(User.id), primary_key=True)

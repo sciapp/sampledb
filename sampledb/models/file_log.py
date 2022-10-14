@@ -23,7 +23,7 @@ class FileLogEntryType(enum.Enum):
     EDIT_URL = 5
 
 
-class FileLogEntry(db.Model):
+class FileLogEntry(db.Model):  # type: ignore
     __tablename__ = 'file_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -34,7 +34,9 @@ class FileLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    __table_args__ = (db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]), {})
+    __table_args__ = (
+        db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]),
+    )
 
     def __init__(
             self,

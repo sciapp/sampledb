@@ -32,7 +32,7 @@ class ObjectLogEntryType(enum.Enum):
     UNLINK_PROJECT = 14
 
 
-class ObjectLogEntry(db.Model):
+class ObjectLogEntry(db.Model):  # type: ignore
     __tablename__ = 'object_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -58,5 +58,5 @@ class ObjectLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, object_id={1.object_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

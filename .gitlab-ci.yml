@@ -53,7 +53,7 @@ analyze:
     - python3 -m pip install types-babel types-beautifulsoup4 types-bleach types-Flask-SQLAlchemy types-Markdown types-requests types-SQLAlchemy types-ldap3 flask-httpauth-stubs
     - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
     - python3 -m pyflakes sampledb
-    - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/utils.py sampledb/logic/ sampledb/api/
+    - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/utils.py sampledb/logic/ sampledb/api/ sampledb/models/
 
 documentation:
   stage: test

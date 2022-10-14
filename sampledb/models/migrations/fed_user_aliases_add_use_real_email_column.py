@@ -5,11 +5,13 @@ Add use_real_email column to fed_user_aliases table.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 105
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     user_alias_column_names = db.session.execute(db.text("""
             SELECT column_name

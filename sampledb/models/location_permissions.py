@@ -12,7 +12,7 @@ from .permissions import Permissions
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class UserLocationPermissions(db.Model):
+class UserLocationPermissions(db.Model):  # type: ignore
     __tablename__ = 'user_location_permissions'
 
     location_id = db.Column(db.Integer, db.ForeignKey(Location.id), nullable=False)
@@ -21,11 +21,10 @@ class UserLocationPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(location_id, user_id),
-        {},
     )
 
 
-class GroupLocationPermissions(db.Model):
+class GroupLocationPermissions(db.Model):  # type: ignore
     __tablename__ = 'group_location_permissions'
 
     location_id = db.Column(db.Integer, db.ForeignKey(Location.id), nullable=False)
@@ -34,11 +33,10 @@ class GroupLocationPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(location_id, group_id),
-        {},
     )
 
 
-class ProjectLocationPermissions(db.Model):
+class ProjectLocationPermissions(db.Model):  # type: ignore
     __tablename__ = 'project_location_permissions'
 
     location_id = db.Column(db.Integer, db.ForeignKey(Location.id), nullable=False)
@@ -47,11 +45,10 @@ class ProjectLocationPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(location_id, project_id),
-        {},
     )
 
 
-class AllUserLocationPermissions(db.Model):
+class AllUserLocationPermissions(db.Model):  # type: ignore
     __tablename__ = 'all_user_location_permissions'
 
     location_id = db.Column(db.Integer, db.ForeignKey(Location.id), primary_key=True)

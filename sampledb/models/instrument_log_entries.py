@@ -36,7 +36,7 @@ class InstrumentLogCategoryTheme(enum.Enum):
     RED = 4
 
 
-class InstrumentLogCategory(db.Model):
+class InstrumentLogCategory(db.Model):  # type: ignore
     __tablename__ = 'instrument_log_categories'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,16 +44,21 @@ class InstrumentLogCategory(db.Model):
     title = db.Column(db.String, nullable=False)
     theme = db.Column(db.Enum(InstrumentLogCategoryTheme), nullable=False)
 
-    def __init__(self, instrument_id: int, title: str, theme: InstrumentLogCategoryTheme):
+    def __init__(
+            self,
+            instrument_id: int,
+            title: str,
+            theme: InstrumentLogCategoryTheme
+    ) -> None:
         self.instrument_id = instrument_id
         self.title = title
         self.theme = theme
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, instrument_id={self.instrument_id}, title="{self.title}", theme={self.theme.name.lower()})>'
 
 
-class InstrumentLogEntry(db.Model):
+class InstrumentLogEntry(db.Model):  # type: ignore
     __tablename__ = 'instrument_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -65,15 +70,15 @@ class InstrumentLogEntry(db.Model):
             self,
             instrument_id: int,
             user_id: int
-    ):
+    ) -> None:
         self.instrument_id = instrument_id
         self.user_id = user_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, instrument_id={1.instrument_id}, user_id={1.user_id})>'.format(type(self).__name__, self)
 
 
-class InstrumentLogEntryVersion(db.Model):
+class InstrumentLogEntryVersion(db.Model):  # type: ignore
     __tablename__ = 'instrument_log_entry_versions'
 
     log_entry_id = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), primary_key=True)
@@ -93,7 +98,7 @@ class InstrumentLogEntryVersion(db.Model):
             utc_datetime: typing.Optional[datetime.datetime] = None,
             content_is_markdown: bool = False,
             event_utc_datetime: typing.Optional[datetime.datetime] = None
-    ):
+    ) -> None:
         self.log_entry_id = log_entry_id
         self.version_id = version_id
         self.content = content
@@ -103,11 +108,11 @@ class InstrumentLogEntryVersion(db.Model):
         self.content_is_markdown = content_is_markdown
         self.event_utc_datetime = event_utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(log_entry_id={1.log_entry_id}, version_id={1.version_id},  utc_datetime={1.utc_datetime}, content="{1.content}")>'.format(type(self).__name__, self)
 
 
-class InstrumentLogFileAttachment(db.Model):
+class InstrumentLogFileAttachment(db.Model):  # type: ignore
     __tablename__ = 'instrument_log_file_attachments'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -116,16 +121,21 @@ class InstrumentLogFileAttachment(db.Model):
     content = db.Column(db.LargeBinary, nullable=False)
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
 
-    def __init__(self, log_entry_id: int, file_name: str, content: bytes):
+    def __init__(
+            self,
+            log_entry_id: int,
+            file_name: str,
+            content: bytes
+    ) -> None:
         self.log_entry_id = log_entry_id
         self.file_name = file_name
         self.content = content
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, log_entry_id={1.log_entry_id}, file_name="{1.file_name}")>'.format(type(self).__name__, self)
 
 
-class InstrumentLogObjectAttachment(db.Model):
+class InstrumentLogObjectAttachment(db.Model):  # type: ignore
     __tablename__ = 'instrument_log_object_attachments'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -133,9 +143,13 @@ class InstrumentLogObjectAttachment(db.Model):
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
 
-    def __init__(self, log_entry_id: int, object_id: int):
+    def __init__(
+            self,
+            log_entry_id: int,
+            object_id: int
+    ) -> None:
         self.log_entry_id = log_entry_id
         self.object_id = object_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, log_entry_id={1.log_entry_id}, object_id={1.object_id})>'.format(type(self).__name__, self)

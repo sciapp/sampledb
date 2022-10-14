@@ -17,7 +17,7 @@ class UserType(enum.Enum):
     FEDERATION_USER = 3
 
 
-class User(db.Model):
+class User(db.Model):  # type: ignore
     __tablename__ = 'users'
     __table_args__ = (
         db.CheckConstraint(
@@ -44,9 +44,22 @@ class User(db.Model):
     last_modified = db.Column(db.DateTime, nullable=False)
     component = db.relationship('Component')
     last_modified_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    # TODO: migration
 
-    def __init__(self, name, email, type, orcid: typing.Optional[str] = None, affiliation: typing.Optional[str] = None, role: typing.Optional[str] = None, extra_fields: typing.Optional[dict] = {}, fed_id: typing.Optional[int] = None, component_id: typing.Optional[int] = None, last_modified: typing.Optional[datetime] = None):
+    def __init__(
+            self,
+            name: typing.Optional[str],
+            email: typing.Optional[str],
+            type: UserType,
+            orcid: typing.Optional[str] = None,
+            affiliation: typing.Optional[str] = None,
+            role: typing.Optional[str] = None,
+            extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None,
+            last_modified: typing.Optional[datetime] = None
+    ) -> None:
+        if extra_fields is None:
+            extra_fields = {}
         self.name = name
         self.email = email
         self.type = type
@@ -61,9 +74,9 @@ class User(db.Model):
         else:
             self.last_modified = last_modified
 
-    def __eq__(self, other):
-        try:
-            return (
+    def __eq__(self, other: typing.Any) -> bool:
+        if isinstance(other, User):
+            return bool(
                 self.id == other.id and
                 self.name == other.name and
                 self.email == other.email and
@@ -77,14 +90,13 @@ class User(db.Model):
                 self.fed_id == other.fed_id and
                 self.component_id == other.component_id
             )
-        except AttributeError:
-            return False
+        return NotImplemented
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, name={1.name})>'.format(type(self).__name__, self)
 
 
-class UserInvitation(db.Model):
+class UserInvitation(db.Model):  # type: ignore
     __tablename__ = 'user_invitations'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -93,7 +105,7 @@ class UserInvitation(db.Model):
     accepted = db.Column(db.Boolean, nullable=False, default=False)
 
 
-class UserFederationAlias(db.Model):
+class UserFederationAlias(db.Model):  # type: ignore
     __tablename__ = 'fed_user_aliases'
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -115,10 +127,26 @@ class UserFederationAlias(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(user_id, component_id),
-        {},
     )
 
-    def __init__(self, user_id: int, component_id: int, name: typing.Optional[str] = None, use_real_name: bool = False, email: typing.Optional[str] = None, use_real_email: bool = False, orcid: typing.Optional[str] = None, use_real_orcid: bool = False, affiliation: typing.Optional[str] = None, use_real_affiliation: bool = False, role: typing.Optional[str] = None, use_real_role: bool = False, extra_fields: typing.Optional[dict] = {}, last_modified: typing.Optional[datetime] = None):
+    def __init__(
+            self,
+            user_id: int,
+            component_id: int,
+            name: typing.Optional[str] = None,
+            use_real_name: bool = False,
+            email: typing.Optional[str] = None,
+            use_real_email: bool = False,
+            orcid: typing.Optional[str] = None,
+            use_real_orcid: bool = False,
+            affiliation: typing.Optional[str] = None,
+            use_real_affiliation: bool = False,
+            role: typing.Optional[str] = None,
+            use_real_role: bool = False,
+            extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+            last_modified: typing.Optional[datetime] = None):
+        if extra_fields is None:
+            extra_fields = {}
         self.user_id = user_id
         self.component_id = component_id
         self.name = name
@@ -137,5 +165,5 @@ class UserFederationAlias(db.Model):
         else:
             self.last_modified = last_modified
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(user_id={1.user_id}, component_id={1.component_id}; name={1.name})>'.format(type(self).__name__, self)

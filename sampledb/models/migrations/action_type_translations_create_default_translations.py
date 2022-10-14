@@ -5,6 +5,8 @@ Create default action type translations.
 
 import os
 
+import flask_sqlalchemy
+
 from ..actions import ActionType
 from ..languages import Language
 
@@ -12,7 +14,7 @@ MIGRATION_INDEX = 52
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     action_type_columns = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns

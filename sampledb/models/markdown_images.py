@@ -11,7 +11,7 @@ from .components import Component
 from .users import User
 
 
-class MarkdownImage(db.Model):
+class MarkdownImage(db.Model):  # type: ignore
     __tablename__ = 'markdown_images'
     __table_args__ = (
         db.UniqueConstraint('file_name', 'component_id', name='markdown_images_file_name_component_id_key'),
@@ -25,7 +25,15 @@ class MarkdownImage(db.Model):
     permanent = db.Column(db.Boolean, nullable=False, default=False)
     component_id = db.Column(db.Integer, db.ForeignKey(Component.id), nullable=True)
 
-    def __init__(self, file_name: str, content: bytes, user_id: typing.Optional[int], utc_datetime: typing.Optional[datetime.datetime] = None, permanent: typing.Optional[bool] = False, component_id: typing.Optional[int] = None):
+    def __init__(
+            self,
+            file_name: str,
+            content: bytes,
+            user_id: typing.Optional[int],
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            permanent: typing.Optional[bool] = False,
+            component_id: typing.Optional[int] = None
+    ) -> None:
         self.file_name = file_name
         self.content = content
         self.user_id = user_id

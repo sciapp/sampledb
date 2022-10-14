@@ -24,7 +24,7 @@ class SciCatExportType(enum.Enum):
     SAMPLE = 2
 
 
-class ActionType(db.Model):
+class ActionType(db.Model):  # type: ignore
     __tablename__ = 'action_types'
     __table_args__ = (
         db.UniqueConstraint('fed_id', 'component_id', name='action_types_fed_id_component_id_key'),
@@ -62,7 +62,7 @@ class ActionType(db.Model):
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
     translations = db.relationship('ActionTypeTranslation')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
 
     @property
@@ -114,7 +114,7 @@ class ActionType(db.Model):
         }
 
 
-class Action(db.Model):
+class Action(db.Model):  # type: ignore
     __tablename__ = 'actions'
     __table_args__ = (
         db.CheckConstraint(
@@ -155,8 +155,7 @@ class Action(db.Model):
             component_id: typing.Optional[int] = None,
             admin_only: bool = False,
             disable_create_objects: bool = False
-    ):
-
+    ) -> None:
         self.type_id = action_type_id
         self.instrument_id = instrument_id
         self.schema = schema
@@ -169,20 +168,22 @@ class Action(db.Model):
         self.admin_only = admin_only
         self.disable_create_objects = disable_create_objects
 
-    def __eq__(self, other):
-        return (
-            self.id == other.id and
-            self.instrument_id == other.instrument_id and
-            self.user_id == other.user_id and
-            self.description_is_markdown == other.description_is_markdown and
-            self.short_description_is_markdown == other.short_description_is_markdown and
-            self.is_hidden == other.is_hidden and
-            self.schema == other.schema and
-            self.fed_id == other.fed_id and
-            self.component_id == other.component_id
-        )
+    def __eq__(self, other: typing.Any) -> bool:
+        if isinstance(Action, other):
+            return bool(
+                self.id == other.id and
+                self.instrument_id == other.instrument_id and
+                self.user_id == other.user_id and
+                self.description_is_markdown == other.description_is_markdown and
+                self.short_description_is_markdown == other.short_description_is_markdown and
+                self.is_hidden == other.is_hidden and
+                self.schema == other.schema and
+                self.fed_id == other.fed_id and
+                self.component_id == other.component_id
+            )
+        return NotImplemented
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
 
     @property

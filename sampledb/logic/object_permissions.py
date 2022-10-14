@@ -350,7 +350,7 @@ def get_objects_with_permissions(
     else:
         action_filter = None
 
-    parameters = {
+    parameters: typing.Dict[str, typing.Any] = {
         'min_permissions_int': permissions.value,
         'user_id': user_id
     }

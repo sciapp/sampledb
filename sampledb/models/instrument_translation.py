@@ -2,13 +2,14 @@
 """
 
 """
+import typing
 
 from .. import db
 
 __author__ = 'Du Kim Nguyen <k.nguyen@fz-juelich.de>'
 
 
-class InstrumentTranslation(db.Model):
+class InstrumentTranslation(db.Model):  # type: ignore
     __tablename__ = 'instrument_translations'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -39,7 +40,7 @@ class InstrumentTranslation(db.Model):
             description: str = '',
             notes: str = '',
             short_description: str = ''
-    ):
+    ) -> None:
         self.instrument_id = instrument_id
         self.language_id = language_id
         self.name = name
@@ -47,16 +48,18 @@ class InstrumentTranslation(db.Model):
         self.notes = notes
         self.short_description = short_description
 
-    def __eq__(self, other):
-        return (
-            self.id == other.id and
-            self.language_id == other.language_id and
-            self.instrument_id == other.instrument_id and
-            self.name == other.name and
-            self.description == other.description and
-            self.notes == other.notes and
-            self.short_description == other.short_description
-        )
+    def __eq__(self, other: typing.Any) -> bool:
+        if isinstance(other, InstrumentTranslation):
+            return bool(
+                self.id == other.id and
+                self.language_id == other.language_id and
+                self.instrument_id == other.instrument_id and
+                self.name == other.name and
+                self.description == other.description and
+                self.notes == other.notes and
+                self.short_description == other.short_description
+            )
+        return NotImplemented
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, name={1.language_id})>'.format(type(self).__name__, self)

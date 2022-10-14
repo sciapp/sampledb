@@ -4,6 +4,9 @@ Create default action types.
 """
 
 import os
+import typing
+
+import flask_sqlalchemy
 
 from ..actions import ActionType
 
@@ -11,7 +14,7 @@ MIGRATION_INDEX = 30
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     action_type_columns = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
@@ -166,8 +169,10 @@ def run(db):
         ]
 
         for action_type in default_action_types:
+            action_type_id: int = typing.cast(int, action_type['id'])
+
             # Skip migration by condition
-            if action_type['id'] in existing_action_type_ids:
+            if action_type_id in existing_action_type_ids:
                 continue
 
             # Perform migration
@@ -177,14 +182,14 @@ def run(db):
                       """), params=action_type)
             performed_migration = True
 
-            if action_type['id'] in scicat_export_types:
+            if action_type_id in scicat_export_types:
                 db.session.execute(db.text("""
                     UPDATE action_types
                     SET scicat_export_type = :export_type
                     WHERE id = :id
                 """), {
-                    "id": action_type['id'],
-                    "export_type": scicat_export_types[action_type['id']]
+                    "id": action_type_id,
+                    "export_type": scicat_export_types[action_type_id]
                 })
 
         return performed_migration

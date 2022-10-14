@@ -33,7 +33,7 @@ class HTTPMethod(enum.Enum):
         return HTTPMethod.OTHER
 
 
-class APILogEntry(db.Model):
+class APILogEntry(db.Model):  # type: ignore
     __tablename__ = 'api_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)

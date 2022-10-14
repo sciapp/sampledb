@@ -5,11 +5,13 @@ Add fed_object_id, fed_version_id and component_id columns to objects_current ta
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 71
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     column_names = db.session.execute(db.text("""
         SELECT column_name

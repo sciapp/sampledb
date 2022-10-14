@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .files import File
 from .. import db
@@ -21,7 +22,7 @@ class FedUserLogEntryType(enum.Enum):
     CREATE_REF_USER = 6
 
 
-class FedUserLogEntry(db.Model):
+class FedUserLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_user_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -31,7 +32,14 @@ class FedUserLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedUserLogEntryType, user_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedUserLogEntryType,
+            user_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.user_id = user_id
         self.component_id = component_id
@@ -40,7 +48,7 @@ class FedUserLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
 
 
@@ -55,7 +63,7 @@ class FedObjectLogEntryType(enum.Enum):
     CREATE_REF_OBJECT = 6
 
 
-class FedObjectLogEntry(db.Model):
+class FedObjectLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_object_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -65,7 +73,14 @@ class FedObjectLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedObjectLogEntryType, object_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedObjectLogEntryType,
+            object_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.object_id = object_id
         self.component_id = component_id
@@ -74,7 +89,7 @@ class FedObjectLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, object_id={1.object_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
 
 
@@ -89,7 +104,7 @@ class FedLocationLogEntryType(enum.Enum):
     CREATE_REF_LOCATION = 6
 
 
-class FedLocationLogEntry(db.Model):
+class FedLocationLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_location_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -99,7 +114,14 @@ class FedLocationLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedLocationLogEntryType, location_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedLocationLogEntryType,
+            location_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.location_id = location_id
         self.component_id = component_id
@@ -108,7 +130,7 @@ class FedLocationLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, location_id={1.location_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
             type(self).__name__, self)
 
@@ -124,7 +146,7 @@ class FedLocationTypeLogEntryType(enum.Enum):
     CREATE_REF_LOCATION_TYPE = 6
 
 
-class FedLocationTypeLogEntry(db.Model):
+class FedLocationTypeLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_location_type_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -134,7 +156,14 @@ class FedLocationTypeLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedLocationTypeLogEntryType, location_type_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedLocationTypeLogEntryType,
+            location_type_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.location_type_id = location_type_id
         self.component_id = component_id
@@ -143,7 +172,7 @@ class FedLocationTypeLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, location_type_id={1.location_type_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
 
 
@@ -158,7 +187,7 @@ class FedActionLogEntryType(enum.Enum):
     CREATE_REF_ACTION = 6
 
 
-class FedActionLogEntry(db.Model):
+class FedActionLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_action_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -168,7 +197,14 @@ class FedActionLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedActionLogEntryType, action_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedActionLogEntryType,
+            action_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.action_id = action_id
         self.component_id = component_id
@@ -177,7 +213,7 @@ class FedActionLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, action_id={1.action_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
             type(self).__name__, self)
 
@@ -193,7 +229,7 @@ class FedActionTypeLogEntryType(enum.Enum):
     CREATE_REF_ACTION_TYPE = 6
 
 
-class FedActionTypeLogEntry(db.Model):
+class FedActionTypeLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_action_type_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -203,7 +239,14 @@ class FedActionTypeLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedActionTypeLogEntryType, action_type_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedActionTypeLogEntryType,
+            action_type_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.action_type_id = action_type_id
         self.component_id = component_id
@@ -212,7 +255,7 @@ class FedActionTypeLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, action_type_id={1.action_type_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
             type(self).__name__, self)
 
@@ -228,7 +271,7 @@ class FedInstrumentLogEntryType(enum.Enum):
     CREATE_REF_INSTRUMENT = 6
 
 
-class FedInstrumentLogEntry(db.Model):
+class FedInstrumentLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_instrument_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -238,7 +281,14 @@ class FedInstrumentLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedInstrumentLogEntryType, instrument_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedInstrumentLogEntryType,
+            instrument_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.instrument_id = instrument_id
         self.component_id = component_id
@@ -247,7 +297,7 @@ class FedInstrumentLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, instrument_id={1.instrument_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
             type(self).__name__, self)
 
@@ -263,7 +313,7 @@ class FedCommentLogEntryType(enum.Enum):
     CREATE_REF_COMMENT = 6
 
 
-class FedCommentLogEntry(db.Model):
+class FedCommentLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_comment_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -273,7 +323,14 @@ class FedCommentLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedCommentLogEntryType, comment_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedCommentLogEntryType,
+            comment_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.comment_id = comment_id
         self.component_id = component_id
@@ -282,7 +339,7 @@ class FedCommentLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, comment_id={1.comment_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
             type(self).__name__, self)
 
@@ -298,7 +355,7 @@ class FedFileLogEntryType(enum.Enum):
     CREATE_REF_FILE = 6
 
 
-class FedFileLogEntry(db.Model):
+class FedFileLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_file_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -309,9 +366,19 @@ class FedFileLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    __table_args__ = (db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]), {})
+    __table_args__ = (
+        db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]),
+    )
 
-    def __init__(self, type: FedFileLogEntryType, object_id: int, file_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedFileLogEntryType,
+            object_id: int,
+            file_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.object_id = object_id
         self.file_id = file_id
@@ -321,7 +388,7 @@ class FedFileLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, file_id={1.file_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
             type(self).__name__, self)
 
@@ -337,7 +404,7 @@ class FedObjectLocationAssignmentLogEntryType(enum.Enum):
     CREATE_REF_OBJECT_LOCATION_ASSIGNMENT = 6
 
 
-class FedObjectLocationAssignmentLogEntry(db.Model):
+class FedObjectLocationAssignmentLogEntry(db.Model):  # type: ignore
     __tablename__ = 'fed_object_location_assignment_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -347,7 +414,14 @@ class FedObjectLocationAssignmentLogEntry(db.Model):
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, type: FedObjectLocationAssignmentLogEntryType, object_location_assignment_id: int, component_id: int, data: dict, utc_datetime=None):
+    def __init__(
+            self,
+            type: FedObjectLocationAssignmentLogEntryType,
+            object_location_assignment_id: int,
+            component_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.object_location_assignment_id = object_location_assignment_id
         self.component_id = component_id
@@ -356,5 +430,5 @@ class FedObjectLocationAssignmentLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, object_location_assignment_id={1.object_location_assignment_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

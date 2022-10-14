@@ -17,7 +17,7 @@ instrument_user_association_table = db.Table(
 )
 
 
-class Instrument(db.Model):
+class Instrument(db.Model):  # type: ignore
     __tablename__ = 'instruments'
     __table_args__ = (
         db.UniqueConstraint('fed_id', 'component_id', name='instruments_fed_id_component_id_key'),
@@ -48,7 +48,7 @@ class Instrument(db.Model):
             is_hidden: bool = False,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
-    ):
+    ) -> None:
         self.description_is_markdown = description_is_markdown
         self.short_description_is_markdown = short_description_is_markdown
         self.notes_is_markdown = notes_is_markdown
@@ -59,22 +59,24 @@ class Instrument(db.Model):
         self.fed_id = fed_id
         self.component_id = component_id
 
-    def __eq__(self, other):
-        return (
-            self.id == other.id and
-            self.description_is_markdown == other.description_is_markdown and
-            self.short_description_is_markdown == other.short_description_is_markdown and
-            self.notes_is_markdown == other.notes_is_markdown and
-            self.users_can_create_log_entries == other.users_can_create_log_entries and
-            self.users_can_view_log_entries == other.users_can_view_log_entries and
-            self.create_log_entry_default == other.create_log_entry_default and
-            self.is_hidden == other.is_hidden and
-            self.responsible_users == other.responsible_users and
-            self.fed_id == other.fed_id and
-            self.component_id == other.component_id
-        )
+    def __eq__(self, other: typing.Any) -> bool:
+        if isinstance(other, Instrument):
+            return bool(
+                self.id == other.id and
+                self.description_is_markdown == other.description_is_markdown and
+                self.short_description_is_markdown == other.short_description_is_markdown and
+                self.notes_is_markdown == other.notes_is_markdown and
+                self.users_can_create_log_entries == other.users_can_create_log_entries and
+                self.users_can_view_log_entries == other.users_can_view_log_entries and
+                self.create_log_entry_default == other.create_log_entry_default and
+                self.is_hidden == other.is_hidden and
+                self.responsible_users == other.responsible_users and
+                self.fed_id == other.fed_id and
+                self.component_id == other.component_id
+            )
+        return NotImplemented
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
 
     @property

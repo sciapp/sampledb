@@ -6,11 +6,13 @@ location permissions yet.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 99
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     existing_permissions = db.session.execute(db.text("""
         SELECT 1 FROM all_user_location_permissions

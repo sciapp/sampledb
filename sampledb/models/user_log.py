@@ -32,7 +32,7 @@ class UserLogEntryType(enum.Enum):
     CREATE_INSTRUMENT_LOG_ENTRY = 15
 
 
-class UserLogEntry(db.Model):
+class UserLogEntry(db.Model):  # type: ignore
     __tablename__ = 'user_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)

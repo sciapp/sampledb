@@ -19,14 +19,18 @@ class Permissions(enum.Enum):
     def __contains__(self, item: 'Permissions') -> bool:
         return self.value >= item.value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name.lower()
 
-    def __le__(self, other):
-        return self.value <= other.value
+    def __le__(self, other: 'Permissions') -> bool:
+        if isinstance(other, Permissions):
+            return self.value <= other.value
+        return NotImplemented
 
-    def __lt__(self, other):
-        return self.value < other.value
+    def __lt__(self, other: 'Permissions') -> bool:
+        if isinstance(other, Permissions):
+            return self.value < other.value
+        return NotImplemented
 
     @staticmethod
     def from_name(
