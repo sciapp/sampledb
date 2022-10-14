@@ -42,7 +42,7 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
 }
 
 
-def use_environment_configuration(env_prefix):
+def use_environment_configuration(env_prefix: str) -> None:
     """
     Uses configuration data from environment variables with a given prefix by setting the config modules variables.
     """
@@ -102,7 +102,7 @@ def check_config(
     show_config_info = False
     can_run = True
 
-    internal_config = {}
+    internal_config: typing.Dict[str, typing.Any] = {}
 
     missing_config_keys = REQUIRED_CONFIG_KEYS - defined_config_keys
 
@@ -516,7 +516,7 @@ SCICAT_EXTRA_PID_PREFIX = ''
 
 DOWNLOAD_SERVICE_URL = None
 DOWNLOAD_SERVICE_SECRET = None
-DOWNLOAD_SERVICE_WHITELIST = {}
+DOWNLOAD_SERVICE_WHITELIST: typing.Dict[str, typing.List[int]] = {}
 DOWNLOAD_SERVICE_TIME_LIMIT = 24 * 60 * 60
 
 # PDF export settings
@@ -551,7 +551,7 @@ ENFORCE_SPLIT_NAMES = False
 BUILD_TRANSLATIONS = True
 PYBABEL_PATH = 'pybabel'
 
-EXTRA_USER_FIELDS = {}
+EXTRA_USER_FIELDS: typing.Dict[str, typing.Dict[str, typing.Dict[str, str]]] = {}
 
 SHOW_PREVIEW_WARNING = False
 

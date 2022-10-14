@@ -3,6 +3,7 @@ import os
 import signal
 import subprocess
 import sys
+import typing
 
 import flask
 from flask_babel import Babel
@@ -29,10 +30,10 @@ import sampledb.models.migrations
 import sampledb.config
 
 
-@babel.localeselector
-def set_locale():
+@babel.localeselector  # type: ignore
+def set_locale() -> str:
     if hasattr(flask.g, 'override_locale') and flask.g.override_locale in sampledb.logic.locale.get_allowed_language_codes():
-        return flask.g.override_locale
+        return typing.cast(str, flask.g.override_locale)
 
     request_locale = sampledb.logic.locale.guess_request_locale()
 
@@ -45,38 +46,38 @@ def set_locale():
 
     stored_locale = sampledb.logic.settings.get_user_settings(current_user.id)['LOCALE']
     if stored_locale in sampledb.logic.locale.get_allowed_language_codes():
-        return stored_locale
+        return typing.cast(str, stored_locale)
 
     return request_locale
 
 
-@babel.timezoneselector
-def set_timezone():
+@babel.timezoneselector  # type: ignore
+def set_timezone() -> typing.Optional[str]:
     if flask.current_app.config['TIMEZONE']:
-        return flask.current_app.config['TIMEZONE']
+        return typing.cast(typing.Optional[str], flask.current_app.config['TIMEZONE'])
     if current_user.is_authenticated:
         settings = sampledb.logic.settings.get_user_settings(current_user.id)
         if settings['AUTO_TZ']:
-            return flask.request.args.get('timezone', settings['TIMEZONE'])
-        return settings['TIMEZONE']
+            return typing.cast(typing.Optional[str], flask.request.args.get('timezone', settings['TIMEZONE']))
+        return typing.cast(typing.Optional[str], settings['TIMEZONE'])
     return flask.request.args.get('timezone', None)
 
 
-def setup_database(app):
+def setup_database(app: flask.Flask) -> None:
     with app.app_context():
         db.metadata.create_all(bind=db.engine)
         sampledb.models.Objects.bind = db.engine
         sampledb.models.migrations.run(db)
 
 
-def setup_admin_account_from_config(app):
+def setup_admin_account_from_config(app: flask.Flask) -> None:
     with app.app_context():
         if 'ADMIN_INFO' in app.config['internal'] and not sampledb.logic.users.get_users(exclude_hidden=False):
             admin_username, admin_email, admin_password = app.config['internal']['ADMIN_INFO']
             admin_user = sampledb.logic.users.create_user(
                 admin_username,
                 admin_email,
-                sampledb.logic.users.UserType.PERSON
+                sampledb.models.users.UserType.PERSON
             )
             sampledb.logic.authentication.add_other_authentication(
                 admin_user.id,
@@ -87,7 +88,7 @@ def setup_admin_account_from_config(app):
             sampledb.logic.users.set_user_administrator(admin_user.id, True)
 
 
-def setup_jinja_environment(app):
+def setup_jinja_environment(app: flask.Flask) -> None:
     with app.app_context():
         is_ldap_configured = sampledb.logic.ldap.is_ldap_configured()
 
@@ -124,11 +125,11 @@ def setup_jinja_environment(app):
         NotificationType=sampledb.models.NotificationType,
         get_user=sampledb.logic.users.get_user,
     )
-    app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)
-    app.jinja_env.globals.update(sampledb.frontend.utils.jinja_function.functions)
+    app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)  # type: ignore
+    app.jinja_env.globals.update(sampledb.frontend.utils.jinja_function.functions)  # type: ignore
 
 
-def build_translations(pybabel_path):
+def build_translations(pybabel_path: str) -> None:
     translations_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), 'translations'))
     # merge extracted and manual message catalogs
     for translation_directory in os.listdir(translations_directory):
@@ -138,20 +139,20 @@ def build_translations(pybabel_path):
         merged_message_catalog_path = os.path.join(translation_directory, 'LC_MESSAGES', 'messages.po')
         if os.path.isfile(extracted_message_catalog_path) and os.path.isfile(manual_message_catalog_path):
             # manually merge instead of using msgcat to avoid duplicate headers
-            with open(extracted_message_catalog_path, 'r', encoding='utf-8') as extracted_message_catalog:
-                extracted_message_catalog = extracted_message_catalog.read()
-            with open(manual_message_catalog_path, 'r', encoding='utf-8') as manual_message_catalog:
-                manual_message_catalog = manual_message_catalog.read()
-            with open(merged_message_catalog_path, 'w', encoding='utf-8') as merged_message_catalog:
-                merged_message_catalog.write(extracted_message_catalog)
-                merged_message_catalog.write(manual_message_catalog)
+            with open(extracted_message_catalog_path, 'r', encoding='utf-8') as extracted_message_catalog_file:
+                extracted_message_catalog = extracted_message_catalog_file.read()
+            with open(manual_message_catalog_path, 'r', encoding='utf-8') as manual_message_catalog_file:
+                manual_message_catalog = manual_message_catalog_file.read()
+            with open(merged_message_catalog_path, 'w', encoding='utf-8') as merged_message_catalog_file:
+                merged_message_catalog_file.write(extracted_message_catalog)
+                merged_message_catalog_file.write(manual_message_catalog)
     # compile messages
     subprocess.run([pybabel_path, "compile", "-d", translations_directory], check=True)
 
 
 def create_app(include_dashboard: bool = True) -> flask.Flask:
     app = flask.Flask(__name__)
-    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore
 
     app.config.from_object(sampledb.config)
 
@@ -160,7 +161,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     login_manager.init_app(app)
     mail.init_app(app)
-    db.init_app(app)
+    db.init_app(app)  # type: ignore
     babel.init_app(app)
     if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
         sampledb.dashboard.init_app(app)
@@ -177,14 +178,14 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     def custom_send_static_file(filename: str) -> flask.Response:
         response = flask.make_response(
-            flask.send_from_directory(app.static_folder, filename)
+            flask.send_from_directory(app.static_folder, filename)  # type: ignore
         )
         if 'v' in flask.request.args:
             # fingerprinted URLs for static files can be cached as immutable
             response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
         return response
 
-    app.send_static_file = custom_send_static_file
+    app.send_static_file = custom_send_static_file  # type: ignore
 
     setup_database(app)
     setup_admin_account_from_config(app)
@@ -203,7 +204,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     if app.config['ENABLE_BACKGROUND_TASKS']:
         sampledb.logic.background_tasks.start_handler_threads(app)
 
-    def signal_handler(sig, _):
+    def signal_handler(sig: int, _: typing.Any) -> None:
         if sig == signal.SIGTERM:
             if app.config['ENABLE_BACKGROUND_TASKS']:
                 sampledb.logic.background_tasks.stop_handler_threads(app)

@@ -12,6 +12,7 @@ is used.
 import functools
 import os
 import secrets
+import typing
 
 import flask
 import flask_login
@@ -19,43 +20,45 @@ import werkzeug.exceptions
 
 from . import version
 
+F = typing.TypeVar('F', bound=typing.Callable[..., typing.Any])
 
-def _secure(func):
-    @flask_login.login_required
+
+def _secure(func: F) -> F:
+    @flask_login.login_required  # type: ignore
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         if not _is_admin():
             return flask.abort(403)
         return func(*args, **kwargs)
-    return wrapper
+    return typing.cast(F, wrapper)
 
 
-def _is_admin():
-    return flask_login.current_user.is_authenticated and flask_login.current_user.is_admin
+def _is_admin() -> bool:
+    return bool(flask_login.current_user.is_authenticated and flask_login.current_user.is_admin)
 
 
-def _on_login(user):
+def _on_login(user: typing.Any) -> None:
     if not _is_admin():
         # login via dashboard is disabled
         raise werkzeug.exceptions.Forbidden()
 
 
-def _on_logout():
+def _on_logout() -> werkzeug.Response:
     flask_login.logout_user()
     return flask.redirect(flask.url_for('frontend.index'))
 
 
-def _get_current_user_id():
+def _get_current_user_id() -> typing.Optional[int]:
     if flask_login.current_user.is_authenticated:
-        return flask_login.current_user.get_id()
+        return typing.cast(int, flask_login.current_user.get_id())
     return None
 
 
-def _get_ip():
+def _get_ip() -> str:
     return flask.request.headers.get('X-Forwarded-For', flask.request.environ['REMOTE_ADDR'])
 
 
-def init_app(app):
+def init_app(app: flask.Flask) -> None:
     # late import to only create dashboard Blueprint if it should be used
     try:
         import flask_monitoringdashboard as dashboard
