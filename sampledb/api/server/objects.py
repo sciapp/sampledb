@@ -39,7 +39,7 @@ class ObjectVersion(Resource):
             'version_id': object.version_id,
             'action_id': object.action_id,
             'user_id': object.user_id,
-            'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime else None,
             'schema': object.schema,
             'data': object.data,
             'fed_object_id': object.fed_object_id,
@@ -49,21 +49,24 @@ class ObjectVersion(Resource):
         embed_action = bool(flask.request.args.get('embed_action'))
         if embed_action:
             object_version_json['action'] = None
-            try:
-                if Permissions.READ in get_user_action_permissions(action_id=object.action_id, user_id=flask.g.user.id):
-                    action = get_action(
-                        action_id=object.action_id
-                    )
-                    object_version_json['action'] = action_to_json(action)
-            except errors.ActionDoesNotExistError:
-                pass
+            if object.action_id is not None:
+                try:
+                    if Permissions.READ in get_user_action_permissions(action_id=object.action_id, user_id=flask.g.user.id):
+                        action = get_action(
+                            action_id=object.action_id
+                        )
+                        object_version_json['action'] = action_to_json(action)
+                except errors.ActionDoesNotExistError:
+                    pass
         embed_user = bool(flask.request.args.get('embed_user'))
         if embed_user:
-            try:
-                user = users.get_user(object.user_id)
-                object_version_json['user'] = user_to_json(user)
-            except errors.UserDoesNotExistError:
-                object_version_json['user'] = None
+            object_version_json['user'] = None
+            if object.user_id is not None:
+                try:
+                    user = users.get_user(object.user_id)
+                    object_version_json['user'] = user_to_json(user)
+                except errors.UserDoesNotExistError:
+                    pass
         return object_version_json
 
 
@@ -81,6 +84,10 @@ class ObjectVersions(Resource):
                     "message": "invalid key '{}'".format(key)
                 }, 400
         object = get_object(object_id=object_id)
+        if object.action_id is None:
+            return {
+                "message": "editing this object is not supported"
+            }, 400
         action = get_action(action_id=object.action_id)
         if 'object_id' in request_json:
             if request_json['object_id'] != object.object_id:

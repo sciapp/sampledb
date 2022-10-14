@@ -11,7 +11,7 @@ import requests
 from .objects import get_object
 from .object_permissions import get_user_object_permissions
 from .datatypes import DateTime, Quantity
-from . import settings, users, errors
+from . import settings, users, errors, utils
 from ..models import SciCatExport, SciCatExportType, Permissions
 from .. import db
 
@@ -127,16 +127,10 @@ def _convert_metadata(
     ) -> str:
         object_id = data['object_id']
         if Permissions.READ in get_user_object_permissions(object_id=object_id, user_id=user_id):
-            object_name = get_object(object_id).name
-            if object_name:
-                if isinstance(object_name, dict) and 'en' in object_name:
-                    object_name = object_name['en']
-                else:
-                    object_name = str(object_name)
+            raw_object_name = get_object(object_id).name
         else:
-            object_name = None
-        if not object_name:
-            object_name = f"Object #{object_id}"
+            raw_object_name = None
+        object_name = utils.get_translated_text(raw_object_name, 'en', f"Object #{object_id}")
         sampledb_object_url = flask.url_for(
             'frontend.object',
             object_id=object_id,
@@ -223,14 +217,7 @@ def upload_object(
     pid_uuid = uuid.uuid4()
     pid = f"{pid_prefix}{pid_uuid}"
 
-    object_name = object.name
-    if object_name:
-        if isinstance(object_name, dict) and 'en' in object_name:
-            object_name = object_name['en']
-        else:
-            object_name = str(object_name)
-    if not object_name:
-        object_name = f"Object #{object_id}"
+    object_name = utils.get_translated_text(object.name, 'en', default=f"Object #{object_id}")
 
     if object_export_type in {SciCatExportType.RAW_DATASET, SciCatExportType.DERIVED_DATASET}:
         if object_export_type == SciCatExportType.RAW_DATASET:
@@ -238,19 +225,19 @@ def upload_object(
         else:
             api_endpoint = f'{api_url}/api/v3/DerivedDatasets'
         scicat_url = f'{frontend_url}/datasets/{urllib.parse.quote_plus("PID/" + pid)}'
-        data = {
+        data: typing.Dict[str, typing.Any] = {
             "pid": pid,
             "datasetName": object_name,
             "owner": user.name,
             "ownerEmail": user.email,
             "ownerGroup": owner_group,
             "contactEmail": user.email,
-            "creationTime": original_object_version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            "creationTime": original_object_version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if original_object_version.utc_datetime else None,
             "description": f"Metadata export from {flask.current_app.config['SERVICE_NAME']} object #{object_id}",
             "sourceFolder": "-",
             "version": str(object.version_id),
             "keywords": [],
-            "scientificMetadata": _convert_metadata(object.data, object.schema, property_whitelist, user_id)
+            "scientificMetadata": _convert_metadata(object.data, object.schema, property_whitelist, user_id) if object.data is not None and object.schema is not None else {}
         }
         if object_export_type == SciCatExportType.RAW_DATASET:
             data.update({
@@ -270,7 +257,7 @@ def upload_object(
                 "inputDatasets": input_dataset_pids
             })
 
-        if 'tags' in object.schema['properties'] and object.schema['properties']['tags']['type'] == 'tags' and 'tags' in object.data:
+        if object.schema is not None and object.data is not None and 'tags' in object.schema['properties'] and object.schema['properties']['tags']['type'] == 'tags' and 'tags' in object.data:
             for tag in object.data['tags']['tags']:
                 if tag in tag_whitelist:
                     data['keywords'].append(tag)
@@ -287,7 +274,7 @@ def upload_object(
             "sampleId": object_name + " / " + pid,
             "owner": user.name,
             "description": f"Metadata export from {flask.current_app.config['SERVICE_NAME']} object #{object_id}",
-            "sampleCharacteristics": _convert_metadata(object.data, object.schema, property_whitelist, user_id),
+            "sampleCharacteristics": _convert_metadata(object.data, object.schema, property_whitelist, user_id) if object.data is not None and object.schema is not None else {},
             "ownerGroup": owner_group
         }
 

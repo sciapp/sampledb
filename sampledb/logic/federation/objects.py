@@ -82,7 +82,7 @@ class SharedObjectVersionData(typing.TypedDict):
     user: typing.Optional[UserRef]
     data: typing.Optional[typing.Dict[str, typing.Any]]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
-    utc_datetime: typing.Optional[datetime]
+    utc_datetime: typing.Optional[str]
 
 
 class SharedObjectLocationAssignmentData(typing.TypedDict):
@@ -136,7 +136,8 @@ def import_object(
                 utc_datetime=version['utc_datetime'],
                 allow_disabled_languages=True
             )
-            fed_logs.import_object(object.id, component.id)
+            if object:
+                fed_logs.import_object(object.id, component.id)
         elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
             object = update_object_version(
                 object_id=object.object_id,
@@ -324,7 +325,7 @@ def shared_object_preprocessor(
     object = get_object(object_id)
     object_versions = get_object_versions(object_id)
     if 'access' in policy:
-        if 'action' in policy['access'] and policy['access']['action']:
+        if 'action' in policy['access'] and policy['access']['action'] and object.action_id is not None:
             if ('actions', object.action_id) not in refs:
                 refs.append(('actions', object.action_id))
             action = get_action(object.action_id)
@@ -520,13 +521,13 @@ def shared_object_preprocessor(
         version_schema: typing.Optional[typing.Dict[str, typing.Any]] = None
         version_user: typing.Optional[UserRef] = None
         if policy.get('access', {'data': True}).get('data', True):
-            version_data = version.data.copy()
-            if version_data is not None:
+            if version.data is not None:
+                version_data = version.data.copy()
                 entry_preprocessor(version_data, refs, markdown_images)
-            version_schema = version.schema.copy()
-            if version_schema is not None:
+            if version.schema is not None:
+                version_schema = version.schema.copy()
                 schema_entry_preprocessor(version_schema, refs)
-        if policy.get('access', {}).get('users', False):
+        if policy.get('access', {}).get('users', False) and version.user_id:
             if ('users', version.user_id) not in refs:
                 refs.append(('users', version.user_id))
             user = get_user(version.user_id)
@@ -571,7 +572,7 @@ def shared_object_preprocessor(
             schema=version_schema,
             data=version_data,
             user=version_user,
-            utc_datetime=version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+            utc_datetime=version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if version.utc_datetime else None
         ))
     return result
 

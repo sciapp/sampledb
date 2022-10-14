@@ -44,7 +44,7 @@ def get_export_infos(
         Permissions.READ
     )
     infos = {}
-    object_infos = []
+    object_infos: typing.List[typing.Dict[str, typing.Any]] = []
     for object in objects:
         if object_ids is not None and object.id not in object_ids:
             continue
@@ -69,7 +69,7 @@ def get_export_infos(
                 {
                     'id': object_version.version_id,
                     'user_id': object_version.user_id,
-                    'utc_datetime': object_version.utc_datetime.isoformat(),
+                    'utc_datetime': object_version.utc_datetime.isoformat() if object_version.utc_datetime is not None else None,
                     'schema': object_version.schema,
                     'data': object_version.data
                 }
@@ -78,8 +78,9 @@ def get_export_infos(
             for referenced_user_id, _ in logic.objects.find_user_references(object_version, False):
                 relevant_user_ids.add(referenced_user_id)
 
-            for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_version.data):
-                relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(markdown)))
+            if object_version.data:
+                for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_version.data):
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(markdown)))
 
         for comment in logic.comments.get_comments_for_object(object.id):
             relevant_user_ids.add(comment.user_id)

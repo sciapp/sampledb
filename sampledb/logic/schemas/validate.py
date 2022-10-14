@@ -513,6 +513,8 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
             sample = objects.get_object(object_id=instance['object_id'])
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
+        if sample.action_id is None:
+            raise ValidationError('object must be sample', path)
         action = actions.get_action(sample.action_id)
         if action.component is not None and action.type_id is not None:
             if action.type_id != ActionType.SAMPLE_CREATION:
@@ -555,6 +557,8 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
             measurement = objects.get_object(object_id=instance['object_id'])
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
+        if measurement.action_id is None:
+            raise ValidationError('object must be measurement', path)
         action = actions.get_action(measurement.action_id)
         if action.component is not None and action.type_id is not None:
             if action.type_id != ActionType.MEASUREMENT:
@@ -635,14 +639,19 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 valid_action_ids = [schema['action_id']]
             else:
                 valid_action_ids = schema['action_id']
-            if valid_action_ids is not None and object.action_id not in valid_action_ids:
-                raise ValidationError('object has wrong action', path)
+            if valid_action_ids is not None:
+                if object.action_id is None:
+                    raise ValidationError('object has no action type', path)
+                if object.action_id not in valid_action_ids:
+                    raise ValidationError('object has wrong action', path)
         if 'action_type_id' in schema:
             if type(schema['action_type_id']) == int:
                 valid_action_type_ids = [schema['action_type_id']]
             else:
                 valid_action_type_ids = schema['action_type_id']
             if valid_action_type_ids is not None:
+                if object.action_id is None:
+                    raise ValidationError('object has no action type', path)
                 action = actions.get_action(object.action_id)
                 if action.type is None or (action.type_id not in valid_action_type_ids and not (action.type.fed_id is not None and action.type.fed_id < 0 and action.type.fed_id in valid_action_type_ids)):
                     raise ValidationError('object has wrong action type', path)

@@ -3,7 +3,7 @@
 
 """
 
-import collections
+import dataclasses
 import datetime
 import functools
 import typing
@@ -11,15 +11,85 @@ import typing
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
 
+if typing.TYPE_CHECKING:
+    from ..logic.components import Component
 
-def _use_transaction(func):
+
+F = typing.TypeVar('F', bound=typing.Callable[..., typing.Any])
+
+
+def _use_transaction(func: F) -> F:
     @functools.wraps(func)
-    def wrapped_func(self, *args, connection: typing.Optional[db.engine.Connection] = None, **kwargs):
+    def wrapped_func(
+            self: 'VersionedJSONSerializableObjectTables',
+            *args: typing.Any,
+            connection: typing.Optional[db.engine.Connection] = None,
+            **kwargs: typing.Any
+    ) -> typing.Any:
         if connection is not None:
             return func(self, *args, connection=connection, **kwargs)
+        assert self.bind is not None
         with self.bind.begin() as connection:
             return func(self, *args, connection=connection, **kwargs)
-    return wrapped_func
+    return typing.cast(F, wrapped_func)
+
+
+class DataValidator(typing.Protocol):
+    def __call__(
+        self,
+        instance: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
+        schema: typing.Dict[str, typing.Any],
+        path: typing.Optional[typing.List[str]] = None,
+        allow_disabled_languages: bool = False,
+        strict: bool = False
+    ) -> None:
+        ...
+
+
+class SchemaValidator(typing.Protocol):
+    def __call__(
+        self,
+        schema: typing.Dict[str, typing.Any],
+        path: typing.Optional[typing.List[str]] = None,
+        *,
+        parent_conditions: typing.Optional[typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]]] = None,
+        invalid_template_action_ids: typing.Sequence[int] = (),
+        strict: bool = False
+    ) -> None:
+        ...
+
+
+@dataclasses.dataclass
+class Object:
+    object_id: int
+    version_id: int
+    action_id: typing.Optional[int]
+    data: typing.Optional[typing.Dict[str, typing.Any]]
+    schema: typing.Optional[typing.Dict[str, typing.Any]]
+    user_id: typing.Optional[int]
+    utc_datetime: typing.Optional[datetime.datetime]
+    fed_object_id: typing.Optional[int]
+    fed_version_id: typing.Optional[int]
+    component_id: typing.Optional[int]
+    _component_cache: typing.List[typing.Optional['Component']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
+
+    @property
+    def id(self) -> int:
+        return self.object_id
+
+    @property
+    def name(self) -> typing.Union[str, typing.Dict[str, str]]:
+        if self.data is not None and self.data.get('name') and isinstance(self.data['name'], dict) and self.data['name'].get('text'):
+            return typing.cast(typing.Union[str, typing.Dict[str, str]], self.data['name']['text'])
+        else:
+            return ''
+
+    @property
+    def component(self) -> typing.Optional['Component']:
+        if self.component_id is not None and self._component_cache[0] is None:
+            from ..logic.components import get_component
+            self._component_cache[0] = get_component(self.component_id)
+        return self._component_cache[0]
 
 
 class VersionedJSONSerializableObjectTables(object):
@@ -39,53 +109,26 @@ class VersionedJSONSerializableObjectTables(object):
     For information on JSON schemas, see http://json-schema.org/.
     """
 
-    class VersionedJSONSerializableObject(collections.namedtuple(
-            'VersionedJSONSerializableObject',
-            [
-                'object_id',
-                'version_id',
-                'action_id',
-                'data',
-                'schema',
-                'user_id',
-                'utc_datetime',
-                'fed_object_id',
-                'fed_version_id',
-                'component_id'
-            ]
-    )):
-
-        _component = None
-
-        @property
-        def id(self) -> int:
-            return self.object_id
-
-        @property
-        def name(self):
-            if self.data and self.data.get('name') and self.data.get('name').get('text'):
-                return self.data['name']['text']
-            else:
-                return ''
-
-        @property
-        def component(self):
-            if self.component_id is not None and self._component is None:
-                from ..logic.components import get_component
-                self._component = get_component(self.component_id)
-            return self._component
-
-    def __init__(self, table_name_prefix, bind=None, object_type=VersionedJSONSerializableObject, user_id_column=None, action_id_column=None, component_id_column=None, action_schema_column=None, metadata=None, create_object_callbacks=None, data_validator=None, schema_validator=None):
+    def __init__(
+            self,
+            table_name_prefix: str,
+            bind: typing.Optional[db.engine.Engine] = None,
+            user_id_column: typing.Optional[typing.Any] = None,
+            action_id_column: typing.Optional[typing.Any] = None,
+            component_id_column: typing.Optional[typing.Any] = None,
+            action_schema_column: typing.Optional[typing.Any] = None,
+            metadata: typing.Optional[db.MetaData] = None,
+            data_validator: typing.Optional[DataValidator] = None,
+            schema_validator: typing.Optional[SchemaValidator] = None
+    ) -> None:
         """
         Creates new instance for storing versioned, JSON-serializable objects using three tables.
 
         :param table_name_prefix: the prefix used for naming the two used tables
         :param bind: the SQLAlchemy engine used for creating the tables and for future connections
-        :param object_type: the type used for returning objects
         :param user_id_column: a SQLAlchemy column object for use as foreign key for the user ID (optional)
         :param action_id_column: a SQLAlchemy column object for use as foreign key for the action ID (optional)
         :param metadata: an SQLAlchemy MetaData object used for creating the two tables (optional)
-        :param create_object_callbacks: a list of callables which will be called when an object is created (optional)
         :param data_validator: a data validator function (given the data and the schema) (optional)
         :param schema_validator: a schema validator function (given the schema) (optional)
         """
@@ -162,7 +205,6 @@ class VersionedJSONSerializableObjectTables(object):
         self._action_id_column = action_id_column
         self._action_schema_column = action_schema_column
         self._component_id_column = component_id_column
-        self.object_type = object_type
         self.object_id_column = self._current_table.c.object_id
         self.bind = bind
         if self.bind is not None:
@@ -173,17 +215,17 @@ class VersionedJSONSerializableObjectTables(object):
     @_use_transaction
     def create_object(
             self,
-            data: typing.Dict[str, typing.Any],
+            data: typing.Optional[typing.Dict[str, typing.Any]],
             schema: typing.Optional[typing.Dict[str, typing.Any]],
-            user_id: int,
-            action_id: int,
+            user_id: typing.Optional[int],
+            action_id: typing.Optional[int],
             utc_datetime: typing.Optional[datetime.datetime] = None,
             fed_object_id: typing.Optional[int] = None,
             fed_version_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             validate_data: bool = True
-    ) -> VersionedJSONSerializableObject:
+    ) -> Object:
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
 
@@ -199,11 +241,10 @@ class VersionedJSONSerializableObjectTables(object):
         :param validate_data: whether the data must be validated
         :return: the newly created object as object_type
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         if utc_datetime is None and fed_object_id is None:
             utc_datetime = datetime.datetime.utcnow()
-        if schema is None and self._action_schema_column is not None:
+        if schema is None and action_id is not None and self._action_schema_column is not None:
             action = connection.execute(
                 db
                 .select(
@@ -219,13 +260,13 @@ class VersionedJSONSerializableObjectTables(object):
             else:
                 schema = action[0]
         if not (schema is None and fed_object_id is not None and fed_version_id is not None):
-            if self._schema_validator:
+            if schema is not None and self._schema_validator:
                 self._schema_validator(schema)
             if not (data is None and fed_object_id is not None and fed_version_id is not None):
-                if self._data_validator and validate_data:
+                if data is not None and schema is not None and self._data_validator and validate_data:
                     self._data_validator(data, schema)
         version_id = 0
-        object_id = connection.execute(
+        object_id = typing.cast(int, connection.execute(
             self._current_table
             .insert()
             .values(
@@ -244,8 +285,8 @@ class VersionedJSONSerializableObjectTables(object):
             .returning(
                 self._current_table.c.object_id
             )
-        ).scalar()
-        obj = self.object_type(
+        ).scalar())
+        obj = Object(
             object_id=object_id,
             version_id=version_id,
             action_id=action_id,
@@ -263,14 +304,14 @@ class VersionedJSONSerializableObjectTables(object):
     def update_object(
             self,
             object_id: int,
-            data: typing.Dict[str, typing.Any],
+            data: typing.Optional[typing.Dict[str, typing.Any]],
             schema: typing.Optional[typing.Dict[str, typing.Any]],
             user_id: int,
             utc_datetime: typing.Optional[datetime.datetime] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             validate_schema: bool = True,
             validate_data: bool = True
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
+    ) -> typing.Optional[Object]:
         """
         Updates an existing object using the given data, user id and datetime.
 
@@ -287,20 +328,19 @@ class VersionedJSONSerializableObjectTables(object):
         :param validate_data: whether the data should be validated
         :return: the updated object as object_type or None, if the object does not exist
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
         if schema is None:
-            schema = connection.execute(
+            schema_row = connection.execute(
                 db.select(self._current_table.c.schema).where(self._current_table.c.object_id == object_id)
             ).fetchone()
-            if schema is None:
+            if schema_row is None:
                 return None
-            schema = schema[0]
-        if validate_schema and self._schema_validator:
+            schema = schema_row[0]
+        if validate_schema and self._schema_validator and schema is not None:
             self._schema_validator(schema)
-        if validate_data and self._data_validator:
+        if validate_data and self._data_validator and schema is not None and data is not None:
             self._data_validator(data, schema)
 
         # Copy current version to previous versions
@@ -354,13 +394,13 @@ class VersionedJSONSerializableObjectTables(object):
             user_id: int,
             utc_datetime: typing.Optional[datetime.datetime] = None,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
+    ) -> typing.Optional[Object]:
         object_version = self.get_object_version(object_id=object_id, version_id=version_id, connection=connection)
         if object_version is None:
             return None
-        if self._schema_validator:
+        if object_version.schema is not None and self._schema_validator:
             self._schema_validator(object_version.schema)
-        if self._data_validator:
+        if object_version.schema is not None and object_version.data is not None and self._data_validator:
             # allow disabled languages, as they were enabled when the version was created
             self._data_validator(object_version.data, object_version.schema, allow_disabled_languages=True)
         return self.update_object(
@@ -379,7 +419,7 @@ class VersionedJSONSerializableObjectTables(object):
             self,
             fed_object_id: int,
             fed_version_id: int,
-            component_id: typing.Optional[int],
+            component_id: int,
             action_id: typing.Optional[int],
             data: typing.Optional[typing.Dict[str, typing.Any]],
             schema: typing.Optional[typing.Dict[str, typing.Any]],
@@ -387,10 +427,8 @@ class VersionedJSONSerializableObjectTables(object):
             utc_datetime: typing.Optional[datetime.datetime],
             connection: typing.Optional[db.engine.Connection] = None,
             allow_disabled_languages: bool = False
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
-        if connection is None:
-            connection = self.bind.connect()
-
+    ) -> typing.Optional[Object]:
+        assert connection is not None  # ensured by decorator
         if schema is None and self._action_schema_column is not None:
             action = connection.execute(
                 db
@@ -419,7 +457,7 @@ class VersionedJSONSerializableObjectTables(object):
         if current is None:
             object = self.create_object(data, schema, user_id, action_id, utc_datetime, fed_object_id, fed_version_id, component_id, connection=connection, validate_data=validate_data)
             return object
-        elif current.fed_version_id < fed_version_id:
+        elif current.fed_version_id is None or current.fed_version_id < fed_version_id:
             # Copy current version to previous versions
             if connection.execute(
                 self._previous_table
@@ -503,7 +541,7 @@ class VersionedJSONSerializableObjectTables(object):
             utc_datetime_subversion: typing.Optional[datetime.datetime] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             allow_disabled_languages: bool = False
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
+    ) -> typing.Optional[Object]:
         """
         Updates an existing object version using the given data, user id and datetime.
 
@@ -521,8 +559,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: the updated object as object_type or None, if the object does not exist
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         if utc_datetime_subversion is None:
             utc_datetime_subversion = datetime.datetime.utcnow()
         if schema is None and self._action_schema_column is not None:
@@ -544,8 +581,7 @@ class VersionedJSONSerializableObjectTables(object):
                 if self._data_validator:
                     self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages)
 
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         previous_objects = connection.execute(
             db
             .select(
@@ -567,7 +603,7 @@ class VersionedJSONSerializableObjectTables(object):
         ).fetchall()
         if previous_objects:
             selected_table = self._previous_table
-            object_data = self.object_type(*previous_objects[0])
+            object_data = Object(*previous_objects[0])
         else:
             current_object = self.get_current_object(object_id, connection=connection)
             if current_object is not None and current_object.version_id == version_id:
@@ -638,8 +674,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: whether the object exists
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         return connection.execute(
             db.select(self._current_table.c.object_id).where(self._current_table.c.object_id == object_id)
         ).fetchone() is not None
@@ -649,7 +684,7 @@ class VersionedJSONSerializableObjectTables(object):
             self,
             object_id: int,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
+    ) -> typing.Optional[Object]:
         """
         Queries and returns an object by its ID.
 
@@ -657,8 +692,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: the object as object_type or None if the object does not exist
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         current_object = connection.execute(
             db
             .select(
@@ -677,7 +711,7 @@ class VersionedJSONSerializableObjectTables(object):
         ).fetchone()
         if current_object is None:
             return None
-        return self.object_type(*current_object)
+        return Object(*current_object)
 
     @_use_transaction
     def get_previous_subversion(
@@ -685,9 +719,8 @@ class VersionedJSONSerializableObjectTables(object):
             object_id: int,
             version_id: int,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
-        if connection is None:
-            connection = self.bind.connect()
+    ) -> typing.Optional[Object]:
+        assert connection is not None  # ensured by decorator
         previous_object_subversion = connection.execute(
             db.select(
                 self._subversions_table.c.object_id,
@@ -711,7 +744,7 @@ class VersionedJSONSerializableObjectTables(object):
         ).first()
         if previous_object_subversion is None:
             return None
-        return self.object_type(*previous_object_subversion)
+        return Object(*previous_object_subversion)
 
     @_use_transaction
     def get_current_fed_object(
@@ -719,11 +752,10 @@ class VersionedJSONSerializableObjectTables(object):
             component_id: int,
             fed_object_id: int,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
+    ) -> typing.Optional[Object]:
         """
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         current_object = connection.execute(
             db
             .select(
@@ -745,7 +777,7 @@ class VersionedJSONSerializableObjectTables(object):
         ).fetchone()
         if current_object is None:
             return None
-        return self.object_type(*current_object)
+        return Object(*current_object)
 
     @_use_transaction
     def get_fed_object_version(
@@ -754,11 +786,10 @@ class VersionedJSONSerializableObjectTables(object):
             fed_object_id: int,
             fed_version_id: int,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> typing.Optional[VersionedJSONSerializableObject]:
+    ) -> typing.Optional[Object]:
         """
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         previous_objects = connection.execute(
             db
             .select(
@@ -780,7 +811,7 @@ class VersionedJSONSerializableObjectTables(object):
             ))
         ).fetchall()
         if previous_objects:
-            return self.object_type(*previous_objects[0])
+            return Object(*previous_objects[0])
         current_object = self.get_current_fed_object(component_id, fed_object_id, connection=connection)
         if current_object is not None and current_object.fed_version_id == fed_version_id:
             return current_object
@@ -799,7 +830,7 @@ class VersionedJSONSerializableObjectTables(object):
             limit: typing.Optional[int] = None,
             offset: typing.Optional[int] = None,
             num_objects_found: typing.Optional[typing.List[int]] = None
-    ) -> typing.Sequence[VersionedJSONSerializableObject]:
+    ) -> typing.List[Object]:
         """
         Queries and returns all objects matching a given filter.
 
@@ -810,8 +841,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param parameters: query parameters for the custom select statement (optional)
         :return: a list of objects as object_type
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
 
         if parameters is None:
             parameters = {}
@@ -854,8 +884,10 @@ class VersionedJSONSerializableObjectTables(object):
         select_statement = select_statement.select_from(selectable)
 
         if sorting_func is None:
-            def sorting_func(current_columns, original_columns):
+            def default_sorting_func(current_columns: typing.Any, original_columns: typing.Any) -> typing.Any:
                 return db.sql.desc(current_columns.object_id)
+
+            sorting_func = default_sorting_func
 
         select_statement = select_statement.where(filter_func(table.c.data))
         select_statement = select_statement.order_by(sorting_func(table.c, self._previous_table.c))
@@ -876,14 +908,14 @@ class VersionedJSONSerializableObjectTables(object):
                 num_objects_found.append(objects[0][-1])
             else:
                 num_objects_found.append(0)
-        return [self.object_type(*obj[:-1]) for obj in objects]
+        return [Object(*obj[:-1]) for obj in objects]
 
     @_use_transaction
     def get_object_versions(
             self,
             object_id: int,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> typing.List[VersionedJSONSerializableObject]:
+    ) -> typing.List[Object]:
         """
         Queries and returns all versions of an object with a given ID, sorted ascendingly by the version ID, from first
         version to current version.
@@ -892,8 +924,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: a list of objects as object_type
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         current_object = self.get_current_object(object_id, connection=connection)
         if current_object is None:
             return []
@@ -917,7 +948,7 @@ class VersionedJSONSerializableObjectTables(object):
         ).fetchall()
         objects = []
         for obj in previous_objects:
-            objects.append(self.object_type(*obj))
+            objects.append(Object(*obj))
         objects.append(current_object)
         return objects
 
@@ -927,7 +958,7 @@ class VersionedJSONSerializableObjectTables(object):
             object_id: int,
             version_id: int,
             connection: typing.Optional[db.engine.Connection] = None
-    ) -> VersionedJSONSerializableObject:
+    ) -> typing.Optional[Object]:
         """
         Queries and returns an individual version of an object with a given object and version ID.
 
@@ -936,8 +967,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: the object as object_type or None if the object or this version of it does not exist
         """
-        if connection is None:
-            connection = self.bind.connect()
+        assert connection is not None  # ensured by decorator
         previous_objects = connection.execute(
             db
             .select(
@@ -958,7 +988,7 @@ class VersionedJSONSerializableObjectTables(object):
             ))
         ).fetchall()
         if previous_objects:
-            return self.object_type(*previous_objects[0])
+            return Object(*previous_objects[0])
         current_object = self.get_current_object(object_id, connection=connection)
         if current_object is not None and current_object.version_id == version_id:
             return current_object
