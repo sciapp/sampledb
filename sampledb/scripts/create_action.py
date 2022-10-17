@@ -7,6 +7,8 @@ Usage: python -m sampledb create_action <instrument_id> <type: sample or measure
 
 import json
 import sys
+import typing
+
 from .. import create_app
 from ..logic.actions import create_action, get_action_type, get_action_types
 from ..logic.action_translations import set_action_translation
@@ -18,27 +20,27 @@ from ..logic.utils import get_translated_text
 from .. import models
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 5:
         print(__doc__)
         exit(1)
-    instrument_id, action_type_id, name, description, schema_file_name = arguments
-    if instrument_id == 'None':
-        instrument_id = None
+    instrument_id_str, action_type_id_str, name, description, schema_file_name = arguments
+    if instrument_id_str == 'None':
+        instrument_id: typing.Optional[int] = None
     else:
         try:
-            instrument_id = int(instrument_id)
+            instrument_id = int(instrument_id_str)
         except ValueError:
             print("Error: instrument_id must be an integer or 'None'", file=sys.stderr)
             exit(1)
     try:
-        action_type_id = int(action_type_id)
+        action_type_id: typing.Optional[int] = int(action_type_id_str)
     except ValueError:
         action_type_id = {
             'sample': models.ActionType.SAMPLE_CREATION,
             'measurement': models.ActionType.MEASUREMENT,
             'simulation': models.ActionType.SIMULATION
-        }.get(action_type_id, None)
+        }.get(action_type_id_str, None)
     if action_type_id is not None:
         try:
             get_action_type(action_type_id)

@@ -6,19 +6,21 @@ Usage: python -m sampledb run [<port>]
 """
 
 import sys
+import typing
+
 import cherrypy
 
 from .. import create_app
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) > 1:
         print(__doc__)
         exit(1)
     if arguments:
-        port = arguments[0]
+        port_str = arguments[0]
         try:
-            port = int(port)
+            port = int(port_str)
             if port < 1024 or port > 65535:
                 raise ValueError()
         except ValueError:

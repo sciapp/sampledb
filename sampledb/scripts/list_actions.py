@@ -4,12 +4,13 @@ Script for listing all actions in SampleDB.
 
 Usage: python -m sampledb list_actions
 """
+import typing
 
 from .. import create_app
 from ..logic.actions import get_actions
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
         exit(1)

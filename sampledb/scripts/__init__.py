@@ -6,9 +6,11 @@
 import importlib.util
 import os
 import string
+import typing
+import types
 
 
-def _find_script_modules():
+def _find_script_modules() -> typing.Dict[str, types.ModuleType]:
     """
     Find, import and return all .py files located in the scripts directory.
     """
@@ -24,6 +26,8 @@ def _find_script_modules():
             continue
         module_path = os.path.join(scripts_path, file_name)
         spec = importlib.util.spec_from_file_location(f'sampledb.scripts.{module_name}', module_path)
+        if not spec or not spec.loader:
+            continue
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         script_modules[module_name] = module

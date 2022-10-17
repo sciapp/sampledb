@@ -6,11 +6,12 @@ unchanged. The file directory will not be changed by this script.
 
 Usage: python -m sampledb move_local_files_to_database
 """
+import typing
 
 from sampledb import db, models, logic, create_app
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if arguments:
         print(__doc__)
         exit(1)

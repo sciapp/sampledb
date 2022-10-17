@@ -6,13 +6,15 @@ Usage: python -m sampledb create_instrument <name> <description>
 """
 
 import sys
+import typing
+
 from .. import create_app
 from ..logic.instruments import create_instrument, get_instruments
 from ..logic.instrument_translations import set_instrument_translation
 from ..logic.languages import Language
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 2:
         print(__doc__)
         exit(1)
