@@ -32,7 +32,10 @@ def users(flask_server):
         # force attribute refresh
         for user in users:
             assert user.id is not None
-    return users
+    return [
+        sampledb.logic.users.User.from_database(user)
+        for user in users
+    ]
 
 
 @pytest.fixture

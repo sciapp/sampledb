@@ -24,7 +24,7 @@ def user():
     user = User(name='User', email="example@example.com", type=UserType.PERSON)
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
-    return user
+    return sampledb.logic.users.User.from_database(user)
 
 
 @pytest.fixture

@@ -4,9 +4,9 @@
 """
 
 import pytest
-from sampledb import db
+
+import sampledb.logic.users
 from sampledb.logic import instruments
-from sampledb.models.users import User, UserType
 import sampledb.__main__ as scripts
 
 
@@ -19,16 +19,14 @@ def instrument():
 
 @pytest.fixture
 def users():
-    users = [
-        User(name, 'example@example.com', UserType.PERSON)
-        for name in ['User 1', 'User 2', 'User 3']
+    return [
+        sampledb.logic.users.create_user(
+            name=f'User {i}',
+            email='user{i}@example.com',
+            type=sampledb.models.UserType.PERSON
+        )
+        for i in range(1, 4)
     ]
-    for user in users:
-        db.session.add(user)
-        db.session.commit()
-        assert user.id is not None
-        db.session.expunge(user)
-    return users
 
 
 def test_update_instrument_responsible_users(instrument, users, capsys):

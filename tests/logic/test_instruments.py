@@ -98,11 +98,8 @@ def test_update_missing_instrument():
 
 
 def test_set_instrument_responsible_users():
-    user1 = User(name="Testuser", email="example@example.com", type=UserType.PERSON)
-    user2 = User(name="Testuser", email="example@example.com", type=UserType.PERSON)
-    sampledb.db.session.add(user1)
-    sampledb.db.session.add(user2)
-    sampledb.db.session.commit()
+    user1 = sampledb.logic.users.create_user(name="Testuser", email="example@example.com", type=UserType.PERSON)
+    user2 = sampledb.logic.users.create_user(name="Testuser", email="example@example.com", type=UserType.PERSON)
     instrument = instruments.create_instrument()
     assert len(instrument.responsible_users) == 0
     instruments.set_instrument_responsible_users(instrument.id, [user1.id])
